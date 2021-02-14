@@ -1,0 +1,10 @@
+manifest:
+  version: 0.9
+  remotes:
+    - name: nrfconnect
+      url-base: https://github.com/nrfconnect
+  projects:
+    - name: sdk-nrf
+      remote: nrfconnect
+      revision: v1.4.2
+      import: true
