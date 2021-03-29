@@ -46,6 +46,14 @@
 	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 };
 
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <13>;
+	rx-pin = <14>;
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
