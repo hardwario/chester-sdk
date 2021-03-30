@@ -1,9 +1,12 @@
-.PHONY: build clean flash
+.PHONY: build deploy clean flash debug
 
 all: build
 
 build:
 	west build -b chester_nrf52840
+
+deploy:
+	west build -b chester_nrf52840 -- -DOVERLAY_CONFIG=../chester/prj.conf.deploy
 
 clean:
 	west build -t pristine
