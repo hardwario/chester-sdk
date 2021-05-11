@@ -43,6 +43,7 @@
 	sck-pin = <22>;
 	mosi-pin = <32>;
 	miso-pin = <24>;
+	miso-pull-down;
 	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 };
 
