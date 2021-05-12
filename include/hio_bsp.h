@@ -34,4 +34,7 @@ hio_bsp_set_rf_mux(hio_bsp_rf_mux_t mux);
 int
 hio_bsp_set_led(hio_bsp_led_t led, bool on);
 
+int
+hio_bsp_set_lte_wkup(int level);
+
 #endif

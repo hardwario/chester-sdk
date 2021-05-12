@@ -30,50 +30,58 @@ static const struct device *dev_gpio_1;
 #define DEV_RF_LORA dev_gpio_1
 #define PIN_RF_LORA 2
 
+#define DEV_LTE_WKUP dev_gpio_0
+#define PIN_LTE_WKUP 15
+
 int
 hio_bsp_init(void) {
 
     dev_gpio_0 = device_get_binding("GPIO_0");
     dev_gpio_1 = device_get_binding("GPIO_1");
 
-    if (gpio_pin_configure(DEV_RF_INT, PIN_RF_INT,
+    if (gpio_pin_configure(DEV_LED_R, PIN_LED_R,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         return -1;
     }
 
-    if (gpio_pin_configure(DEV_RF_EXT, PIN_RF_EXT,
+    if (gpio_pin_configure(DEV_LED_G, PIN_LED_G,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         return -2;
     }
 
-    if (gpio_pin_configure(DEV_RF_LTE, PIN_RF_LTE,
+    if (gpio_pin_configure(DEV_LED_Y, PIN_LED_Y,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         return -3;
     }
 
-    if (gpio_pin_configure(DEV_RF_LORA, PIN_RF_LORA,
+    if (gpio_pin_configure(DEV_LED_EXT, PIN_LED_EXT,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         return -4;
     }
 
-    if (gpio_pin_configure(DEV_LED_R, PIN_LED_R,
+    if (gpio_pin_configure(DEV_RF_INT, PIN_RF_INT,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         return -5;
     }
 
-    if (gpio_pin_configure(DEV_LED_G, PIN_LED_G,
+    if (gpio_pin_configure(DEV_RF_EXT, PIN_RF_EXT,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         return -6;
     }
 
-    if (gpio_pin_configure(DEV_LED_Y, PIN_LED_Y,
+    if (gpio_pin_configure(DEV_RF_LTE, PIN_RF_LTE,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         return -7;
     }
 
-    if (gpio_pin_configure(DEV_LED_EXT, PIN_LED_EXT,
+    if (gpio_pin_configure(DEV_RF_LORA, PIN_RF_LORA,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         return -8;
+    }
+
+    if (gpio_pin_configure(DEV_LTE_WKUP, PIN_LTE_WKUP,
+                           GPIO_OUTPUT_INACTIVE) < 0) {
+        return -9;
     }
 
     return 0;
@@ -188,6 +196,16 @@ hio_bsp_set_led(hio_bsp_led_t led, bool on) {
 
         default:
             return -5;
+    }
+
+    return 0;
+}
+
+int
+hio_bsp_set_lte_wkup(int level)
+{
+    if (gpio_pin_set(DEV_LTE_WKUP, PIN_LTE_WKUP, level == 0 ? 0 : 1) < 0) {
+        return -1;
     }
 
     return 0;
