@@ -11,6 +11,13 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	/* This should be possible from Zephyr v2.6.0
+	zephyr,user {
+		pin-rf-int = <&gpio0 9>;
+		pin-rf-ext = <&gpio0 10>;
+	};
+	*/
 };
 
 &adc {
