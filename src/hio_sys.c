@@ -1,5 +1,6 @@
 #include <hio_sys.h>
-#include <zephyr.h>
+// TODO
+// #include <hio_log.h>
 
 static void
 task_wrapper(void *p1, void *p2, void *p3)
@@ -23,7 +24,59 @@ hio_sys_task_init(hio_sys_task_t *task,
 }
 
 void
-hio_sys_sleep(int milliseconds)
+hio_sys_task_sleep(hio_sys_timeout_t timeout)
 {
-    k_msleep((int32_t)milliseconds);
+    k_sleep(timeout);
+}
+
+void
+hio_sys_sem_init(hio_sys_sem_t *sem, unsigned int value)
+{
+    if (k_sem_init((struct k_sem *)sem, value, UINT_MAX) < 0) {
+        // TODO
+        // hio_log_critical("Call `k_sem_init` failed");
+    }
+}
+
+int
+hio_sys_sem_take(hio_sys_sem_t *sem, hio_sys_timeout_t timeout)
+{
+    if (k_sem_take((struct k_sem *)sem, (k_timeout_t)timeout) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+void
+hio_sys_sem_give(hio_sys_sem_t *sem)
+{
+    k_sem_give((struct k_sem *)sem);
+}
+
+void
+hio_sys_mut_init(hio_sys_mut_t *mut)
+{
+    if (k_mutex_init((struct k_mutex *)mut) < 0) {
+        // TODO
+        // hio_log_critical("Call `k_mutex_init` failed");
+    }
+}
+
+void
+hio_sys_mut_acquire(hio_sys_mut_t *mut)
+{
+    if (k_mutex_lock((struct k_mutex *)mut, K_FOREVER) < 0) {
+        // TODO
+        // hio_log_critical("Call `k_mutex_lock` failed");
+    }
+}
+
+void
+hio_sys_mut_release(hio_sys_mut_t *mut)
+{
+    if (k_mutex_unlock((struct k_mutex *)mut) < 0) {
+        // TODO
+        // hio_log_critical("Call `k_mutex_unlock` failed");
+    }
 }
