@@ -5,6 +5,7 @@
 
 #define HIO_SYS_FOREVER ((hio_sys_timeout_t)K_FOREVER)
 #define HIO_SYS_NO_WAIT ((hio_sys_timeout_t)K_NO_WAIT)
+
 #define HIO_SYS_MSEC K_MSEC
 #define HIO_SYS_SECONDS K_SECONDS
 #define HIO_SYS_MINUTES K_MINUTES
