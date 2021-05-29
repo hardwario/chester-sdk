@@ -5,7 +5,7 @@
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/uart.h>
-#include <sys/ring_buffer.h>
+
 #include <zephyr.h>
 
 // Standard includes
@@ -25,19 +25,19 @@ static const struct device *dev;
 static uint8_t __aligned(4) rx_buffer[2][256];
 
 // Ring buffer object for received characters
-static struct ring_buf rx_ring_buf;
+static hio_sys_rbuf_t rx_ring_buf;
 
 // Ring buffer memory for received characters
 static uint8_t __aligned(4) rx_ring_buf_mem[1024];
 
 // Heap object for received line buffers
-static struct k_heap rx_heap;
+static hio_sys_heap_t rx_heap;
 
 // Heap memory for received line buffers
 static char __aligned(4) rx_heap_mem[4 * RX_LINE_MAX_SIZE];
 
 // Message queue object for pointers to received lines
-static struct k_msgq rx_msgq;
+static hio_sys_msgq_t rx_msgq;
 
 // Message queue memory for pointers to received lines
 static char __aligned(4) rx_msgq_mem[64 * sizeof(char *)];
@@ -59,6 +59,7 @@ uart_callback(const struct device *dev,
               struct uart_event *evt, void *user_data)
 {
     static uint8_t *next_buf = rx_buffer[1];
+    uint8_t *p;
 
     switch (evt->type) {
     case UART_TX_DONE:
@@ -69,8 +70,8 @@ uart_callback(const struct device *dev,
         hio_sys_sem_give(&tx_sem);
         break;
     case UART_RX_RDY:
-        ring_buf_put(&rx_ring_buf, evt->data.rx.buf + evt->data.rx.offset,
-                     evt->data.rx.len);
+        p = evt->data.rx.buf + evt->data.rx.offset;
+        hio_sys_rbuf_put(&rx_ring_buf, p, evt->data.rx.len);
         hio_sys_sem_give(&rx_sem);
         break;
     case UART_RX_BUF_REQUEST:
@@ -88,20 +89,77 @@ uart_callback(const struct device *dev,
 }
 
 static void
+process_rx_char(char c)
+{
+    // Buffer for received characters
+    static char buf[RX_LINE_MAX_SIZE];
+
+    // Number of received characters
+    static size_t len;
+
+    // Indicates buffer is clipped
+    static bool clipped;
+
+    // Received new line character?
+    if (c == '\r' || c == '\n') {
+
+        // If buffer is not clipped and contains something...
+        if (!clipped && len > 0) {
+
+            if (buf[0] != '+') {
+                printf("UART RX: %s\n", buf);
+
+                // Allocate buffer from heap
+                char *p = hio_sys_heap_alloc(&rx_heap, len, HIO_SYS_NO_WAIT);
+
+                // Memory allocation failed?
+                if (p == NULL) {
+                    // TODO Log error
+                } else {
+
+                    // Copy line to allocated buffer
+                    memcpy(p, buf, len + 1);
+
+                    // Store pointer to buffer to RX queue
+                    if (hio_sys_msgq_put(&rx_msgq, &p, HIO_SYS_NO_WAIT) < 0) {
+                        // TODO Log error
+                    }
+                }
+            } else {
+                printf("URC: %s\n", buf);
+            }
+        }
+
+        // TODO Not needed, just for debug
+        memset(buf, 0, sizeof(buf));
+
+        // Reset line
+        len = 0;
+
+        // Reset clip indicator
+        clipped = false;
+
+    } else {
+
+        // Check for insufficient room...
+        if (len >= sizeof(buf) - 1) {
+
+            // Indicate clipped buffer
+            clipped = true;
+
+        } else {
+
+            // Store character to buffer
+            buf[len++] = c;
+            buf[len] = '\0';
+        }
+    }
+}
+
+static void
 rx_task_entry(void *param)
 {
-    // Forever...
     for (;;) {
-
-        // Buffer for received characters
-        static char buf[RX_LINE_MAX_SIZE];
-
-        // Number of received characters
-        static size_t len;
-
-        // Indicates buffer is clipped
-        static bool clipped;
-
         // Wait for semaphore...
         if (hio_sys_sem_take(&rx_sem, HIO_SYS_FOREVER) < 0) {
             // TODO Should never get here
@@ -109,62 +167,8 @@ rx_task_entry(void *param)
         }
 
         // Process all available characters in ring buffer
-        for (char c; ring_buf_get(&rx_ring_buf, &c, 1) > 0;) {
-
-            // Received new line character?
-            if (c == '\r' || c == '\n') {
-
-                // If buffer is not clipped and contains something...
-                if (!clipped && len > 0) {
-
-                    if (buf[0] != '+') {
-                        printf("UART RX: %s\n", buf);
-
-                        // Allocate buffer from heap
-                        char *p = k_heap_alloc(&rx_heap, len, K_NO_WAIT);
-
-                        // Memory allocation failed?
-                        if (p == NULL) {
-                            // TODO Log error
-                        } else {
-
-                            // Copy line to allocated buffer
-                            memcpy(p, buf, len + 1);
-
-                            // Store pointer to buffer to RX queue
-                            if (k_msgq_put(&rx_msgq, &p, K_NO_WAIT) < 0) {
-                                // TODO Log error
-                            }
-                        }
-                    } else {
-                        printf("URC: %s\n", buf);
-                    }
-                }
-
-                // TODO Not needed, just for debug
-                memset(buf, 0, sizeof(buf));
-
-                // Reset line
-                len = 0;
-
-                // Reset clip indicator
-                clipped = false;
-
-            } else {
-
-                // Check for insufficient room...
-                if (len >= sizeof(buf) - 1) {
-
-                    // Indicate clipped buffer
-                    clipped = true;
-
-                } else {
-
-                    // Store character to buffer
-                    buf[len++] = c;
-                    buf[len] = '\0';
-                }
-            }
+        for (char c; hio_sys_rbuf_get(&rx_ring_buf, &c, 1) > 0;) {
+            process_rx_char(c);
         }
     }
 }
@@ -173,13 +177,13 @@ int
 hio_lte_uart_init(void)
 {
     // Initialize RX ring buffer
-    ring_buf_init(&rx_ring_buf, sizeof(rx_ring_buf_mem), rx_ring_buf_mem);
+    hio_sys_rbuf_init(&rx_ring_buf, rx_ring_buf_mem, sizeof(rx_ring_buf_mem));
 
     // Initialize heap
-    k_heap_init(&rx_heap, rx_heap_mem, sizeof(rx_heap_mem));
+    hio_sys_heap_init(&rx_heap, rx_heap_mem, sizeof(rx_heap_mem));
 
     // Initialize RX queue
-    k_msgq_init(&rx_msgq, rx_msgq_mem, sizeof(char *), 64);
+    hio_sys_msgq_init(&rx_msgq, rx_msgq_mem, sizeof(char *), 64);
 
     hio_sys_sem_init(&tx_sem, 0);
     hio_sys_sem_init(&rx_sem, 0);
@@ -250,13 +254,13 @@ hio_lte_uart_recv(hio_sys_timeout_t timeout)
 
     char *p;
 
-    if (k_msgq_get(&rx_msgq, &p, timeout) < 0) {
+    if (hio_sys_msgq_get(&rx_msgq, &p, timeout) < 0) {
         return NULL;
     }
 
     strcpy(buf, p);
 
-    k_heap_free(&rx_heap, p);
+    hio_sys_heap_free(&rx_heap, p);
 
     return buf;
 }

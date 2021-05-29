@@ -2,6 +2,25 @@
 // TODO
 // #include <hio_log.h>
 
+void
+hio_sys_heap_init(hio_sys_heap_t *heap, void *mem, size_t mem_size)
+{
+    k_heap_init((struct k_heap *)heap, mem, mem_size);
+}
+
+void *
+hio_sys_heap_alloc(hio_sys_heap_t *heap, size_t bytes,
+                   hio_sys_timeout_t timeout)
+{
+    return k_heap_alloc((struct k_heap *)heap, bytes, (k_timeout_t)timeout);
+}
+
+void
+hio_sys_heap_free(hio_sys_heap_t *heap, void *mem)
+{
+    k_heap_free((struct k_heap *)heap, mem);
+}
+
 static void
 task_wrapper(void *p1, void *p2, void *p3)
 {
@@ -38,6 +57,12 @@ hio_sys_sem_init(hio_sys_sem_t *sem, unsigned int value)
     }
 }
 
+void
+hio_sys_sem_give(hio_sys_sem_t *sem)
+{
+    k_sem_give((struct k_sem *)sem);
+}
+
 int
 hio_sys_sem_take(hio_sys_sem_t *sem, hio_sys_timeout_t timeout)
 {
@@ -46,12 +71,6 @@ hio_sys_sem_take(hio_sys_sem_t *sem, hio_sys_timeout_t timeout)
     }
 
     return 0;
-}
-
-void
-hio_sys_sem_give(hio_sys_sem_t *sem)
-{
-    k_sem_give((struct k_sem *)sem);
 }
 
 void
@@ -79,4 +98,53 @@ hio_sys_mut_release(hio_sys_mut_t *mut)
         // TODO
         // hio_log_critical("Call `k_mutex_unlock` failed");
     }
+}
+
+void
+hio_sys_msgq_init(hio_sys_msgq_t *msgq, void *mem,
+                  size_t item_size, size_t max_items)
+{
+    k_msgq_init((struct k_msgq *)msgq, (char *)mem, item_size, max_items);
+}
+
+int
+hio_sys_msgq_put(hio_sys_msgq_t *msgq, const void *item,
+                 hio_sys_timeout_t timeout)
+{
+    if (k_msgq_put((struct k_msgq *)msgq, item, (k_timeout_t)timeout) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int
+hio_sys_msgq_get(hio_sys_msgq_t *msgq, void *item,
+                 hio_sys_timeout_t timeout)
+{
+    if (k_msgq_get((struct k_msgq *)msgq, item, (k_timeout_t)timeout) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+void
+hio_sys_rbuf_init(hio_sys_rbuf_t *rbuf, void *mem, size_t mem_size)
+{
+    ring_buf_init((struct ring_buf *)rbuf, mem_size, mem);
+}
+
+size_t
+hio_sys_rbuf_put(hio_sys_rbuf_t *rbuf, const uint8_t *data, size_t bytes)
+{
+    return (size_t)ring_buf_put((struct ring_buf *)rbuf,
+                                data, (uint32_t)bytes);
+}
+
+size_t
+hio_sys_rbuf_get(hio_sys_rbuf_t *rbuf, uint8_t *data, size_t bytes)
+{
+    return (size_t)ring_buf_get((struct ring_buf *)rbuf,
+                                data, (uint32_t)bytes);
 }
