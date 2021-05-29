@@ -177,7 +177,8 @@ int
 hio_lte_uart_init(void)
 {
     // Initialize RX ring buffer
-    hio_sys_rbuf_init(&rx_ring_buf, rx_ring_buf_mem, sizeof(rx_ring_buf_mem));
+    hio_sys_rbuf_init(&rx_ring_buf,
+                      rx_ring_buf_mem, sizeof(rx_ring_buf_mem));
 
     // Initialize heap
     hio_sys_heap_init(&rx_heap, rx_heap_mem, sizeof(rx_heap_mem));
@@ -187,7 +188,10 @@ hio_lte_uart_init(void)
 
     hio_sys_sem_init(&tx_sem, 0);
     hio_sys_sem_init(&rx_sem, 0);
-    hio_sys_task_init(&rx_task, rx_task_stack, HIO_SYS_TASK_STACK_SIZEOF(rx_task_stack), rx_task_entry, NULL);
+
+    hio_sys_task_init(&rx_task,
+                      rx_task_stack, HIO_SYS_TASK_STACK_SIZEOF(rx_task_stack),
+                      rx_task_entry, NULL);
 
     dev = device_get_binding("UART_0");
 
@@ -211,7 +215,8 @@ hio_lte_uart_init(void)
         return -3;
     }
 
-    if (uart_rx_enable(dev, rx_buffer[0], sizeof(rx_buffer[0]), RX_TIMEOUT) < 0) {
+    if (uart_rx_enable(dev, rx_buffer[0], sizeof(rx_buffer[0]),
+                       RX_TIMEOUT) < 0) {
         return -4;
     }
 
