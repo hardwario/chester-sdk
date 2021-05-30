@@ -9,12 +9,19 @@
 #define LOG_PREFIX "# "
 
 static struct {
+    bool init;
     const hio_log_driver_t *driver;
     hio_log_level_t level;
     hio_log_timestamp_t ts;
     uint64_t last;
     char buf[LOG_BUF_SIZE];
 } log;
+
+bool
+hio_log_is_init(void)
+{
+    return log.init;
+}
 
 void
 hio_log_init(const hio_log_driver_t *driver,
@@ -27,6 +34,8 @@ hio_log_init(const hio_log_driver_t *driver,
     if (log.driver->init != NULL) {
         log.driver->init();
     }
+
+    log.init = true;
 }
 
 static void
@@ -192,7 +201,7 @@ hio_log_dump_(const void *buf, size_t len, const char *fmt, ...)
 }
 
 void
-hio_hio_log_debug_(const char *fmt, ...)
+hio_log_debug_(const char *fmt, ...)
 {
     va_list ap;
 
@@ -202,7 +211,7 @@ hio_hio_log_debug_(const char *fmt, ...)
 }
 
 void
-hio_hio_log_info_(const char *fmt, ...)
+hio_log_info_(const char *fmt, ...)
 {
     va_list ap;
 
@@ -212,7 +221,7 @@ hio_hio_log_info_(const char *fmt, ...)
 }
 
 void
-hio_hio_log_warn_(const char *fmt, ...)
+hio_log_warn_(const char *fmt, ...)
 {
     va_list ap;
 
@@ -222,7 +231,7 @@ hio_hio_log_warn_(const char *fmt, ...)
 }
 
 void
-hio_hio_log_error_(const char *fmt, ...)
+hio_log_error_(const char *fmt, ...)
 {
     va_list ap;
 
@@ -232,11 +241,15 @@ hio_hio_log_error_(const char *fmt, ...)
 }
 
 void
-hio_hio_log_fatal_(const char *fmt, ...)
+hio_log_fatal_(const char *fmt, ...)
 {
     va_list ap;
 
     va_start(ap, fmt);
     message(HIO_LOG_LEVEL_ERROR, 'F', fmt, ap);
     va_end(ap);
+
+    if (log.driver->reboot != NULL) {
+        log.driver->reboot();
+    }
 }

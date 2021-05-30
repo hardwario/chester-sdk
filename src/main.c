@@ -6,7 +6,10 @@
 // Zephyr includes
 #include <zephyr.h>
 
-#define HIO_LOG_ACTIVE 1
+// TODO
+#include <stdio.h>
+
+#define HIO_LOG_ENABLED 1
 #define HIO_LOG_PREFIX "MAIN"
 
 static hio_sys_mut_t log_mut;
@@ -46,19 +49,26 @@ log_driver_unlock(void)
     hio_sys_mut_release(&log_mut);
 }
 
+static void
+log_driver_reboot(void)
+{
+    hio_sys_reboot();
+}
+
 void
 main(void)
 {
+    hio_sys_mut_init(&log_mut);
+
     static const hio_log_driver_t log_driver = {
         .init = log_driver_init,
         .print = log_driver_print,
         .time = log_driver_time,
         .eol = log_driver_eol,
         .lock = log_driver_lock,
-        .unlock = log_driver_unlock
+        .unlock = log_driver_unlock,
+        .reboot = log_driver_reboot
     };
-
-    hio_sys_mut_init(&log_mut);
 
     hio_log_init(&log_driver, HIO_LOG_LEVEL_DUMP, HIO_LOG_TIMESTAMP_ABS);
 

@@ -1,17 +1,20 @@
 #include <hio_lte_uart.h>
 #include <hio_bsp.h>
+#include <hio_log.h>
 
 // Zephyr includes
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/uart.h>
-
 #include <zephyr.h>
 
 // Standard includes
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+
+#define HIO_LOG_ENABLED 1
+#define HIO_LOG_PREFIX "HIO/LTE/UART"
 
 #define TX_LINE_MAX_SIZE 1024
 #define RX_LINE_MAX_SIZE 1024
@@ -107,7 +110,7 @@ process_rx_char(char c)
         if (!clipped && len > 0) {
 
             if (buf[0] != '+') {
-                printf("UART RX: %s\n", buf);
+                hio_log_debug("RSP: %s", buf);
 
                 // Allocate buffer from heap
                 char *p = hio_sys_heap_alloc(&rx_heap, len, HIO_SYS_NO_WAIT);
@@ -126,7 +129,7 @@ process_rx_char(char c)
                     }
                 }
             } else {
-                printf("URC: %s\n", buf);
+                hio_log_debug("URC: %s", buf);
             }
         }
 
@@ -236,9 +239,9 @@ hio_lte_uart_send(const char *fmt, va_list ap)
         return -2;
     }
 
-    strcat(buf, "\r\n");
+    hio_log_debug("CMD: %s", buf);
 
-    printf("UART TX: %s", buf);
+    strcat(buf, "\r\n");
 
     if (uart_tx(dev, buf, strlen(buf), SYS_FOREVER_MS) < 0) {
         return -3;

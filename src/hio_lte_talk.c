@@ -1,9 +1,12 @@
 #include <hio_lte_talk.h>
 #include <hio_lte_uart.h>
+#include <hio_log.h>
+
+// Standard includes
 #include <string.h>
 
-// TODO Remove
-#include <stdio.h>
+#define HIO_LOG_ENABLED 1
+#define HIO_LOG_PREFIX "HIO/LTE/TALK"
 
 int
 hio_lte_talk_cmd(const char *fmt, ...)
@@ -15,9 +18,7 @@ hio_lte_talk_cmd(const char *fmt, ...)
     va_end(ap);
 
     if (ret < 0) {
-        printf("Call `hio_lte_uart_send` failed\n");
-        for (;;);
-        return -1;
+        hio_log_fatal("Call `hio_lte_uart_send` failed");
     }
 
     return 0;
@@ -67,8 +68,9 @@ hio_lte_talk_cmd_ok(hio_sys_timeout_t timeout, const char *fmt, ...)
     }
 
     if (strcmp(rsp, "OK") != 0) {
+        // TODO Remove
         for (size_t i = 0; i < strlen(rsp); i++) {
-            printf("rsp[%u]: %02x (%c)\n", i, rsp[i], rsp[i]);
+            hio_log_debug("rsp[%u]: %02x (%c)", i, rsp[i], rsp[i]);
         }
 
         return -3;

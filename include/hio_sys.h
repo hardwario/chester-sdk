@@ -31,6 +31,9 @@ typedef struct k_mutex hio_sys_mut_t;
 typedef struct k_msgq hio_sys_msgq_t;
 typedef struct ring_buf hio_sys_rbuf_t;
 
+void
+hio_sys_reboot(void);
+
 int64_t
 hio_sys_uptime_get(void);
 

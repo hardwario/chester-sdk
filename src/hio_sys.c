@@ -1,8 +1,22 @@
 #include <hio_sys.h>
 #include <hio_log.h>
 
-#define HIO_LOG_ACTIVE 1
-#define HIO_LOG_PREFIX "SYS"
+// Zephyr includes
+#include <power/reboot.h>
+
+#define HIO_LOG_ENABLED 1
+#define HIO_LOG_PREFIX "HIO:SYS"
+
+void
+hio_sys_reboot(void)
+{
+    // TODO Flip this
+    #if 0
+    sys_reboot(SYS_REBOOT_COLD);
+    #else
+    for (;;);
+    #endif
+}
 
 int64_t
 hio_sys_uptime_get(void)
@@ -60,7 +74,11 @@ void
 hio_sys_sem_init(hio_sys_sem_t *sem, unsigned int value)
 {
     if (k_sem_init((struct k_sem *)sem, value, UINT_MAX) < 0) {
-        hio_log_fatal("Call `k_sem_init` failed");
+        if (hio_log_is_init()) {
+            hio_log_fatal("Call `k_sem_init` failed");
+        } else {
+            hio_sys_reboot();
+        }
     }
 }
 
@@ -84,7 +102,11 @@ void
 hio_sys_mut_init(hio_sys_mut_t *mut)
 {
     if (k_mutex_init((struct k_mutex *)mut) < 0) {
-        hio_log_fatal("Call `k_mutex_init` failed");
+        if (hio_log_is_init()) {
+            hio_log_fatal("Call `k_mutex_init` failed");
+        } else {
+            hio_sys_reboot();
+        }
     }
 }
 
@@ -92,7 +114,11 @@ void
 hio_sys_mut_acquire(hio_sys_mut_t *mut)
 {
     if (k_mutex_lock((struct k_mutex *)mut, K_FOREVER) < 0) {
-        hio_log_fatal("Call `k_mutex_lock` failed");
+        if (hio_log_is_init()) {
+            hio_log_fatal("Call `k_mutex_lock` failed");
+        } else {
+            hio_sys_reboot();
+        }
     }
 }
 
@@ -100,7 +126,11 @@ void
 hio_sys_mut_release(hio_sys_mut_t *mut)
 {
     if (k_mutex_unlock((struct k_mutex *)mut) < 0) {
-        hio_log_fatal("Call `k_mutex_unlock` failed");
+        if (hio_log_is_init()) {
+            hio_log_fatal("Call `k_mutex_unlock` failed");
+        } else {
+            hio_sys_reboot();
+        }
     }
 }
 
