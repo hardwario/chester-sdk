@@ -1,6 +1,14 @@
 #include <hio_sys.h>
-// TODO
-// #include <hio_log.h>
+#include <hio_log.h>
+
+#define HIO_LOG_ACTIVE 1
+#define HIO_LOG_PREFIX "SYS"
+
+int64_t
+hio_sys_uptime_get(void)
+{
+    return k_uptime_get();
+}
 
 void
 hio_sys_heap_init(hio_sys_heap_t *heap, void *mem, size_t mem_size)
@@ -52,8 +60,7 @@ void
 hio_sys_sem_init(hio_sys_sem_t *sem, unsigned int value)
 {
     if (k_sem_init((struct k_sem *)sem, value, UINT_MAX) < 0) {
-        // TODO
-        // hio_log_critical("Call `k_sem_init` failed");
+        hio_log_fatal("Call `k_sem_init` failed");
     }
 }
 
@@ -77,8 +84,7 @@ void
 hio_sys_mut_init(hio_sys_mut_t *mut)
 {
     if (k_mutex_init((struct k_mutex *)mut) < 0) {
-        // TODO
-        // hio_log_critical("Call `k_mutex_init` failed");
+        hio_log_fatal("Call `k_mutex_init` failed");
     }
 }
 
@@ -86,8 +92,7 @@ void
 hio_sys_mut_acquire(hio_sys_mut_t *mut)
 {
     if (k_mutex_lock((struct k_mutex *)mut, K_FOREVER) < 0) {
-        // TODO
-        // hio_log_critical("Call `k_mutex_lock` failed");
+        hio_log_fatal("Call `k_mutex_lock` failed");
     }
 }
 
@@ -95,8 +100,7 @@ void
 hio_sys_mut_release(hio_sys_mut_t *mut)
 {
     if (k_mutex_unlock((struct k_mutex *)mut) < 0) {
-        // TODO
-        // hio_log_critical("Call `k_mutex_unlock` failed");
+        hio_log_fatal("Call `k_mutex_unlock` failed");
     }
 }
 

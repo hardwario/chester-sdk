@@ -5,6 +5,10 @@
 #include <sys/ring_buffer.h>
 #include <zephyr.h>
 
+// Standard includes
+#include <stdint.h>
+#include <stddef.h>
+
 #define HIO_SYS_FOREVER ((hio_sys_timeout_t)K_FOREVER)
 #define HIO_SYS_NO_WAIT ((hio_sys_timeout_t)K_NO_WAIT)
 
@@ -26,6 +30,9 @@ typedef struct k_sem hio_sys_sem_t;
 typedef struct k_mutex hio_sys_mut_t;
 typedef struct k_msgq hio_sys_msgq_t;
 typedef struct ring_buf hio_sys_rbuf_t;
+
+int64_t
+hio_sys_uptime_get(void);
 
 void
 hio_sys_heap_init(hio_sys_heap_t *heap, void *mem, size_t mem_size);
