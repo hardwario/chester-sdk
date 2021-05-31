@@ -7,8 +7,8 @@
 int
 hio_lte_talk_cmd(const char *fmt, ...);
 
-char *
-hio_lte_talk_rsp(hio_sys_timeout_t timeout);
+int
+hio_lte_talk_rsp(char **s, hio_sys_timeout_t timeout);
 
 int
 hio_lte_talk_ok(hio_sys_timeout_t timeout);

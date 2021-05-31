@@ -9,7 +9,7 @@ hio_lte_uart_init(void);
 int
 hio_lte_uart_send(const char *fmt, va_list ap);
 
-char *
-hio_lte_uart_recv(hio_sys_timeout_t timeout);
+int
+hio_lte_uart_recv(char **s, hio_sys_timeout_t timeout);
 
 #endif

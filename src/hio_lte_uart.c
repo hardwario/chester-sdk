@@ -10,11 +10,13 @@
 
 // Standard includes
 #include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
 #define HIO_LOG_ENABLED 1
-#define HIO_LOG_PREFIX "HIO/LTE/UART"
+#define HIO_LOG_PREFIX "HIO:LTE:UART"
 
 #define TX_LINE_MAX_SIZE 1024
 #define RX_LINE_MAX_SIZE 1024
@@ -255,20 +257,23 @@ hio_lte_uart_send(const char *fmt, va_list ap)
     return ret;
 }
 
-char *
-hio_lte_uart_recv(hio_sys_timeout_t timeout)
+int
+hio_lte_uart_recv(char **s, hio_sys_timeout_t timeout)
 {
     static uint8_t __aligned(4) buf[RX_LINE_MAX_SIZE];
 
     char *p;
 
     if (hio_sys_msgq_get(&rx_msgq, &p, timeout) < 0) {
-        return NULL;
+        *s = NULL;
+        return -1;
     }
 
     strcpy(buf, p);
 
     hio_sys_heap_free(&rx_heap, p);
 
-    return buf;
+    *s = buf;
+
+    return 0;
 }
