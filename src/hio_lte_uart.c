@@ -119,7 +119,7 @@ process_rx_char(char c)
 
                 // Memory allocation failed?
                 if (p == NULL) {
-                    // TODO Log error
+                    hio_log_error("Call `hio_sys_heap_alloc` failed");
                 } else {
 
                     // Copy line to allocated buffer
@@ -127,16 +127,13 @@ process_rx_char(char c)
 
                     // Store pointer to buffer to RX queue
                     if (hio_sys_msgq_put(&rx_msgq, &p, HIO_SYS_NO_WAIT) < 0) {
-                        // TODO Log error
+                        hio_log_error("Call `hio_sys_msgq_put` failed");
                     }
                 }
             } else {
                 hio_log_debug("URC: %s", buf);
             }
         }
-
-        // TODO Not needed, just for debug
-        memset(buf, 0, sizeof(buf));
 
         // Reset line
         len = 0;
@@ -201,6 +198,7 @@ hio_lte_uart_init(void)
     dev = device_get_binding("UART_0");
 
     if (dev == NULL) {
+        hio_log_fatal("Call `device_get_binding` failed");
         return -1;
     }
 
@@ -213,15 +211,18 @@ hio_lte_uart_init(void)
     };
 
     if (uart_configure(dev, &cfg) < 0) {
+        hio_log_fatal("Call `uart_configure` failed");
         return -2;
     }
 
     if (uart_callback_set(dev, uart_callback, NULL) < 0) {
+        hio_log_fatal("Call `uart_callback_set` failed");
         return -3;
     }
 
     if (uart_rx_enable(dev, rx_buffer[0], sizeof(rx_buffer[0]),
                        RX_TIMEOUT) < 0) {
+        hio_log_fatal("Call `uart_rx_enable` failed");
         return -4;
     }
 
@@ -236,8 +237,10 @@ hio_lte_uart_send(const char *fmt, va_list ap)
     int ret = vsnprintf(buf, sizeof(buf) - 2, fmt, ap);
 
     if (ret < 0) {
+        hio_log_error("Call `vsnprintf` failed");
         return -1;
     } else if (ret > sizeof(buf) - 2) {
+        hio_log_error("Buffer too small");
         return -2;
     }
 
@@ -246,11 +249,13 @@ hio_lte_uart_send(const char *fmt, va_list ap)
     strcat(buf, "\r\n");
 
     if (uart_tx(dev, buf, strlen(buf), SYS_FOREVER_MS) < 0) {
+        hio_log_error("Call `uart_tx` failed");
         return -3;
     }
 
     // TODO Shall we set some reasonable timeout?
     if (hio_sys_sem_take(&tx_sem, HIO_SYS_FOREVER) < 0) {
+        hio_log_error("Call `hio_sys_sem_take` failed");
         return -4;
     }
 
@@ -265,6 +270,7 @@ hio_lte_uart_recv(char **s, hio_sys_timeout_t timeout)
     char *p;
 
     if (hio_sys_msgq_get(&rx_msgq, &p, timeout) < 0) {
+        hio_log_error("Call `hio_sys_msgq_get` failed");
         *s = NULL;
         return -1;
     }
