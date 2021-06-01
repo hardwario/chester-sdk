@@ -1,5 +1,7 @@
 target_include_directories(app PRIVATE include)
 target_sources(app PRIVATE src/hio_bsp.c)
+target_sources(app PRIVATE src/hio_bsp_i2c.c)
+target_sources(app PRIVATE src/hio_bus_i2c.c)
 target_sources(app PRIVATE src/hio_log.c)
 target_sources(app PRIVATE src/hio_lte_talk.c)
 target_sources(app PRIVATE src/hio_lte_uart.c)

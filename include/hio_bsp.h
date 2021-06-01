@@ -1,6 +1,9 @@
 #ifndef HIO_BSP_H
 #define HIO_BSP_H
 
+#include <hio_bus_i2c.h>
+
+// Standard includes
 #include <stdbool.h>
 
 typedef enum {
@@ -29,6 +32,9 @@ typedef enum {
 
 int
 hio_bsp_init(void);
+
+hio_bus_i2c_t *
+hio_bsp_get_i2c(void);
 
 int
 hio_bsp_set_led(hio_bsp_led_t led, bool on);

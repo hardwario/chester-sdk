@@ -1,5 +1,7 @@
 #include <application.h>
 #include <hio_bsp.h>
+#include <hio_bsp_i2c.h>
+#include <hio_bus_i2c.h>
 #include <hio_log.h>
 #include <hio_sys.h>
 
