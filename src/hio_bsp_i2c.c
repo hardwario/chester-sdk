@@ -15,18 +15,13 @@ static const struct device *dev;
 static int
 init(void *ctx)
 {
-    dev = device_get_binding("I2C_0");
-
-    if (dev == NULL) {
-        hio_log_fatal("Call `device_get_binding` failed [%p]", ctx);
-        return -1;
-    }
+    dev = (struct device *)ctx;
 
     uint32_t dev_config = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
 
 	if (i2c_configure(dev, dev_config) < 0) {
         hio_log_fatal("Call `i2c_configure` failed [%p]", ctx);
-        return -2;
+        return -1;
     }
 
     // TODO Uncomment

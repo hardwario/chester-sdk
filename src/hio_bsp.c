@@ -55,6 +55,7 @@
 #define DEV_LTE_WKUP dev_gpio_0
 #define PIN_LTE_WKUP 15
 
+static const struct device *dev_i2c;
 static const struct device *dev_gpio_0;
 static const struct device *dev_gpio_1;
 
@@ -63,113 +64,122 @@ static hio_bus_i2c_t i2c;
 int
 hio_bsp_init(void)
 {
-    if (hio_bus_i2c_init(&i2c, hio_bsp_i2c_get_driver(), NULL) < 0) {
-        hio_log_fatal("Call `hio_bus_i2c_init` failed");
+    dev_i2c = device_get_binding("I2C_0");
+
+    if (dev_i2c == NULL) {
+        hio_log_fatal("Call `device_get_binding` failed");
         return -1;
+    }
+
+    const hio_bus_i2c_driver_t *i2c_drv = hio_bsp_i2c_get_driver();
+
+    if (hio_bus_i2c_init(&i2c, i2c_drv, (void *)dev_i2c) < 0) {
+        hio_log_fatal("Call `hio_bus_i2c_init` failed");
+        return -2;
     }
 
     dev_gpio_0 = device_get_binding("GPIO_0");
 
     if (dev_gpio_0 == NULL) {
         hio_log_fatal("Call `device_get_binding` failed");
-        return -2;
+        return -3;
     }
 
     dev_gpio_1 = device_get_binding("GPIO_1");
 
     if (dev_gpio_1 == NULL) {
         hio_log_fatal("Call `device_get_binding` failed");
-        return -3;
+        return -4;
     }
 
     if (gpio_pin_configure(DEV_LED_R, PIN_LED_R,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -4;
+        return -5;
     }
 
     if (gpio_pin_configure(DEV_LED_G, PIN_LED_G,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -5;
+        return -6;
     }
 
     if (gpio_pin_configure(DEV_LED_Y, PIN_LED_Y,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -6;
+        return -7;
     }
 
     if (gpio_pin_configure(DEV_LED_EXT, PIN_LED_EXT,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -7;
+        return -8;
     }
 
     if (gpio_pin_configure(DEV_BTN_INT, PIN_BTN_INT,
                            GPIO_INPUT | GPIO_PULL_UP) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -8;
+        return -9;
     }
 
     if (gpio_pin_configure(DEV_BTN_EXT, PIN_BTN_EXT,
                            GPIO_INPUT | GPIO_PULL_UP) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -9;
+        return -10;
     }
 
     if (gpio_pin_configure(DEV_BAT_LOAD, PIN_BAT_LOAD,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -10;
+        return -11;
     }
 
     if (gpio_pin_configure(DEV_SLPZ, PIN_SLPZ,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -11;
+        return -12;
     }
 
     if (gpio_pin_configure(DEV_GNSS_ON, PIN_GNSS_ON,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -12;
+        return -13;
     }
 
     if (gpio_pin_configure(DEV_GNSS_RTC, PIN_GNSS_RTC,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -13;
+        return -14;
     }
 
     if (gpio_pin_configure(DEV_RF_INT, PIN_RF_INT,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -14;
+        return -15;
     }
 
     if (gpio_pin_configure(DEV_RF_EXT, PIN_RF_EXT,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -15;
+        return -16;
     }
 
     if (gpio_pin_configure(DEV_RF_LTE, PIN_RF_LTE,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -16;
+        return -17;
     }
 
     if (gpio_pin_configure(DEV_RF_LORA, PIN_RF_LORA,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -17;
+        return -18;
     }
 
     if (gpio_pin_configure(DEV_LTE_WKUP, PIN_LTE_WKUP,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -18;
+        return -19;
     }
 
     return 0;

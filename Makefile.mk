@@ -9,7 +9,7 @@ deploy:
 	west build -b chester_nrf52840 -- -DOVERLAY_CONFIG=../chester/prj.conf.deploy
 
 clean:
-	west build -t pristine
+	rm -rf build
 
 flash:
 	west flash
