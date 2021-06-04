@@ -74,11 +74,30 @@ read(hio_drv_sht30_t *ctx, uint8_t *buf)
     return 0;
 }
 
+static uint8_t
+calc_crc(uint8_t *data, size_t len)
+{
+    uint16_t crc = 0xff;
+
+    for (size_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (size_t j = 0; j < 8; j++) {
+            if ((crc & 0x80) != 0) {
+                crc <<= 1;
+                crc ^= 0x131;
+            } else {
+                crc <<= 1;
+            }
+        }
+    }
+
+    return crc;
+}
+
 int
 hio_drv_sht30_measure(hio_drv_sht30_t *ctx, float *t, float *rh)
 {
     if (!ctx->ready) {
-
         if (reset(ctx) < 0) {
             hio_log_error("Call `reset` failed [%p]", ctx)
             return -1;
@@ -105,13 +124,17 @@ hio_drv_sht30_measure(hio_drv_sht30_t *ctx, float *t, float *rh)
         return -3;
     }
 
-    // TODO Check CRC
+    if (calc_crc(&buf[0], 2) != buf[2] ||
+        calc_crc(&buf[3], 2) != buf[5]) {
+        hio_log_error("CRC mismatch [%p]", ctx)
+        return -4;
+    }
 
     uint16_t reg_t = buf[0] << 8 | buf[1];
-    *t = -45.f + 175.f * (float) reg_t / 65535.f;
+    *t = -45.f + 175.f * (float)reg_t / 65535.f;
 
     uint16_t reg_rh = buf[3] << 8 | buf[4];
-    *rh = 100.f * (float) reg_rh / 65535.f;
+    *rh = 100.f * (float)reg_rh / 65535.f;
 
     return 0;
 }
