@@ -28,17 +28,6 @@ init(hio_drv_tmp112_t *ctx)
         return -1;
     }
 
-    ////////
-    uint16_t reg;
-
-    if (hio_bus_i2c_mem_read_16b(ctx->i2c, ctx->dev_addr, 0x01, &reg) < 0) {
-        hio_log_error("Call `hio_bus_i2c_mem_read_16b` failed [%p]", ctx)
-        return -1;
-    } else {
-        hio_log_info("%04x [%p]", reg, ctx)
-    }
-    ///////
-
     return 0;
 }
 

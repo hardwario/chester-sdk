@@ -130,43 +130,48 @@ mem_read(void *ctx, const hio_bus_i2c_mem_xfer_t *xfer)
 static int
 mem_write(void *ctx, const hio_bus_i2c_mem_xfer_t *xfer)
 {
-    struct i2c_msg msgs[2];
-
-    msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_RESTART;
-
-    msgs[1].buf = xfer->buf;
-    msgs[1].len = xfer->len;
-    msgs[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+    if (xfer->len > 64) {
+        hio_log_error("Write request too large [%p]", ctx);
+        return -1;
+    }
 
     if ((xfer->mem_addr & HIO_BUS_I2C_MEM_ADDR_16B) != 0) {
+        uint8_t buf[2 + 64];
 
-        uint8_t buf[2] = {
-            xfer->mem_addr >> 8,
-            xfer->mem_addr
-        };
+        buf[0] = xfer->mem_addr >> 8;
+        buf[1] = xfer->mem_addr;
 
-        msgs[0].buf = buf;
-        msgs[0].len = sizeof(buf);
+        memcpy(&buf[2], xfer->buf, xfer->len);
 
-        if (i2c_transfer(dev, msgs, HIO_ARRAY_SIZE(msgs),
-                         xfer->dev_addr) < 0) {
-            hio_log_warn("Call `i2c_transfer` failed [%p]", ctx);
-            return -1;
-        }
-
-    } else {
-
-        uint8_t buf[1] = {
-            xfer->mem_addr
-        };
+        struct i2c_msg msgs[1];
 
         msgs[0].buf = buf;
-        msgs[0].len = sizeof(buf);
+        msgs[0].len = 2 + xfer->len;
+        msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
         if (i2c_transfer(dev, msgs, HIO_ARRAY_SIZE(msgs),
                          xfer->dev_addr) < 0) {
             hio_log_warn("Call `i2c_transfer` failed [%p]", ctx);
             return -2;
+        }
+
+    } else {
+        uint8_t buf[1 + 64];
+
+        buf[0] = xfer->mem_addr;
+
+        memcpy(&buf[1], xfer->buf, xfer->len);
+
+        struct i2c_msg msgs[1];
+
+        msgs[0].buf = buf;
+        msgs[0].len = 1 + xfer->len;
+        msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+        if (i2c_transfer(dev, msgs, HIO_ARRAY_SIZE(msgs),
+                         xfer->dev_addr) < 0) {
+            hio_log_warn("Call `i2c_transfer` failed [%p]", ctx);
+            return -3;
         }
     }
 
