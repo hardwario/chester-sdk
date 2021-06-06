@@ -52,7 +52,7 @@ int
 hio_bsp_set_gnss_rtc(bool on);
 
 int
-hio_bsp_set_slpz(int level);
+hio_bsp_set_w1b_slpz(int level);
 
 int
 hio_bsp_set_rf_ant(hio_bsp_rf_ant_t ant);
@@ -62,5 +62,11 @@ hio_bsp_set_rf_mux(hio_bsp_rf_mux_t mux);
 
 int
 hio_bsp_set_lte_wkup(int level);
+
+int
+hio_bsp_sht30_measure(float *t, float *rh);
+
+int
+hio_bsp_tmp112_measure(float *t);
 
 #endif

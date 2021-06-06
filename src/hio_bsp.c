@@ -1,5 +1,7 @@
 #include <hio_bsp.h>
 #include <hio_bsp_i2c.h>
+#include <hio_drv_sht30.h>
+#include <hio_drv_tmp112.h>
 #include <hio_log.h>
 
 // Zephyr includes
@@ -61,8 +63,11 @@ static const struct device *dev_gpio_1;
 
 static hio_bus_i2c_t i2c;
 
-int
-hio_bsp_init(void)
+static hio_drv_sht30_t sht30;
+static hio_drv_tmp112_t tmp112;
+
+static int
+init_i2c(void)
 {
     dev_i2c = device_get_binding("I2C_0");
 
@@ -78,108 +83,217 @@ hio_bsp_init(void)
         return -2;
     }
 
+    if (hio_drv_sht30_init(&sht30, &i2c, 0x45) < 0) {
+        hio_log_fatal("Call `hio_drv_sht30_init` failed");
+        return -3;
+    }
+
+    if (hio_drv_tmp112_init(&tmp112, &i2c, 0x48) < 0) {
+        hio_log_fatal("Call `hio_drv_tmp112_init` failed");
+        return -4;
+    }
+
+    return 0;
+}
+
+static int
+init_gpio(void)
+{
     dev_gpio_0 = device_get_binding("GPIO_0");
 
     if (dev_gpio_0 == NULL) {
         hio_log_fatal("Call `device_get_binding` failed");
-        return -3;
+        return -1;
     }
 
     dev_gpio_1 = device_get_binding("GPIO_1");
 
     if (dev_gpio_1 == NULL) {
         hio_log_fatal("Call `device_get_binding` failed");
-        return -4;
+        return -2;
     }
 
+    return 0;
+}
+
+static int
+init_led(void)
+{
     if (gpio_pin_configure(DEV_LED_R, PIN_LED_R,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -5;
+        return -1;
     }
 
     if (gpio_pin_configure(DEV_LED_G, PIN_LED_G,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -6;
+        return -2;
     }
 
     if (gpio_pin_configure(DEV_LED_Y, PIN_LED_Y,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -7;
+        return -3;
     }
 
     if (gpio_pin_configure(DEV_LED_EXT, PIN_LED_EXT,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -8;
+        return -4;
     }
 
+    return 0;
+}
+
+static int
+init_button(void)
+{
     if (gpio_pin_configure(DEV_BTN_INT, PIN_BTN_INT,
                            GPIO_INPUT | GPIO_PULL_UP) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -9;
+        return -1;
     }
 
     if (gpio_pin_configure(DEV_BTN_EXT, PIN_BTN_EXT,
                            GPIO_INPUT | GPIO_PULL_UP) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -10;
+        return -2;
     }
 
-    if (gpio_pin_configure(DEV_BAT_LOAD, PIN_BAT_LOAD,
-                           GPIO_OUTPUT_INACTIVE) < 0) {
-        hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -11;
-    }
+    return 0;
+}
 
-    if (gpio_pin_configure(DEV_SLPZ, PIN_SLPZ,
-                           GPIO_OUTPUT_INACTIVE) < 0) {
-        hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -12;
-    }
-
-    if (gpio_pin_configure(DEV_GNSS_ON, PIN_GNSS_ON,
-                           GPIO_OUTPUT_INACTIVE) < 0) {
-        hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -13;
-    }
-
-    if (gpio_pin_configure(DEV_GNSS_RTC, PIN_GNSS_RTC,
-                           GPIO_OUTPUT_INACTIVE) < 0) {
-        hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -14;
-    }
-
+int
+init_rf_mux(void)
+{
     if (gpio_pin_configure(DEV_RF_INT, PIN_RF_INT,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -15;
+        return -1;
     }
 
     if (gpio_pin_configure(DEV_RF_EXT, PIN_RF_EXT,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -16;
+        return -2;
     }
 
     if (gpio_pin_configure(DEV_RF_LTE, PIN_RF_LTE,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -17;
+        return -3;
     }
 
     if (gpio_pin_configure(DEV_RF_LORA, PIN_RF_LORA,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -18;
+        return -4;
     }
 
+    return 0;
+}
+
+int
+init_gnss(void)
+{
+    if (gpio_pin_configure(DEV_GNSS_ON, PIN_GNSS_ON,
+                           GPIO_OUTPUT_INACTIVE) < 0) {
+        hio_log_fatal("Call `gpio_pin_configure` failed");
+        return -1;
+    }
+
+    if (gpio_pin_configure(DEV_GNSS_RTC, PIN_GNSS_RTC,
+                           GPIO_OUTPUT_INACTIVE) < 0) {
+        hio_log_fatal("Call `gpio_pin_configure` failed");
+        return -2;
+    }
+
+    return 0;
+}
+
+int
+init_lte(void)
+{
     if (gpio_pin_configure(DEV_LTE_WKUP, PIN_LTE_WKUP,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -19;
+        return -1;
+    }
+
+    return 0;
+}
+
+int
+init_bat_test(void)
+{
+    if (gpio_pin_configure(DEV_BAT_LOAD, PIN_BAT_LOAD,
+                           GPIO_OUTPUT_INACTIVE) < 0) {
+        hio_log_fatal("Call `gpio_pin_configure` failed");
+        return -1;
+    }
+
+    return 0;
+}
+
+int
+init_w1b(void)
+{
+    if (gpio_pin_configure(DEV_SLPZ, PIN_SLPZ,
+                           GPIO_OUTPUT_INACTIVE) < 0) {
+        hio_log_fatal("Call `gpio_pin_configure` failed");
+        return -1;
+    }
+
+    return 0;
+}
+
+int
+hio_bsp_init(void)
+{
+    if (init_i2c() < 0) {
+        hio_log_fatal("Call `init_i2c` failed");
+        return -1;
+    }
+
+    if (init_gpio() < 0) {
+        hio_log_fatal("Call `init_gpio` failed");
+        return -2;
+    }
+
+    if (init_led() < 0) {
+        hio_log_fatal("Call `init_led` failed");
+        return -3;
+    }
+
+    if (init_button() < 0) {
+        hio_log_fatal("Call `init_button` failed");
+        return -4;
+    }
+
+    if (init_rf_mux() < 0) {
+        hio_log_fatal("Call `init_rf_mux` failed");
+        return -5;
+    }
+
+    if (init_gnss() < 0) {
+        hio_log_fatal("Call `init_gnss` failed");
+        return -6;
+    }
+
+    if (init_lte() < 0) {
+        hio_log_fatal("Call `init_lte` failed");
+        return -7;
+    }
+
+    if (init_bat_test() < 0) {
+        hio_log_fatal("Call `init_bat_test` failed");
+        return -8;
+    }
+
+    if (init_w1b() < 0) {
+        hio_log_fatal("Call `init_w1b` failed");
+        return -9;
     }
 
     return 0;
@@ -295,7 +409,7 @@ hio_bsp_set_gnss_rtc(bool on)
 }
 
 int
-hio_bsp_set_slpz(int level)
+hio_bsp_set_w1b_slpz(int level)
 {
     if (gpio_pin_set(DEV_SLPZ, PIN_SLPZ, level == 0 ? 0 : 1) < 0) {
         hio_log_fatal("Call `gpio_pin_set` failed");
@@ -400,6 +514,28 @@ hio_bsp_set_lte_wkup(int level)
 {
     if (gpio_pin_set(DEV_LTE_WKUP, PIN_LTE_WKUP, level == 0 ? 0 : 1) < 0) {
         hio_log_fatal("Call `gpio_pin_set` failed");
+        return -1;
+    }
+
+    return 0;
+}
+
+int
+hio_bsp_sht30_measure(float *t, float *rh)
+{
+    if (hio_drv_sht30_measure(&sht30, t, rh) < 0) {
+        hio_log_error("Call `hio_drv_sht30_measure` failed");
+        return -1;
+    }
+
+    return 0;
+}
+
+int
+hio_bsp_tmp112_measure(float *t)
+{
+    if (hio_drv_tmp112_measure(&tmp112, t) < 0) {
+        hio_log_error("Call `hio_bsp_tmp112_measure` failed");
         return -1;
     }
 
