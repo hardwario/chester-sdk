@@ -36,7 +36,8 @@ int
 hio_net_lte_init(hio_net_lte_t *ctx, const hio_net_lte_cfg_t *cfg);
 
 int
-hio_net_lte_set_callback(hio_net_lte_t *ctx, hio_net_lte_callback_t cb, void *param);
+hio_net_lte_set_callback(hio_net_lte_t *ctx,
+                         hio_net_lte_callback_t cb, void *param);
 
 int
 hio_net_lte_attach(hio_net_lte_t *ctx);
