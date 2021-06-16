@@ -13,7 +13,8 @@
 #define SEND_MSGQ_MAX_ITEMS 16
 #define RECV_MSGQ_MAX_ITEMS 16
 
-#define TIMEOUT_S HIO_SYS_MSEC(5000)
+// TODO Revert 5 seconds
+#define TIMEOUT_S HIO_SYS_MSEC(2000)
 
 typedef struct {
     int64_t ttl;
@@ -72,43 +73,48 @@ attach(int retries, hio_sys_timeout_t delay)
     do {
         ret = 0;
 
-        if (hio_bsp_set_lte_wkup(1) < 0) {
-            hio_log_error("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
-            ret = -2;
-            continue;
-        }
-
-        hio_sys_task_sleep(HIO_SYS_MSEC(10));
-
-        if (hio_bsp_set_lte_wkup(0) < 0) {
-            hio_log_error("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
-            ret = -3;
-            continue;
-        }
-
         hio_sys_task_sleep(HIO_SYS_MSEC(1000));
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=0") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -4;
+            ret = -2;
             continue;
         }
 
+        if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=0") < 0) {
+            hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+            ret = -2;
+            continue;
+        }
+
+        if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=0") < 0) {
+            hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+            ret = -2;
+            continue;
+        }
+
+        if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=0") < 0) {
+            hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+            ret = -2;
+            continue;
+        }
+
+
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XSYSTEMMODE=0,1,0,0") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -5;
+            ret = -3;
             continue;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CSCON=1") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -6;
+            ret = -4;
             continue;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CEREG=%d", 5) < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -7;
+            ret = -5;
             continue;
         }
 
@@ -118,13 +124,13 @@ attach(int retries, hio_sys_timeout_t delay)
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CPSMS=1,,,\"%s\",\"%s\"",
                                 timer_t3412, timer_t3324) < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -8;
+            ret = -6;
             continue;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=1") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -9;
+            ret = -7;
             continue;
         }
 
@@ -172,7 +178,7 @@ check_state(void)
     if (state_now != state_req) {
         switch (state_req) {
         case STATE_ATTACHED:
-            if (attach(3, HIO_SYS_SECONDS(30)) < 0) {
+            if (attach(10000, HIO_SYS_SECONDS(30)) < 0) {
                 hio_log_warn("Call `attach` failed [%p]", ctx);
             } else {
                 state_now = STATE_ATTACHED;

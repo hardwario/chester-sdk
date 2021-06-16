@@ -54,9 +54,6 @@
 #define DEV_RF_LORA dev_gpio_1
 #define PIN_RF_LORA 2
 
-#define DEV_LTE_WKUP dev_gpio_0
-#define PIN_LTE_WKUP 15
-
 static const struct device *dev_i2c;
 static const struct device *dev_gpio_0;
 static const struct device *dev_gpio_1;
@@ -215,11 +212,7 @@ init_gnss(void)
 int
 init_lte(void)
 {
-    if (gpio_pin_configure(DEV_LTE_WKUP, PIN_LTE_WKUP,
-                           GPIO_OUTPUT_INACTIVE) < 0) {
-        hio_log_fatal("Call `gpio_pin_configure` failed");
-        return -1;
-    }
+    // TODO Keep empty?
 
     return 0;
 }
@@ -504,17 +497,6 @@ hio_bsp_set_rf_mux(hio_bsp_rf_mux_t mux)
     default:
         hio_log_fatal("Invalid parameter");
         return -7;
-    }
-
-    return 0;
-}
-
-int
-hio_bsp_set_lte_wkup(int level)
-{
-    if (gpio_pin_set(DEV_LTE_WKUP, PIN_LTE_WKUP, level == 0 ? 0 : 1) < 0) {
-        hio_log_fatal("Call `gpio_pin_set` failed");
-        return -1;
     }
 
     return 0;
