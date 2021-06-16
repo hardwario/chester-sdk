@@ -1,6 +1,7 @@
 #include <hio_lte_talk.h>
 #include <hio_lte_uart.h>
 #include <hio_log.h>
+#include <hio_sys.h>
 
 // Standard includes
 #include <string.h>
@@ -8,9 +9,13 @@
 #define HIO_LOG_ENABLED 1
 #define HIO_LOG_PREFIX "HIO:LTE:TALK"
 
+#define SEND_GUARD_TIME HIO_SYS_MSEC(100)
+
 int
 hio_lte_talk_cmd(const char *fmt, ...)
 {
+    hio_sys_task_sleep(SEND_GUARD_TIME);
+
     va_list ap;
 
     va_start(ap, fmt);
@@ -56,6 +61,8 @@ hio_lte_talk_ok(hio_sys_timeout_t timeout)
 int
 hio_lte_talk_cmd_ok(hio_sys_timeout_t timeout, const char *fmt, ...)
 {
+    hio_sys_task_sleep(SEND_GUARD_TIME);
+
     va_list ap;
 
     va_start(ap, fmt);
