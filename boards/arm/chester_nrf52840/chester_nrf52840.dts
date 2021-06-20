@@ -11,13 +11,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
-
-	/* This should be possible from Zephyr v2.6.0
-	zephyr,user {
-		pin-rf-int = <&gpio0 9>;
-		pin-rf-ext = <&gpio0 10>;
-	};
-	*/
 };
 
 &adc {
@@ -34,6 +27,13 @@
 
 &gpio1 {
 	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+	/*
+	interrupts = <6 NRF_DEFAULT_IRQ_PRIORITY>;
+	*/
 };
 
 &i2c0 {
@@ -60,6 +60,18 @@
 	current-speed = <115200>;
 	tx-pin = <13>;
 	rx-pin = <14>;
+	/delete-property/ hw-flow-control;
+	/delete-property/ rts-pin;
+	/delete-property/ cts-pin;
+	/*
+	lpuart: nrf-sw-lpuart {
+		compatible = "nordic,nrf-sw-lpuart";
+		status = "okay";
+		label = "LPUART";
+		req-pin = <15>;
+		rdy-pin = <16>;
+	};
+	*/
 };
 
 &flash0 {

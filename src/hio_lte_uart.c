@@ -59,6 +59,11 @@ static hio_sys_task_t rx_task;
 // Task memory for receiver worker
 static HIO_SYS_TASK_STACK_DEFINE(rx_task_stack, 1024);
 
+// TODO Remove
+volatile int trap_tx_aborted;
+volatile int trap_rx_disabled;
+volatile int trap_rx_stopped;
+
 static void
 uart_callback(const struct device *dev,
               struct uart_event *evt, void *user_data)
@@ -72,6 +77,7 @@ uart_callback(const struct device *dev,
         break;
     case UART_TX_ABORTED:
         // TODO Consider better handling/signalization?
+        trap_tx_aborted++;
         hio_sys_sem_give(&tx_sem);
         break;
     case UART_RX_RDY:
@@ -86,9 +92,11 @@ uart_callback(const struct device *dev,
 		next_buf = evt->data.rx_buf.buf;
         break;
     case UART_RX_DISABLED:
+        trap_rx_disabled++;
         break;
     case UART_RX_STOPPED:
         // TODO Handle this
+        trap_rx_stopped++;
         break;
     }
 }
