@@ -9,7 +9,7 @@
 #define HIO_LOG_ENABLED 1
 #define HIO_LOG_PREFIX "HIO:LTE:TALK"
 
-#define SEND_GUARD_TIME HIO_SYS_MSEC(1000)
+#define SEND_GUARD_TIME HIO_SYS_MSEC(100)
 
 int
 hio_lte_talk_cmd(const char *fmt, ...)

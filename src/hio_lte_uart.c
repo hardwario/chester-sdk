@@ -15,16 +15,13 @@
 #include <stdio.h>
 #include <string.h>
 
-// TODO Delete
-#include <hio_sys.h>
-
 #define HIO_LOG_ENABLED 1
 #define HIO_LOG_PREFIX "HIO:LTE:UART"
 
 #define TX_LINE_MAX_SIZE 1024
 #define RX_LINE_MAX_SIZE 1024
 
-#define RX_TIMEOUT 50
+#define RX_TIMEOUT 10
 
 // Handle for UART
 static const struct device *dev;
@@ -265,7 +262,7 @@ hio_lte_uart_send(const char *fmt, va_list ap)
     }
 
     // TODO Shall we set some reasonable timeout?
-    if (hio_sys_sem_take(&tx_sem, HIO_SYS_SECONDS(1)) < 0) {
+    if (hio_sys_sem_take(&tx_sem, HIO_SYS_FOREVER) < 0) {
         hio_log_error("Call `hio_sys_sem_take` failed");
         return -4;
     }
@@ -291,11 +288,6 @@ hio_lte_uart_recv(char **s, hio_sys_timeout_t timeout)
     hio_sys_heap_free(&rx_heap, p);
 
     *s = buf;
-
-    // TODO Delete
-    hio_bsp_set_led(HIO_BSP_LED_R, true);
-    hio_sys_task_sleep(HIO_SYS_MSEC(50));
-    hio_bsp_set_led(HIO_BSP_LED_R, false);
 
     return 0;
 }
