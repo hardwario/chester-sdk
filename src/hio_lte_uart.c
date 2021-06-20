@@ -206,7 +206,7 @@ hio_lte_uart_init(void)
                       rx_task_stack, HIO_SYS_TASK_STACK_SIZEOF(rx_task_stack),
                       rx_task_entry, NULL);
 
-    dev = device_get_binding("LPUART");
+    dev = device_get_binding("UART_0");
 
     if (dev == NULL) {
         hio_log_fatal("Call `device_get_binding` failed");

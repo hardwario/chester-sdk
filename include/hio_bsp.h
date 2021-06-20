@@ -61,6 +61,9 @@ int
 hio_bsp_set_rf_mux(hio_bsp_rf_mux_t mux);
 
 int
+hio_bsp_set_lte_wkup(int level);
+
+int
 hio_bsp_sht30_measure(float *t, float *rh);
 
 int
