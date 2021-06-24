@@ -24,6 +24,12 @@ hio_sys_uptime_get(void)
     return k_uptime_get();
 }
 
+hio_sys_timeout_t
+hio_sys_msec_to_timeout(int64_t ms)
+{
+    return Z_TIMEOUT_MS(ms);
+}
+
 void
 hio_sys_heap_init(hio_sys_heap_t *heap, void *mem, size_t mem_size)
 {
