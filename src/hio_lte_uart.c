@@ -1,4 +1,5 @@
 #include <hio_lte_uart.h>
+#include <hio_lte_talk.h>
 #include <hio_bsp.h>
 #include <hio_log.h>
 
@@ -10,6 +11,7 @@
 
 // Standard includes
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -102,6 +104,41 @@ uart_callback(const struct device *dev,
 }
 
 static void
+process_rsp(const char *buf, size_t len)
+{
+    // Allocate buffer from heap
+    char *p = hio_sys_heap_alloc(&rx_heap, len, HIO_SYS_NO_WAIT);
+
+    // Memory allocation failed?
+    if (p == NULL) {
+        hio_log_error("Call `hio_sys_heap_alloc` failed");
+    } else {
+        // Copy line to allocated buffer
+        memcpy(p, buf, len + 1);
+
+        // Store pointer to buffer to RX queue
+        if (hio_sys_msgq_put(&rx_msgq, &p, HIO_SYS_NO_WAIT) < 0) {
+            hio_log_error("Call `hio_sys_msgq_put` failed");
+        }
+    }
+}
+
+static bool
+starts_with(const char *s, const char *pfx)
+{
+    return strncmp(s, pfx, strlen(pfx)) == 0 ? true : false;
+}
+
+static void
+process_urc(const char *buf, size_t len)
+{
+    if (starts_with(buf, "+CEREG: ")) {
+        hio_lte_talk_cereg(buf);
+        return;
+    }
+}
+
+static void
 process_rx_char(char c)
 {
     // Buffer for received characters
@@ -121,25 +158,10 @@ process_rx_char(char c)
 
             if (buf[0] != '+') {
                 hio_log_debug("RSP: %s", buf);
-
-                // Allocate buffer from heap
-                char *p = hio_sys_heap_alloc(&rx_heap, len, HIO_SYS_NO_WAIT);
-
-                // Memory allocation failed?
-                if (p == NULL) {
-                    hio_log_error("Call `hio_sys_heap_alloc` failed");
-                } else {
-
-                    // Copy line to allocated buffer
-                    memcpy(p, buf, len + 1);
-
-                    // Store pointer to buffer to RX queue
-                    if (hio_sys_msgq_put(&rx_msgq, &p, HIO_SYS_NO_WAIT) < 0) {
-                        hio_log_error("Call `hio_sys_msgq_put` failed");
-                    }
-                }
+                process_rsp(buf, len);
             } else {
                 hio_log_debug("URC: %s", buf);
+                process_urc(buf, len);
             }
         }
 

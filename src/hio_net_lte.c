@@ -51,16 +51,19 @@ typedef struct {
     HIO_SYS_TASK_STACK_MEMBER(stack, 1024);
     state_t state_now;
     state_t state_req;
+    bool registered;
 } hio_net_lte_t;
 
 static hio_net_lte_t inst;
 
 static int
-attach(int retries, hio_sys_timeout_t delay)
+attach(void)
 {
-    hio_log_info("Trying to attach");
-
     hio_net_lte_t *ctx = &inst;
+
+    hio_log_info("Attach started [%p]", ctx);
+
+    int retries = ctx->cfg->attach_retries;
 
     if (retries <= 0) {
         hio_log_error("Parameter `retries` invalid [%p]", ctx);
@@ -75,7 +78,7 @@ attach(int retries, hio_sys_timeout_t delay)
         if (hio_bsp_set_lte_wkup(1) < 0) {
             hio_log_error("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
             ret = -2;
-            continue;
+            goto error;
         }
 
         hio_sys_task_sleep(HIO_SYS_MSEC(10));
@@ -83,7 +86,7 @@ attach(int retries, hio_sys_timeout_t delay)
         if (hio_bsp_set_lte_wkup(0) < 0) {
             hio_log_error("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
             ret = -3;
-            continue;
+            goto error;
         }
 
         hio_sys_task_sleep(HIO_SYS_MSEC(1000));
@@ -91,25 +94,25 @@ attach(int retries, hio_sys_timeout_t delay)
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=0") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
             ret = -4;
-            continue;
+            goto error;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XSYSTEMMODE=0,1,0,0") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
             ret = -5;
-            continue;
+            goto error;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CSCON=1") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
             ret = -6;
-            continue;
+            goto error;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CEREG=%d", 5) < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
             ret = -7;
-            continue;
+            goto error;
         }
 
         const char *timer_t3412 = "00001000"; // T3412 Extended Timer
@@ -119,22 +122,79 @@ attach(int retries, hio_sys_timeout_t delay)
                                 timer_t3412, timer_t3324) < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
             ret = -8;
-            continue;
+            goto error;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=1") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
             ret = -9;
-            continue;
+            goto error;
         }
 
-        // TODO Implement wait for connection
-        hio_sys_task_sleep(HIO_SYS_SECONDS(10));
+        int64_t end = hio_sys_uptime_get() + 5 * 60 * 1000;
+
+        for (;;) {
+            int64_t now = hio_sys_uptime_get();
+
+            if (now >= end) {
+                hio_log_warn("Attach timed out [%p]", ctx);
+                break;
+            }
+
+            hio_sys_timeout_t timeout;
+            timeout = hio_sys_msec_to_timeout(end - now);
+
+            if (hio_sys_sem_take(&ctx->sem, timeout) < 0) {
+                continue;
+            }
+
+            hio_sys_mut_acquire(&ctx->mut);
+            bool registered = ctx->registered;
+            hio_sys_mut_release(&ctx->mut);
+
+            if (registered) {
+                hio_log_info("Attach succeeded [%p]", ctx);
+
+                if (ctx->cb != NULL) {
+                    hio_net_lte_event_t event = {0};
+                    event.source = HIO_NET_LTE_EVENT_ATTACH_DONE;
+                    ctx->cb(&event, ctx->param);
+                }
+
+                break;
+            }
+        }
+
+        hio_sys_sem_give(&ctx->sem);
+
         break;
 
-        hio_sys_task_sleep(delay);
+error:
+        hio_log_warn("Attach failed [%p]", ctx);
+
+        if (ctx->cb != NULL) {
+            hio_net_lte_event_t event = {0};
+            event.source = HIO_NET_LTE_EVENT_ATTACH_ERROR;
+            ctx->cb(&event, ctx->param);
+            if (event.opts.attach_error.stop) {
+                hio_log_info("Attach cancelled [%p]", ctx);
+                break;
+            }
+        }
+
+        hio_sys_task_sleep(hio_sys_msec_to_timeout(ctx->cfg->attach_pause));
 
     } while (--retries > 0);
+
+    if (ret == 0) {
+        hio_log_info("Attach succeeded [%p]", ctx);
+
+        if (ctx->cb != NULL) {
+            hio_net_lte_event_t event = {0};
+            event.source = HIO_NET_LTE_EVENT_ATTACH_DONE;
+            ctx->cb(&event, ctx->param);
+        }
+    }
 
     return ret;
 }
@@ -142,21 +202,44 @@ attach(int retries, hio_sys_timeout_t delay)
 static int
 detach(void)
 {
-    hio_log_info("Trying to detach");
-
     hio_net_lte_t *ctx = &inst;
+
+    hio_log_info("Detach started [%p]", ctx);
+
+    int ret = 0;
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=0") < 0) {
         hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -1;
+        ret = -1;
+        goto error;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT#XSLEEP=2") < 0) {
         hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -2;
+        ret = -2;
+        goto error;
+    }
+
+    hio_log_info("Detach succeeded [%p]", ctx);
+
+    if (ctx->cb != NULL) {
+        hio_net_lte_event_t event = {0};
+        event.source = HIO_NET_LTE_EVENT_DETACH_DONE;
+        ctx->cb(&event, ctx->param);
     }
 
     return 0;
+
+error:
+    hio_log_warn("Detach failed [%p]", ctx);
+
+    if (ctx->cb != NULL) {
+        hio_net_lte_event_t event = {0};
+        event.source = HIO_NET_LTE_EVENT_DETACH_ERROR;
+        ctx->cb(&event, ctx->param);
+    }
+
+    return ret;
 }
 
 static state_t
@@ -172,7 +255,7 @@ check_state(void)
     if (state_now != state_req) {
         switch (state_req) {
         case STATE_ATTACHED:
-            if (attach(3, HIO_SYS_SECONDS(30)) < 0) {
+            if (attach() < 0) {
                 hio_log_warn("Call `attach` failed [%p]", ctx);
             } else {
                 state_now = STATE_ATTACHED;
@@ -180,8 +263,6 @@ check_state(void)
                 hio_sys_mut_acquire(&ctx->mut);
                 ctx->state_now = state_now;
                 hio_sys_mut_release(&ctx->mut);
-
-                ctx->cb(HIO_NET_LTE_EVENT_ATTACHED, ctx->param);
             }
             break;
         case STATE_DETACHED:
@@ -193,8 +274,6 @@ check_state(void)
                 hio_sys_mut_acquire(&ctx->mut);
                 ctx->state_now = state_now;
                 hio_sys_mut_release(&ctx->mut);
-
-                ctx->cb(HIO_NET_LTE_EVENT_DETACHED, ctx->param);
             }
             break;
         default:
@@ -214,7 +293,8 @@ check_send(void)
     send_item_t item;
 
     if (hio_sys_msgq_get(&ctx->send_msgq, &item, HIO_SYS_NO_WAIT) >= 0) {
-        hio_log_info("Dequeued message to sent (port %d, len %u)", item.port, item.len);
+        hio_log_info("Dequeued message to send (port %d, len %u) [%p]",
+                     item.port, item.len, ctx);
     }
 }
 
@@ -239,7 +319,6 @@ entry(void *param)
     }
 
     for (;;) {
-
         if (hio_sys_sem_take(&ctx->sem, HIO_SYS_FOREVER) < 0) {
             hio_log_fatal("Call `hio_sys_sem_take` failed [%p]", ctx);
             return;
@@ -252,7 +331,6 @@ entry(void *param)
         }
 
         /*
-
         char *rsp;
 
         TRY(hio_lte_talk_cmd("AT#XPING=\"192.168.168.1\",50,5000"))
@@ -265,7 +343,6 @@ entry(void *param)
         if (strcmp(rsp, "Ready") != 0) {
             goto error;
         }
-
         */
     }
 }
@@ -343,7 +420,7 @@ hio_net_lte_send(const hio_net_send_opts_t *opts, const void *buf, size_t len)
     };
 
     if (hio_sys_msgq_put(&ctx->send_msgq, &item, HIO_SYS_NO_WAIT) < 0) {
-        hio_log_error("Call `hio_sys_msgq_put` failed");
+        hio_log_error("Call `hio_sys_msgq_put` failed [%p]", ctx);
         return -1;
     }
 
@@ -356,4 +433,16 @@ int
 hio_net_lte_recv(hio_net_recv_info_t *info, void *buf, size_t size)
 {
     return 0;
+}
+
+void
+hio_net_lte_set_reg(bool state)
+{
+    hio_net_lte_t *ctx = &inst;
+
+    hio_sys_mut_acquire(&ctx->mut);
+    ctx->registered = state;
+    hio_sys_mut_release(&ctx->mut);
+
+    hio_sys_sem_give(&ctx->sem);
 }

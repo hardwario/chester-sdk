@@ -16,4 +16,7 @@ hio_lte_talk_ok(hio_sys_timeout_t timeout);
 int
 hio_lte_talk_cmd_ok(hio_sys_timeout_t timeout, const char *fmt, ...);
 
+void
+hio_lte_talk_cereg(const char *s);
+
 #endif

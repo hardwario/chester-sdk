@@ -1,6 +1,8 @@
 #include <hio_lte_talk.h>
+#include <hio_lte_tok.h>
 #include <hio_lte_uart.h>
 #include <hio_log.h>
+#include <hio_net_lte.h>
 #include <hio_sys.h>
 
 // Standard includes
@@ -86,4 +88,96 @@ hio_lte_talk_cmd_ok(hio_sys_timeout_t timeout, const char *fmt, ...)
     }
 
     return 0;
+}
+
+void
+hio_lte_talk_cereg(const char *s)
+{
+    char *p = (char *) s;
+
+    if ((p = hio_lte_tok_pfx(p, "+CEREG: ")) == NULL) {
+        return;
+    }
+
+    bool def_stat;
+    long stat;
+
+    if ((p = hio_lte_tok_num(p, &def_stat, &stat)) == NULL) {
+        return;
+    }
+
+    /*
+    if ((p = hio_lte_tok_sep(p)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_str(p, NULL, NULL, 0)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_sep(p)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_str(p, NULL, NULL, 0)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_sep(p)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_num(p, NULL, NULL)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_sep(p)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_num(p, NULL, NULL)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_sep(p)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_num(p, NULL, NULL)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_sep(p)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_str(p, NULL, NULL, 0)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_sep(p)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_str(p, NULL, NULL, 0)) == NULL) {
+        return;
+    }
+
+    if ((p = hio_lte_tok_end(p)) == NULL) {
+        return;
+    }
+    */
+
+    if (!def_stat) {
+        return;
+    }
+
+    hio_log_debug("Parsed +CEREG");
+
+    hio_net_lte_set_reg(stat == 1 || stat == 5 ? true : false);
+
+    //+CEREG: 5,"B414","000F6E21",9,,,"00000010","00001000"
+    //+CEREG: 2,"B414","000F6E21",9
+
+    // TODO Process here
 }
