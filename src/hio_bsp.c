@@ -54,6 +54,9 @@
 #define DEV_RF_LORA dev_gpio_1
 #define PIN_RF_LORA 2
 
+#define DEV_LTE_RESET dev_gpio_1
+#define PIN_LTE_RESET 7
+
 #define DEV_LTE_WKUP dev_gpio_0
 #define PIN_LTE_WKUP 15
 
@@ -215,6 +218,12 @@ init_gnss(void)
 int
 init_lte(void)
 {
+    if (gpio_pin_configure(DEV_LTE_RESET, PIN_LTE_RESET,
+                           GPIO_DISCONNECTED) < 0) {
+        hio_log_fatal("Call `gpio_pin_configure` failed");
+        return -1;
+    }
+
     if (gpio_pin_configure(DEV_LTE_WKUP, PIN_LTE_WKUP,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fatal("Call `gpio_pin_configure` failed");
@@ -504,6 +513,26 @@ hio_bsp_set_rf_mux(hio_bsp_rf_mux_t mux)
     default:
         hio_log_fatal("Invalid parameter");
         return -7;
+    }
+
+    return 0;
+}
+
+int
+hio_bsp_set_lte_reset(int level)
+{
+    if (level == 0) {
+        if (gpio_pin_configure(DEV_LTE_RESET, PIN_LTE_RESET,
+                               GPIO_OUTPUT_INACTIVE) < 0) {
+            hio_log_fatal("Call `gpio_pin_configure` failed");
+            return -1;
+        }
+    } else {
+        if (gpio_pin_configure(DEV_LTE_RESET, PIN_LTE_RESET,
+                               GPIO_DISCONNECTED) < 0) {
+            hio_log_fatal("Call `gpio_pin_configure` failed");
+            return -2;
+        }
     }
 
     return 0;

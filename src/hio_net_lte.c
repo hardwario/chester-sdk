@@ -5,6 +5,7 @@
 #include <hio_lte_uart.h>
 
 // Standard includes
+#include <stdio.h>
 #include <string.h>
 
 #define HIO_LOG_ENABLED 1
@@ -14,6 +15,7 @@
 #define RECV_MSGQ_MAX_ITEMS 16
 
 #define TIMEOUT_S HIO_SYS_MSEC(5000)
+#define TIMEOUT_L HIO_SYS_SECONDS(30)
 
 typedef struct {
     int64_t ttl;
@@ -75,9 +77,27 @@ attach(void)
     do {
         ret = 0;
 
+        char *rsp;
+
+        if (hio_bsp_set_lte_reset(0) < 0) {
+            hio_log_error("Call `hio_bsp_set_lte_reset` failed [%p]", ctx);
+            ret = -2;
+            goto error;
+        }
+
+        hio_sys_task_sleep(HIO_SYS_MSEC(10));
+
+        if (hio_bsp_set_lte_reset(1) < 0) {
+            hio_log_error("Call `hio_bsp_set_lte_reset` failed [%p]", ctx);
+            ret = -3;
+            goto error;
+        }
+
+        hio_sys_task_sleep(HIO_SYS_MSEC(1000));
+
         if (hio_bsp_set_lte_wkup(1) < 0) {
             hio_log_error("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
-            ret = -2;
+            ret = -4;
             goto error;
         }
 
@@ -85,33 +105,43 @@ attach(void)
 
         if (hio_bsp_set_lte_wkup(0) < 0) {
             hio_log_error("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
-            ret = -3;
+            ret = -5;
             goto error;
         }
 
-        hio_sys_task_sleep(HIO_SYS_MSEC(1000));
+        if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
+            hio_log_error("Call `hio_lte_talk_rsp` failed [%p]", ctx);
+            ret = -6;
+            goto error;
+        }
+
+        if (strcmp(rsp, "Ready") != 0) {
+            hio_log_error("Boot message not received [%p]", ctx);
+            ret = -7;
+            goto error;
+        }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=0") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -4;
+            ret = -8;
             goto error;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XSYSTEMMODE=0,1,0,0") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -5;
+            ret = -9;
             goto error;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CSCON=1") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -6;
+            ret = -10;
             goto error;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CEREG=%d", 5) < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -7;
+            ret = -11;
             goto error;
         }
 
@@ -121,13 +151,13 @@ attach(void)
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CPSMS=1,,,\"%s\",\"%s\"",
                                 timer_t3412, timer_t3324) < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -8;
+            ret = -12;
             goto error;
         }
 
         if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=1") < 0) {
             hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-            ret = -9;
+            ret = -13;
             goto error;
         }
 
@@ -138,7 +168,8 @@ attach(void)
 
             if (now >= end) {
                 hio_log_warn("Attach timed out [%p]", ctx);
-                break;
+                ret = -14;
+                goto error;
             }
 
             hio_sys_timeout_t timeout;
@@ -153,19 +184,44 @@ attach(void)
             hio_sys_mut_release(&ctx->mut);
 
             if (registered) {
-                hio_log_info("Attach succeeded [%p]", ctx);
-
-                if (ctx->cb != NULL) {
-                    hio_net_lte_event_t event = {0};
-                    event.source = HIO_NET_LTE_EVENT_ATTACH_DONE;
-                    ctx->cb(&event, ctx->param);
-                }
-
                 break;
             }
         }
 
         hio_sys_sem_give(&ctx->sem);
+
+        // TODO Short timeout?
+        if (hio_lte_talk_cmd("AT#XSOCKET=1,2,0") < 0) {
+            hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+            ret = -15;
+            goto error;
+        }
+
+        if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
+            hio_log_error("Call `hio_lte_talk_rsp` failed [%p]", ctx);
+            ret = -16;
+            goto error;
+        }
+
+        if (strcmp(rsp, "#XSOCKET: 1,2,0,17") != 0) {
+            hio_log_error("Unexpected response [%p]", ctx);
+            ret = -17;
+            goto error;
+        }
+
+        if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
+            hio_log_error("Call `hio_lte_talk_ok` failed [%p]", ctx);
+            ret = -18;
+            goto error;
+        }
+
+        hio_log_info("Attach succeeded [%p]", ctx);
+
+        if (ctx->cb != NULL) {
+            hio_net_lte_event_t event = {0};
+            event.source = HIO_NET_LTE_EVENT_ATTACH_DONE;
+            ctx->cb(&event, ctx->param);
+        }
 
         break;
 
@@ -292,10 +348,54 @@ check_send(void)
 
     send_item_t item;
 
-    if (hio_sys_msgq_get(&ctx->send_msgq, &item, HIO_SYS_NO_WAIT) >= 0) {
-        hio_log_info("Dequeued message to send (port %d, len %u) [%p]",
-                     item.port, item.len, ctx);
+    if (hio_sys_msgq_get(&ctx->send_msgq, &item, HIO_SYS_NO_WAIT) < 0) {
+        return;
     }
+
+    hio_log_info("Dequeued message to send (port %d, len %u) [%p]",
+                 item.port, item.len, ctx);
+
+    static char buf[1024];
+
+    snprintf(buf, sizeof(buf),
+             "AT#XSENDTO=\"192.168.168.1\",%u,0,\"", item.port);
+
+    size_t offset = strlen(buf);
+
+    const char *p = item.buf;
+
+    for (size_t i = 0; i < item.len; i++) {
+        int n = snprintf(&buf[offset], sizeof(buf) - offset, "%02X", p[i]);
+        if (n != 2) {
+            hio_log_error("Buffer preparation failed (%d) [%p]", n, ctx);
+            goto error;
+        }
+        offset += n;
+    }
+
+    snprintf(&buf[offset], sizeof(buf) - offset, "\"");
+
+    if (hio_lte_talk_cmd("%s", buf) < 0) {
+        hio_log_error("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        goto error;
+    }
+
+    char *rsp;
+
+    if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
+        hio_log_error("Call `hio_lte_talk_rsp` failed [%p]", ctx);
+        goto error;
+    }
+
+    if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
+        hio_log_error("Call `hio_lte_talk_ok` failed [%p]", ctx);
+        goto error;
+    }
+
+    return;
+
+error:
+    hio_log_error("Sending failed [%p]", ctx);
 }
 
 static void
