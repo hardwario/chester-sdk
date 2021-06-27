@@ -106,11 +106,6 @@ attach_once(void)
         return -6;
     }
 
-    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=0") < 0) {
-        hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -7;
-    }
-
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XSYSTEMMODE=0,1,0,0") < 0) {
         hio_log_error("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -8;
@@ -454,11 +449,16 @@ error:
             }
         }
 
+        if (attach() < 0) {
+            hio_log_warn("Call `attach` failed");
+            return -4;
+        }
+
         hio_sys_task_sleep(hio_sys_msec_to_timeout(pause));
 
     } while (--retries > 0);
 
-    return -4;
+    return -5;
 }
 
 static void
