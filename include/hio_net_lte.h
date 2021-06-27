@@ -23,7 +23,7 @@ typedef struct {
     .attach_retries = 5,           \
     .attach_pause = 30 * 1000,     \
     .send_retries = 3,             \
-    .send_pause = 10 * 10000       \
+    .send_pause = 10 * 1000        \
 }
 
 typedef struct {
