@@ -8,8 +8,7 @@
 // Standard includes
 #include <string.h>
 
-#define HIO_LOG_ENABLED 1
-#define HIO_LOG_PREFIX "HIO:LTE:TALK"
+HIO_LOG_REGISTER(hio_lte_talk, HIO_LOG_LEVEL_DBG);
 
 #define SEND_GUARD_TIME HIO_SYS_MSEC(100)
 
@@ -25,7 +24,7 @@ hio_lte_talk_cmd(const char *fmt, ...)
     va_end(ap);
 
     if (ret < 0) {
-        hio_log_fatal("Call `hio_lte_uart_send` failed");
+        hio_log_fat("Call `hio_lte_uart_send` failed");
         return -1;
     }
 
@@ -36,7 +35,7 @@ int
 hio_lte_talk_rsp(char **s, hio_sys_timeout_t timeout)
 {
     if (hio_lte_uart_recv(s, timeout) < 0) {
-        hio_log_error("Call `hio_lte_uart_recv` failed");
+        hio_log_err("Call `hio_lte_uart_recv` failed");
         return -1;
     }
 
@@ -49,7 +48,7 @@ hio_lte_talk_ok(hio_sys_timeout_t timeout)
     char *rsp;
 
     if (hio_lte_uart_recv(&rsp, timeout) < 0) {
-        hio_log_error("Call `hio_lte_uart_recv` failed");
+        hio_log_err("Call `hio_lte_uart_recv` failed");
         return -1;
     }
 
@@ -78,12 +77,12 @@ hio_lte_talk_cmd_ok(hio_sys_timeout_t timeout, const char *fmt, ...)
     char *rsp;
 
     if (hio_lte_uart_recv(&rsp, timeout) < 0) {
-        hio_log_error("Call `hio_lte_uart_recv` failed");
+        hio_log_err("Call `hio_lte_uart_recv` failed");
         return -2;
     }
 
     if (strcmp(rsp, "OK") != 0) {
-        hio_log_error("Response mismatch");
+        hio_log_err("Response mismatch");
         return -3;
     }
 
@@ -172,7 +171,7 @@ hio_lte_talk_cereg(const char *s)
         return;
     }
 
-    hio_log_debug("Parsed +CEREG");
+    hio_log_dbg("Parsed +CEREG");
 
     hio_net_lte_set_reg(stat == 1 || stat == 5 ? true : false);
 

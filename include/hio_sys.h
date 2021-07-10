@@ -52,7 +52,7 @@ void
 hio_sys_heap_free(hio_sys_heap_t *heap, void *mem);
 
 hio_sys_task_id_t
-hio_sys_task_init(hio_sys_task_t *task,
+hio_sys_task_init(hio_sys_task_t *task, const char *name,
                   hio_sys_task_stack_t *stack, size_t stack_size,
                   hio_sys_task_entry_t entry, void *param);
 

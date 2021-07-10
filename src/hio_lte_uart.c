@@ -17,8 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define HIO_LOG_ENABLED 1
-#define HIO_LOG_PREFIX "HIO:LTE:UART"
+HIO_LOG_REGISTER(hio_lte_uart, HIO_LOG_LEVEL_DBG);
 
 #define TX_LINE_MAX_SIZE 1024
 #define RX_LINE_MAX_SIZE 1024
@@ -59,7 +58,7 @@ static hio_sys_sem_t rx_sem;
 static hio_sys_task_t rx_task;
 
 // Task memory for receiver worker
-static HIO_SYS_TASK_STACK_DEFINE(rx_task_stack, 1024);
+static HIO_SYS_TASK_STACK_DEFINE(rx_task_stack, 2048);
 
 // TODO Remove
 volatile int trap_tx_aborted;
@@ -111,14 +110,14 @@ process_rsp(const char *buf, size_t len)
 
     // Memory allocation failed?
     if (p == NULL) {
-        hio_log_error("Call `hio_sys_heap_alloc` failed");
+        hio_log_err("Call `hio_sys_heap_alloc` failed");
     } else {
         // Copy line to allocated buffer
         memcpy(p, buf, len + 1);
 
         // Store pointer to buffer to RX queue
         if (hio_sys_msgq_put(&rx_msgq, &p, HIO_SYS_NO_WAIT) < 0) {
-            hio_log_error("Call `hio_sys_msgq_put` failed");
+            hio_log_err("Call `hio_sys_msgq_put` failed");
         }
     }
 }
@@ -157,10 +156,10 @@ process_rx_char(char c)
         if (!clipped && len > 0) {
 
             if (buf[0] != '+') {
-                hio_log_debug("RSP: %s", buf);
+                hio_log_dbg("RSP: %s", buf);
                 process_rsp(buf, len);
             } else {
-                hio_log_debug("URC: %s", buf);
+                hio_log_dbg("URC: %s", buf);
                 process_urc(buf, len);
             }
         }
@@ -221,14 +220,14 @@ hio_lte_uart_init(void)
     hio_sys_sem_init(&tx_sem, 0);
     hio_sys_sem_init(&rx_sem, 0);
 
-    hio_sys_task_init(&rx_task,
+    hio_sys_task_init(&rx_task, "hio_lte_uart_rx",
                       rx_task_stack, HIO_SYS_TASK_STACK_SIZEOF(rx_task_stack),
                       rx_task_entry, NULL);
 
     dev = device_get_binding("UART_0");
 
     if (dev == NULL) {
-        hio_log_fatal("Call `device_get_binding` failed");
+        hio_log_fat("Call `device_get_binding` failed");
         return -1;
     }
 
@@ -241,18 +240,18 @@ hio_lte_uart_init(void)
     };
 
     if (uart_configure(dev, &cfg) < 0) {
-        hio_log_fatal("Call `uart_configure` failed");
+        hio_log_fat("Call `uart_configure` failed");
         return -2;
     }
 
     if (uart_callback_set(dev, uart_callback, NULL) < 0) {
-        hio_log_fatal("Call `uart_callback_set` failed");
+        hio_log_fat("Call `uart_callback_set` failed");
         return -3;
     }
 
     if (uart_rx_enable(dev, rx_buffer[0], sizeof(rx_buffer[0]),
                        RX_TIMEOUT) < 0) {
-        hio_log_fatal("Call `uart_rx_enable` failed");
+        hio_log_fat("Call `uart_rx_enable` failed");
         return -4;
     }
 
@@ -267,25 +266,25 @@ hio_lte_uart_send(const char *fmt, va_list ap)
     int ret = vsnprintf(buf, sizeof(buf) - 2, fmt, ap);
 
     if (ret < 0) {
-        hio_log_error("Call `vsnprintf` failed");
+        hio_log_err("Call `vsnprintf` failed");
         return -1;
     } else if (ret > sizeof(buf) - 2) {
-        hio_log_error("Buffer too small");
+        hio_log_err("Buffer too small");
         return -2;
     }
 
-    hio_log_debug("CMD: %s", buf);
+    hio_log_dbg("CMD: %s", buf);
 
     strcat(buf, "\r\n");
 
     if (uart_tx(dev, buf, strlen(buf), SYS_FOREVER_MS) < 0) {
-        hio_log_error("Call `uart_tx` failed");
+        hio_log_err("Call `uart_tx` failed");
         return -3;
     }
 
     // TODO Shall we set some reasonable timeout?
     if (hio_sys_sem_take(&tx_sem, HIO_SYS_FOREVER) < 0) {
-        hio_log_error("Call `hio_sys_sem_take` failed");
+        hio_log_err("Call `hio_sys_sem_take` failed");
         return -4;
     }
 
@@ -300,7 +299,7 @@ hio_lte_uart_recv(char **s, hio_sys_timeout_t timeout)
     char *p;
 
     if (hio_sys_msgq_get(&rx_msgq, &p, timeout) < 0) {
-        hio_log_error("Call `hio_sys_msgq_get` failed");
+        hio_log_err("Call `hio_sys_msgq_get` failed");
         *s = NULL;
         return -1;
     }
