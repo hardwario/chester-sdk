@@ -134,6 +134,23 @@ attach_once(void)
         return -12;
     }
 
+    hio_sys_task_sleep(HIO_SYS_MSEC(1000));
+
+    if (hio_lte_talk_cmd("AT+CIMI") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        return -13;
+    }
+
+    if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
+        hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
+        return -14;
+    }
+
+    if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
+        hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
+        return -15;
+    }
+
     int64_t end = hio_sys_uptime_get() + 5 * 60 * 1000;
 
     for (;;) {
@@ -141,7 +158,7 @@ attach_once(void)
 
         if (now >= end) {
             hio_log_wrn("Attach timed out [%p]", ctx);
-            return -13;
+            return -16;
         }
 
         hio_sys_timeout_t timeout;
@@ -164,23 +181,23 @@ attach_once(void)
 
     if (hio_lte_talk_cmd("AT#XSOCKET=1,2,0") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -14;
+        return -17;
     }
 
     // TODO Short timeout?
     if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
         hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
-        return -15;
+        return -18;
     }
 
     if (strcmp(rsp, "#XSOCKET: 1,2,0,17") != 0) {
         hio_log_err("Unexpected response [%p]", ctx);
-        return -16;
+        return -19;
     }
 
     if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
         hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
-        return -17;
+        return -20;
     }
 
     return 0;
