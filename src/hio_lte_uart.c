@@ -107,14 +107,15 @@ static void
 process_rsp(const char *buf, size_t len)
 {
     // Allocate buffer from heap
-    char *p = hio_sys_heap_alloc(&rx_heap, len, HIO_SYS_NO_WAIT);
+    char *p = hio_sys_heap_alloc(&rx_heap, len + 1, HIO_SYS_NO_WAIT);
 
     // Memory allocation failed?
     if (p == NULL) {
         hio_log_err("Call `hio_sys_heap_alloc` failed");
     } else {
         // Copy line to allocated buffer
-        memcpy(p, buf, len + 1);
+        memcpy(p, buf, len);
+        p[len] = '\0';
 
         // Store pointer to buffer to RX queue
         if (hio_sys_msgq_put(&rx_msgq, &p, HIO_SYS_NO_WAIT) < 0) {
@@ -156,7 +157,7 @@ process_rx_char(char c)
         // If buffer is not clipped and contains something...
         if (!clipped && len > 0) {
 
-            if (buf[0] != '+') {
+            if (buf[0] != '+' && buf[0] != '%') {
                 hio_log_dbg("RSP: %s", buf);
                 process_rsp(buf, len);
             } else {
