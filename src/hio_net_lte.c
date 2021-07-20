@@ -151,7 +151,7 @@ attach_once(void)
         return -15;
     }
 
-    int64_t end = hio_sys_uptime_get() + 5 * 60 * 1000;
+    int64_t end = hio_sys_uptime_get() + HIO_SYS_MINUTES(5);
 
     for (;;) {
         int64_t now = hio_sys_uptime_get();
