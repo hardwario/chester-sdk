@@ -2,6 +2,7 @@
 #include <hio_lte_talk.h>
 #include <hio_bsp.h>
 #include <hio_log.h>
+#include <hio_sys.h>
 
 // Zephyr includes
 #include <device.h>
@@ -292,7 +293,7 @@ hio_lte_uart_send(const char *fmt, va_list ap)
 }
 
 int
-hio_lte_uart_recv(char **s, hio_sys_timeout_t timeout)
+hio_lte_uart_recv(char **s, int64_t timeout)
 {
     static uint8_t __aligned(4) buf[RX_LINE_MAX_SIZE];
 

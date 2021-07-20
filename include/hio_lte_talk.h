@@ -1,20 +1,21 @@
 #ifndef HIO_LTE_TALK_H
 #define HIO_LTE_TALK_H
 
-#include <hio_sys.h>
+// Standard includes
 #include <stdarg.h>
+#include <stdint.h>
 
 int
 hio_lte_talk_cmd(const char *fmt, ...);
 
 int
-hio_lte_talk_rsp(char **s, hio_sys_timeout_t timeout);
+hio_lte_talk_rsp(char **s, int64_t timeout);
 
 int
-hio_lte_talk_ok(hio_sys_timeout_t timeout);
+hio_lte_talk_ok(int64_t timeout);
 
 int
-hio_lte_talk_cmd_ok(hio_sys_timeout_t timeout, const char *fmt, ...);
+hio_lte_talk_cmd_ok(int64_t timeout, const char *fmt, ...);
 
 void
 hio_lte_talk_cereg(const char *s);

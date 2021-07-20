@@ -161,10 +161,7 @@ attach_once(void)
             return -16;
         }
 
-        hio_sys_timeout_t timeout;
-        timeout = hio_sys_msec_to_timeout(end - now);
-
-        if (hio_sys_sem_take(&ctx->sem, timeout) < 0) {
+        if (hio_sys_sem_take(&ctx->sem, end - now) < 0) {
             continue;
         }
 
@@ -248,7 +245,7 @@ error:
             }
         }
 
-        hio_sys_task_sleep(hio_sys_msec_to_timeout(pause));
+        hio_sys_task_sleep(pause);
 
     } while (--retries > 0);
 
@@ -470,7 +467,7 @@ error:
             return -4;
         }
 
-        hio_sys_task_sleep(hio_sys_msec_to_timeout(pause));
+        hio_sys_task_sleep(pause);
 
     } while (--retries > 0);
 

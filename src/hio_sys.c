@@ -6,6 +6,20 @@
 
 HIO_LOG_REGISTER(hio_sys, HIO_LOG_LEVEL_DBG);
 
+static k_timeout_t
+conv_timeout(int64_t timeout)
+{
+    if (timeout == HIO_SYS_NO_WAIT || timeout < 0) {
+        return K_NO_WAIT;
+    }
+
+    if (timeout == HIO_SYS_FOREVER) {
+        return K_FOREVER;
+    }
+
+    return Z_TIMEOUT_MS(timeout);
+}
+
 void
 hio_sys_reboot(void)
 {
@@ -23,12 +37,6 @@ hio_sys_uptime_get(void)
     return k_uptime_get();
 }
 
-hio_sys_timeout_t
-hio_sys_msec_to_timeout(int64_t ms)
-{
-    return Z_TIMEOUT_MS(ms);
-}
-
 void
 hio_sys_heap_init(hio_sys_heap_t *heap, void *mem, size_t mem_size)
 {
@@ -36,10 +44,9 @@ hio_sys_heap_init(hio_sys_heap_t *heap, void *mem, size_t mem_size)
 }
 
 void *
-hio_sys_heap_alloc(hio_sys_heap_t *heap, size_t bytes,
-                   hio_sys_timeout_t timeout)
+hio_sys_heap_alloc(hio_sys_heap_t *heap, size_t bytes, int64_t timeout)
 {
-    return k_heap_alloc((struct k_heap *)heap, bytes, (k_timeout_t)timeout);
+    return k_heap_alloc((struct k_heap *)heap, bytes, conv_timeout(timeout));
 }
 
 void
@@ -74,9 +81,9 @@ hio_sys_task_init(hio_sys_task_t *task, const char *name,
 }
 
 void
-hio_sys_task_sleep(hio_sys_timeout_t timeout)
+hio_sys_task_sleep(int64_t timeout)
 {
-    k_sleep(timeout);
+    k_sleep(conv_timeout(timeout));
 }
 
 void
@@ -94,9 +101,9 @@ hio_sys_sem_give(hio_sys_sem_t *sem)
 }
 
 int
-hio_sys_sem_take(hio_sys_sem_t *sem, hio_sys_timeout_t timeout)
+hio_sys_sem_take(hio_sys_sem_t *sem, int64_t timeout)
 {
-    if (k_sem_take((struct k_sem *)sem, (k_timeout_t)timeout) < 0) {
+    if (k_sem_take((struct k_sem *)sem, conv_timeout(timeout)) < 0) {
         return -1;
     }
 
@@ -135,10 +142,9 @@ hio_sys_msgq_init(hio_sys_msgq_t *msgq, void *mem,
 }
 
 int
-hio_sys_msgq_put(hio_sys_msgq_t *msgq, const void *item,
-                 hio_sys_timeout_t timeout)
+hio_sys_msgq_put(hio_sys_msgq_t *msgq, const void *item, int64_t timeout)
 {
-    if (k_msgq_put((struct k_msgq *)msgq, item, (k_timeout_t)timeout) < 0) {
+    if (k_msgq_put((struct k_msgq *)msgq, item, conv_timeout(timeout)) < 0) {
         return -1;
     }
 
@@ -146,10 +152,9 @@ hio_sys_msgq_put(hio_sys_msgq_t *msgq, const void *item,
 }
 
 int
-hio_sys_msgq_get(hio_sys_msgq_t *msgq, void *item,
-                 hio_sys_timeout_t timeout)
+hio_sys_msgq_get(hio_sys_msgq_t *msgq, void *item, int64_t timeout)
 {
-    if (k_msgq_get((struct k_msgq *)msgq, item, (k_timeout_t)timeout) < 0) {
+    if (k_msgq_get((struct k_msgq *)msgq, item, conv_timeout(timeout)) < 0) {
         return -1;
     }
 

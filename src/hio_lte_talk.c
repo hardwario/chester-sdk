@@ -32,7 +32,7 @@ hio_lte_talk_cmd(const char *fmt, ...)
 }
 
 int
-hio_lte_talk_rsp(char **s, hio_sys_timeout_t timeout)
+hio_lte_talk_rsp(char **s, int64_t timeout)
 {
     if (hio_lte_uart_recv(s, timeout) < 0) {
         hio_log_err("Call `hio_lte_uart_recv` failed");
@@ -43,7 +43,7 @@ hio_lte_talk_rsp(char **s, hio_sys_timeout_t timeout)
 }
 
 int
-hio_lte_talk_ok(hio_sys_timeout_t timeout)
+hio_lte_talk_ok(int64_t timeout)
 {
     char *rsp;
 
@@ -60,7 +60,7 @@ hio_lte_talk_ok(hio_sys_timeout_t timeout)
 }
 
 int
-hio_lte_talk_cmd_ok(hio_sys_timeout_t timeout, const char *fmt, ...)
+hio_lte_talk_cmd_ok(int64_t timeout, const char *fmt, ...)
 {
     hio_sys_task_sleep(SEND_GUARD_TIME);
 
