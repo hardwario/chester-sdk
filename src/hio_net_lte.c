@@ -22,6 +22,7 @@ HIO_LOG_REGISTER(hio_net_lte, HIO_LOG_LEVEL_DBG);
 
 typedef struct {
     int64_t ttl;
+    uint8_t addr[4];
     int port;
     const void *buf;
     size_t len;
@@ -63,6 +64,26 @@ typedef struct {
 static hio_net_lte_t inst;
 
 static int
+wake_up(void)
+{
+    hio_net_lte_t *ctx = &inst;
+
+    if (hio_bsp_set_lte_wkup(0) < 0) {
+        hio_log_err("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
+        return -1;
+    }
+
+    hio_sys_task_sleep(HIO_SYS_MSEC(10));
+
+    if (hio_bsp_set_lte_wkup(1) < 0) {
+        hio_log_err("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
+        return -2;
+    }
+
+    return 0;
+}
+
+static int
 attach_once(void)
 {
     hio_net_lte_t *ctx = &inst;
@@ -81,17 +102,15 @@ attach_once(void)
 
     hio_sys_task_sleep(HIO_SYS_MSEC(1000));
 
-    if (hio_bsp_set_lte_wkup(1) < 0) {
-        hio_log_err("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
+    // TODO This block depends on the configured functionality of SLM
+    // application - i.e. if sleep after reset was enabled; we had some
+    // erroneous behavior with it, so we keep it disabled for now
+    #if 0
+    if (wake_up() < 0) {
+        hio_log_err("Call `wake_up` failed [%p]", ctx);
         return -3;
     }
-
-    hio_sys_task_sleep(HIO_SYS_MSEC(10));
-
-    if (hio_bsp_set_lte_wkup(0) < 0) {
-        hio_log_err("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
-        return -4;
-    }
+    #endif
 
     char *rsp;
 
@@ -212,6 +231,15 @@ attach_once(void)
         return -22;
     }
 
+    // TODO Unfortunately, we are not getting acknowledgement to this, but the
+    // ticket has been raised
+    if (hio_lte_talk_cmd("AT#XSLEEP=2") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        return -23;
+    }
+
+    // TODO Disable UART
+
     return 0;
 }
 
@@ -276,15 +304,21 @@ detach(void)
 
     int ret = 0;
 
+    if (wake_up() < 0) {
+        hio_log_err("Call `wake_up` failed [%p]", ctx);
+        ret = -1;
+        goto error;
+    }
+
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=0") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        ret = -1;
+        ret = -2;
         goto error;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT#XSLEEP=2") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        ret = -2;
+        ret = -3;
         goto error;
     }
 
@@ -380,23 +414,29 @@ send_once(send_item_t *item)
         return -1;
     }
 
-    if (hio_lte_talk_cmd("AT#XSENDTO=\"%u.%u.%u.%u\",%u,0,\"%s\"",
-                         192, 168, 168, 1, item->port, ctx->buf) < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+    if (wake_up() < 0) {
+        hio_log_err("Call `wake_up` failed [%p]", ctx);
         return -2;
+    }
+
+    if (hio_lte_talk_cmd("AT#XSENDTO=\"%u.%u.%u.%u\",%u,0,\"%s\"",
+                         item->addr[0], item->addr[1], item->addr[2],
+                         item->addr[3], item->port, ctx->buf) < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        return -3;
     }
 
     char *rsp;
 
     if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
         hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
-        return -3;
+        return -4;
     }
 
 
     if ((rsp = hio_lte_tok_pfx(rsp, "#XSENDTO: ")) == NULL) {
         hio_log_err("Call `hio_lte_tok_pfx` failed [%p]", ctx);
-        return -4;
+        return -5;
     }
 
     bool def;
@@ -404,22 +444,22 @@ send_once(send_item_t *item)
 
     if ((rsp = hio_lte_tok_num(rsp, &def, &num)) == NULL) {
         hio_log_err("Call `hio_lte_tok_num` failed [%p]", ctx);
-        return -5;
+        return -6;
     }
 
     if (!def || num != item->len) {
         hio_log_err("Number of sent bytes does not match [%p]", ctx);
-        return -6;
+        return -7;
     }
 
     if ((rsp = hio_lte_tok_end(rsp)) == NULL) {
         hio_log_err("Call `hio_lte_tok_end` failed [%p]", ctx);
-        return -7;
+        return -8;
     }
 
     if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
         hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
-        return -8;
+        return -9;
     }
 
     return 0;
@@ -611,6 +651,7 @@ hio_net_lte_send(const hio_net_send_opts_t *opts, const void *buf, size_t len)
 
     send_item_t item = {
         .ttl = opts->ttl,
+        .addr = {opts->addr[0], opts->addr[1], opts->addr[2], opts->addr[3]},
         .port = opts->port,
         .buf = buf,
         .len = len

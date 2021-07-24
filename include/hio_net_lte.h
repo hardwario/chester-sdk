@@ -26,6 +26,13 @@ typedef struct {
     .send_pause = 10 * 1000        \
 }
 
+// TODO Change .port to 10000
+#define HIO_NET_LTE_SEND_OPTS_DEFAULTS { \
+    .ttl = HIO_SYS_FOREVER,              \
+    .addr = {192, 168, 168, 1},          \
+    .port = 7777                         \
+}
+
 typedef struct {
     enum {
         HIO_NET_LTE_EVENT_ATTACH_DONE = 0,
@@ -58,12 +65,14 @@ typedef struct {
 typedef struct {
     // Time-to-Live
     int64_t ttl;
+    uint8_t addr[4];
     int port;
 } hio_net_send_opts_t;
 
 typedef struct {
     // Time-of-Arrival
     int64_t toa;
+    uint8_t addr[4];
     int port;
     size_t len;
 } hio_net_recv_info_t;
