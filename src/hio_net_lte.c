@@ -105,7 +105,7 @@ attach_once(void)
     // TODO This block depends on the configured functionality of SLM
     // application - i.e. if sleep after reset was enabled; we had some
     // erroneous behavior with it, so we keep it disabled for now
-    #if 0
+    #if 1
     if (wake_up() < 0) {
         hio_log_err("Call `wake_up` failed [%p]", ctx);
         return -3;
@@ -113,16 +113,6 @@ attach_once(void)
     #endif
 
     char *rsp;
-
-    if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
-        return -5;
-    }
-
-    if (strcmp(rsp, "Ready") != 0) {
-        hio_log_err("Boot message not received [%p]", ctx);
-        return -6;
-    }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%HWVERSION") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
@@ -154,8 +144,8 @@ attach_once(void)
         return -12;
     }
 
-    const char *timer_t3412 = "00001000"; // T3412 Extended Timer
-    const char *timer_t3324 = "00000010"; // T3324 Active Timer
+    const char *timer_t3412 = "00111000"; // T3412 Extended Timer
+    const char *timer_t3324 = "00000000"; // T3324 Active Timer
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CPSMS=1,,,\"%s\",\"%s\"",
                             timer_t3412, timer_t3324) < 0) {
@@ -209,27 +199,6 @@ attach_once(void)
     }
 
     hio_sys_sem_give(&ctx->sem);
-
-    if (hio_lte_talk_cmd("AT#XSOCKET=1,2,0") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -19;
-    }
-
-    // TODO Short timeout?
-    if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
-        return -20;
-    }
-
-    if (strcmp(rsp, "#XSOCKET: 1,2,0,17") != 0) {
-        hio_log_err("Unexpected response [%p]", ctx);
-        return -21;
-    }
-
-    if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
-        return -22;
-    }
 
     // TODO Unfortunately, we are not getting acknowledgement to this, but the
     // ticket has been raised
@@ -419,6 +388,29 @@ send_once(send_item_t *item)
         return -2;
     }
 
+    char *rsp;
+
+    if (hio_lte_talk_cmd("AT#XSOCKET=1,2,0") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        return -19;
+    }
+
+    // TODO Short timeout?
+    if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
+        hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
+        return -20;
+    }
+
+    if (strcmp(rsp, "#XSOCKET: 1,2,0,17") != 0) {
+        hio_log_err("Unexpected response [%p]", ctx);
+        return -21;
+    }
+
+    if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
+        hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
+        return -22;
+    }
+
     if (hio_lte_talk_cmd("AT#XSENDTO=\"%u.%u.%u.%u\",%u,0,\"%s\"",
                          item->addr[0], item->addr[1], item->addr[2],
                          item->addr[3], item->port, ctx->buf) < 0) {
@@ -426,13 +418,10 @@ send_once(send_item_t *item)
         return -3;
     }
 
-    char *rsp;
-
     if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
         hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
         return -4;
     }
-
 
     if ((rsp = hio_lte_tok_pfx(rsp, "#XSENDTO: ")) == NULL) {
         hio_log_err("Call `hio_lte_tok_pfx` failed [%p]", ctx);

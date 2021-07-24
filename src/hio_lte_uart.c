@@ -3,6 +3,7 @@
 #include <hio_bsp.h>
 #include <hio_log.h>
 #include <hio_sys.h>
+#include <hio_test.h>
 
 // Zephyr includes
 #include <device.h>
@@ -156,13 +157,18 @@ process_rx_char(char c)
 
         // If buffer is not clipped and contains something...
         if (!clipped && len > 0) {
-
-            if (buf[0] != '+' && buf[0] != '%') {
+            if (hio_test_is_active()) {
                 hio_log_dbg("RSP: %s", buf);
-                process_rsp(buf, len);
-            } else {
-                hio_log_dbg("URC: %s", buf);
-                process_urc(buf, len);
+
+            } else if (strcmp(buf, "Ready") != 0) {
+                if (buf[0] != '+' && buf[0] != '%') {
+                    hio_log_dbg("RSP: %s", buf);
+                    process_rsp(buf, len);
+
+                } else {
+                    hio_log_dbg("URC: %s", buf);
+                    process_urc(buf, len);
+                }
             }
         }
 
