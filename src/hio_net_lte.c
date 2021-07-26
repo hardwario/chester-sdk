@@ -64,9 +64,34 @@ typedef struct {
 static hio_net_lte_t inst;
 
 static int
+sleep(void)
+{
+    #if 1
+    hio_net_lte_t *ctx = &inst;
+
+    hio_log_inf("Sleep initiated [%p]", ctx);
+
+    // TODO Unfortunately, we are not getting acknowledgement to this, but the
+    // ticket has been raised
+    if (hio_lte_talk_cmd("AT#XSLEEP=2") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        return -1;
+    }
+
+    // TODO Why needed?
+    hio_sys_task_sleep(HIO_SYS_SECONDS(2));
+    #endif
+
+    return 0;
+}
+
+static int
 wake_up(void)
 {
+    #if 1
     hio_net_lte_t *ctx = &inst;
+
+    hio_log_inf("Wake up initiated [%p]", ctx);
 
     if (hio_bsp_set_lte_wkup(0) < 0) {
         hio_log_err("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
@@ -80,8 +105,13 @@ wake_up(void)
         return -2;
     }
 
+    // TODO Why needed?
+    hio_sys_task_sleep(HIO_SYS_SECONDS(1));
+    #endif
+
     return 0;
 }
+
 
 static int
 attach_once(void)
@@ -102,46 +132,71 @@ attach_once(void)
 
     hio_sys_task_sleep(HIO_SYS_MSEC(1000));
 
-    // TODO This block depends on the configured functionality of SLM
-    // application - i.e. if sleep after reset was enabled; we had some
-    // erroneous behavior with it, so we keep it disabled for now
-    #if 1
     if (wake_up() < 0) {
         hio_log_err("Call `wake_up` failed [%p]", ctx);
         return -3;
     }
-    #endif
 
     char *rsp;
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%HWVERSION") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -7;
+        return -4;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%SHORTSWVER") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -8;
+        return -5;
     }
 
-    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CGSN=1") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
-        return -9;
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XPOFWARN=1,30") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        return -6;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XSYSTEMMODE=0,1,0,0") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        return -7;
+    }
+
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%REL14FEAT=1,1,1,1,0") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        return -8;
+    }
+
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XDATAPRFL=0") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        return -9;
+    }
+
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XSIM=1") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -10;
     }
 
-    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CSCON=1") < 0) {
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XNETTIME=1") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -11;
     }
 
-    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CEREG=%d", 5) < 0) {
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XTIME=1") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -12;
+    }
+
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CEREG=5") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        return -13;
+    }
+
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CGEREP=1") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        return -14;
+    }
+
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CSCON=1") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        return -15;
     }
 
     const char *timer_t3412 = "00111000"; // T3412 Extended Timer
@@ -150,29 +205,45 @@ attach_once(void)
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CPSMS=1,,,\"%s\",\"%s\"",
                             timer_t3412, timer_t3324) < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -13;
+        return -16;
+    }
+
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CNEC=24") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        return -17;
+    }
+
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CMEE=1") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        return -18;
+    }
+
+    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CEPPI=1") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        return -19;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=1") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -14;
+        return -20;
     }
 
+    // TODO Remove
     hio_sys_task_sleep(HIO_SYS_MSEC(1000));
 
     if (hio_lte_talk_cmd("AT+CIMI") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
-        return -15;
+        return -21;
     }
 
     if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
         hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
-        return -16;
+        return -22;
     }
 
     if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
         hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
-        return -17;
+        return -23;
     }
 
     int64_t end = hio_sys_uptime_get() + HIO_SYS_MINUTES(5);
@@ -182,7 +253,7 @@ attach_once(void)
 
         if (now >= end) {
             hio_log_wrn("Attach timed out [%p]", ctx);
-            return -18;
+            return -24;
         }
 
         if (hio_sys_sem_take(&ctx->sem, end - now) < 0) {
@@ -198,16 +269,34 @@ attach_once(void)
         }
     }
 
-    hio_sys_sem_give(&ctx->sem);
-
-    // TODO Unfortunately, we are not getting acknowledgement to this, but the
-    // ticket has been raised
-    if (hio_lte_talk_cmd("AT#XSLEEP=2") < 0) {
+    if (hio_lte_talk_cmd("AT#XSOCKET=1,2,0") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -23;
+        return -25;
+    }
+
+    // TODO Short timeout?
+    if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
+        hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
+        return -26;
+    }
+
+    if (strcmp(rsp, "#XSOCKET: 1,2,0,17") != 0) {
+        hio_log_err("Unexpected response [%p]", ctx);
+        return -27;
+    }
+
+    if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
+        hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
+        return -28;
+    }
+
+    if (sleep() < 0) {
+        return -29;
     }
 
     // TODO Disable UART
+
+    hio_sys_sem_give(&ctx->sem);
 
     return 0;
 }
@@ -285,8 +374,8 @@ detach(void)
         goto error;
     }
 
-    if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT#XSLEEP=2") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+    if (sleep() < 0) {
+        hio_log_err("Call `sleep` failed [%p]", ctx);
         ret = -3;
         goto error;
     }
@@ -390,27 +479,6 @@ send_once(send_item_t *item)
 
     char *rsp;
 
-    if (hio_lte_talk_cmd("AT#XSOCKET=1,2,0") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -19;
-    }
-
-    // TODO Short timeout?
-    if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
-        return -20;
-    }
-
-    if (strcmp(rsp, "#XSOCKET: 1,2,0,17") != 0) {
-        hio_log_err("Unexpected response [%p]", ctx);
-        return -21;
-    }
-
-    if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
-        return -22;
-    }
-
     if (hio_lte_talk_cmd("AT#XSENDTO=\"%u.%u.%u.%u\",%u,0,\"%s\"",
                          item->addr[0], item->addr[1], item->addr[2],
                          item->addr[3], item->port, ctx->buf) < 0) {
@@ -449,6 +517,11 @@ send_once(send_item_t *item)
     if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
         hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
         return -9;
+    }
+
+    if (sleep() < 0) {
+        hio_log_err("Call `sleep` failed [%p]", ctx);
+        return -10;
     }
 
     return 0;

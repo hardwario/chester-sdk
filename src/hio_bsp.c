@@ -224,7 +224,7 @@ init_lte(void)
     }
 
     if (gpio_pin_configure(DEV_LTE_WKUP, PIN_LTE_WKUP,
-                           GPIO_OUTPUT_INACTIVE) < 0) {
+                           GPIO_OUTPUT_ACTIVE) < 0) {
         hio_log_fat("Call `gpio_pin_configure` failed");
         return -1;
     }
