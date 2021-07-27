@@ -3,7 +3,7 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 
 / {
-	model = "HARDWARIO CHESTER (nRF52840)";
+	model = "HARDWARIO CHESTER nRF52840";
 	compatible = "hardwario,chester-nrf52840";
 
 	chosen {
@@ -75,10 +75,6 @@
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -86,33 +82,23 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
+			reg = <0x000000000 0x00012000>;
 		};
-		slot0_partition: partition@c000 {
+		slot0_partition: partition@12000 {
 			label = "image-0";
-			reg = <0x0000C000 0x00067000>;
+			reg = <0x00012000 0x000069000>;
 		};
-		slot1_partition: partition@73000 {
+		slot1_partition: partition@7b000 {
 			label = "image-1";
-			reg = <0x00073000 0x00067000>;
+			reg = <0x0007b000 0x000069000>;
 		};
-		scratch_partition: partition@da000 {
+		scratch_partition: partition@e4000 {
 			label = "image-scratch";
-			reg = <0x000da000 0x0001e000>;
+			reg = <0x000e4000 0x00018000>;
 		};
-
-		/*
-		 * The flash starting at 0x000f8000 and ending at
-		 * 0x000fffff is reserved for use by the application.
-		 */
-
-		/*
-		 * Storage partition will be used by FCB/LittleFS/NVS
-		 * if enabled.
-		 */
-		storage_partition: partition@f8000 {
+		storage_partition: partition@fc000 {
 			label = "storage";
-			reg = <0x000f8000 0x00008000>;
+			reg = <0x000fc000 0x00004000>;
 		};
 	};
 };
