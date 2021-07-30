@@ -6,6 +6,6 @@ manifest:
   projects:
     - name: sdk-nrf
       remote: nrfconnect
-      revision: v1.6.0
+      revision: v1.6.1
       path: nrf
       import: true
