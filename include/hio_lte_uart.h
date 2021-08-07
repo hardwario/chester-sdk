@@ -9,6 +9,12 @@ int
 hio_lte_uart_init(void);
 
 int
+hio_lte_uart_enable(void);
+
+int
+hio_lte_uart_disable(void);
+
+int
 hio_lte_uart_send(const char *fmt, va_list ap);
 
 int

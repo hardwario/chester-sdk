@@ -62,6 +62,10 @@ static hio_sys_task_t rx_task;
 // Task memory for receiver worker
 static HIO_SYS_TASK_STACK_DEFINE(rx_task_stack, 2048);
 
+uint8_t *next_buf;
+
+static bool enabled;
+
 // TODO Remove
 volatile int trap_tx_aborted;
 volatile int trap_rx_disabled;
@@ -71,7 +75,6 @@ static void
 uart_callback(const struct device *dev,
               struct uart_event *evt, void *user_data)
 {
-    static uint8_t *next_buf = rx_buffer[1];
     uint8_t *p;
 
     switch (evt->type) {
@@ -257,11 +260,57 @@ hio_lte_uart_init(void)
         return -3;
     }
 
+	if (pm_device_state_set(dev, PM_DEVICE_STATE_OFF, NULL, NULL) < 0) {
+        hio_log_fat("Call `pm_device_state_set` failed");
+        return -4;
+    }
+
+    return 0;
+}
+
+int
+hio_lte_uart_enable(void)
+{
+    if (enabled) {
+        return 0;
+    }
+
+	if (pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE, NULL, NULL) < 0) {
+        hio_log_fat("Call `pm_device_state_set` failed");
+        return -1;
+    }
+
+    next_buf = rx_buffer[1];
+
     if (uart_rx_enable(dev, rx_buffer[0], sizeof(rx_buffer[0]),
                        RX_TIMEOUT) < 0) {
         hio_log_fat("Call `uart_rx_enable` failed");
-        return -4;
+        return -2;
     }
+
+    enabled = true;
+
+    return 0;
+}
+
+int
+hio_lte_uart_disable(void)
+{
+    if (!enabled) {
+        return 0;
+    }
+
+    if (uart_rx_disable(dev) < 0) {
+        hio_log_fat("Call `uart_rx_disable` failed");
+        return -1;
+    }
+
+	if (pm_device_state_set(dev, PM_DEVICE_STATE_OFF, NULL, NULL) < 0) {
+        hio_log_fat("Call `pm_device_state_set` failed");
+        return -2;
+    }
+
+    enabled = false;
 
     return 0;
 }

@@ -69,20 +69,27 @@ sleep(void)
     #if 1
     hio_net_lte_t *ctx = &inst;
 
+    int ret = 0;
+
     hio_log_inf("Sleep initiated [%p]", ctx);
 
     // TODO Unfortunately, we are not getting acknowledgement to this, but the
     // ticket has been raised
     if (hio_lte_talk_cmd("AT#XSLEEP=2") < 0) {
         hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
-        return -1;
+        ret = -1;
     }
 
     // TODO Why needed?
     hio_sys_task_sleep(HIO_SYS_SECONDS(2));
     #endif
 
-    return 0;
+    if (hio_lte_uart_disable()) {
+        hio_log_err("Call `hio_lte_uart_disable` failed [%p]", ctx);
+        ret = -2;
+    }
+
+    return ret;
 }
 
 static int
@@ -93,16 +100,21 @@ wake_up(void)
 
     hio_log_inf("Wake up initiated [%p]", ctx);
 
+    if (hio_lte_uart_enable() < 0) {
+        hio_log_err("Call `hio_lte_uart_enable` failed [%p]", ctx);
+        return -1;
+    }
+
     if (hio_bsp_set_lte_wkup(0) < 0) {
         hio_log_err("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
-        return -1;
+        return -2;
     }
 
     hio_sys_task_sleep(HIO_SYS_MSEC(10));
 
     if (hio_bsp_set_lte_wkup(1) < 0) {
         hio_log_err("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
-        return -2;
+        return -3;
     }
 
     // TODO Why needed?
@@ -111,7 +123,6 @@ wake_up(void)
 
     return 0;
 }
-
 
 static int
 attach_once(void)
