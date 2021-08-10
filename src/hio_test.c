@@ -94,9 +94,14 @@ cmd_test_lte_reset(const struct shell *shell,
         return -1;
     }
 
+    if (hio_lte_uart_enable() < 0) {
+        hio_log_err("Call `hio_lte_uart_enable` failed");
+        return -2;
+    }
+
     if (hio_bsp_set_lte_reset(0) < 0) {
         hio_log_err("Call `hio_bsp_set_lte_reset` failed");
-        return -2;
+        return -3;
     }
 
     hio_sys_task_sleep(HIO_SYS_MSEC(10));
@@ -121,15 +126,47 @@ cmd_test_lte_wakeup(const struct shell *shell,
         return -1;
     }
 
+    if (hio_lte_uart_enable() < 0) {
+        hio_log_err("Call `hio_lte_uart_enable` failed");
+        return -3;
+    }
+
     if (hio_bsp_set_lte_wkup(0) < 0) {
         hio_log_err("Call `hio_bsp_set_lte_wkup` failed");
-        return -2;
+        return -4;
     }
 
     hio_sys_task_sleep(HIO_SYS_MSEC(10));
 
     if (hio_bsp_set_lte_wkup(1) < 0) {
         hio_log_err("Call `hio_bsp_set_lte_wkup` failed");
+        return -5;
+    }
+
+    return 0;
+}
+
+static int
+cmd_test_lte_sleep(const struct shell *shell,
+                   size_t argc, char **argv)
+{
+    HIO_ARG_UNUSED(argc);
+    HIO_ARG_UNUSED(argv);
+
+    if (!active) {
+        shell_print(shell, "Test mode is not activated");
+        return -1;
+    }
+
+    if (hio_lte_talk_cmd("AT#XSLEEP=2") < 0) {
+        hio_log_err("Call `hio_lte_talk_cmd` failed");
+        return -2;
+    }
+
+    hio_sys_task_sleep(HIO_SYS_SECONDS(1));
+
+    if (hio_lte_uart_disable() < 0) {
+        hio_log_err("Call `hio_lte_uart_disable` failed");
         return -3;
     }
 
@@ -214,6 +251,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
                   cmd_test_lte_reset, 1, 0),
     SHELL_CMD_ARG(wakeup, NULL, "Wake up modem.",
                   cmd_test_lte_wakeup, 1, 0),
+    SHELL_CMD_ARG(sleep, NULL, "Sleep modem.",
+                  cmd_test_lte_sleep, 1, 0),
     SHELL_CMD_ARG(cmd, NULL, "Send AT command to modem.",
                   cmd_test_lte_cmd, 2, 0),
     SHELL_SUBCMD_SET_END
@@ -229,29 +268,3 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 
 SHELL_CMD_REGISTER(test, &sub_test, "Test commands", print_help);
-
-/*
-
-kernel reboot warm
-
-<push button>
-
-test start
-test lte ant int
-test lte reset
-test lte wakeup
-test lte cmd AT%XPOFWARN=1,30
-test lte cmd AT%XSYSTEMMODE=0,1,0,0
-test lte cmd AT%REL14FEAT=1,1,1,1,0
-test lte cmd AT%XDATAPRFL=0
-test lte cmd AT%XSIM=1
-test lte cmd AT%XTIME=1
-test lte cmd AT+CEREG=5
-test lte cmd AT+CGEREP=1
-test lte cmd AT+CSCON=1
-test lte cmd AT+CPSMS=1,,,\"00111000\",\"00000000\"
-test lte cmd AT+CNEC=24
-test lte cmd AT+CMEE=1
-test lte cmd AT+CFUN=1
-
-*/

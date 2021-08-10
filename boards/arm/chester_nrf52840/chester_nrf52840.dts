@@ -63,15 +63,6 @@
 	/delete-property/ hw-flow-control;
 	/delete-property/ rts-pin;
 	/delete-property/ cts-pin;
-	/*
-	lpuart: nrf-sw-lpuart {
-		compatible = "nordic,nrf-sw-lpuart";
-		status = "okay";
-		label = "LPUART";
-		req-pin = <15>;
-		rdy-pin = <16>;
-	};
-	*/
 };
 
 &flash0 {

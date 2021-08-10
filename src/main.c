@@ -74,6 +74,12 @@ wait_for_button(void)
 void
 main(void)
 {
+    #if 0
+    for (;;) {
+        hio_sys_task_sleep(HIO_SYS_SECONDS(5));
+    }
+    #endif
+
     if (hio_bsp_init() < 0) {
         hio_log_fat("Call `hio_bsp_init` failed");
     }
