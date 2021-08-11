@@ -99,3 +99,14 @@ hio_drv_tmp112_measure(hio_drv_tmp112_t *ctx, float *t)
 
     return 0;
 }
+
+int
+hio_drv_tmp112_sleep(hio_drv_tmp112_t *ctx)
+{
+    if (init(ctx) < 0) {
+        hio_log_err("Call `init` failed [%p]", ctx);
+        return -1;
+    }
+
+    return 0;
+}

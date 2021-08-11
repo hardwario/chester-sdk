@@ -20,4 +20,7 @@ hio_drv_tmp112_init(hio_drv_tmp112_t *ctx,
 int
 hio_drv_tmp112_measure(hio_drv_tmp112_t *ctx, float *t);
 
+int
+hio_drv_tmp112_sleep(hio_drv_tmp112_t *ctx);
+
 #endif

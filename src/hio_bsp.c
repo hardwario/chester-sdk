@@ -8,6 +8,7 @@
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/gpio.h>
+#include <drivers/spi.h>
 
 HIO_LOG_REGISTER(hio_bsp, HIO_LOG_LEVEL_DBG);
 
@@ -59,9 +60,10 @@ HIO_LOG_REGISTER(hio_bsp, HIO_LOG_LEVEL_DBG);
 #define DEV_LTE_WKUP dev_gpio_0
 #define PIN_LTE_WKUP 15
 
-static const struct device *dev_i2c;
 static const struct device *dev_gpio_0;
 static const struct device *dev_gpio_1;
+static const struct device *dev_i2c_0;
+static const struct device *dev_spi_1;
 
 static hio_bus_i2c_t i2c;
 
@@ -71,16 +73,16 @@ static hio_drv_tmp112_t tmp112;
 static int
 init_i2c(void)
 {
-    dev_i2c = device_get_binding("I2C_0");
+    dev_i2c_0 = device_get_binding("I2C_0");
 
-    if (dev_i2c == NULL) {
+    if (dev_i2c_0 == NULL) {
         hio_log_fat("Call `device_get_binding` failed");
         return -1;
     }
 
     const hio_bus_i2c_driver_t *i2c_drv = hio_bsp_i2c_get_driver();
 
-    if (hio_bus_i2c_init(&i2c, i2c_drv, (void *)dev_i2c) < 0) {
+    if (hio_bus_i2c_init(&i2c, i2c_drv, (void *)dev_i2c_0) < 0) {
         hio_log_fat("Call `hio_bus_i2c_init` failed");
         return -2;
     }
@@ -161,6 +163,74 @@ init_button(void)
                            GPIO_INPUT | GPIO_PULL_UP) < 0) {
         hio_log_fat("Call `gpio_pin_configure` failed");
         return -2;
+    }
+
+    return 0;
+}
+
+static int
+init_flash(void)
+{
+    dev_spi_1 = device_get_binding("SPI_1");
+
+    if (dev_spi_1 == NULL) {
+        hio_log_fat("Call `device_get_binding` failed");
+        return -1;
+    }
+
+    struct spi_cs_control spi_cs = {0};
+
+    spi_cs.gpio_dev = dev_gpio_0;
+    spi_cs.gpio_pin = 23;
+    spi_cs.gpio_dt_flags = GPIO_ACTIVE_LOW;
+    spi_cs.delay = 2;
+
+    struct spi_config spi_cfg = {0};
+
+    spi_cfg.frequency = 500000;
+    spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_LINES_SINGLE;
+    spi_cfg.cs = &spi_cs;
+
+    uint8_t buffer_tx[] = { 0x79 };
+
+    const struct spi_buf tx_buf[] = {
+        {
+            .buf = buffer_tx,
+            .len = sizeof(buffer_tx)
+        }
+    };
+
+    const struct spi_buf_set tx = {
+        .buffers = tx_buf,
+        .count = 1
+    };
+
+    const struct spi_buf rx_buf[] = {
+        {
+            .buf = NULL,
+            .len = 1
+        }
+    };
+
+    const struct spi_buf_set rx = {
+        .buffers = rx_buf,
+        .count = 1
+    };
+
+    if (spi_transceive(dev_spi_1, &spi_cfg, &tx, &rx) < 0) {
+        hio_log_fat("Call `spi_transceive` failed");
+        return -2;
+    }
+
+    return 0;
+}
+
+static int
+init_tmp112(void)
+{
+    if (hio_drv_tmp112_sleep(&tmp112) < 0) {
+        hio_log_err("Call `hio_drv_tmp112_sleep` failed");
+        return -1;
     }
 
     return 0;
@@ -259,11 +329,6 @@ init_w1b(void)
 int
 hio_bsp_init(void)
 {
-    if (init_i2c() < 0) {
-        hio_log_fat("Call `init_i2c` failed");
-        return -1;
-    }
-
     if (init_gpio() < 0) {
         hio_log_fat("Call `init_gpio` failed");
         return -2;
@@ -279,29 +344,44 @@ hio_bsp_init(void)
         return -4;
     }
 
+    if (init_i2c() < 0) {
+        hio_log_fat("Call `init_i2c` failed");
+        return -1;
+    }
+
+    if (init_tmp112() < 0) {
+        hio_log_fat("Call `init_tmp112` failed");
+        return -6;
+    }
+
+    if (init_flash() < 0) {
+        hio_log_fat("Call `init_flash` failed");
+        return -5;
+    }
+
     if (init_rf_mux() < 0) {
         hio_log_fat("Call `init_rf_mux` failed");
-        return -5;
+        return -7;
     }
 
     if (init_gnss() < 0) {
         hio_log_fat("Call `init_gnss` failed");
-        return -6;
+        return -8;
     }
 
     if (init_lte() < 0) {
         hio_log_fat("Call `init_lte` failed");
-        return -7;
+        return -9;
     }
 
     if (init_bat_test() < 0) {
         hio_log_fat("Call `init_bat_test` failed");
-        return -8;
+        return -10;
     }
 
     if (init_w1b() < 0) {
         hio_log_fat("Call `init_w1b` failed");
-        return -9;
+        return -11;
     }
 
     return 0;
