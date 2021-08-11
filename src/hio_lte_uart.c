@@ -280,6 +280,9 @@ hio_lte_uart_enable(void)
         return -1;
     }
 
+    // TODO Implement better mechanism
+    hio_sys_task_sleep(HIO_SYS_MSEC(100));
+
     next_buf = rx_buffer[1];
 
     if (uart_rx_enable(dev, rx_buffer[0], sizeof(rx_buffer[0]),
@@ -304,6 +307,9 @@ hio_lte_uart_disable(void)
         hio_log_fat("Call `uart_rx_disable` failed");
         return -1;
     }
+
+    // TODO Implement better mechanism
+    hio_sys_task_sleep(HIO_SYS_MSEC(100));
 
 	if (pm_device_state_set(dev, PM_DEVICE_STATE_OFF, NULL, NULL) < 0) {
         hio_log_fat("Call `pm_device_state_set` failed");
