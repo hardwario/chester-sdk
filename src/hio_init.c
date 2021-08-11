@@ -1,19 +1,19 @@
-#include <application.h>
-
 #include <hio_bsp.h>
 #include <hio_bsp_i2c.h>
 #include <hio_bus_i2c.h>
 #include <hio_log.h>
 #include <hio_sys.h>
 #include <hio_test.h>
+#include <hio_util.h>
 
+// Zephyr includes
 #include <init.h>
 
 // Standard includes
 #include <stdbool.h>
 #include <stdint.h>
 
-HIO_LOG_REGISTER(main, HIO_LOG_LEVEL_DBG);
+HIO_LOG_REGISTER(init, HIO_LOG_LEVEL_DBG);
 
 static hio_sys_task_t button_task;
 static HIO_SYS_TASK_STACK_DEFINE(button_task_stack, 2048);
@@ -74,8 +74,10 @@ wait_for_button(void)
 }
 
 static int
-board_init(const struct device *dev)
+init(const struct device *dev)
 {
+    HIO_ARG_UNUSED(dev);
+
     #if 0
     for (;;) {
         hio_sys_task_sleep(HIO_SYS_SECONDS(5));
@@ -84,6 +86,7 @@ board_init(const struct device *dev)
 
     if (hio_bsp_init() < 0) {
         hio_log_fat("Call `hio_bsp_init` failed");
+        return -1;
     }
 
     hio_sys_task_init(&button_task, "button", button_task_stack,
@@ -96,7 +99,7 @@ board_init(const struct device *dev)
 
     #if 1
     if (hio_test_is_active()) {
-        return 0;
+        return -2;
     }
 
     hio_log_inf("Waiting for test mode");
@@ -112,13 +115,7 @@ board_init(const struct device *dev)
     hio_log_inf("Test mode entry timed out");
     #endif
 
-    // application_init();
-
-    // for (;;) {
-    //     application_loop();
-    // }
-
     return 0;
 }
 
-SYS_INIT(board_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
