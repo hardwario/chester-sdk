@@ -7,6 +7,8 @@
 #include <hio_sys.h>
 #include <hio_test.h>
 
+#include <init.h>
+
 // Standard includes
 #include <stdbool.h>
 #include <stdint.h>
@@ -71,8 +73,8 @@ wait_for_button(void)
     hio_bsp_set_led(HIO_BSP_LED_Y, false);
 }
 
-void
-main(void)
+static int
+board_init(const struct device *dev)
 {
     if (hio_bsp_init() < 0) {
         hio_log_fat("Call `hio_bsp_init` failed");
@@ -88,7 +90,7 @@ main(void)
 
     #if 1
     if (hio_test_is_active()) {
-        return;
+        return 0;
     }
 
     hio_log_inf("Waiting for test mode");
@@ -96,7 +98,7 @@ main(void)
     hio_sys_task_sleep(HIO_SYS_SECONDS(10));
 
     if (hio_test_is_active()) {
-        return;
+        return 0;
     }
 
     hio_test_block();
@@ -104,9 +106,13 @@ main(void)
     hio_log_inf("Test mode entry timed out");
     #endif
 
-    application_init();
+    // application_init();
 
-    for (;;) {
-        application_loop();
-    }
+    // for (;;) {
+    //     application_loop();
+    // }
+
+    return 0;
 }
+
+SYS_INIT(board_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
