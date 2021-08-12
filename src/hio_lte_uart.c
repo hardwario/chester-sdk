@@ -4,6 +4,7 @@
 #include <hio_log.h>
 #include <hio_sys.h>
 #include <hio_test.h>
+#include <hio_util.h>
 
 // Zephyr includes
 #include <device.h>
@@ -66,10 +67,7 @@ uint8_t *next_buf;
 
 static bool enabled;
 
-// TODO Remove
-volatile int trap_tx_aborted;
-volatile int trap_rx_disabled;
-volatile int trap_rx_stopped;
+static struct k_poll_signal rx_disabled_sig;
 
 static void
 uart_callback(const struct device *dev,
@@ -82,8 +80,7 @@ uart_callback(const struct device *dev,
         hio_sys_sem_give(&tx_sem);
         break;
     case UART_TX_ABORTED:
-        // TODO Consider better handling/signalization?
-        trap_tx_aborted++;
+        hio_log_wrn("Sending timed out or aborted");
         hio_sys_sem_give(&tx_sem);
         break;
     case UART_RX_RDY:
@@ -98,11 +95,11 @@ uart_callback(const struct device *dev,
 		next_buf = evt->data.rx_buf.buf;
         break;
     case UART_RX_DISABLED:
-        trap_rx_disabled++;
+        k_poll_signal_raise(&rx_disabled_sig, 0);
         break;
     case UART_RX_STOPPED:
+        hio_log_wrn("Receiving stopped");
         // TODO Handle this
-        trap_rx_stopped++;
         break;
     }
 }
@@ -235,6 +232,8 @@ hio_lte_uart_init(void)
                       rx_task_stack, HIO_SYS_TASK_STACK_SIZEOF(rx_task_stack),
                       rx_task_entry, NULL);
 
+    k_poll_signal_init(&rx_disabled_sig);
+
     dev = device_get_binding("UART_0");
 
     if (dev == NULL) {
@@ -280,8 +279,7 @@ hio_lte_uart_enable(void)
         return -1;
     }
 
-    // TODO Implement better mechanism
-    hio_sys_task_sleep(HIO_SYS_MSEC(100));
+    k_poll_signal_reset(&rx_disabled_sig);
 
     next_buf = rx_buffer[1];
 
@@ -308,12 +306,20 @@ hio_lte_uart_disable(void)
         return -1;
     }
 
-    // TODO Implement better mechanism
-    hio_sys_task_sleep(HIO_SYS_MSEC(100));
+    struct k_poll_event events[] = {
+        K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+                                 K_POLL_MODE_NOTIFY_ONLY,
+                                 &rx_disabled_sig)
+    };
+
+    if (k_poll(events, HIO_ARRAY_SIZE(events), K_FOREVER) < 0) {
+        hio_log_err("Call `k_poll` failed");
+        return -2;
+    }
 
 	if (pm_device_state_set(dev, PM_DEVICE_STATE_OFF, NULL, NULL) < 0) {
         hio_log_fat("Call `pm_device_state_set` failed");
-        return -2;
+        return -3;
     }
 
     enabled = false;

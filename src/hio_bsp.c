@@ -3,6 +3,7 @@
 #include <hio_drv_sht30.h>
 #include <hio_drv_tmp112.h>
 #include <hio_log.h>
+#include <hio_rtc.h>
 
 // Zephyr includes
 #include <device.h>
@@ -71,30 +72,11 @@ static hio_drv_sht30_t sht30;
 static hio_drv_tmp112_t tmp112;
 
 static int
-init_i2c(void)
+init_rtc(void)
 {
-    dev_i2c_0 = device_get_binding("I2C_0");
-
-    if (dev_i2c_0 == NULL) {
-        hio_log_fat("Call `device_get_binding` failed");
+    if (hio_rtc_init() < 0) {
+        hio_log_fat("Call `hio_rtc_init` failed");
         return -1;
-    }
-
-    const hio_bus_i2c_driver_t *i2c_drv = hio_bsp_i2c_get_driver();
-
-    if (hio_bus_i2c_init(&i2c, i2c_drv, (void *)dev_i2c_0) < 0) {
-        hio_log_fat("Call `hio_bus_i2c_init` failed");
-        return -2;
-    }
-
-    if (hio_drv_sht30_init(&sht30, &i2c, 0x45) < 0) {
-        hio_log_fat("Call `hio_drv_sht30_init` failed");
-        return -3;
-    }
-
-    if (hio_drv_tmp112_init(&tmp112, &i2c, 0x48) < 0) {
-        hio_log_fat("Call `hio_drv_tmp112_init` failed");
-        return -4;
     }
 
     return 0;
@@ -169,6 +151,47 @@ init_button(void)
 }
 
 static int
+init_i2c(void)
+{
+    dev_i2c_0 = device_get_binding("I2C_0");
+
+    if (dev_i2c_0 == NULL) {
+        hio_log_fat("Call `device_get_binding` failed");
+        return -1;
+    }
+
+    const hio_bus_i2c_driver_t *i2c_drv = hio_bsp_i2c_get_driver();
+
+    if (hio_bus_i2c_init(&i2c, i2c_drv, (void *)dev_i2c_0) < 0) {
+        hio_log_fat("Call `hio_bus_i2c_init` failed");
+        return -2;
+    }
+
+    if (hio_drv_sht30_init(&sht30, &i2c, 0x45) < 0) {
+        hio_log_fat("Call `hio_drv_sht30_init` failed");
+        return -3;
+    }
+
+    if (hio_drv_tmp112_init(&tmp112, &i2c, 0x48) < 0) {
+        hio_log_fat("Call `hio_drv_tmp112_init` failed");
+        return -4;
+    }
+
+    return 0;
+}
+
+static int
+init_tmp112(void)
+{
+    if (hio_drv_tmp112_sleep(&tmp112) < 0) {
+        hio_log_err("Call `hio_drv_tmp112_sleep` failed");
+        return -1;
+    }
+
+    return 0;
+}
+
+static int
 init_flash(void)
 {
     dev_spi_1 = device_get_binding("SPI_1");
@@ -220,17 +243,6 @@ init_flash(void)
     if (spi_transceive(dev_spi_1, &spi_cfg, &tx, &rx) < 0) {
         hio_log_fat("Call `spi_transceive` failed");
         return -2;
-    }
-
-    return 0;
-}
-
-static int
-init_tmp112(void)
-{
-    if (hio_drv_tmp112_sleep(&tmp112) < 0) {
-        hio_log_err("Call `hio_drv_tmp112_sleep` failed");
-        return -1;
     }
 
     return 0;
@@ -329,6 +341,11 @@ init_w1b(void)
 int
 hio_bsp_init(void)
 {
+    if (init_rtc() < 0) {
+        hio_log_fat("Call `init_i2c` failed");
+        return -1;
+    }
+
     if (init_gpio() < 0) {
         hio_log_fat("Call `init_gpio` failed");
         return -2;

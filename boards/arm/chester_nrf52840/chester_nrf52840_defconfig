@@ -72,6 +72,9 @@ CONFIG_CBPRINTF_COMPLETE=y
 CONFIG_CBPRINTF_FP_SUPPORT=y
 CONFIG_CBPRINTF_FULL_INTEGRAL=y
 
+CONFIG_NRFX_RTC=y
+CONFIG_NRFX_RTC0=y
+
 # Options for further reference and examination
 # =============================================
 # CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
