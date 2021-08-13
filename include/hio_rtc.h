@@ -1,6 +1,5 @@
 #ifndef HIO_RTC_H
 #define HIO_RTC_H
-
 typedef struct {
     int year;
     int month;

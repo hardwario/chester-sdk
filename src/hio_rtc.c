@@ -10,6 +10,8 @@
 #include <zephyr.h>
 
 // Standard includes
+#include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(hio_rtc, LOG_LEVEL_DBG);
@@ -228,20 +230,63 @@ cmd_rtc_set(const struct shell *shell,
 {
     ARG_UNUSED(argc);
 
-    if (strlen(argv[1]) != 10 || strlen(argv[2]) != 8) {
+    char *date = argv[1];
+    char *time = argv[2];
+
+    if (strlen(date) != 10 ||
+        !isdigit((unsigned char)date[0]) ||
+        !isdigit((unsigned char)date[1]) ||
+        !isdigit((unsigned char)date[2]) ||
+        !isdigit((unsigned char)date[3]) ||
+        date[4] != '/' ||
+        !isdigit((unsigned char)date[5]) ||
+        !isdigit((unsigned char)date[6]) ||
+        date[7] != '/'||
+        !isdigit((unsigned char)date[8]) ||
+        !isdigit((unsigned char)date[9])
+    ) {
         shell_help(shell);
         return -1;
     }
 
-    hio_rtc_tm_t tm;
-
-    if (hio_rtc_set(&tm) < 0) {
-        LOG_ERR("Call `hio_rtc_set` failed");
+    if (strlen(time) != 8 ||
+        !isdigit((unsigned char)time[0]) ||
+        !isdigit((unsigned char)time[1]) ||
+        time[2] != ':' ||
+        !isdigit((unsigned char)time[3]) ||
+        !isdigit((unsigned char)time[4]) ||
+        time[5] != ':'||
+        !isdigit((unsigned char)time[6]) ||
+        !isdigit((unsigned char)time[7])
+    ) {
+        shell_help(shell);
         return -2;
     }
 
-    shell_print(shell, "%04d/%02d/%02d %02d:%02d:%02d",
-                tm.year, tm.month, tm.day, tm.hours, tm.minutes, tm.seconds);
+    date[4] = '\0';
+    date[7] = '\0';
+    time[2] = '\0';
+    time[5] = '\0';
+
+    hio_rtc_tm_t tm;
+
+    tm.year =
+        atoi(&date[0]);
+    tm.month =
+        atoi(&date[5]);
+    tm.day =
+        atoi(&date[8]);
+    tm.hours =
+        atoi(&time[0]);
+    tm.minutes =
+        atoi(&time[3]);
+    tm.seconds =
+        atoi(&time[6]);
+
+    if (hio_rtc_set(&tm) < 0) {
+        LOG_ERR("Call `hio_rtc_set` failed");
+        return -3;
+    }
 
     return 0;
 }
