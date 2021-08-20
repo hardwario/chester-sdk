@@ -9,7 +9,10 @@
 // Zephyr includes
 #include <device.h>
 #include <devicetree.h>
+#include <drivers/clock_control.h>
+#include <drivers/clock_control/nrf_clock_control.h>
 #include <drivers/uart.h>
+#include <logging/log.h>
 #include <zephyr.h>
 
 // Standard includes
@@ -65,6 +68,8 @@ static HIO_SYS_TASK_STACK_DEFINE(rx_task_stack, 2048);
 
 uint8_t *next_buf;
 
+static struct onoff_client hfclk_cli;
+
 static bool enabled;
 
 static struct k_poll_signal rx_disabled_sig;
@@ -113,6 +118,7 @@ process_rsp(const char *buf, size_t len)
     // Memory allocation failed?
     if (p == NULL) {
         hio_log_err("Call `hio_sys_heap_alloc` failed");
+
     } else {
         // Copy line to allocated buffer
         memcpy(p, buf, len);
@@ -179,7 +185,6 @@ process_rx_char(char c)
         clipped = false;
 
     } else {
-
         // Check for insufficient room...
         if (len >= sizeof(buf) - 1) {
 
@@ -187,7 +192,6 @@ process_rx_char(char c)
             clipped = true;
 
         } else {
-
             // Store character to buffer
             buf[len++] = c;
             buf[len] = '\0';
@@ -267,26 +271,102 @@ hio_lte_uart_init(void)
     return 0;
 }
 
+static int
+request_hfclk(void)
+{
+    int ret;
+
+    struct onoff_manager *mgr =
+        z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+
+    if (mgr == NULL) {
+        LOG_ERR("Call `z_nrf_clock_control_get_onoff` failed");
+        return -ENXIO;
+    }
+
+    static struct k_poll_signal sig;
+
+    k_poll_signal_init(&sig);
+    sys_notify_init_signal(&hfclk_cli.notify, &sig);
+
+    ret = onoff_request(mgr, &hfclk_cli);
+
+    if (ret < 0) {
+        LOG_ERR("Call `onoff_request` failed: %d", ret);
+        return ret;
+    }
+
+    struct k_poll_event events[] = {
+        K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+                                 K_POLL_MODE_NOTIFY_ONLY,
+                                 &sig)
+    };
+
+    ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_poll` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+static int
+release_hfclk(void)
+{
+    int ret;
+
+    struct onoff_manager *mgr =
+        z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+
+    if (mgr == NULL) {
+        LOG_ERR("Call `z_nrf_clock_control_get_onoff` failed");
+        return -ENXIO;
+    }
+
+    ret = onoff_cancel_or_release(mgr, &hfclk_cli);
+
+    if (ret < 0) {
+        LOG_ERR("Call `onoff_cancel_or_release` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
 int
 hio_lte_uart_enable(void)
 {
+    int ret;
+
     if (enabled) {
         return 0;
     }
 
-	if (pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE, NULL, NULL) < 0) {
-        hio_log_fat("Call `pm_device_state_set` failed");
-        return -1;
+    ret = request_hfclk();
+
+    if (ret < 0) {
+        LOG_ERR("Call `request_hfclk` failed: %d", ret);
+        return ret;
+    }
+
+    ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
+
+	if (ret < 0) {
+        hio_log_fat("Call `pm_device_state_set` failed: %d", ret);
+        return ret;
     }
 
     k_poll_signal_reset(&rx_disabled_sig);
 
     next_buf = rx_buffer[1];
 
-    if (uart_rx_enable(dev, rx_buffer[0], sizeof(rx_buffer[0]),
-                       RX_TIMEOUT) < 0) {
-        hio_log_fat("Call `uart_rx_enable` failed");
-        return -2;
+    ret = uart_rx_enable(dev, rx_buffer[0], sizeof(rx_buffer[0]), RX_TIMEOUT);
+
+    if (ret < 0) {
+        hio_log_fat("Call `uart_rx_enable` failed: %d", ret);
+        return -3;
     }
 
     enabled = true;
@@ -297,13 +377,17 @@ hio_lte_uart_enable(void)
 int
 hio_lte_uart_disable(void)
 {
+    int ret;
+
     if (!enabled) {
         return 0;
     }
 
-    if (uart_rx_disable(dev) < 0) {
-        hio_log_fat("Call `uart_rx_disable` failed");
-        return -1;
+    ret = uart_rx_disable(dev);
+
+    if (ret < 0) {
+        LOG_ERR("Call `uart_rx_disable` failed: %d", ret);
+        return ret;
     }
 
     struct k_poll_event events[] = {
@@ -312,14 +396,25 @@ hio_lte_uart_disable(void)
                                  &rx_disabled_sig)
     };
 
-    if (k_poll(events, HIO_ARRAY_SIZE(events), K_FOREVER) < 0) {
-        hio_log_err("Call `k_poll` failed");
-        return -2;
+    ret = k_poll(events, HIO_ARRAY_SIZE(events), K_FOREVER);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_poll` failed: %d", ret);
+        return ret;
     }
 
-	if (pm_device_state_set(dev, PM_DEVICE_STATE_OFF, NULL, NULL) < 0) {
-        hio_log_fat("Call `pm_device_state_set` failed");
-        return -3;
+    ret = pm_device_state_set(dev, PM_DEVICE_STATE_OFF, NULL, NULL);
+
+	if (ret < 0) {
+        LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
+        return ret;
+    }
+
+    ret = release_hfclk();
+
+    if (ret < 0) {
+        LOG_ERR("Call `release_hfclk` failed: %d", ret);
+        return ret;
     }
 
     enabled = false;
@@ -337,6 +432,7 @@ hio_lte_uart_send(const char *fmt, va_list ap)
     if (ret < 0) {
         hio_log_err("Call `vsnprintf` failed");
         return -1;
+
     } else if (ret > sizeof(buf) - 2) {
         hio_log_err("Buffer too small");
         return -2;
@@ -363,14 +459,18 @@ hio_lte_uart_send(const char *fmt, va_list ap)
 int
 hio_lte_uart_recv(char **s, int64_t timeout)
 {
+    int ret;
+
     static uint8_t __aligned(4) buf[RX_LINE_MAX_SIZE];
 
     char *p;
 
-    if (hio_sys_msgq_get(&rx_msgq, &p, timeout) < 0) {
-        hio_log_err("Call `hio_sys_msgq_get` failed");
+    ret = hio_sys_msgq_get(&rx_msgq, &p, timeout);
+
+    if (ret < 0) {
+        hio_log_err("Call `hio_sys_msgq_get` failed: %d", ret);
         *s = NULL;
-        return -1;
+        return -ETIMEDOUT;
     }
 
     strcpy(buf, p);
