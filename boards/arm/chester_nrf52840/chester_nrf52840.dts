@@ -65,6 +65,17 @@
 	/delete-property/ cts-pin;
 };
 
+&uart1 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <19200>;
+	tx-pin = <7>;
+	rx-pin = <8>;
+	/delete-property/ hw-flow-control;
+	/delete-property/ rts-pin;
+	/delete-property/ cts-pin;
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";

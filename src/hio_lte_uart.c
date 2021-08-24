@@ -23,12 +23,12 @@
 #include <stdio.h>
 #include <string.h>
 
-HIO_LOG_REGISTER(hio_lte_uart, HIO_LOG_LEVEL_DBG);
-
 #define TX_LINE_MAX_SIZE 1024
 #define RX_LINE_MAX_SIZE 1024
 
 #define RX_TIMEOUT 10
+
+HIO_LOG_REGISTER(hio_lte_uart, HIO_LOG_LEVEL_DBG);
 
 // Handle for UART
 static const struct device *dev;
@@ -354,7 +354,7 @@ hio_lte_uart_enable(void)
     ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
 
 	if (ret < 0) {
-        hio_log_fat("Call `pm_device_state_set` failed: %d", ret);
+        LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
         return ret;
     }
 
@@ -365,8 +365,8 @@ hio_lte_uart_enable(void)
     ret = uart_rx_enable(dev, rx_buffer[0], sizeof(rx_buffer[0]), RX_TIMEOUT);
 
     if (ret < 0) {
-        hio_log_fat("Call `uart_rx_enable` failed: %d", ret);
-        return -3;
+        LOG_ERR("Call `uart_rx_enable` failed: %d", ret);
+        return ret;
     }
 
     enabled = true;
@@ -396,7 +396,7 @@ hio_lte_uart_disable(void)
                                  &rx_disabled_sig)
     };
 
-    ret = k_poll(events, HIO_ARRAY_SIZE(events), K_FOREVER);
+    ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
 
     if (ret < 0) {
         LOG_ERR("Call `k_poll` failed: %d", ret);
