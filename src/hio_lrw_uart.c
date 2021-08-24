@@ -457,7 +457,7 @@ int hio_lrw_uart_send(const char *fmt, va_list ap)
         return -ENOBUFS;
     }
 
-    LOG_DBG("TX: %s", &buf[TX_PREFIX_LEN]);
+    LOG_INF("TX: %s", &buf[TX_PREFIX_LEN]);
 
     size_t len = strlen(&buf[TX_PREFIX_LEN]);
 

@@ -102,7 +102,7 @@ static bool ok_handler(const char *s, void *param)
 {
     ARG_UNUSED(param);
 
-    if (strcmp(s, "OK") != 0) {
+    if (strcmp(s, "+OK") != 0) {
         return false;
     }
 
