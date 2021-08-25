@@ -1,25 +1,25 @@
 #include <hio_bsp.h>
 #include <hio_bsp_i2c.h>
 #include <hio_bus_i2c.h>
-#include <hio_log.h>
 #include <hio_sys.h>
 #include <hio_test.h>
-#include <hio_util.h>
 
 // Zephyr includes
 #include <init.h>
+#include <logging/log.h>
+#include <settings/settings.h>
+#include <zephyr.h>
 
 // Standard includes
 #include <stdbool.h>
 #include <stdint.h>
 
-HIO_LOG_REGISTER(init, HIO_LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(hio_init, LOG_LEVEL_DBG);
 
 static hio_sys_task_t button_task;
 static HIO_SYS_TASK_STACK_DEFINE(button_task_stack, 2048);
 
-static void
-button_task_entry(void *param)
+static void button_task_entry(void *param)
 {
     for (;;) {
         int64_t now = hio_sys_uptime_get();
@@ -32,6 +32,7 @@ button_task_entry(void *param)
             if (!pressed) {
                 timeout = now + HIO_SYS_SECONDS(2);
             }
+
         } else {
             timeout = 0;
         }
@@ -39,23 +40,24 @@ button_task_entry(void *param)
         if (timeout != 0 && now >= timeout) {
             timeout = 0;
 
-            hio_log_inf("Discharge request - load ON");
+            LOG_INF("Discharge request - load ON");
 
             hio_bsp_set_led(HIO_BSP_LED_G, true);
             hio_bsp_set_bat_load(true);
-            hio_sys_task_sleep(HIO_SYS_SECONDS(120));
+
+            k_sleep(K_SECONDS(120));
+
             hio_bsp_set_bat_load(false);
             hio_bsp_set_led(HIO_BSP_LED_G, false);
 
-            hio_log_inf("Discharge request - load OFF");
+            LOG_INF("Discharge request - load OFF");
         }
 
-        hio_sys_task_sleep(HIO_SYS_MSEC(50));
+        k_sleep(K_MSEC(50));
     }
 }
 
-static void
-wait_for_button(void)
+static void wait_for_button(void)
 {
     hio_bsp_set_led(HIO_BSP_LED_Y, true);
 
@@ -67,16 +69,17 @@ wait_for_button(void)
             }
         }
 
-        hio_sys_task_sleep(HIO_SYS_MSEC(100));
+        k_sleep(K_MSEC(100));
     }
 
     hio_bsp_set_led(HIO_BSP_LED_Y, false);
 }
 
-static int
-init(const struct device *dev)
+static int init(const struct device *dev)
 {
-    HIO_ARG_UNUSED(dev);
+    ARG_UNUSED(dev);
+
+    int ret;
 
     #if 0
     for (;;) {
@@ -84,9 +87,18 @@ init(const struct device *dev)
     }
     #endif
 
-    if (hio_bsp_init() < 0) {
-        hio_log_fat("Call `hio_bsp_init` failed");
-        return -1;
+    ret = settings_subsys_init();
+
+    if (ret < 0) {
+        LOG_ERR("Call `settings_subsys_init` failed: %d", ret);
+        return ret;
+    }
+
+    ret = hio_bsp_init();
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_init` failed: %d", ret);
+        return ret;
     }
 
     hio_sys_task_init(&button_task, "button", button_task_stack,
@@ -99,20 +111,20 @@ init(const struct device *dev)
 
     #if 1
     if (hio_test_is_active()) {
-        return -2;
+        return 1;
     }
 
-    hio_log_inf("Waiting for test mode");
+    LOG_INF("Waiting for test mode");
 
-    hio_sys_task_sleep(HIO_SYS_SECONDS(10));
+    k_sleep(K_SECONDS(10));
 
     if (hio_test_is_active()) {
-        return 0;
+        return 1;
     }
 
     hio_test_block();
 
-    hio_log_inf("Test mode entry timed out");
+    LOG_INF("Test mode entry timed out");
     #endif
 
     return 0;
