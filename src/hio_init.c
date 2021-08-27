@@ -8,6 +8,7 @@
 #include <init.h>
 #include <logging/log.h>
 #include <settings/settings.h>
+#include <shell/shell.h>
 #include <zephyr.h>
 
 // Standard includes
@@ -131,3 +132,25 @@ static int init(const struct device *dev)
 }
 
 SYS_INIT(init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+
+static int cmd_save(const struct shell *shell, size_t argc, char **argv)
+{
+    int ret;
+
+    if (argc != 1) {
+        shell_help(shell);
+        return -ENOEXEC;
+    }
+
+    ret = settings_save();
+
+    if (ret < 0) {
+        LOG_ERR("Call `settings_save` failed: %d", ret);
+        shell_error(shell, "Command failed");
+        return ret;
+    }
+
+    return 0;
+}
+
+SHELL_CMD_REGISTER(save, NULL, "Save settings", cmd_save);

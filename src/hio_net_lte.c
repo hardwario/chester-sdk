@@ -460,7 +460,7 @@ static int
 hexify(char *dst, size_t size, const void *src, size_t len)
 {
     if (size < len * 2 + 1) {
-        return -1;
+        return -ENOBUFS;
     }
 
     memset(dst, 0, size);

@@ -291,20 +291,17 @@ cmd_rtc_set(const struct shell *shell,
     return 0;
 }
 
-static int
-print_help(const struct shell *shell,
-           size_t argc, char **argv)
+static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
-    int ret = 0;
-
     if (argc > 1) {
         shell_error(shell, "%s: Command not found", argv[1]);
-        ret = -1;
+        shell_help(shell);
+        return -EINVAL;
     }
 
     shell_help(shell);
 
-    return ret;
+    return 0;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
