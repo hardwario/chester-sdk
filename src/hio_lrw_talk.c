@@ -176,6 +176,20 @@ int hio_lrw_talk_at(void)
     return 0;
 }
 
+int hio_lrw_talk_at_dformat(uint8_t df)
+{
+    int ret;
+
+    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+DFORMAT=%u", df);
+
+    if (ret < 0) {
+        LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
 int hio_lrw_talk_at_band(uint8_t band)
 {
     int ret;
@@ -218,11 +232,67 @@ int hio_lrw_talk_at_mode(uint8_t mode)
     return 0;
 }
 
-int hio_lrw_talk_at_nwk(uint8_t nwk)
+int hio_lrw_talk_at_nwk(uint8_t network)
 {
     int ret;
 
-    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+NWK=%u", nwk);
+    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+NWK=%u", network);
+
+    if (ret < 0) {
+        LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+int hio_lrw_talk_at_adr(uint8_t adr)
+{
+    int ret;
+
+    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+ADR=%u", adr);
+
+    if (ret < 0) {
+        LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+int hio_lrw_talk_at_dutycycle(uint8_t dc)
+{
+    int ret;
+
+    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+DUTYCYCLE=%u", dc);
+
+    if (ret < 0) {
+        LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+int hio_lrw_talk_at_joindc(uint8_t jdc)
+{
+    int ret;
+
+    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+JOINDC=%u", jdc);
+
+    if (ret < 0) {
+        LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+int hio_lrw_talk_at_join(void)
+{
+    int ret;
+
+    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+JOIN");
 
     if (ret < 0) {
         LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);

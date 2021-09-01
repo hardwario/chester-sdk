@@ -16,11 +16,14 @@
 
 LOG_MODULE_REGISTER(hio_net_lrw, LOG_LEVEL_DBG);
 
+#define SETTINGS_PFX "lrw"
+
 static K_MUTEX_DEFINE(m_settings_mut);
 
-static bool m_adr = false;
-static bool m_dutycyle = false;
 static bool m_enabled = false;
+
+static bool m_adr = true;
+static bool m_dutycycle = true;
 
 enum band {
     BAND_AS923 = 0,
@@ -66,192 +69,41 @@ static int h_set(const char *key, size_t len,
 
     LOG_DBG("key: %s len: %u", key, len);
 
-    if (settings_name_steq(key, "enabled", &next) && !next) {
-        if (len != sizeof(m_enabled)) {
-            return -EINVAL;
-        }
+#define SETTINGS_SET(_key, _var)                             \
+    do {                                                     \
+        if (settings_name_steq(key, _key, &next) && !next) { \
+            if (len != sizeof(_var)) {                       \
+                return -EINVAL;                              \
+            }                                                \
+                                                             \
+            k_mutex_lock(&m_settings_mut, K_FOREVER);        \
+            ret = read_cb(cb_arg, &_var, len);               \
+            k_mutex_unlock(&m_settings_mut);                 \
+                                                             \
+            if (ret < 0) {                                   \
+                LOG_ERR("Call `read_cb` failed: %d", ret);   \
+                return ret;                                  \
+            }                                                \
+                                                             \
+            return 0;                                        \
+        }                                                    \
+    } while (0)
 
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, &m_enabled, len);
-        k_mutex_unlock(&m_settings_mut);
+    SETTINGS_SET("enabled", m_enabled);
+    SETTINGS_SET("band", m_band);
+    SETTINGS_SET("class", m_class);
+    SETTINGS_SET("mode", m_mode);
+    SETTINGS_SET("nwk", m_nwk);
+    SETTINGS_SET("adr", m_adr);
+    SETTINGS_SET("dutycycle", m_dutycycle);
+    SETTINGS_SET("devaddr", m_devaddr);
+    SETTINGS_SET("deveui", m_deveui);
+    SETTINGS_SET("joineui", m_joineui);
+    SETTINGS_SET("appkey", m_appkey);
+    SETTINGS_SET("nwkskey", m_nwkskey);
+    SETTINGS_SET("appskey", m_appskey);
 
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
-
-    if (settings_name_steq(key, "band", &next) && !next) {
-        if (len != sizeof(m_band)) {
-            return -EINVAL;
-        }
-
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, &m_band, len);
-        k_mutex_unlock(&m_settings_mut);
-
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
-
-    if (settings_name_steq(key, "class", &next) && !next) {
-        if (len != sizeof(m_class)) {
-            return -EINVAL;
-        }
-
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, &m_class, len);
-        k_mutex_unlock(&m_settings_mut);
-
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
-
-    if (settings_name_steq(key, "mode", &next) && !next) {
-        if (len != sizeof(m_mode)) {
-            return -EINVAL;
-        }
-
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, &m_mode, len);
-        k_mutex_unlock(&m_settings_mut);
-
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
-
-    if (settings_name_steq(key, "nwk", &next) && !next) {
-        if (len != sizeof(m_nwk)) {
-            return -EINVAL;
-        }
-
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, &m_nwk, len);
-        k_mutex_unlock(&m_settings_mut);
-
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
-
-    if (settings_name_steq(key, "devaddr", &next) && !next) {
-        if (len != sizeof(m_devaddr)) {
-            return -EINVAL;
-        }
-
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, m_devaddr, len);
-        k_mutex_unlock(&m_settings_mut);
-
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
-
-    if (settings_name_steq(key, "deveui", &next) && !next) {
-        if (len != sizeof(m_deveui)) {
-            return -EINVAL;
-        }
-
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, m_deveui, len);
-        k_mutex_unlock(&m_settings_mut);
-
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
-
-    if (settings_name_steq(key, "joineui", &next) && !next) {
-        if (len != sizeof(m_joineui)) {
-            return -EINVAL;
-        }
-
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, m_joineui, len);
-        k_mutex_unlock(&m_settings_mut);
-
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
-
-    if (settings_name_steq(key, "appkey", &next) && !next) {
-        if (len != sizeof(m_appkey)) {
-            return -EINVAL;
-        }
-
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, m_appkey, len);
-        k_mutex_unlock(&m_settings_mut);
-
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
-
-    if (settings_name_steq(key, "nwkskey", &next) && !next) {
-        if (len != sizeof(m_nwkskey)) {
-            return -EINVAL;
-        }
-
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, m_nwkskey, len);
-        k_mutex_unlock(&m_settings_mut);
-
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
-
-    if (settings_name_steq(key, "appskey", &next) && !next) {
-        if (len != sizeof(m_appskey)) {
-            return -EINVAL;
-        }
-
-        k_mutex_lock(&m_settings_mut, K_FOREVER);
-        ret = read_cb(cb_arg, m_appskey, len);
-        k_mutex_unlock(&m_settings_mut);
-
-        if (ret < 0) {
-            LOG_ERR("Call `read_cb` failed: %d", ret);
-            return ret;
-        }
-
-        return 0;
-    }
+#undef SETTINGS_SET
 
     return -ENOENT;
 }
@@ -261,16 +113,25 @@ static int h_export(int (*export_func)(const char *name,
 {
     k_mutex_lock(&m_settings_mut, K_FOREVER);
 
-    (void)export_func("lrw/band", &m_band, sizeof(m_band));
-    (void)export_func("lrw/class", &m_class, sizeof(m_class));
-    (void)export_func("lrw/mode", &m_mode, sizeof(m_mode));
-    (void)export_func("lrw/nwk", &m_nwk, sizeof(m_nwk));
-    (void)export_func("lrw/devaddr", m_devaddr, sizeof(m_devaddr));
-    (void)export_func("lrw/deveui", m_deveui, sizeof(m_deveui));
-    (void)export_func("lrw/joineui", m_joineui, sizeof(m_joineui));
-    (void)export_func("lrw/appkey", m_appkey, sizeof(m_appkey));
-    (void)export_func("lrw/nwkskey", m_nwkskey, sizeof(m_nwkskey));
-    (void)export_func("lrw/appskey", m_appskey, sizeof(m_appskey));
+#define EXPORT_FUNC(_key, _var, _size)                         \
+    do {                                                       \
+        (void)export_func(SETTINGS_PFX "/" _key, _var, _size); \
+    } while (0)
+
+    EXPORT_FUNC("band", &m_band, sizeof(m_band));
+    EXPORT_FUNC("class", &m_class, sizeof(m_class));
+    EXPORT_FUNC("mode", &m_mode, sizeof(m_mode));
+    EXPORT_FUNC("nwk", &m_nwk, sizeof(m_nwk));
+    EXPORT_FUNC("adr", &m_adr, sizeof(m_adr));
+    EXPORT_FUNC("dutycycle", &m_dutycycle, sizeof(m_dutycycle));
+    EXPORT_FUNC("devaddr", m_devaddr, sizeof(m_devaddr));
+    EXPORT_FUNC("deveui", m_deveui, sizeof(m_deveui));
+    EXPORT_FUNC("joineui", m_joineui, sizeof(m_joineui));
+    EXPORT_FUNC("appkey", m_appkey, sizeof(m_appkey));
+    EXPORT_FUNC("nwkskey", m_nwkskey, sizeof(m_nwkskey));
+    EXPORT_FUNC("appskey", m_appskey, sizeof(m_appskey));
+
+#undef EXPORT_FUNC
 
     k_mutex_unlock(&m_settings_mut);
 
@@ -281,10 +142,17 @@ static int configure(void)
 {
     int ret;
 
-    enum band band = BAND_EU868;
-    enum class class = CLASS_A;
-    enum mode mode = MODE_OTAA;
-    enum nwk nwk = NWK_PRIVATE;
+    k_mutex_lock(&m_settings_mut, K_FOREVER);
+
+    bool enabled = m_enabled;
+
+    bool adr = m_adr;
+    bool dutycycle = m_dutycycle;
+
+    enum band band = m_band;
+    enum class class = m_class;
+    enum mode mode = m_mode;
+    enum nwk nwk = m_nwk;
 
     uint8_t devaddr[sizeof(m_devaddr)];
     uint8_t deveui[sizeof(m_deveui)];
@@ -292,13 +160,6 @@ static int configure(void)
     uint8_t appkey[sizeof(m_appkey)];
     uint8_t nwkskey[sizeof(m_nwkskey)];
     uint8_t appskey[sizeof(m_appskey)];
-
-    k_mutex_lock(&m_settings_mut, K_FOREVER);
-
-    band = m_band;
-    class = m_class;
-    mode = m_mode;
-    nwk = m_nwk;
 
     memcpy(devaddr, m_devaddr, sizeof(devaddr));
     memcpy(deveui, m_deveui, sizeof(deveui));
@@ -308,6 +169,13 @@ static int configure(void)
     memcpy(appskey, m_appskey, sizeof(appskey));
 
     k_mutex_unlock(&m_settings_mut);
+
+    ret = hio_lrw_talk_at_dformat(1);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lrw_talk_at_dformat` failed: %d", ret);
+        return ret;
+    }
 
     ret = hio_lrw_talk_at_band((uint8_t)band);
 
@@ -335,6 +203,29 @@ static int configure(void)
     if (ret < 0) {
         LOG_ERR("Call `hio_lrw_talk_at_nwk` failed: %d", ret);
         return ret;
+    }
+
+    ret = hio_lrw_talk_at_adr(adr ? 1 : 0);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lrw_talk_at_adr` failed: %d", ret);
+        return ret;
+    }
+
+    ret = hio_lrw_talk_at_dutycycle(dutycycle ? 1 : 0);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lrw_talk_at_dutycycle` failed: %d", ret);
+        return ret;
+    }
+
+    if (mode != MODE_ABP) {
+        ret = hio_lrw_talk_at_joindc(dutycycle ? 1 : 0);
+
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_at_joindc` failed: %d", ret);
+            return ret;
+        }
     }
 
     ret = hio_lrw_talk_at_devaddr(devaddr, sizeof(devaddr));
@@ -389,7 +280,7 @@ int hio_net_lrw_init(void)
     LOG_INF("Start");
 
     static struct settings_handler sh = {
-        .name = "lrw",
+        .name = SETTINGS_PFX,
         .h_set = h_set,
         .h_export = h_export
     };
@@ -401,7 +292,7 @@ int hio_net_lrw_init(void)
         return ret;
     }
 
-    ret = settings_load_subtree("lrw");
+    ret = settings_load_subtree(SETTINGS_PFX);
 
     if (ret < 0) {
         LOG_ERR("Call `settings_load_subtree` failed: %d", ret);
@@ -436,6 +327,13 @@ int hio_net_lrw_init(void)
 
         if (ret < 0) {
             LOG_ERR("Call `configure` failed: %d", ret);
+            return ret;
+        }
+
+        ret = hio_lrw_talk_at_join();
+
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_at_join` failed: %d", ret);
             return ret;
         }
 
@@ -536,6 +434,20 @@ static void print_nwk(const struct shell *shell)
     k_mutex_unlock(&m_settings_mut);
 }
 
+static void print_adr(const struct shell *shell)
+{
+    k_mutex_lock(&m_settings_mut, K_FOREVER);
+    shell_print(shell, "adr: %s", m_adr ? "true" : "false");
+    k_mutex_unlock(&m_settings_mut);
+}
+
+static void print_dutycycle(const struct shell *shell)
+{
+    k_mutex_lock(&m_settings_mut, K_FOREVER);
+    shell_print(shell, "dutycycle: %s", m_dutycycle ? "true" : "false");
+    k_mutex_unlock(&m_settings_mut);
+}
+
 static void print_devaddr(const struct shell *shell)
 {
     k_mutex_lock(&m_settings_mut, K_FOREVER);
@@ -629,6 +541,8 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
     print_class(shell);
     print_mode(shell);
     print_nwk(shell);
+    print_adr(shell);
+    print_dutycycle(shell);
     print_devaddr(shell);
     print_deveui(shell);
     print_joineui(shell);
@@ -786,6 +700,56 @@ static int cmd_nwk(const struct shell *shell, size_t argc, char **argv)
     if (argc == 2 && strcmp(argv[1], "public") == 0) {
         k_mutex_lock(&m_settings_mut, K_FOREVER);
         m_nwk = NWK_PUBLIC;
+        k_mutex_unlock(&m_settings_mut);
+        return 0;
+    }
+
+    shell_help(shell);
+    return -EINVAL;
+}
+
+static int cmd_adr(const struct shell *shell, size_t argc, char **argv)
+{
+    if (argc == 1) {
+        print_adr(shell);
+        return 0;
+    }
+
+    if (argc == 2 && strcmp(argv[1], "true") == 0) {
+        k_mutex_lock(&m_settings_mut, K_FOREVER);
+        m_adr = true;
+        k_mutex_unlock(&m_settings_mut);
+        return 0;
+    }
+
+    if (argc == 2 && strcmp(argv[1], "false") == 0) {
+        k_mutex_lock(&m_settings_mut, K_FOREVER);
+        m_adr = false;
+        k_mutex_unlock(&m_settings_mut);
+        return 0;
+    }
+
+    shell_help(shell);
+    return -EINVAL;
+}
+
+static int cmd_dutycycle(const struct shell *shell, size_t argc, char **argv)
+{
+    if (argc == 1) {
+        print_dutycycle(shell);
+        return 0;
+    }
+
+    if (argc == 2 && strcmp(argv[1], "true") == 0) {
+        k_mutex_lock(&m_settings_mut, K_FOREVER);
+        m_dutycycle = true;
+        k_mutex_unlock(&m_settings_mut);
+        return 0;
+    }
+
+    if (argc == 2 && strcmp(argv[1], "false") == 0) {
+        k_mutex_lock(&m_settings_mut, K_FOREVER);
+        m_dutycycle = false;
         k_mutex_unlock(&m_settings_mut);
         return 0;
     }
@@ -954,23 +918,29 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(nwk, NULL,
                   "Get/Set network type (format: <private|public>).",
                   cmd_nwk, 1, 1),
+    SHELL_CMD_ARG(adr, NULL,
+                  "Get/Set adaptive data rate (format: <true|false>).",
+                  cmd_adr, 1, 1),
+    SHELL_CMD_ARG(dutycycle, NULL,
+                  "Get/Set duty cycle (format: <true|false>).",
+                  cmd_dutycycle, 1, 1),
     SHELL_CMD_ARG(devaddr, NULL,
-                  "Get/Set DEVADDR (format: <8 hexadecimal digits>).",
+                  "Get/Set DevAddr (format: <8 hexadecimal digits>).",
                   cmd_devaddr, 1, 1),
     SHELL_CMD_ARG(deveui, NULL,
-                  "Get/Set DEVEUI (format: <16 hexadecimal digits>).",
+                  "Get/Set DevEUI (format: <16 hexadecimal digits>).",
                   cmd_deveui, 1, 1),
     SHELL_CMD_ARG(joineui, NULL,
-                  "Get/Set JOINEUI (format: <16 hexadecimal digits>).",
+                  "Get/Set JoinEUI (format: <16 hexadecimal digits>).",
                   cmd_joineui, 1, 1),
     SHELL_CMD_ARG(appkey, NULL,
-                  "Get/Set APPKEY (format: <32 hexadecimal digits>).",
+                  "Get/Set AppKey (format: <32 hexadecimal digits>).",
                   cmd_appkey, 1, 1),
     SHELL_CMD_ARG(nwkskey, NULL,
-                  "Get/Set NWKSKEY (format: <32 hexadecimal digits>).",
+                  "Get/Set NwkSKey (format: <32 hexadecimal digits>).",
                   cmd_nwkskey, 1, 1),
     SHELL_CMD_ARG(appskey, NULL,
-                  "Get/Set APPSKEY (format: <32 hexadecimal digits>).",
+                  "Get/Set AppSKey (format: <32 hexadecimal digits>).",
                   cmd_appskey, 1, 1),
     SHELL_SUBCMD_SET_END
 );
