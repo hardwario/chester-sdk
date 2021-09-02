@@ -1,5 +1,5 @@
 #include <hio_lrw_talk.h>
-//#include <hio_lrw_tok.h>
+// #include <hio_lrw_tok.h>
 #include <hio_lrw_uart.h>
 #include <hio_util.h>
 
@@ -437,5 +437,42 @@ int hio_lrw_talk_at_appskey(const uint8_t *appskey, size_t appskey_size)
         return ret;
     }
 
+    return 0;
+}
+
+int hio_lrw_talk_at_putx(uint8_t port, const void *payload,
+                         size_t payload_len)
+{
+    int ret;
+
+    if (payload_len < 1 || payload_len > 242) {
+        return -EINVAL;
+    }
+
+    char *hex = k_malloc(payload_len * 2 + 1);
+
+    if (hex == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    ret = hio_buf2hex(payload, payload_len, hex, payload_len * 2 + 1, true);
+
+    if (ret != payload_len * 2) {
+        LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
+        k_free(hex);
+        return ret;
+    }
+
+    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S,
+                      "AT+PUTX=%u,%u\r%s", port, payload_len, hex);
+
+    if (ret < 0) {
+        LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        k_free(hex);
+        return ret;
+    }
+
+    k_free(hex);
     return 0;
 }

@@ -724,7 +724,12 @@ hio_net_lte_send(const hio_net_send_opts_t *opts, const void *buf, size_t len)
 
     send_item_t item = {
         .ttl = opts->ttl,
-        .addr = {opts->addr[0], opts->addr[1], opts->addr[2], opts->addr[3]},
+        .addr = {
+            opts->addr[0],
+            opts->addr[1],
+            opts->addr[2],
+            opts->addr[3]
+        },
         .port = opts->port,
         .buf = buf,
         .len = len
