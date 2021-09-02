@@ -5,7 +5,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
-int hio_lrw_talk_init(void);
+enum hio_lrw_talk_event {
+    HIO_LRW_TALK_EVENT_BOOT = 0,
+    HIO_LRW_TALK_EVENT_JOIN_OK = 1,
+    HIO_LRW_TALK_EVENT_JOIN_ERR = 2,
+};
+
+typedef void (*hio_lrw_talk_event_cb)(enum hio_lrw_talk_event event);
+
+int hio_lrw_talk_init(hio_lrw_talk_event_cb event_cb);
 int hio_lrw_talk_enable(void);
 int hio_lrw_talk_disable(void);
 int hio_lrw_talk_at(void);

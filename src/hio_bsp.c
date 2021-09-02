@@ -52,14 +52,17 @@ HIO_LOG_REGISTER(hio_bsp, HIO_LOG_LEVEL_DBG);
 #define DEV_RF_LTE dev_gpio_0
 #define PIN_RF_LTE 25
 
-#define DEV_RF_LORA dev_gpio_1
-#define PIN_RF_LORA 2
+#define DEV_RF_LRW dev_gpio_1
+#define PIN_RF_LRW 2
 
 #define DEV_LTE_RESET dev_gpio_1
 #define PIN_LTE_RESET 7
 
 #define DEV_LTE_WKUP dev_gpio_0
 #define PIN_LTE_WKUP 15
+
+#define DEV_LRW_RESET dev_gpio_0
+#define PIN_LRW_RESET 11
 
 static const struct device *dev_gpio_0;
 static const struct device *dev_gpio_1;
@@ -269,7 +272,7 @@ init_rf_mux(void)
         return -3;
     }
 
-    if (gpio_pin_configure(DEV_RF_LORA, PIN_RF_LORA,
+    if (gpio_pin_configure(DEV_RF_LRW, PIN_RF_LRW,
                            GPIO_OUTPUT_INACTIVE) < 0) {
         hio_log_fat("Call `gpio_pin_configure` failed");
         return -4;
@@ -578,14 +581,14 @@ hio_bsp_set_rf_mux(hio_bsp_rf_mux_t mux)
             hio_log_fat("Call `gpio_pin_set` failed");
             return -1;
         }
-        if (gpio_pin_set(DEV_RF_LORA, PIN_RF_LORA, 0) < 0) {
+        if (gpio_pin_set(DEV_RF_LRW, PIN_RF_LRW, 0) < 0) {
             hio_log_fat("Call `gpio_pin_set` failed");
             return -2;
         }
         break;
 
     case HIO_BSP_RF_MUX_LTE:
-        if (gpio_pin_set(DEV_RF_LORA, PIN_RF_LORA, 0) < 0) {
+        if (gpio_pin_set(DEV_RF_LRW, PIN_RF_LRW, 0) < 0) {
             hio_log_fat("Call `gpio_pin_set` failed");
             return -3;
         }
@@ -595,12 +598,12 @@ hio_bsp_set_rf_mux(hio_bsp_rf_mux_t mux)
         }
         break;
 
-    case HIO_BSP_RF_MUX_LORA:
+    case HIO_BSP_RF_MUX_LRW:
         if (gpio_pin_set(DEV_RF_LTE, PIN_RF_LTE, 0) < 0) {
             hio_log_fat("Call `gpio_pin_set` failed");
             return -5;
         }
-        if (gpio_pin_set(DEV_RF_LORA, PIN_RF_LORA, 1) < 0) {
+        if (gpio_pin_set(DEV_RF_LRW, PIN_RF_LRW, 1) < 0) {
             hio_log_fat("Call `gpio_pin_set` failed");
             return -6;
         }
@@ -640,6 +643,26 @@ hio_bsp_set_lte_wkup(int level)
     if (gpio_pin_set(DEV_LTE_WKUP, PIN_LTE_WKUP, level == 0 ? 0 : 1) < 0) {
         hio_log_fat("Call `gpio_pin_set` failed");
         return -1;
+    }
+
+    return 0;
+}
+
+int
+hio_bsp_set_lrw_reset(int level)
+{
+    if (level == 0) {
+        if (gpio_pin_configure(DEV_LRW_RESET, PIN_LRW_RESET,
+                               GPIO_OUTPUT_INACTIVE) < 0) {
+            hio_log_fat("Call `gpio_pin_configure` failed");
+            return -1;
+        }
+    } else {
+        if (gpio_pin_configure(DEV_LRW_RESET, PIN_LRW_RESET,
+                               GPIO_DISCONNECTED) < 0) {
+            hio_log_fat("Call `gpio_pin_configure` failed");
+            return -2;
+        }
     }
 
     return 0;

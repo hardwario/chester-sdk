@@ -27,7 +27,7 @@ typedef enum {
 typedef enum {
     HIO_BSP_RF_MUX_NONE = 0,
     HIO_BSP_RF_MUX_LTE = 1,
-    HIO_BSP_RF_MUX_LORA = 2
+    HIO_BSP_RF_MUX_LRW = 2
 } hio_bsp_rf_mux_t;
 
 int
@@ -65,6 +65,9 @@ hio_bsp_set_lte_reset(int level);
 
 int
 hio_bsp_set_lte_wkup(int level);
+
+int
+hio_bsp_set_lrw_reset(int level);
 
 int
 hio_bsp_sht30_measure(float *t, float *rh);

@@ -1,4 +1,9 @@
+// TODO Implement retries settings parameter
+// TODO Implement antenna selection parameter
+// TODO Implement thread + queue mechanism
+
 #include <hio_net_lrw.h>
+#include <hio_bsp.h>
 #include <hio_lrw_talk.h>
 #include <hio_util.h>
 
@@ -48,7 +53,7 @@ enum mode {
 
 enum nwk {
     NWK_PRIVATE = 0,
-    NWK_PUBLIC = 2
+    NWK_PUBLIC = 1
 };
 
 struct config {
@@ -79,84 +84,66 @@ static struct config m_config = {
     .dutycycle = true
 };
 
+static struct k_poll_signal m_boot_sig;
+static struct k_poll_signal m_join_sig;
+static struct k_poll_signal m_send_sig;
+
 static int h_set(const char *key, size_t len,
-                 settings_read_cb read_cb, void *cb_arg)
-{
-    int ret;
-    const char *next;
-
-    LOG_DBG("key: %s len: %u", key, len);
-
-#define SETTINGS_SET(_key, _var, _size)                      \
-    do {                                                     \
-        if (settings_name_steq(key, _key, &next) && !next) { \
-            if (len != _size) {                              \
-                return -EINVAL;                              \
-            }                                                \
-                                                             \
-            k_mutex_lock(&m_config_mut, K_FOREVER);          \
-            ret = read_cb(cb_arg, _var, len);                \
-            k_mutex_unlock(&m_config_mut);                   \
-                                                             \
-            if (ret < 0) {                                   \
-                LOG_ERR("Call `read_cb` failed: %d", ret);   \
-                return ret;                                  \
-            }                                                \
-                                                             \
-            return 0;                                        \
-        }                                                    \
-    } while (0)
-
-    SETTINGS_SET("enabled", &m_config.enabled, sizeof(m_config.enabled));
-    SETTINGS_SET("band", &m_config.band, sizeof(m_config.band));
-    SETTINGS_SET("class", &m_config.class, sizeof(m_config.class));
-    SETTINGS_SET("mode", &m_config.mode, sizeof(m_config.mode));
-    SETTINGS_SET("nwk", &m_config.nwk, sizeof(m_config.nwk));
-    SETTINGS_SET("adr", &m_config.adr, sizeof(m_config.adr));
-    SETTINGS_SET("dutycycle", &m_config.dutycycle, sizeof(m_config.dutycycle));
-    SETTINGS_SET("devaddr", m_config.devaddr, sizeof(m_config.devaddr));
-    SETTINGS_SET("deveui", m_config.deveui, sizeof(m_config.deveui));
-    SETTINGS_SET("joineui", m_config.joineui, sizeof(m_config.joineui));
-    SETTINGS_SET("appkey", m_config.appkey, sizeof(m_config.appkey));
-    SETTINGS_SET("nwkskey", m_config.nwkskey, sizeof(m_config.nwkskey));
-    SETTINGS_SET("appskey", m_config.appskey, sizeof(m_config.appskey));
-
-#undef SETTINGS_SET
-
-    return -ENOENT;
-}
+                 settings_read_cb read_cb, void *cb_arg);
 
 static int h_export(int (*export_func)(const char *name,
-			                           const void *val, size_t val_len))
+                                       const void *val, size_t val_len));
+
+static int boot(void)
 {
-    k_mutex_lock(&m_config_mut, K_FOREVER);
+    int ret;
 
-#define EXPORT_FUNC(_key, _var, _size)                         \
-    do {                                                       \
-        (void)export_func(SETTINGS_PFX "/" _key, _var, _size); \
-    } while (0)
+    ret = hio_lrw_talk_enable();
 
-    EXPORT_FUNC("band", &m_config.band, sizeof(m_config.band));
-    EXPORT_FUNC("class", &m_config.class, sizeof(m_config.class));
-    EXPORT_FUNC("mode", &m_config.mode, sizeof(m_config.mode));
-    EXPORT_FUNC("nwk", &m_config.nwk, sizeof(m_config.nwk));
-    EXPORT_FUNC("adr", &m_config.adr, sizeof(m_config.adr));
-    EXPORT_FUNC("dutycycle", &m_config.dutycycle, sizeof(m_config.dutycycle));
-    EXPORT_FUNC("devaddr", m_config.devaddr, sizeof(m_config.devaddr));
-    EXPORT_FUNC("deveui", m_config.deveui, sizeof(m_config.deveui));
-    EXPORT_FUNC("joineui", m_config.joineui, sizeof(m_config.joineui));
-    EXPORT_FUNC("appkey", m_config.appkey, sizeof(m_config.appkey));
-    EXPORT_FUNC("nwkskey", m_config.nwkskey, sizeof(m_config.nwkskey));
-    EXPORT_FUNC("appskey", m_config.appskey, sizeof(m_config.appskey));
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+        return ret;
+    }
 
-#undef EXPORT_FUNC
+    for (;;) {
+        hio_bsp_set_lrw_reset(0);
+        k_sleep(K_MSEC(100));
+        k_poll_signal_reset(&m_boot_sig);
+        hio_bsp_set_lrw_reset(1);
 
-    k_mutex_unlock(&m_config_mut);
+        struct k_poll_event events[] = {
+            K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+                                     K_POLL_MODE_NOTIFY_ONLY,
+                                     &m_boot_sig)
+        };
+
+        ret = k_poll(events, ARRAY_SIZE(events), K_MSEC(1000));
+
+        if (ret == 0) {
+            break;
+
+        } else if (ret == -EAGAIN) {
+            LOG_WRN("Boot message timed out");
+
+            ret = hio_lrw_talk_disable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+                return ret;
+            }
+
+            k_sleep(K_SECONDS(60));
+            continue;
+        }
+
+        LOG_ERR("Call `k_poll` failed: %d", ret);
+        return ret;
+    }
 
     return 0;
 }
 
-static int configure(void)
+static int setup(void)
 {
     int ret;
     struct config config;
@@ -268,11 +255,181 @@ static int configure(void)
     return 0;
 }
 
+static int join(void)
+{
+    int ret;
+
+    for (;;) {
+        k_poll_signal_reset(&m_join_sig);
+
+        ret = hio_lrw_talk_at_join();
+
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_at_join` failed: %d", ret);
+            k_sleep(K_SECONDS(10));
+            continue;
+        }
+
+        struct k_poll_event events[] = {
+            K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+                                     K_POLL_MODE_NOTIFY_ONLY,
+                                     &m_join_sig)
+        };
+
+        ret = k_poll(events, ARRAY_SIZE(events), K_SECONDS(30));
+
+        if (ret == -EAGAIN) {
+            LOG_WRN("Join response timed out");
+            continue;
+        }
+
+        if (ret < 0) {
+            LOG_ERR("Call `k_poll` failed: %d", ret);
+            return ret;
+        }
+
+        unsigned int signaled;
+        int result;
+
+        k_poll_signal_check(&m_join_sig, &signaled, &result);
+
+        if (signaled > 0 && result == 0) {
+            LOG_INF("Join operation succeeded");
+
+            // TODO Signalize to application join success
+
+            break;
+
+        } else {
+            LOG_WRN("Join operation failed");
+
+            // TODO Signalize to application join failure
+
+            ret = hio_lrw_talk_disable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+                return ret;
+            }
+
+            k_sleep(K_MINUTES(10));
+
+            ret = hio_lrw_talk_enable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+                return ret;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static int send(void)
+{
+    int ret;
+
+    for (;;) {
+        k_poll_signal_reset(&m_send_sig);
+
+        uint8_t buf[] = {1,2,3,4};
+
+        ret = hio_lrw_talk_at_putx(1, buf, sizeof(buf));
+
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_at_putx` failed: %d", ret);
+            k_sleep(K_SECONDS(10));
+            continue;
+        }
+
+        break;
+
+        /*
+        struct k_poll_event events[] = {
+            K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+                                     K_POLL_MODE_NOTIFY_ONLY,
+                                     &m_send_sig)
+        };
+
+        ret = k_poll(events, ARRAY_SIZE(events), K_SECONDS(30));
+
+        if (ret == -EAGAIN) {
+            LOG_WRN("Join response timed out");
+            continue;
+        }
+
+        if (ret < 0) {
+            LOG_ERR("Call `k_poll` failed: %d", ret);
+            return ret;
+        }
+
+        unsigned int signaled;
+        int result;
+
+        k_poll_signal_check(&m_send_sig, &signaled, &result);
+
+        if (signaled > 0 && result == 0) {
+            LOG_INF("Send operation succeeded");
+
+            // TODO Signalize to application send success
+
+            break;
+
+        } else {
+            LOG_WRN("Send operation failed");
+
+            // TODO Signalize to application send failure
+
+            ret = hio_lrw_talk_disable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+                return ret;
+            }
+
+            k_sleep(K_MINUTES(10));
+
+            ret = hio_lrw_talk_enable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+                return ret;
+            }
+        }
+        */
+    }
+
+    return 0;
+}
+
+static void talk_handler(enum hio_lrw_talk_event event)
+{
+    switch (event) {
+    case HIO_LRW_TALK_EVENT_BOOT:
+        LOG_DBG("Event `HIO_LRW_TALK_EVENT_BOOT`");
+        k_poll_signal_raise(&m_boot_sig, 0);
+        break;
+    case HIO_LRW_TALK_EVENT_JOIN_OK:
+        LOG_DBG("Event `HIO_LRW_TALK_EVENT_JOIN_OK`");
+        k_poll_signal_raise(&m_join_sig, 0);
+        break;
+    case HIO_LRW_TALK_EVENT_JOIN_ERR:
+        LOG_DBG("Event `HIO_LRW_TALK_EVENT_JOIN_ERR`");
+        k_poll_signal_raise(&m_join_sig, 1);
+        break;
+    default:
+        LOG_WRN("Unknown event: %d", (int)event);
+    }
+}
+
 int hio_net_lrw_init(void)
 {
     int ret;
 
-    LOG_INF("Start");
+    k_poll_signal_init(&m_boot_sig);
+    k_poll_signal_init(&m_join_sig);
+    k_poll_signal_init(&m_send_sig);
 
     static struct settings_handler sh = {
         .name = SETTINGS_PFX,
@@ -294,46 +451,135 @@ int hio_net_lrw_init(void)
         return ret;
     }
 
-    ret = hio_lrw_talk_init();
+    ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_set_rf_ant` failed: %d", ret);
+        return ret;
+    }
+
+    ret = hio_bsp_set_rf_mux(HIO_BSP_RF_MUX_LRW);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_set_rf_mux` failed: %d", ret);
+        return ret;
+    }
+
+    ret = hio_lrw_talk_init(talk_handler);
 
     if (ret < 0) {
         LOG_ERR("Call `hio_lrw_talk_init` failed: %d", ret);
         return ret;
     }
 
-    ret = hio_lrw_talk_enable();
-
-    if (ret < 0) {
-        LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
-        return ret;
-    }
-
     for (;;) {
-        LOG_DBG("Alive");
-
-        ret = hio_lrw_talk_at();
+        ret = boot();
 
         if (ret < 0) {
-            LOG_ERR("Call `hio_lrw_talk_at` failed: %d", ret);
+            LOG_ERR("Call `boot` failed: %d", ret);
             return ret;
         }
 
-        ret = configure();
+        ret = setup();
 
         if (ret < 0) {
-            LOG_ERR("Call `configure` failed: %d", ret);
+            LOG_ERR("Call `setup` failed: %d", ret);
             return ret;
         }
 
-        ret = hio_lrw_talk_at_join();
+        ret = join();
 
         if (ret < 0) {
-            LOG_ERR("Call `hio_lrw_talk_at_join` failed: %d", ret);
+            LOG_ERR("Call `join` failed: %d", ret);
+            return ret;
+        }
+
+        ret = send();
+
+        if (ret < 0) {
+            LOG_ERR("Call `send` failed: %d", ret);
             return ret;
         }
 
         k_sleep(K_SECONDS(30));
     }
+
+    return 0;
+}
+
+static int h_set(const char *key, size_t len,
+                 settings_read_cb read_cb, void *cb_arg)
+{
+    int ret;
+    const char *next;
+
+    LOG_DBG("key: %s len: %u", key, len);
+
+#define SETTINGS_SET(_key, _var, _size)                      \
+    do {                                                     \
+        if (settings_name_steq(key, _key, &next) && !next) { \
+            if (len != _size) {                              \
+                return -EINVAL;                              \
+            }                                                \
+                                                             \
+            k_mutex_lock(&m_config_mut, K_FOREVER);          \
+            ret = read_cb(cb_arg, _var, len);                \
+            k_mutex_unlock(&m_config_mut);                   \
+                                                             \
+            if (ret < 0) {                                   \
+                LOG_ERR("Call `read_cb` failed: %d", ret);   \
+                return ret;                                  \
+            }                                                \
+                                                             \
+            return 0;                                        \
+        }                                                    \
+    } while (0)
+
+    SETTINGS_SET("enabled", &m_config.enabled, sizeof(m_config.enabled));
+    SETTINGS_SET("band", &m_config.band, sizeof(m_config.band));
+    SETTINGS_SET("class", &m_config.class, sizeof(m_config.class));
+    SETTINGS_SET("mode", &m_config.mode, sizeof(m_config.mode));
+    SETTINGS_SET("nwk", &m_config.nwk, sizeof(m_config.nwk));
+    SETTINGS_SET("adr", &m_config.adr, sizeof(m_config.adr));
+    SETTINGS_SET("dutycycle", &m_config.dutycycle, sizeof(m_config.dutycycle));
+    SETTINGS_SET("devaddr", m_config.devaddr, sizeof(m_config.devaddr));
+    SETTINGS_SET("deveui", m_config.deveui, sizeof(m_config.deveui));
+    SETTINGS_SET("joineui", m_config.joineui, sizeof(m_config.joineui));
+    SETTINGS_SET("appkey", m_config.appkey, sizeof(m_config.appkey));
+    SETTINGS_SET("nwkskey", m_config.nwkskey, sizeof(m_config.nwkskey));
+    SETTINGS_SET("appskey", m_config.appskey, sizeof(m_config.appskey));
+
+#undef SETTINGS_SET
+
+    return -ENOENT;
+}
+
+static int h_export(int (*export_func)(const char *name,
+                                       const void *val, size_t val_len))
+{
+    k_mutex_lock(&m_config_mut, K_FOREVER);
+
+#define EXPORT_FUNC(_key, _var, _size)                         \
+    do {                                                       \
+        (void)export_func(SETTINGS_PFX "/" _key, _var, _size); \
+    } while (0)
+
+    EXPORT_FUNC("band", &m_config.band, sizeof(m_config.band));
+    EXPORT_FUNC("class", &m_config.class, sizeof(m_config.class));
+    EXPORT_FUNC("mode", &m_config.mode, sizeof(m_config.mode));
+    EXPORT_FUNC("nwk", &m_config.nwk, sizeof(m_config.nwk));
+    EXPORT_FUNC("adr", &m_config.adr, sizeof(m_config.adr));
+    EXPORT_FUNC("dutycycle", &m_config.dutycycle, sizeof(m_config.dutycycle));
+    EXPORT_FUNC("devaddr", m_config.devaddr, sizeof(m_config.devaddr));
+    EXPORT_FUNC("deveui", m_config.deveui, sizeof(m_config.deveui));
+    EXPORT_FUNC("joineui", m_config.joineui, sizeof(m_config.joineui));
+    EXPORT_FUNC("appkey", m_config.appkey, sizeof(m_config.appkey));
+    EXPORT_FUNC("nwkskey", m_config.nwkskey, sizeof(m_config.nwkskey));
+    EXPORT_FUNC("appskey", m_config.appskey, sizeof(m_config.appskey));
+
+#undef EXPORT_FUNC
+
+    k_mutex_unlock(&m_config_mut);
 
     return 0;
 }

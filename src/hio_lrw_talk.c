@@ -15,10 +15,12 @@ LOG_MODULE_REGISTER(hio_lrw_talk, LOG_LEVEL_DBG);
 
 #define SEND_GUARD_TIME K_MSEC(100)
 #define RESPONSE_TIMEOUT_S K_MSEC(1000)
+#define RESPONSE_TIMEOUT_L K_SECONDS(10)
 
 typedef bool (*handler_cb)(const char *s, void *param);
 
 static handler_cb m_handler_cb;
+static hio_lrw_talk_event_cb m_event_cb;
 static K_MUTEX_DEFINE(m_handler_mut);
 static K_MUTEX_DEFINE(m_talk_mut);
 static struct k_poll_signal m_response_sig;
@@ -26,6 +28,29 @@ static void *m_handler_param;
 
 static void process_urc(const char *s)
 {
+    if (strcmp(s, "+EVENT=1,1") == 0) {
+        if (m_event_cb != NULL) {
+            m_event_cb(HIO_LRW_TALK_EVENT_JOIN_OK);
+        }
+
+        return;
+    }
+
+    if (strcmp(s, "+EVENT=1,0") == 0) {
+        if (m_event_cb != NULL) {
+            m_event_cb(HIO_LRW_TALK_EVENT_JOIN_ERR);
+        }
+
+        return;
+    }
+
+    if (strcmp(s, "+EVENT=0,0") == 0) {
+        if (m_event_cb != NULL) {
+            m_event_cb(HIO_LRW_TALK_EVENT_BOOT);
+        }
+
+        return;
+    }
 }
 
 static void recv_cb(const char *s)
@@ -118,9 +143,11 @@ static int talk_cmd_ok(k_timeout_t timeout, const char *fmt, ...)
     return 0;
 }
 
-int hio_lrw_talk_init(void)
+int hio_lrw_talk_init(hio_lrw_talk_event_cb event_cb)
 {
     int ret;
+
+    m_event_cb = event_cb;
 
     k_poll_signal_init(&m_response_sig);
 
@@ -464,8 +491,9 @@ int hio_lrw_talk_at_putx(uint8_t port, const void *payload,
         return ret;
     }
 
+    // TODO Long timeout?
     ret = talk_cmd_ok(RESPONSE_TIMEOUT_S,
-                      "AT+PUTX=%u,%u\r%s", port, payload_len, hex);
+                      "AT+PUTX %u,%u\r%s", port, payload_len, hex);
 
     if (ret < 0) {
         LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
