@@ -46,8 +46,6 @@ static uint8_t __aligned(4) m_rx_ring_buf_mem[RX_RING_BUF_SIZE];
 
 static void rx_receive_work_handler(struct k_work *work)
 {
-    // TODO This should be preferably false after reset but we need to check
-    // if Murata sends <CR><LF> after toggling RESET pin
     static bool synced = true;
     static char buf[RX_LINE_MAX_SIZE];
     static size_t len;
@@ -63,8 +61,6 @@ static void rx_receive_work_handler(struct k_work *work)
     }
 
     for (char c; ring_buf_get(&m_rx_ring_buf, (uint8_t *) &c, 1) != 0;) {
-        // TODO Remove this
-        // LOG_DBG("c: %d", (int)c);
         if (!synced) {
             if (c == '\r' || c == '\n') {
                 synced = true;
