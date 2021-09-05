@@ -587,7 +587,8 @@ static int h_export(int (*export_func)(const char *name,
 static void print_enabled(const struct shell *shell)
 {
     k_mutex_lock(&m_config_mut, K_FOREVER);
-    shell_print(shell, "enabled: %s", m_config.enabled ? "true" : "false");
+    shell_print(shell, SETTINGS_PFX " config enabled %s",
+                m_config.enabled ? "true" : "false");
     k_mutex_unlock(&m_config_mut);
 }
 
@@ -597,25 +598,25 @@ static void print_band(const struct shell *shell)
 
     switch (m_config.band) {
     case BAND_AS923:
-        shell_print(shell, "band: as923");
+        shell_print(shell, SETTINGS_PFX " config band as923");
         break;
     case BAND_AU915:
-        shell_print(shell, "band: au915");
+        shell_print(shell, SETTINGS_PFX " config band au915");
         break;
     case BAND_EU868:
-        shell_print(shell, "band: eu868");
+        shell_print(shell, SETTINGS_PFX " config band eu868");
         break;
     case BAND_KR920:
-        shell_print(shell, "band: kr920");
+        shell_print(shell, SETTINGS_PFX " config band kr920");
         break;
     case BAND_IN865:
-        shell_print(shell, "band: in865");
+        shell_print(shell, SETTINGS_PFX " config band in865");
         break;
     case BAND_US915:
-        shell_print(shell, "band: us915");
+        shell_print(shell, SETTINGS_PFX " config band us915");
         break;
     default:
-        shell_print(shell, "band: (unknown)");
+        shell_print(shell, SETTINGS_PFX " config band (unknown)");
     }
 
     k_mutex_unlock(&m_config_mut);
@@ -627,13 +628,13 @@ static void print_class(const struct shell *shell)
 
     switch (m_config.class) {
     case CLASS_A:
-        shell_print(shell, "class: a");
+        shell_print(shell, SETTINGS_PFX " config class a");
         break;
     case CLASS_C:
-        shell_print(shell, "class: c");
+        shell_print(shell, SETTINGS_PFX " config class c");
         break;
     default:
-        shell_print(shell, "class: (unknown)");
+        shell_print(shell, SETTINGS_PFX " config class (unknown)");
     }
 
     k_mutex_unlock(&m_config_mut);
@@ -645,13 +646,13 @@ static void print_mode(const struct shell *shell)
 
     switch (m_config.mode) {
     case MODE_ABP:
-        shell_print(shell, "mode: abp");
+        shell_print(shell, SETTINGS_PFX " config mode abp");
         break;
     case MODE_OTAA:
-        shell_print(shell, "mode: otaa");
+        shell_print(shell, SETTINGS_PFX " config mode otaa");
         break;
     default:
-        shell_print(shell, "mode: (unknown)");
+        shell_print(shell, SETTINGS_PFX " config mode (unknown)");
     }
 
     k_mutex_unlock(&m_config_mut);
@@ -663,13 +664,13 @@ static void print_nwk(const struct shell *shell)
 
     switch (m_config.nwk) {
     case NWK_PRIVATE:
-        shell_print(shell, "nwk: private");
+        shell_print(shell, SETTINGS_PFX " config nwk private");
         break;
     case NWK_PUBLIC:
-        shell_print(shell, "nwk: public");
+        shell_print(shell, SETTINGS_PFX " config nwk public");
         break;
     default:
-        shell_print(shell, "nwk: (unknown)");
+        shell_print(shell, SETTINGS_PFX " config nwk (unknown)");
     }
 
     k_mutex_unlock(&m_config_mut);
@@ -678,14 +679,16 @@ static void print_nwk(const struct shell *shell)
 static void print_adr(const struct shell *shell)
 {
     k_mutex_lock(&m_config_mut, K_FOREVER);
-    shell_print(shell, "adr: %s", m_config.adr ? "true" : "false");
+    shell_print(shell, SETTINGS_PFX " config adr %s",
+                m_config.adr ? "true" : "false");
     k_mutex_unlock(&m_config_mut);
 }
 
 static void print_dutycycle(const struct shell *shell)
 {
     k_mutex_lock(&m_config_mut, K_FOREVER);
-    shell_print(shell, "dutycycle: %s", m_config.dutycycle ? "true" : "false");
+    shell_print(shell, SETTINGS_PFX " config dutycycle %s",
+                m_config.dutycycle ? "true" : "false");
     k_mutex_unlock(&m_config_mut);
 }
 
@@ -697,7 +700,7 @@ static void print_devaddr(const struct shell *shell)
 
     if (hio_buf2hex(m_config.devaddr, sizeof(m_config.devaddr),
                     buf, sizeof(buf), false) >= 0) {
-        shell_print(shell, "devaddr: %s", buf);
+        shell_print(shell, SETTINGS_PFX " config devaddr %s", buf);
     }
 
     k_mutex_unlock(&m_config_mut);
@@ -711,7 +714,7 @@ static void print_deveui(const struct shell *shell)
 
     if (hio_buf2hex(m_config.deveui, sizeof(m_config.deveui),
                     buf, sizeof(buf), false) >= 0) {
-        shell_print(shell, "deveui: %s", buf);
+        shell_print(shell, SETTINGS_PFX " config deveui %s", buf);
     }
 
     k_mutex_unlock(&m_config_mut);
@@ -725,7 +728,7 @@ static void print_joineui(const struct shell *shell)
 
     if (hio_buf2hex(m_config.joineui, sizeof(m_config.joineui),
                     buf, sizeof(buf), false) >= 0) {
-        shell_print(shell, "joineui: %s", buf);
+        shell_print(shell, SETTINGS_PFX " config joineui %s", buf);
     }
 
     k_mutex_unlock(&m_config_mut);
@@ -739,7 +742,7 @@ static void print_appkey(const struct shell *shell)
 
     if (hio_buf2hex(m_config.appkey, sizeof(m_config.appkey),
                     buf, sizeof(buf), false) >= 0) {
-        shell_print(shell, "appkey: %s", buf);
+        shell_print(shell, SETTINGS_PFX " config appkey %s", buf);
     }
 
     k_mutex_unlock(&m_config_mut);
@@ -753,7 +756,7 @@ static void print_nwkskey(const struct shell *shell)
 
     if (hio_buf2hex(m_config.nwkskey, sizeof(m_config.nwkskey),
                     buf, sizeof(buf), false) >= 0) {
-        shell_print(shell, "nwkskey: %s", buf);
+        shell_print(shell, SETTINGS_PFX " config nwkskey %s", buf);
     }
 
     k_mutex_unlock(&m_config_mut);
@@ -767,13 +770,14 @@ static void print_appskey(const struct shell *shell)
 
     if (hio_buf2hex(m_config.appskey, sizeof(m_config.appskey),
                     buf, sizeof(buf), false) >= 0) {
-        shell_print(shell, "appskey: %s", buf);
+        shell_print(shell, SETTINGS_PFX " config appskey %s", buf);
     }
 
     k_mutex_unlock(&m_config_mut);
 }
 
-static int cmd_show(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_show(const struct shell *shell,
+                           size_t argc, char **argv)
 {
     k_mutex_lock(&m_config_mut, K_FOREVER);
 
@@ -796,7 +800,8 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
     return 0;
 }
 
-static int cmd_enabled(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_enabled(const struct shell *shell,
+                              size_t argc, char **argv)
 {
     if (argc == 1) {
         print_enabled(shell);
@@ -821,7 +826,8 @@ static int cmd_enabled(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_band(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_band(const struct shell *shell,
+                           size_t argc, char **argv)
 {
     if (argc == 1) {
         print_band(shell);
@@ -874,7 +880,8 @@ static int cmd_band(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_class(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_class(const struct shell *shell,
+                            size_t argc, char **argv)
 {
     if (argc == 1) {
         print_class(shell);
@@ -899,7 +906,8 @@ static int cmd_class(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_mode(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_mode(const struct shell *shell,
+                           size_t argc, char **argv)
 {
     if (argc == 1) {
         print_mode(shell);
@@ -924,7 +932,8 @@ static int cmd_mode(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_nwk(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_nwk(const struct shell *shell,
+                          size_t argc, char **argv)
 {
     if (argc == 1) {
         print_nwk(shell);
@@ -949,7 +958,8 @@ static int cmd_nwk(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_adr(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_adr(const struct shell *shell,
+                          size_t argc, char **argv)
 {
     if (argc == 1) {
         print_adr(shell);
@@ -974,7 +984,8 @@ static int cmd_adr(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_dutycycle(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_dutycycle(const struct shell *shell,
+                                size_t argc, char **argv)
 {
     if (argc == 1) {
         print_dutycycle(shell);
@@ -999,7 +1010,8 @@ static int cmd_dutycycle(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_devaddr(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_devaddr(const struct shell *shell,
+                              size_t argc, char **argv)
 {
     if (argc == 1) {
         print_devaddr(shell);
@@ -1008,7 +1020,8 @@ static int cmd_devaddr(const struct shell *shell, size_t argc, char **argv)
 
     if (argc == 2) {
         k_mutex_lock(&m_config_mut, K_FOREVER);
-        int ret = hio_hex2buf(argv[1], m_config.devaddr, sizeof(m_config.devaddr), true);
+        int ret = hio_hex2buf(argv[1], m_config.devaddr,
+                              sizeof(m_config.devaddr), true);
         k_mutex_unlock(&m_config_mut);
 
         if (ret == sizeof(m_config.devaddr)) {
@@ -1020,7 +1033,8 @@ static int cmd_devaddr(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_deveui(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_deveui(const struct shell *shell,
+                             size_t argc, char **argv)
 {
     if (argc == 1) {
         print_deveui(shell);
@@ -1029,7 +1043,8 @@ static int cmd_deveui(const struct shell *shell, size_t argc, char **argv)
 
     if (argc == 2) {
         k_mutex_lock(&m_config_mut, K_FOREVER);
-        int ret = hio_hex2buf(argv[1], m_config.deveui, sizeof(m_config.deveui), true);
+        int ret = hio_hex2buf(argv[1], m_config.deveui,
+                              sizeof(m_config.deveui), true);
         k_mutex_unlock(&m_config_mut);
 
         if (ret == sizeof(m_config.deveui)) {
@@ -1041,7 +1056,8 @@ static int cmd_deveui(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_joineui(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_joineui(const struct shell *shell,
+                              size_t argc, char **argv)
 {
     if (argc == 1) {
         print_joineui(shell);
@@ -1050,7 +1066,8 @@ static int cmd_joineui(const struct shell *shell, size_t argc, char **argv)
 
     if (argc == 2) {
         k_mutex_lock(&m_config_mut, K_FOREVER);
-        int ret = hio_hex2buf(argv[1], m_config.joineui, sizeof(m_config.joineui), true);
+        int ret = hio_hex2buf(argv[1], m_config.joineui,
+                              sizeof(m_config.joineui), true);
         k_mutex_unlock(&m_config_mut);
 
         if (ret >= 0) {
@@ -1062,7 +1079,8 @@ static int cmd_joineui(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_appkey(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_appkey(const struct shell *shell,
+                             size_t argc, char **argv)
 {
     if (argc == 1) {
         print_appkey(shell);
@@ -1071,7 +1089,8 @@ static int cmd_appkey(const struct shell *shell, size_t argc, char **argv)
 
     if (argc == 2) {
         k_mutex_lock(&m_config_mut, K_FOREVER);
-        int ret = hio_hex2buf(argv[1], m_config.appkey, sizeof(m_config.appkey), true);
+        int ret = hio_hex2buf(argv[1], m_config.appkey,
+                              sizeof(m_config.appkey), true);
         k_mutex_unlock(&m_config_mut);
 
         if (ret >= 0) {
@@ -1083,7 +1102,8 @@ static int cmd_appkey(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_nwkskey(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_nwkskey(const struct shell *shell,
+                              size_t argc, char **argv)
 {
     if (argc == 1) {
         print_nwkskey(shell);
@@ -1092,7 +1112,8 @@ static int cmd_nwkskey(const struct shell *shell, size_t argc, char **argv)
 
     if (argc == 2) {
         k_mutex_lock(&m_config_mut, K_FOREVER);
-        int ret = hio_hex2buf(argv[1], m_config.nwkskey, sizeof(m_config.nwkskey), true);
+        int ret = hio_hex2buf(argv[1], m_config.nwkskey,
+                              sizeof(m_config.nwkskey), true);
         k_mutex_unlock(&m_config_mut);
 
         if (ret >= 0) {
@@ -1104,7 +1125,8 @@ static int cmd_nwkskey(const struct shell *shell, size_t argc, char **argv)
     return -EINVAL;
 }
 
-static int cmd_appskey(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_appskey(const struct shell *shell,
+                              size_t argc, char **argv)
 {
     if (argc == 1) {
         print_appskey(shell);
@@ -1113,7 +1135,8 @@ static int cmd_appskey(const struct shell *shell, size_t argc, char **argv)
 
     if (argc == 2) {
         k_mutex_lock(&m_config_mut, K_FOREVER);
-        int ret = hio_hex2buf(argv[1], m_config.appskey, sizeof(m_config.appskey), true);
+        int ret = hio_hex2buf(argv[1], m_config.appskey,
+                              sizeof(m_config.appskey), true);
         k_mutex_unlock(&m_config_mut);
 
         if (ret >= 0) {
@@ -1123,6 +1146,13 @@ static int cmd_appskey(const struct shell *shell, size_t argc, char **argv)
 
     shell_help(shell);
     return -EINVAL;
+}
+
+static int cmd_join(const struct shell *shell,
+                    size_t argc, char **argv)
+{
+    // TODO Implement
+    return 0;
 }
 
 static int print_help(const struct shell *shell, size_t argc, char **argv)
@@ -1139,50 +1169,59 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-    sub_lrw,
+    sub_lrw_config,
     SHELL_CMD_ARG(show, NULL,
                   "List current configuration.",
-                  cmd_show, 1, 0),
+                  cmd_config_show, 1, 0),
     SHELL_CMD_ARG(enabled, NULL,
                   "Get/Set LoRaWAN state (format: <true|false>).",
-                  cmd_enabled, 1, 1),
+                  cmd_config_enabled, 1, 1),
     SHELL_CMD_ARG(band, NULL,
                   "Get/Set radio band "
                   "(format: <as923|au915|eu868|kr920|in865|us915>).",
-                  cmd_band, 1, 1),
+                  cmd_config_band, 1, 1),
     SHELL_CMD_ARG(class, NULL,
                   "Get/Set device class (format: <a|c>).",
-                  cmd_class, 1, 1),
+                  cmd_config_class, 1, 1),
     SHELL_CMD_ARG(mode, NULL,
                   "Get/Set operation mode (format: <abp|otaa>).",
-                  cmd_mode, 1, 1),
+                  cmd_config_mode, 1, 1),
     SHELL_CMD_ARG(nwk, NULL,
                   "Get/Set network type (format: <private|public>).",
-                  cmd_nwk, 1, 1),
+                  cmd_config_nwk, 1, 1),
     SHELL_CMD_ARG(adr, NULL,
                   "Get/Set adaptive data rate (format: <true|false>).",
-                  cmd_adr, 1, 1),
+                  cmd_config_adr, 1, 1),
     SHELL_CMD_ARG(dutycycle, NULL,
                   "Get/Set duty cycle (format: <true|false>).",
-                  cmd_dutycycle, 1, 1),
+                  cmd_config_dutycycle, 1, 1),
     SHELL_CMD_ARG(devaddr, NULL,
                   "Get/Set DevAddr (format: <8 hexadecimal digits>).",
-                  cmd_devaddr, 1, 1),
+                  cmd_config_devaddr, 1, 1),
     SHELL_CMD_ARG(deveui, NULL,
                   "Get/Set DevEUI (format: <16 hexadecimal digits>).",
-                  cmd_deveui, 1, 1),
+                  cmd_config_deveui, 1, 1),
     SHELL_CMD_ARG(joineui, NULL,
                   "Get/Set JoinEUI (format: <16 hexadecimal digits>).",
-                  cmd_joineui, 1, 1),
+                  cmd_config_joineui, 1, 1),
     SHELL_CMD_ARG(appkey, NULL,
                   "Get/Set AppKey (format: <32 hexadecimal digits>).",
-                  cmd_appkey, 1, 1),
+                  cmd_config_appkey, 1, 1),
     SHELL_CMD_ARG(nwkskey, NULL,
                   "Get/Set NwkSKey (format: <32 hexadecimal digits>).",
-                  cmd_nwkskey, 1, 1),
+                  cmd_config_nwkskey, 1, 1),
     SHELL_CMD_ARG(appskey, NULL,
                   "Get/Set AppSKey (format: <32 hexadecimal digits>).",
-                  cmd_appskey, 1, 1),
+                  cmd_config_appskey, 1, 1),
+    SHELL_SUBCMD_SET_END
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_lrw,
+    SHELL_CMD_ARG(config, &sub_lrw_config, "Configuration commands.",
+                  print_help, 1, 0),
+    SHELL_CMD_ARG(join, NULL, "Join network.",
+                  cmd_join, 1, 0),
     SHELL_SUBCMD_SET_END
 );
 
