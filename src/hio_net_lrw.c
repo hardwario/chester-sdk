@@ -4,10 +4,12 @@
 
 #include <hio_net_lrw.h>
 #include <hio_bsp.h>
+#include <hio_config.h>
 #include <hio_lrw_talk.h>
 #include <hio_util.h>
 
 // Zephyr includes
+#include <init.h>
 #include <logging/log.h>
 #include <settings/settings.h>
 #include <shell/shell.h>
@@ -1226,3 +1228,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 
 SHELL_CMD_REGISTER(lrw, &sub_lrw, "LoRaWAN commands.", print_help);
+
+static int init(const struct device *dev)
+{
+    ARG_UNUSED(dev);
+
+    hio_config_append_show(cmd_config_show);
+
+    return 0;
+}
+
+SYS_INIT(init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
