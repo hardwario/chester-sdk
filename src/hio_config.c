@@ -5,6 +5,7 @@
 #include <logging/log.h>
 #include <settings/settings.h>
 #include <storage/flash_map.h>
+#include <sys/reboot.h>
 #include <zephyr.h>
 
 // Standard includes
@@ -44,6 +45,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
             ret = item->cb(shell, argc, argv);
             if (ret < 0) {
                 LOG_ERR("Call `item->cb` failed: %d", ret);
+                shell_error(shell, "Command failed");
                 return ret;
             }
         }
@@ -64,6 +66,8 @@ static int cmd_save(const struct shell *shell, size_t argc, char **argv)
         return ret;
     }
 
+    sys_reboot(SYS_REBOOT_COLD);
+
     return 0;
 }
 
@@ -76,6 +80,7 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 
     if (ret < 0) {
         LOG_ERR("Call `flash_area_open` failed: %d", ret);
+        shell_error(shell, "Command failed");
         return ret;
     }
 
@@ -87,6 +92,7 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 
     if (ret < 0 && ret != -ENOMEM) {
         LOG_ERR("Call `flash_area_get_sectors` failed: %d", ret);
+        shell_error(shell, "Command failed");
         return ret;
     }
 
@@ -120,6 +126,7 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 
     if (ret < 0) {
         LOG_ERR("Call `nvs_init` failed: %d", ret);
+        shell_error(shell, "Command failed");
         return ret;
     }
 
@@ -127,8 +134,11 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 
     if (ret < 0) {
         LOG_ERR("Call `nvs_clear` failed: %d", ret);
+        shell_error(shell, "Command failed");
         return ret;
     }
+
+    sys_reboot(SYS_REBOOT_COLD);
 
     return 0;
 }
