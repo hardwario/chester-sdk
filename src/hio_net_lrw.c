@@ -1233,7 +1233,7 @@ static int init(const struct device *dev)
 {
     ARG_UNUSED(dev);
 
-    hio_config_append_show(cmd_config_show);
+    hio_config_append_show(SETTINGS_PFX, cmd_config_show);
 
     return 0;
 }

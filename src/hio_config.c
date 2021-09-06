@@ -14,13 +14,14 @@
 LOG_MODULE_REGISTER(hio_config, LOG_LEVEL_DBG);
 
 struct show_item {
+    const char *name;
     hio_config_show_cb cb;
     sys_snode_t node;
 };
 
 static sys_slist_t show_list = SYS_SLIST_STATIC_INIT(&show_list);
 
-void hio_config_append_show(hio_config_show_cb cb)
+void hio_config_append_show(const char *name, hio_config_show_cb cb)
 {
     struct show_item *item = k_malloc(sizeof(*item));
 
@@ -32,6 +33,17 @@ void hio_config_append_show(hio_config_show_cb cb)
     item->cb = cb;
 
     sys_slist_append(&show_list, &item->node);
+}
+
+static int cmd_modules(const struct shell *shell, size_t argc, char **argv)
+{
+    struct show_item *item;
+
+    SYS_SLIST_FOR_EACH_CONTAINER(&show_list, item, node) {
+        shell_print(shell, "%s", item->name);
+    }
+
+    return 0;
 }
 
 static int cmd_show(const struct shell *shell, size_t argc, char **argv)
@@ -158,6 +170,8 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_config,
+    SHELL_CMD_ARG(modules, NULL, "Show all modules.",
+                  cmd_modules, 1, 0),
     SHELL_CMD_ARG(show, NULL, "Show all configuration.",
                   cmd_show, 1, 0),
     SHELL_CMD_ARG(save, NULL, "Save all configuration.",
