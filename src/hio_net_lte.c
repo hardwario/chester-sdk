@@ -320,6 +320,7 @@ attach(void)
     hio_log_inf("Attach started [%p]", ctx);
 
     hio_sys_mut_acquire(&ctx->mut);
+    ctx->registered = false;
     int retries = ctx->cfg->attach_retries;
     int64_t pause = ctx->cfg->attach_pause;
     hio_sys_mut_release(&ctx->mut);
