@@ -4,7 +4,6 @@
 #include <hio_log.h>
 #include <hio_sys.h>
 #include <hio_test.h>
-#include <hio_util.h>
 
 // Zephyr includes
 #include <device.h>

@@ -1,11 +1,11 @@
 #include <hio_bsp_i2c.h>
 #include <hio_log.h>
-#include <hio_util.h>
 
 // Zephyr includes
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/i2c.h>
+#include <zephyr.h>
 
 HIO_LOG_REGISTER(hio_bsp_i2c, HIO_LOG_LEVEL_DBG);
 
@@ -55,7 +55,7 @@ read(void *ctx, const hio_bus_i2c_xfer_t *xfer)
     msgs[0].len = xfer->len;
     msgs[0].flags = I2C_MSG_READ | I2C_MSG_STOP;
 
-    if (i2c_transfer(dev, msgs, HIO_ARRAY_SIZE(msgs), xfer->dev_addr) < 0) {
+    if (i2c_transfer(dev, msgs, ARRAY_SIZE(msgs), xfer->dev_addr) < 0) {
         hio_log_wrn("Call `i2c_transfer` failed [%p]", ctx);
         return -1;
     }
@@ -72,7 +72,7 @@ write(void *ctx, const hio_bus_i2c_xfer_t *xfer)
     msgs[0].len = xfer->len;
     msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-    if (i2c_transfer(dev, msgs, HIO_ARRAY_SIZE(msgs), xfer->dev_addr) < 0) {
+    if (i2c_transfer(dev, msgs, ARRAY_SIZE(msgs), xfer->dev_addr) < 0) {
         hio_log_wrn("Call `i2c_transfer` failed [%p]", ctx);
         return -1;
     }
@@ -101,7 +101,7 @@ mem_read(void *ctx, const hio_bus_i2c_mem_xfer_t *xfer)
         msgs[0].buf = buf;
         msgs[0].len = sizeof(buf);
 
-        if (i2c_transfer(dev, msgs, HIO_ARRAY_SIZE(msgs),
+        if (i2c_transfer(dev, msgs, ARRAY_SIZE(msgs),
                          xfer->dev_addr) < 0) {
             hio_log_wrn("Call `i2c_transfer` failed [%p]", ctx);
             return -1;
@@ -116,7 +116,7 @@ mem_read(void *ctx, const hio_bus_i2c_mem_xfer_t *xfer)
         msgs[0].buf = buf;
         msgs[0].len = sizeof(buf);
 
-        if (i2c_transfer(dev, msgs, HIO_ARRAY_SIZE(msgs),
+        if (i2c_transfer(dev, msgs, ARRAY_SIZE(msgs),
                          xfer->dev_addr) < 0) {
             hio_log_wrn("Call `i2c_transfer` failed [%p]", ctx);
             return -2;
@@ -148,7 +148,7 @@ mem_write(void *ctx, const hio_bus_i2c_mem_xfer_t *xfer)
         msgs[0].len = 2 + xfer->len;
         msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-        if (i2c_transfer(dev, msgs, HIO_ARRAY_SIZE(msgs),
+        if (i2c_transfer(dev, msgs, ARRAY_SIZE(msgs),
                          xfer->dev_addr) < 0) {
             hio_log_wrn("Call `i2c_transfer` failed [%p]", ctx);
             return -2;
@@ -167,7 +167,7 @@ mem_write(void *ctx, const hio_bus_i2c_mem_xfer_t *xfer)
         msgs[0].len = 1 + xfer->len;
         msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-        if (i2c_transfer(dev, msgs, HIO_ARRAY_SIZE(msgs),
+        if (i2c_transfer(dev, msgs, ARRAY_SIZE(msgs),
                          xfer->dev_addr) < 0) {
             hio_log_wrn("Call `i2c_transfer` failed [%p]", ctx);
             return -3;

@@ -3,7 +3,6 @@
 #include <hio_log.h>
 #include <hio_lte_talk.h>
 #include <hio_lte_uart.h>
-#include <hio_util.h>
 
 // Zephyr includes
 #include <shell/shell.h>
@@ -46,8 +45,8 @@ static int
 cmd_test_lte_ant_int(const struct shell *shell,
                      size_t argc, char **argv)
 {
-    HIO_ARG_UNUSED(argc);
-    HIO_ARG_UNUSED(argv);
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
 
     if (!active) {
         shell_print(shell, "Test mode is not activated");
@@ -66,8 +65,8 @@ static int
 cmd_test_lte_ant_ext(const struct shell *shell,
                      size_t argc, char **argv)
 {
-    HIO_ARG_UNUSED(argc);
-    HIO_ARG_UNUSED(argv);
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
 
     if (!active) {
         shell_print(shell, "Test mode is not activated");
@@ -86,8 +85,8 @@ static int
 cmd_test_lte_reset(const struct shell *shell,
                    size_t argc, char **argv)
 {
-    HIO_ARG_UNUSED(argc);
-    HIO_ARG_UNUSED(argv);
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
 
     if (!active) {
         shell_print(shell, "Test mode is not activated");
@@ -118,8 +117,8 @@ static int
 cmd_test_lte_wakeup(const struct shell *shell,
                     size_t argc, char **argv)
 {
-    HIO_ARG_UNUSED(argc);
-    HIO_ARG_UNUSED(argv);
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
 
     if (!active) {
         shell_print(shell, "Test mode is not activated");
@@ -150,8 +149,8 @@ static int
 cmd_test_lte_sleep(const struct shell *shell,
                    size_t argc, char **argv)
 {
-    HIO_ARG_UNUSED(argc);
-    HIO_ARG_UNUSED(argv);
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
 
     if (!active) {
         shell_print(shell, "Test mode is not activated");
@@ -199,8 +198,8 @@ static int
 cmd_test_start(const struct shell *shell,
          size_t argc, char **argv)
 {
-    HIO_ARG_UNUSED(argc);
-    HIO_ARG_UNUSED(argv);
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
 
     if (active) {
         shell_warn(shell, "Test mode is already active");
