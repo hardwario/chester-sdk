@@ -1,16 +1,19 @@
 #include <hio_net_lte.h>
 #include <hio_bsp.h>
-#include <hio_log.h>
 #include <hio_lte_talk.h>
 #include <hio_lte_tok.h>
 #include <hio_lte_uart.h>
+
+// Zephyr includes
+#include <logging/log.h>
+#include <zephyr.h>
 
 // Standard includes
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-HIO_LOG_REGISTER(hio_net_lte, HIO_LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(hio_net_lte, LOG_LEVEL_DBG);
 
 #define SEND_MSGQ_MAX_ITEMS 16
 #define RECV_MSGQ_MAX_ITEMS 16
@@ -71,12 +74,12 @@ sleep(void)
 
     int ret = 0;
 
-    hio_log_inf("Sleep initiated [%p]", ctx);
+    LOG_INF("Sleep initiated [%p]", ctx);
 
     // TODO Unfortunately, we are not getting acknowledgement to this, but the
     // ticket has been raised
     if (hio_lte_talk_cmd("AT#XSLEEP=2") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         ret = -1;
     }
 
@@ -85,7 +88,7 @@ sleep(void)
     #endif
 
     if (hio_lte_uart_disable()) {
-        hio_log_err("Call `hio_lte_uart_disable` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_uart_disable` failed [%p]", ctx);
         ret = -2;
     }
 
@@ -98,22 +101,22 @@ wake_up(void)
     #if 1
     hio_net_lte_t *ctx = &inst;
 
-    hio_log_inf("Wake up initiated [%p]", ctx);
+    LOG_INF("Wake up initiated [%p]", ctx);
 
     if (hio_lte_uart_enable() < 0) {
-        hio_log_err("Call `hio_lte_uart_enable` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_uart_enable` failed [%p]", ctx);
         return -1;
     }
 
     if (hio_bsp_set_lte_wkup(0) < 0) {
-        hio_log_err("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
+        LOG_ERR("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
         return -2;
     }
 
     hio_sys_task_sleep(HIO_SYS_MSEC(10));
 
     if (hio_bsp_set_lte_wkup(1) < 0) {
-        hio_log_err("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
+        LOG_ERR("Call `hio_bsp_set_lte_wkup` failed [%p]", ctx);
         return -3;
     }
 
@@ -130,83 +133,83 @@ attach_once(void)
     hio_net_lte_t *ctx = &inst;
 
     if (hio_bsp_set_lte_reset(0) < 0) {
-        hio_log_err("Call `hio_bsp_set_lte_reset` failed [%p]", ctx);
+        LOG_ERR("Call `hio_bsp_set_lte_reset` failed [%p]", ctx);
         return -1;
     }
 
     hio_sys_task_sleep(HIO_SYS_MSEC(10));
 
     if (hio_bsp_set_lte_reset(1) < 0) {
-        hio_log_err("Call `hio_bsp_set_lte_reset` failed [%p]", ctx);
+        LOG_ERR("Call `hio_bsp_set_lte_reset` failed [%p]", ctx);
         return -2;
     }
 
     hio_sys_task_sleep(HIO_SYS_MSEC(1000));
 
     if (wake_up() < 0) {
-        hio_log_err("Call `wake_up` failed [%p]", ctx);
+        LOG_ERR("Call `wake_up` failed [%p]", ctx);
         return -3;
     }
 
     char *rsp;
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%HWVERSION") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -4;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%SHORTSWVER") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -5;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XPOFWARN=1,30") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -6;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XSYSTEMMODE=0,1,0,0") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -7;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%REL14FEAT=1,1,1,1,0") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -8;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XDATAPRFL=0") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -9;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XSIM=1") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -10;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XNETTIME=1") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -11;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT%%XTIME=1") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -12;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CEREG=5") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -13;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CGEREP=1") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -14;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CSCON=1") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -15;
     }
 
@@ -215,27 +218,27 @@ attach_once(void)
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CPSMS=1,,,\"%s\",\"%s\"",
                             timer_t3412, timer_t3324) < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -16;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CNEC=24") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd` failed [%p]", ctx);
         return -17;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CMEE=1") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd` failed [%p]", ctx);
         return -18;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CEPPI=1") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd` failed [%p]", ctx);
         return -19;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=1") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -20;
     }
 
@@ -243,17 +246,17 @@ attach_once(void)
     hio_sys_task_sleep(HIO_SYS_MSEC(1000));
 
     if (hio_lte_talk_cmd("AT+CIMI") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd` failed [%p]", ctx);
         return -21;
     }
 
     if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_rsp` failed [%p]", ctx);
         return -22;
     }
 
     if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_ok` failed [%p]", ctx);
         return -23;
     }
 
@@ -263,7 +266,7 @@ attach_once(void)
         int64_t now = hio_sys_uptime_get();
 
         if (now >= end) {
-            hio_log_wrn("Attach timed out [%p]", ctx);
+            LOG_WRN("Attach timed out [%p]", ctx);
             return -24;
         }
 
@@ -281,23 +284,23 @@ attach_once(void)
     }
 
     if (hio_lte_talk_cmd("AT#XSOCKET=1,2,0") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         return -25;
     }
 
     // TODO Short timeout?
     if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_rsp` failed [%p]", ctx);
         return -26;
     }
 
     if (strcmp(rsp, "#XSOCKET: 1,2,0,17") != 0) {
-        hio_log_err("Unexpected response [%p]", ctx);
+        LOG_ERR("Unexpected response [%p]", ctx);
         return -27;
     }
 
     if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_ok` failed [%p]", ctx);
         return -28;
     }
 
@@ -317,7 +320,7 @@ attach(void)
 {
     hio_net_lte_t *ctx = &inst;
 
-    hio_log_inf("Attach started [%p]", ctx);
+    LOG_INF("Attach started [%p]", ctx);
 
     hio_sys_mut_acquire(&ctx->mut);
     ctx->registered = false;
@@ -326,7 +329,7 @@ attach(void)
     hio_sys_mut_release(&ctx->mut);
 
     if (retries <= 0) {
-        hio_log_err("Parameter `retries` invalid [%p]", ctx);
+        LOG_ERR("Parameter `retries` invalid [%p]", ctx);
         return -1;
     }
 
@@ -335,7 +338,7 @@ attach(void)
             goto error;
         }
 
-        hio_log_inf("Attach succeeded [%p]", ctx);
+        LOG_INF("Attach succeeded [%p]", ctx);
 
         if (ctx->cb != NULL) {
             hio_net_lte_event_t event = {0};
@@ -346,14 +349,14 @@ attach(void)
         return 0;
 
 error:
-        hio_log_wrn("Attach failed [%p]", ctx);
+        LOG_WRN("Attach failed [%p]", ctx);
 
         if (ctx->cb != NULL) {
             hio_net_lte_event_t event = {0};
             event.source = HIO_NET_LTE_EVENT_ATTACH_ERROR;
             ctx->cb(&event, ctx->param);
             if (event.opts.attach_error.stop) {
-                hio_log_inf("Attach cancelled [%p]", ctx);
+                LOG_INF("Attach cancelled [%p]", ctx);
                 return -2;
             }
         }
@@ -370,29 +373,29 @@ detach(void)
 {
     hio_net_lte_t *ctx = &inst;
 
-    hio_log_inf("Detach started [%p]", ctx);
+    LOG_INF("Detach started [%p]", ctx);
 
     int ret = 0;
 
     if (wake_up() < 0) {
-        hio_log_err("Call `wake_up` failed [%p]", ctx);
+        LOG_ERR("Call `wake_up` failed [%p]", ctx);
         ret = -1;
         goto error;
     }
 
     if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CFUN=0") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
         ret = -2;
         goto error;
     }
 
     if (sleep() < 0) {
-        hio_log_err("Call `sleep` failed [%p]", ctx);
+        LOG_ERR("Call `sleep` failed [%p]", ctx);
         ret = -3;
         goto error;
     }
 
-    hio_log_inf("Detach succeeded [%p]", ctx);
+    LOG_INF("Detach succeeded [%p]", ctx);
 
     if (ctx->cb != NULL) {
         hio_net_lte_event_t event = {0};
@@ -403,7 +406,7 @@ detach(void)
     return 0;
 
 error:
-    hio_log_wrn("Detach failed [%p]", ctx);
+    LOG_WRN("Detach failed [%p]", ctx);
 
     if (ctx->cb != NULL) {
         hio_net_lte_event_t event = {0};
@@ -428,7 +431,7 @@ check_state(void)
         switch (state_req) {
         case STATE_ATTACHED:
             if (attach() < 0) {
-                hio_log_wrn("Call `attach` failed [%p]", ctx);
+                LOG_WRN("Call `attach` failed [%p]", ctx);
             } else {
                 state_now = STATE_ATTACHED;
 
@@ -439,7 +442,7 @@ check_state(void)
             break;
         case STATE_DETACHED:
             if (detach() < 0) {
-                hio_log_wrn("Call `detach` failed [%p]", ctx);
+                LOG_WRN("Call `detach` failed [%p]", ctx);
             } else {
                 state_now = STATE_DETACHED;
 
@@ -449,7 +452,7 @@ check_state(void)
             }
             break;
         default:
-            hio_log_err("Invalid state requested [%p]", ctx);
+            LOG_ERR("Invalid state requested [%p]", ctx);
             break;
         }
     }
@@ -480,12 +483,12 @@ send_once(send_item_t *item)
     hio_net_lte_t *ctx = &inst;
 
     if (hexify(ctx->buf, sizeof(ctx->buf), item->buf, item->len) < 0) {
-        hio_log_err("Call `hexify` failed [%p]", ctx);
+        LOG_ERR("Call `hexify` failed [%p]", ctx);
         return -1;
     }
 
     if (wake_up() < 0) {
-        hio_log_err("Call `wake_up` failed [%p]", ctx);
+        LOG_ERR("Call `wake_up` failed [%p]", ctx);
         return -2;
     }
 
@@ -494,17 +497,17 @@ send_once(send_item_t *item)
     if (hio_lte_talk_cmd("AT#XSENDTO=\"%u.%u.%u.%u\",%u,0,\"%s\"",
                          item->addr[0], item->addr[1], item->addr[2],
                          item->addr[3], item->port, ctx->buf) < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_cmd` failed [%p]", ctx);
         return -3;
     }
 
     if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_rsp` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_rsp` failed [%p]", ctx);
         return -4;
     }
 
     if ((rsp = hio_lte_tok_pfx(rsp, "#XSENDTO: ")) == NULL) {
-        hio_log_err("Call `hio_lte_tok_pfx` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_tok_pfx` failed [%p]", ctx);
         return -5;
     }
 
@@ -512,27 +515,27 @@ send_once(send_item_t *item)
     long num;
 
     if ((rsp = hio_lte_tok_num(rsp, &def, &num)) == NULL) {
-        hio_log_err("Call `hio_lte_tok_num` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_tok_num` failed [%p]", ctx);
         return -6;
     }
 
     if (!def || num != item->len) {
-        hio_log_err("Number of sent bytes does not match [%p]", ctx);
+        LOG_ERR("Number of sent bytes does not match [%p]", ctx);
         return -7;
     }
 
     if ((rsp = hio_lte_tok_end(rsp)) == NULL) {
-        hio_log_err("Call `hio_lte_tok_end` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_tok_end` failed [%p]", ctx);
         return -8;
     }
 
     if (hio_lte_talk_ok(TIMEOUT_S) < 0) {
-        hio_log_err("Call `hio_lte_talk_ok` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_talk_ok` failed [%p]", ctx);
         return -9;
     }
 
     if (sleep() < 0) {
-        hio_log_err("Call `sleep` failed [%p]", ctx);
+        LOG_ERR("Call `sleep` failed [%p]", ctx);
         return -10;
     }
 
@@ -544,7 +547,7 @@ send(send_item_t *item)
 {
     hio_net_lte_t *ctx = &inst;
 
-    hio_log_inf("Send started [%p]", ctx);
+    LOG_INF("Send started [%p]", ctx);
 
     hio_sys_mut_acquire(&ctx->mut);
     int retries = ctx->cfg->send_retries;
@@ -552,12 +555,12 @@ send(send_item_t *item)
     hio_sys_mut_release(&ctx->mut);
 
     if (retries <= 0) {
-        hio_log_err("Parameter `retries` invalid [%p]", ctx);
+        LOG_ERR("Parameter `retries` invalid [%p]", ctx);
         return -1;
     }
 
     if (hio_sys_uptime_get() > item->ttl) {
-        hio_log_wrn("Message TTL expired [%p]", ctx);
+        LOG_WRN("Message TTL expired [%p]", ctx);
         return -2;
     }
 
@@ -566,7 +569,7 @@ send(send_item_t *item)
             goto error;
         }
 
-        hio_log_inf("Send succeeded [%p]", ctx);
+        LOG_INF("Send succeeded [%p]", ctx);
 
         if (ctx->cb != NULL) {
             hio_net_lte_event_t event = {0};
@@ -579,20 +582,20 @@ send(send_item_t *item)
         return 0;
 
 error:
-        hio_log_wrn("Send failed [%p]", ctx);
+        LOG_WRN("Send failed [%p]", ctx);
 
         if (ctx->cb != NULL) {
             hio_net_lte_event_t event = {0};
             event.source = HIO_NET_LTE_EVENT_SEND_ERROR;
             ctx->cb(&event, ctx->param);
             if (event.opts.send_error.stop) {
-                hio_log_inf("Send cancelled [%p]", ctx);
+                LOG_INF("Send cancelled [%p]", ctx);
                 return -3;
             }
         }
 
         if (attach() < 0) {
-            hio_log_wrn("Call `attach` failed");
+            LOG_WRN("Call `attach` failed");
             return -4;
         }
 
@@ -615,11 +618,11 @@ check_send(void)
             break;
         }
 
-        hio_log_inf("Dequeued message to send (port %d, len %u) [%p]",
+        LOG_INF("Dequeued message to send (port %d, len %u) [%p]",
                      item.port, item.len, ctx);
 
         if (send(&item) < 0) {
-            hio_log_err("Call `send` failed [%p]", ctx);
+            LOG_ERR("Call `send` failed [%p]", ctx);
         }
     }
 }
@@ -630,23 +633,23 @@ entry(void *param)
     hio_net_lte_t *ctx = param;
 
     if (hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT) < 0) {
-        hio_log_fat("Call `hio_bsp_set_rf_ant` failed [%p]", ctx);
+        LOG_ERR("Call `hio_bsp_set_rf_ant` failed [%p]", ctx);
         return;
     }
 
     if (hio_bsp_set_rf_mux(HIO_BSP_RF_MUX_LTE) < 0) {
-        hio_log_fat("Call `hio_bsp_set_rf_mux` failed [%p]", ctx);
+        LOG_ERR("Call `hio_bsp_set_rf_mux` failed [%p]", ctx);
         return;
     }
 
     if (hio_lte_uart_init() < 0) {
-        hio_log_fat("Call `hio_lte_uart_init` failed [%p]", ctx);
+        LOG_ERR("Call `hio_lte_uart_init` failed [%p]", ctx);
         return;
     }
 
     for (;;) {
         if (hio_sys_sem_take(&ctx->sem, HIO_SYS_FOREVER) < 0) {
-            hio_log_fat("Call `hio_sys_sem_take` failed [%p]", ctx);
+            LOG_ERR("Call `hio_sys_sem_take` failed [%p]", ctx);
             return;
         }
 
@@ -737,7 +740,7 @@ hio_net_lte_send(const hio_net_send_opts_t *opts, const void *buf, size_t len)
     };
 
     if (hio_sys_msgq_put(&ctx->send_msgq, &item, HIO_SYS_NO_WAIT) < 0) {
-        hio_log_err("Call `hio_sys_msgq_put` failed [%p]", ctx);
+        LOG_ERR("Call `hio_sys_msgq_put` failed [%p]", ctx);
         return -1;
     }
 

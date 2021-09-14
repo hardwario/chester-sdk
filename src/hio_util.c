@@ -1,10 +1,10 @@
 #include <hio_util.h>
 
-// Standard includes
-#include <stdint.h>
-
 // Zephyr includes
 #include <zephyr.h>
+
+// Standard includes
+#include <stdint.h>
 
 int hio_buf2hex(const void *src, size_t src_size,
                 char *dst, size_t dst_size, bool upper)

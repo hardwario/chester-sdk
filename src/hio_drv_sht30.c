@@ -1,11 +1,14 @@
 #include <hio_drv_sht30.h>
-#include <hio_log.h>
 #include <hio_sys.h>
+
+// Zephyr includes
+#include <logging/log.h>
+#include <zephyr.h>
 
 // Standard includes
 #include <string.h>
 
-HIO_LOG_REGISTER(hio_drv_sht30, HIO_LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(hio_drv_sht30, LOG_LEVEL_DBG);
 
 int
 hio_drv_sht30_init(hio_drv_sht30_t *ctx, hio_bus_i2c_t *i2c, uint8_t dev_addr)
@@ -30,7 +33,7 @@ reset(hio_drv_sht30_t *ctx)
     };
 
     if (hio_bus_i2c_write(ctx->i2c, &xfer) < 0) {
-        hio_log_err("Call `hio_bus_i2c_write` failed [%p]", ctx);
+        LOG_ERR("Call `hio_bus_i2c_write` failed [%p]", ctx);
         return -1;
     }
 
@@ -49,7 +52,7 @@ measure(hio_drv_sht30_t *ctx)
     };
 
     if (hio_bus_i2c_write(ctx->i2c, &xfer) < 0) {
-        hio_log_err("Call `hio_bus_i2c_write` failed [%p]", ctx);
+        LOG_ERR("Call `hio_bus_i2c_write` failed [%p]", ctx);
         return -1;
     }
 
@@ -66,7 +69,7 @@ read(hio_drv_sht30_t *ctx, uint8_t *buf)
     };
 
     if (hio_bus_i2c_read(ctx->i2c, &xfer) < 0) {
-        hio_log_err("Call `hio_bus_i2c_read` failed [%p]", ctx);
+        LOG_ERR("Call `hio_bus_i2c_read` failed [%p]", ctx);
         return -1;
     }
 
@@ -98,7 +101,7 @@ hio_drv_sht30_measure(hio_drv_sht30_t *ctx, float *t, float *rh)
 {
     if (!ctx->ready) {
         if (reset(ctx) < 0) {
-            hio_log_err("Call `reset` failed [%p]", ctx);
+            LOG_ERR("Call `reset` failed [%p]", ctx);
             return -1;
         }
 
@@ -108,7 +111,7 @@ hio_drv_sht30_measure(hio_drv_sht30_t *ctx, float *t, float *rh)
     }
 
     if (measure(ctx) < 0) {
-        hio_log_err("Call `measure` failed [%p]", ctx);
+        LOG_ERR("Call `measure` failed [%p]", ctx);
         ctx->ready = false;
         return -2;
     }
@@ -118,14 +121,14 @@ hio_drv_sht30_measure(hio_drv_sht30_t *ctx, float *t, float *rh)
     uint8_t buf[6];
 
     if (read(ctx, buf) < 0) {
-        hio_log_err("Call `read` failed [%p]", ctx);
+        LOG_ERR("Call `read` failed [%p]", ctx);
         ctx->ready = false;
         return -3;
     }
 
     if (calc_crc(&buf[0], 2) != buf[2] ||
         calc_crc(&buf[3], 2) != buf[5]) {
-        hio_log_err("CRC mismatch [%p]", ctx);
+        LOG_ERR("CRC mismatch [%p]", ctx);
         return -4;
     }
 

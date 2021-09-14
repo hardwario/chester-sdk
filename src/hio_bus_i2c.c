@@ -1,10 +1,13 @@
 #include <hio_bus_i2c.h>
-#include <hio_log.h>
+
+// Zephyr includes
+#include <logging/log.h>
+#include <zephyr.h>
 
 // Standard includes
 #include <string.h>
 
-HIO_LOG_REGISTER(hio_bus_i2c, HIO_LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(hio_bus_i2c, LOG_LEVEL_DBG);
 
 int
 hio_bus_i2c_init(hio_bus_i2c_t *ctx,
@@ -13,7 +16,7 @@ hio_bus_i2c_init(hio_bus_i2c_t *ctx,
     memset(ctx, 0, sizeof(*ctx));
 
     if (drv == NULL) {
-        hio_log_fat("Driver cannot be NULL [%p]", ctx);
+        LOG_ERR("Driver cannot be NULL [%p]", ctx);
         return -1;
     }
 
@@ -24,7 +27,7 @@ hio_bus_i2c_init(hio_bus_i2c_t *ctx,
 
     if (ctx->drv->init != NULL) {
         if (ctx->drv->init(ctx->drv_ctx) < 0) {
-            hio_log_err("Call `ctx->drv->init` failed [%p]", ctx);
+            LOG_ERR("Call `ctx->drv->init` failed [%p]", ctx);
             return -2;
         }
     }
@@ -39,10 +42,10 @@ hio_bus_i2c_acquire(hio_bus_i2c_t *ctx)
 
     if ((ctx->acq_cnt)++ == 0) {
         if (ctx->drv->enable != NULL) {
-            hio_log_dbg("Bus enable [%p]", ctx);
+            LOG_DBG("Bus enable [%p]", ctx);
 
             if (ctx->drv->enable(ctx->drv_ctx) < 0) {
-                hio_log_err("Call `ctx->drv->enable` failed [%p]", ctx);
+                LOG_ERR("Call `ctx->drv->enable` failed [%p]", ctx);
 
                 hio_sys_mut_release(&ctx->mut);
                 return -1;
@@ -57,16 +60,16 @@ int
 hio_bus_i2c_release(hio_bus_i2c_t *ctx)
 {
     if (ctx->acq_cnt == 0) {
-        hio_log_fat("Bus not acquired [%p]", ctx);
+        LOG_ERR("Bus not acquired [%p]", ctx);
         return -1;
     }
 
     if (--(ctx->acq_cnt) == 0) {
         if (ctx->drv->disable != NULL) {
-            hio_log_dbg("Bus disable [%p]", ctx);
+            LOG_DBG("Bus disable [%p]", ctx);
 
             if (ctx->drv->disable(ctx->drv_ctx) < 0) {
-                hio_log_err("Call `ctx->drv->disable` failed [%p]", ctx);
+                LOG_ERR("Call `ctx->drv->disable` failed [%p]", ctx);
 
                 hio_sys_mut_release(&ctx->mut);
                 return -2;
@@ -86,7 +89,7 @@ hio_bus_i2c_read(hio_bus_i2c_t *ctx,
 
     if (ctx->drv->read != NULL) {
         if (ctx->drv->read(ctx->drv_ctx, xfer) < 0) {
-            hio_log_wrn("Call `ctx->drv->read` failed [%p]", ctx);
+            LOG_WRN("Call `ctx->drv->read` failed [%p]", ctx);
 
             hio_bus_i2c_release(ctx);
             return -1;
@@ -105,7 +108,7 @@ hio_bus_i2c_write(hio_bus_i2c_t *ctx,
 
     if (ctx->drv->write != NULL) {
         if (ctx->drv->write(ctx->drv_ctx, xfer) < 0) {
-            hio_log_wrn("Call `ctx->drv->write` failed [%p]", ctx);
+            LOG_WRN("Call `ctx->drv->write` failed [%p]", ctx);
 
             hio_bus_i2c_release(ctx);
             return -1;
@@ -124,7 +127,7 @@ hio_bus_i2c_mem_read(hio_bus_i2c_t *ctx,
 
     if (ctx->drv->mem_read != NULL) {
         if (ctx->drv->mem_read(ctx->drv_ctx, xfer) < 0) {
-            hio_log_wrn("Call `ctx->drv->mem_read` failed [%p]", ctx);
+            LOG_WRN("Call `ctx->drv->mem_read` failed [%p]", ctx);
 
             hio_bus_i2c_release(ctx);
             return -1;
@@ -143,7 +146,7 @@ hio_bus_i2c_mem_write(hio_bus_i2c_t *ctx,
 
     if (ctx->drv->mem_write != NULL) {
         if (ctx->drv->mem_write(ctx->drv_ctx, xfer) < 0) {
-            hio_log_wrn("Call `ctx->drv->mem_write` failed [%p]", ctx);
+            LOG_WRN("Call `ctx->drv->mem_write` failed [%p]", ctx);
 
             hio_bus_i2c_release(ctx);
             return -1;
@@ -168,7 +171,7 @@ hio_bus_i2c_mem_read_8b(hio_bus_i2c_t *ctx,
     };
 
     if (hio_bus_i2c_mem_read(ctx, &xfer) < 0) {
-        hio_log_wrn("Call `hio_bus_i2c_mem_read` failed [%p]", ctx);
+        LOG_WRN("Call `hio_bus_i2c_mem_read` failed [%p]", ctx);
         return -1;
     }
 
@@ -190,7 +193,7 @@ hio_bus_i2c_mem_read_16b(hio_bus_i2c_t *ctx,
     };
 
     if (hio_bus_i2c_mem_read(ctx, &xfer) < 0) {
-        hio_log_wrn("Call `hio_bus_i2c_mem_read` failed [%p]", ctx);
+        LOG_WRN("Call `hio_bus_i2c_mem_read` failed [%p]", ctx);
         return -1;
     }
 
@@ -214,7 +217,7 @@ hio_bus_i2c_mem_write_8b(hio_bus_i2c_t *ctx,
     };
 
     if (hio_bus_i2c_mem_write(ctx, &xfer) < 0) {
-        hio_log_wrn("Call `hio_bus_i2c_mem_write` failed [%p]", ctx);
+        LOG_WRN("Call `hio_bus_i2c_mem_write` failed [%p]", ctx);
         return -1;
     }
 
@@ -238,7 +241,7 @@ hio_bus_i2c_mem_write_16b(hio_bus_i2c_t *ctx,
     };
 
     if (hio_bus_i2c_mem_write(ctx, &xfer) < 0) {
-        hio_log_wrn("Call `hio_bus_i2c_mem_write` failed [%p]", ctx);
+        LOG_WRN("Call `hio_bus_i2c_mem_write` failed [%p]", ctx);
         return -1;
     }
 

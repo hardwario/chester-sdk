@@ -1,10 +1,11 @@
 #include <hio_sys.h>
-#include <hio_log.h>
 
 // Zephyr includes
+#include <logging/log.h>
 #include <power/reboot.h>
+#include <zephyr.h>
 
-HIO_LOG_REGISTER(hio_sys, HIO_LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(hio_sys, LOG_LEVEL_DBG);
 
 static k_timeout_t
 conv_timeout(int64_t timeout)
@@ -74,7 +75,8 @@ hio_sys_task_init(hio_sys_task_t *task, const char *name,
                           K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 
     if (k_thread_name_set(ret, name) < 0) {
-        hio_log_fat("Call `k_thread_name_set` failed");
+        LOG_ERR("Call `k_thread_name_set` failed");
+        k_oops();
     }
 
     return (hio_sys_task_id_t)ret;
@@ -90,7 +92,8 @@ void
 hio_sys_sem_init(hio_sys_sem_t *sem, unsigned int value)
 {
     if (k_sem_init((struct k_sem *)sem, value, UINT_MAX) < 0) {
-        hio_log_fat("Call `k_sem_init` failed");
+        LOG_ERR("Call `k_sem_init` failed");
+        k_oops();
     }
 }
 
@@ -114,7 +117,8 @@ void
 hio_sys_mut_init(hio_sys_mut_t *mut)
 {
     if (k_mutex_init((struct k_mutex *)mut) < 0) {
-        hio_log_fat("Call `k_mutex_init` failed");
+        LOG_ERR("Call `k_mutex_init` failed");
+        k_oops();
     }
 }
 
@@ -122,7 +126,8 @@ void
 hio_sys_mut_acquire(hio_sys_mut_t *mut)
 {
     if (k_mutex_lock((struct k_mutex *)mut, K_FOREVER) < 0) {
-        hio_log_fat("Call `k_mutex_lock` failed");
+        LOG_ERR("Call `k_mutex_lock` failed");
+        k_oops();
     }
 }
 
@@ -130,7 +135,8 @@ void
 hio_sys_mut_release(hio_sys_mut_t *mut)
 {
     if (k_mutex_unlock((struct k_mutex *)mut) < 0) {
-        hio_log_fat("Call `k_mutex_unlock` failed");
+        LOG_ERR("Call `k_mutex_unlock` failed");
+        k_oops();
     }
 }
 

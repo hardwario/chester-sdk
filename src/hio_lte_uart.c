@@ -1,7 +1,6 @@
 #include <hio_lte_uart.h>
 #include <hio_lte_talk.h>
 #include <hio_bsp.h>
-#include <hio_log.h>
 #include <hio_sys.h>
 #include <hio_test.h>
 
@@ -27,7 +26,7 @@
 
 #define RX_TIMEOUT 10
 
-HIO_LOG_REGISTER(hio_lte_uart, HIO_LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(hio_lte_uart, LOG_LEVEL_DBG);
 
 // Handle for UART
 static const struct device *dev;
@@ -84,7 +83,7 @@ uart_callback(const struct device *dev,
         hio_sys_sem_give(&tx_sem);
         break;
     case UART_TX_ABORTED:
-        hio_log_wrn("Sending timed out or aborted");
+        LOG_WRN("Sending timed out or aborted");
         hio_sys_sem_give(&tx_sem);
         break;
     case UART_RX_RDY:
@@ -102,7 +101,7 @@ uart_callback(const struct device *dev,
         k_poll_signal_raise(&rx_disabled_sig, 0);
         break;
     case UART_RX_STOPPED:
-        hio_log_wrn("Receiving stopped");
+        LOG_WRN("Receiving stopped");
         // TODO Handle this
         break;
     }
@@ -116,7 +115,7 @@ process_rsp(const char *buf, size_t len)
 
     // Memory allocation failed?
     if (p == NULL) {
-        hio_log_err("Call `hio_sys_heap_alloc` failed");
+        LOG_ERR("Call `hio_sys_heap_alloc` failed");
 
     } else {
         // Copy line to allocated buffer
@@ -125,7 +124,7 @@ process_rsp(const char *buf, size_t len)
 
         // Store pointer to buffer to RX queue
         if (hio_sys_msgq_put(&rx_msgq, &p, HIO_SYS_NO_WAIT) < 0) {
-            hio_log_err("Call `hio_sys_msgq_put` failed");
+            LOG_ERR("Call `hio_sys_msgq_put` failed");
         }
     }
 }
@@ -163,15 +162,15 @@ process_rx_char(char c)
         // If buffer is not clipped and contains something...
         if (!clipped && len > 0) {
             if (hio_test_is_active()) {
-                hio_log_dbg("RSP: %s", buf);
+                LOG_DBG("RSP: %s", buf);
 
             } else if (strcmp(buf, "Ready") != 0) {
                 if (buf[0] != '+' && buf[0] != '%') {
-                    hio_log_dbg("RSP: %s", buf);
+                    LOG_DBG("RSP: %s", buf);
                     process_rsp(buf, len);
 
                 } else {
-                    hio_log_dbg("URC: %s", buf);
+                    LOG_DBG("URC: %s", buf);
                     process_urc(buf, len);
                 }
             }
@@ -240,7 +239,7 @@ hio_lte_uart_init(void)
     dev = device_get_binding("UART_0");
 
     if (dev == NULL) {
-        hio_log_fat("Call `device_get_binding` failed");
+        LOG_ERR("Call `device_get_binding` failed");
         return -1;
     }
 
@@ -253,17 +252,17 @@ hio_lte_uart_init(void)
     };
 
     if (uart_configure(dev, &cfg) < 0) {
-        hio_log_fat("Call `uart_configure` failed");
+        LOG_ERR("Call `uart_configure` failed");
         return -2;
     }
 
     if (uart_callback_set(dev, uart_callback, NULL) < 0) {
-        hio_log_fat("Call `uart_callback_set` failed");
+        LOG_ERR("Call `uart_callback_set` failed");
         return -3;
     }
 
 	if (pm_device_state_set(dev, PM_DEVICE_STATE_OFF, NULL, NULL) < 0) {
-        hio_log_fat("Call `pm_device_state_set` failed");
+        LOG_ERR("Call `pm_device_state_set` failed");
         return -4;
     }
 
@@ -429,26 +428,26 @@ hio_lte_uart_send(const char *fmt, va_list ap)
     int ret = vsnprintf(buf, sizeof(buf) - 2, fmt, ap);
 
     if (ret < 0) {
-        hio_log_err("Call `vsnprintf` failed");
+        LOG_ERR("Call `vsnprintf` failed");
         return -1;
 
     } else if (ret > sizeof(buf) - 2) {
-        hio_log_err("Buffer too small");
+        LOG_ERR("Buffer too small");
         return -2;
     }
 
-    hio_log_dbg("CMD: %s", buf);
+    LOG_DBG("CMD: %s", buf);
 
     strcat(buf, "\r\n");
 
     if (uart_tx(dev, buf, strlen(buf), SYS_FOREVER_MS) < 0) {
-        hio_log_err("Call `uart_tx` failed");
+        LOG_ERR("Call `uart_tx` failed");
         return -3;
     }
 
     // TODO Shall we set some reasonable timeout?
     if (hio_sys_sem_take(&tx_sem, HIO_SYS_FOREVER) < 0) {
-        hio_log_err("Call `hio_sys_sem_take` failed");
+        LOG_ERR("Call `hio_sys_sem_take` failed");
         return -4;
     }
 
@@ -467,7 +466,7 @@ hio_lte_uart_recv(char **s, int64_t timeout)
     ret = hio_sys_msgq_get(&rx_msgq, &p, timeout);
 
     if (ret < 0) {
-        hio_log_err("Call `hio_sys_msgq_get` failed: %d", ret);
+        LOG_ERR("Call `hio_sys_msgq_get` failed: %d", ret);
         *s = NULL;
         return -ETIMEDOUT;
     }

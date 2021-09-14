@@ -1,14 +1,14 @@
 #include <hio_test.h>
 #include <hio_bsp.h>
-#include <hio_log.h>
 #include <hio_lte_talk.h>
 #include <hio_lte_uart.h>
 
 // Zephyr includes
+#include <logging/log.h>
 #include <shell/shell.h>
 #include <zephyr.h>
 
-HIO_LOG_REGISTER(hio_test, HIO_LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(hio_test, LOG_LEVEL_DBG);
 
 static bool active;
 static bool blocked;
@@ -54,7 +54,7 @@ cmd_test_lte_ant_int(const struct shell *shell,
     }
 
     if (hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT) < 0) {
-        hio_log_err("Call `hio_bsp_set_rf_ant` failed");
+        LOG_ERR("Call `hio_bsp_set_rf_ant` failed");
         return -2;
     }
 
@@ -74,7 +74,7 @@ cmd_test_lte_ant_ext(const struct shell *shell,
     }
 
     if (hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_EXT) < 0) {
-        hio_log_err("Call `hio_bsp_set_rf_ant` failed");
+        LOG_ERR("Call `hio_bsp_set_rf_ant` failed");
         return -2;
     }
 
@@ -94,19 +94,19 @@ cmd_test_lte_reset(const struct shell *shell,
     }
 
     if (hio_lte_uart_enable() < 0) {
-        hio_log_err("Call `hio_lte_uart_enable` failed");
+        LOG_ERR("Call `hio_lte_uart_enable` failed");
         return -2;
     }
 
     if (hio_bsp_set_lte_reset(0) < 0) {
-        hio_log_err("Call `hio_bsp_set_lte_reset` failed");
+        LOG_ERR("Call `hio_bsp_set_lte_reset` failed");
         return -3;
     }
 
     hio_sys_task_sleep(HIO_SYS_MSEC(10));
 
     if (hio_bsp_set_lte_reset(1) < 0) {
-        hio_log_err("Call `hio_bsp_set_lte_reset` failed");
+        LOG_ERR("Call `hio_bsp_set_lte_reset` failed");
         return -3;
     }
 
@@ -126,19 +126,19 @@ cmd_test_lte_wakeup(const struct shell *shell,
     }
 
     if (hio_lte_uart_enable() < 0) {
-        hio_log_err("Call `hio_lte_uart_enable` failed");
+        LOG_ERR("Call `hio_lte_uart_enable` failed");
         return -3;
     }
 
     if (hio_bsp_set_lte_wkup(0) < 0) {
-        hio_log_err("Call `hio_bsp_set_lte_wkup` failed");
+        LOG_ERR("Call `hio_bsp_set_lte_wkup` failed");
         return -4;
     }
 
     hio_sys_task_sleep(HIO_SYS_MSEC(10));
 
     if (hio_bsp_set_lte_wkup(1) < 0) {
-        hio_log_err("Call `hio_bsp_set_lte_wkup` failed");
+        LOG_ERR("Call `hio_bsp_set_lte_wkup` failed");
         return -5;
     }
 
@@ -158,14 +158,14 @@ cmd_test_lte_sleep(const struct shell *shell,
     }
 
     if (hio_lte_talk_cmd("AT#XSLEEP=2") < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd` failed");
+        LOG_ERR("Call `hio_lte_talk_cmd` failed");
         return -2;
     }
 
     hio_sys_task_sleep(HIO_SYS_SECONDS(1));
 
     if (hio_lte_uart_disable() < 0) {
-        hio_log_err("Call `hio_lte_uart_disable` failed");
+        LOG_ERR("Call `hio_lte_uart_disable` failed");
         return -3;
     }
 
@@ -187,7 +187,7 @@ cmd_test_lte_cmd(const struct shell *shell,
     }
 
     if (hio_lte_talk_cmd("%s", argv[1]) < 0) {
-        hio_log_err("Call `hio_lte_talk_cmd` failed");
+        LOG_ERR("Call `hio_lte_talk_cmd` failed");
         return -3;
     }
 
@@ -213,20 +213,20 @@ cmd_test_start(const struct shell *shell,
 
     active = true;
 
-    hio_log_inf("Test mode started");
+    LOG_INF("Test mode started");
 
     if (hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT) < 0) {
-        hio_log_fat("Call `hio_bsp_set_rf_ant` failed");
+        LOG_ERR("Call `hio_bsp_set_rf_ant` failed");
         return -3;
     }
 
     if (hio_bsp_set_rf_mux(HIO_BSP_RF_MUX_LTE) < 0) {
-        hio_log_fat("Call `hio_bsp_set_rf_mux` failed");
+        LOG_ERR("Call `hio_bsp_set_rf_mux` failed");
         return -4;
     }
 
     if (hio_lte_uart_init() < 0) {
-        hio_log_fat("Call `hio_lte_uart_init` failed");
+        LOG_ERR("Call `hio_lte_uart_init` failed");
         return -5;
     }
 
