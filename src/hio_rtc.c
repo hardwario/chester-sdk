@@ -16,15 +16,15 @@
 
 LOG_MODULE_REGISTER(hio_rtc, LOG_LEVEL_DBG);
 
-static const nrfx_rtc_t rtc = NRFX_RTC_INSTANCE(0);
-static struct onoff_client lfclk_cli;
+static const nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(0);
+static struct onoff_client m_lfclk_cli;
 
-static int year = 1970;
-static int month = 1;
-static int day = 1;
-static int hours = 0;
-static int minutes = 0;
-static int seconds = 0;
+static int m_year = 1970;
+static int m_month = 1;
+static int m_day = 1;
+static int m_hours = 0;
+static int m_minutes = 0;
+static int m_seconds = 0;
 
 static int get_days_in_month(int year, int month)
 {
@@ -61,22 +61,22 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type)
 
     prescaler = 0;
 
-    if (++seconds >= 60) {
-        seconds = 0;
+    if (++m_seconds >= 60) {
+        m_seconds = 0;
 
-        if (++minutes >= 60) {
-            minutes = 0;
+        if (++m_minutes >= 60) {
+            m_minutes = 0;
 
-            if (++hours >= 24) {
-                hours = 0;
+            if (++m_hours >= 24) {
+                m_hours = 0;
 
-                if (++day > get_days_in_month(year, month)) {
-                    day = 1;
+                if (++m_day > get_days_in_month(m_year, m_month)) {
+                    m_day = 1;
 
-                    if (++month > 12) {
-                        month = 1;
+                    if (++m_month > 12) {
+                        m_month = 1;
 
-                        ++year;
+                        ++m_year;
                     }
                 }
             }
@@ -99,9 +99,9 @@ static int request_lfclk(void)
     static struct k_poll_signal sig;
 
     k_poll_signal_init(&sig);
-    sys_notify_init_signal(&lfclk_cli.notify, &sig);
+    sys_notify_init_signal(&m_lfclk_cli.notify, &sig);
 
-    ret = onoff_request(mgr, &lfclk_cli);
+    ret = onoff_request(mgr, &m_lfclk_cli);
 
     if (ret < 0) {
         LOG_ERR("Call `onoff_request` failed: %d", ret);
@@ -138,15 +138,15 @@ int hio_rtc_init(void)
     nrfx_rtc_config_t config = NRFX_RTC_DEFAULT_CONFIG;
     config.prescaler = 4095;
 
-    nrfx_err_t err = nrfx_rtc_init(&rtc, &config, rtc_handler);
+    nrfx_err_t err = nrfx_rtc_init(&m_rtc, &config, rtc_handler);
 
     if (err != NRFX_SUCCESS) {
         LOG_ERR("Call `nrfx_rtc_init` failed: %d", (int)err);
         return -EIO;
     }
 
-    nrfx_rtc_tick_enable(&rtc, true);
-    nrfx_rtc_enable(&rtc);
+    nrfx_rtc_tick_enable(&m_rtc, true);
+    nrfx_rtc_enable(&m_rtc);
 
     IRQ_CONNECT(RTC0_IRQn, 0, nrfx_rtc_0_irq_handler, NULL, 0);
     irq_enable(RTC0_IRQn);
@@ -158,12 +158,12 @@ int hio_rtc_get(struct hio_rtc_tm *tm)
 {
     irq_disable(RTC0_IRQn);
 
-    tm->year = year;
-    tm->month = month;
-    tm->day = day;
-    tm->hours = hours;
-    tm->minutes = minutes;
-    tm->seconds = seconds;
+    tm->year = m_year;
+    tm->month = m_month;
+    tm->day = m_day;
+    tm->hours = m_hours;
+    tm->minutes = m_minutes;
+    tm->seconds = m_seconds;
 
     irq_enable(RTC0_IRQn);
 
@@ -198,12 +198,12 @@ int hio_rtc_set(const struct hio_rtc_tm *tm)
 
     irq_disable(RTC0_IRQn);
 
-    year = tm->year;
-    month = tm->month;
-    day = tm->day;
-    hours = tm->hours;
-    minutes = tm->minutes;
-    seconds = tm->seconds;
+    m_year = tm->year;
+    m_month = tm->month;
+    m_day = tm->day;
+    m_hours = tm->hours;
+    m_minutes = tm->minutes;
+    m_seconds = tm->seconds;
 
     irq_enable(RTC0_IRQn);
 
