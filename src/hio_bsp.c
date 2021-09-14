@@ -14,66 +14,66 @@
 
 LOG_MODULE_REGISTER(hio_bsp, LOG_LEVEL_DBG);
 
-#define DEV_LED_R dev_gpio_1
+#define DEV_LED_R m_dev_gpio_1
 #define PIN_LED_R 13
 
-#define DEV_LED_G dev_gpio_1
+#define DEV_LED_G m_dev_gpio_1
 #define PIN_LED_G 11
 
-#define DEV_LED_Y dev_gpio_1
+#define DEV_LED_Y m_dev_gpio_1
 #define PIN_LED_Y 12
 
-#define DEV_LED_EXT dev_gpio_1
+#define DEV_LED_EXT m_dev_gpio_1
 #define PIN_LED_EXT 4
 
-#define DEV_BTN_INT dev_gpio_0
+#define DEV_BTN_INT m_dev_gpio_0
 #define PIN_BTN_INT 27
 
-#define DEV_BTN_EXT dev_gpio_0
+#define DEV_BTN_EXT m_dev_gpio_0
 #define PIN_BTN_EXT 26
 
-#define DEV_BAT_LOAD dev_gpio_1
+#define DEV_BAT_LOAD m_dev_gpio_1
 #define PIN_BAT_LOAD 14
 
-#define DEV_SLPZ dev_gpio_1
+#define DEV_SLPZ m_dev_gpio_1
 #define PIN_SLPZ 10
 
-#define DEV_GNSS_ON dev_gpio_1
+#define DEV_GNSS_ON m_dev_gpio_1
 #define PIN_GNSS_ON 1
 
-#define DEV_GNSS_RTC dev_gpio_1
+#define DEV_GNSS_RTC m_dev_gpio_1
 #define PIN_GNSS_RTC 3
 
-#define DEV_RF_INT dev_gpio_0
+#define DEV_RF_INT m_dev_gpio_0
 #define PIN_RF_INT 9
 
-#define DEV_RF_EXT dev_gpio_0
+#define DEV_RF_EXT m_dev_gpio_0
 #define PIN_RF_EXT 10
 
-#define DEV_RF_LTE dev_gpio_0
+#define DEV_RF_LTE m_dev_gpio_0
 #define PIN_RF_LTE 25
 
-#define DEV_RF_LRW dev_gpio_1
+#define DEV_RF_LRW m_dev_gpio_1
 #define PIN_RF_LRW 2
 
-#define DEV_LTE_RESET dev_gpio_1
+#define DEV_LTE_RESET m_dev_gpio_1
 #define PIN_LTE_RESET 7
 
-#define DEV_LTE_WKUP dev_gpio_0
+#define DEV_LTE_WKUP m_dev_gpio_0
 #define PIN_LTE_WKUP 15
 
-#define DEV_LRW_RESET dev_gpio_0
+#define DEV_LRW_RESET m_dev_gpio_0
 #define PIN_LRW_RESET 11
 
-static const struct device *dev_gpio_0;
-static const struct device *dev_gpio_1;
-static const struct device *dev_i2c_0;
-static const struct device *dev_spi_1;
+static const struct device *m_dev_gpio_0;
+static const struct device *m_dev_gpio_1;
+static const struct device *m_dev_i2c_0;
+static const struct device *m_dev_spi_1;
 
-static hio_bus_i2c_t i2c;
+static hio_bus_i2c_t m_i2c;
 
-static hio_drv_sht30_t sht30;
-static hio_drv_tmp112_t tmp112;
+static hio_drv_sht30_t m_sht30;
+static hio_drv_tmp112_t m_tmp112;
 
 static int init_rtc(void)
 {
@@ -91,16 +91,16 @@ static int init_rtc(void)
 
 static int init_gpio(void)
 {
-    dev_gpio_0 = device_get_binding("GPIO_0");
+    m_dev_gpio_0 = device_get_binding("GPIO_0");
 
-    if (dev_gpio_0 == NULL) {
+    if (m_dev_gpio_0 == NULL) {
         LOG_ERR("Call `device_get_binding` failed");
         return -ENODEV;
     }
 
-    dev_gpio_1 = device_get_binding("GPIO_1");
+    m_dev_gpio_1 = device_get_binding("GPIO_1");
 
-    if (dev_gpio_1 == NULL) {
+    if (m_dev_gpio_1 == NULL) {
         LOG_ERR("Call `device_get_binding` failed");
         return -ENODEV;
     }
@@ -170,30 +170,30 @@ static int init_i2c(void)
 {
     int ret;
 
-    dev_i2c_0 = device_get_binding("I2C_0");
+    m_dev_i2c_0 = device_get_binding("I2C_0");
 
-    if (dev_i2c_0 == NULL) {
+    if (m_dev_i2c_0 == NULL) {
         LOG_ERR("Call `device_get_binding` failed");
         return -ENODEV;
     }
 
     const hio_bus_i2c_driver_t *i2c_drv = hio_bsp_i2c_get_driver();
 
-    ret = hio_bus_i2c_init(&i2c, i2c_drv, (void *)dev_i2c_0);
+    ret = hio_bus_i2c_init(&m_i2c, i2c_drv, (void *)m_dev_i2c_0);
 
     if (ret < 0) {
         LOG_ERR("Call `hio_bus_i2c_init` failed: %d", ret);
         return ret;
     }
 
-    ret = hio_drv_sht30_init(&sht30, &i2c, 0x45);
+    ret = hio_drv_sht30_init(&m_sht30, &m_i2c, 0x45);
 
     if (ret < 0) {
         LOG_ERR("Call `hio_drv_sht30_init` failed: %d", ret);
         return ret;
     }
 
-    ret = hio_drv_tmp112_init(&tmp112, &i2c, 0x48);
+    ret = hio_drv_tmp112_init(&m_tmp112, &m_i2c, 0x48);
 
     if (ret < 0) {
         LOG_ERR("Call `hio_drv_tmp112_init` failed: %d", ret);
@@ -207,7 +207,7 @@ static int init_tmp112(void)
 {
     int ret;
 
-    ret = hio_drv_tmp112_sleep(&tmp112);
+    ret = hio_drv_tmp112_sleep(&m_tmp112);
 
     if (ret < 0) {
         LOG_ERR("Call `hio_drv_tmp112_sleep` failed: %d", ret);
@@ -221,16 +221,16 @@ static int init_flash(void)
 {
     int ret;
 
-    dev_spi_1 = device_get_binding("SPI_1");
+    m_dev_spi_1 = device_get_binding("SPI_1");
 
-    if (dev_spi_1 == NULL) {
+    if (m_dev_spi_1 == NULL) {
         LOG_ERR("Call `device_get_binding` failed");
         return -ENODEV;
     }
 
     struct spi_cs_control spi_cs = {0};
 
-    spi_cs.gpio_dev = dev_gpio_0;
+    spi_cs.gpio_dev = m_dev_gpio_0;
     spi_cs.gpio_pin = 23;
     spi_cs.gpio_dt_flags = GPIO_ACTIVE_LOW;
     spi_cs.delay = 2;
@@ -268,7 +268,7 @@ static int init_flash(void)
         .count = 1
     };
 
-    ret = spi_transceive(dev_spi_1, &spi_cfg, &tx, &rx);
+    ret = spi_transceive(m_dev_spi_1, &spi_cfg, &tx, &rx);
 
     if (ret < 0) {
         LOG_ERR("Call `spi_transceive` failed");
@@ -478,7 +478,7 @@ int hio_bsp_init(void)
 
 hio_bus_i2c_t *hio_bsp_get_i2c(void)
 {
-    return &i2c;
+    return &m_i2c;
 }
 
 int hio_bsp_set_led(enum hio_bsp_led led, bool on)
@@ -818,7 +818,7 @@ int hio_bsp_sht30_measure(float *t, float *rh)
 {
     int ret;
 
-    ret = hio_drv_sht30_measure(&sht30, t, rh);
+    ret = hio_drv_sht30_measure(&m_sht30, t, rh);
 
     if (ret < 0) {
         LOG_ERR("Call `hio_drv_sht30_measure` failed: %d", ret);
@@ -832,7 +832,7 @@ int hio_bsp_tmp112_measure(float *t)
 {
     int ret;
 
-    ret = hio_drv_tmp112_measure(&tmp112, t);
+    ret = hio_drv_tmp112_measure(&m_tmp112, t);
 
     if (ret < 0) {
         LOG_ERR("Call `hio_bsp_tmp112_measure` failed: %d", ret);
