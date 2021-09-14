@@ -19,7 +19,7 @@ struct show_item {
     sys_snode_t node;
 };
 
-static sys_slist_t show_list = SYS_SLIST_STATIC_INIT(&show_list);
+static sys_slist_t m_show_list = SYS_SLIST_STATIC_INIT(&m_show_list);
 
 void hio_config_append_show(const char *name, hio_config_show_cb cb)
 {
@@ -32,14 +32,14 @@ void hio_config_append_show(const char *name, hio_config_show_cb cb)
 
     item->cb = cb;
 
-    sys_slist_append(&show_list, &item->node);
+    sys_slist_append(&m_show_list, &item->node);
 }
 
 static int cmd_modules(const struct shell *shell, size_t argc, char **argv)
 {
     struct show_item *item;
 
-    SYS_SLIST_FOR_EACH_CONTAINER(&show_list, item, node) {
+    SYS_SLIST_FOR_EACH_CONTAINER(&m_show_list, item, node) {
         shell_print(shell, "%s", item->name);
     }
 
@@ -52,7 +52,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 
     struct show_item *item;
 
-    SYS_SLIST_FOR_EACH_CONTAINER(&show_list, item, node) {
+    SYS_SLIST_FOR_EACH_CONTAINER(&m_show_list, item, node) {
         if (item->cb != NULL) {
             ret = item->cb(shell, argc, argv);
             if (ret < 0) {
