@@ -10,7 +10,7 @@
 LOG_MODULE_REGISTER(hio_drv_tmp112, LOG_LEVEL_DBG);
 
 int hio_drv_tmp112_init(struct hio_drv_tmp112 *ctx,
-                        hio_bus_i2c_t *i2c, uint8_t dev_addr)
+                        struct hio_bus_i2c *i2c, uint8_t dev_addr)
 {
     memset(ctx, 0, sizeof(*ctx));
 

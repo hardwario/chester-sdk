@@ -10,7 +10,7 @@
 LOG_MODULE_REGISTER(hio_drv_sht30, LOG_LEVEL_DBG);
 
 int hio_drv_sht30_init(struct hio_drv_sht30 *ctx,
-                       hio_bus_i2c_t *i2c, uint8_t dev_addr)
+                       struct hio_bus_i2c *i2c, uint8_t dev_addr)
 {
     memset(ctx, 0, sizeof(*ctx));
 
@@ -26,7 +26,7 @@ static int reset(struct hio_drv_sht30 *ctx)
 
     uint8_t buf[] = {0x30, 0xa2};
 
-    hio_bus_i2c_xfer_t xfer = {
+    struct hio_bus_i2c_xfer xfer = {
         .dev_addr = ctx->dev_addr,
         .buf = buf,
         .len = sizeof(buf)
@@ -48,7 +48,7 @@ static int measure(struct hio_drv_sht30 *ctx)
 
     uint8_t buf[] = {0x24, 0x00};
 
-    hio_bus_i2c_xfer_t xfer = {
+    struct hio_bus_i2c_xfer xfer = {
         .dev_addr = ctx->dev_addr,
         .buf = buf,
         .len = sizeof(buf)
@@ -68,7 +68,7 @@ static int read(struct hio_drv_sht30 *ctx, uint8_t *buf)
 {
     int ret;
 
-    hio_bus_i2c_xfer_t xfer = {
+    struct hio_bus_i2c_xfer xfer = {
         .dev_addr = ctx->dev_addr,
         .buf = buf,
         .len = 6

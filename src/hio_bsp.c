@@ -70,7 +70,7 @@ static const struct device *m_dev_gpio_1;
 static const struct device *m_dev_i2c_0;
 static const struct device *m_dev_spi_1;
 
-static hio_bus_i2c_t m_i2c;
+static struct hio_bus_i2c m_i2c;
 
 static struct hio_drv_sht30 m_sht30;
 static struct hio_drv_tmp112 m_tmp112;
@@ -177,7 +177,7 @@ static int init_i2c(void)
         return -ENODEV;
     }
 
-    const hio_bus_i2c_driver_t *i2c_drv = hio_bsp_i2c_get_driver();
+    const struct hio_bus_i2c_driver *i2c_drv = hio_bsp_i2c_get_driver();
 
     ret = hio_bus_i2c_init(&m_i2c, i2c_drv, (void *)m_dev_i2c_0);
 
@@ -476,7 +476,7 @@ int hio_bsp_init(void)
     return 0;
 }
 
-hio_bus_i2c_t *hio_bsp_get_i2c(void)
+struct hio_bus_i2c *hio_bsp_get_i2c(void)
 {
     return &m_i2c;
 }

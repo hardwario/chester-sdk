@@ -8,13 +8,13 @@
 #include <stdint.h>
 
 struct hio_drv_sht30 {
-    hio_bus_i2c_t *i2c;
+    struct hio_bus_i2c *i2c;
     uint8_t dev_addr;
     bool ready;
 };
 
 int hio_drv_sht30_init(struct hio_drv_sht30 *ctx,
-                       hio_bus_i2c_t *i2c, uint8_t dev_addr);
+                       struct hio_bus_i2c *i2c, uint8_t dev_addr);
 int hio_drv_sht30_measure(struct hio_drv_sht30 *ctx, float *t, float *rh);
 
 #endif

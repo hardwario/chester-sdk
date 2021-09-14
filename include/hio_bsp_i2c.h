@@ -3,7 +3,6 @@
 
 #include <hio_bus_i2c.h>
 
-const hio_bus_i2c_driver_t *
-hio_bsp_i2c_get_driver(void);
+const struct hio_bus_i2c_driver *hio_bsp_i2c_get_driver(void);
 
 #endif
