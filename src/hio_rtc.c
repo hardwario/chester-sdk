@@ -26,8 +26,7 @@ static int hours = 0;
 static int minutes = 0;
 static int seconds = 0;
 
-static int
-get_days_in_month(int year, int month)
+static int get_days_in_month(int year, int month)
 {
     if (month < 1 || month > 12) {
         return 0;
@@ -48,8 +47,7 @@ get_days_in_month(int year, int month)
     return 31;
 }
 
-static void
-rtc_handler(nrfx_rtc_int_type_t int_type)
+static void rtc_handler(nrfx_rtc_int_type_t int_type)
 {
     if (int_type != NRFX_RTC_INT_TICK) {
         return;
@@ -86,15 +84,16 @@ rtc_handler(nrfx_rtc_int_type_t int_type)
     }
 }
 
-static int
-request_lfclk(void)
+static int request_lfclk(void)
 {
+    int ret;
+
     struct onoff_manager *mgr =
         z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
 
     if (mgr == NULL) {
         LOG_ERR("Call `z_nrf_clock_control_get_onoff` failed");
-        return -1;
+        return -ENXIO;
     }
 
     static struct k_poll_signal sig;
@@ -102,9 +101,11 @@ request_lfclk(void)
     k_poll_signal_init(&sig);
     sys_notify_init_signal(&lfclk_cli.notify, &sig);
 
-    if (onoff_request(mgr, &lfclk_cli) < 0) {
-        LOG_ERR("Call `onoff_request` failed");
-        return -2;
+    ret = onoff_request(mgr, &lfclk_cli);
+
+    if (ret < 0) {
+        LOG_ERR("Call `onoff_request` failed: %d", ret);
+        return ret;
     }
 
     struct k_poll_event events[] = {
@@ -113,28 +114,35 @@ request_lfclk(void)
                                  &sig)
     };
 
-    if (k_poll(events, ARRAY_SIZE(events), K_FOREVER) < 0) {
-        LOG_ERR("Call `k_poll` failed");
-        return -3;
+    ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_poll` failed: %d", ret);
+        return ret;
     }
 
     return 0;
 }
 
-int
-hio_rtc_init(void)
+int hio_rtc_init(void)
 {
-    if (request_lfclk() < 0) {
-        LOG_ERR("Call `request_lfclk` failed");
-        return -1;
+    int ret;
+
+    ret = request_lfclk();
+
+    if (ret < 0) {
+        LOG_ERR("Call `request_lfclk` failed: %d", ret);
+        return ret;
     }
 
     nrfx_rtc_config_t config = NRFX_RTC_DEFAULT_CONFIG;
     config.prescaler = 4095;
 
-    if (nrfx_rtc_init(&rtc, &config, rtc_handler) != NRFX_SUCCESS) {
-        LOG_ERR("Call `nrfx_rtc_init` failed");
-        return -2;
+    nrfx_err_t err = nrfx_rtc_init(&rtc, &config, rtc_handler);
+
+    if (err != NRFX_SUCCESS) {
+        LOG_ERR("Call `nrfx_rtc_init` failed: %d", (int)err);
+        return -EIO;
     }
 
     nrfx_rtc_tick_enable(&rtc, true);
@@ -146,8 +154,7 @@ hio_rtc_init(void)
     return 0;
 }
 
-int
-hio_rtc_get(hio_rtc_tm_t *tm)
+int hio_rtc_get(struct hio_rtc_tm *tm)
 {
     irq_disable(RTC0_IRQn);
 
@@ -163,31 +170,30 @@ hio_rtc_get(hio_rtc_tm_t *tm)
     return 0;
 }
 
-int
-hio_rtc_set(const hio_rtc_tm_t *tm)
+int hio_rtc_set(const struct hio_rtc_tm *tm)
 {
     if (tm->year < 1970 || tm->year > 2099) {
-        return -1;
+        return -EINVAL;
     }
 
     if (tm->month < 1 || tm->month > 12) {
-        return -2;
+        return -EINVAL;
     }
 
     if (tm->day < 1 || tm->day > get_days_in_month(tm->year, tm->month)) {
-        return -3;
+        return -EINVAL;
     }
 
     if (tm->hours < 0 || tm->hours > 23) {
-        return -4;
+        return -EINVAL;
     }
 
     if (tm->minutes < 0 || tm->minutes > 59) {
-        return -5;
+        return -EINVAL;
     }
 
     if (tm->seconds < 0 || tm->seconds > 59) {
-        return -6;
+        return -EINVAL;
     }
 
     irq_disable(RTC0_IRQn);
@@ -204,18 +210,20 @@ hio_rtc_set(const hio_rtc_tm_t *tm)
     return 0;
 }
 
-static int
-cmd_rtc_get(const struct shell *shell,
-            size_t argc, char **argv)
+static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
 
-    hio_rtc_tm_t tm;
+    int ret;
 
-    if (hio_rtc_get(&tm) < 0) {
-        LOG_ERR("Call `hio_rtc_get` failed");
-        return -1;
+    struct hio_rtc_tm tm;
+
+    ret = hio_rtc_get(&tm);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_rtc_get` failed: %d", ret);
+        return ret;
     }
 
     shell_print(shell, "%04d/%02d/%02d %02d:%02d:%02d",
@@ -224,11 +232,11 @@ cmd_rtc_get(const struct shell *shell,
     return 0;
 }
 
-static int
-cmd_rtc_set(const struct shell *shell,
-            size_t argc, char **argv)
+static int cmd_rtc_set(const struct shell *shell, size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
+
+    int ret;
 
     char *date = argv[1];
     char *time = argv[2];
@@ -246,7 +254,7 @@ cmd_rtc_set(const struct shell *shell,
         !isdigit((unsigned char)date[9])
     ) {
         shell_help(shell);
-        return -1;
+        return -EINVAL;
     }
 
     if (strlen(time) != 8 ||
@@ -260,7 +268,7 @@ cmd_rtc_set(const struct shell *shell,
         !isdigit((unsigned char)time[7])
     ) {
         shell_help(shell);
-        return -2;
+        return -EINVAL;
     }
 
     date[4] = '\0';
@@ -268,24 +276,20 @@ cmd_rtc_set(const struct shell *shell,
     time[2] = '\0';
     time[5] = '\0';
 
-    hio_rtc_tm_t tm;
+    struct hio_rtc_tm tm;
 
-    tm.year =
-        atoi(&date[0]);
-    tm.month =
-        atoi(&date[5]);
-    tm.day =
-        atoi(&date[8]);
-    tm.hours =
-        atoi(&time[0]);
-    tm.minutes =
-        atoi(&time[3]);
-    tm.seconds =
-        atoi(&time[6]);
+    tm.year = atoi(&date[0]);
+    tm.month = atoi(&date[5]);
+    tm.day = atoi(&date[8]);
+    tm.hours = atoi(&time[0]);
+    tm.minutes = atoi(&time[3]);
+    tm.seconds = atoi(&time[6]);
 
-    if (hio_rtc_set(&tm) < 0) {
-        LOG_ERR("Call `hio_rtc_set` failed");
-        return -3;
+    ret = hio_rtc_set(&tm);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_rtc_set` failed: %d", ret);
+        return ret;
     }
 
     return 0;
@@ -306,10 +310,12 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_rtc,
-    SHELL_CMD_ARG(get, NULL, "Get current date/time (format YYYY/MM/DD hh:mm:ss).",
-                  cmd_rtc_get, 1, 0),
-    SHELL_CMD_ARG(set, NULL, "Set current date/time (format YYYY/MM/DD hh:mm:ss).",
-                  cmd_rtc_set, 3, 0),
+    SHELL_CMD_ARG(get, NULL,
+                  "Get current date/time"
+                  "(format YYYY/MM/DD hh:mm:ss).", cmd_rtc_get, 1, 0),
+    SHELL_CMD_ARG(set, NULL,
+                  "Set current date/time"
+                  "(format YYYY/MM/DD hh:mm:ss).", cmd_rtc_set, 3, 0),
     SHELL_SUBCMD_SET_END
 );
 
