@@ -7,20 +7,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct {
+struct hio_drv_tmp112 {
     hio_bus_i2c_t *i2c;
     uint8_t dev_addr;
     bool ready;
-} hio_drv_tmp112_t;
+};
 
-int
-hio_drv_tmp112_init(hio_drv_tmp112_t *ctx,
-                    hio_bus_i2c_t *i2c, uint8_t dev_addr);
-
-int
-hio_drv_tmp112_measure(hio_drv_tmp112_t *ctx, float *t);
-
-int
-hio_drv_tmp112_sleep(hio_drv_tmp112_t *ctx);
+int hio_drv_tmp112_init(struct hio_drv_tmp112 *ctx,
+                        hio_bus_i2c_t *i2c, uint8_t dev_addr);
+int hio_drv_tmp112_measure(struct hio_drv_tmp112 *ctx, float *t);
+int hio_drv_tmp112_sleep(struct hio_drv_tmp112 *ctx);
 
 #endif

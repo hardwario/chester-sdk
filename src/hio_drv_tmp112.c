@@ -1,5 +1,4 @@
 #include <hio_drv_tmp112.h>
-#include <hio_sys.h>
 
 // Zephyr includes
 #include <logging/log.h>
@@ -10,9 +9,8 @@
 
 LOG_MODULE_REGISTER(hio_drv_tmp112, LOG_LEVEL_DBG);
 
-int
-hio_drv_tmp112_init(hio_drv_tmp112_t *ctx,
-                    hio_bus_i2c_t *i2c, uint8_t dev_addr)
+int hio_drv_tmp112_init(struct hio_drv_tmp112 *ctx,
+                        hio_bus_i2c_t *i2c, uint8_t dev_addr)
 {
     memset(ctx, 0, sizeof(*ctx));
 
@@ -22,79 +20,96 @@ hio_drv_tmp112_init(hio_drv_tmp112_t *ctx,
     return 0;
 }
 
-static int
-init(hio_drv_tmp112_t *ctx)
+static int init(struct hio_drv_tmp112 *ctx)
 {
-    if (hio_bus_i2c_mem_write_16b(ctx->i2c, ctx->dev_addr, 0x01, 0x0180) < 0) {
-        LOG_ERR("Call `hio_bus_i2c_mem_write_16b` failed [%p]", ctx);
-        return -1;
+    int ret;
+
+    ret = hio_bus_i2c_mem_write_16b(ctx->i2c, ctx->dev_addr, 0x01, 0x0180);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bus_i2c_mem_write_16b` failed [%p]: %d", ctx, ret);
+        return ret;
     }
 
     return 0;
 }
 
-static int
-measure(hio_drv_tmp112_t *ctx)
+static int measure(struct hio_drv_tmp112 *ctx)
 {
-    if (hio_bus_i2c_mem_write_8b(ctx->i2c, ctx->dev_addr, 0x01, 0x81) < 0) {
-        LOG_ERR("Call `hio_bus_i2c_mem_write_8b` failed [%p]", ctx);
-        return -1;
+    int ret;
+
+    ret = hio_bus_i2c_mem_write_8b(ctx->i2c, ctx->dev_addr, 0x01, 0x81);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bus_i2c_mem_write_8b` failed [%p]: %d", ctx, ret);
+        return ret;
     }
 
     return 0;
 }
 
-static int
-read(hio_drv_tmp112_t *ctx, uint16_t *data)
+static int read(struct hio_drv_tmp112 *ctx, uint16_t *data)
 {
+    int ret;
     uint8_t reg;
 
-    if (hio_bus_i2c_mem_read_8b(ctx->i2c, ctx->dev_addr, 0x01, &reg) < 0) {
-        LOG_ERR("Call `hio_bus_i2c_mem_read_8b` failed [%p]", ctx);
-        return -1;
+    ret = hio_bus_i2c_mem_read_8b(ctx->i2c, ctx->dev_addr, 0x01, &reg);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bus_i2c_mem_read_8b` failed [%p]: %d", ctx, ret);
+        return ret;
     }
 
     if ((reg & 0x81) != 0x81) {
         LOG_ERR("Unexpected value (0x%02x) [%p]", reg, ctx);
-        return -2;
+        return -EIO;
     }
 
-    if (hio_bus_i2c_mem_read_16b(ctx->i2c, ctx->dev_addr, 0x00, data) < 0) {
-        LOG_ERR("Call `hio_bus_i2c_mem_read_16b` failed [%p]", ctx);
-        return -3;
+    ret = hio_bus_i2c_mem_read_16b(ctx->i2c, ctx->dev_addr, 0x00, data);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bus_i2c_mem_read_16b` failed [%p]: %d", ctx, ret);
+        return ret;
     }
 
     return 0;
 }
 
-int
-hio_drv_tmp112_measure(hio_drv_tmp112_t *ctx, float *t)
+int hio_drv_tmp112_measure(struct hio_drv_tmp112 *ctx, float *t)
 {
+    int ret;
+
     if (!ctx->ready) {
-        if (init(ctx) < 0) {
-            LOG_ERR("Call `init` failed [%p]", ctx);
-            return -1;
+        ret = init(ctx);
+
+        if (ret < 0) {
+            LOG_ERR("Call `init` failed [%p]: %d", ctx, ret);
+            return ret;
         }
 
         ctx->ready = true;
 
-        hio_sys_task_sleep(HIO_SYS_MSEC(100));
+        k_sleep(K_MSEC(100));
     }
 
-    if (measure(ctx) < 0) {
-        LOG_ERR("Call `measure` failed [%p]", ctx);
+    ret = measure(ctx);
+
+    if (ret < 0) {
+        LOG_ERR("Call `measure` failed [%p]: %d", ctx, ret);
         ctx->ready = false;
-        return -2;
+        return ret;
     }
 
-    hio_sys_task_sleep(HIO_SYS_MSEC(100));
+    k_sleep(K_MSEC(100));
 
     uint16_t data;
 
-    if (read(ctx, &data) < 0) {
-        LOG_ERR("Call `read` failed [%p]", ctx);
+    ret = read(ctx, &data);
+
+    if (ret < 0) {
+        LOG_ERR("Call `read` failed [%p]: %d", ctx, ret);
         ctx->ready = false;
-        return -3;
+        return ret;
     }
 
     int16_t reg_t = (int16_t)data >> 4;
@@ -103,12 +118,15 @@ hio_drv_tmp112_measure(hio_drv_tmp112_t *ctx, float *t)
     return 0;
 }
 
-int
-hio_drv_tmp112_sleep(hio_drv_tmp112_t *ctx)
+int hio_drv_tmp112_sleep(struct hio_drv_tmp112 *ctx)
 {
-    if (init(ctx) < 0) {
-        LOG_ERR("Call `init` failed [%p]", ctx);
-        return -1;
+    int ret;
+
+    ret = init(ctx);
+
+    if (ret < 0) {
+        LOG_ERR("Call `init` failed [%p]: %d", ctx, ret);
+        return ret;
     }
 
     return 0;

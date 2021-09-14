@@ -8,7 +8,7 @@
 enum hio_lrw_talk_event {
     HIO_LRW_TALK_EVENT_BOOT = 0,
     HIO_LRW_TALK_EVENT_JOIN_OK = 1,
-    HIO_LRW_TALK_EVENT_JOIN_ERR = 2,
+    HIO_LRW_TALK_EVENT_JOIN_ERR = 2
 };
 
 typedef void (*hio_lrw_talk_event_cb)(enum hio_lrw_talk_event event);

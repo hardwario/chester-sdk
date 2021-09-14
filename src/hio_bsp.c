@@ -73,7 +73,7 @@ static const struct device *m_dev_spi_1;
 static hio_bus_i2c_t m_i2c;
 
 static hio_drv_sht30_t m_sht30;
-static hio_drv_tmp112_t m_tmp112;
+static struct hio_drv_tmp112 m_tmp112;
 
 static int init_rtc(void)
 {
