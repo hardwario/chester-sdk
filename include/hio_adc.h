@@ -4,23 +4,20 @@
 // Standard includes
 #include <stdint.h>
 
+#define HIO_ADC_MILLIVOLTS(_sample) ((uint32_t)(_sample) * 600 * 6 / 4095)
+
 enum hio_adc_channel {
-    HIO_ADC_CHANNEL_A0 = 0,
-    HIO_ADC_CHANNEL_A1 = 1,
-    HIO_ADC_CHANNEL_A2 = 2,
-    HIO_ADC_CHANNEL_A3 = 3,
+    HIO_ADC_CHANNEL_A0 = 1,
+    HIO_ADC_CHANNEL_A1 = 5,
+    HIO_ADC_CHANNEL_A2 = 0,
+    HIO_ADC_CHANNEL_A3 = 7,
     HIO_ADC_CHANNEL_B0 = 4,
-    HIO_ADC_CHANNEL_B1 = 5,
-    HIO_ADC_CHANNEL_B2 = 6,
-    HIO_ADC_CHANNEL_B3 = 7
+    HIO_ADC_CHANNEL_B1 = 6,
+    HIO_ADC_CHANNEL_B2 = 2,
+    HIO_ADC_CHANNEL_B3 = 3
 };
 
 int hio_adc_init(enum hio_adc_channel channel);
-
-int hio_adc_get_raw(enum hio_adc_channel_t channel,
-                    uint16_t *raw);
-
-int hio_adc_get_millivolts(enum hio_adc_channel_t channel,
-                           uint16_t *millivolts);
+int hio_adc_read(enum hio_adc_channel channel, uint16_t *sample);
 
 #endif

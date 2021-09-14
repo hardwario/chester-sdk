@@ -1,5 +1,6 @@
 zephyr_include_directories(include)
 
+target_sources(app PRIVATE src/hio_adc.c)
 target_sources(app PRIVATE src/hio_ble.c)
 target_sources(app PRIVATE src/hio_bsp_i2c.c)
 target_sources(app PRIVATE src/hio_bsp.c)
