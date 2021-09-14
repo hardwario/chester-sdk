@@ -2,7 +2,6 @@
 
 // Zephyr includes
 #include <logging/log.h>
-#include <zephyr.h>
 
 // Standard includes
 #include <string.h>
@@ -24,7 +23,7 @@ int hio_bus_i2c_init(struct hio_bus_i2c *ctx,
     ctx->drv = drv;
     ctx->drv_ctx = drv_ctx;
 
-    hio_sys_mut_init(&ctx->mut);
+    k_mutex_init(&ctx->mut);
 
     if (ctx->drv->init != NULL) {
         ret = ctx->drv->init(ctx->drv_ctx);
@@ -42,7 +41,7 @@ int hio_bus_i2c_acquire(struct hio_bus_i2c *ctx)
 {
     int ret;
 
-    hio_sys_mut_acquire(&ctx->mut);
+    k_mutex_lock(&ctx->mut, K_FOREVER);
 
     if ((ctx->acq_cnt)++ == 0) {
         if (ctx->drv->enable != NULL) {
@@ -53,7 +52,7 @@ int hio_bus_i2c_acquire(struct hio_bus_i2c *ctx)
             if (ret < 0) {
                 LOG_ERR("Call `ctx->drv->enable` failed [%p]: %d", ctx, ret);
 
-                hio_sys_mut_release(&ctx->mut);
+                k_mutex_unlock(&ctx->mut);
                 return ret;
             }
         }
@@ -81,13 +80,13 @@ int hio_bus_i2c_release(struct hio_bus_i2c *ctx)
             if (ret < 0) {
                 LOG_ERR("Call `ctx->drv->disable` failed [%p]: %d", ctx, ret);
 
-                hio_sys_mut_release(&ctx->mut);
+                k_mutex_unlock(&ctx->mut);
                 return ret;
             }
         }
     }
 
-    hio_sys_mut_release(&ctx->mut);
+    k_mutex_unlock(&ctx->mut);
     return 0;
 }
 

@@ -1,7 +1,8 @@
 #ifndef HIO_BUS_I2C_H
 #define HIO_BUS_I2C_H
 
-#include <hio_sys.h>
+// Zephyr includes
+#include <zephyr.h>
 
 // Standard includes
 #include <stddef.h>
@@ -50,7 +51,7 @@ struct hio_bus_i2c_driver {
 struct hio_bus_i2c {
     const struct hio_bus_i2c_driver *drv;
     void *drv_ctx;
-    hio_sys_mut_t mut;
+    struct k_mutex mut;
     int acq_cnt;
 };
 

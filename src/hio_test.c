@@ -10,224 +10,255 @@
 
 LOG_MODULE_REGISTER(hio_test, LOG_LEVEL_DBG);
 
-static bool active;
-static bool blocked;
+static atomic_t m_is_active;
+static atomic_t m_is_blocked;
 
-void
-hio_test_block(void)
+void hio_test_block(void)
 {
-    blocked = true;
+    atomic_set(&m_is_blocked, true);
 }
 
-bool
-hio_test_is_active(void)
+bool hio_test_is_active(void)
 {
-    return active;
+    return atomic_get(&m_is_active);
 }
 
-static int
-print_help(const struct shell *shell,
-           size_t argc, char **argv)
+static int print_help(const struct shell *shell,
+                      size_t argc, char **argv)
 {
-	int ret = 0;
+    if (argc > 1) {
+        shell_error(shell, "%s: Command not found", argv[1]);
+        shell_help(shell);
+        return -EINVAL;
+    }
 
-	if (argc > 1) {
-		shell_error(shell, "%s: Command not found", argv[1]);
-		ret = -1;
-	}
+    shell_help(shell);
 
-	shell_help(shell);
-
-	return ret;
+    return 0;
 }
 
-static int
-cmd_test_lte_ant_int(const struct shell *shell,
-                     size_t argc, char **argv)
+static int cmd_test_lte_ant_int(const struct shell *shell,
+                                size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
 
-    if (!active) {
+    int ret;
+
+    if (!atomic_get(&m_is_active)) {
         shell_print(shell, "Test mode is not activated");
-        return -1;
+        return -ENOEXEC;
     }
 
-    if (hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT) < 0) {
-        LOG_ERR("Call `hio_bsp_set_rf_ant` failed");
-        return -2;
+    ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_set_rf_ant` failed: %d", ret);
+        return ret;
     }
 
     return 0;
 }
 
-static int
-cmd_test_lte_ant_ext(const struct shell *shell,
-                     size_t argc, char **argv)
+static int cmd_test_lte_ant_ext(const struct shell *shell,
+                                size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
 
-    if (!active) {
+    int ret;
+
+    if (!atomic_get(&m_is_active)) {
         shell_print(shell, "Test mode is not activated");
-        return -1;
+        return -ENOEXEC;
     }
 
-    if (hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_EXT) < 0) {
-        LOG_ERR("Call `hio_bsp_set_rf_ant` failed");
-        return -2;
+    ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_EXT);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_set_rf_ant` failed: %d", ret);
+        return ret;
     }
 
     return 0;
 }
 
-static int
-cmd_test_lte_reset(const struct shell *shell,
-                   size_t argc, char **argv)
+static int cmd_test_lte_reset(const struct shell *shell,
+                              size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
 
-    if (!active) {
+    int ret;
+
+    if (!atomic_get(&m_is_active)) {
         shell_print(shell, "Test mode is not activated");
-        return -1;
+        return -ENOEXEC;
     }
 
-    if (hio_lte_uart_enable() < 0) {
-        LOG_ERR("Call `hio_lte_uart_enable` failed");
-        return -2;
+    ret = hio_lte_uart_enable();
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lte_uart_enable` failed: %d", ret);
+        return ret;
     }
 
-    if (hio_bsp_set_lte_reset(0) < 0) {
-        LOG_ERR("Call `hio_bsp_set_lte_reset` failed");
-        return -3;
+    ret = hio_bsp_set_lte_reset(0);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_set_lte_reset` failed: %d", ret);
+        return ret;
     }
 
-    hio_sys_task_sleep(HIO_SYS_MSEC(10));
+    k_sleep(K_MSEC(10));
 
-    if (hio_bsp_set_lte_reset(1) < 0) {
-        LOG_ERR("Call `hio_bsp_set_lte_reset` failed");
-        return -3;
+    ret = hio_bsp_set_lte_reset(1);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_set_lte_reset` failed: %d", ret);
+        return ret;
     }
 
     return 0;
 }
 
-static int
-cmd_test_lte_wakeup(const struct shell *shell,
-                    size_t argc, char **argv)
+static int cmd_test_lte_wakeup(const struct shell *shell,
+                               size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
 
-    if (!active) {
+    int ret;
+
+    if (!atomic_get(&m_is_active)) {
         shell_print(shell, "Test mode is not activated");
-        return -1;
+        return -ENOEXEC;
     }
 
-    if (hio_lte_uart_enable() < 0) {
-        LOG_ERR("Call `hio_lte_uart_enable` failed");
-        return -3;
+    ret = hio_lte_uart_enable();
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lte_uart_enable` failed: %d", ret);
+        return ret;
     }
 
-    if (hio_bsp_set_lte_wkup(0) < 0) {
-        LOG_ERR("Call `hio_bsp_set_lte_wkup` failed");
-        return -4;
+    ret = hio_bsp_set_lte_wkup(0);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_set_lte_wkup` failed: %d", ret);
+        return ret;
     }
 
-    hio_sys_task_sleep(HIO_SYS_MSEC(10));
+    k_sleep(K_MSEC(10));
 
-    if (hio_bsp_set_lte_wkup(1) < 0) {
-        LOG_ERR("Call `hio_bsp_set_lte_wkup` failed");
-        return -5;
+    ret = hio_bsp_set_lte_wkup(1);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_set_lte_wkup` failed: %d", ret);
+        return ret;
     }
 
     return 0;
 }
 
-static int
-cmd_test_lte_sleep(const struct shell *shell,
-                   size_t argc, char **argv)
+static int cmd_test_lte_sleep(const struct shell *shell,
+                              size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
 
-    if (!active) {
+    int ret;
+
+    if (!atomic_get(&m_is_active)) {
         shell_print(shell, "Test mode is not activated");
-        return -1;
+        return -ENOEXEC;
     }
 
-    if (hio_lte_talk_cmd("AT#XSLEEP=2") < 0) {
-        LOG_ERR("Call `hio_lte_talk_cmd` failed");
-        return -2;
+    ret = hio_lte_talk_cmd("AT#XSLEEP=2");
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lte_talk_cmd` failed: %d", ret);
+        return ret;
     }
 
-    hio_sys_task_sleep(HIO_SYS_SECONDS(1));
+    k_sleep(K_SECONDS(1));
 
-    if (hio_lte_uart_disable() < 0) {
-        LOG_ERR("Call `hio_lte_uart_disable` failed");
-        return -3;
+    ret = hio_lte_uart_disable();
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lte_uart_disable` failed: %d", ret);
+        return ret;
     }
 
     return 0;
 }
 
-static int
-cmd_test_lte_cmd(const struct shell *shell,
-                 size_t argc, char **argv)
+static int cmd_test_lte_cmd(const struct shell *shell,
+                            size_t argc, char **argv)
 {
-    if (!active) {
+    int ret;
+
+    if (!atomic_get(&m_is_active)) {
         shell_error(shell, "Test mode is not activated");
-        return -1;
+        return -ENOEXEC;
     }
 
     if (argc > 2) {
         shell_error(shell, "Only one argument is allowed (use quotes?)");
-        return -2;
+        return -EINVAL;
     }
 
-    if (hio_lte_talk_cmd("%s", argv[1]) < 0) {
-        LOG_ERR("Call `hio_lte_talk_cmd` failed");
-        return -3;
+    ret = hio_lte_talk_cmd("%s", argv[1]);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lte_talk_cmd` failed: %d", ret);
+        return ret;
     }
 
     return 0;
 }
 
-static int
-cmd_test_start(const struct shell *shell,
-         size_t argc, char **argv)
+static int cmd_test_start(const struct shell *shell,
+                          size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
 
-    if (active) {
+    int ret;
+
+    if (atomic_get(&m_is_active)) {
         shell_warn(shell, "Test mode is already active");
-        return -1;
+        return -ENOEXEC;
     }
 
-    if (blocked) {
+    if (atomic_get(&m_is_blocked)) {
         shell_error(shell, "Test mode activation is blocked");
-        return -2;
+        return -EBUSY;
     }
 
-    active = true;
+    atomic_set(&m_is_active, true);
 
     LOG_INF("Test mode started");
 
-    if (hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT) < 0) {
-        LOG_ERR("Call `hio_bsp_set_rf_ant` failed");
-        return -3;
+    ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_set_rf_ant` failed: %d", ret);
+        return ret;
     }
 
-    if (hio_bsp_set_rf_mux(HIO_BSP_RF_MUX_LTE) < 0) {
-        LOG_ERR("Call `hio_bsp_set_rf_mux` failed");
-        return -4;
+    ret = hio_bsp_set_rf_mux(HIO_BSP_RF_MUX_LTE);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_bsp_set_rf_mux` failed: %d", ret);
+        return ret;
     }
 
-    if (hio_lte_uart_init() < 0) {
-        LOG_ERR("Call `hio_lte_uart_init` failed");
-        return -5;
+    ret = hio_lte_uart_init();
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lte_uart_init` failed: %d", ret);
+        return ret;
     }
 
     return 0;

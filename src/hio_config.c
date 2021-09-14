@@ -155,7 +155,8 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
     return 0;
 }
 
-static int print_help(const struct shell *shell, size_t argc, char **argv)
+static int print_help(const struct shell *shell,
+                      size_t argc, char **argv)
 {
     if (argc > 1) {
         shell_error(shell, "%s: Command not found", argv[1]);

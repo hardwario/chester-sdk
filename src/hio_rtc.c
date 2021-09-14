@@ -210,7 +210,8 @@ int hio_rtc_set(const struct hio_rtc_tm *tm)
     return 0;
 }
 
-static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
+static int cmd_rtc_get(const struct shell *shell,
+                       size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
@@ -232,7 +233,8 @@ static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
     return 0;
 }
 
-static int cmd_rtc_set(const struct shell *shell, size_t argc, char **argv)
+static int cmd_rtc_set(const struct shell *shell,
+                       size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
 
@@ -295,7 +297,8 @@ static int cmd_rtc_set(const struct shell *shell, size_t argc, char **argv)
     return 0;
 }
 
-static int print_help(const struct shell *shell, size_t argc, char **argv)
+static int print_help(const struct shell *shell,
+                      size_t argc, char **argv)
 {
     if (argc > 1) {
         shell_error(shell, "%s: Command not found", argv[1]);
