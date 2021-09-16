@@ -1,0 +1,10 @@
+&i2c0 {
+	uart_x2: uart@50 {
+		compatible = "nxp,sc16is7xx";
+		reg = <0x50>;
+		clock-frequency = <14700000>;
+		prescaler = <1>;
+		label = "UART_X2";
+		irq-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+	};
+};

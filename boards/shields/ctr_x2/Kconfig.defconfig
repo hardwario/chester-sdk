@@ -1,0 +1,15 @@
+if SHIELD_CTR_X2
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config SERIAL
+	default y
+
+config UART_SC16IS7XX
+	default y
+
+endif # SHIELD_CTR_X2
