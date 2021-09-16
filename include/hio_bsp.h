@@ -3,8 +3,29 @@
 
 #include <hio_bus_i2c.h>
 
+// Zephyr includes
+#include <devicetree.h>
+
 // Standard includes
 #include <stdbool.h>
+
+#define HIO_BSP_GP0A_DEV DT_LABEL(DT_NODELABEL(gpio0))
+#define HIO_BSP_GP0A_PIN 3
+#define HIO_BSP_GP1A_DEV DT_LABEL(DT_NODELABEL(gpio0))
+#define HIO_BSP_GP1A_PIN 29
+#define HIO_BSP_GP2A_DEV DT_LABEL(DT_NODELABEL(gpio0))
+#define HIO_BSP_GP2A_PIN 2
+#define HIO_BSP_GP3A_DEV DT_LABEL(DT_NODELABEL(gpio0))
+#define HIO_BSP_GP3A_PIN 31
+
+#define HIO_BSP_GP0B_DEV DT_LABEL(DT_NODELABEL(gpio0))
+#define HIO_BSP_GP0B_PIN 28
+#define HIO_BSP_GP1B_DEV DT_LABEL(DT_NODELABEL(gpio0))
+#define HIO_BSP_GP1B_PIN 30
+#define HIO_BSP_GP2B_DEV DT_LABEL(DT_NODELABEL(gpio0))
+#define HIO_BSP_GP2B_PIN 4
+#define HIO_BSP_GP3B_DEV DT_LABEL(DT_NODELABEL(gpio0))
+#define HIO_BSP_GP3B_PIN 5
 
 enum hio_bsp_led {
     HIO_BSP_LED_R = 0,
