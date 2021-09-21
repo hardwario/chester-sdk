@@ -34,8 +34,8 @@ struct input {
     int pin;
     hio_chester_x0d_event_cb event_callback;
     void *event_param;
-    struct gpio_callback gpio_callback_rising;
-    struct gpio_callback gpio_callback_falling;
+    struct gpio_callback gpio_callback;
+    bool rising;
 };
 
 static struct input m_inputs[2][4] = {
@@ -104,33 +104,40 @@ struct event {
 
 static K_MEM_SLAB_DEFINE(m_event_slab, sizeof(struct event), 64, 4);
 
-static void gpio_callback_rising_handler(const struct device *port,
-                                         struct gpio_callback *cb,
-                                         gpio_port_pins_t pins)
+static void gpio_callback_handler(const struct device *port,
+                                  struct gpio_callback *cb,
+                                  gpio_port_pins_t pins)
 {
-    struct input *input =
-        CONTAINER_OF(cb, struct input, gpio_callback_rising);
+    int ret;
 
-    // TODO Call from k_work
-    if (input->event_callback != NULL) {
-        input->event_callback(input->slot, input->channel,
-                              HIO_CHESTER_X0D_EVENT_RISING,
-                              input->event_param);
+    struct input *input =
+        CONTAINER_OF(cb, struct input, gpio_callback);
+
+    const struct device *dev = device_get_binding(input->device_name);
+
+    if (dev == NULL) {
+        LOG_ERR("Call `device_get_binding` failed");
+        k_oops();
     }
-}
 
-static void gpio_callback_falling_handler(const struct device *port,
-                                          struct gpio_callback *cb,
-                                          gpio_port_pins_t pins)
-{
-    struct input *input =
-        CONTAINER_OF(cb, struct input, gpio_callback_falling);
+    enum hio_chester_x0d_event event = input->rising ?
+        HIO_CHESTER_X0D_EVENT_RISING : HIO_CHESTER_X0D_EVENT_FALLING;
+
+    ret = gpio_pin_interrupt_configure(dev, input->pin, input->rising ?
+                                       GPIO_INT_EDGE_FALLING :
+                                       GPIO_INT_EDGE_RISING);
+
+    if (ret < 0) {
+        LOG_ERR("Call `gpio_pin_interrupt_configure` failed: %d", ret);
+        k_oops();
+    }
+
+    input->rising = !input->rising;
 
     // TODO Call from k_work
     if (input->event_callback != NULL) {
         input->event_callback(input->slot, input->channel,
-                              HIO_CHESTER_X0D_EVENT_FALLING,
-                              input->event_param);
+                              event, input->event_param);
     }
 }
 
@@ -152,27 +159,10 @@ static int setup(struct input *input)
         return ret;
     }
 
-    gpio_init_callback(&input->gpio_callback_rising,
-                       gpio_callback_rising_handler, BIT(input->pin));
+    gpio_init_callback(&input->gpio_callback,
+                       gpio_callback_handler, BIT(input->pin));
 
-    ret = gpio_add_callback(dev, &input->gpio_callback_rising);
-
-    if (ret < 0) {
-        LOG_ERR("Call `gpio_add_callback` failed: %d", ret);
-        return ret;
-    }
-
-    ret = gpio_pin_interrupt_configure(dev, input->pin, GPIO_INT_EDGE_RISING);
-
-    if (ret < 0) {
-        LOG_ERR("Call `gpio_pin_interrupt_configure` failed: %d", ret);
-        return ret;
-    }
-
-    gpio_init_callback(&input->gpio_callback_falling,
-                       gpio_callback_falling_handler, BIT(input->pin));
-
-    ret = gpio_add_callback(dev, &input->gpio_callback_falling);
+    ret = gpio_add_callback(dev, &input->gpio_callback);
 
     if (ret < 0) {
         LOG_ERR("Call `gpio_add_callback` failed: %d", ret);
