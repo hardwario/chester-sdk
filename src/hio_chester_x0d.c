@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(hio_chester_x0d, LOG_LEVEL_DBG);
 #define INPUT_4_PIN_B HIO_BSP_GP3B_PIN
 
 struct input {
+    bool initialized;
     enum hio_chester_x0d_slot slot;
     enum hio_chester_x0d_channel channel;
     const char *device_name;
@@ -138,7 +139,7 @@ static void gpio_callback_handler(const struct device *port,
     }
 
     enum hio_chester_x0d_event event = input->rising ?
-        HIO_CHESTER_X0D_EVENT_RISING : HIO_CHESTER_X0D_EVENT_FALLING;
+        HIO_CHESTER_X0D_EVENT_RISE : HIO_CHESTER_X0D_EVENT_FALL;
 
     ret = gpio_pin_interrupt_configure(dev, input->pin, input->rising ?
                                        GPIO_INT_EDGE_FALLING :
@@ -212,12 +213,14 @@ static int setup(struct input *input)
         return ret;
     }
 
+    input->initialized = true;
+
     return 0;
 }
 
 int hio_chester_x0d_init(enum hio_chester_x0d_slot slot,
                          enum hio_chester_x0d_channel channel,
-                         hio_chester_x0d_event_cb cb, void *param)
+                         hio_chester_x0d_event_cb callback, void *param)
 {
     int ret;
 
@@ -238,7 +241,12 @@ int hio_chester_x0d_init(enum hio_chester_x0d_slot slot,
 
     struct input *input = &m_inputs[slot][channel];
 
-    input->event_callback = cb;
+    if (input->initialized) {
+        LOG_ERR("Input already initialized");
+        return -EPERM;
+    }
+
+    input->event_callback = callback;
     input->event_param = param;
 
     ret = setup(input);
@@ -248,5 +256,35 @@ int hio_chester_x0d_init(enum hio_chester_x0d_slot slot,
         return ret;
     }
 
+    return 0;
+}
+
+int hio_chester_x0d_read(enum hio_chester_x0d_slot slot,
+                         enum hio_chester_x0d_channel channel, int *level)
+{
+    int ret;
+
+    struct input *input = &m_inputs[slot][channel];
+
+    if (!input->initialized) {
+        LOG_ERR("Input not initialized");
+        return -EPERM;
+    }
+
+    const struct device *dev = device_get_binding(input->device_name);
+
+    if (dev == NULL) {
+        LOG_ERR("Call `device_get_binding` failed");
+        return -ENODEV;
+    }
+
+    ret = gpio_pin_get(dev, input->pin);
+
+    if (ret < 0) {
+        LOG_ERR("Call `gpio_pin_get` failed: %d", ret);
+        return ret;
+    }
+
+    *level = ret;
     return 0;
 }

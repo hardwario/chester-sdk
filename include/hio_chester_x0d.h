@@ -14,8 +14,8 @@ enum hio_chester_x0d_channel {
 };
 
 enum hio_chester_x0d_event {
-    HIO_CHESTER_X0D_EVENT_RISING = 0,
-    HIO_CHESTER_X0D_EVENT_FALLING = 1
+    HIO_CHESTER_X0D_EVENT_RISE = 0,
+    HIO_CHESTER_X0D_EVENT_FALL = 1
 };
 
 typedef void (*hio_chester_x0d_event_cb)
@@ -24,6 +24,9 @@ typedef void (*hio_chester_x0d_event_cb)
 
 int hio_chester_x0d_init(enum hio_chester_x0d_slot slot,
                          enum hio_chester_x0d_channel channel,
-                         hio_chester_x0d_event_cb cb, void *param);
+                         hio_chester_x0d_event_cb callback, void *param);
+int hio_chester_x0d_read(enum hio_chester_x0d_slot slot,
+                         enum hio_chester_x0d_channel channel, int *level);
+
 
 #endif
