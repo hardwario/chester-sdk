@@ -9,6 +9,10 @@
 
 LOG_MODULE_REGISTER(hio_chester_x0d, LOG_LEVEL_DBG);
 
+#define EVENT_WORK_NAME "chester_x0d"
+#define EVENT_WORK_STACK_SIZE 1024
+#define EVENT_SLAB_MAX_ITEMS 64
+
 #define INPUT_1_DEV_A HIO_BSP_GP0A_DEV
 #define INPUT_1_PIN_A HIO_BSP_GP0A_PIN
 #define INPUT_2_DEV_A HIO_BSP_GP1A_DEV
@@ -93,16 +97,30 @@ static struct input m_inputs[2][4] = {
     }
 };
 
-struct event {
+struct event_item {
     struct k_work work;
-    hio_chester_x0d_event_cb cb;
     enum hio_chester_x0d_slot slot;
     enum hio_chester_x0d_channel channel;
     enum hio_chester_x0d_event event;
+    hio_chester_x0d_event_cb callback;
     void *param;
 };
 
-static K_MEM_SLAB_DEFINE(m_event_slab, sizeof(struct event), 64, 4);
+static K_MEM_SLAB_DEFINE(m_event_slab, sizeof(struct event_item),
+                         EVENT_SLAB_MAX_ITEMS, 4);
+static K_THREAD_STACK_DEFINE(m_event_work_stack_area, EVENT_WORK_STACK_SIZE);
+static struct k_work_q m_event_work_q;
+
+static void event_work_handler(struct k_work *work)
+{
+    struct event_item *ei = CONTAINER_OF(work, struct event_item, work);
+
+    if (ei->callback != NULL) {
+        ei->callback(ei->slot, ei->channel, ei->event, ei->param);
+    }
+
+    k_mem_slab_free(&m_event_slab, (void **)&ei);
+}
 
 static void gpio_callback_handler(const struct device *port,
                                   struct gpio_callback *cb,
@@ -110,8 +128,7 @@ static void gpio_callback_handler(const struct device *port,
 {
     int ret;
 
-    struct input *input =
-        CONTAINER_OF(cb, struct input, gpio_callback);
+    struct input *input = CONTAINER_OF(cb, struct input, gpio_callback);
 
     const struct device *dev = device_get_binding(input->device_name);
 
@@ -134,10 +151,29 @@ static void gpio_callback_handler(const struct device *port,
 
     input->rising = !input->rising;
 
-    // TODO Call from k_work
-    if (input->event_callback != NULL) {
-        input->event_callback(input->slot, input->channel,
-                              event, input->event_param);
+    struct event_item *ei;
+
+    ret = k_mem_slab_alloc(&m_event_slab, (void **)&ei, K_NO_WAIT);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_mem_slab_alloc` failed: %d", ret);
+        return;
+    }
+
+    ei->slot = input->slot;
+    ei->channel = input->channel;
+    ei->event = event;
+    ei->callback = input->event_callback;
+    ei->param = input->event_param;
+
+    k_work_init(&ei->work, event_work_handler);
+
+    ret = k_work_submit_to_queue(&m_event_work_q, &ei->work);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+        k_mem_slab_free(&m_event_slab, (void **)&ei);
+        return;
     }
 }
 
@@ -184,6 +220,21 @@ int hio_chester_x0d_init(enum hio_chester_x0d_slot slot,
                          hio_chester_x0d_event_cb cb, void *param)
 {
     int ret;
+
+    static bool initialized;
+
+    if (!initialized) {
+        struct k_work_queue_config config = {
+            .name = EVENT_WORK_NAME,
+            .no_yield = false
+        };
+
+        k_work_queue_start(&m_event_work_q, m_event_work_stack_area,
+                           K_THREAD_STACK_SIZEOF(m_event_work_stack_area),
+                           K_HIGHEST_APPLICATION_THREAD_PRIO, &config);
+
+        initialized = true;
+    }
 
     struct input *input = &m_inputs[slot][channel];
 
