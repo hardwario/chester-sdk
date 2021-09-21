@@ -93,6 +93,17 @@ static struct input m_inputs[2][4] = {
     }
 };
 
+struct event {
+    struct k_work work;
+    hio_chester_x0d_event_cb cb;
+    enum hio_chester_x0d_slot slot;
+    enum hio_chester_x0d_channel channel;
+    enum hio_chester_x0d_event event;
+    void *param;
+};
+
+static K_MEM_SLAB_DEFINE(m_event_slab, sizeof(struct event), 64, 4);
+
 static void gpio_callback_rising_handler(const struct device *port,
                                          struct gpio_callback *cb,
                                          gpio_port_pins_t pins)
