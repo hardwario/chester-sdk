@@ -35,6 +35,9 @@ LOG_MODULE_REGISTER(hio_bsp, LOG_LEVEL_DBG);
 #define DEV_BAT_LOAD m_dev_gpio_1
 #define PIN_BAT_LOAD 14
 
+#define DEV_BAT_TEST m_dev_gpio_1
+#define PIN_BAT_TEST 15
+
 #define DEV_SLPZ m_dev_gpio_1
 #define PIN_SLPZ 10
 
@@ -355,11 +358,18 @@ int init_lte(void)
     return 0;
 }
 
-int init_bat_test(void)
+int init_batt(void)
 {
     int ret;
 
     ret = gpio_pin_configure(DEV_BAT_LOAD, PIN_BAT_LOAD, GPIO_OUTPUT_INACTIVE);
+
+    if (ret < 0) {
+        LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
+        return ret;
+    }
+
+    ret = gpio_pin_configure(DEV_BAT_TEST, PIN_BAT_TEST, GPIO_OUTPUT_INACTIVE);
 
     if (ret < 0) {
         LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
@@ -459,10 +469,10 @@ int hio_bsp_init(void)
         return ret;
     }
 
-    ret = init_bat_test();
+    ret = init_batt();
 
     if (ret < 0) {
-        LOG_ERR("Call `init_bat_test` failed: %d", ret);
+        LOG_ERR("Call `init_batt` failed: %d", ret);
         return ret;
     }
 
@@ -568,11 +578,25 @@ int hio_bsp_get_button(enum hio_bsp_button button, bool *pressed)
     return 0;
 }
 
-int hio_bsp_set_bat_load(bool on)
+int hio_bsp_set_batt_load(bool on)
 {
     int ret;
 
     ret = gpio_pin_set(DEV_BAT_LOAD, PIN_BAT_LOAD, on ? 1 : 0);
+
+    if (ret < 0) {
+        LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+int hio_bsp_set_batt_test(bool on)
+{
+    int ret;
+
+    ret = gpio_pin_set(DEV_BAT_TEST, PIN_BAT_TEST, on ? 1 : 0);
 
     if (ret < 0) {
         LOG_ERR("Call `gpio_pin_set` failed: %d", ret);

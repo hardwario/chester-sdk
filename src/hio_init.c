@@ -43,11 +43,11 @@ static void button_task_entry(void *param)
             LOG_INF("Discharge request - load ON");
 
             hio_bsp_set_led(HIO_BSP_LED_G, true);
-            hio_bsp_set_bat_load(true);
+            hio_bsp_set_batt_load(true);
 
             k_sleep(K_SECONDS(120));
 
-            hio_bsp_set_bat_load(false);
+            hio_bsp_set_batt_load(false);
             hio_bsp_set_led(HIO_BSP_LED_G, false);
 
             LOG_INF("Discharge request - load OFF");
