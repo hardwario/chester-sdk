@@ -129,6 +129,8 @@ int hio_batt_measure(struct hio_batt_result *result)
 
     result->current_load_ma = result->voltage_load_mv / LOAD_R;
 
+    LOG_INF("Battery current (load) = %u mA", result->current_load_ma);
+
     k_mutex_unlock(&m_mut);
     return 0;
 }
