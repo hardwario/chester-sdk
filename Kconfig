@@ -1,0 +1,173 @@
+config HIO_SDK
+	bool "HIO_SDK"
+
+config ADC
+	default y if HIO_SDK
+
+config ADC_SHELL
+	default n if HIO_SDK
+
+config ASSERT
+	default y if HIO_SDK
+
+config CBPRINTF_FP_SUPPORT
+	default y if HIO_SDK
+
+config DEBUG
+	default y if HIO_SDK
+
+config FLASH
+	default y if HIO_SDK
+
+config FLASH_MAP
+	default y if HIO_SDK
+
+config HEAP_MEM_POOL_SIZE
+	default 2048 if HIO_SDK
+
+config I2C
+	default y if HIO_SDK
+
+config KERNEL_SHELL
+	default y if HIO_SDK
+
+config LOG
+	default y if HIO_SDK
+
+config LOG_BACKEND_RTT
+	default y if HIO_SDK
+
+config LOG_BACKEND_RTT_BUFFER
+	default 1 if HIO_SDK
+
+config LOG_BACKEND_RTT_BUFFER_SIZE
+	default 4096 if HIO_SDK
+
+config LOG_BACKEND_SHOW_COLOR
+	default n if HIO_SDK
+
+config LOG_SPEED
+	default y if HIO_SDK
+
+config MAIN_STACK_SIZE
+	default 2048 if HIO_SDK
+
+config NEWLIB_LIBC_FLOAT_PRINTF
+	default y if HIO_SDK
+
+config NEWLIB_LIBC_FLOAT_SCANF
+	default y if HIO_SDK
+
+config NFCT_PINS_AS_GPIOS
+	default y if HIO_SDK
+
+config NRFX_RTC0
+	default y if HIO_SDK
+
+config NRFX_UARTE0
+	default y if HIO_SDK
+
+config NRFX_UARTE1
+	default y if HIO_SDK
+
+config NVS
+	default y if HIO_SDK
+
+config PM_DEVICE
+	default y if HIO_SDK
+
+config REBOOT
+	default y if HIO_SDK
+
+config REQUIRES_FULL_LIBC
+	default y if HIO_SDK
+
+config RING_BUFFER
+	default y if HIO_SDK
+
+config SEGGER_RTT_BUFFER_SIZE_DOWN
+	default 4096 if HIO_SDK
+
+config SEGGER_RTT_BUFFER_SIZE_UP
+	default 4096 if HIO_SDK
+
+config SERIAL
+	default y if HIO_SDK
+
+config SETTINGS
+	default y if HIO_SDK
+
+config SETTINGS_RUNTIME
+	default y if HIO_SDK
+
+config SHELL
+	default y if HIO_SDK
+
+config SHELL_BACKEND_RTT
+	default y if HIO_SDK
+
+config SHELL_CMDS
+	default y if HIO_SDK
+
+config SHELL_DEFAULT_TERMINAL_WIDTH
+	default 1024 if HIO_SDK
+
+config SHELL_ECHO_STATUS
+	default n if HIO_SDK
+
+config SHELL_HELP
+	default y if HIO_SDK
+
+config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
+	default y if HIO_SDK
+
+config SHELL_LOG_BACKEND
+	default n if HIO_SDK
+
+config SHELL_MINIMAL
+	default y if HIO_SDK
+
+config SHELL_PROMPT_RTT
+	default "" if HIO_SDK
+
+config SHELL_RTT_RX_POLL_PERIOD
+	default 200 if HIO_SDK
+
+config SHELL_STATS
+	default y if HIO_SDK
+
+config SPI
+	default y if HIO_SDK
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048 if HIO_SDK
+
+config UART_0_INTERRUPT_DRIVEN
+	default n if HIO_SDK
+
+config UART_0_NRF_HW_ASYNC
+	default y if HIO_SDK
+
+config UART_0_NRF_HW_ASYNC_TIMER
+	default 1 if HIO_SDK
+
+config UART_1_INTERRUPT_DRIVEN
+	default n if HIO_SDK
+
+config UART_1_NRF_HW_ASYNC
+	default y if HIO_SDK
+
+config UART_1_NRF_HW_ASYNC_TIMER
+	default 2 if HIO_SDK
+
+config UART_ASYNC_API
+	default y if HIO_SDK
+
+config UART_INTERRUPT_DRIVEN
+	default y if HIO_SDK
+
+config UART_LINE_CTRL
+	default y if HIO_SDK
+
+config USE_SEGGER_RTT
+	default y if HIO_SDK

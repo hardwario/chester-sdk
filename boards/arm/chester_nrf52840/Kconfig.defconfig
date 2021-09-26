@@ -3,4 +3,10 @@ if BOARD_CHESTER_NRF52840
 config BOARD
 	default "chester_nrf52840"
 
-endif
+config BT_CTLR
+	default BT
+
+config SHELL_BACKEND_SERIAL
+	default n
+
+endif # BOARD_CHESTER_NRF52840
