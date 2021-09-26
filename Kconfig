@@ -61,7 +61,7 @@ config NEWLIB_LIBC_FLOAT_SCANF
 config NFCT_PINS_AS_GPIOS
 	default y if HIO_SDK
 
-config NRFX_RTC0
+config NRFX_RTC2
 	default y if HIO_SDK
 
 config NRFX_UARTE0

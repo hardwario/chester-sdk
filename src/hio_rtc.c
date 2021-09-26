@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(hio_rtc, LOG_LEVEL_DBG);
 
-static const nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(0);
+static const nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(2);
 static struct onoff_client m_lfclk_cli;
 
 static int m_year = 1970;
@@ -148,15 +148,15 @@ int hio_rtc_init(void)
     nrfx_rtc_tick_enable(&m_rtc, true);
     nrfx_rtc_enable(&m_rtc);
 
-    IRQ_CONNECT(RTC0_IRQn, 0, nrfx_rtc_0_irq_handler, NULL, 0);
-    irq_enable(RTC0_IRQn);
+    IRQ_CONNECT(RTC2_IRQn, 0, nrfx_rtc_2_irq_handler, NULL, 0);
+    irq_enable(RTC2_IRQn);
 
     return 0;
 }
 
 int hio_rtc_get(struct hio_rtc_tm *tm)
 {
-    irq_disable(RTC0_IRQn);
+    irq_disable(RTC2_IRQn);
 
     tm->year = m_year;
     tm->month = m_month;
@@ -165,7 +165,7 @@ int hio_rtc_get(struct hio_rtc_tm *tm)
     tm->minutes = m_minutes;
     tm->seconds = m_seconds;
 
-    irq_enable(RTC0_IRQn);
+    irq_enable(RTC2_IRQn);
 
     return 0;
 }
@@ -196,7 +196,7 @@ int hio_rtc_set(const struct hio_rtc_tm *tm)
         return -EINVAL;
     }
 
-    irq_disable(RTC0_IRQn);
+    irq_disable(RTC2_IRQn);
 
     m_year = tm->year;
     m_month = tm->month;
@@ -205,7 +205,7 @@ int hio_rtc_set(const struct hio_rtc_tm *tm)
     m_minutes = tm->minutes;
     m_seconds = tm->seconds;
 
-    irq_enable(RTC0_IRQn);
+    irq_enable(RTC2_IRQn);
 
     return 0;
 }
