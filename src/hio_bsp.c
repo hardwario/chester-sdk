@@ -402,7 +402,7 @@ int hio_bsp_init(void)
     ret = init_rtc();
 
     if (ret < 0) {
-        LOG_ERR("Call `init_i2c` failed: %d", ret);
+        LOG_ERR("Call `init_rtc` failed: %d", ret);
         return ret;
     }
 
