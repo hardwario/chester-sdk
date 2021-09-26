@@ -261,7 +261,7 @@ hio_lte_uart_init(void)
         return -3;
     }
 
-	if (pm_device_state_set(dev, PM_DEVICE_STATE_OFF, NULL, NULL) < 0) {
+	if (pm_device_state_set(dev, PM_DEVICE_STATE_OFF) < 0) {
         LOG_ERR("Call `pm_device_state_set` failed");
         return -4;
     }
@@ -349,7 +349,7 @@ hio_lte_uart_enable(void)
         return ret;
     }
 
-    ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
+    ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
 
 	if (ret < 0) {
         LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
@@ -401,7 +401,7 @@ hio_lte_uart_disable(void)
         return ret;
     }
 
-    ret = pm_device_state_set(dev, PM_DEVICE_STATE_OFF, NULL, NULL);
+    ret = pm_device_state_set(dev, PM_DEVICE_STATE_OFF);
 
 	if (ret < 0) {
         LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
