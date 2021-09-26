@@ -2,7 +2,6 @@ zephyr_include_directories(include)
 
 target_sources_ifdef(CONFIG_HIO_SDK app PRIVATE src/hio_adc.c)
 target_sources_ifdef(CONFIG_HIO_SDK app PRIVATE src/hio_batt.c)
-target_sources_ifdef(CONFIG_HIO_SDK app PRIVATE src/hio_ble.c)
 target_sources_ifdef(CONFIG_HIO_SDK app PRIVATE src/hio_bsp_i2c.c)
 target_sources_ifdef(CONFIG_HIO_SDK app PRIVATE src/hio_bsp.c)
 target_sources_ifdef(CONFIG_HIO_SDK app PRIVATE src/hio_bus_i2c.c)
@@ -23,3 +22,5 @@ target_sources_ifdef(CONFIG_HIO_SDK app PRIVATE src/hio_rtc.c)
 target_sources_ifdef(CONFIG_HIO_SDK app PRIVATE src/hio_sys.c)
 target_sources_ifdef(CONFIG_HIO_SDK app PRIVATE src/hio_test.c)
 target_sources_ifdef(CONFIG_HIO_SDK app PRIVATE src/hio_util.c)
+
+target_sources_ifdef(CONFIG_HIO_BLE app PRIVATE src/hio_ble2.c)

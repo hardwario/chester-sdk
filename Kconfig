@@ -1,5 +1,23 @@
 config HIO_SDK
 	bool "HIO_SDK"
+	select BOOTLOADER_MCUBOOT
+
+if HIO_SDK
+
+config HIO_BLE
+	bool "HIO_BLE"
+	select BT
+	select BT_NUS
+	select BT_PERIPHERAL
+	select MCUMGR
+	select MCUMGR_CMD_IMG_MGMT
+	select MCUMGR_CMD_OS_MGMT
+	select MCUMGR_SMP_BT
+
+endif # HIO_SDK
+
+# #############################################################################
+# HIO_SDK
 
 config ADC
 	default y if HIO_SDK
@@ -140,7 +158,7 @@ config SPI
 	default y if HIO_SDK
 
 config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 2048 if HIO_SDK
+	default 3072 if HIO_SDK
 
 config UART_0_INTERRUPT_DRIVEN
 	default n if HIO_SDK
@@ -171,3 +189,18 @@ config UART_LINE_CTRL
 
 config USE_SEGGER_RTT
 	default y if HIO_SDK
+
+# #############################################################################
+# HIO_BLE
+
+config BT_RX_STACK_SIZE
+	default 2048 if HIO_BLE
+
+config BT_L2CAP_TX_MTU
+	default 252 if HIO_BLE
+
+config BT_BUF_ACL_RX_SIZE
+	default 256 if HIO_BLE
+
+config MCUMGR_SMP_BT_AUTHEN
+	default n if HIO_BLE
