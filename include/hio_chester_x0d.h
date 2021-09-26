@@ -28,5 +28,4 @@ int hio_chester_x0d_init(enum hio_chester_x0d_slot slot,
 int hio_chester_x0d_read(enum hio_chester_x0d_slot slot,
                          enum hio_chester_x0d_channel channel, int *level);
 
-
 #endif
