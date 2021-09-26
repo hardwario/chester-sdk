@@ -1,14 +1,15 @@
-config HIO_SDK
+menuconfig HIO_SDK
 	bool "HIO_SDK"
 	select BOOTLOADER_MCUBOOT
+	select MCUMGR
 
 if HIO_SDK
 
 config HIO_BLE
 	bool "HIO_BLE"
 	select BT
+	select BT_NUS
 	select BT_PERIPHERAL
-	select MCUMGR
 	select MCUMGR_CMD_IMG_MGMT
 	select MCUMGR_CMD_OS_MGMT
 	select MCUMGR_SMP_BT
