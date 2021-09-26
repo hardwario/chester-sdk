@@ -257,7 +257,7 @@ int hio_lrw_uart_init(hio_lrw_recv_cb recv_cb)
         return ret;
     }
 
-    ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPEND, NULL, NULL);
+    ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPEND);
 
     if (ret < 0) {
         LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
@@ -318,7 +318,7 @@ int hio_lrw_uart_enable(void)
         return ret;
     }
 
-    ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
+    ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_ACTIVE);
 
     if (ret < 0) {
         LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
@@ -404,7 +404,7 @@ int hio_lrw_uart_disable(void)
         return ret;
     }
 
-    ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPEND, NULL, NULL);
+    ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPEND);
 
     if (ret < 0) {
         LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
