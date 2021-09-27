@@ -1,73 +1,83 @@
 #include <hio_ble.h>
 
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/uuid.h>
-#include <init.h>
-#include <logging/log.h>
-#include <zephyr.h>
 #include <bluetooth/services/nus.h>
+#include <bluetooth/uuid.h>
 #include <img_mgmt/img_mgmt.h>
+#include <logging/log.h>
 #include <mgmt/mcumgr/smp_bt.h>
 #include <os_mgmt/os_mgmt.h>
-
-#define BT_UUID_SMP_VAL BT_UUID_128_ENCODE(0x8D53DC1D, 0x1db7, 0x4cd3, 0x868b, 0x8a527460aa84)
+#include <shell/shell_bt_nus.h>
+#include <zephyr.h>
 
 LOG_MODULE_REGISTER(hio_ble, LOG_LEVEL_DBG);
 
 static const struct bt_data ad_data[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_NUS_VAL)
 };
 
-static const struct bt_data sd_data[] = {
-	// BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_NUS_VAL),
-	// BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_SMP_VAL),
-};
-
-static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint16_t len)
-{
-	LOG_HEXDUMP_DBG(data, len, "bt_receive_cb");
-}
-
-static struct bt_nus_cb nus_cb = {
-	.received = bt_receive_cb,
-};
-
-static void bt_ready(int err)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
-		LOG_ERR("bt_ready failed: %d", err);
+		LOG_ERR("Connection failed (err %u)", err);
+		return;
 	}
+
+	LOG_INF("Connected");
+
+	shell_bt_nus_enable(conn);
 }
 
-void hio_ble_init(void)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	LOG_INF("Disconnected (reason %u)", reason);
+
+	shell_bt_nus_disable();
+}
+
+int hio_ble_init(void)
 {
 	int ret;
 
-	ret = bt_enable(bt_ready);
-	if (ret) {
-		LOG_ERR("bt_enable failed: %d", ret);
-		return;
+    struct bt_conn_cb conn_callbacks = {
+	    .connected = connected,
+	    .disconnected = disconnected
+    };
+
+    bt_conn_cb_register(&conn_callbacks);
+
+	ret = bt_enable(NULL);
+
+	if (ret < 0) {
+		LOG_ERR("Call `bt_enable` failed: %d", ret);
+		return ret;
 	}
 
-	ret = bt_nus_init(&nus_cb);
+	ret = shell_bt_nus_init();
+
 	if (ret < 0) {
-		LOG_ERR("bt_nus_init failed: %d", ret);
-		return;
+		LOG_ERR("Call `shell_bt_nus_init` failed: %d", ret);
+		return ret;
 	}
 
 	os_mgmt_register_group();
 	img_mgmt_register_group();
 
 	ret = smp_bt_register();
+
 	if (ret < 0) {
-		LOG_ERR("smp_bt_register failed: %d", ret);
-		return;
+		LOG_ERR("Call `smp_bt_register` failed: %d", ret);
+		return ret;
 	}
 
-	ret = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad_data, ARRAY_SIZE(ad_data), sd_data,
-			      ARRAY_SIZE(sd_data));
-	if (ret) {
-		LOG_ERR("bt_le_adv_start failed: %d", ret);
-		return;
+	ret = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad_data, ARRAY_SIZE(ad_data),
+                          NULL, 0);
+
+	if (ret < 0) {
+		LOG_ERR("Call `bt_le_adv_start` failed: %d", ret);
+		return ret;
 	}
+
+    return 0;
 }

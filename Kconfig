@@ -7,7 +7,6 @@ if HIO_SDK
 config HIO_BLE
 	bool "HIO_BLE"
 	select BT
-	select BT_NUS
 	select BT_PERIPHERAL
 	select MCUMGR
 	select MCUMGR_CMD_IMG_MGMT
@@ -194,7 +193,10 @@ config USE_SEGGER_RTT
 # HIO_BLE
 
 config BT_RX_STACK_SIZE
-	default 2048 if HIO_BLE
+	default 4096 if HIO_BLE
+
+config BT_CTLR_RX_PRIO_STACK_SIZE
+    default 2048 if HIO_BLE
 
 config BT_L2CAP_TX_MTU
 	default 252 if HIO_BLE
@@ -204,3 +206,15 @@ config BT_BUF_ACL_RX_SIZE
 
 config MCUMGR_SMP_BT_AUTHEN
 	default n if HIO_BLE
+
+config BT_DEVICE_NAME
+    default "CHESTER 3" if HIO_BLE
+
+config SHELL_BT_NUS
+    default y if HIO_BLE
+
+config SHELL_BT_NUS_RX_RING_BUFFER_SIZE
+    default 256 if HIO_BLE
+
+config SHELL_BT_NUS_TX_RING_BUFFER_SIZE
+    default 256 if HIO_BLE
