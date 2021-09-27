@@ -11,6 +11,54 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		btn_int: btn_int {
+			gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BTN_INT";
+		};
+
+		btn_ext: btn_ext {
+			gpios = <&gpio0 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BTN_EXT";
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_g: led_g {
+			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+			label = "LED_GREEN";
+		};
+
+		led_y: led_y {
+			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+			label = "LED_YELLOW";
+		};
+
+		led_r: led_r {
+			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+			label = "LED_RED";
+		};
+
+		led_ext: led_ext {
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+			label = "LED_EXT";
+		};
+	};
+
+	aliases {
+		led0 = &led_g;
+		led1 = &led_y;
+		led2 = &led_r;
+		led3 = &led_ext;
+		sw0 = &btn_int;
+		sw1 = &btn_ext;
+		bootloader-led0 = &led_ext;
+	};
 };
 
 &adc {
@@ -31,9 +79,7 @@
 
 &gpiote {
 	status = "okay";
-	/*
-	interrupts = <6 NRF_DEFAULT_IRQ_PRIORITY>;
-	*/
+	/* interrupts = <6 NRF_DEFAULT_IRQ_PRIORITY>; */
 };
 
 &i2c0 {
@@ -86,18 +132,22 @@
 			label = "mcuboot";
 			reg = <0x000000000 0x00012000>;
 		};
+
 		slot0_partition: partition@12000 {
 			label = "image-0";
 			reg = <0x00012000 0x000069000>;
 		};
+
 		slot1_partition: partition@7b000 {
 			label = "image-1";
 			reg = <0x0007b000 0x000069000>;
 		};
+
 		scratch_partition: partition@e4000 {
 			label = "image-scratch";
 			reg = <0x000e4000 0x00018000>;
 		};
+
 		storage_partition: partition@fc000 {
 			label = "storage";
 			reg = <0x000fc000 0x00004000>;
