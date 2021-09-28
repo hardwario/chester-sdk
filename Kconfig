@@ -197,7 +197,7 @@ config BT_RX_STACK_SIZE
 	default 4096 if HIO_BLE
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
-    default 2048 if HIO_BLE
+	default 2048 if HIO_BLE
 
 config BT_L2CAP_TX_MTU
 	default 252 if HIO_BLE
