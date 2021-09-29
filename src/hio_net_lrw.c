@@ -24,6 +24,7 @@
 LOG_MODULE_REGISTER(hio_net_lrw, LOG_LEVEL_DBG);
 
 #define SETTINGS_PFX "lrw"
+#define JOIN_TIMEOUT K_SECONDS(30)
 
 static K_MUTEX_DEFINE(m_config_mut);
 
@@ -101,48 +102,34 @@ static int h_set(const char *key, size_t len,
 static int h_export(int (*export_func)(const char *name,
                                        const void *val, size_t val_len));
 
-static int boot(void)
+// ----------------------------------------------------------------------------
+
+static int boot_once(void)
 {
     int ret;
 
-    ret = hio_lrw_talk_enable();
+    hio_bsp_set_lrw_reset(0);
 
-    if (ret < 0) {
-        LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
-        return ret;
+    k_sleep(K_MSEC(100));
+
+    k_poll_signal_reset(&m_boot_sig);
+
+    hio_bsp_set_lrw_reset(1);
+
+    struct k_poll_event events[] = {
+        K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+                                    K_POLL_MODE_NOTIFY_ONLY,
+                                    &m_boot_sig)
+    };
+
+    ret = k_poll(events, ARRAY_SIZE(events), K_MSEC(1000));
+
+    if (ret == -EAGAIN) {
+        LOG_WRN("Boot message timed out");
+        return -ETIMEDOUT;
     }
 
-    for (;;) {
-        hio_bsp_set_lrw_reset(0);
-        k_sleep(K_MSEC(100));
-        k_poll_signal_reset(&m_boot_sig);
-        hio_bsp_set_lrw_reset(1);
-
-        struct k_poll_event events[] = {
-            K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
-                                     K_POLL_MODE_NOTIFY_ONLY,
-                                     &m_boot_sig)
-        };
-
-        ret = k_poll(events, ARRAY_SIZE(events), K_MSEC(1000));
-
-        if (ret == 0) {
-            break;
-
-        } else if (ret == -EAGAIN) {
-            LOG_WRN("Boot message timed out");
-
-            ret = hio_lrw_talk_disable();
-
-            if (ret < 0) {
-                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
-                return ret;
-            }
-
-            k_sleep(K_SECONDS(60));
-            continue;
-        }
-
+    if (ret < 0) {
         LOG_ERR("Call `k_poll` failed: %d", ret);
         return ret;
     }
@@ -150,13 +137,62 @@ static int boot(void)
     return 0;
 }
 
-static int setup(void)
+// ----------------------------------------------------------------------------
+
+static int boot(int retries, k_timeout_t delay)
 {
     int ret;
-    struct config config;
+
+    LOG_INF("Boot operation started");
+
+    while (retries-- > 0) {
+        ret = boot_once();
+
+        if (ret == 0) {
+            LOG_INF("Boot operation succeeded");
+            return 0;
+        }
+
+        if (ret < 0) {
+            LOG_WRN("Call `boot_once` failed: %d", ret);
+        }
+
+        if (retries != 1) {
+            ret = hio_lrw_talk_disable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+                return ret;
+            }
+
+            k_sleep(delay);
+
+            LOG_WRN("Boot operation repetition");
+
+            ret = hio_lrw_talk_enable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+                return ret;
+            }
+        }
+    }
+
+    LOG_ERR("Boot operation failed");
+    return -ENOLINK;
+}
+
+// ----------------------------------------------------------------------------
+
+static int setup_once(void)
+{
+    int ret;
 
     k_mutex_lock(&m_config_mut, K_FOREVER);
+
+    struct config config;
     memcpy(&config, &m_config, sizeof(config));
+
     k_mutex_unlock(&m_config_mut);
 
     ret = hio_lrw_talk_at_dformat(1);
@@ -262,56 +298,27 @@ static int setup(void)
     return 0;
 }
 
-static int join(void)
+// ----------------------------------------------------------------------------
+
+static int setup(int retries, k_timeout_t delay)
 {
     int ret;
 
-    for (;;) {
-        k_poll_signal_reset(&m_join_sig);
+    LOG_INF("Setup operation started");
 
-        ret = hio_lrw_talk_at_join();
+    while (retries-- > 0) {
+        ret = setup_once();
 
-        if (ret < 0) {
-            LOG_ERR("Call `hio_lrw_talk_at_join` failed: %d", ret);
-            k_sleep(K_SECONDS(10));
-            continue;
-        }
-
-        struct k_poll_event events[] = {
-            K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
-                                     K_POLL_MODE_NOTIFY_ONLY,
-                                     &m_join_sig)
-        };
-
-        ret = k_poll(events, ARRAY_SIZE(events), K_SECONDS(30));
-
-        if (ret == -EAGAIN) {
-            LOG_WRN("Join response timed out");
-            continue;
+        if (ret == 0) {
+            LOG_INF("Setup operation succeeded");
+            return 0;
         }
 
         if (ret < 0) {
-            LOG_ERR("Call `k_poll` failed: %d", ret);
-            return ret;
+            LOG_WRN("Call `setup_once` failed: %d", ret);
         }
 
-        unsigned int signaled;
-        int result;
-
-        k_poll_signal_check(&m_join_sig, &signaled, &result);
-
-        if (signaled > 0 && result == 0) {
-            LOG_INF("Join operation succeeded");
-
-            // TODO Signalize to application join success
-
-            break;
-
-        } else {
-            LOG_WRN("Join operation failed");
-
-            // TODO Signalize to application join failure
-
+        if (retries != 1) {
             ret = hio_lrw_talk_disable();
 
             if (ret < 0) {
@@ -319,7 +326,9 @@ static int join(void)
                 return ret;
             }
 
-            k_sleep(K_MINUTES(10));
+            k_sleep(delay);
+
+            LOG_WRN("Setup operation repetition");
 
             ret = hio_lrw_talk_enable();
 
@@ -330,8 +339,101 @@ static int join(void)
         }
     }
 
+    LOG_ERR("Setup operation failed");
+    return -EPIPE;
+}
+
+// ----------------------------------------------------------------------------
+
+static int join_once(void)
+{
+    int ret;
+
+    k_poll_signal_reset(&m_join_sig);
+
+    ret = hio_lrw_talk_at_join();
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lrw_talk_at_join` failed: %d", ret);
+        return ret;
+    }
+
+    struct k_poll_event events[] = {
+        K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+                                 K_POLL_MODE_NOTIFY_ONLY,
+                                 &m_join_sig)
+    };
+
+    ret = k_poll(events, ARRAY_SIZE(events), JOIN_TIMEOUT);
+
+    if (ret == -EAGAIN) {
+        LOG_WRN("Join response timed out");
+        return -ETIMEDOUT;
+    }
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_poll` failed: %d", ret);
+        return ret;
+    }
+
+    unsigned int signaled;
+    int result;
+
+    k_poll_signal_check(&m_join_sig, &signaled, &result);
+
+    if (signaled == 0 || result != 0) {
+        return -ENOTCONN;
+    }
+
     return 0;
 }
+
+// ----------------------------------------------------------------------------
+
+static int join(int retries, k_timeout_t delay)
+{
+    int ret;
+
+    LOG_INF("Join operation started");
+
+    while (retries-- > 0) {
+        ret = join_once();
+
+        if (ret == 0) {
+            LOG_INF("Join operation succeeded");
+            return 0;
+        }
+
+        if (ret < 0) {
+            LOG_WRN("Call `join_once` failed: %d", ret);
+        }
+
+        if (retries != 1) {
+            ret = hio_lrw_talk_disable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+                return ret;
+            }
+
+            k_sleep(delay);
+
+            LOG_WRN("Join operation repetition");
+
+            ret = hio_lrw_talk_enable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+                return ret;
+            }
+        }
+    }
+
+    LOG_WRN("Join operation failed");
+    return -ENOTCONN;
+}
+
+// ----------------------------------------------------------------------------
 
 static int send(void)
 {
@@ -430,11 +532,18 @@ static void talk_handler(enum hio_lrw_talk_event event)
     }
 }
 
-int hio_net_lrw_init(void)
+int hio_net_lrw_start(void)
 {
     int ret;
 
-    if (m_config.antenna == ANTENNA_EXT) {
+    k_mutex_lock(&m_config_mut, K_FOREVER);
+
+    struct config config;
+    memcpy(&config, &m_config, sizeof(config));
+
+    k_mutex_unlock(&m_config_mut);
+
+    if (config.antenna == ANTENNA_EXT) {
         ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_EXT);
     } else {
         ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
@@ -459,22 +568,29 @@ int hio_net_lrw_init(void)
         return ret;
     }
 
+    ret = hio_lrw_talk_enable();
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+        return ret;
+    }
+
     for (;;) {
-        ret = boot();
+        ret = boot(3, K_SECONDS(10));
 
         if (ret < 0) {
             LOG_ERR("Call `boot` failed: %d", ret);
             return ret;
         }
 
-        ret = setup();
+        ret = setup(3, K_SECONDS(10));
 
         if (ret < 0) {
             LOG_ERR("Call `setup` failed: %d", ret);
             return ret;
         }
 
-        ret = join();
+        ret = join(3, K_MINUTES(10));
 
         if (ret < 0) {
             LOG_ERR("Call `join` failed: %d", ret);
@@ -493,6 +609,9 @@ int hio_net_lrw_init(void)
 
     return 0;
 }
+
+
+// ============================================================================
 
 static int h_set(const char *key, size_t len,
                  settings_read_cb read_cb, void *cb_arg)

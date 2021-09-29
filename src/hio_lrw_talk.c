@@ -117,6 +117,7 @@ static int talk_cmd_ok(k_timeout_t timeout, const char *fmt, ...)
 {
     int ret;
 
+    // TODO Do not block long operation by mutex but return -EBUSY instead
     k_mutex_lock(&m_talk_mut, K_FOREVER);
     k_sleep(SEND_GUARD_TIME);
 

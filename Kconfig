@@ -77,7 +77,7 @@ config LOG_SPEED
 	default y if HIO_SDK
 
 config MAIN_STACK_SIZE
-	default 2048 if HIO_SDK
+	default 4096 if HIO_SDK
 
 config NEWLIB_LIBC_FLOAT_PRINTF
 	default y if HIO_SDK
