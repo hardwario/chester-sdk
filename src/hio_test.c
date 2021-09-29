@@ -4,20 +4,21 @@
 #include <hio_lte_uart.h>
 
 // Zephyr includes
+#include <init.h>
 #include <logging/log.h>
 #include <shell/shell.h>
 #include <zephyr.h>
 
 LOG_MODULE_REGISTER(hio_test, LOG_LEVEL_DBG);
 
+// TODO Delete this variable
 static atomic_t m_is_active;
+
 static atomic_t m_is_blocked;
 
-void hio_test_block(void)
-{
-    atomic_set(&m_is_blocked, true);
-}
+static struct k_poll_signal m_start_sig;
 
+// TODO Remove this function
 bool hio_test_is_active(void)
 {
     return atomic_get(&m_is_active);
@@ -226,7 +227,12 @@ static int cmd_test_start(const struct shell *shell,
 
     int ret;
 
-    if (atomic_get(&m_is_active)) {
+    unsigned int signaled;
+    int result;
+
+    k_poll_signal_check(&m_start_sig, &signaled, &result);
+
+    if (signaled != 0) {
         shell_warn(shell, "Test mode is already active");
         return -ENOEXEC;
     }
@@ -236,9 +242,12 @@ static int cmd_test_start(const struct shell *shell,
         return -EBUSY;
     }
 
+    k_poll_signal_raise(&m_start_sig, 0);
+
+    // TODO Delete this statement
     atomic_set(&m_is_active, true);
 
-    LOG_INF("Test mode started");
+    // TODO Remove any initialization below
 
     ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
 
@@ -281,7 +290,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
                   cmd_test_lte_reset, 1, 0),
     SHELL_CMD_ARG(wakeup, NULL, "Wake up modem.",
                   cmd_test_lte_wakeup, 1, 0),
-    SHELL_CMD_ARG(sleep, NULL, "Sleep modem.",
+    SHELL_CMD_ARG(sleep, NULL, "Put modem to sleep.",
                   cmd_test_lte_sleep, 1, 0),
     SHELL_CMD_ARG(cmd, NULL, "Send AT command to modem.",
                   cmd_test_lte_cmd, 2, 0),
@@ -298,3 +307,45 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 
 SHELL_CMD_REGISTER(test, &sub_test, "Test commands", print_help);
+
+static int init(const struct device *dev)
+{
+    ARG_UNUSED(dev);
+
+    int ret;
+
+    LOG_INF("Init");
+
+    k_poll_signal_init(&m_start_sig);
+
+    LOG_INF("Waiting for test mode entry");
+
+    struct k_poll_event events[] = {
+        K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+                                 K_POLL_MODE_NOTIFY_ONLY,
+                                 &m_start_sig)
+    };
+
+    ret = k_poll(events, ARRAY_SIZE(events), K_MSEC(5000));
+
+    if (ret == -EAGAIN) {
+        LOG_INF("Test mode entry timed out");
+        atomic_set(&m_is_blocked, true);
+        return 0;
+    }
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_poll` failed: %d", ret);
+        return ret;
+    }
+
+    LOG_INF("Test mode started");
+
+    for (;;) {
+        k_sleep(K_FOREVER);
+    }
+
+    return 0;
+}
+
+SYS_INIT(init, APPLICATION, CONFIG_HIO_TEST_INIT_PRIORITY);

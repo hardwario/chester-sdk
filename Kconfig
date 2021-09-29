@@ -14,6 +14,15 @@ config HIO_BLE
 	select MCUMGR_CMD_OS_MGMT
 	select MCUMGR_SMP_BT
 
+config HIO_BSP
+	bool "HIO_BSP"
+
+config HIO_RTC
+	bool "HIO_RTC"
+
+config HIO_TEST
+	bool "HIO_TEST"
+
 endif # HIO_SDK
 
 # #############################################################################
@@ -190,6 +199,10 @@ config UART_LINE_CTRL
 config USE_SEGGER_RTT
 	default y if HIO_SDK
 
+config HIO_CONFIG_INIT_PRIORITY
+	int "HIO_CONFIG_INIT_PRIORITY"
+	default 0
+
 # #############################################################################
 # HIO_BLE
 
@@ -209,13 +222,46 @@ config MCUMGR_SMP_BT_AUTHEN
 	default n if HIO_BLE
 
 config BT_DEVICE_NAME
-    default "CHESTER 3" if HIO_BLE
+	default "CHESTER 3" if HIO_BLE
 
 config SHELL_BT_NUS
-    default y if HIO_BLE
+	default y if HIO_BLE
 
 config SHELL_BT_NUS_RX_RING_BUFFER_SIZE
-    default 256 if HIO_BLE
+	default 256 if HIO_BLE
 
 config SHELL_BT_NUS_TX_RING_BUFFER_SIZE
-    default 256 if HIO_BLE
+	default 256 if HIO_BLE
+
+# #############################################################################
+# HIO_BSP
+
+if HIO_BSP
+
+config HIO_BSP_INIT_PRIORITY
+	int "HIO_BSP_INIT_PRIORITY"
+	default 2
+
+endif # HIO_BSP
+
+# #############################################################################
+# HIO_RTC
+
+if HIO_RTC
+
+config HIO_RTC_INIT_PRIORITY
+	int "HIO_RTC_INIT_PRIORITY"
+	default 1
+
+endif # HIO_RTC
+
+# #############################################################################
+# HIO_TEST
+
+if HIO_TEST
+
+config HIO_TEST_INIT_PRIORITY
+	int "HIO_TEST_INIT_PRIORITY"
+	default 99
+
+endif # HIO_TEST

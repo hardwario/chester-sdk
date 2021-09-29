@@ -51,7 +51,6 @@ enum hio_bsp_rf_mux {
     HIO_BSP_RF_MUX_LRW = 2
 };
 
-int hio_bsp_init(void);
 struct hio_bus_i2c *hio_bsp_get_i2c(void);
 int hio_bsp_set_led(enum hio_bsp_led led, bool on);
 int hio_bsp_get_button(enum hio_bsp_button button, bool *pressed);

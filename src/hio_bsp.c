@@ -78,20 +78,6 @@ static struct hio_bus_i2c m_i2c;
 static struct hio_drv_sht30 m_sht30;
 static struct hio_drv_tmp112 m_tmp112;
 
-static int init_rtc(void)
-{
-    int ret;
-
-    ret = hio_rtc_init();
-
-    if (ret < 0) {
-        LOG_ERR("Call `hio_rtc_init` failed: %d", ret);
-        return ret;
-    }
-
-    return 0;
-}
-
 static int init_gpio(void)
 {
     m_dev_gpio_0 = device_get_binding("GPIO_0");
@@ -387,99 +373,6 @@ int init_w1b(void)
 
     if (ret < 0) {
         LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-        return ret;
-    }
-
-    return 0;
-}
-
-int hio_bsp_init(void)
-{
-    int ret;
-
-    LOG_DBG("Start");
-
-    ret = init_rtc();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_rtc` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_gpio();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_gpio` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_led();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_led` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_button();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_button` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_i2c();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_i2c` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_tmp112();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_tmp112` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_flash();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_flash` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_rf_mux();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_rf_mux` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_gnss();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_gnss` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_lte();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_lte` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_batt();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_batt` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_w1b();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_w1b` failed: %d", ret);
         return ret;
     }
 
@@ -865,3 +758,93 @@ int hio_bsp_tmp112_measure(float *t)
 
     return 0;
 }
+
+static int init(const struct device *dev)
+{
+    ARG_UNUSED(dev);
+
+    int ret;
+
+    LOG_INF("Init");
+
+    ret = init_gpio();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_gpio` failed: %d", ret);
+        return ret;
+    }
+
+    ret = init_led();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_led` failed: %d", ret);
+        return ret;
+    }
+
+    ret = init_button();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_button` failed: %d", ret);
+        return ret;
+    }
+
+    ret = init_i2c();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_i2c` failed: %d", ret);
+        return ret;
+    }
+
+    ret = init_tmp112();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_tmp112` failed: %d", ret);
+        return ret;
+    }
+
+    ret = init_flash();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_flash` failed: %d", ret);
+        return ret;
+    }
+
+    ret = init_rf_mux();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_rf_mux` failed: %d", ret);
+        return ret;
+    }
+
+    ret = init_gnss();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_gnss` failed: %d", ret);
+        return ret;
+    }
+
+    ret = init_lte();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_lte` failed: %d", ret);
+        return ret;
+    }
+
+    ret = init_batt();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_batt` failed: %d", ret);
+        return ret;
+    }
+
+    ret = init_w1b();
+
+    if (ret < 0) {
+        LOG_ERR("Call `init_w1b` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+SYS_INIT(init, APPLICATION, CONFIG_HIO_BSP_INIT_PRIORITY);

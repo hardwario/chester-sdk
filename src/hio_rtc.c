@@ -47,113 +47,6 @@ static int get_days_in_month(int year, int month)
     return 31;
 }
 
-static void rtc_handler(nrfx_rtc_int_type_t int_type)
-{
-    if (int_type != NRFX_RTC_INT_TICK) {
-        return;
-    }
-
-    static int prescaler = 0;
-
-    if (++prescaler % 8 != 0) {
-        return;
-    }
-
-    prescaler = 0;
-
-    if (++m_seconds >= 60) {
-        m_seconds = 0;
-
-        if (++m_minutes >= 60) {
-            m_minutes = 0;
-
-            if (++m_hours >= 24) {
-                m_hours = 0;
-
-                if (++m_day > get_days_in_month(m_year, m_month)) {
-                    m_day = 1;
-
-                    if (++m_month > 12) {
-                        m_month = 1;
-
-                        ++m_year;
-                    }
-                }
-            }
-        }
-    }
-}
-
-static int request_lfclk(void)
-{
-    int ret;
-
-    struct onoff_manager *mgr =
-        z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
-
-    if (mgr == NULL) {
-        LOG_ERR("Call `z_nrf_clock_control_get_onoff` failed");
-        return -ENXIO;
-    }
-
-    static struct k_poll_signal sig;
-
-    k_poll_signal_init(&sig);
-    sys_notify_init_signal(&m_lfclk_cli.notify, &sig);
-
-    ret = onoff_request(mgr, &m_lfclk_cli);
-
-    if (ret < 0) {
-        LOG_ERR("Call `onoff_request` failed: %d", ret);
-        return ret;
-    }
-
-    struct k_poll_event events[] = {
-        K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
-                                 K_POLL_MODE_NOTIFY_ONLY,
-                                 &sig)
-    };
-
-    ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
-
-    if (ret < 0) {
-        LOG_ERR("Call `k_poll` failed: %d", ret);
-        return ret;
-    }
-
-    return 0;
-}
-
-int hio_rtc_init(void)
-{
-    int ret;
-
-    ret = request_lfclk();
-
-    if (ret < 0) {
-        LOG_ERR("Call `request_lfclk` failed: %d", ret);
-        return ret;
-    }
-
-    nrfx_rtc_config_t config = NRFX_RTC_DEFAULT_CONFIG;
-    config.prescaler = 4095;
-
-    nrfx_err_t err = nrfx_rtc_init(&m_rtc, &config, rtc_handler);
-
-    if (err != NRFX_SUCCESS) {
-        LOG_ERR("Call `nrfx_rtc_init` failed: %d", (int)err);
-        return -EIO;
-    }
-
-    nrfx_rtc_tick_enable(&m_rtc, true);
-    nrfx_rtc_enable(&m_rtc);
-
-    IRQ_CONNECT(RTC2_IRQn, 0, nrfx_rtc_2_irq_handler, NULL, 0);
-    irq_enable(RTC2_IRQn);
-
-    return 0;
-}
-
 int hio_rtc_get(struct hio_rtc_tm *tm)
 {
     irq_disable(RTC2_IRQn);
@@ -324,3 +217,116 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 SHELL_CMD_REGISTER(rtc, &sub_rtc,
                    "RTC commands for date/time operations", print_help);
+
+static void rtc_handler(nrfx_rtc_int_type_t int_type)
+{
+    if (int_type != NRFX_RTC_INT_TICK) {
+        return;
+    }
+
+    static int prescaler = 0;
+
+    if (++prescaler % 8 != 0) {
+        return;
+    }
+
+    prescaler = 0;
+
+    if (++m_seconds >= 60) {
+        m_seconds = 0;
+
+        if (++m_minutes >= 60) {
+            m_minutes = 0;
+
+            if (++m_hours >= 24) {
+                m_hours = 0;
+
+                if (++m_day > get_days_in_month(m_year, m_month)) {
+                    m_day = 1;
+
+                    if (++m_month > 12) {
+                        m_month = 1;
+
+                        ++m_year;
+                    }
+                }
+            }
+        }
+    }
+}
+
+static int request_lfclk(void)
+{
+    int ret;
+
+    struct onoff_manager *mgr =
+        z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
+
+    if (mgr == NULL) {
+        LOG_ERR("Call `z_nrf_clock_control_get_onoff` failed");
+        return -ENXIO;
+    }
+
+    static struct k_poll_signal sig;
+
+    k_poll_signal_init(&sig);
+    sys_notify_init_signal(&m_lfclk_cli.notify, &sig);
+
+    ret = onoff_request(mgr, &m_lfclk_cli);
+
+    if (ret < 0) {
+        LOG_ERR("Call `onoff_request` failed: %d", ret);
+        return ret;
+    }
+
+    struct k_poll_event events[] = {
+        K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+                                 K_POLL_MODE_NOTIFY_ONLY,
+                                 &sig)
+    };
+
+    ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_poll` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+static int init(const struct device *dev)
+{
+    ARG_UNUSED(dev);
+
+    int ret;
+
+    LOG_INF("Init");
+
+    ret = request_lfclk();
+
+    if (ret < 0) {
+        LOG_ERR("Call `request_lfclk` failed: %d", ret);
+        return ret;
+    }
+
+    nrfx_rtc_config_t config = NRFX_RTC_DEFAULT_CONFIG;
+    config.prescaler = 4095;
+
+    nrfx_err_t err = nrfx_rtc_init(&m_rtc, &config, rtc_handler);
+
+    if (err != NRFX_SUCCESS) {
+        LOG_ERR("Call `nrfx_rtc_init` failed: %d", (int)err);
+        return -EIO;
+    }
+
+    nrfx_rtc_tick_enable(&m_rtc, true);
+    nrfx_rtc_enable(&m_rtc);
+
+    IRQ_CONNECT(RTC2_IRQn, 0, nrfx_rtc_2_irq_handler, NULL, 0);
+    irq_enable(RTC2_IRQn);
+
+    return 0;
+}
+
+SYS_INIT(init, APPLICATION, CONFIG_HIO_RTC_INIT_PRIORITY);

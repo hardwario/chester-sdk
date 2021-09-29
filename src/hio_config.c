@@ -1,6 +1,7 @@
 #include <hio_config.h>
 
 // Zephyr includes
+#include <init.h>
 #include <fs/nvs.h>
 #include <logging/log.h>
 #include <settings/settings.h>
@@ -30,6 +31,7 @@ void hio_config_append_show(const char *name, hio_config_show_cb cb)
         return;
     }
 
+    item->name = name;
     item->cb = cb;
 
     sys_slist_append(&m_show_list, &item->node);
@@ -183,3 +185,23 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 
 SHELL_CMD_REGISTER(config, &sub_config, "Configuration commands.", print_help);
+
+static int init(const struct device *dev)
+{
+    ARG_UNUSED(dev);
+
+    int ret;
+
+    LOG_INF("Init");
+
+    ret = settings_subsys_init();
+
+    if (ret < 0) {
+        LOG_ERR("Call `settings_subsys_init` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+SYS_INIT(init, APPLICATION, CONFIG_HIO_CONFIG_INIT_PRIORITY);

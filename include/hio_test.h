@@ -4,7 +4,7 @@
 // Standard includes
 #include <stdbool.h>
 
-void hio_test_block(void);
+// TODO Remove this function
 bool hio_test_is_active(void);
 
 #endif

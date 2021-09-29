@@ -27,6 +27,11 @@ LOG_MODULE_REGISTER(hio_net_lrw, LOG_LEVEL_DBG);
 
 static K_MUTEX_DEFINE(m_config_mut);
 
+enum antenna {
+    ANTENNA_INT = 0,
+    ANTENNA_EXT = 1
+};
+
 enum state {
     STATE_INIT = 0,
     STATE_JOIN = 1,
@@ -60,6 +65,7 @@ enum nwk {
 
 struct config {
     bool enabled; // TODO Implement
+    enum antenna antenna;
     enum band band;
     enum class class;
     enum mode mode;
@@ -78,6 +84,7 @@ static enum state m_state = STATE_INIT;
 
 static struct config m_config = {
     .enabled = true,
+    .antenna = ANTENNA_INT,
     .band = BAND_EU868,
     .class = CLASS_A,
     .mode = MODE_OTAA,
@@ -429,31 +436,11 @@ int hio_net_lrw_init(void)
 {
     int ret;
 
-    k_poll_signal_init(&m_boot_sig);
-    k_poll_signal_init(&m_join_sig);
-    k_poll_signal_init(&m_send_sig);
-
-    static struct settings_handler sh = {
-        .name = SETTINGS_PFX,
-        .h_set = h_set,
-        .h_export = h_export
-    };
-
-    ret = settings_register(&sh);
-
-    if (ret < 0) {
-        LOG_ERR("Call `settings_register` failed: %d", ret);
-        return ret;
+    if (m_config.antenna == ANTENNA_EXT) {
+        ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_EXT);
+    } else {
+        ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
     }
-
-    ret = settings_load_subtree(SETTINGS_PFX);
-
-    if (ret < 0) {
-        LOG_ERR("Call `settings_load_subtree` failed: %d", ret);
-        return ret;
-    }
-
-    ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
 
     if (ret < 0) {
         LOG_ERR("Call `hio_bsp_set_rf_ant` failed: %d", ret);
@@ -538,6 +525,7 @@ static int h_set(const char *key, size_t len,
     } while (0)
 
     SETTINGS_SET("enabled", &m_config.enabled, sizeof(m_config.enabled));
+    SETTINGS_SET("antenna", &m_config.antenna, sizeof(m_config.antenna));
     SETTINGS_SET("band", &m_config.band, sizeof(m_config.band));
     SETTINGS_SET("class", &m_config.class, sizeof(m_config.class));
     SETTINGS_SET("mode", &m_config.mode, sizeof(m_config.mode));
@@ -566,6 +554,7 @@ static int h_export(int (*export_func)(const char *name,
         (void)export_func(SETTINGS_PFX "/" _key, _var, _size); \
     } while (0)
 
+    EXPORT_FUNC("antenna", &m_config.antenna, sizeof(m_config.antenna));
     EXPORT_FUNC("band", &m_config.band, sizeof(m_config.band));
     EXPORT_FUNC("class", &m_config.class, sizeof(m_config.class));
     EXPORT_FUNC("mode", &m_config.mode, sizeof(m_config.mode));
@@ -591,6 +580,24 @@ static void print_enabled(const struct shell *shell)
     k_mutex_lock(&m_config_mut, K_FOREVER);
     shell_print(shell, SETTINGS_PFX " config enabled %s",
                 m_config.enabled ? "true" : "false");
+    k_mutex_unlock(&m_config_mut);
+}
+
+static void print_antenna(const struct shell *shell)
+{
+    k_mutex_lock(&m_config_mut, K_FOREVER);
+
+    switch (m_config.antenna) {
+    case ANTENNA_INT:
+        shell_print(shell, SETTINGS_PFX " config antenna int");
+        break;
+    case ANTENNA_EXT:
+        shell_print(shell, SETTINGS_PFX " config antenna ext");
+        break;
+    default:
+        shell_print(shell, SETTINGS_PFX " config antenna (unknown)");
+    }
+
     k_mutex_unlock(&m_config_mut);
 }
 
@@ -784,6 +791,7 @@ static int cmd_config_show(const struct shell *shell,
     k_mutex_lock(&m_config_mut, K_FOREVER);
 
     print_enabled(shell);
+    print_antenna(shell);
     print_band(shell);
     print_class(shell);
     print_mode(shell);
@@ -820,6 +828,32 @@ static int cmd_config_enabled(const struct shell *shell,
     if (argc == 2 && strcmp(argv[1], "false") == 0) {
         k_mutex_lock(&m_config_mut, K_FOREVER);
         m_config.enabled = false;
+        k_mutex_unlock(&m_config_mut);
+        return 0;
+    }
+
+    shell_help(shell);
+    return -EINVAL;
+}
+
+static int cmd_config_antenna(const struct shell *shell,
+                              size_t argc, char **argv)
+{
+    if (argc == 1) {
+        print_antenna(shell);
+        return 0;
+    }
+
+    if (argc == 2 && strcmp(argv[1], "int") == 0) {
+        k_mutex_lock(&m_config_mut, K_FOREVER);
+        m_config.antenna = ANTENNA_INT;
+        k_mutex_unlock(&m_config_mut);
+        return 0;
+    }
+
+    if (argc == 2 && strcmp(argv[1], "ext") == 0) {
+        k_mutex_lock(&m_config_mut, K_FOREVER);
+        m_config.antenna = ANTENNA_EXT;
         k_mutex_unlock(&m_config_mut);
         return 0;
     }
@@ -1179,6 +1213,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(enabled, NULL,
                   "Get/Set LoRaWAN state (format: <true|false>).",
                   cmd_config_enabled, 1, 1),
+    SHELL_CMD_ARG(antenna, NULL,
+                  "Get/Set LoRaWAN antenna (format: <int|ext>).",
+                  cmd_config_antenna, 1, 1),
     SHELL_CMD_ARG(band, NULL,
                   "Get/Set radio band "
                   "(format: <as923|au915|eu868|kr920|in865|us915>).",
@@ -1233,6 +1270,34 @@ SHELL_CMD_REGISTER(lrw, &sub_lrw, "LoRaWAN commands.", print_help);
 static int init(const struct device *dev)
 {
     ARG_UNUSED(dev);
+
+    int ret;
+
+    LOG_INF("Init");
+
+    k_poll_signal_init(&m_boot_sig);
+    k_poll_signal_init(&m_join_sig);
+    k_poll_signal_init(&m_send_sig);
+
+    static struct settings_handler sh = {
+        .name = SETTINGS_PFX,
+        .h_set = h_set,
+        .h_export = h_export
+    };
+
+    ret = settings_register(&sh);
+
+    if (ret < 0) {
+        LOG_ERR("Call `settings_register` failed: %d", ret);
+        return ret;
+    }
+
+    ret = settings_load_subtree(SETTINGS_PFX);
+
+    if (ret < 0) {
+        LOG_ERR("Call `settings_load_subtree` failed: %d", ret);
+        return ret;
+    }
 
     hio_config_append_show(SETTINGS_PFX, cmd_config_show);
 

@@ -10,7 +10,6 @@ struct hio_rtc_tm {
     int seconds;
 };
 
-int hio_rtc_init(void);
 int hio_rtc_get(struct hio_rtc_tm *tm);
 int hio_rtc_set(const struct hio_rtc_tm *tm);
 
