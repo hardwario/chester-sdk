@@ -1273,7 +1273,7 @@ static int init(const struct device *dev)
 
     int ret;
 
-    LOG_INF("Init");
+    LOG_INF("System initialization");
 
     k_poll_signal_init(&m_boot_sig);
     k_poll_signal_init(&m_join_sig);

@@ -765,7 +765,7 @@ static int init(const struct device *dev)
 
     int ret;
 
-    LOG_INF("Init");
+    LOG_INF("System initialization");
 
     ret = init_gpio();
 

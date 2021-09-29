@@ -206,6 +206,10 @@ config HIO_CONFIG_INIT_PRIORITY
 # #############################################################################
 # HIO_BLE
 
+config HIO_BLE_INIT_PRIORITY
+	int "HIO_BLE_INIT_PRIORITY"
+	default 1
+
 config BT_RX_STACK_SIZE
 	default 4096 if HIO_BLE
 
@@ -251,7 +255,7 @@ if HIO_RTC
 
 config HIO_RTC_INIT_PRIORITY
 	int "HIO_RTC_INIT_PRIORITY"
-	default 1
+	default 3
 
 endif # HIO_RTC
 
