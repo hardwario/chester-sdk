@@ -64,7 +64,6 @@ enum nwk {
 };
 
 struct config {
-    bool enabled; // TODO Implement
     enum antenna antenna;
     enum band band;
     enum class class;
@@ -83,7 +82,6 @@ struct config {
 static enum state m_state = STATE_INIT;
 
 static struct config m_config = {
-    .enabled = true,
     .antenna = ANTENNA_INT,
     .band = BAND_EU868,
     .class = CLASS_A,
@@ -524,7 +522,6 @@ static int h_set(const char *key, size_t len,
         }                                                    \
     } while (0)
 
-    SETTINGS_SET("enabled", &m_config.enabled, sizeof(m_config.enabled));
     SETTINGS_SET("antenna", &m_config.antenna, sizeof(m_config.antenna));
     SETTINGS_SET("band", &m_config.band, sizeof(m_config.band));
     SETTINGS_SET("class", &m_config.class, sizeof(m_config.class));
@@ -573,14 +570,6 @@ static int h_export(int (*export_func)(const char *name,
     k_mutex_unlock(&m_config_mut);
 
     return 0;
-}
-
-static void print_enabled(const struct shell *shell)
-{
-    k_mutex_lock(&m_config_mut, K_FOREVER);
-    shell_print(shell, SETTINGS_PFX " config enabled %s",
-                m_config.enabled ? "true" : "false");
-    k_mutex_unlock(&m_config_mut);
 }
 
 static void print_antenna(const struct shell *shell)
@@ -790,7 +779,6 @@ static int cmd_config_show(const struct shell *shell,
 {
     k_mutex_lock(&m_config_mut, K_FOREVER);
 
-    print_enabled(shell);
     print_antenna(shell);
     print_band(shell);
     print_class(shell);
@@ -808,32 +796,6 @@ static int cmd_config_show(const struct shell *shell,
     k_mutex_unlock(&m_config_mut);
 
     return 0;
-}
-
-static int cmd_config_enabled(const struct shell *shell,
-                              size_t argc, char **argv)
-{
-    if (argc == 1) {
-        print_enabled(shell);
-        return 0;
-    }
-
-    if (argc == 2 && strcmp(argv[1], "true") == 0) {
-        k_mutex_lock(&m_config_mut, K_FOREVER);
-        m_config.enabled = true;
-        k_mutex_unlock(&m_config_mut);
-        return 0;
-    }
-
-    if (argc == 2 && strcmp(argv[1], "false") == 0) {
-        k_mutex_lock(&m_config_mut, K_FOREVER);
-        m_config.enabled = false;
-        k_mutex_unlock(&m_config_mut);
-        return 0;
-    }
-
-    shell_help(shell);
-    return -EINVAL;
 }
 
 static int cmd_config_antenna(const struct shell *shell,
@@ -1210,9 +1172,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(show, NULL,
                   "List current configuration.",
                   cmd_config_show, 1, 0),
-    SHELL_CMD_ARG(enabled, NULL,
-                  "Get/Set LoRaWAN state (format: <true|false>).",
-                  cmd_config_enabled, 1, 1),
     SHELL_CMD_ARG(antenna, NULL,
                   "Get/Set LoRaWAN antenna (format: <int|ext>).",
                   cmd_config_antenna, 1, 1),
