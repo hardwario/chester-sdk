@@ -19,6 +19,7 @@ static int init(void *ctx)
 
     uint32_t dev_config = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
 
+    // TODO Really needed?
     ret = i2c_configure(m_dev, dev_config);
 
 	if (ret < 0) {
