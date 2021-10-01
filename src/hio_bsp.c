@@ -97,41 +97,6 @@ static int init_gpio(void)
     return 0;
 }
 
-static int init_led(void)
-{
-    int ret;
-
-    ret = gpio_pin_configure(DEV_LED_R, PIN_LED_R, GPIO_OUTPUT_INACTIVE);
-
-    if (ret < 0) {
-        LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-        return ret;
-    }
-
-    ret = gpio_pin_configure(DEV_LED_G, PIN_LED_G, GPIO_OUTPUT_INACTIVE);
-
-    if (ret < 0) {
-        LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-        return ret;
-    }
-
-    ret = gpio_pin_configure(DEV_LED_Y, PIN_LED_Y, GPIO_OUTPUT_INACTIVE);
-
-    if (ret < 0) {
-        LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-        return ret;
-    }
-
-    ret = gpio_pin_configure(DEV_LED_EXT, PIN_LED_EXT, GPIO_OUTPUT_INACTIVE);
-
-    if (ret < 0) {
-        LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-        return ret;
-    }
-
-    return 0;
-}
-
 static int init_button(void)
 {
     int ret;
@@ -771,13 +736,6 @@ static int init(const struct device *dev)
 
     if (ret < 0) {
         LOG_ERR("Call `init_gpio` failed: %d", ret);
-        return ret;
-    }
-
-    ret = init_led();
-
-    if (ret < 0) {
-        LOG_ERR("Call `init_led` failed: %d", ret);
         return ret;
     }
 

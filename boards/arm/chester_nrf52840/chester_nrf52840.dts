@@ -26,38 +26,39 @@
 		};
 	};
 
-	leds {
+	leds_rgy {
 		compatible = "gpio-leds";
+		label = "LEDS_RGY";
+
+		led_r: led_r {
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		};
 
 		led_g: led_g {
-			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
-			label = "LED_GREEN";
+			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_y: led_y {
-			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
-			label = "LED_YELLOW";
+			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		};
+	};
 
-		led_r: led_r {
-			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
-			label = "LED_RED";
-		};
+	leds_ext {
+		compatible = "gpio-leds";
+		label = "LEDS_EXT";
 
 		led_ext: led_ext {
-			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
-			label = "LED_EXT";
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
 	aliases {
-		led0 = &led_g;
-		led1 = &led_y;
-		led2 = &led_r;
+		led0 = &led_r;
+		led1 = &led_g;
+		led2 = &led_y;
 		led3 = &led_ext;
 		sw0 = &btn_int;
 		sw1 = &btn_ext;
-		bootloader-led0 = &led_ext;
 	};
 };
 
