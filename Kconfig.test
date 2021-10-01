@@ -1,0 +1,8 @@
+config HIO_TEST
+	bool "HIO_TEST"
+	select HIO_SDK
+
+config HIO_TEST_INIT_PRIORITY
+	int "HIO_TEST_INIT_PRIORITY"
+	default 99
+	depends on HIO_TEST

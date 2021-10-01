@@ -1,33 +1,12 @@
-menuconfig HIO_SDK
+config HIO_SDK
 	bool "HIO_SDK"
 	select BOOTLOADER_MCUBOOT
 	select MCUMGR
 
 if HIO_SDK
 
-config HIO_BLE
-	bool "HIO_BLE"
-	select BT
-	select BT_NUS
-	select BT_PERIPHERAL
-	select MCUMGR_CMD_IMG_MGMT
-	select MCUMGR_CMD_OS_MGMT
-	select MCUMGR_SMP_BT
-
-config HIO_BSP
-	bool "HIO_BSP"
-
 config HIO_CHESTER_X3
 	bool "HIO_CHESTER_X3"
-
-config HIO_NET_LRW
-	bool "HIO_NET_LRW"
-
-config HIO_RTC
-	bool "HIO_RTC"
-
-config HIO_TEST
-	bool "HIO_TEST"
 
 endif # HIO_SDK
 
@@ -205,88 +184,11 @@ config UART_LINE_CTRL
 config USE_SEGGER_RTT
 	default y if HIO_SDK
 
-config HIO_CONFIG_INIT_PRIORITY
-	int "HIO_CONFIG_INIT_PRIORITY"
-	default 0
+rsource "Kconfig.ble"
+rsource "Kconfig.bsp"
+rsource "Kconfig.config"
+rsource "Kconfig.lrw"
+rsource "Kconfig.rtc"
+rsource "Kconfig.test"
 
-# #############################################################################
-# HIO_BLE
-
-config HIO_BLE_INIT_PRIORITY
-	int "HIO_BLE_INIT_PRIORITY"
-	default 1
-
-config BT_RX_STACK_SIZE
-	default 4096 if HIO_BLE
-
-config BT_CTLR_RX_PRIO_STACK_SIZE
-	default 2048 if HIO_BLE
-
-config BT_L2CAP_TX_MTU
-	default 252 if HIO_BLE
-
-config BT_BUF_ACL_RX_SIZE
-	default 256 if HIO_BLE
-
-config MCUMGR_SMP_BT_AUTHEN
-	default n if HIO_BLE
-
-config BT_DEVICE_NAME
-	default "CHESTER 3" if HIO_BLE
-
-config SHELL_BT_NUS
-	default y if HIO_BLE
-
-config SHELL_BT_NUS_RX_RING_BUFFER_SIZE
-	default 256 if HIO_BLE
-
-config SHELL_BT_NUS_TX_RING_BUFFER_SIZE
-	default 256 if HIO_BLE
-
-# #############################################################################
-# HIO_BSP
-
-if HIO_BSP
-
-config HIO_BSP_INIT_PRIORITY
-	int "HIO_BSP_INIT_PRIORITY"
-	default 2
-
-endif # HIO_BSP
-
-# #############################################################################
-# HIO_NET_LRW
-
-if HIO_NET_LRW
-
-config HIO_NET_LRW_THREAD_STACK_SIZE
-	int "HIO_NET_LRW_THREAD_STACK_SIZE"
-	default 4096
-
-config HIO_NET_LRW_THREAD_PRIORITY
-	int "HIO_NET_LRW_THREAD_PRIORITY"
-	default 10
-
-endif # HIO_NET_LRW
-
-# #############################################################################
-# HIO_RTC
-
-if HIO_RTC
-
-config HIO_RTC_INIT_PRIORITY
-	int "HIO_RTC_INIT_PRIORITY"
-	default 3
-
-endif # HIO_RTC
-
-# #############################################################################
-# HIO_TEST
-
-if HIO_TEST
-
-config HIO_TEST_INIT_PRIORITY
-	int "HIO_TEST_INIT_PRIORITY"
-	default 99
-
-endif # HIO_TEST
+rsource "drivers/Kconfig"

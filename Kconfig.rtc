@@ -1,0 +1,8 @@
+config HIO_RTC
+	bool "HIO_RTC"
+	select HIO_SDK
+
+config HIO_RTC_INIT_PRIORITY
+	int "HIO_RTC_INIT_PRIORITY"
+	default 3
+	depends on HIO_RTC

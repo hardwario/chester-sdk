@@ -1,0 +1,13 @@
+config HIO_NET_LRW
+	bool "HIO_NET_LRW"
+	select HIO_SDK
+
+config HIO_NET_LRW_THREAD_STACK_SIZE
+	int "HIO_NET_LRW_THREAD_STACK_SIZE"
+	default 4096
+	depends on HIO_NET_LRW
+
+config HIO_NET_LRW_THREAD_PRIORITY
+	int "HIO_NET_LRW_THREAD_PRIORITY"
+	default 10
+	depends on HIO_NET_LRW

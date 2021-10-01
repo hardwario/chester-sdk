@@ -1,0 +1,8 @@
+config HIO_BSP
+	bool "HIO_BSP"
+	select HIO_SDK
+
+config HIO_BSP_INIT_PRIORITY
+	int "HIO_BSP_INIT_PRIORITY"
+	default 2
+	depends on HIO_BSP
