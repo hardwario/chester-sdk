@@ -131,8 +131,6 @@ static int h_set(const char *key, size_t len,
 static int h_export(int (*export_func)(const char *name,
                                        const void *val, size_t val_len));
 
-// ----------------------------------------------------------------------------
-
 static void talk_handler(enum hio_lrw_talk_event event)
 {
     switch (event) {
@@ -160,8 +158,6 @@ static void talk_handler(enum hio_lrw_talk_event event)
         LOG_WRN("Unknown event: %d", (int)event);
     }
 }
-
-// ----------------------------------------------------------------------------
 
 static int boot_once(void)
 {
@@ -195,8 +191,6 @@ static int boot_once(void)
 
     return 0;
 }
-
-// ----------------------------------------------------------------------------
 
 static int boot(int retries, k_timeout_t delay)
 {
@@ -240,8 +234,6 @@ static int boot(int retries, k_timeout_t delay)
     LOG_ERR("Operation BOOT failed");
     return -ENOLINK;
 }
-
-// ----------------------------------------------------------------------------
 
 static int setup_once(void)
 {
@@ -357,8 +349,6 @@ static int setup_once(void)
     return 0;
 }
 
-// ----------------------------------------------------------------------------
-
 static int setup(int retries, k_timeout_t delay)
 {
     int ret;
@@ -401,8 +391,6 @@ static int setup(int retries, k_timeout_t delay)
     LOG_ERR("Operation SETUP failed");
     return -EPIPE;
 }
-
-// ----------------------------------------------------------------------------
 
 static int join_once(void)
 {
@@ -447,8 +435,6 @@ static int join_once(void)
     return 0;
 }
 
-// ----------------------------------------------------------------------------
-
 static int join(int retries, k_timeout_t delay)
 {
     int ret;
@@ -491,8 +477,6 @@ static int join(int retries, k_timeout_t delay)
     LOG_WRN("Operation JOIN failed");
     return -ENOTCONN;
 }
-
-// ----------------------------------------------------------------------------
 
 static int send_once(struct msgq_data_send *data)
 {
@@ -568,8 +552,6 @@ static int send_once(struct msgq_data_send *data)
 
     return 0;
 }
-
-// ----------------------------------------------------------------------------
 
 static int send(int retries, k_timeout_t delay, struct msgq_data_send *data)
 {
@@ -753,6 +735,12 @@ static void process_thread(void)
             LOG_INF("Dequeued SEND command (correlation id: %d)",
                     item.corr_id);
 
+            if (item.data.send.ttl != 0) {
+                if (k_uptime_get() > item.data.send.ttl) {
+                    LOG_WRN("Message TTL expired");
+                }
+            }
+
             // TODO Check state
 
             ret = send(3, K_SECONDS(30), &item.data.send);
@@ -891,8 +879,6 @@ int hio_net_lrw_send(const struct hio_net_lrw_send_opts *opts,
 
     return 0;
 }
-
-// ============================================================================
 
 static int h_set(const char *key, size_t len,
                  settings_read_cb read_cb, void *cb_arg)
