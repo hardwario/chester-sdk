@@ -1,6 +1,5 @@
 // TODO Implement retries settings parameter
-// TODO Implement antenna selection parameter
-// TODO Implement thread + queue mechanism
+// TODO Implement states + state checking
 
 #include <hio_net_lrw.h>
 #include <hio_bsp.h>
@@ -25,6 +24,30 @@ LOG_MODULE_REGISTER(hio_net_lrw, LOG_LEVEL_DBG);
 
 #define SETTINGS_PFX "lrw"
 #define JOIN_TIMEOUT K_SECONDS(30)
+#define SEND_TIMEOUT K_SECONDS(120)
+#define MSGQ_MAX_ITEMS 16
+
+enum msgq_cmd {
+    MSGQ_CMD_START = 0,
+    MSGQ_CMD_JOIN = 1,
+    MSGQ_CMD_SEND = 2
+};
+
+struct msgq_data_send {
+    int64_t ttl;
+    bool confirmed;
+    int port;
+    void *buf;
+    size_t len;
+};
+
+struct msgq_item {
+    int corr_id;
+    enum msgq_cmd cmd;
+    union {
+        struct msgq_data_send send;
+    } data;
+};
 
 static K_MUTEX_DEFINE(m_config_mut);
 
@@ -96,11 +119,47 @@ static struct k_poll_signal m_boot_sig;
 static struct k_poll_signal m_join_sig;
 static struct k_poll_signal m_send_sig;
 
+K_MSGQ_DEFINE(m_msgq, sizeof(struct msgq_item), MSGQ_MAX_ITEMS, 4);
+
+static hio_net_lrw_event_cb m_callback;
+static void *m_param;
+static atomic_t m_corr_id;
+
 static int h_set(const char *key, size_t len,
                  settings_read_cb read_cb, void *cb_arg);
 
 static int h_export(int (*export_func)(const char *name,
                                        const void *val, size_t val_len));
+
+// ----------------------------------------------------------------------------
+
+static void talk_handler(enum hio_lrw_talk_event event)
+{
+    switch (event) {
+    case HIO_LRW_TALK_EVENT_BOOT:
+        LOG_DBG("Event `HIO_LRW_TALK_EVENT_BOOT`");
+        k_poll_signal_raise(&m_boot_sig, 0);
+        break;
+    case HIO_LRW_TALK_EVENT_JOIN_OK:
+        LOG_DBG("Event `HIO_LRW_TALK_EVENT_JOIN_OK`");
+        k_poll_signal_raise(&m_join_sig, 0);
+        break;
+    case HIO_LRW_TALK_EVENT_JOIN_ERR:
+        LOG_DBG("Event `HIO_LRW_TALK_EVENT_JOIN_ERR`");
+        k_poll_signal_raise(&m_join_sig, 1);
+        break;
+    case HIO_LRW_TALK_EVENT_SEND_OK:
+        LOG_DBG("Event `HIO_LRW_TALK_EVENT_SEND_OK`");
+        k_poll_signal_raise(&m_send_sig, 0);
+        break;
+    case HIO_LRW_TALK_EVENT_SEND_ERR:
+        LOG_DBG("Event `HIO_LRW_TALK_EVENT_SEND_ERR`");
+        k_poll_signal_raise(&m_send_sig, 1);
+        break;
+    default:
+        LOG_WRN("Unknown event: %d", (int)event);
+    }
+}
 
 // ----------------------------------------------------------------------------
 
@@ -143,13 +202,13 @@ static int boot(int retries, k_timeout_t delay)
 {
     int ret;
 
-    LOG_INF("Boot operation started");
+    LOG_INF("Operation BOOT started");
 
     while (retries-- > 0) {
         ret = boot_once();
 
         if (ret == 0) {
-            LOG_INF("Boot operation succeeded");
+            LOG_INF("Operation BOOT succeeded");
             return 0;
         }
 
@@ -167,7 +226,7 @@ static int boot(int retries, k_timeout_t delay)
 
             k_sleep(delay);
 
-            LOG_WRN("Boot operation repetition");
+            LOG_WRN("Repeating BOOT operation (retries left: %d)", retries);
 
             ret = hio_lrw_talk_enable();
 
@@ -178,7 +237,7 @@ static int boot(int retries, k_timeout_t delay)
         }
     }
 
-    LOG_ERR("Boot operation failed");
+    LOG_ERR("Operation BOOT failed");
     return -ENOLINK;
 }
 
@@ -304,13 +363,13 @@ static int setup(int retries, k_timeout_t delay)
 {
     int ret;
 
-    LOG_INF("Setup operation started");
+    LOG_INF("Operation SETUP started");
 
     while (retries-- > 0) {
         ret = setup_once();
 
         if (ret == 0) {
-            LOG_INF("Setup operation succeeded");
+            LOG_INF("Operation SETUP succeeded");
             return 0;
         }
 
@@ -328,7 +387,7 @@ static int setup(int retries, k_timeout_t delay)
 
             k_sleep(delay);
 
-            LOG_WRN("Setup operation repetition");
+            LOG_WRN("Repeating SETUP operation (retries left: %d)", retries);
 
             ret = hio_lrw_talk_enable();
 
@@ -339,7 +398,7 @@ static int setup(int retries, k_timeout_t delay)
         }
     }
 
-    LOG_ERR("Setup operation failed");
+    LOG_ERR("Operation SETUP failed");
     return -EPIPE;
 }
 
@@ -394,13 +453,13 @@ static int join(int retries, k_timeout_t delay)
 {
     int ret;
 
-    LOG_INF("Join operation started");
+    LOG_INF("Operation JOIN started");
 
     while (retries-- > 0) {
         ret = join_once();
 
         if (ret == 0) {
-            LOG_INF("Join operation succeeded");
+            LOG_INF("Operation JOIN succeeded");
             return 0;
         }
 
@@ -418,7 +477,7 @@ static int join(int retries, k_timeout_t delay)
 
             k_sleep(delay);
 
-            LOG_WRN("Join operation repetition");
+            LOG_WRN("Repeating JOIN operation (retries left: %d)", retries);
 
             ret = hio_lrw_talk_enable();
 
@@ -429,67 +488,108 @@ static int join(int retries, k_timeout_t delay)
         }
     }
 
-    LOG_WRN("Join operation failed");
+    LOG_WRN("Operation JOIN failed");
     return -ENOTCONN;
 }
 
 // ----------------------------------------------------------------------------
 
-static int send(void)
+static int send_once(struct msgq_data_send *data)
 {
     int ret;
 
-    for (;;) {
-        k_poll_signal_reset(&m_send_sig);
-
-        uint8_t buf[] = {1,2,3,4};
-
-        ret = hio_lrw_talk_at_putx(1, buf, sizeof(buf));
+    if (!data->confirmed && data->port < 0) {
+        ret = hio_lrw_talk_at_utx(data->buf, data->len);
 
         if (ret < 0) {
-            LOG_ERR("Call `hio_lrw_talk_at_putx` failed: %d", ret);
-            k_sleep(K_SECONDS(10));
-            continue;
-        }
-
-        break;
-
-        /*
-        struct k_poll_event events[] = {
-            K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
-                                     K_POLL_MODE_NOTIFY_ONLY,
-                                     &m_send_sig)
-        };
-
-        ret = k_poll(events, ARRAY_SIZE(events), K_SECONDS(30));
-
-        if (ret == -EAGAIN) {
-            LOG_WRN("Join response timed out");
-            continue;
-        }
-
-        if (ret < 0) {
-            LOG_ERR("Call `k_poll` failed: %d", ret);
+            LOG_ERR("Call `hio_lrw_talk_at_utx` failed: %d", ret);
             return ret;
         }
 
-        unsigned int signaled;
-        int result;
+        k_poll_signal_raise(&m_send_sig, 0);
 
-        k_poll_signal_check(&m_send_sig, &signaled, &result);
+    } else if (data->confirmed && data->port < 0) {
+        ret = hio_lrw_talk_at_ctx(data->buf, data->len);
 
-        if (signaled > 0 && result == 0) {
-            LOG_INF("Send operation succeeded");
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_at_ctx` failed: %d", ret);
+            return ret;
+        }
 
-            // TODO Signalize to application send success
+        k_poll_signal_reset(&m_send_sig);
 
-            break;
+    } else if (!data->confirmed && data->port >= 0) {
+        ret = hio_lrw_talk_at_putx(data->port, data->buf, data->len);
 
-        } else {
-            LOG_WRN("Send operation failed");
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_at_putx` failed: %d", ret);
+            return ret;
+        }
 
-            // TODO Signalize to application send failure
+        k_poll_signal_raise(&m_send_sig, 0);
 
+    } else {
+        ret = hio_lrw_talk_at_pctx(data->port, data->buf, data->len);
+
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_at_pctx` failed: %d", ret);
+            return ret;
+        }
+
+        k_poll_signal_reset(&m_send_sig);
+    }
+
+    struct k_poll_event events[] = {
+        K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
+                                K_POLL_MODE_NOTIFY_ONLY,
+                                &m_send_sig)
+    };
+
+    ret = k_poll(events, ARRAY_SIZE(events), SEND_TIMEOUT);
+
+    if (ret == -EAGAIN) {
+        LOG_WRN("Send response timed out");
+        return -ETIMEDOUT;
+    }
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_poll` failed: %d", ret);
+        return ret;
+    }
+
+    unsigned int signaled;
+    int result;
+
+    k_poll_signal_check(&m_send_sig, &signaled, &result);
+
+    if (signaled == 0 || result != 0) {
+        return -ENOMSG;
+    }
+
+    return 0;
+}
+
+// ----------------------------------------------------------------------------
+
+static int send(int retries, k_timeout_t delay, struct msgq_data_send *data)
+{
+    int ret;
+
+    LOG_INF("Operation SEND started");
+
+    while (retries-- > 0) {
+        ret = send_once(data);
+
+        if (ret == 0) {
+            LOG_INF("Operation SEND succeeded");
+            return 0;
+        }
+
+        if (ret < 0) {
+            LOG_WRN("Call `send_once` failed: %d", ret);
+        }
+
+        if (retries != 1) {
             ret = hio_lrw_talk_disable();
 
             if (ret < 0) {
@@ -497,7 +597,9 @@ static int send(void)
                 return ret;
             }
 
-            k_sleep(K_MINUTES(10));
+            k_sleep(delay);
+
+            LOG_WRN("Repeating SEND operation (retries left: %d)", retries);
 
             ret = hio_lrw_talk_enable();
 
@@ -506,33 +608,13 @@ static int send(void)
                 return ret;
             }
         }
-        */
     }
 
-    return 0;
+    LOG_WRN("Operation SEND failed");
+    return -ENODATA;
 }
 
-static void talk_handler(enum hio_lrw_talk_event event)
-{
-    switch (event) {
-    case HIO_LRW_TALK_EVENT_BOOT:
-        LOG_DBG("Event `HIO_LRW_TALK_EVENT_BOOT`");
-        k_poll_signal_raise(&m_boot_sig, 0);
-        break;
-    case HIO_LRW_TALK_EVENT_JOIN_OK:
-        LOG_DBG("Event `HIO_LRW_TALK_EVENT_JOIN_OK`");
-        k_poll_signal_raise(&m_join_sig, 0);
-        break;
-    case HIO_LRW_TALK_EVENT_JOIN_ERR:
-        LOG_DBG("Event `HIO_LRW_TALK_EVENT_JOIN_ERR`");
-        k_poll_signal_raise(&m_join_sig, 1);
-        break;
-    default:
-        LOG_WRN("Unknown event: %d", (int)event);
-    }
-}
-
-int hio_net_lrw_start(void)
+static int start(void)
 {
     int ret;
 
@@ -575,41 +657,240 @@ int hio_net_lrw_start(void)
         return ret;
     }
 
-    for (;;) {
-        ret = boot(3, K_SECONDS(10));
+    ret = boot(3, K_SECONDS(10));
 
-        if (ret < 0) {
-            LOG_ERR("Call `boot` failed: %d", ret);
-            return ret;
-        }
+    if (ret < 0) {
+        LOG_ERR("Call `boot` failed: %d", ret);
+        return ret;
+    }
 
-        ret = setup(3, K_SECONDS(10));
+    ret = setup(3, K_SECONDS(10));
 
-        if (ret < 0) {
-            LOG_ERR("Call `setup` failed: %d", ret);
-            return ret;
-        }
-
-        ret = join(3, K_MINUTES(10));
-
-        if (ret < 0) {
-            LOG_ERR("Call `join` failed: %d", ret);
-            return ret;
-        }
-
-        ret = send();
-
-        if (ret < 0) {
-            LOG_ERR("Call `send` failed: %d", ret);
-            return ret;
-        }
-
-        k_sleep(K_SECONDS(30));
+    if (ret < 0) {
+        LOG_ERR("Call `setup` failed: %d", ret);
+        return ret;
     }
 
     return 0;
 }
 
+static void process_thread(void)
+{
+    int ret;
+
+    LOG_DBG("Thread started");
+
+    for (;;) {
+        struct msgq_item item;
+
+        ret = k_msgq_get(&m_msgq, &item, K_FOREVER);
+
+        if (ret < 0) {
+            LOG_ERR("Call `k_msgq_get` failed: %d", ret);
+            return;
+        }
+
+        union hio_net_lrw_event_data data = {0};
+
+        switch (item.cmd) {
+        case MSGQ_CMD_START:
+            LOG_INF("Dequeued START command (correlation id: %d)",
+                    item.corr_id);
+
+            // TODO Check state
+
+            ret = start();
+
+            if (ret < 0) {
+                LOG_ERR("Call `start` failed: %d", ret);
+
+                data.start_err.corr_id = item.corr_id;
+
+                if (m_callback != NULL) {
+                    m_callback(HIO_NET_LRW_EVENT_START_ERR, &data, m_param);
+                }
+
+                break;
+            }
+
+            data.start_ok.corr_id = item.corr_id;
+
+            if (m_callback != NULL) {
+                m_callback(HIO_NET_LRW_EVENT_START_OK, &data, m_param);
+            }
+
+            break;
+
+        case MSGQ_CMD_JOIN:
+            LOG_INF("Dequeued JOIN command (correlation id: %d)",
+                    item.corr_id);
+
+            // TODO Check state
+
+            ret = join(3, K_SECONDS(10));
+
+            if (ret < 0) {
+                LOG_ERR("Call `join` failed: %d", ret);
+
+                data.join_err.corr_id = item.corr_id;
+
+                if (m_callback != NULL) {
+                    m_callback(HIO_NET_LRW_EVENT_JOIN_ERR, &data, m_param);
+                }
+
+                break;
+            }
+
+            data.join_ok.corr_id = item.corr_id;
+
+            if (m_callback != NULL) {
+                m_callback(HIO_NET_LRW_EVENT_JOIN_OK, &data, m_param);
+            }
+
+            break;
+
+        case MSGQ_CMD_SEND:
+            LOG_INF("Dequeued SEND command (correlation id: %d)",
+                    item.corr_id);
+
+            // TODO Check state
+
+            ret = send(3, K_SECONDS(30), &item.data.send);
+
+            k_free(item.data.send.buf);
+
+            if (ret < 0) {
+                LOG_ERR("Call `send` failed: %d", ret);
+
+                data.send_err.corr_id = item.corr_id;
+
+                if (m_callback != NULL) {
+                    m_callback(HIO_NET_LRW_EVENT_SEND_ERR, &data, m_param);
+                }
+
+                break;
+            }
+
+            data.send_ok.corr_id = item.corr_id;
+
+            if (m_callback != NULL) {
+                m_callback(HIO_NET_LRW_EVENT_SEND_OK, &data, m_param);
+            }
+
+            break;
+
+        default:
+            LOG_ERR("Unknown message: %d", (int)item.cmd);
+        }
+    }
+}
+
+K_THREAD_DEFINE(hio_net_lrw, CONFIG_HIO_NET_LRW_THREAD_STACK_SIZE,
+                process_thread, NULL, NULL, NULL,
+                CONFIG_HIO_NET_LRW_THREAD_PRIORITY, 0, 0);
+
+int hio_net_lrw_init(hio_net_lrw_event_cb callback, void *param)
+{
+    m_callback = callback;
+    m_param = param;
+
+    return 0;
+}
+
+int hio_net_lrw_start(int *corr_id)
+{
+    int ret;
+
+    struct msgq_item item = {
+        .corr_id = (int)atomic_inc(&m_corr_id),
+        .cmd = MSGQ_CMD_START
+    };
+
+    LOG_INF("Enqueing START command (correlation id: %d)", item.corr_id);
+
+    if (corr_id != NULL) {
+        *corr_id = item.corr_id;
+    }
+
+    ret = k_msgq_put(&m_msgq, &item, K_NO_WAIT);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_msgq_put` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+int hio_net_lrw_join(int *corr_id)
+{
+    int ret;
+
+    struct msgq_item item = {
+        .corr_id = (int)atomic_inc(&m_corr_id),
+        .cmd = MSGQ_CMD_JOIN
+    };
+
+    if (corr_id != NULL) {
+        *corr_id = item.corr_id;
+    }
+
+    LOG_INF("Enqueing JOIN command (correlation id: %d)", item.corr_id);
+
+    ret = k_msgq_put(&m_msgq, &item, K_NO_WAIT);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_msgq_put` failed: %d", ret);
+        return ret;
+    }
+
+    return 0;
+}
+
+int hio_net_lrw_send(const struct hio_net_lrw_send_opts *opts,
+                     const void *buf, size_t len, int *corr_id)
+{
+    int ret;
+
+    void *p = k_malloc(len);
+
+    if (p == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    memcpy(p, buf, len);
+
+    struct msgq_item item = {
+        .corr_id = (int)atomic_inc(&m_corr_id),
+        .cmd = MSGQ_CMD_SEND,
+        .data = {
+            .send = {
+                .ttl = opts->ttl,
+                .confirmed = opts->confirmed,
+                .port = opts->port,
+                .buf = p,
+                .len = len
+            }
+        }
+    };
+
+    LOG_INF("Enqueing SEND command (correlation id: %d)", item.corr_id);
+
+    if (corr_id != NULL) {
+        *corr_id = item.corr_id;
+    }
+
+    ret = k_msgq_put(&m_msgq, &item, K_NO_WAIT);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_msgq_put` failed: %d", ret);
+        k_free(p);
+        return ret;
+    }
+
+    return 0;
+}
 
 // ============================================================================
 
@@ -621,24 +902,24 @@ static int h_set(const char *key, size_t len,
 
     LOG_DBG("key: %s len: %u", key, len);
 
-#define SETTINGS_SET(_key, _var, _size)                      \
-    do {                                                     \
-        if (settings_name_steq(key, _key, &next) && !next) { \
-            if (len != _size) {                              \
-                return -EINVAL;                              \
-            }                                                \
-                                                             \
-            k_mutex_lock(&m_config_mut, K_FOREVER);          \
-            ret = read_cb(cb_arg, _var, len);                \
-            k_mutex_unlock(&m_config_mut);                   \
-                                                             \
-            if (ret < 0) {                                   \
-                LOG_ERR("Call `read_cb` failed: %d", ret);   \
-                return ret;                                  \
-            }                                                \
-                                                             \
-            return 0;                                        \
-        }                                                    \
+#define SETTINGS_SET(_key, _var, _size)                                       \
+    do {                                                                      \
+        if (settings_name_steq(key, _key, &next) && !next) {                  \
+            if (len != _size) {                                               \
+                return -EINVAL;                                               \
+            }                                                                 \
+                                                                              \
+            k_mutex_lock(&m_config_mut, K_FOREVER);                           \
+            ret = read_cb(cb_arg, _var, len);                                 \
+            k_mutex_unlock(&m_config_mut);                                    \
+                                                                              \
+            if (ret < 0) {                                                    \
+                LOG_ERR("Call `read_cb` failed: %d", ret);                    \
+                return ret;                                                   \
+            }                                                                 \
+                                                                              \
+            return 0;                                                         \
+        }                                                                     \
     } while (0)
 
     SETTINGS_SET("antenna", &m_config.antenna, sizeof(m_config.antenna));
@@ -1268,7 +1549,7 @@ static int cmd_config_appskey(const struct shell *shell,
 static int cmd_join(const struct shell *shell,
                     size_t argc, char **argv)
 {
-    // TODO Implement
+
     return 0;
 }
 

@@ -17,6 +17,9 @@ config HIO_BLE
 config HIO_BSP
 	bool "HIO_BSP"
 
+config HIO_NET_LRW
+	bool "HIO_NET_LRW"
+
 config HIO_RTC
 	bool "HIO_RTC"
 
@@ -247,6 +250,21 @@ config HIO_BSP_INIT_PRIORITY
 	default 2
 
 endif # HIO_BSP
+
+# #############################################################################
+# HIO_NET_LRW
+
+if HIO_NET_LRW
+
+config HIO_NET_LRW_THREAD_STACK_SIZE
+	int "HIO_NET_LRW_THREAD_STACK_SIZE"
+	default 4096
+
+config HIO_NET_LRW_THREAD_PRIORITY
+	int "HIO_NET_LRW_THREAD_PRIORITY"
+	default 10
+
+endif # HIO_NET_LRW
 
 # #############################################################################
 # HIO_RTC

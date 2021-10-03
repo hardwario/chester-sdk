@@ -1,6 +1,4 @@
 #include <hio_lrw_talk.h>
-// TODO ?
-// #include <hio_lrw_tok.h>
 #include <hio_lrw_uart.h>
 #include <hio_util.h>
 
@@ -29,6 +27,22 @@ static void *m_handler_param;
 
 static void process_urc(const char *s)
 {
+    if (strcmp(s, "+ACK") == 0) {
+        if (m_event_cb != NULL) {
+            m_event_cb(HIO_LRW_TALK_EVENT_SEND_OK);
+        }
+
+        return;
+    }
+
+    if (strcmp(s, "+NOACK") == 0) {
+        if (m_event_cb != NULL) {
+            m_event_cb(HIO_LRW_TALK_EVENT_SEND_ERR);
+        }
+
+        return;
+    }
+
     if (strcmp(s, "+EVENT=1,1") == 0) {
         if (m_event_cb != NULL) {
             m_event_cb(HIO_LRW_TALK_EVENT_JOIN_OK);
@@ -335,12 +349,19 @@ int hio_lrw_talk_at_devaddr(const uint8_t *devaddr, size_t devaddr_size)
 {
     int ret;
 
-    char hex[devaddr_size * 2 + 1];
+    size_t hex_size = devaddr_size * 2 + 1;
+    char *hex = k_malloc(hex_size);
 
-    ret = hio_buf2hex(devaddr, devaddr_size, hex, sizeof(hex), true);
+    if (hex == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    ret = hio_buf2hex(devaddr, devaddr_size, hex, hex_size, true);
 
     if (ret != devaddr_size * 2) {
         LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
@@ -348,9 +369,11 @@ int hio_lrw_talk_at_devaddr(const uint8_t *devaddr, size_t devaddr_size)
 
     if (ret < 0) {
         LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
+    k_free(hex);
     return 0;
 }
 
@@ -358,12 +381,19 @@ int hio_lrw_talk_at_deveui(const uint8_t *deveui, size_t deveui_size)
 {
     int ret;
 
-    char hex[deveui_size * 2 + 1];
+    size_t hex_size = deveui_size * 2 + 1;
+    char *hex = k_malloc(hex_size);
 
-    ret = hio_buf2hex(deveui, deveui_size, hex, sizeof(hex), true);
+    if (hex == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    ret = hio_buf2hex(deveui, deveui_size, hex, hex_size, true);
 
     if (ret != deveui_size * 2) {
         LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
@@ -371,9 +401,11 @@ int hio_lrw_talk_at_deveui(const uint8_t *deveui, size_t deveui_size)
 
     if (ret < 0) {
         LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
+    k_free(hex);
     return 0;
 }
 
@@ -381,12 +413,19 @@ int hio_lrw_talk_at_appeui(const uint8_t *appeui, size_t appeui_size)
 {
     int ret;
 
-    char hex[appeui_size * 2 + 1];
+    size_t hex_size = appeui_size * 2 + 1;
+    char *hex = k_malloc(hex_size);
 
-    ret = hio_buf2hex(appeui, appeui_size, hex, sizeof(hex), true);
+    if (hex == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    ret = hio_buf2hex(appeui, appeui_size, hex, hex_size, true);
 
     if (ret != appeui_size * 2) {
         LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
@@ -394,9 +433,11 @@ int hio_lrw_talk_at_appeui(const uint8_t *appeui, size_t appeui_size)
 
     if (ret < 0) {
         LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
+    k_free(hex);
     return 0;
 }
 
@@ -404,12 +445,19 @@ int hio_lrw_talk_at_appkey(const uint8_t *appkey, size_t appkey_size)
 {
     int ret;
 
-    char hex[appkey_size * 2 + 1];
+    size_t hex_size = appkey_size * 2 + 1;
+    char *hex = k_malloc(hex_size);
 
-    ret = hio_buf2hex(appkey, appkey_size, hex, sizeof(hex), true);
+    if (hex == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    ret = hio_buf2hex(appkey, appkey_size, hex, hex_size, true);
 
     if (ret != appkey_size * 2) {
         LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
@@ -417,9 +465,11 @@ int hio_lrw_talk_at_appkey(const uint8_t *appkey, size_t appkey_size)
 
     if (ret < 0) {
         LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
+    k_free(hex);
     return 0;
 }
 
@@ -427,12 +477,19 @@ int hio_lrw_talk_at_nwkskey(const uint8_t *nwkskey, size_t nwkskey_size)
 {
     int ret;
 
-    char hex[nwkskey_size * 2 + 1];
+    size_t hex_size = nwkskey_size * 2 + 1;
+    char *hex = k_malloc(hex_size);
 
-    ret = hio_buf2hex(nwkskey, nwkskey_size, hex, sizeof(hex), true);
+    if (hex == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    ret = hio_buf2hex(nwkskey, nwkskey_size, hex, hex_size, true);
 
     if (ret != nwkskey_size * 2) {
         LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
@@ -440,9 +497,11 @@ int hio_lrw_talk_at_nwkskey(const uint8_t *nwkskey, size_t nwkskey_size)
 
     if (ret < 0) {
         LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
+    k_free(hex);
     return 0;
 }
 
@@ -450,12 +509,19 @@ int hio_lrw_talk_at_appskey(const uint8_t *appskey, size_t appskey_size)
 {
     int ret;
 
-    char hex[appskey_size * 2 + 1];
+    size_t hex_size = appskey_size * 2 + 1;
+    char *hex = k_malloc(hex_size);
 
-    ret = hio_buf2hex(appskey, appskey_size, hex, sizeof(hex), true);
+    if (hex == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    ret = hio_buf2hex(appskey, appskey_size, hex, hex_size, true);
 
     if (ret != appskey_size * 2) {
         LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
@@ -463,9 +529,85 @@ int hio_lrw_talk_at_appskey(const uint8_t *appskey, size_t appskey_size)
 
     if (ret < 0) {
         LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        k_free(hex);
         return ret;
     }
 
+    k_free(hex);
+    return 0;
+}
+
+int hio_lrw_talk_at_utx(const void *payload, size_t payload_len)
+{
+    int ret;
+
+    if (payload_len < 1 || payload_len > 242) {
+        return -EINVAL;
+    }
+
+    size_t hex_size = payload_len * 2 + 1;
+    char *hex = k_malloc(hex_size);
+
+    if (hex == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    ret = hio_buf2hex(payload, payload_len, hex, hex_size, true);
+
+    if (ret != payload_len * 2) {
+        LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
+        k_free(hex);
+        return ret;
+    }
+
+    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S,
+                      "AT+UTX %u\r%s", payload_len, hex);
+
+    if (ret < 0) {
+        LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        k_free(hex);
+        return ret;
+    }
+
+    k_free(hex);
+    return 0;
+}
+
+int hio_lrw_talk_at_ctx(const void *payload, size_t payload_len)
+{
+    int ret;
+
+    if (payload_len < 1 || payload_len > 242) {
+        return -EINVAL;
+    }
+
+    size_t hex_size = payload_len * 2 + 1;
+    char *hex = k_malloc(hex_size);
+
+    if (hex == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    ret = hio_buf2hex(payload, payload_len, hex, hex_size, true);
+
+    if (ret != payload_len * 2) {
+        LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
+        k_free(hex);
+        return ret;
+    }
+
+    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S,
+                      "AT+CTX %u\r%s", payload_len, hex);
+
+    if (ret < 0) {
+        LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        k_free(hex);
+        return ret;
+    }
+
+    k_free(hex);
     return 0;
 }
 
@@ -478,14 +620,15 @@ int hio_lrw_talk_at_putx(uint8_t port, const void *payload,
         return -EINVAL;
     }
 
-    char *hex = k_malloc(payload_len * 2 + 1);
+    size_t hex_size = payload_len * 2 + 1;
+    char *hex = k_malloc(hex_size);
 
     if (hex == NULL) {
         LOG_ERR("Call `k_malloc` failed");
         return -ENOMEM;
     }
 
-    ret = hio_buf2hex(payload, payload_len, hex, payload_len * 2 + 1, true);
+    ret = hio_buf2hex(payload, payload_len, hex, hex_size, true);
 
     if (ret != payload_len * 2) {
         LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
@@ -493,9 +636,46 @@ int hio_lrw_talk_at_putx(uint8_t port, const void *payload,
         return ret;
     }
 
-    // TODO Long timeout?
     ret = talk_cmd_ok(RESPONSE_TIMEOUT_S,
                       "AT+PUTX %u,%u\r%s", port, payload_len, hex);
+
+    if (ret < 0) {
+        LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+        k_free(hex);
+        return ret;
+    }
+
+    k_free(hex);
+    return 0;
+}
+
+int hio_lrw_talk_at_pctx(uint8_t port, const void *payload,
+                         size_t payload_len)
+{
+    int ret;
+
+    if (payload_len < 1 || payload_len > 242) {
+        return -EINVAL;
+    }
+
+    size_t hex_size = payload_len * 2 + 1;
+    char *hex = k_malloc(hex_size);
+
+    if (hex == NULL) {
+        LOG_ERR("Call `k_malloc` failed");
+        return -ENOMEM;
+    }
+
+    ret = hio_buf2hex(payload, payload_len, hex, hex_size, true);
+
+    if (ret != payload_len * 2) {
+        LOG_ERR("Call `hio_buf2hex` failed: %d", ret);
+        k_free(hex);
+        return ret;
+    }
+
+    ret = talk_cmd_ok(RESPONSE_TIMEOUT_S,
+                      "AT+PCTX %u,%u\r%s", port, payload_len, hex);
 
     if (ret < 0) {
         LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
