@@ -17,6 +17,9 @@ config HIO_BLE
 config HIO_BSP
 	bool "HIO_BSP"
 
+config HIO_CHESTER_X3
+	bool "HIO_CHESTER_X3"
+
 config HIO_NET_LRW
 	bool "HIO_NET_LRW"
 

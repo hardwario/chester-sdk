@@ -3,6 +3,7 @@
 // Zephyr includes
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
+#include <init.h>
 #include <irq.h>
 #include <logging/log.h>
 #include <nrfx_rtc.h>
