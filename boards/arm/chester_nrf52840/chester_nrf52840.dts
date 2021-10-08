@@ -88,6 +88,19 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sda-pin = <21>;
 	scl-pin = <20>;
+
+	sht30: sht30@45 {
+		compatible = "sensirion,sht3xd";
+		status = "disabled";
+		reg = <0x45>;
+		label = "SHT30";
+	};
+
+	tmp112: tmp112@48 {
+		compatible = "ti,tmp112";
+		reg = <0x48>;
+		label = "TMP112";
+	};
 };
 
 &spi1 {
