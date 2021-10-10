@@ -26,9 +26,9 @@
 		};
 	};
 
-	leds_rgy {
+	led_rgy {
 		compatible = "gpio-leds";
-		label = "LEDS_RGY";
+		label = "LED_RGY";
 
 		led_r: led_r {
 			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
@@ -43,9 +43,9 @@
 		};
 	};
 
-	leds_ext {
+	led_ext {
 		compatible = "gpio-leds";
-		label = "LEDS_EXT";
+		label = "LED_EXT";
 
 		led_ext: led_ext {
 			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
