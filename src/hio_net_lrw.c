@@ -1,5 +1,4 @@
 // TODO Implement retries settings parameter
-// TODO Implement states + state checking
 
 #include <hio_net_lrw.h>
 #include <hio_bsp.h>
@@ -23,8 +22,18 @@
 LOG_MODULE_REGISTER(hio_net_lrw, LOG_LEVEL_DBG);
 
 #define SETTINGS_PFX "lrw"
+
+#define BOOT_RETRY_COUNT 3
+#define BOOT_RETRY_DELAY K_SECONDS(10)
+#define SETUP_RETRY_COUNT 3
+#define SETUP_RETRY_DELAY K_SECONDS(10)
 #define JOIN_TIMEOUT K_SECONDS(30)
+#define JOIN_RETRY_COUNT 3
+#define JOIN_RETRY_DELAY K_SECONDS(30)
 #define SEND_TIMEOUT K_SECONDS(120)
+#define SEND_RETRY_COUNT 3
+#define SEND_RETRY_DELAY K_SECONDS(30)
+
 #define CMD_MSGQ_MAX_ITEMS 16
 #define SEND_MSGQ_MAX_ITEMS 16
 
@@ -53,16 +62,15 @@ struct send_msgq_item {
 
 static K_MUTEX_DEFINE(m_config_mut);
 
+enum state {
+    STATE_ERROR = -1,
+    STATE_INIT = 0,
+    STATE_READY = 1
+};
+
 enum antenna {
     ANTENNA_INT = 0,
     ANTENNA_EXT = 1
-};
-
-enum state {
-    STATE_INIT = 0,
-    STATE_JOIN = 1,
-    STATE_SEND = 2,
-    STATE_WAIT = 3
 };
 
 enum band {
@@ -204,9 +212,23 @@ static int boot(int retries, k_timeout_t delay)
     LOG_INF("Operation BOOT started");
 
     while (retries-- > 0) {
+        ret = hio_lrw_talk_enable();
+
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+            return ret;
+        }
+
         ret = boot_once();
 
         if (ret == 0) {
+            ret = hio_lrw_talk_disable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+                return ret;
+            }
+
             LOG_INF("Operation BOOT succeeded");
             return 0;
         }
@@ -215,24 +237,16 @@ static int boot(int retries, k_timeout_t delay)
             LOG_WRN("Call `boot_once` failed: %d", ret);
         }
 
-        if (retries != 1) {
-            ret = hio_lrw_talk_disable();
+        ret = hio_lrw_talk_disable();
 
-            if (ret < 0) {
-                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
-                return ret;
-            }
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+            return ret;
+        }
 
+        if (retries > 0) {
             k_sleep(delay);
-
             LOG_WRN("Repeating BOOT operation (retries left: %d)", retries);
-
-            ret = hio_lrw_talk_enable();
-
-            if (ret < 0) {
-                LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
-                return ret;
-            }
         }
     }
 
@@ -361,9 +375,23 @@ static int setup(int retries, k_timeout_t delay)
     LOG_INF("Operation SETUP started");
 
     while (retries-- > 0) {
+        ret = hio_lrw_talk_enable();
+
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+            return ret;
+        }
+
         ret = setup_once();
 
         if (ret == 0) {
+            ret = hio_lrw_talk_disable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+                return ret;
+            }
+
             LOG_INF("Operation SETUP succeeded");
             return 0;
         }
@@ -372,24 +400,16 @@ static int setup(int retries, k_timeout_t delay)
             LOG_WRN("Call `setup_once` failed: %d", ret);
         }
 
-        if (retries != 1) {
-            ret = hio_lrw_talk_disable();
+        ret = hio_lrw_talk_disable();
 
-            if (ret < 0) {
-                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
-                return ret;
-            }
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+            return ret;
+        }
 
+        if (retries > 0) {
             k_sleep(delay);
-
             LOG_WRN("Repeating SETUP operation (retries left: %d)", retries);
-
-            ret = hio_lrw_talk_enable();
-
-            if (ret < 0) {
-                LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
-                return ret;
-            }
         }
     }
 
@@ -447,9 +467,23 @@ static int join(int retries, k_timeout_t delay)
     LOG_INF("Operation JOIN started");
 
     while (retries-- > 0) {
+        ret = hio_lrw_talk_enable();
+
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+            return ret;
+        }
+
         ret = join_once();
 
         if (ret == 0) {
+            ret = hio_lrw_talk_disable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+                return ret;
+            }
+
             LOG_INF("Operation JOIN succeeded");
             return 0;
         }
@@ -458,24 +492,16 @@ static int join(int retries, k_timeout_t delay)
             LOG_WRN("Call `join_once` failed: %d", ret);
         }
 
-        if (retries != 1) {
-            ret = hio_lrw_talk_disable();
+        ret = hio_lrw_talk_disable();
 
-            if (ret < 0) {
-                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
-                return ret;
-            }
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+            return ret;
+        }
 
+        if (retries > 0) {
             k_sleep(delay);
-
             LOG_WRN("Repeating JOIN operation (retries left: %d)", retries);
-
-            ret = hio_lrw_talk_enable();
-
-            if (ret < 0) {
-                LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
-                return ret;
-            }
         }
     }
 
@@ -483,7 +509,7 @@ static int join(int retries, k_timeout_t delay)
     return -ENOTCONN;
 }
 
-static int send_once(struct send_msgq_data *data)
+static int send_once(const struct send_msgq_data *data)
 {
     int ret;
 
@@ -530,8 +556,8 @@ static int send_once(struct send_msgq_data *data)
 
     struct k_poll_event events[] = {
         K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
-                                K_POLL_MODE_NOTIFY_ONLY,
-                                &m_send_sig)
+                                 K_POLL_MODE_NOTIFY_ONLY,
+                                 &m_send_sig)
     };
 
     ret = k_poll(events, ARRAY_SIZE(events), SEND_TIMEOUT);
@@ -558,16 +584,31 @@ static int send_once(struct send_msgq_data *data)
     return 0;
 }
 
-static int send(int retries, k_timeout_t delay, struct send_msgq_data *data)
+static int send(int retries, k_timeout_t delay,
+                const struct send_msgq_data *data)
 {
     int ret;
 
     LOG_INF("Operation SEND started");
 
     while (retries-- > 0) {
+        ret = hio_lrw_talk_enable();
+
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+            return ret;
+        }
+
         ret = send_once(data);
 
         if (ret == 0) {
+            ret = hio_lrw_talk_disable();
+
+            if (ret < 0) {
+                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+                return ret;
+            }
+
             LOG_INF("Operation SEND succeeded");
             return 0;
         }
@@ -576,24 +617,16 @@ static int send(int retries, k_timeout_t delay, struct send_msgq_data *data)
             LOG_WRN("Call `send_once` failed: %d", ret);
         }
 
-        if (retries != 1) {
-            ret = hio_lrw_talk_disable();
+        ret = hio_lrw_talk_disable();
 
-            if (ret < 0) {
-                LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
-                return ret;
-            }
+        if (ret < 0) {
+            LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+            return ret;
+        }
 
+        if (retries > 0) {
             k_sleep(delay);
-
             LOG_WRN("Repeating SEND operation (retries left: %d)", retries);
-
-            ret = hio_lrw_talk_enable();
-
-            if (ret < 0) {
-                LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
-                return ret;
-            }
         }
     }
 
@@ -637,25 +670,117 @@ static int start(void)
         return ret;
     }
 
-    ret = hio_lrw_talk_enable();
-
-    if (ret < 0) {
-        LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
-        return ret;
-    }
-
-    ret = boot(3, K_SECONDS(10));
+    ret = boot(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
 
     if (ret < 0) {
         LOG_ERR("Call `boot` failed: %d", ret);
         return ret;
     }
 
-    ret = setup(3, K_SECONDS(10));
+    ret = setup(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
 
     if (ret < 0) {
         LOG_ERR("Call `setup` failed: %d", ret);
         return ret;
+    }
+
+    return 0;
+}
+
+static int process_req_start(const struct cmd_msgq_item *item)
+{
+    int ret;
+
+    union hio_net_lrw_event_data data = {0};
+
+    ret = start();
+
+    if (ret < 0) {
+        LOG_ERR("Call `start` failed: %d", ret);
+
+        data.start_err.corr_id = item->corr_id;
+
+        if (m_callback != NULL) {
+            m_callback(HIO_NET_LRW_EVENT_START_ERR, &data, m_param);
+        }
+
+        return ret;
+    }
+
+    m_state = STATE_READY;
+
+    data.start_ok.corr_id = item->corr_id;
+
+    if (m_callback != NULL) {
+        m_callback(HIO_NET_LRW_EVENT_START_OK, &data, m_param);
+    }
+
+    return 0;
+}
+
+static int process_req_join(const struct cmd_msgq_item *item)
+{
+    int ret;
+
+    union hio_net_lrw_event_data data = {0};
+
+    ret = join(JOIN_RETRY_COUNT, JOIN_RETRY_DELAY);
+
+    if (ret < 0) {
+        LOG_ERR("Call `join` failed: %d", ret);
+
+        data.join_err.corr_id = item->corr_id;
+
+        if (m_callback != NULL) {
+            m_callback(HIO_NET_LRW_EVENT_JOIN_ERR, &data, m_param);
+        }
+
+        return ret;
+    }
+
+    data.join_ok.corr_id = item->corr_id;
+
+    if (m_callback != NULL) {
+        m_callback(HIO_NET_LRW_EVENT_JOIN_OK, &data, m_param);
+    }
+
+    return 0;
+}
+
+static int process_req_send(const struct send_msgq_item *item)
+{
+    int ret;
+
+    union hio_net_lrw_event_data data = {0};
+
+    if (item->data.ttl != 0) {
+        if (k_uptime_get() > item->data.ttl) {
+            LOG_WRN("Message TTL expired");
+            k_free(item->data.buf);
+            return -ECANCELED;
+        }
+    }
+
+    ret = send(SEND_RETRY_COUNT, SEND_RETRY_DELAY, &item->data);
+
+    k_free(item->data.buf);
+
+    if (ret < 0) {
+        LOG_ERR("Call `send` failed: %d", ret);
+
+        data.send_err.corr_id = item->corr_id;
+
+        if (m_callback != NULL) {
+            m_callback(HIO_NET_LRW_EVENT_SEND_ERR, &data, m_param);
+        }
+
+        return ret;
+    }
+
+    data.send_ok.corr_id = item->corr_id;
+
+    if (m_callback != NULL) {
+        m_callback(HIO_NET_LRW_EVENT_SEND_OK, &data, m_param);
     }
 
     return 0;
@@ -674,64 +799,29 @@ static void process_cmd_msgq(void)
         return;
     }
 
-    union hio_net_lrw_event_data data = {0};
-
-    switch (item.req) {
-    case CMD_MSGQ_REQ_START:
+    if (item.req == CMD_MSGQ_REQ_START) {
         LOG_INF("Dequeued START command (correlation id: %d)", item.corr_id);
 
-        // TODO Check state
+        if (m_state != STATE_INIT && m_state != STATE_ERROR) {
+            LOG_WRN("No reason for START operation - ignoring");
 
-        ret = start();
+        } else {
+            ret = process_req_start(&item);
 
-        if (ret < 0) {
-            LOG_ERR("Call `start` failed: %d", ret);
-
-            data.start_err.corr_id = item.corr_id;
-
-            if (m_callback != NULL) {
-                m_callback(HIO_NET_LRW_EVENT_START_ERR, &data, m_param);
-            }
-
-            break;
+            m_state = ret == 0 ? STATE_READY : STATE_ERROR;
         }
-
-        data.start_ok.corr_id = item.corr_id;
-
-        if (m_callback != NULL) {
-            m_callback(HIO_NET_LRW_EVENT_START_OK, &data, m_param);
-        }
-
-        break;
-
-    case CMD_MSGQ_REQ_JOIN:
+    } else if (item.req == CMD_MSGQ_REQ_JOIN) {
         LOG_INF("Dequeued JOIN command (correlation id: %d)", item.corr_id);
 
-        // TODO Check state
+        if (m_state != STATE_READY) {
+            LOG_WRN("Not ready for JOIN command - ignoring");
 
-        ret = join(3, K_SECONDS(10));
+        } else {
+            ret = process_req_join(&item);
 
-        if (ret < 0) {
-            LOG_ERR("Call `join` failed: %d", ret);
-
-            data.join_err.corr_id = item.corr_id;
-
-            if (m_callback != NULL) {
-                m_callback(HIO_NET_LRW_EVENT_JOIN_ERR, &data, m_param);
-            }
-
-            break;
+            m_state = ret == 0 ? STATE_READY : STATE_ERROR;
         }
-
-        data.join_ok.corr_id = item.corr_id;
-
-        if (m_callback != NULL) {
-            m_callback(HIO_NET_LRW_EVENT_JOIN_OK, &data, m_param);
-        }
-
-        break;
-
-    default:
+    } else {
         LOG_ERR("Unknown message: %d", (int)item.req);
     }
 }
@@ -751,39 +841,9 @@ static void process_send_msgq(void)
 
     LOG_INF("Dequeued SEND command (correlation id: %d)", item.corr_id);
 
-    union hio_net_lrw_event_data data = {0};
+    ret = process_req_send(&item);
 
-    if (item.data.ttl != 0) {
-        if (k_uptime_get() > item.data.ttl) {
-            LOG_WRN("Message TTL expired");
-            k_free(item.data.buf);
-            return;
-        }
-    }
-
-    // TODO Check state
-
-    ret = send(3, K_SECONDS(30), &item.data);
-
-    k_free(item.data.buf);
-
-    if (ret < 0) {
-        LOG_ERR("Call `send` failed: %d", ret);
-
-        data.send_err.corr_id = item.corr_id;
-
-        if (m_callback != NULL) {
-            m_callback(HIO_NET_LRW_EVENT_SEND_ERR, &data, m_param);
-        }
-
-        return;
-    }
-
-    data.send_ok.corr_id = item.corr_id;
-
-    if (m_callback != NULL) {
-        m_callback(HIO_NET_LRW_EVENT_SEND_OK, &data, m_param);
-    }
+    m_state = ret == 0 || ret == -ECANCELED ? STATE_READY : STATE_ERROR;
 }
 
 static void dispatcher_thread(void)
@@ -800,7 +860,7 @@ static void dispatcher_thread(void)
                                      &m_send_msgq)
         };
 
-        ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
+        ret = k_poll(events, m_state != STATE_READY ? 1 : 2, K_FOREVER);
 
         if (ret < 0) {
             LOG_ERR("Call `k_poll` failed: %d", ret);
@@ -813,7 +873,9 @@ static void dispatcher_thread(void)
         }
 
         if (events[1].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
-            process_send_msgq();
+            if (m_state == STATE_READY) {
+                process_send_msgq();
+            }
         }
     }
 }
@@ -1574,9 +1636,54 @@ static int cmd_config_appskey(const struct shell *shell,
     return -EINVAL;
 }
 
+static int cmd_start(const struct shell *shell,
+                     size_t argc, char **argv)
+{
+    int ret;
+
+    if (argc > 1) {
+        shell_error(shell, "command not found: %s", argv[1]);
+        shell_help(shell);
+        return -EINVAL;
+    }
+
+    int corr_id;
+
+    ret = hio_net_lrw_start(&corr_id);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_net_lrw_start` failed: %d", ret);
+        shell_error(shell, "command failed");
+        return ret;
+    }
+
+    shell_print(shell, "correlation id: %d", corr_id);
+
+    return 0;
+}
+
 static int cmd_join(const struct shell *shell,
                     size_t argc, char **argv)
 {
+    int ret;
+
+    if (argc > 1) {
+        shell_error(shell, "command not found: %s", argv[1]);
+        shell_help(shell);
+        return -EINVAL;
+    }
+
+    int corr_id;
+
+    ret = hio_net_lrw_join(&corr_id);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_net_lrw_join` failed: %d", ret);
+        shell_error(shell, "command failed");
+        return ret;
+    }
+
+    shell_print(shell, "correlation id: %d", corr_id);
 
     return 0;
 }
@@ -1647,6 +1754,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_lrw,
     SHELL_CMD_ARG(config, &sub_lrw_config, "Configuration commands.",
                   print_help, 1, 0),
+    SHELL_CMD_ARG(start, NULL, "Start interface.",
+                  cmd_start, 1, 0),
     SHELL_CMD_ARG(join, NULL, "Join network.",
                   cmd_join, 1, 0),
     SHELL_SUBCMD_SET_END
