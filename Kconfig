@@ -43,6 +43,11 @@ config I2C
 config KERNEL_SHELL
 	default y if HIO_SDK
 
+choice LOG_MODE
+	default LOG2_MODE_DEFERRED
+	depends on HIO_SDK
+endchoice
+
 config LOG
 	default y if HIO_SDK
 
