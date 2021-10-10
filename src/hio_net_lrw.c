@@ -663,9 +663,22 @@ static void process_thread(void)
     LOG_DBG("Thread started");
 
     for (;;) {
+        struct k_poll_event events[] = {
+            K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+                                     K_POLL_MODE_NOTIFY_ONLY,
+                                     &m_msgq)
+        };
+
+        ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
+
+        if (ret < 0) {
+            LOG_ERR("Call `k_poll` failed: %d", ret);
+            return;
+        }
+
         struct msgq_item item;
 
-        ret = k_msgq_get(&m_msgq, &item, K_FOREVER);
+        ret = k_msgq_get(&m_msgq, &item, K_NO_WAIT);
 
         if (ret < 0) {
             LOG_ERR("Call `k_msgq_get` failed: %d", ret);
