@@ -217,7 +217,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 
 SHELL_CMD_REGISTER(rtc, &sub_rtc,
-                   "RTC commands for date/time operations", print_help);
+                   "RTC commands for date/time operations.", print_help);
 
 static void rtc_handler(nrfx_rtc_int_type_t int_type)
 {

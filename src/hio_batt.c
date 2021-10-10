@@ -205,10 +205,10 @@ static int print_help(const struct shell *shell,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_batt,
-    SHELL_CMD_ARG(measure, NULL, "Measure battery", cmd_batt_measure, 1, 0),
-    SHELL_CMD_ARG(load, NULL, "Load battery", cmd_batt_load, 1, 0),
-    SHELL_CMD_ARG(unload, NULL, "Unload battery", cmd_batt_unload, 1, 0),
+    SHELL_CMD_ARG(measure, NULL, "Measure battery.", cmd_batt_measure, 1, 0),
+    SHELL_CMD_ARG(load, NULL, "Load battery.", cmd_batt_load, 1, 0),
+    SHELL_CMD_ARG(unload, NULL, "Unload battery.", cmd_batt_unload, 1, 0),
     SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(batt, &sub_batt, "Battery commands", print_help);
+SHELL_CMD_REGISTER(batt, &sub_batt, "Battery commands.", print_help);

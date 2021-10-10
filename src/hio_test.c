@@ -47,7 +47,7 @@ static int cmd_test_lte_ant_int(const struct shell *shell,
     int ret;
 
     if (!atomic_get(&m_is_active)) {
-        shell_print(shell, "Test mode is not activated");
+        shell_error(shell, "test mode is not activated");
         return -ENOEXEC;
     }
 
@@ -70,7 +70,7 @@ static int cmd_test_lte_ant_ext(const struct shell *shell,
     int ret;
 
     if (!atomic_get(&m_is_active)) {
-        shell_print(shell, "Test mode is not activated");
+        shell_error(shell, "test mode is not activated");
         return -ENOEXEC;
     }
 
@@ -93,7 +93,7 @@ static int cmd_test_lte_reset(const struct shell *shell,
     int ret;
 
     if (!atomic_get(&m_is_active)) {
-        shell_print(shell, "Test mode is not activated");
+        shell_error(shell, "test mode is not activated");
         return -ENOEXEC;
     }
 
@@ -132,7 +132,7 @@ static int cmd_test_lte_wakeup(const struct shell *shell,
     int ret;
 
     if (!atomic_get(&m_is_active)) {
-        shell_print(shell, "Test mode is not activated");
+        shell_error(shell, "test mode is not activated");
         return -ENOEXEC;
     }
 
@@ -171,7 +171,7 @@ static int cmd_test_lte_sleep(const struct shell *shell,
     int ret;
 
     if (!atomic_get(&m_is_active)) {
-        shell_print(shell, "Test mode is not activated");
+        shell_error(shell, "test mode is not activated");
         return -ENOEXEC;
     }
 
@@ -200,12 +200,12 @@ static int cmd_test_lte_cmd(const struct shell *shell,
     int ret;
 
     if (!atomic_get(&m_is_active)) {
-        shell_error(shell, "Test mode is not activated");
+        shell_error(shell, "test mode is not activated");
         return -ENOEXEC;
     }
 
     if (argc > 2) {
-        shell_error(shell, "Only one argument is allowed (use quotes?)");
+        shell_error(shell, "only one argument is accepted (use quotes?)");
         return -EINVAL;
     }
 
@@ -306,7 +306,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(test, &sub_test, "Test commands", print_help);
+SHELL_CMD_REGISTER(test, &sub_test, "Test commands.", print_help);
 
 static int init(const struct device *dev)
 {
