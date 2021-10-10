@@ -25,15 +25,20 @@ LOG_MODULE_REGISTER(hio_net_lrw, LOG_LEVEL_DBG);
 #define SETTINGS_PFX "lrw"
 #define JOIN_TIMEOUT K_SECONDS(30)
 #define SEND_TIMEOUT K_SECONDS(120)
-#define MSGQ_MAX_ITEMS 16
+#define CMD_MSGQ_MAX_ITEMS 16
+#define SEND_MSGQ_MAX_ITEMS 16
 
-enum msgq_cmd {
-    MSGQ_CMD_START = 0,
-    MSGQ_CMD_JOIN = 1,
-    MSGQ_CMD_SEND = 2
+enum cmd_msgq_req {
+    CMD_MSGQ_REQ_START = 0,
+    CMD_MSGQ_REQ_JOIN = 1
 };
 
-struct msgq_data_send {
+struct cmd_msgq_item {
+    int corr_id;
+    enum cmd_msgq_req req;
+};
+
+struct send_msgq_data {
     int64_t ttl;
     bool confirmed;
     int port;
@@ -41,12 +46,9 @@ struct msgq_data_send {
     size_t len;
 };
 
-struct msgq_item {
+struct send_msgq_item {
     int corr_id;
-    enum msgq_cmd cmd;
-    union {
-        struct msgq_data_send send;
-    } data;
+    struct send_msgq_data data;
 };
 
 static K_MUTEX_DEFINE(m_config_mut);
@@ -119,7 +121,10 @@ static struct k_poll_signal m_boot_sig;
 static struct k_poll_signal m_join_sig;
 static struct k_poll_signal m_send_sig;
 
-K_MSGQ_DEFINE(m_msgq, sizeof(struct msgq_item), MSGQ_MAX_ITEMS, 4);
+K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item),
+              CMD_MSGQ_MAX_ITEMS, 4);
+K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item),
+              SEND_MSGQ_MAX_ITEMS, 4);
 
 static hio_net_lrw_event_cb m_callback;
 static void *m_param;
@@ -478,7 +483,7 @@ static int join(int retries, k_timeout_t delay)
     return -ENOTCONN;
 }
 
-static int send_once(struct msgq_data_send *data)
+static int send_once(struct send_msgq_data *data)
 {
     int ret;
 
@@ -553,7 +558,7 @@ static int send_once(struct msgq_data_send *data)
     return 0;
 }
 
-static int send(int retries, k_timeout_t delay, struct msgq_data_send *data)
+static int send(int retries, k_timeout_t delay, struct send_msgq_data *data)
 {
     int ret;
 
@@ -656,138 +661,165 @@ static int start(void)
     return 0;
 }
 
-static void process_thread(void)
+static void process_cmd_msgq(void)
 {
     int ret;
 
-    LOG_DBG("Thread started");
+    struct cmd_msgq_item item;
+
+    ret = k_msgq_get(&m_cmd_msgq, &item, K_NO_WAIT);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_msgq_get` failed: %d", ret);
+        return;
+    }
+
+    union hio_net_lrw_event_data data = {0};
+
+    switch (item.req) {
+    case CMD_MSGQ_REQ_START:
+        LOG_INF("Dequeued START command (correlation id: %d)", item.corr_id);
+
+        // TODO Check state
+
+        ret = start();
+
+        if (ret < 0) {
+            LOG_ERR("Call `start` failed: %d", ret);
+
+            data.start_err.corr_id = item.corr_id;
+
+            if (m_callback != NULL) {
+                m_callback(HIO_NET_LRW_EVENT_START_ERR, &data, m_param);
+            }
+
+            break;
+        }
+
+        data.start_ok.corr_id = item.corr_id;
+
+        if (m_callback != NULL) {
+            m_callback(HIO_NET_LRW_EVENT_START_OK, &data, m_param);
+        }
+
+        break;
+
+    case CMD_MSGQ_REQ_JOIN:
+        LOG_INF("Dequeued JOIN command (correlation id: %d)", item.corr_id);
+
+        // TODO Check state
+
+        ret = join(3, K_SECONDS(10));
+
+        if (ret < 0) {
+            LOG_ERR("Call `join` failed: %d", ret);
+
+            data.join_err.corr_id = item.corr_id;
+
+            if (m_callback != NULL) {
+                m_callback(HIO_NET_LRW_EVENT_JOIN_ERR, &data, m_param);
+            }
+
+            break;
+        }
+
+        data.join_ok.corr_id = item.corr_id;
+
+        if (m_callback != NULL) {
+            m_callback(HIO_NET_LRW_EVENT_JOIN_OK, &data, m_param);
+        }
+
+        break;
+
+    default:
+        LOG_ERR("Unknown message: %d", (int)item.req);
+    }
+}
+
+static void process_send_msgq(void)
+{
+    int ret;
+
+    struct send_msgq_item item;
+
+    ret = k_msgq_get(&m_send_msgq, &item, K_NO_WAIT);
+
+    if (ret < 0) {
+        LOG_ERR("Call `k_msgq_get` failed: %d", ret);
+        return;
+    }
+
+    LOG_INF("Dequeued SEND command (correlation id: %d)", item.corr_id);
+
+    union hio_net_lrw_event_data data = {0};
+
+    if (item.data.ttl != 0) {
+        if (k_uptime_get() > item.data.ttl) {
+            LOG_WRN("Message TTL expired");
+            k_free(item.data.buf);
+            return;
+        }
+    }
+
+    // TODO Check state
+
+    ret = send(3, K_SECONDS(30), &item.data);
+
+    k_free(item.data.buf);
+
+    if (ret < 0) {
+        LOG_ERR("Call `send` failed: %d", ret);
+
+        data.send_err.corr_id = item.corr_id;
+
+        if (m_callback != NULL) {
+            m_callback(HIO_NET_LRW_EVENT_SEND_ERR, &data, m_param);
+        }
+
+        return;
+    }
+
+    data.send_ok.corr_id = item.corr_id;
+
+    if (m_callback != NULL) {
+        m_callback(HIO_NET_LRW_EVENT_SEND_OK, &data, m_param);
+    }
+}
+
+static void dispatcher_thread(void)
+{
+    int ret;
 
     for (;;) {
         struct k_poll_event events[] = {
             K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
                                      K_POLL_MODE_NOTIFY_ONLY,
-                                     &m_msgq)
+                                     &m_cmd_msgq),
+            K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+                                     K_POLL_MODE_NOTIFY_ONLY,
+                                     &m_send_msgq)
         };
 
         ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
 
         if (ret < 0) {
             LOG_ERR("Call `k_poll` failed: %d", ret);
-            return;
+            k_sleep(K_SECONDS(5));
+            continue;
         }
 
-        struct msgq_item item;
-
-        ret = k_msgq_get(&m_msgq, &item, K_NO_WAIT);
-
-        if (ret < 0) {
-            LOG_ERR("Call `k_msgq_get` failed: %d", ret);
-            return;
+        if (events[0].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+            process_cmd_msgq();
         }
 
-        union hio_net_lrw_event_data data = {0};
-
-        switch (item.cmd) {
-        case MSGQ_CMD_START:
-            LOG_INF("Dequeued START command (correlation id: %d)",
-                    item.corr_id);
-
-            // TODO Check state
-
-            ret = start();
-
-            if (ret < 0) {
-                LOG_ERR("Call `start` failed: %d", ret);
-
-                data.start_err.corr_id = item.corr_id;
-
-                if (m_callback != NULL) {
-                    m_callback(HIO_NET_LRW_EVENT_START_ERR, &data, m_param);
-                }
-
-                break;
-            }
-
-            data.start_ok.corr_id = item.corr_id;
-
-            if (m_callback != NULL) {
-                m_callback(HIO_NET_LRW_EVENT_START_OK, &data, m_param);
-            }
-
-            break;
-
-        case MSGQ_CMD_JOIN:
-            LOG_INF("Dequeued JOIN command (correlation id: %d)",
-                    item.corr_id);
-
-            // TODO Check state
-
-            ret = join(3, K_SECONDS(10));
-
-            if (ret < 0) {
-                LOG_ERR("Call `join` failed: %d", ret);
-
-                data.join_err.corr_id = item.corr_id;
-
-                if (m_callback != NULL) {
-                    m_callback(HIO_NET_LRW_EVENT_JOIN_ERR, &data, m_param);
-                }
-
-                break;
-            }
-
-            data.join_ok.corr_id = item.corr_id;
-
-            if (m_callback != NULL) {
-                m_callback(HIO_NET_LRW_EVENT_JOIN_OK, &data, m_param);
-            }
-
-            break;
-
-        case MSGQ_CMD_SEND:
-            LOG_INF("Dequeued SEND command (correlation id: %d)",
-                    item.corr_id);
-
-            if (item.data.send.ttl != 0) {
-                if (k_uptime_get() > item.data.send.ttl) {
-                    LOG_WRN("Message TTL expired");
-                }
-            }
-
-            // TODO Check state
-
-            ret = send(3, K_SECONDS(30), &item.data.send);
-
-            k_free(item.data.send.buf);
-
-            if (ret < 0) {
-                LOG_ERR("Call `send` failed: %d", ret);
-
-                data.send_err.corr_id = item.corr_id;
-
-                if (m_callback != NULL) {
-                    m_callback(HIO_NET_LRW_EVENT_SEND_ERR, &data, m_param);
-                }
-
-                break;
-            }
-
-            data.send_ok.corr_id = item.corr_id;
-
-            if (m_callback != NULL) {
-                m_callback(HIO_NET_LRW_EVENT_SEND_OK, &data, m_param);
-            }
-
-            break;
-
-        default:
-            LOG_ERR("Unknown message: %d", (int)item.cmd);
+        if (events[1].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+            process_send_msgq();
         }
     }
 }
 
 K_THREAD_DEFINE(hio_net_lrw, CONFIG_HIO_NET_LRW_THREAD_STACK_SIZE,
-                process_thread, NULL, NULL, NULL,
+                dispatcher_thread, NULL, NULL, NULL,
                 CONFIG_HIO_NET_LRW_THREAD_PRIORITY, 0, 0);
 
 int hio_net_lrw_init(hio_net_lrw_event_cb callback, void *param)
@@ -802,9 +834,9 @@ int hio_net_lrw_start(int *corr_id)
 {
     int ret;
 
-    struct msgq_item item = {
+    struct cmd_msgq_item item = {
         .corr_id = (int)atomic_inc(&m_corr_id),
-        .cmd = MSGQ_CMD_START
+        .req = CMD_MSGQ_REQ_START
     };
 
     LOG_INF("Enqueing START command (correlation id: %d)", item.corr_id);
@@ -813,7 +845,7 @@ int hio_net_lrw_start(int *corr_id)
         *corr_id = item.corr_id;
     }
 
-    ret = k_msgq_put(&m_msgq, &item, K_NO_WAIT);
+    ret = k_msgq_put(&m_cmd_msgq, &item, K_NO_WAIT);
 
     if (ret < 0) {
         LOG_ERR("Call `k_msgq_put` failed: %d", ret);
@@ -827,9 +859,9 @@ int hio_net_lrw_join(int *corr_id)
 {
     int ret;
 
-    struct msgq_item item = {
+    struct cmd_msgq_item item = {
         .corr_id = (int)atomic_inc(&m_corr_id),
-        .cmd = MSGQ_CMD_JOIN
+        .req = CMD_MSGQ_REQ_JOIN
     };
 
     if (corr_id != NULL) {
@@ -838,7 +870,7 @@ int hio_net_lrw_join(int *corr_id)
 
     LOG_INF("Enqueing JOIN command (correlation id: %d)", item.corr_id);
 
-    ret = k_msgq_put(&m_msgq, &item, K_NO_WAIT);
+    ret = k_msgq_put(&m_cmd_msgq, &item, K_NO_WAIT);
 
     if (ret < 0) {
         LOG_ERR("Call `k_msgq_put` failed: %d", ret);
@@ -862,17 +894,14 @@ int hio_net_lrw_send(const struct hio_net_lrw_send_opts *opts,
 
     memcpy(p, buf, len);
 
-    struct msgq_item item = {
+    struct send_msgq_item item = {
         .corr_id = (int)atomic_inc(&m_corr_id),
-        .cmd = MSGQ_CMD_SEND,
         .data = {
-            .send = {
-                .ttl = opts->ttl,
-                .confirmed = opts->confirmed,
-                .port = opts->port,
-                .buf = p,
-                .len = len
-            }
+            .ttl = opts->ttl,
+            .confirmed = opts->confirmed,
+            .port = opts->port,
+            .buf = p,
+            .len = len
         }
     };
 
@@ -882,7 +911,7 @@ int hio_net_lrw_send(const struct hio_net_lrw_send_opts *opts,
         *corr_id = item.corr_id;
     }
 
-    ret = k_msgq_put(&m_msgq, &item, K_NO_WAIT);
+    ret = k_msgq_put(&m_send_msgq, &item, K_NO_WAIT);
 
     if (ret < 0) {
         LOG_ERR("Call `k_msgq_put` failed: %d", ret);
