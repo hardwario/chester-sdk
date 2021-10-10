@@ -63,6 +63,18 @@ config LOG_BACKEND_RTT_BUFFER_SIZE
 config LOG_BACKEND_SHOW_COLOR
 	default n if HIO_SDK
 
+config LOG_FUNC_NAME_PREFIX_ERR
+	default y if HIO_SDK
+
+config LOG_FUNC_NAME_PREFIX_WRN
+	default y if HIO_SDK
+
+config LOG_FUNC_NAME_PREFIX_INF
+	default y if HIO_SDK
+
+config LOG_FUNC_NAME_PREFIX_DBG
+	default y if HIO_SDK
+
 config LOG_SPEED
 	default y if HIO_SDK
 
