@@ -195,7 +195,7 @@ static int print_help(const struct shell *shell,
                       size_t argc, char **argv)
 {
     if (argc > 1) {
-        shell_error(shell, "%s: Command not found", argv[1]);
+        shell_error(shell, "command not found: %s", argv[1]);
         shell_help(shell);
         return -EINVAL;
     }

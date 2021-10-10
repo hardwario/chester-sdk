@@ -59,7 +59,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
             ret = item->cb(shell, argc, argv);
             if (ret < 0) {
                 LOG_ERR("Call `item->cb` failed: %d", ret);
-                shell_error(shell, "Command failed");
+                shell_error(shell, "command failed");
                 return ret;
             }
         }
@@ -76,7 +76,7 @@ static int cmd_save(const struct shell *shell, size_t argc, char **argv)
 
     if (ret < 0) {
         LOG_ERR("Call `settings_save` failed: %d", ret);
-        shell_error(shell, "Command failed");
+        shell_error(shell, "command failed");
         return ret;
     }
 
@@ -94,7 +94,7 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 
     if (ret < 0) {
         LOG_ERR("Call `flash_area_open` failed: %d", ret);
-        shell_error(shell, "Command failed");
+        shell_error(shell, "command failed");
         return ret;
     }
 
@@ -106,7 +106,7 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 
     if (ret < 0 && ret != -ENOMEM) {
         LOG_ERR("Call `flash_area_get_sectors` failed: %d", ret);
-        shell_error(shell, "Command failed");
+        shell_error(shell, "command failed");
         return ret;
     }
 
@@ -140,7 +140,7 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 
     if (ret < 0) {
         LOG_ERR("Call `nvs_init` failed: %d", ret);
-        shell_error(shell, "Command failed");
+        shell_error(shell, "command failed");
         return ret;
     }
 
@@ -148,7 +148,7 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 
     if (ret < 0) {
         LOG_ERR("Call `nvs_clear` failed: %d", ret);
-        shell_error(shell, "Command failed");
+        shell_error(shell, "command failed");
         return ret;
     }
 
@@ -161,7 +161,7 @@ static int print_help(const struct shell *shell,
                       size_t argc, char **argv)
 {
     if (argc > 1) {
-        shell_error(shell, "%s: Command not found", argv[1]);
+        shell_error(shell, "command not found: %s", argv[1]);
         shell_help(shell);
         return -EINVAL;
     }
