@@ -1,0 +1,5 @@
+/ {
+	chosen {
+		zephyr,console = &uart_x2;
+	};
+};
