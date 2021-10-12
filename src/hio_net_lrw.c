@@ -808,7 +808,7 @@ static void process_cmd_msgq(void)
         } else {
             ret = process_req_start(&item);
 
-            m_state = ret == 0 ? STATE_READY : STATE_ERROR;
+            m_state = ret < 0 ? STATE_ERROR : STATE_READY;
         }
     } else if (item.req == CMD_MSGQ_REQ_JOIN) {
         LOG_INF("Dequeued JOIN command (correlation id: %d)", item.corr_id);
@@ -819,7 +819,7 @@ static void process_cmd_msgq(void)
         } else {
             ret = process_req_join(&item);
 
-            m_state = ret == 0 ? STATE_READY : STATE_ERROR;
+            m_state = ret < 0 ? STATE_ERROR : STATE_READY;
         }
     } else {
         LOG_ERR("Unknown message: %d", (int)item.req);
