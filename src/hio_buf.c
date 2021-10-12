@@ -4,13 +4,13 @@
 #include <errno.h>
 #include <string.h>
 
-int hio_buf_init(struct hio_buf *ctx, void *buf, size_t size)
+int hio_buf_init(struct hio_buf *ctx, void *mem, size_t size)
 {
     if (size == 0) {
         return -EINVAL;
     }
 
-    ctx->mem = buf;
+    ctx->mem = mem;
     ctx->size = size;
 
     hio_buf_reset(ctx);
@@ -56,7 +56,7 @@ int hio_buf_append_ ## _name(struct hio_buf *ctx, _type val)                  \
         ctx->mem[ctx->len++] = (uint64_t)val >> (8 * i);                      \
     }                                                                         \
                                                                               \
-    return 0;                                                     \
+    return 0;                                                                 \
 }
 
 HIO_BUF_APPEND(char, char)

@@ -6,18 +6,18 @@
 #include <stdint.h>
 
 #define HIO_BUF_DEFINE(_name, _size)                                          \
-    uint8_t _name ## _mem[_size];                                             \
+    uint8_t _name##_mem[_size];                                               \
     struct hio_buf _name = {                                                  \
         .mem = _name ## _mem,                                                 \
-        .size = sizeof(_name ## _mem),                                        \
+        .size = sizeof(_name##_mem),                                          \
         .len = 0                                                              \
     }
 
 #define HIO_BUF_DEFINE_STATIC(_name, _size)                                   \
-    static uint8_t _name ## _mem[_size];                                      \
+    static uint8_t _name##_mem[_size];                                        \
     static struct hio_buf _name = {                                           \
-        .mem = _name ## _mem,                                                 \
-        .size = sizeof(_name ## _mem),                                        \
+        .mem = _name##_mem,                                                   \
+        .size = sizeof(_name##_mem),                                          \
         .len = 0                                                              \
     }
 
@@ -27,7 +27,7 @@ struct hio_buf {
     size_t len;
 };
 
-int hio_buf_init(struct hio_buf *ctx, void *buf, size_t size);
+int hio_buf_init(struct hio_buf *ctx, void *mem, size_t size);
 uint8_t *hio_buf_get_mem(struct hio_buf *ctx);
 size_t hio_buf_get_free(struct hio_buf *ctx);
 size_t hio_buf_get_used(struct hio_buf *ctx);
