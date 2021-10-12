@@ -564,7 +564,9 @@ static int send_once(const struct send_msgq_data *data)
 
     if (ret == -EAGAIN) {
         LOG_WRN("Send response timed out");
-        return -ETIMEDOUT;
+
+        /* Return positive error code intentionally */
+        return ETIMEDOUT;
     }
 
     if (ret < 0) {
@@ -578,7 +580,8 @@ static int send_once(const struct send_msgq_data *data)
     k_poll_signal_check(&m_send_sig, &signaled, &result);
 
     if (signaled == 0 || result != 0) {
-        return -ENOMSG;
+        /* Return positive error code intentionally */
+        return ENOMSG;
     }
 
     return 0;
@@ -588,6 +591,7 @@ static int send(int retries, k_timeout_t delay,
                 const struct send_msgq_data *data)
 {
     int ret;
+    int err = 0;
 
     LOG_INF("Operation SEND started");
 
@@ -600,6 +604,7 @@ static int send(int retries, k_timeout_t delay,
         }
 
         ret = send_once(data);
+        err = ret;
 
         if (ret == 0) {
             ret = hio_lrw_talk_disable();
@@ -631,7 +636,7 @@ static int send(int retries, k_timeout_t delay,
     }
 
     LOG_WRN("Operation SEND failed");
-    return -ENODATA;
+    return err;
 }
 
 static int start(void)
@@ -756,8 +761,11 @@ static int process_req_send(const struct send_msgq_item *item)
     if (item->data.ttl != 0) {
         if (k_uptime_get() > item->data.ttl) {
             LOG_WRN("Message TTL expired");
+
             k_free(item->data.buf);
-            return -ECANCELED;
+
+            /* Return positive error code intentionally */
+            return ECANCELED;
         }
     }
 
@@ -765,7 +773,7 @@ static int process_req_send(const struct send_msgq_item *item)
 
     k_free(item->data.buf);
 
-    if (ret < 0) {
+    if (ret != 0) {
         LOG_ERR("Call `send` failed: %d", ret);
 
         data.send_err.corr_id = item->corr_id;
@@ -809,7 +817,18 @@ static void process_cmd_msgq(void)
             ret = process_req_start(&item);
 
             m_state = ret < 0 ? STATE_ERROR : STATE_READY;
+
+            if (m_state == STATE_ERROR) {
+                LOG_ERR("Error - flushing all control commands from queue");
+
+                k_msgq_purge(&m_cmd_msgq);
+
+                if (m_callback != NULL) {
+                    m_callback(HIO_NET_LRW_EVENT_FAILURE, NULL, m_param);
+                }
+            }
         }
+
     } else if (item.req == CMD_MSGQ_REQ_JOIN) {
         LOG_INF("Dequeued JOIN command (correlation id: %d)", item.corr_id);
 
@@ -820,7 +839,18 @@ static void process_cmd_msgq(void)
             ret = process_req_join(&item);
 
             m_state = ret < 0 ? STATE_ERROR : STATE_READY;
+
+            if (m_state == STATE_ERROR) {
+                LOG_ERR("Error - flushing all control commands from queue");
+
+                k_msgq_purge(&m_cmd_msgq);
+
+                if (m_callback != NULL) {
+                    m_callback(HIO_NET_LRW_EVENT_FAILURE, NULL, m_param);
+                }
+            }
         }
+
     } else {
         LOG_ERR("Unknown message: %d", (int)item.req);
     }
@@ -843,7 +873,17 @@ static void process_send_msgq(void)
 
     ret = process_req_send(&item);
 
-    m_state = ret == 0 || ret == -ECANCELED ? STATE_READY : STATE_ERROR;
+    m_state = ret < 0 ? STATE_ERROR : STATE_READY;
+
+    if (m_state == STATE_ERROR) {
+        LOG_ERR("Error - flushing all control commands from queue");
+
+        k_msgq_purge(&m_cmd_msgq);
+
+        if (m_callback != NULL) {
+            m_callback(HIO_NET_LRW_EVENT_FAILURE, NULL, m_param);
+        }
+    }
 }
 
 static void dispatcher_thread(void)

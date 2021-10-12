@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 enum hio_net_lrw_event {
+    HIO_NET_LRW_EVENT_FAILURE = -1,
     HIO_NET_LRW_EVENT_START_OK = 0,
     HIO_NET_LRW_EVENT_START_ERR = 1,
     HIO_NET_LRW_EVENT_JOIN_OK = 2,
