@@ -5,6 +5,7 @@
 #include <devicetree.h>
 #include <drivers/sensor.h>
 #include <logging/log.h>
+#include <shell/shell.h>
 #include <zephyr.h>
 
 // Standard includes
@@ -27,13 +28,15 @@ static const int m_vectors[7][3] = {
     [6] = {1, 0, 0}
 };
 
-static atomic_t m_orientation;
+static int m_orientation;
+
+static K_MUTEX_DEFINE(m_mut);
 
 static void update_orientation(float coeff_x, float coeff_y, float coeff_z)
 {
-    int vector_x = m_vectors[atomic_get(&m_orientation)][0];
-    int vector_y = m_vectors[atomic_get(&m_orientation)][1];
-    int vector_z = m_vectors[atomic_get(&m_orientation)][2];
+    int vector_x = m_vectors[m_orientation][0];
+    int vector_y = m_vectors[m_orientation][1];
+    int vector_z = m_vectors[m_orientation][2];
 
     if ((vector_x == 0 &&
          (coeff_x < -ORIENTATION_THR || coeff_x > ORIENTATION_THR)) ||
@@ -72,15 +75,10 @@ update:
             delta_y < 1.f - ORIENTATION_THR &&
             delta_z < 1.f - ORIENTATION_THR) {
 
-            atomic_set(&m_orientation, i);
+            m_orientation = i;
             return;
         }
     }
-}
-
-int hio_accel_init(void)
-{
-    return 0;
 }
 
 int hio_accel_read(float *accel_x, float *accel_y, float *accel_z,
@@ -88,10 +86,13 @@ int hio_accel_read(float *accel_x, float *accel_y, float *accel_z,
 {
     int ret;
 
+    k_mutex_lock(&m_mut, K_FOREVER);
+
     const struct device *dev = device_get_binding("LIS2DH12");
 
     if (dev == NULL) {
         LOG_ERR("Call `device_get_binding` failed");
+        k_mutex_unlock(&m_mut);
         return -ENODEV;
     }
 
@@ -99,6 +100,7 @@ int hio_accel_read(float *accel_x, float *accel_y, float *accel_z,
 
     if (ret < 0 && ret != -EBADMSG) {
         LOG_ERR("Call `sensor_sample_fetch` failed: %d", ret);
+        k_mutex_unlock(&m_mut);
         return ret;
     }
 
@@ -108,6 +110,7 @@ int hio_accel_read(float *accel_x, float *accel_y, float *accel_z,
 
     if (ret < 0) {
         LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
+        k_mutex_unlock(&m_mut);
         return ret;
     }
 
@@ -135,7 +138,7 @@ int hio_accel_read(float *accel_x, float *accel_y, float *accel_z,
                        tmp_accel_y / GRAVITY,
                        tmp_accel_z / GRAVITY);
 
-    int tmp_orientation = atomic_get(&m_orientation);
+    int tmp_orientation = m_orientation;
 
     LOG_DBG("Orientation: %d", tmp_orientation);
 
@@ -143,5 +146,54 @@ int hio_accel_read(float *accel_x, float *accel_y, float *accel_z,
         *orientation = tmp_orientation;
     }
 
+    k_mutex_unlock(&m_mut);
     return 0;
 }
+
+static int cmd_accel_read(const struct shell *shell,
+                          size_t argc, char **argv)
+{
+    int ret;
+
+    float accel_x;
+    float accel_y;
+    float accel_z;
+    int orientation;
+
+    ret = hio_accel_read(&accel_x, &accel_y, &accel_z, &orientation);
+
+    if (ret < 0) {
+        LOG_ERR("Call `hio_accel_read` failed: %d", ret);
+        shell_error(shell, "command failed");
+        return ret;
+    }
+
+    shell_print(shell, "accel-axis-x: %.3f m/s^2", accel_x);
+    shell_print(shell, "accel-axis-y: %.3f m/s^2", accel_y);
+    shell_print(shell, "accel-axis-z: %.3f m/s^2", accel_z);
+    shell_print(shell, "orientation: %d", orientation);
+
+    return 0;
+}
+
+static int print_help(const struct shell *shell,
+                      size_t argc, char **argv)
+{
+    if (argc > 1) {
+        shell_error(shell, "command not found: %s", argv[1]);
+        shell_help(shell);
+        return -EINVAL;
+    }
+
+    shell_help(shell);
+
+    return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_accel,
+    SHELL_CMD_ARG(read, NULL, "Read sensor data.", cmd_accel_read, 1, 0),
+    SHELL_SUBCMD_SET_END
+);
+
+SHELL_CMD_REGISTER(accel, &sub_accel, "Accelerometer commands.", print_help);
