@@ -1,0 +1,11 @@
+config HIO_HYGRO
+	bool "HIO_HYGRO"
+	select SENSOR
+	select SHT3XD
+
+# TODO Uncomment this when named choices get to mainline:
+# https://github.com/zephyrproject-rtos/zephyr/pull/39305
+# choice SHT3XD_MEASUREMENT_MODE
+# 	default SHT3XD_SINGLE_SHOT_MODE
+# 	depends on HIO_HYGRO
+# endchoice
