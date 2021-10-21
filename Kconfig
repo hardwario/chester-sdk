@@ -1,7 +1,5 @@
 menuconfig HIO_SDK
 	bool "HIO_SDK"
-	select BOOTLOADER_MCUBOOT
-	select MCUMGR
 
 if HIO_SDK
 
@@ -10,54 +8,19 @@ config HIO_BLE
 	select BT
 	select BT_NUS
 	select BT_PERIPHERAL
+	select BOOTLOADER_MCUBOOT
+	select MCUMGR
 	select MCUMGR_CMD_IMG_MGMT
 	select MCUMGR_CMD_OS_MGMT
 	select MCUMGR_SMP_BT
+	select FLASH_MAP
+	select NVS
+	select SETTINGS
+	select SETTINGS_RUNTIME
+
 
 config HIO_CHESTER_X3
 	bool "HIO_CHESTER_X3"
-
-config HIO_ACCEL
-	bool "HIO_ACCEL"
-	select SENSOR
-	select LIS2DH
-
-# Uncomment this when named choices get to mainline
-# https://github.com/zephyrproject-rtos/zephyr/pull/39303
-# choice LIS2DH_ACCEL_RANGE
-# 	default LIS2DH_ACCEL_RANGE_4G
-# 	depends on HIO_ACCEL
-# endchoice
-#
-# choice LIS2DH_ODR
-# 	default LIS2DH_ODR_2
-# 	depends on HIO_ACCEL
-# endchoice
-#
-# choice LIS2DH_TRIGGER_MODE
-# 	default LIS2DH_TRIGGER_GLOBAL_THREAD
-# 	depends on HIO_ACCEL
-# endchoice
-
-# Uncomment this when named choices get to mainline:
-# https://github.com/zephyrproject-rtos/zephyr/pull/39305
-# choice SHT3XD_MEASUREMENT_MODE
-# 	default SHT3XD_SINGLE_SHOT_MODE
-# 	depends on HIO_HYGRO
-# endchoice
-
-config HIO_HYGRO
-	bool "HIO_HYGRO"
-	select SENSOR
-	select SHT3XD
-
-config HIO_THERM
-	bool "HIO_THERM"
-	select SENSOR
-	select TMP112
-
-config HIO_RTC
-	bool "HIO_RTC"
 
 config HIO_TEST
 	bool "HIO_TEST"
@@ -84,9 +47,6 @@ config DEBUG
 
 config HEAP_MEM_POOL_SIZE
 	default 2048 if HIO_SDK
-
-config I2C
-	default y if HIO_SDK
 
 config KERNEL_SHELL
 	default y if HIO_SDK
@@ -135,19 +95,10 @@ config NEWLIB_LIBC_FLOAT_PRINTF
 config NEWLIB_LIBC_FLOAT_SCANF
 	default y if HIO_SDK
 
-config NFCT_PINS_AS_GPIOS
-	default y if HIO_SDK
-
-config NRFX_RTC2
-	default y if HIO_SDK
-
 config NRFX_UARTE0
 	default y if HIO_SDK
 
 config NRFX_UARTE1
-	default y if HIO_SDK
-
-config NVS
 	default y if HIO_SDK
 
 config PM_DEVICE
@@ -169,12 +120,6 @@ config SEGGER_RTT_BUFFER_SIZE_UP
 	default 4096 if HIO_SDK
 
 config SERIAL
-	default y if HIO_SDK
-
-config SETTINGS
-	default y if HIO_SDK
-
-config SETTINGS_RUNTIME
 	default y if HIO_SDK
 
 config SHELL
@@ -213,9 +158,6 @@ config SHELL_RTT_RX_POLL_PERIOD
 config SHELL_STATS
 	default y if HIO_SDK
 
-config SPI
-	default y if HIO_SDK
-
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 3072 if HIO_SDK
 
@@ -248,10 +190,6 @@ config UART_LINE_CTRL
 
 config USE_SEGGER_RTT
 	default y if HIO_SDK
-
-config HIO_CONFIG_INIT_PRIORITY
-	int "HIO_CONFIG_INIT_PRIORITY"
-	default 0
 
 # #############################################################################
 # HIO_BLE
@@ -288,17 +226,6 @@ config SHELL_BT_NUS_TX_RING_BUFFER_SIZE
 	default 256 if HIO_BLE
 
 # #############################################################################
-# HIO_RTC
-
-if HIO_RTC
-
-config HIO_RTC_INIT_PRIORITY
-	int "HIO_RTC_INIT_PRIORITY"
-	default 3
-
-endif # HIO_RTC
-
-# #############################################################################
 # HIO_TEST
 
 if HIO_TEST
@@ -308,6 +235,18 @@ config HIO_TEST_INIT_PRIORITY
 	default 99
 
 endif # HIO_TEST
+
+# rsource "Kconfig.ble"
+# rsource "Kconfig.test"
+
+rsource "Kconfig.accel"
+rsource "Kconfig.bsp"
+rsource "Kconfig.config"
+rsource "Kconfig.hygro"
+rsource "Kconfig.led"
+rsource "Kconfig.lrw"
+rsource "Kconfig.rtc"
+rsource "Kconfig.therm"
 
 # config HIO_SDK
 # 	bool "HIO_SDK"
@@ -504,12 +443,4 @@ endif # HIO_TEST
 #
 # config USE_SEGGER_RTT
 # 	default y if HIO_SDK
-#
-# rsource "Kconfig.ble"
-rsource "Kconfig.bsp"
-# rsource "Kconfig.config"
-rsource "Kconfig.led"
-rsource "Kconfig.lrw"
-# rsource "Kconfig.rtc"
-# rsource "Kconfig.test"
 #
