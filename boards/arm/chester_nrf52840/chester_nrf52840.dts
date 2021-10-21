@@ -120,6 +120,22 @@
 	miso-pin = <24>;
 	miso-pull-down;
 	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+
+	flash1: at45db641e@0 {
+		compatible = "atmel,at45";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <85000000>;
+		label = "NOR";
+		jedec-id = [1f 28 00];
+		size = <67108864>;
+		sector-size = <262144>;
+		block-size = <2048>;
+		page-size = <256>;
+		use-udpd;
+		enter-dpd-delay = <3000>;  /* w/o use-udpd  <2000> */
+		exit-dpd-delay = <100000>; /* w/o use-udpd <35000> */
+	};
 };
 
 &uart0 {

@@ -1,8 +1,9 @@
 config HIO_BSP
 	bool "HIO_BSP"
 	select HIO_SDK
-	select LED
-	select LED_GPIO
+	select SPI
+	select FLASH
+	select SPI_FLASH_AT45
 
 config HIO_BSP_INIT_PRIORITY
 	int "HIO_BSP_INIT_PRIORITY"
