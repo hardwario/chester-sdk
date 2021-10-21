@@ -14,9 +14,6 @@ config HIO_BLE
 	select MCUMGR_CMD_OS_MGMT
 	select MCUMGR_SMP_BT
 
-config HIO_BSP
-	bool "HIO_BSP"
-
 config HIO_CHESTER_X3
 	bool "HIO_CHESTER_X3"
 
@@ -58,9 +55,6 @@ config HIO_THERM
 	bool "HIO_THERM"
 	select SENSOR
 	select TMP112
-
-config HIO_NET_LRW
-	bool "HIO_NET_LRW"
 
 config HIO_RTC
 	bool "HIO_RTC"
@@ -300,32 +294,6 @@ config SHELL_BT_NUS_TX_RING_BUFFER_SIZE
 	default 256 if HIO_BLE
 
 # #############################################################################
-# HIO_BSP
-
-if HIO_BSP
-
-config HIO_BSP_INIT_PRIORITY
-	int "HIO_BSP_INIT_PRIORITY"
-	default 2
-
-endif # HIO_BSP
-
-# #############################################################################
-# HIO_NET_LRW
-
-if HIO_NET_LRW
-
-config HIO_NET_LRW_THREAD_STACK_SIZE
-	int "HIO_NET_LRW_THREAD_STACK_SIZE"
-	default 4096
-
-config HIO_NET_LRW_THREAD_PRIORITY
-	int "HIO_NET_LRW_THREAD_PRIORITY"
-	default 10
-
-endif # HIO_NET_LRW
-
-# #############################################################################
 # HIO_RTC
 
 if HIO_RTC
@@ -550,9 +518,9 @@ endif # HIO_TEST
 # 	default y if HIO_SDK
 #
 # rsource "Kconfig.ble"
-# rsource "Kconfig.bsp"
+rsource "Kconfig.bsp"
 # rsource "Kconfig.config"
-# rsource "Kconfig.lrw"
+rsource "Kconfig.lrw"
 # rsource "Kconfig.rtc"
 # rsource "Kconfig.test"
 #

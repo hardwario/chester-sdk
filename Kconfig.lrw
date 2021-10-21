@@ -1,6 +1,7 @@
 config HIO_NET_LRW
 	bool "HIO_NET_LRW"
 	select HIO_SDK
+	select HIO_BSP
 
 config HIO_NET_LRW_THREAD_STACK_SIZE
 	int "HIO_NET_LRW_THREAD_STACK_SIZE"
