@@ -520,6 +520,7 @@ endif # HIO_TEST
 # rsource "Kconfig.ble"
 rsource "Kconfig.bsp"
 # rsource "Kconfig.config"
+rsource "Kconfig.led"
 rsource "Kconfig.lrw"
 # rsource "Kconfig.rtc"
 # rsource "Kconfig.test"

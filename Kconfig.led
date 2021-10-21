@@ -1,0 +1,5 @@
+config HIO_LED
+	bool "HIO_LED"
+	depends on SHELL
+	select LED
+	select LED_GPIO
