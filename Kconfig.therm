@@ -1,0 +1,4 @@
+config HIO_THERM
+	bool "HIO_THERM"
+	select SENSOR
+	select TMP112
