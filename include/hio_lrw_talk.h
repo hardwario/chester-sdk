@@ -6,11 +6,11 @@
 #include <stdint.h>
 
 enum hio_lrw_talk_event {
-    HIO_LRW_TALK_EVENT_BOOT = 0,
-    HIO_LRW_TALK_EVENT_JOIN_OK = 1,
-    HIO_LRW_TALK_EVENT_JOIN_ERR = 2,
-    HIO_LRW_TALK_EVENT_SEND_OK = 3,
-    HIO_LRW_TALK_EVENT_SEND_ERR = 4
+	HIO_LRW_TALK_EVENT_BOOT = 0,
+	HIO_LRW_TALK_EVENT_JOIN_OK = 1,
+	HIO_LRW_TALK_EVENT_JOIN_ERR = 2,
+	HIO_LRW_TALK_EVENT_SEND_OK = 3,
+	HIO_LRW_TALK_EVENT_SEND_ERR = 4,
 };
 
 typedef void (*hio_lrw_talk_event_cb)(enum hio_lrw_talk_event event);
@@ -36,9 +36,7 @@ int hio_lrw_talk_at_nwkskey(const uint8_t *nwkskey, size_t nwkskey_size);
 int hio_lrw_talk_at_appskey(const uint8_t *appskey, size_t appskey_size);
 int hio_lrw_talk_at_utx(const void *payload, size_t payload_len);
 int hio_lrw_talk_at_ctx(const void *payload, size_t payload_len);
-int hio_lrw_talk_at_putx(uint8_t port, const void *payload,
-                         size_t payload_len);
-int hio_lrw_talk_at_pctx(uint8_t port, const void *payload,
-                         size_t payload_len);
+int hio_lrw_talk_at_putx(uint8_t port, const void *payload, size_t payload_len);
+int hio_lrw_talk_at_pctx(uint8_t port, const void *payload, size_t payload_len);
 
 #endif

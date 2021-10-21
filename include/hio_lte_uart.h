@@ -5,19 +5,10 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-int
-hio_lte_uart_init(void);
-
-int
-hio_lte_uart_enable(void);
-
-int
-hio_lte_uart_disable(void);
-
-int
-hio_lte_uart_send(const char *fmt, va_list ap);
-
-int
-hio_lte_uart_recv(char **s, int64_t timeout);
+int hio_lte_uart_init(void);
+int hio_lte_uart_enable(void);
+int hio_lte_uart_disable(void);
+int hio_lte_uart_send(const char *fmt, va_list ap);
+int hio_lte_uart_recv(char **s, int64_t timeout);
 
 #endif

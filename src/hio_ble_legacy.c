@@ -14,8 +14,8 @@
 
 LOG_MODULE_REGISTER(hio_ble);
 
-#define DEVICE_NAME             CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN	        (sizeof(DEVICE_NAME) - 1)
+#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
+#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
 static struct bt_conn *current_conn;
 
@@ -60,25 +60,22 @@ static char *log_addr(struct bt_conn *conn)
 	return log_strdup(addr);
 }
 
-static void __attribute__((unused)) security_changed(struct bt_conn *conn,
-						     bt_security_t level,
-						     enum bt_security_err err)
+static void __attribute__((unused))
+security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
 	char *addr = log_addr(conn);
 
 	if (!err) {
 		LOG_INF("Security changed: %s level %u", addr, level);
 	} else {
-		LOG_INF("Security failed: %s level %u err %d", addr, level,
-			err);
+		LOG_INF("Security failed: %s level %u err %d", addr, level, err);
 	}
 }
 
 static struct bt_conn_cb conn_callbacks = {
-	.connected    = connected,
+	.connected = connected,
 	.disconnected = disconnected,
-	COND_CODE_1(CONFIG_BT_SMP,
-		    (.security_changed = security_changed), ())
+	COND_CODE_1(CONFIG_BT_SMP, (.security_changed = security_changed), ())
 };
 
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
@@ -108,16 +105,13 @@ static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 	LOG_INF("Pairing failed conn: %s, reason %d", log_addr(conn), reason);
 }
 
-static struct bt_conn_auth_cb conn_auth_callbacks = {
-	.passkey_display = auth_passkey_display,
-	.cancel = auth_cancel,
-	.pairing_confirm = pairing_confirm,
-	.pairing_complete = pairing_complete,
-	.pairing_failed = pairing_failed
-};
+static struct bt_conn_auth_cb conn_auth_callbacks = { .passkey_display = auth_passkey_display,
+	                                              .cancel = auth_cancel,
+	                                              .pairing_confirm = pairing_confirm,
+	                                              .pairing_complete = pairing_complete,
+	                                              .pairing_failed = pairing_failed };
 
-void
-hio_ble_init(void)
+void hio_ble_init(void)
 {
 	int err;
 
@@ -138,8 +132,7 @@ hio_ble_init(void)
 		return;
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd,
-			      ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		LOG_ERR("Advertising failed to start (err %d)", err);
 		return;
@@ -150,8 +143,7 @@ hio_ble_init(void)
 
 #else
 
-void
-hio_ble_init(void)
+void hio_ble_init(void)
 {
 }
 
@@ -188,7 +180,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CONFIG_BT_NUS_SECURITY_ENABLED
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN	(sizeof(DEVICE_NAME) - 1)
+#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
 static K_SEM_DEFINE(ble_init_ok, 0, 1);
 

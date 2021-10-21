@@ -6,58 +6,58 @@
 
 int hio_buf_init(struct hio_buf *ctx, void *mem, size_t size)
 {
-    if (size == 0) {
-        return -EINVAL;
-    }
+	if (size == 0) {
+		return -EINVAL;
+	}
 
-    ctx->mem = mem;
-    ctx->size = size;
+	ctx->mem = mem;
+	ctx->size = size;
 
-    hio_buf_reset(ctx);
+	hio_buf_reset(ctx);
 
-    return 0;
+	return 0;
 }
 
 uint8_t *hio_buf_get_mem(struct hio_buf *ctx)
 {
-    return ctx->mem;
+	return ctx->mem;
 }
 
 size_t hio_buf_get_free(struct hio_buf *ctx)
 {
-    return ctx->size - ctx->len;
+	return ctx->size - ctx->len;
 }
 
 size_t hio_buf_get_used(struct hio_buf *ctx)
 {
-    return ctx->len;
+	return ctx->len;
 }
 
 void hio_buf_reset(struct hio_buf *ctx)
 {
-    ctx->len = 0;
+	ctx->len = 0;
 }
 
 void hio_buf_fill(struct hio_buf *ctx, int val)
 {
-    memset(ctx->mem, val, ctx->size);
+	memset(ctx->mem, val, ctx->size);
 
-    hio_buf_reset(ctx);
+	hio_buf_reset(ctx);
 }
 
-#define HIO_BUF_APPEND(_name, _type)                                          \
-int hio_buf_append_ ## _name(struct hio_buf *ctx, _type val)                  \
-{                                                                             \
-    if (hio_buf_get_free(ctx) < sizeof(val)) {                                \
-        return -ENOSPC;                                                       \
-    }                                                                         \
-                                                                              \
-    for (size_t i = 0; i < sizeof(val); i++) {                                \
-        ctx->mem[ctx->len++] = (uint64_t)val >> (8 * i);                      \
-    }                                                                         \
-                                                                              \
-    return 0;                                                                 \
-}
+#define HIO_BUF_APPEND(_name, _type)                                                               \
+	int hio_buf_append_##_name(struct hio_buf *ctx, _type val)                                 \
+	{                                                                                          \
+		if (hio_buf_get_free(ctx) < sizeof(val)) {                                         \
+			return -ENOSPC;                                                            \
+		}                                                                                  \
+                                                                                                   \
+		for (size_t i = 0; i < sizeof(val); i++) {                                         \
+			ctx->mem[ctx->len++] = (uint64_t)val >> (8 * i);                           \
+		}                                                                                  \
+                                                                                                   \
+		return 0;                                                                          \
+	}
 
 HIO_BUF_APPEND(char, char)
 HIO_BUF_APPEND(float, float)

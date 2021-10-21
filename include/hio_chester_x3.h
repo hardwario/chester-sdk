@@ -5,19 +5,17 @@
 #include <stdint.h>
 
 enum hio_chester_x3_slot {
-    HIO_CHESTER_X3_SLOT_A = 0,
-    HIO_CHESTER_X3_SLOT_B = 1
+	HIO_CHESTER_X3_SLOT_A = 0,
+	HIO_CHESTER_X3_SLOT_B = 1,
 };
 
 enum hio_chester_x3_channel {
-    HIO_CHESTER_X3_CHANNEL_1 = 0,
-    HIO_CHESTER_X3_CHANNEL_2 = 1
+	HIO_CHESTER_X3_CHANNEL_1 = 0,
+	HIO_CHESTER_X3_CHANNEL_2 = 1,
 };
 
-int hio_chester_x3_init(enum hio_chester_x3_slot slot,
-                        enum hio_chester_x3_channel channel);
-int hio_chester_x3_measure(enum hio_chester_x3_slot slot,
-                           enum hio_chester_x3_channel channel,
+int hio_chester_x3_init(enum hio_chester_x3_slot slot, enum hio_chester_x3_channel channel);
+int hio_chester_x3_measure(enum hio_chester_x3_slot slot, enum hio_chester_x3_channel channel,
                            int32_t *result);
 
 // TODO

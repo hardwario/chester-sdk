@@ -5,26 +5,26 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HIO_BUF_DEFINE(_name, _size)                                          \
-    uint8_t _name##_mem[_size];                                               \
-    struct hio_buf _name = {                                                  \
-        .mem = _name ## _mem,                                                 \
-        .size = sizeof(_name##_mem),                                          \
-        .len = 0                                                              \
-    }
+#define HIO_BUF_DEFINE(_name, _size)                                                               \
+	uint8_t _name##_mem[_size];                                                                \
+	struct hio_buf _name = {                                                                   \
+		.mem = _name##_mem,                                                                \
+		.size = sizeof(_name##_mem),                                                       \
+		.len = 0,                                                                          \
+	}
 
-#define HIO_BUF_DEFINE_STATIC(_name, _size)                                   \
-    static uint8_t _name##_mem[_size];                                        \
-    static struct hio_buf _name = {                                           \
-        .mem = _name##_mem,                                                   \
-        .size = sizeof(_name##_mem),                                          \
-        .len = 0                                                              \
-    }
+#define HIO_BUF_DEFINE_STATIC(_name, _size)                                                        \
+	static uint8_t _name##_mem[_size];                                                         \
+	static struct hio_buf _name = {                                                            \
+		.mem = _name##_mem,                                                                \
+		.size = sizeof(_name##_mem),                                                       \
+		.len = 0,                                                                          \
+	}
 
 struct hio_buf {
-    uint8_t *mem;
-    size_t size;
-    size_t len;
+	uint8_t *mem;
+	size_t size;
+	size_t len;
 };
 
 int hio_buf_init(struct hio_buf *ctx, void *mem, size_t size);

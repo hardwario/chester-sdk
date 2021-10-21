@@ -5,154 +5,149 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *
-hio_lte_tok_pfx(const char *s, const char *pfx)
+char *hio_lte_tok_pfx(const char *s, const char *pfx)
 {
-    char *p = (char *) s;
+	char *p = (char *)s;
 
-    size_t len = strlen(pfx);
+	size_t len = strlen(pfx);
 
-    if (strncmp(p, pfx, len) != 0) {
-        return NULL;
-    }
+	if (strncmp(p, pfx, len) != 0) {
+		return NULL;
+	}
 
-    return p + len;
+	return p + len;
 }
 
-char *
-hio_lte_tok_sep(const char *s)
+char *hio_lte_tok_sep(const char *s)
 {
-    char *p = (char *) s;
+	char *p = (char *)s;
 
-    if (*p++ != ',') {
-        return NULL;
-    }
+	if (*p++ != ',') {
+		return NULL;
+	}
 
-    return p;
+	return p;
 }
 
-char *
-hio_lte_tok_end(const char *s)
+char *hio_lte_tok_end(const char *s)
 {
-    char *p = (char *) s;
+	char *p = (char *)s;
 
-    if (*p != '\0') {
-        return NULL;
-    }
+	if (*p != '\0') {
+		return NULL;
+	}
 
-    return p;
+	return p;
 }
 
-char *
-hio_lte_tok_str(const char *s, bool *def, char *str, size_t size)
+char *hio_lte_tok_str(const char *s, bool *def, char *str, size_t size)
 {
-    if (str != NULL) {
-        memset(str, 0, size);
-    }
+	if (str != NULL) {
+		memset(str, 0, size);
+	}
 
-    if (def != NULL) {
-        *def = false;
-    }
+	if (def != NULL) {
+		*def = false;
+	}
 
-    char *p = (char *) s;
+	char *p = (char *)s;
 
-    if (*p == '\0' || *p == ',') {
-        return p;
-    }
+	if (*p == '\0' || *p == ',') {
+		return p;
+	}
 
-    if (*p++ != '"') {
-        return NULL;
-    }
+	if (*p++ != '"') {
+		return NULL;
+	}
 
-    p = strchr(p, '"');
+	p = strchr(p, '"');
 
-    if (p == NULL) {
-        return NULL;
-    }
+	if (p == NULL) {
+		return NULL;
+	}
 
-    if (def != NULL) {
-        *def = true;
-    }
+	if (def != NULL) {
+		*def = true;
+	}
 
-    if (str != NULL) {
-        size_t len = p - s - 1;
+	if (str != NULL) {
+		size_t len = p - s - 1;
 
-        if (len >= size) {
-            return NULL;
-        }
+		if (len >= size) {
+			return NULL;
+		}
 
-        strncpy(str, s + 1, len);
-    }
+		strncpy(str, s + 1, len);
+	}
 
-    return p + 1;
+	return p + 1;
 }
 
-char *
-hio_lte_tok_num(const char *s, bool *def, long *num)
+char *hio_lte_tok_num(const char *s, bool *def, long *num)
 {
-    if (num != NULL) {
-        *num = 0;
-    }
+	if (num != NULL) {
+		*num = 0;
+	}
 
-    if (def != NULL) {
-        *def = false;
-    }
+	if (def != NULL) {
+		*def = false;
+	}
 
-    char *p = (char *) s;
+	char *p = (char *)s;
 
-    if (*p == '\0' || *p == ',') {
-        return p;
-    }
+	if (*p == '\0' || *p == ',') {
+		return p;
+	}
 
-    if (isdigit((int) *p) == 0 && *p != '-') {
-        return NULL;
-    }
+	if (isdigit((int)*p) == 0 && *p != '-') {
+		return NULL;
+	}
 
-    p++;
+	p++;
 
-    while (*p != '\0' && *p != ',') {
-        if (isdigit((int) *p++) == 0) {
-            return NULL;
-        }
-    }
+	while (*p != '\0' && *p != ',') {
+		if (isdigit((int)*p++) == 0) {
+			return NULL;
+		}
+	}
 
-    if (def != NULL) {
-        *def = true;
-    }
+	if (def != NULL) {
+		*def = true;
+	}
 
-    if (*s == '-') {
-        char buf[11 + 1];
+	if (*s == '-') {
+		char buf[11 + 1];
 
-        memset(buf, 0, sizeof(buf));
+		memset(buf, 0, sizeof(buf));
 
-        size_t len = p - s;
+		size_t len = p - s;
 
-        if (len >= sizeof(buf)) {
-            return NULL;
-        }
+		if (len >= sizeof(buf)) {
+			return NULL;
+		}
 
-        strncpy(buf, s, len);
+		strncpy(buf, s, len);
 
-        if (num != NULL) {
-            *num = atol(buf);
-        }
-    } else {
-        char buf[10 + 1];
+		if (num != NULL) {
+			*num = atol(buf);
+		}
+	} else {
+		char buf[10 + 1];
 
-        memset(buf, 0, sizeof(buf));
+		memset(buf, 0, sizeof(buf));
 
-        size_t len = p - s;
+		size_t len = p - s;
 
-        if (len >= sizeof(buf)) {
-            return NULL;
-        }
+		if (len >= sizeof(buf)) {
+			return NULL;
+		}
 
-        strncpy(buf, s, len);
+		strncpy(buf, s, len);
 
-        if (num != NULL) {
-            *num = atol(buf);
-        }
-    }
+		if (num != NULL) {
+			*num = atol(buf);
+		}
+	}
 
-    return p;
+	return p;
 }
