@@ -82,12 +82,6 @@ config CBPRINTF_FP_SUPPORT
 config DEBUG
 	default y if HIO_SDK
 
-config FLASH
-	default y if HIO_SDK
-
-config FLASH_MAP
-	default y if HIO_SDK
-
 config HEAP_MEM_POOL_SIZE
 	default 2048 if HIO_SDK
 
@@ -359,12 +353,6 @@ endif # HIO_TEST
 # 	default y if HIO_SDK
 #
 # config DEBUG
-# 	default y if HIO_SDK
-#
-# config FLASH
-# 	default y if HIO_SDK
-#
-# config FLASH_MAP
 # 	default y if HIO_SDK
 #
 # config HEAP_MEM_POOL_SIZE
