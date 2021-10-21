@@ -1,6 +1,7 @@
 config HIO_RTC
 	bool "HIO_RTC"
 	select HIO_SDK
+	select NRFX_RTC2
 
 config HIO_RTC_INIT_PRIORITY
 	int "HIO_RTC_INIT_PRIORITY"
