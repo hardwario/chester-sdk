@@ -1,3 +1,5 @@
+add_subdirectory(drivers)
+
 zephyr_include_directories(include)
 
 zephyr_library()

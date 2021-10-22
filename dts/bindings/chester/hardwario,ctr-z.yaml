@@ -1,0 +1,17 @@
+description: HARDWARIO CHESTER-Z Cover Module
+
+compatible: "hardwario,ctr-z"
+
+include: [i2c-device.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Alert line (active low); Needs external pullup.
+
+  auto-beep:
+    type: boolean
+    description: |
+      Enables the panel to automatically beep upon button press without the app

@@ -251,6 +251,8 @@ rsource "Kconfig.lrw"
 rsource "Kconfig.rtc"
 rsource "Kconfig.therm"
 
+rsource "drivers/Kconfig"
+
 # config HIO_SDK
 # 	bool "HIO_SDK"
 # 	select BOOTLOADER_MCUBOOT

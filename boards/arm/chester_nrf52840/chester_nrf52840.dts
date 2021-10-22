@@ -90,6 +90,14 @@
 	sda-pin = <21>;
 	scl-pin = <20>;
 
+	ctr_z: ctr_z@4f {
+		compatible = "hardwario,ctr-z";
+		status = "disabled";
+		reg = <0x4f>;
+		label = "CHESTER_Z";
+		irq-gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+
 	lis2dh12: lis2dh12@19 {
 		compatible = "st,lis2dh";
 		reg = <0x19>;
