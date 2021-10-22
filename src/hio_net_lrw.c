@@ -1693,8 +1693,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
         SHELL_CMD_ARG(antenna, NULL, "Get/Set LoRaWAN antenna (format: <int|ext>).",
                       cmd_config_antenna, 1, 1),
         SHELL_CMD_ARG(band, NULL,
-                      "Get/Set radio band "
-                      "(format: <as923|au915|eu868|kr920|in865|us915>).",
+                      "Get/Set radio band"
+                      " (format: <as923|au915|eu868|kr920|in865|us915>).",
                       cmd_config_band, 1, 1),
         SHELL_CMD_ARG(class, NULL, "Get/Set device class (format: <a|c>).", cmd_config_class, 1, 1),
         SHELL_CMD_ARG(mode, NULL, "Get/Set operation mode (format: <abp|otaa>).", cmd_config_mode,
