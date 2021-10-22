@@ -133,7 +133,7 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_led,
                                SHELL_CMD_ARG(switch, NULL,
                                              "Switch LED channel"
-                                             "(format red|green|yellow|ext on|off).",
+                                             " (format red|green|yellow|ext on|off).",
                                              cmd_led_switch, 3, 0),
                                SHELL_SUBCMD_SET_END);
 
