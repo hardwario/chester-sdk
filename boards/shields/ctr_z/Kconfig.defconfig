@@ -1,0 +1,9 @@
+if SHIELD_CTR_Z
+
+config I2C
+	default y
+
+config CTR_Z
+	default y
+
+endif # SHIELD_CTR_Z
