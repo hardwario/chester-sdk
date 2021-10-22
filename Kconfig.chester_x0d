@@ -1,0 +1,3 @@
+config HIO_CHESTER_X0D
+	bool "HIO_CHESTER_X0D"
+	depends on SHELL

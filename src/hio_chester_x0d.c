@@ -5,6 +5,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>
+#include <shell/shell.h>
 #include <zephyr.h>
 
 LOG_MODULE_REGISTER(hio_chester_x0d, LOG_LEVEL_DBG);
@@ -98,6 +99,7 @@ struct event_item {
 static K_MEM_SLAB_DEFINE(m_event_slab, sizeof(struct event_item), EVENT_SLAB_MAX_ITEMS, 4);
 static K_THREAD_STACK_DEFINE(m_event_work_stack_area, EVENT_WORK_STACK_SIZE);
 static struct k_work_q m_event_work_q;
+static K_MUTEX_DEFINE(m_mut);
 
 static void event_work_handler(struct k_work *work)
 {
@@ -207,6 +209,8 @@ int hio_chester_x0d_init(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_ch
 {
 	int ret;
 
+	k_mutex_lock(&m_mut, K_FOREVER);
+
 	static bool initialized;
 
 	if (!initialized) {
@@ -223,6 +227,7 @@ int hio_chester_x0d_init(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_ch
 
 	if (input->initialized) {
 		LOG_ERR("Input already initialized");
+		k_mutex_unlock(&m_mut);
 		return -EPERM;
 	}
 
@@ -233,9 +238,11 @@ int hio_chester_x0d_init(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_ch
 
 	if (ret < 0) {
 		LOG_ERR("Call `setup` failed: %d", ret);
+		k_mutex_unlock(&m_mut);
 		return ret;
 	}
 
+	k_mutex_unlock(&m_mut);
 	return 0;
 }
 
@@ -244,10 +251,13 @@ int hio_chester_x0d_read(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_ch
 {
 	int ret;
 
+	k_mutex_lock(&m_mut, K_FOREVER);
+
 	struct input *input = &m_inputs[slot][channel];
 
 	if (!input->initialized) {
 		LOG_ERR("Input not initialized");
+		k_mutex_unlock(&m_mut);
 		return -EPERM;
 	}
 
@@ -255,6 +265,7 @@ int hio_chester_x0d_read(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_ch
 
 	if (dev == NULL) {
 		LOG_ERR("Call `device_get_binding` failed");
+		k_mutex_unlock(&m_mut);
 		return -ENODEV;
 	}
 
@@ -262,9 +273,87 @@ int hio_chester_x0d_read(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_ch
 
 	if (ret < 0) {
 		LOG_ERR("Call `gpio_pin_get` failed: %d", ret);
+		k_mutex_unlock(&m_mut);
 		return ret;
 	}
 
 	*level = ret;
+
+	k_mutex_unlock(&m_mut);
 	return 0;
 }
+
+static int cmd_channel_read(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	enum hio_chester_x0d_slot slot;
+
+	if (strcmp(argv[1], "a") == 0) {
+		slot = HIO_CHESTER_X0D_SLOT_A;
+
+	} else if (strcmp(argv[1], "b") == 0) {
+		slot = HIO_CHESTER_X0D_SLOT_B;
+
+	} else {
+		shell_error(shell, "invalid slot");
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	enum hio_chester_x0d_channel channel;
+
+	if (strcmp(argv[2], "1") == 0) {
+		channel = HIO_CHESTER_X0D_CHANNEL_1;
+
+	} else if (strcmp(argv[2], "2") == 0) {
+		channel = HIO_CHESTER_X0D_CHANNEL_2;
+
+	} else if (strcmp(argv[2], "3") == 0) {
+		channel = HIO_CHESTER_X0D_CHANNEL_3;
+
+	} else if (strcmp(argv[2], "4") == 0) {
+		channel = HIO_CHESTER_X0D_CHANNEL_4;
+
+	} else {
+		shell_error(shell, "invalid channel");
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	int level;
+
+	ret = hio_chester_x0d_read(slot, channel, &level);
+
+	if (ret < 0) {
+		LOG_ERR("Call `hio_chester_x0d_read` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "level: %d", level);
+
+	return 0;
+}
+
+static int print_help(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	shell_help(shell);
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_chester_x0d,
+                               SHELL_CMD_ARG(read, NULL,
+                                             "Read channel state"
+                                             " (format a|b 1|2|3|4).",
+                                             cmd_channel_read, 3, 0),
+                               SHELL_SUBCMD_SET_END);
+
+SHELL_CMD_REGISTER(chester_x0d, &sub_chester_x0d, "CHESTER-X0D commands.", print_help);
