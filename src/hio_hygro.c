@@ -110,4 +110,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_hygro,
                                SHELL_CMD_ARG(read, NULL, "Read sensor data.", cmd_hygro_read, 1, 0),
                                SHELL_SUBCMD_SET_END);
 
-SHELL_CMD_REGISTER(therm, &sub_hygro, "Hygrometer commands.", print_help);
+SHELL_CMD_REGISTER(hygro, &sub_hygro, "Hygrometer commands.", print_help);
