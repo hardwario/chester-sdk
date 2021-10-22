@@ -1,0 +1,3 @@
+&ctr_z {
+	auto-beep;
+};
