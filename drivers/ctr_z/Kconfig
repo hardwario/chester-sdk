@@ -1,0 +1,11 @@
+config CTR_Z
+	bool "HARDWARIO CHESTER-Z Cover Module"
+	depends on I2C
+
+if CTR_Z
+
+module = CTR_Z
+module-str = ctr_z
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_Z
