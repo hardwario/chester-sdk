@@ -240,6 +240,7 @@ endif # HIO_TEST
 # rsource "Kconfig.test"
 
 rsource "Kconfig.accel"
+rsource "Kconfig.batt"
 rsource "Kconfig.bsp"
 rsource "Kconfig.button"
 rsource "Kconfig.chester_x0d"

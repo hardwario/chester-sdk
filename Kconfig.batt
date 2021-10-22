@@ -1,0 +1,3 @@
+config HIO_BATT
+	bool "HIO_BATT"
+	depends on SHELL
