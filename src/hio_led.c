@@ -44,7 +44,7 @@ static int set_led(enum hio_led_channel channel, bool is_on)
 		break;
 
 	default:
-		LOG_ERR("Invalid channel");
+		LOG_ERR("Invalid channel: %d", channel);
 		return -EINVAL;
 	}
 

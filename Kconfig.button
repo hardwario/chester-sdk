@@ -1,0 +1,3 @@
+config HIO_BUTTON
+	bool "HIO_BUTTON"
+	depends on SHELL
