@@ -264,8 +264,9 @@ static int request_hfclk(void)
 		return ret;
 	}
 
-	struct k_poll_event events[] = { K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
-		                                                  K_POLL_MODE_NOTIFY_ONLY, &sig) };
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sig),
+	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
 
