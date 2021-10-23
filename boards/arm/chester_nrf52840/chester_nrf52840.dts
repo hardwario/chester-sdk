@@ -16,38 +16,40 @@
 		compatible = "gpio-keys";
 
 		btn_int: btn_int {
-			gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN_INT";
+			gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 
 		btn_ext: btn_ext {
-			gpios = <&gpio0 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN_EXT";
+			gpios = <&gpio0 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
 
 	led_rgy {
 		compatible = "gpio-leds";
-		label = "LED_RGY";
 
 		led_r: led_r {
+			label = "LED_R";
 			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_g: led_g {
+			label = "LED_G";
 			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_y: led_y {
+			label = "LED_Y";
 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
 	led_ext {
 		compatible = "gpio-leds";
-		label = "LED_EXT";
 
 		led_ext: led_ext {
+			label = "LED_EXT";
 			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -80,19 +82,18 @@
 
 &gpiote {
 	status = "okay";
-	/* interrupts = <6 NRF_DEFAULT_IRQ_PRIORITY>; */
 };
 
 &i2c0 {
-	compatible = "nordic,nrf-twi";
 	status = "okay";
+	compatible = "nordic,nrf-twi";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sda-pin = <21>;
 	scl-pin = <20>;
 
 	ctr_z: ctr_z@4f {
-		compatible = "hardwario,ctr-z";
 		status = "disabled";
+		compatible = "hardwario,ctr-z";
 		reg = <0x4f>;
 		label = "CHESTER_Z";
 		irq-gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -107,8 +108,8 @@
 	};
 
 	sht30: sht30@45 {
-		compatible = "sensirion,sht3xd";
 		status = "disabled";
+		compatible = "sensirion,sht3xd";
 		reg = <0x45>;
 		label = "SHT30";
 	};
@@ -121,8 +122,8 @@
 };
 
 &spi1 {
-	compatible = "nordic,nrf-spi";
 	status = "okay";
+	compatible = "nordic,nrf-spi";
 	sck-pin = <22>;
 	mosi-pin = <32>;
 	miso-pin = <24>;
@@ -130,12 +131,12 @@
 	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 
 	flash1: at45db641e@0 {
-		compatible = "atmel,at45";
 		status = "okay";
+		compatible = "atmel,at45";
 		reg = <0>;
-		spi-max-frequency = <85000000>;
 		label = "NOR";
-		jedec-id = [1f 28 00];
+		spi-max-frequency = <85000000>;
+		jedec-id = [ 1f 28 00  ];
 		size = <67108864>;
 		sector-size = <262144>;
 		block-size = <2048>;
@@ -147,8 +148,8 @@
 };
 
 &uart0 {
-	compatible = "nordic,nrf-uarte";
 	status = "okay";
+	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	tx-pin = <13>;
 	rx-pin = <14>;
@@ -158,8 +159,8 @@
 };
 
 &uart1 {
-	compatible = "nordic,nrf-uarte";
 	status = "okay";
+	compatible = "nordic,nrf-uarte";
 	current-speed = <19200>;
 	tx-pin = <7>;
 	rx-pin = <8>;
