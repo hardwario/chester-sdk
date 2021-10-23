@@ -231,19 +231,6 @@ int hio_lrw_uart_init(hio_lrw_recv_cb recv_cb)
 		return -ENXIO;
 	}
 
-	struct uart_config cfg = { .baudrate = 19200,
-		                   .parity = UART_CFG_PARITY_NONE,
-		                   .stop_bits = UART_CFG_STOP_BITS_1,
-		                   .data_bits = UART_CFG_DATA_BITS_8,
-		                   .flow_ctrl = UART_CFG_FLOW_CTRL_NONE };
-
-	ret = uart_configure(m_dev, &cfg);
-
-	if (ret < 0) {
-		LOG_ERR("Call `uart_configure` failed: %d", ret);
-		return ret;
-	}
-
 	ret = uart_callback_set(m_dev, uart_callback, NULL);
 
 	if (ret < 0) {
@@ -381,8 +368,10 @@ int hio_lrw_uart_disable(void)
 		return ret;
 	}
 
-	struct k_poll_event events[] = { K_POLL_EVENT_INITIALIZER(
-		K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_rx_disabled_sig) };
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+		                         &m_rx_disabled_sig),
+	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
 
@@ -460,8 +449,10 @@ int hio_lrw_uart_send(const char *fmt, va_list ap)
 		return ret;
 	}
 
-	struct k_poll_event events[] = { K_POLL_EVENT_INITIALIZER(
-		K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_tx_done_sig) };
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+		                         &m_tx_done_sig),
+	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
 
