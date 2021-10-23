@@ -28,12 +28,11 @@ LOG_MODULE_REGISTER(hio_lrw_uart, LOG_LEVEL_DBG);
 #define TX_PREFIX_LEN 0
 #define TX_SUFFIX "\r"
 #define TX_SUFFIX_LEN 1
-#define UART_NAME DT_LABEL(DT_NODELABEL(uart1))
 
 static atomic_t m_enabled;
 static atomic_t m_reset;
 static atomic_t m_stop;
-static const struct device *m_dev;
+static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(uart1));
 static hio_lrw_recv_cb m_recv_cb;
 static K_MEM_SLAB_DEFINE(m_rx_slab, RX_BLOCK_SIZE, 2, 4);
 static K_MUTEX_DEFINE(m_mut);
@@ -220,10 +219,8 @@ int hio_lrw_uart_init(hio_lrw_recv_cb recv_cb)
 	k_poll_signal_init(&m_tx_done_sig);
 	k_poll_signal_init(&m_rx_disabled_sig);
 
-	m_dev = device_get_binding(UART_NAME);
-
-	if (m_dev == NULL) {
-		LOG_ERR("Call `device_get_binding` failed");
+	if (!device_is_ready(m_dev)) {
+		LOG_ERR("Device not ready");
 		return -ENODEV;
 	}
 
