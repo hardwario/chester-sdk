@@ -95,8 +95,10 @@ static int wait_response(k_timeout_t timeout, handler_cb cb, void *param)
 	m_handler_param = param;
 	k_mutex_unlock(&m_handler_mut);
 
-	struct k_poll_event events[] = { K_POLL_EVENT_INITIALIZER(
-		K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_response_sig) };
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+		                         &m_response_sig),
+	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), timeout);
 
