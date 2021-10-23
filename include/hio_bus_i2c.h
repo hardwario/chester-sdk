@@ -8,6 +8,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define HIO_BUS_I2C_MEM_ADDR_16B 0x80000000
 
 struct hio_bus_i2c_xfer {
@@ -63,5 +67,9 @@ int hio_bus_i2c_mem_write_8b(struct hio_bus_i2c *ctx, uint8_t dev_addr, uint32_t
                              uint8_t data);
 int hio_bus_i2c_mem_write_16b(struct hio_bus_i2c *ctx, uint8_t dev_addr, uint32_t mem_addr,
                               uint16_t data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

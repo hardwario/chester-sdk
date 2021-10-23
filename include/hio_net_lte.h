@@ -8,6 +8,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	bool auto_connect;
 	int plmn_id;
@@ -82,5 +86,9 @@ int hio_net_lte_detach(void);
 int hio_net_lte_send(const hio_net_send_opts_t *opts, const void *buf, size_t len);
 int hio_net_lte_recv(hio_net_recv_info_t *info, void *buf, size_t size);
 void hio_net_lte_set_reg(bool state);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

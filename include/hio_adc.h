@@ -4,7 +4,11 @@
 // Standard includes
 #include <stdint.h>
 
-#define HIO_ADC_MILLIVOLTS(_sample) ((uint32_t)(_sample)*600 * 6 / 4095)
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define HIO_ADC_MILLIVOLTS(_sample) (((uint32_t)(_sample)) * 600 * 6 / 4095)
 
 enum hio_adc_channel {
 	HIO_ADC_CHANNEL_A0 = 1,
@@ -19,5 +23,9 @@ enum hio_adc_channel {
 
 int hio_adc_init(enum hio_adc_channel channel);
 int hio_adc_read(enum hio_adc_channel channel, uint16_t *sample);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

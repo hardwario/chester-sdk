@@ -9,6 +9,10 @@
 // Standard includes
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define HIO_BSP_GP0A_DEV DT_LABEL(DT_NODELABEL(gpio0))
 #define HIO_BSP_GP0A_PIN 3
 #define HIO_BSP_GP1A_DEV DT_LABEL(DT_NODELABEL(gpio0))
@@ -66,5 +70,9 @@ int hio_bsp_set_lte_wkup(int level);
 int hio_bsp_set_lrw_reset(int level);
 int hio_bsp_sht30_measure(float *t, float *rh);
 int hio_bsp_tmp112_measure(float *t);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

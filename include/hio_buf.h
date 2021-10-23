@@ -5,6 +5,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define HIO_BUF_DEFINE(_name, _size)                                                               \
 	uint8_t _name##_mem[_size];                                                                \
 	struct hio_buf _name = {                                                                   \
@@ -43,5 +47,9 @@ int hio_buf_append_u8(struct hio_buf *ctx, uint8_t val);
 int hio_buf_append_u16(struct hio_buf *ctx, uint16_t val);
 int hio_buf_append_u32(struct hio_buf *ctx, uint32_t val);
 int hio_buf_append_u64(struct hio_buf *ctx, uint64_t val);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,6 +1,10 @@
 #ifndef CHESTER_DRIVERS_CTR_Z_CTR_Z_REG_H_
 #define CHESTER_DRIVERS_CTR_Z_CTR_Z_REG_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define REG_PROTOCOL 0x00
 #define REG_CONTROL 0x01
 #define REG_BUZZER 0x02
@@ -95,5 +99,9 @@
 #define REG_PROD29 0xfd
 #define REG_PROD30 0xfe
 #define REG_PROD31 0xff
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CHESTER_DRIVERS_CTR_Z_CTR_Z_REG_H_ */

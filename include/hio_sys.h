@@ -9,6 +9,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define HIO_SYS_FOREVER ((int64_t)0x7fffffffffffffff)
 #define HIO_SYS_NO_WAIT ((int64_t)0)
 
@@ -53,5 +57,9 @@ int hio_sys_msgq_get(hio_sys_msgq_t *msgq, void *item, int64_t timeout);
 void hio_sys_rbuf_init(hio_sys_rbuf_t *rbuf, void *mem, size_t mem_size);
 size_t hio_sys_rbuf_put(hio_sys_rbuf_t *rbuf, const uint8_t *data, size_t bytes);
 size_t hio_sys_rbuf_get(hio_sys_rbuf_t *rbuf, uint8_t *data, size_t bytes);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

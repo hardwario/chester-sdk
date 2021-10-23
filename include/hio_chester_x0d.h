@@ -1,6 +1,10 @@
 #ifndef HIO_CHESTER_X0D_H
 #define HIO_CHESTER_X0D_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum hio_chester_x0d_slot {
 	HIO_CHESTER_X0D_SLOT_A = 0,
 	HIO_CHESTER_X0D_SLOT_B = 1,
@@ -26,5 +30,9 @@ int hio_chester_x0d_init(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_ch
                          hio_chester_x0d_event_cb callback, void *param);
 int hio_chester_x0d_read(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_channel channel,
                          int *level);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -6,6 +6,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum hio_net_lrw_event {
 	HIO_NET_LRW_EVENT_FAILURE = -1,
 	HIO_NET_LRW_EVENT_START_OK = 0,
@@ -68,5 +72,9 @@ int hio_net_lrw_start(int *corr_id);
 int hio_net_lrw_join(int *corr_id);
 int hio_net_lrw_send(const struct hio_net_lrw_send_opts *opts, const void *buf, size_t len,
                      int *corr_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

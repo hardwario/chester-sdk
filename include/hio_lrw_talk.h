@@ -5,6 +5,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum hio_lrw_talk_event {
 	HIO_LRW_TALK_EVENT_BOOT = 0,
 	HIO_LRW_TALK_EVENT_JOIN_OK = 1,
@@ -38,5 +42,9 @@ int hio_lrw_talk_at_utx(const void *payload, size_t payload_len);
 int hio_lrw_talk_at_ctx(const void *payload, size_t payload_len);
 int hio_lrw_talk_at_putx(uint8_t port, const void *payload, size_t payload_len);
 int hio_lrw_talk_at_pctx(uint8_t port, const void *payload, size_t payload_len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

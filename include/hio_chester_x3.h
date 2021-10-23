@@ -4,6 +4,10 @@
 // Standard includes
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum hio_chester_x3_slot {
 	HIO_CHESTER_X3_SLOT_A = 0,
 	HIO_CHESTER_X3_SLOT_B = 1,
@@ -71,5 +75,9 @@ struct hio_drv_ads122c04_cfg {
 };
 
 */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

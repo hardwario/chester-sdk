@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum hio_chester_z_buzzer_command {
 	HIO_CHESTER_Z_BUZZER_COMMAND_NONE = 0,
 	HIO_CHESTER_Z_BUZZER_COMMAND_1X_1_16 = 1,
@@ -135,5 +139,9 @@ int hio_chester_z_get_product_name(char **product_name);
 int hio_chester_z_set_buzzer(const struct hio_chester_z_buzzer_param *param);
 int hio_chester_z_set_led(enum hio_chester_z_led_channel channel,
                           const struct hio_chester_z_led_param *param);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
