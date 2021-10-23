@@ -1,5 +1,5 @@
-#ifndef HIO_LED_H
-#define HIO_LED_H
+#ifndef CHESTER_INCLUDE_LED_H_
+#define CHESTER_INCLUDE_LED_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,4 +16,4 @@ enum hio_led_channel {
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_LED_H_ */

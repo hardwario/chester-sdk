@@ -1,5 +1,5 @@
-#ifndef HIO_UTIL_H
-#define HIO_UTIL_H
+#ifndef CHESTER_INCLUDE_UTIL_H_
+#define CHESTER_INCLUDE_UTIL_H_
 
 // Standard includes
 #include <stdbool.h>
@@ -16,4 +16,4 @@ int hio_hex2buf(const char *src, void *dst, size_t dst_size, bool allow_spaces);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_UTIL_H_ */

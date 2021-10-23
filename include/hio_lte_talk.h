@@ -1,5 +1,5 @@
-#ifndef HIO_LTE_TALK_H
-#define HIO_LTE_TALK_H
+#ifndef CHESTER_INCLUDE_LTE_TALK_H_
+#define CHESTER_INCLUDE_LTE_TALK_H_
 
 // Standard includes
 #include <stdarg.h>
@@ -19,4 +19,4 @@ void hio_lte_talk_cereg(const char *s);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_LTE_TALK_H_ */

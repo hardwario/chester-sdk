@@ -1,5 +1,5 @@
-#ifndef HIO_BATT_H
-#define HIO_BATT_H
+#ifndef CHESTER_INCLUDE_BATT_H_
+#define CHESTER_INCLUDE_BATT_H_
 
 #include <stdint.h>
 
@@ -19,4 +19,4 @@ int hio_batt_measure(struct hio_batt_result *result);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_BATT_H_ */

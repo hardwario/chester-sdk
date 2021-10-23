@@ -1,5 +1,5 @@
-#ifndef HIO_NET_LRW_H
-#define HIO_NET_LRW_H
+#ifndef CHESTER_INCLUDE_NET_LRW_H_
+#define CHESTER_INCLUDE_NET_LRW_H_
 
 // Standard includes
 #include <stdbool.h>
@@ -77,4 +77,4 @@ int hio_net_lrw_send(const struct hio_net_lrw_send_opts *opts, const void *buf, 
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_NET_LRW_H_ */

@@ -1,5 +1,5 @@
-#ifndef HIO_BUS_I2C_H
-#define HIO_BUS_I2C_H
+#ifndef CHESTER_INCLUDE_BUS_I2C_H_
+#define CHESTER_INCLUDE_BUS_I2C_H_
 
 // Zephyr includes
 #include <zephyr.h>
@@ -72,4 +72,4 @@ int hio_bus_i2c_mem_write_16b(struct hio_bus_i2c *ctx, uint8_t dev_addr, uint32_
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_BUS_I2C_H_ */

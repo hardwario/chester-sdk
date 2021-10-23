@@ -1,5 +1,5 @@
-#ifndef HIO_BSP_H
-#define HIO_BSP_H
+#ifndef CHESTER_INCLUDE_BSP_H_
+#define CHESTER_INCLUDE_BSP_H_
 
 #include <hio_bus_i2c.h>
 
@@ -75,4 +75,4 @@ int hio_bsp_tmp112_measure(float *t);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_BSP_H_ */

@@ -1,5 +1,5 @@
-#ifndef HIO_ADC_H
-#define HIO_ADC_H
+#ifndef CHESTER_INCLUDE_ADC_H_
+#define CHESTER_INCLUDE_ADC_H_
 
 // Standard includes
 #include <stdint.h>
@@ -28,4 +28,4 @@ int hio_adc_read(enum hio_adc_channel channel, uint16_t *sample);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_ADC_H_ */

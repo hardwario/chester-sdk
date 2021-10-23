@@ -1,5 +1,5 @@
-#ifndef HIO_CHESTER_X0D_H
-#define HIO_CHESTER_X0D_H
+#ifndef CHESTER_INCLUDE_CHESTER_X0D_H_
+#define CHESTER_INCLUDE_CHESTER_X0D_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,4 +35,4 @@ int hio_chester_x0d_read(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_ch
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_CHESTER_X0D_H_ */

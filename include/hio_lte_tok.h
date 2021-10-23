@@ -1,5 +1,5 @@
-#ifndef HIO_LTE_PARSE_H
-#define HIO_LTE_PARSE_H
+#ifndef CHESTER_INCLUDE_LTE_TOK_H_
+#define CHESTER_INCLUDE_LTE_TOK_H_
 
 // Standard includes
 #include <stdbool.h>
@@ -19,4 +19,4 @@ char *hio_lte_tok_num(const char *s, bool *def, long *num);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_LTE_TOK_H_ */

@@ -1,5 +1,5 @@
-#ifndef HIO_RTC_H
-#define HIO_RTC_H
+#ifndef CHESTER_INCLUDE_RTC_H_
+#define CHESTER_INCLUDE_RTC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,4 +21,4 @@ int hio_rtc_set(const struct hio_rtc_tm *tm);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_RTC_H_ */

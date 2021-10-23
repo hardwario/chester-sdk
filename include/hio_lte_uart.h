@@ -1,5 +1,5 @@
-#ifndef HIO_LTE_UART_H
-#define HIO_LTE_UART_H
+#ifndef CHESTER_INCLUDE_LTE_UART_H_
+#define CHESTER_INCLUDE_LTE_UART_H_
 
 // Standard includes
 #include <stdarg.h>
@@ -19,4 +19,4 @@ int hio_lte_uart_recv(char **s, int64_t timeout);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_LTE_UART_H_ */

@@ -1,5 +1,5 @@
-#ifndef HIO_DRV_SHT30_H
-#define HIO_DRV_SHT30_H
+#ifndef CHESTER_INCLUDE_DRV_SHT30_H_
+#define CHESTER_INCLUDE_DRV_SHT30_H_
 
 #include <hio_bus_i2c.h>
 
@@ -24,4 +24,4 @@ int hio_drv_sht30_measure(struct hio_drv_sht30 *ctx, float *t, float *rh);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_DRV_SHT30_H_ */

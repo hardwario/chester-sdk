@@ -1,5 +1,5 @@
-#ifndef HIO_NET_LTE_H
-#define HIO_NET_LTE_H
+#ifndef CHESTER_INCLUDE_NET_LTE_H_
+#define CHESTER_INCLUDE_NET_LTE_H_
 
 #include <hio_sys.h>
 
@@ -91,4 +91,4 @@ void hio_net_lte_set_reg(bool state);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_NET_LTE_H_ */

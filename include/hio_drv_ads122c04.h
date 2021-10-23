@@ -1,5 +1,5 @@
-#ifndef HIO_DRV_ADS122C04_H
-#define HIO_DRV_ADS122C04_H
+#ifndef CHESTER_INCLUDE_DRV_ADS122C04_H_
+#define CHESTER_INCLUDE_DRV_ADS122C04_H_
 
 #include <hio_bus_i2c.h>
 
@@ -29,4 +29,4 @@ int hio_drv_ads122c04_read_data(struct hio_drv_ads122c04 *ctx, int32_t *data);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_DRV_ADS122C04_H_ */

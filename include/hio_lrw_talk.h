@@ -1,5 +1,5 @@
-#ifndef HIO_LRW_TALK_H
-#define HIO_LRW_TALK_H
+#ifndef CHESTER_INCLUDE_LRW_TALK_H_
+#define CHESTER_INCLUDE_LRW_TALK_H_
 
 // Standard includes
 #include <stddef.h>
@@ -47,4 +47,4 @@ int hio_lrw_talk_at_pctx(uint8_t port, const void *payload, size_t payload_len);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_LRW_TALK_H_ */

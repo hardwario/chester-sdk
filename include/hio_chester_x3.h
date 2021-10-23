@@ -1,5 +1,5 @@
-#ifndef HIO_CHESTER_X3_H
-#define HIO_CHESTER_X3_H
+#ifndef CHESTER_INCLUDE_CHESTER_X3_H_
+#define CHESTER_INCLUDE_CHESTER_X3_H_
 
 // Standard includes
 #include <stdint.h>
@@ -80,4 +80,4 @@ struct hio_drv_ads122c04_cfg {
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_CHESTER_X3_H_ */

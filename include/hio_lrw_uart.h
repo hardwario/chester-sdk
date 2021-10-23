@@ -1,5 +1,5 @@
-#ifndef HIO_LRW_UART_H
-#define HIO_LRW_UART_H
+#ifndef CHESTER_INCLUDE_LRW_UART_H_
+#define CHESTER_INCLUDE_LRW_UART_H_
 
 // Standard includes
 #include <stdarg.h>
@@ -20,4 +20,4 @@ int hio_lrw_uart_send(const char *fmt, va_list ap);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_LRW_UART_H_ */

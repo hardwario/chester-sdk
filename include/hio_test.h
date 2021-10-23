@@ -1,5 +1,5 @@
-#ifndef HIO_TEST_H
-#define HIO_TEST_H
+#ifndef CHESTER_INCLUDE_TEST_H_
+#define CHESTER_INCLUDE_TEST_H_
 
 // Standard includes
 #include <stdbool.h>
@@ -15,4 +15,4 @@ bool hio_test_is_active(void);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_TEST_H_ */

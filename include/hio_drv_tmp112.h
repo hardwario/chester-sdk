@@ -1,5 +1,5 @@
-#ifndef HIO_DRV_TMP112_H
-#define HIO_DRV_TMP112_H
+#ifndef CHESTER_INCLUDE_DRV_TMP112_H_
+#define CHESTER_INCLUDE_DRV_TMP112_H_
 
 #include <hio_bus_i2c.h>
 
@@ -25,4 +25,4 @@ int hio_drv_tmp112_sleep(struct hio_drv_tmp112 *ctx);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_DRV_TMP112_H_ */

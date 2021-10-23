@@ -1,5 +1,5 @@
-#ifndef HIO_HYGRO_H
-#define HIO_HYGRO_H
+#ifndef CHESTER_INCLUDE_HYGRO_H_
+#define CHESTER_INCLUDE_HYGRO_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,4 +12,4 @@ int hio_hygro_read(float *temperature, float *humidity);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_HYGRO_H_ */

@@ -1,5 +1,5 @@
-#ifndef HIO_BUTTON_H
-#define HIO_BUTTON_H
+#ifndef CHESTER_INCLUDE_BUTTON_H_
+#define CHESTER_INCLUDE_BUTTON_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,4 +14,4 @@ enum hio_button_channel {
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_BUTTON_H_ */

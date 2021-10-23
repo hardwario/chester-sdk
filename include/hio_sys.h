@@ -1,5 +1,5 @@
-#ifndef HIO_SYS_H
-#define HIO_SYS_H
+#ifndef CHESTER_INCLUDE_SYS_H_
+#define CHESTER_INCLUDE_SYS_H_
 
 // Zephyr includes
 #include <sys/ring_buffer.h>
@@ -62,4 +62,4 @@ size_t hio_sys_rbuf_get(hio_sys_rbuf_t *rbuf, uint8_t *data, size_t bytes);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_SYS_H_ */

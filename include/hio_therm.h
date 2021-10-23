@@ -1,5 +1,5 @@
-#ifndef HIO_THERM_H
-#define HIO_THERM_H
+#ifndef CHESTER_INCLUDE_THERM_H_
+#define CHESTER_INCLUDE_THERM_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,4 +12,4 @@ int hio_therm_read(float *temperature);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_THERM_H_ */

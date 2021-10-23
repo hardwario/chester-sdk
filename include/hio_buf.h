@@ -1,5 +1,5 @@
-#ifndef HIO_BUF_H
-#define HIO_BUF_H
+#ifndef CHESTER_INCLUDE_BUF_H_
+#define CHESTER_INCLUDE_BUF_H_
 
 // Standard includes
 #include <stddef.h>
@@ -52,4 +52,4 @@ int hio_buf_append_u64(struct hio_buf *ctx, uint64_t val);
 }
 #endif
 
-#endif
+#endif /* CHESTER_INCLUDE_BUF_H_ */
