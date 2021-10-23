@@ -4,7 +4,7 @@
 #include <hio_sys.h>
 #include <hio_test.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/clock_control.h>
@@ -13,7 +13,7 @@
 #include <logging/log.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -28,40 +28,40 @@
 
 LOG_MODULE_REGISTER(hio_lte_uart, LOG_LEVEL_DBG);
 
-// Handle for UART
+/* Handle for UART */
 static const struct device *dev;
 
-// Receive interrupt double buffer
+/* Receive interrupt double buffer */
 static uint8_t __aligned(4) rx_buffer[2][256];
 
-// Ring buffer object for received characters
+/* Ring buffer object for received characters */
 static hio_sys_rbuf_t rx_ring_buf;
 
-// Ring buffer memory for received characters
+/* Ring buffer memory for received characters */
 static uint8_t __aligned(4) rx_ring_buf_mem[1024];
 
-// Heap object for received line buffers
+/* Heap object for received line buffers */
 static hio_sys_heap_t rx_heap;
 
-// Heap memory for received line buffers
+/* Heap memory for received line buffers */
 static char __aligned(4) rx_heap_mem[4 * RX_LINE_MAX_SIZE];
 
-// Message queue object for pointers to received lines
+/* Message queue object for pointers to received lines */
 static hio_sys_msgq_t rx_msgq;
 
-// Message queue memory for pointers to received lines
+/* Message queue memory for pointers to received lines */
 static char __aligned(4) rx_msgq_mem[64 * sizeof(char *)];
 
-// Semaphore indicating finished transmission
+/* Semaphore indicating finished transmission */
 static hio_sys_sem_t tx_sem;
 
-// Semaphore indicating received characters
+/* Semaphore indicating received characters */
 static hio_sys_sem_t rx_sem;
 
-// Task object for receiver worker
+/* Task object for receiver worker */
 static hio_sys_task_t rx_task;
 
-// Task memory for receiver worker
+/* Task memory for receiver worker */
 static HIO_SYS_TASK_STACK_DEFINE(rx_task_stack, 2048);
 
 uint8_t *next_buf;
@@ -100,26 +100,26 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		break;
 	case UART_RX_STOPPED:
 		LOG_WRN("Receiving stopped");
-		// TODO Handle this
+		/* TODO Handle this */
 		break;
 	}
 }
 
 static void process_rsp(const char *buf, size_t len)
 {
-	// Allocate buffer from heap
+	/* Allocate buffer from heap */
 	char *p = hio_sys_heap_alloc(&rx_heap, len + 1, HIO_SYS_NO_WAIT);
 
-	// Memory allocation failed?
+	/* Memory allocation failed? */
 	if (p == NULL) {
 		LOG_ERR("Call `hio_sys_heap_alloc` failed");
 
 	} else {
-		// Copy line to allocated buffer
+		/* Copy line to allocated buffer */
 		memcpy(p, buf, len);
 		p[len] = '\0';
 
-		// Store pointer to buffer to RX queue
+		/* Store pointer to buffer to RX queue */
 		if (hio_sys_msgq_put(&rx_msgq, &p, HIO_SYS_NO_WAIT) < 0) {
 			LOG_ERR("Call `hio_sys_msgq_put` failed");
 		}
@@ -141,18 +141,18 @@ static void process_urc(const char *buf, size_t len)
 
 static void process_rx_char(char c)
 {
-	// Buffer for received characters
+	/* Buffer for received characters */
 	static char buf[RX_LINE_MAX_SIZE];
 
-	// Number of received characters
+	/* Number of received characters */
 	static size_t len;
 
-	// Indicates buffer is clipped
+	/* Indicates buffer is clipped */
 	static bool clipped;
 
-	// Received new line character?
+	/* Received new line character? */
 	if (c == '\r' || c == '\n') {
-		// If buffer is not clipped and contains something...
+		/* If buffer is not clipped and contains something... */
 		if (!clipped && len > 0) {
 			if (hio_test_is_active()) {
 				LOG_DBG("RSP: %s", buf);
@@ -169,20 +169,20 @@ static void process_rx_char(char c)
 			}
 		}
 
-		// Reset line
+		/* Reset line */
 		len = 0;
 
-		// Reset clip indicator
+		/* Reset clip indicator */
 		clipped = false;
 
 	} else {
-		// Check for insufficient room...
+		/* Check for insufficient room... */
 		if (len >= sizeof(buf) - 1) {
-			// Indicate clipped buffer
+			/* Indicate clipped buffer */
 			clipped = true;
 
 		} else {
-			// Store character to buffer
+			/* Store character to buffer */
 			buf[len++] = c;
 			buf[len] = '\0';
 		}
@@ -192,13 +192,13 @@ static void process_rx_char(char c)
 static void rx_task_entry(void *param)
 {
 	for (;;) {
-		// Wait for semaphore...
+		/* Wait for semaphore... */
 		if (hio_sys_sem_take(&rx_sem, HIO_SYS_FOREVER) < 0) {
-			// TODO Should never get here
+			/* TODO Should never get here */
 			continue;
 		}
 
-		// Process all available characters in ring buffer
+		/* Process all available characters in ring buffer */
 		for (char c; hio_sys_rbuf_get(&rx_ring_buf, &c, 1) > 0;) {
 			process_rx_char(c);
 		}
@@ -207,13 +207,13 @@ static void rx_task_entry(void *param)
 
 int hio_lte_uart_init(void)
 {
-	// Initialize RX ring buffer
+	/* Initialize RX ring buffer */
 	hio_sys_rbuf_init(&rx_ring_buf, rx_ring_buf_mem, sizeof(rx_ring_buf_mem));
 
-	// Initialize heap
+	/* Initialize heap */
 	hio_sys_heap_init(&rx_heap, rx_heap_mem, sizeof(rx_heap_mem));
 
-	// Initialize RX queue
+	/* Initialize RX queue */
 	hio_sys_msgq_init(&rx_msgq, rx_msgq_mem, sizeof(char *), 64);
 
 	hio_sys_sem_init(&tx_sem, 0);
@@ -418,7 +418,7 @@ int hio_lte_uart_send(const char *fmt, va_list ap)
 		return -3;
 	}
 
-	// TODO Shall we set some reasonable timeout?
+	/* TODO Shall we set some reasonable timeout? */
 	if (hio_sys_sem_take(&tx_sem, HIO_SYS_FOREVER) < 0) {
 		LOG_ERR("Call `hio_sys_sem_take` failed");
 		return -4;

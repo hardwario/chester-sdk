@@ -1,6 +1,6 @@
 #include <hio_lte_tok.h>
 
-// Standard includes
+/* Standard includes */
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>

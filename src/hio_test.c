@@ -3,7 +3,7 @@
 #include <hio_lte_talk.h>
 #include <hio_lte_uart.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <init.h>
 #include <logging/log.h>
 #include <shell/shell.h>
@@ -11,14 +11,14 @@
 
 LOG_MODULE_REGISTER(hio_test, LOG_LEVEL_DBG);
 
-// TODO Delete this variable
+/* TODO Delete this variable */
 static atomic_t m_is_active;
 
 static atomic_t m_is_blocked;
 
 static struct k_poll_signal m_start_sig;
 
-// TODO Remove this function
+/* TODO Remove this function */
 bool hio_test_is_active(void)
 {
 	return atomic_get(&m_is_active);
@@ -236,10 +236,10 @@ static int cmd_test_start(const struct shell *shell, size_t argc, char **argv)
 
 	k_poll_signal_raise(&m_start_sig, 0);
 
-	// TODO Delete this statement
+	/* TODO Delete this statement */
 	atomic_set(&m_is_active, true);
 
-	// TODO Remove any initialization below
+	/* TODO Remove any initialization below */
 
 	ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
 

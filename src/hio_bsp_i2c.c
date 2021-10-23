@@ -1,6 +1,6 @@
 #include <hio_bsp_i2c.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/i2c.h>
@@ -19,7 +19,7 @@ static int init(void *ctx)
 
 	uint32_t dev_config = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
 
-	// TODO Really needed?
+	/* TODO Really needed? */
 	ret = i2c_configure(m_dev, dev_config);
 
 	if (ret < 0) {
@@ -27,7 +27,7 @@ static int init(void *ctx)
 		return ret;
 	}
 
-// TODO Uncomment
+/* TODO Uncomment */
 #if 0
     if (i2c_recover_bus(dev) < 0) {
         LOG_ERR("Call `i2c_recover_bus` failed [%p]", ctx);

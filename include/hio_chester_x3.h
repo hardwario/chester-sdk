@@ -1,7 +1,7 @@
 #ifndef CHESTER_INCLUDE_CHESTER_X3_H_
 #define CHESTER_INCLUDE_CHESTER_X3_H_
 
-// Standard includes
+/* Standard includes */
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -22,7 +22,7 @@ int hio_chester_x3_init(enum hio_chester_x3_slot slot, enum hio_chester_x3_chann
 int hio_chester_x3_measure(enum hio_chester_x3_slot slot, enum hio_chester_x3_channel channel,
                            int32_t *result);
 
-// TODO
+/* TODO */
 /*
 
 enum hio_drv_ads122c04_mode {

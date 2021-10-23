@@ -1,10 +1,10 @@
 #ifndef CHESTER_INCLUDE_CONFIG_H_
 #define CHESTER_INCLUDE_CONFIG_H_
 
-// Zephyr includes
+/* Zephyr includes */
 #include <shell/shell.h>
 
-// Standard include
+/* Standard include */
 #include <stddef.h>
 
 #ifdef __cplusplus

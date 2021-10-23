@@ -1,4 +1,4 @@
-// TODO Implement retries settings parameter
+/* TODO Implement retries settings parameter */
 
 #include <hio_net_lrw.h>
 #include <hio_bsp.h>
@@ -6,14 +6,14 @@
 #include <hio_lrw_talk.h>
 #include <hio_util.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <init.h>
 #include <logging/log.h>
 #include <settings/settings.h>
 #include <shell/shell.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>

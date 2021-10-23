@@ -1,6 +1,6 @@
 #include <hio_drv_ads122c04.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <logging/log.h>
 #include <zephyr.h>
 

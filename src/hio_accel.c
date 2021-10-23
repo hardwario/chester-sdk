@@ -1,6 +1,6 @@
 #include <hio_accel.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/sensor.h>
@@ -8,7 +8,7 @@
 #include <shell/shell.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>

@@ -1,11 +1,11 @@
 #ifndef CHESTER_INCLUDE_SYS_H_
 #define CHESTER_INCLUDE_SYS_H_
 
-// Zephyr includes
+/* Zephyr includes */
 #include <sys/ring_buffer.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdint.h>
 #include <stddef.h>
 

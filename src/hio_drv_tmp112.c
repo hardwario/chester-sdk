@@ -1,10 +1,10 @@
 #include <hio_drv_tmp112.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <logging/log.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <string.h>
 
 LOG_MODULE_REGISTER(hio_drv_tmp112, LOG_LEVEL_DBG);

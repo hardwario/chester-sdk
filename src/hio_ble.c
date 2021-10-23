@@ -1,4 +1,4 @@
-// Zephyr includes
+/* Zephyr includes */
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/services/nus.h>
 #include <bluetooth/uuid.h>

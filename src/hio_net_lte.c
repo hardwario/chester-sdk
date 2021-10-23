@@ -4,11 +4,11 @@
 #include <hio_lte_tok.h>
 #include <hio_lte_uart.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <logging/log.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -73,14 +73,14 @@ static int sleep(void)
 
 	LOG_INF("Sleep initiated [%p]", ctx);
 
-	// TODO Unfortunately, we are not getting acknowledgement to this, but the
-	// ticket has been raised
+	/* TODO Unfortunately, we are not getting acknowledgement to this, but the */
+	/* ticket has been raised */
 	if (hio_lte_talk_cmd("AT#XSLEEP=2") < 0) {
 		LOG_ERR("Call `hio_lte_talk_cmd_ok` failed [%p]", ctx);
 		ret = -1;
 	}
 
-	// TODO Why needed?
+	/* TODO Why needed? */
 	hio_sys_task_sleep(HIO_SYS_SECONDS(2));
 #endif
 
@@ -116,7 +116,7 @@ static int wake_up(void)
 		return -3;
 	}
 
-	// TODO Why needed?
+	/* TODO Why needed? */
 	hio_sys_task_sleep(HIO_SYS_SECONDS(1));
 #endif
 
@@ -208,8 +208,8 @@ static int attach_once(void)
 		return -15;
 	}
 
-	const char *timer_t3412 = "00111000"; // T3412 Extended Timer
-	const char *timer_t3324 = "00000000"; // T3324 Active Timer
+	const char *timer_t3412 = "00111000"; /* T3412 Extended Timer */
+	const char *timer_t3324 = "00000000"; /* T3324 Active Timer */
 
 	if (hio_lte_talk_cmd_ok(TIMEOUT_S, "AT+CPSMS=1,,,\"%s\",\"%s\"", timer_t3412, timer_t3324) <
 	    0) {
@@ -237,7 +237,7 @@ static int attach_once(void)
 		return -20;
 	}
 
-	// TODO Remove
+	/* TODO Remove */
 	hio_sys_task_sleep(HIO_SYS_MSEC(1000));
 
 	if (hio_lte_talk_cmd("AT+CIMI") < 0) {
@@ -283,7 +283,7 @@ static int attach_once(void)
 		return -25;
 	}
 
-	// TODO Short timeout?
+	/* TODO Short timeout? */
 	if (hio_lte_talk_rsp(&rsp, TIMEOUT_S) < 0) {
 		LOG_ERR("Call `hio_lte_talk_rsp` failed [%p]", ctx);
 		return -26;
@@ -303,7 +303,7 @@ static int attach_once(void)
 		return -29;
 	}
 
-	// TODO Disable UART
+	/* TODO Disable UART */
 
 	hio_sys_sem_give(&ctx->sem);
 

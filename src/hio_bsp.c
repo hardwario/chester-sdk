@@ -4,7 +4,7 @@
 #include <hio_drv_tmp112.h>
 #include <hio_rtc.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/gpio.h>

@@ -1,6 +1,6 @@
 #include <hio_buf.h>
 
-// Standard includes
+/* Standard includes */
 #include <errno.h>
 #include <string.h>
 

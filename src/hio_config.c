@@ -1,6 +1,6 @@
 #include <hio_config.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <init.h>
 #include <fs/nvs.h>
 #include <logging/log.h>
@@ -9,7 +9,7 @@
 #include <sys/reboot.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdint.h>
 
 LOG_MODULE_REGISTER(hio_config, LOG_LEVEL_DBG);

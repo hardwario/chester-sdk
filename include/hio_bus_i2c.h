@@ -1,10 +1,10 @@
 #ifndef CHESTER_INCLUDE_BUS_I2C_H_
 #define CHESTER_INCLUDE_BUS_I2C_H_
 
-// Zephyr includes
+/* Zephyr includes */
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <stddef.h>
 #include <stdint.h>
 

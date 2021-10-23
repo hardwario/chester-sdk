@@ -1,7 +1,7 @@
 #include <hio_chester_x0d.h>
 #include <hio_bsp.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>

@@ -1,6 +1,6 @@
 #include <hio_led.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/led.h>
@@ -8,7 +8,7 @@
 #include <shell/shell.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>

@@ -1,7 +1,7 @@
 #ifndef CHESTER_INCLUDE_BUF_H_
 #define CHESTER_INCLUDE_BUF_H_
 
-// Standard includes
+/* Standard includes */
 #include <stddef.h>
 #include <stdint.h>
 

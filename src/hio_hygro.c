@@ -1,6 +1,6 @@
 #include <hio_hygro.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/sensor.h>

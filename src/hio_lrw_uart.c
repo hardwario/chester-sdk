@@ -1,6 +1,6 @@
 #include <hio_lrw_uart.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/clock_control.h>
@@ -10,7 +10,7 @@
 #include <sys/ring_buffer.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

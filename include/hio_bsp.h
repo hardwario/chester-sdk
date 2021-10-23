@@ -3,10 +3,10 @@
 
 #include <hio_bus_i2c.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <devicetree.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdbool.h>
 
 #ifdef __cplusplus

@@ -1,6 +1,6 @@
 #include <hio_rtc.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 #include <init.h>
@@ -10,7 +10,7 @@
 #include <shell/shell.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>

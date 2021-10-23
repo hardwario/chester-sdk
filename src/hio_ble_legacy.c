@@ -291,7 +291,7 @@ static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 	LOG_INF("Passkey for %s: %06u", log_strdup(addr), passkey);
 	LOG_INF("Press Button 1 to confirm, Button 2 to reject.");
 
-    // TODO My own hack to support confirmation
+    /* TODO My own hack to support confirmation */
     num_comp_reply(true);
 }
 
@@ -361,7 +361,7 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data,
 
 	LOG_INF("Received data from: %s", log_strdup(addr));
 
-    // TODO Process incoming data
+    /* TODO Process incoming data */
 }
 
 static struct bt_nus_cb nus_cb = {

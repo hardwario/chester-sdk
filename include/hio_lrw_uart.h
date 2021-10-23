@@ -1,7 +1,7 @@
 #ifndef CHESTER_INCLUDE_LRW_UART_H_
 #define CHESTER_INCLUDE_LRW_UART_H_
 
-// Standard includes
+/* Standard includes */
 #include <stdarg.h>
 #include <stdint.h>
 

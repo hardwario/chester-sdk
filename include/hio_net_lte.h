@@ -3,7 +3,7 @@
 
 #include <hio_sys.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -27,7 +27,7 @@ typedef struct {
 		.attach_pause = 30 * 1000, .send_retries = 3, .send_pause = 10 * 1000,             \
 	}
 
-// TODO Change .port to 10000
+/* TODO Change .port to 10000 */
 #define HIO_NET_LTE_SEND_OPTS_DEFAULTS                                                             \
 	{                                                                                          \
 		.ttl = HIO_SYS_FOREVER, .addr = { 192, 168, 168, 1 }, .port = 7777,                \
@@ -63,14 +63,14 @@ typedef struct {
 } hio_net_lte_event_t;
 
 typedef struct {
-	// Time-to-Live
+	/* Time-to-Live */
 	int64_t ttl;
 	uint8_t addr[4];
 	int port;
 } hio_net_send_opts_t;
 
 typedef struct {
-	// Time-of-Arrival
+	/* Time-of-Arrival */
 	int64_t toa;
 	uint8_t addr[4];
 	int port;

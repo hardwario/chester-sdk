@@ -1,7 +1,7 @@
 #ifndef CHESTER_INCLUDE_LTE_TOK_H_
 #define CHESTER_INCLUDE_LTE_TOK_H_
 
-// Standard includes
+/* Standard includes */
 #include <stdbool.h>
 #include <stddef.h>
 

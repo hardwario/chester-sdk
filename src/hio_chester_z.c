@@ -3,7 +3,7 @@
 #include <hio_bsp.h>
 #include <hio_bus_i2c.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/gpio.h>

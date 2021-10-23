@@ -3,7 +3,7 @@
 
 #include <hio_bus_i2c.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdbool.h>
 #include <stdint.h>
 

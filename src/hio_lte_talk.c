@@ -4,11 +4,11 @@
 #include <hio_net_lte.h>
 #include <hio_sys.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <logging/log.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <string.h>
 
 LOG_MODULE_REGISTER(hio_lte_talk, LOG_LEVEL_DBG);
@@ -173,8 +173,8 @@ void hio_lte_talk_cereg(const char *s)
 
 	hio_net_lte_set_reg(stat == 1 || stat == 5 ? true : false);
 
-	//+CEREG: 5,"B414","000F6E21",9,,,"00000010","00001000"
-	//+CEREG: 2,"B414","000F6E21",9
+	/* +CEREG: 5,"B414","000F6E21",9,,,"00000010","00001000" */
+	/* +CEREG: 2,"B414","000F6E21",9 */
 
-	// TODO Process here
+	/* TODO Process here */
 }

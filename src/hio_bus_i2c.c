@@ -1,9 +1,9 @@
 #include <hio_bus_i2c.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <logging/log.h>
 
-// Standard includes
+/* Standard includes */
 #include <string.h>
 
 LOG_MODULE_REGISTER(hio_bus_i2c, LOG_LEVEL_INF);

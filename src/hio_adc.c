@@ -1,13 +1,13 @@
 #include <hio_adc.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/adc.h>
 #include <logging/log.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <stddef.h>
 
 LOG_MODULE_REGISTER(hio_adc, LOG_LEVEL_DBG);

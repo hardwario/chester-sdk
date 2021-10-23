@@ -1,6 +1,6 @@
 #include <hio_sys.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <logging/log.h>
 #include <power/reboot.h>
 #include <zephyr.h>
@@ -22,7 +22,7 @@ static k_timeout_t conv_timeout(int64_t timeout)
 
 void hio_sys_reboot(void)
 {
-// TODO Flip this
+/* TODO Flip this */
 #if 0
     sys_reboot(SYS_REBOOT_COLD);
 #else

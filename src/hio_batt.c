@@ -2,7 +2,7 @@
 #include <hio_bsp.h>
 #include <hio_bus_i2c.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <logging/log.h>
 #include <shell/shell.h>
 #include <zephyr.h>

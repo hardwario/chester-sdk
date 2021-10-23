@@ -1,6 +1,6 @@
 #include <hio_button.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/gpio.h>
@@ -8,7 +8,7 @@
 #include <shell/shell.h>
 #include <zephyr.h>
 
-// Standard includes
+/* Standard includes */
 #include <stdbool.h>
 
 LOG_MODULE_REGISTER(hio_button, LOG_LEVEL_DBG);

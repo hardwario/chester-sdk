@@ -3,7 +3,7 @@
 #include <hio_bsp.h>
 #include <hio_drv_ads122c04.h>
 
-// Zephyr includes
+/* Zephyr includes */
 #include <logging/log.h>
 #include <zephyr.h>
 
@@ -23,19 +23,19 @@ int hio_chester_x3_init(enum hio_chester_x3_slot slot, enum hio_chester_x3_chann
 
 	if (slot == HIO_CHESTER_X3_SLOT_A && channel == HIO_CHESTER_X3_CHANNEL_1) {
 		ads122c04 = &m_ads122c04_a_ch_1;
-		dev_addr = 0x40; // TODO Change for new CHESTER-X3
+		dev_addr = 0x40; /* TODO Change for new CHESTER-X3 */
 
 	} else if (slot == HIO_CHESTER_X3_SLOT_A && channel == HIO_CHESTER_X3_CHANNEL_2) {
 		ads122c04 = &m_ads122c04_a_ch_2;
-		dev_addr = 0x41; // TODO Change for new CHESTER-X3
+		dev_addr = 0x41; /* TODO Change for new CHESTER-X3 */
 
 	} else if (slot == HIO_CHESTER_X3_SLOT_B && channel == HIO_CHESTER_X3_CHANNEL_1) {
 		ads122c04 = &m_ads122c04_b_ch_1;
-		dev_addr = 0x40; // TODO Change for new CHESTER-X3
+		dev_addr = 0x40; /* TODO Change for new CHESTER-X3 */
 
 	} else if (slot == HIO_CHESTER_X3_SLOT_B && channel == HIO_CHESTER_X3_CHANNEL_2) {
 		ads122c04 = &m_ads122c04_b_ch_2;
-		dev_addr = 0x41; // TODO Change for new CHESTER-X3
+		dev_addr = 0x41; /* TODO Change for new CHESTER-X3 */
 
 	} else {
 		return -EINVAL;

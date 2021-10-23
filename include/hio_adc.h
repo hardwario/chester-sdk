@@ -1,7 +1,7 @@
 #ifndef CHESTER_INCLUDE_ADC_H_
 #define CHESTER_INCLUDE_ADC_H_
 
-// Standard includes
+/* Standard includes */
 #include <stdint.h>
 
 #ifdef __cplusplus
