@@ -1,7 +1,12 @@
 #ifndef CHESTER_INCLUDE_DRIVERS_CTR_Z_H_
 #define CHESTER_INCLUDE_DRIVERS_CTR_Z_H_
 
+/* Zephyr includes */
 #include <device.h>
+
+/* Standard include */
+#include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
