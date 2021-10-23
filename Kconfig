@@ -185,7 +185,7 @@ config UART_ASYNC_API
 config UART_INTERRUPT_DRIVEN
 	default y if HIO_SDK
 
-config UART_LINE_CTRL
+config UART_LINE_CTRL # TODO We should not need to enable this
 	default y if HIO_SDK
 
 config USE_SEGGER_RTT
