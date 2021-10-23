@@ -15,6 +15,11 @@
 
 LOG_MODULE_REGISTER(hio_led, LOG_LEVEL_DBG);
 
+static const struct device *m_dev_led_r = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_r)));
+static const struct device *m_dev_led_g = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_g)));
+static const struct device *m_dev_led_y = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_y)));
+static const struct device *m_dev_led_ext = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_ext)));
+
 static int set_led(enum hio_led_channel channel, bool is_on)
 {
 	int ret;
@@ -24,22 +29,22 @@ static int set_led(enum hio_led_channel channel, bool is_on)
 
 	switch (channel) {
 	case HIO_LED_CHANNEL_R:
-		dev = device_get_binding("LED_RGY");
+		dev = m_dev_led_r;
 		led = 0;
 		break;
 
 	case HIO_LED_CHANNEL_G:
-		dev = device_get_binding("LED_RGY");
+		dev = m_dev_led_g;
 		led = 1;
 		break;
 
 	case HIO_LED_CHANNEL_Y:
-		dev = device_get_binding("LED_RGY");
+		dev = m_dev_led_y;
 		led = 2;
 		break;
 
 	case HIO_LED_CHANNEL_EXT:
-		dev = device_get_binding("LED_EXT");
+		dev = m_dev_led_ext;
 		led = 0;
 		break;
 
@@ -48,8 +53,8 @@ static int set_led(enum hio_led_channel channel, bool is_on)
 		return -EINVAL;
 	}
 
-	if (dev == NULL) {
-		LOG_ERR("Call `device_get_binding` failed");
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
 		return -ENODEV;
 	}
 
