@@ -10,6 +10,13 @@
 
 LOG_MODULE_REGISTER(hio_chester_x0d, LOG_LEVEL_DBG);
 
+/* TODO Remove this after K_MEM_SLAB_DEFINE_STATIC definition makes it to mainline */
+#define K_MEM_SLAB_DEFINE_STATIC(name, slab_block_size, slab_num_blocks, slab_align)               \
+	static char __noinit __aligned(WB_UP(slab_align))                                          \
+	        _k_mem_slab_buf_##name[(slab_num_blocks)*WB_UP(slab_block_size)];                  \
+	static Z_STRUCT_SECTION_ITERABLE(k_mem_slab, name) = Z_MEM_SLAB_INITIALIZER(               \
+	        name, _k_mem_slab_buf_##name, WB_UP(slab_block_size), slab_num_blocks)
+
 #define EVENT_WORK_NAME "chester_x0d"
 #define EVENT_WORK_STACK_SIZE 1024
 #define EVENT_SLAB_MAX_ITEMS 64
@@ -96,7 +103,7 @@ struct event_item {
 	void *param;
 };
 
-static K_MEM_SLAB_DEFINE(m_event_slab, sizeof(struct event_item), EVENT_SLAB_MAX_ITEMS, 4);
+K_MEM_SLAB_DEFINE_STATIC(m_event_slab, sizeof(struct event_item), EVENT_SLAB_MAX_ITEMS, 4);
 static K_THREAD_STACK_DEFINE(m_event_work_stack_area, EVENT_WORK_STACK_SIZE);
 static struct k_work_q m_event_work_q;
 static K_MUTEX_DEFINE(m_mut);
