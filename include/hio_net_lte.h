@@ -1,6 +1,101 @@
 #ifndef CHESTER_INCLUDE_NET_LTE_H_
 #define CHESTER_INCLUDE_NET_LTE_H_
 
+/* Standard includes */
+#include <stddef.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+enum hio_net_lte_event {
+	HIO_NET_LTE_EVENT_FAILURE = -1,
+	HIO_NET_LTE_EVENT_START_OK = 0,
+	HIO_NET_LTE_EVENT_START_ERR = 1,
+	HIO_NET_LTE_EVENT_ATTACH_OK = 2,
+	HIO_NET_LTE_EVENT_ATTACH_ERR = 3,
+	HIO_NET_LTE_EVENT_DETACH_OK = 4,
+	HIO_NET_LTE_EVENT_DETACH_ERR = 5,
+	HIO_NET_LTE_EVENT_SEND_OK = 6,
+	HIO_NET_LTE_EVENT_SEND_ERR = 7,
+};
+
+struct hio_net_lte_data_start_ok {
+	int corr_id;
+};
+
+struct hio_net_lte_data_start_err {
+	int corr_id;
+};
+
+struct hio_net_lte_data_attach_ok {
+	int corr_id;
+};
+
+struct hio_net_lte_data_attach_err {
+	int corr_id;
+};
+
+struct hio_net_lte_data_detach_ok {
+	int corr_id;
+};
+
+struct hio_net_lte_data_detach_err {
+	int corr_id;
+};
+
+struct hio_net_lte_data_send_ok {
+	int corr_id;
+};
+
+struct hio_net_lte_data_send_err {
+	int corr_id;
+};
+
+union hio_net_lte_event_data {
+	struct hio_net_lte_data_start_ok start_ok;
+	struct hio_net_lte_data_start_err start_err;
+	struct hio_net_lte_data_attach_ok attach_ok;
+	struct hio_net_lte_data_attach_err attach_err;
+	struct hio_net_lte_data_detach_ok detach_ok;
+	struct hio_net_lte_data_detach_err detach_err;
+	struct hio_net_lte_data_send_ok send_ok;
+	struct hio_net_lte_data_send_err send_err;
+};
+
+typedef void (*hio_net_lte_event_cb)(enum hio_net_lte_event event,
+                                     union hio_net_lte_event_data *data, void *param);
+
+struct hio_net_lte_send_opts {
+	int64_t ttl;
+	uint8_t addr[4];
+	int port;
+};
+
+#define HIO_NET_LTE_SEND_OPTS_DEFAULTS                                                             \
+	{                                                                                          \
+		.ttl = HIO_SYS_FOREVER, .addr = { 192, 168, 168, 1 }, .port = 7777,                \
+	}
+
+int hio_net_lte_init(hio_net_lte_event_cb callback, void *param);
+int hio_net_lte_start(int *corr_id);
+int hio_net_lte_attach(int *corr_id);
+int hio_net_lte_detach(int *corr_id);
+int hio_net_lte_send(const struct hio_net_lte_send_opts *opts, const void *buf, size_t len,
+                     int *corr_id);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* CHESTER_INCLUDE_NET_LTE_H_ */
+
+#if 0
+
+#ifndef CHESTER_INCLUDE_NET_LTE_H_
+#define CHESTER_INCLUDE_NET_LTE_H_
+
 #include <hio_sys.h>
 
 /* Standard includes */
@@ -92,3 +187,5 @@ void hio_net_lte_set_reg(bool state);
 #endif
 
 #endif /* CHESTER_INCLUDE_NET_LTE_H_ */
+
+#endif

@@ -1,4 +1,33 @@
 #include <hio_net_lte.h>
+
+int hio_net_lte_init(hio_net_lte_event_cb callback, void *param)
+{
+	return 0;
+}
+
+int hio_net_lte_start(int *corr_id)
+{
+	return 0;
+}
+
+int hio_net_lte_attach(int *corr_id)
+{
+	return 0;
+}
+
+int hio_net_lte_detach(int *corr_id)
+{
+	return 0;
+}
+
+int hio_net_lte_send(const struct hio_net_lte_send_opts *opts, const void *buf, size_t len,
+                     int *corr_id)
+{
+	return 0;
+}
+
+#if 0
+#include <hio_net_lte.h>
 #include <hio_bsp.h>
 #include <hio_lte_talk.h>
 #include <hio_lte_tok.h>
@@ -740,3 +769,28 @@ void hio_net_lte_set_reg(bool state)
 
 	hio_sys_sem_give(&ctx->sem);
 }
+
+/*
+
+test start
+test lte reset
+test lte wakeup
+test lte cmd AT%XSYSTEMMODE=0,1,0,0
+test lte cmd AT%REL14FEAT=1,1,1,1,0
+test lte cmd AT%XDATAPRFL=0
+test lte cmd AT%XSIM=1
+test lte cmd AT%XNETTIME=1
+test lte cmd AT%XTIME=1
+test lte cmd AT+CEREG=5
+test lte cmd AT+CGEREP=1
+test lte cmd AT+CSCON=1
+test lte cmd 'AT+CPSMS=1,,,"00111000","00000000"'
+test lte cmd AT+CNEC=24
+test lte cmd AT+CMEE=1
+test lte cmd AT+CEPPI=1
+test lte cmd AT+CFUN=1
+
+
+
+*/
+#endif
