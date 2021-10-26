@@ -86,13 +86,15 @@ static int cmd_test_lte_reset(const struct shell *shell, size_t argc, char **arg
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	int ret;
+	// int ret;
 
 	if (!atomic_get(&m_is_active)) {
 		shell_error(shell, "test mode is not activated");
 		return -ENOEXEC;
 	}
 
+	/* TODO Implement */
+	/*
 	ret = hio_lte_uart_enable();
 
 	if (ret < 0) {
@@ -115,6 +117,7 @@ static int cmd_test_lte_reset(const struct shell *shell, size_t argc, char **arg
 		LOG_ERR("Call `hio_bsp_set_lte_reset` failed: %d", ret);
 		return ret;
 	}
+	*/
 
 	return 0;
 }
@@ -124,13 +127,15 @@ static int cmd_test_lte_wakeup(const struct shell *shell, size_t argc, char **ar
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	int ret;
+	// int ret;
 
 	if (!atomic_get(&m_is_active)) {
 		shell_error(shell, "test mode is not activated");
 		return -ENOEXEC;
 	}
 
+	/* TODO Implement */
+	/*
 	ret = hio_lte_uart_enable();
 
 	if (ret < 0) {
@@ -153,6 +158,7 @@ static int cmd_test_lte_wakeup(const struct shell *shell, size_t argc, char **ar
 		LOG_ERR("Call `hio_bsp_set_lte_wkup` failed: %d", ret);
 		return ret;
 	}
+	*/
 
 	return 0;
 }
@@ -162,13 +168,15 @@ static int cmd_test_lte_sleep(const struct shell *shell, size_t argc, char **arg
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	int ret;
+	// int ret;
 
 	if (!atomic_get(&m_is_active)) {
 		shell_error(shell, "test mode is not activated");
 		return -ENOEXEC;
 	}
 
+	/* TODO Implement */
+	/*
 	ret = hio_lte_talk_cmd("AT#XSLEEP=2");
 
 	if (ret < 0) {
@@ -184,19 +192,22 @@ static int cmd_test_lte_sleep(const struct shell *shell, size_t argc, char **arg
 		LOG_ERR("Call `hio_lte_uart_disable` failed: %d", ret);
 		return ret;
 	}
+	*/
 
 	return 0;
 }
 
 static int cmd_test_lte_cmd(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
+	// int ret;
 
 	if (!atomic_get(&m_is_active)) {
 		shell_error(shell, "test mode is not activated");
 		return -ENOEXEC;
 	}
 
+	/* TODO Implement */
+	/*
 	if (argc > 2) {
 		shell_error(shell, "only one argument is accepted (use quotes?)");
 		return -EINVAL;
@@ -208,6 +219,7 @@ static int cmd_test_lte_cmd(const struct shell *shell, size_t argc, char **argv)
 		LOG_ERR("Call `hio_lte_talk_cmd` failed: %d", ret);
 		return ret;
 	}
+	*/
 
 	return 0;
 }
@@ -255,12 +267,15 @@ static int cmd_test_start(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
+	/* TODO Implement */
+	/*
 	ret = hio_lte_uart_init();
 
 	if (ret < 0) {
 		LOG_ERR("Call `hio_lte_uart_init` failed: %d", ret);
 		return ret;
 	}
+	*/
 
 	return 0;
 }
