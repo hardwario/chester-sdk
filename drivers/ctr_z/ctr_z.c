@@ -40,15 +40,27 @@ static inline struct ctr_z_data *get_data(const struct device *dev)
 static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 {
 	int ret;
-	uint8_t data_[2];
 
-	ret = i2c_burst_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, reg, data_,
-	                     sizeof(data_));
+	struct i2c_msg msgs[2];
+
+	msgs[0].buf = &reg;
+	msgs[0].len = 1;
+	msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_RESTART;
+
+	uint16_t buf;
+
+	msgs[1].buf = (uint8_t *)&buf;
+	msgs[1].len = 2;
+	msgs[1].flags = I2C_MSG_READ | I2C_MSG_STOP;
+
+	ret = i2c_transfer(get_config(dev)->i2c_dev, msgs, ARRAY_SIZE(msgs),
+	                   get_config(dev)->i2c_addr);
 	if (ret < 0) {
+		LOG_WRN("Call `i2c_transfer` failed: %d", ret);
 		return ret;
 	}
 
-	*data = sys_get_be16(data_);
+	*data = sys_be16_to_cpu(buf);
 
 	return 0;
 }
@@ -56,13 +68,21 @@ static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 static int write(const struct device *dev, uint8_t reg, uint16_t data)
 {
 	int ret;
-	uint8_t data_[2];
 
-	sys_put_be16(data, data_);
+	uint8_t buf[3] = { reg };
 
-	ret = i2c_burst_write(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, reg, data_,
-	                      sizeof(data_));
+	sys_put_be16(data, &buf[1]);
+
+	struct i2c_msg msgs[1];
+
+	msgs[0].buf = buf;
+	msgs[0].len = 3;
+	msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	ret = i2c_transfer(get_config(dev)->i2c_dev, msgs, ARRAY_SIZE(msgs),
+	                   get_config(dev)->i2c_addr);
 	if (ret < 0) {
+		LOG_WRN("Call `i2c_transfer` failed: %d", ret);
 		return ret;
 	}
 
@@ -81,7 +101,7 @@ static int ctr_z_apply_(const struct device *dev)
 {
 	int ret;
 
-	ret = write(dev, REG_CONTROL, BIT(15));
+	ret = write(dev, REG_CONTROL, BIT(0) | (get_config(dev)->auto_beep ? BIT(1) : 0) | BIT(15));
 	if (ret < 0) {
 		LOG_ERR("Call `write` failed: %d", ret);
 		return ret;
