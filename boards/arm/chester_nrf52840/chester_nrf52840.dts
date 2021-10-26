@@ -86,7 +86,7 @@
 
 &i2c0 {
 	status = "okay";
-	compatible = "nordic,nrf-twi";
+	compatible = "nordic,nrf-twim";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sda-pin = <21>;
 	scl-pin = <20>;
