@@ -8,7 +8,9 @@
 - Implement 1-Wire driver.
 - Test flash filesystem on top of NOR flash.
 - Transfer created file from NOR flash via BLE.
-- Remove labels from Device Tree.
+- Allow users to set number of repetitions (for operations) in LoRaWAN.
+- Check and fix four possible sending options.
+- Check CHESTER-Z + push button + interrupts (stops beeps).
 
 ## Topics for discussion
 
