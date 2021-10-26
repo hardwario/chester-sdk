@@ -9,7 +9,6 @@
 #include <zephyr.h>
 
 /* Standard includes */
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -73,6 +72,20 @@ static int set_led(enum hio_led_channel channel, bool is_on)
 			LOG_ERR("Call `led_off` failed: %d", ret);
 			return ret;
 		}
+	}
+
+	return 0;
+}
+
+int hio_led_set(enum hio_led_channel channel, bool is_on)
+{
+	int ret;
+
+	ret = set_led(channel, is_on);
+
+	if (ret < 0) {
+		LOG_ERR("Call `set_led` failed: %d", ret);
+		return ret;
 	}
 
 	return 0;
