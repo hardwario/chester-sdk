@@ -19,6 +19,13 @@
 
 LOG_MODULE_REGISTER(hio_lrw_uart, LOG_LEVEL_DBG);
 
+/* TODO Remove this after K_MEM_SLAB_DEFINE_STATIC definition makes it to mainline */
+#define K_MEM_SLAB_DEFINE_STATIC(name, slab_block_size, slab_num_blocks, slab_align)               \
+	static char __noinit __aligned(WB_UP(slab_align))                                          \
+	        _k_mem_slab_buf_##name[(slab_num_blocks)*WB_UP(slab_block_size)];                  \
+	static Z_STRUCT_SECTION_ITERABLE(k_mem_slab, name) = Z_MEM_SLAB_INITIALIZER(               \
+	        name, _k_mem_slab_buf_##name, WB_UP(slab_block_size), slab_num_blocks)
+
 #define RX_BLOCK_SIZE 64
 #define RX_LINE_MAX_SIZE 256
 #define RX_RING_BUF_SIZE 512
@@ -34,7 +41,7 @@ static atomic_t m_reset;
 static atomic_t m_stop;
 static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(uart1));
 static hio_lrw_recv_cb m_recv_cb;
-static K_MEM_SLAB_DEFINE(m_rx_slab, RX_BLOCK_SIZE, 2, 4);
+K_MEM_SLAB_DEFINE_STATIC(m_rx_slab, RX_BLOCK_SIZE, 2, 4);
 static K_MUTEX_DEFINE(m_mut);
 static struct k_poll_signal m_rx_disabled_sig;
 static struct k_poll_signal m_tx_done_sig;
