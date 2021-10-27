@@ -1,8 +1,8 @@
 #include "test_i2c.h"
-#include <hio_bsp.h>
-#include <hio_bus_i2c.h>
-#include <hio_drv_sht30.h>
-#include <hio_drv_tmp112.h>
+#include <ctr_bsp.h>
+#include <ctr_bus_i2c.h>
+#include <ctr_drv_sht30.h>
+#include <ctr_drv_tmp112.h>
 
 // Zephyr includes
 #include <logging/log.h>

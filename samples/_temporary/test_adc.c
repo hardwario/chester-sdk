@@ -1,5 +1,5 @@
 #include "test_adc.h"
-#include <hio_adc.h>
+#include <ctr_adc.h>
 
 // Zephyr includes
 #include <logging/log.h>
@@ -82,8 +82,7 @@ int test_adc(void)
 			return ret;
 		}
 
-		LOG_INF("Sample A0: %u <0x%04x> %u mV", sample, sample,
-		        HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample A0: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
 
 		ret = hio_adc_read(HIO_ADC_CHANNEL_A1, &sample);
 
@@ -92,8 +91,7 @@ int test_adc(void)
 			return ret;
 		}
 
-		LOG_INF("Sample A1: %u <0x%04x> %u mV", sample, sample,
-		        HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample A1: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
 
 		ret = hio_adc_read(HIO_ADC_CHANNEL_A2, &sample);
 
@@ -102,8 +100,7 @@ int test_adc(void)
 			return ret;
 		}
 
-		LOG_INF("Sample A2: %u <0x%04x> %u mV", sample, sample,
-		        HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample A2: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
 
 		ret = hio_adc_read(HIO_ADC_CHANNEL_A3, &sample);
 
@@ -112,8 +109,7 @@ int test_adc(void)
 			return ret;
 		}
 
-		LOG_INF("Sample A3: %u <0x%04x> %u mV", sample, sample,
-		        HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample A3: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
 
 		ret = hio_adc_read(HIO_ADC_CHANNEL_B0, &sample);
 
@@ -122,8 +118,7 @@ int test_adc(void)
 			return ret;
 		}
 
-		LOG_INF("Sample B0: %u <0x%04x> %u mV", sample, sample,
-		        HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample B0: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
 
 		ret = hio_adc_read(HIO_ADC_CHANNEL_B1, &sample);
 
@@ -132,8 +127,7 @@ int test_adc(void)
 			return ret;
 		}
 
-		LOG_INF("Sample B1: %u <0x%04x> %u mV", sample, sample,
-		        HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample B1: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
 
 		ret = hio_adc_read(HIO_ADC_CHANNEL_B2, &sample);
 
@@ -142,8 +136,7 @@ int test_adc(void)
 			return ret;
 		}
 
-		LOG_INF("Sample B2: %u <0x%04x> %u mV", sample, sample,
-		        HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample B2: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
 
 		ret = hio_adc_read(HIO_ADC_CHANNEL_B3, &sample);
 
@@ -152,8 +145,7 @@ int test_adc(void)
 			return ret;
 		}
 
-		LOG_INF("Sample B3: %u <0x%04x> %u mV", sample, sample,
-		        HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample B3: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
 
 		k_sleep(K_MSEC(200));
 	}

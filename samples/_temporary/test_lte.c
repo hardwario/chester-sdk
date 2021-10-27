@@ -1,6 +1,6 @@
 #include "test_lte.h"
-#include <hio_net_lte.h>
-#include <hio_sys.h>
+#include <ctr_net_lte.h>
+#include <ctr_sys.h>
 
 // Zephyr includes
 #include <logging/log.h>

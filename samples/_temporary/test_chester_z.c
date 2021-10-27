@@ -1,5 +1,5 @@
 #include "test_chester_z.h"
-#include <hio_chester_z.h>
+#include <ctr_chester_z.h>
 
 // Zephyr includes
 #include <logging/log.h>

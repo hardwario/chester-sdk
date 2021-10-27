@@ -1,5 +1,5 @@
-#include <hio_bsp.h>
-#include <hio_sys.h>
+#include <ctr_bsp.h>
+#include <ctr_sys.h>
 
 // Zephyr includes
 #include <logging/log.h>
