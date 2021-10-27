@@ -1,6 +1,6 @@
 #include <ctr_net_lte.h>
 
-int ctr_net_lte_init(ctr_net_lte_event_cb callback, void *param)
+int ctr_net_lte_set_event_cb(ctr_net_lte_event_cb user_cb, void *user_data)
 {
 	return 0;
 }

@@ -78,7 +78,7 @@ struct ctr_net_lte_send_opts {
 		.ttl = CTR_SYS_FOREVER, .addr = { 192, 168, 168, 1 }, .port = 7777,                \
 	}
 
-int ctr_net_lte_init(ctr_net_lte_event_cb callback, void *param);
+int ctr_net_lte_set_event_cb(ctr_net_lte_event_cb user_cb, void *user_data);
 int ctr_net_lte_start(int *corr_id);
 int ctr_net_lte_attach(int *corr_id);
 int ctr_net_lte_detach(int *corr_id);
