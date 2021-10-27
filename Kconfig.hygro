@@ -1,5 +1,5 @@
-config HIO_HYGRO
-	bool "HIO_HYGRO"
+config CTR_HYGRO
+	bool "CTR_HYGRO"
 	select SENSOR
 	select SHT3XD
 
@@ -7,5 +7,5 @@ config HIO_HYGRO
 # https://github.com/zephyrproject-rtos/zephyr/pull/39305
 # choice SHT3XD_MEASUREMENT_MODE
 # 	default SHT3XD_SINGLE_SHOT_MODE
-# 	depends on HIO_HYGRO
+# 	depends on CTR_HYGRO
 # endchoice

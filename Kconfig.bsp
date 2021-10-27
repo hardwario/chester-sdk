@@ -1,11 +1,11 @@
-config HIO_BSP
-	bool "HIO_BSP"
-	select HIO_SDK
+config CTR_BSP
+	bool "CTR_BSP"
+	select CTR_SDK
 	select SPI
 	select FLASH
 	select SPI_FLASH_AT45
 
-config HIO_BSP_INIT_PRIORITY
-	int "HIO_BSP_INIT_PRIORITY"
+config CTR_BSP_INIT_PRIORITY
+	int "CTR_BSP_INIT_PRIORITY"
 	default 2
-	depends on HIO_BSP
+	depends on CTR_BSP

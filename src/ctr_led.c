@@ -12,14 +12,14 @@
 #include <stdint.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(hio_led, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_led, LOG_LEVEL_DBG);
 
 static const struct device *m_dev_led_r = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_r)));
 static const struct device *m_dev_led_g = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_g)));
 static const struct device *m_dev_led_y = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_y)));
 static const struct device *m_dev_led_ext = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_ext)));
 
-static int set_led(enum hio_led_channel channel, bool is_on)
+static int set_led(enum ctr_led_channel channel, bool is_on)
 {
 	int ret;
 
@@ -27,22 +27,22 @@ static int set_led(enum hio_led_channel channel, bool is_on)
 	uint32_t led;
 
 	switch (channel) {
-	case HIO_LED_CHANNEL_R:
+	case CTR_LED_CHANNEL_R:
 		dev = m_dev_led_r;
 		led = 0;
 		break;
 
-	case HIO_LED_CHANNEL_G:
+	case CTR_LED_CHANNEL_G:
 		dev = m_dev_led_g;
 		led = 1;
 		break;
 
-	case HIO_LED_CHANNEL_Y:
+	case CTR_LED_CHANNEL_Y:
 		dev = m_dev_led_y;
 		led = 2;
 		break;
 
-	case HIO_LED_CHANNEL_EXT:
+	case CTR_LED_CHANNEL_EXT:
 		dev = m_dev_led_ext;
 		led = 0;
 		break;
@@ -77,7 +77,7 @@ static int set_led(enum hio_led_channel channel, bool is_on)
 	return 0;
 }
 
-int hio_led_set(enum hio_led_channel channel, bool is_on)
+int ctr_led_set(enum ctr_led_channel channel, bool is_on)
 {
 	int ret;
 
@@ -95,19 +95,19 @@ static int cmd_led_switch(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	enum hio_led_channel channel;
+	enum ctr_led_channel channel;
 
 	if (strcmp(argv[1], "red") == 0) {
-		channel = HIO_LED_CHANNEL_R;
+		channel = CTR_LED_CHANNEL_R;
 
 	} else if (strcmp(argv[1], "green") == 0) {
-		channel = HIO_LED_CHANNEL_G;
+		channel = CTR_LED_CHANNEL_G;
 
 	} else if (strcmp(argv[1], "yellow") == 0) {
-		channel = HIO_LED_CHANNEL_Y;
+		channel = CTR_LED_CHANNEL_Y;
 
 	} else if (strcmp(argv[1], "ext") == 0) {
-		channel = HIO_LED_CHANNEL_EXT;
+		channel = CTR_LED_CHANNEL_EXT;
 
 	} else {
 		shell_error(shell, "invalid channel name");

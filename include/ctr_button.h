@@ -5,9 +5,9 @@
 extern "C" {
 #endif
 
-enum hio_button_channel {
-	HIO_BUTTON_CHANNEL_INT = 0,
-	HIO_BUTTON_CHANNEL_EXT = 1,
+enum ctr_button_channel {
+	CTR_BUTTON_CHANNEL_INT = 0,
+	CTR_BUTTON_CHANNEL_EXT = 1,
 };
 
 #ifdef __cplusplus

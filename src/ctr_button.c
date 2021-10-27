@@ -11,21 +11,21 @@
 /* Standard includes */
 #include <stdbool.h>
 
-LOG_MODULE_REGISTER(hio_button, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_button, LOG_LEVEL_DBG);
 
 static const struct gpio_dt_spec m_button_int = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 static const struct gpio_dt_spec m_button_ext = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
 
-static int read_button(enum hio_button_channel channel, bool *is_pressed)
+static int read_button(enum ctr_button_channel channel, bool *is_pressed)
 {
 	int ret;
 
 	switch (channel) {
-	case HIO_BUTTON_CHANNEL_INT:
+	case CTR_BUTTON_CHANNEL_INT:
 		ret = gpio_pin_get_dt(&m_button_int);
 		break;
 
-	case HIO_BUTTON_CHANNEL_EXT:
+	case CTR_BUTTON_CHANNEL_EXT:
 		ret = gpio_pin_get_dt(&m_button_ext);
 		break;
 
@@ -48,13 +48,13 @@ static int cmd_button_read(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	enum hio_button_channel channel;
+	enum ctr_button_channel channel;
 
 	if (strcmp(argv[1], "int") == 0) {
-		channel = HIO_BUTTON_CHANNEL_INT;
+		channel = CTR_BUTTON_CHANNEL_INT;
 
 	} else if (strcmp(argv[1], "ext") == 0) {
-		channel = HIO_BUTTON_CHANNEL_EXT;
+		channel = CTR_BUTTON_CHANNEL_EXT;
 
 	} else {
 		shell_error(shell, "invalid channel name");

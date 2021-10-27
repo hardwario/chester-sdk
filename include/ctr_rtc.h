@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-struct hio_rtc_tm {
+struct ctr_rtc_tm {
 	int year;
 	int month;
 	int day;
@@ -14,8 +14,8 @@ struct hio_rtc_tm {
 	int seconds;
 };
 
-int hio_rtc_get(struct hio_rtc_tm *tm);
-int hio_rtc_set(const struct hio_rtc_tm *tm);
+int ctr_rtc_get(struct ctr_rtc_tm *tm);
+int ctr_rtc_set(const struct ctr_rtc_tm *tm);
 
 #ifdef __cplusplus
 }

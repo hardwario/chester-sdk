@@ -12,7 +12,7 @@
 #include <shell/shell_bt_nus.h>
 #include <stdio.h>
 
-LOG_MODULE_REGISTER(hio_ble);
+LOG_MODULE_REGISTER(ctr_ble);
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
@@ -111,7 +111,7 @@ static struct bt_conn_auth_cb conn_auth_callbacks = { .passkey_display = auth_pa
 	                                              .pairing_complete = pairing_complete,
 	                                              .pairing_failed = pairing_failed };
 
-void hio_ble_init(void)
+void ctr_ble_init(void)
 {
 	int err;
 
@@ -143,7 +143,7 @@ void hio_ble_init(void)
 
 #else
 
-void hio_ble_init(void)
+void ctr_ble_init(void)
 {
 }
 
@@ -376,7 +376,7 @@ void error(void)
 	}
 }
 
-void hio_ble_init(void)
+void ctr_ble_init(void)
 {
 	int err = 0;
 
@@ -438,7 +438,7 @@ K_THREAD_DEFINE(ble_write_thread_id, STACKSIZE, ble_write_thread, NULL, NULL,
 #else
 
 void
-hio_ble_init(void)
+ctr_ble_init(void)
 {
 }
 

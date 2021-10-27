@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(hio_lte_uart, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_lte_uart, LOG_LEVEL_DBG);
 
 /* TODO Remove this after K_MEM_SLAB_DEFINE_STATIC definition makes it to mainline */
 #define K_MEM_SLAB_DEFINE_STATIC(name, slab_block_size, slab_num_blocks, slab_align)               \
@@ -40,7 +40,7 @@ static atomic_t m_enabled;
 static atomic_t m_reset;
 static atomic_t m_stop;
 static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(uart1));
-static hio_lte_recv_cb m_recv_cb;
+static ctr_lte_recv_cb m_recv_cb;
 K_MEM_SLAB_DEFINE_STATIC(m_rx_slab, RX_BLOCK_SIZE, 2, 4);
 static K_MUTEX_DEFINE(m_mut);
 static struct k_poll_signal m_rx_disabled_sig;
@@ -215,7 +215,7 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 	}
 }
 
-int hio_lte_uart_init(hio_lte_recv_cb recv_cb)
+int ctr_lte_uart_init(ctr_lte_recv_cb recv_cb)
 {
 	int ret;
 
@@ -285,7 +285,7 @@ static int request_hfclk(void)
 	return 0;
 }
 
-int hio_lte_uart_enable(void)
+int ctr_lte_uart_enable(void)
 {
 	int ret;
 
@@ -355,7 +355,7 @@ static int release_hfclk(void)
 	return 0;
 }
 
-int hio_lte_uart_disable(void)
+int ctr_lte_uart_disable(void)
 {
 	int ret;
 
@@ -411,7 +411,7 @@ int hio_lte_uart_disable(void)
 	return 0;
 }
 
-int hio_lte_uart_send(const char *fmt, va_list ap)
+int ctr_lte_uart_send(const char *fmt, va_list ap)
 {
 	int ret;
 

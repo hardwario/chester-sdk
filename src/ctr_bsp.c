@@ -12,7 +12,7 @@
 #include <logging/log.h>
 #include <zephyr.h>
 
-LOG_MODULE_REGISTER(hio_bsp, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_bsp, LOG_LEVEL_DBG);
 
 #define DEV_LED_R m_dev_gpio_1
 #define PIN_LED_R 13
@@ -73,10 +73,10 @@ static const struct device *m_dev_gpio_1;
 static const struct device *m_dev_i2c_0;
 static const struct device *m_dev_spi_1;
 
-static struct hio_bus_i2c m_i2c;
+static struct ctr_bus_i2c m_i2c;
 
-static struct hio_drv_sht30 m_sht30;
-static struct hio_drv_tmp112 m_tmp112;
+static struct ctr_drv_sht30 m_sht30;
+static struct ctr_drv_tmp112 m_tmp112;
 
 static int init_gpio(void)
 {
@@ -129,26 +129,26 @@ static int init_i2c(void)
 		return -ENODEV;
 	}
 
-	const struct hio_bus_i2c_driver *i2c_drv = hio_bsp_i2c_get_driver();
+	const struct ctr_bus_i2c_driver *i2c_drv = ctr_bsp_i2c_get_driver();
 
-	ret = hio_bus_i2c_init(&m_i2c, i2c_drv, (void *)m_dev_i2c_0);
+	ret = ctr_bus_i2c_init(&m_i2c, i2c_drv, (void *)m_dev_i2c_0);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_bus_i2c_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_drv_sht30_init(&m_sht30, &m_i2c, 0x45);
+	ret = ctr_drv_sht30_init(&m_sht30, &m_i2c, 0x45);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_drv_sht30_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_drv_sht30_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_drv_tmp112_init(&m_tmp112, &m_i2c, 0x48);
+	ret = ctr_drv_tmp112_init(&m_tmp112, &m_i2c, 0x48);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_drv_tmp112_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_drv_tmp112_init` failed: %d", ret);
 		return ret;
 	}
 
@@ -159,10 +159,10 @@ static int init_tmp112(void)
 {
 	int ret;
 
-	ret = hio_drv_tmp112_sleep(&m_tmp112);
+	ret = ctr_drv_tmp112_sleep(&m_tmp112);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_drv_tmp112_sleep` failed: %d", ret);
+		LOG_ERR("Call `ctr_drv_tmp112_sleep` failed: %d", ret);
 		return ret;
 	}
 
@@ -325,17 +325,17 @@ int init_w1b(void)
 	return 0;
 }
 
-struct hio_bus_i2c *hio_bsp_get_i2c(void)
+struct ctr_bus_i2c *ctr_bsp_get_i2c(void)
 {
 	return &m_i2c;
 }
 
-int hio_bsp_set_led(enum hio_bsp_led led, bool on)
+int ctr_bsp_set_led(enum ctr_bsp_led led, bool on)
 {
 	int ret;
 
 	switch (led) {
-	case HIO_BSP_LED_R:
+	case CTR_BSP_LED_R:
 		ret = gpio_pin_set(DEV_LED_R, PIN_LED_R, on ? 1 : 0);
 
 		if (ret < 0) {
@@ -345,7 +345,7 @@ int hio_bsp_set_led(enum hio_bsp_led led, bool on)
 
 		break;
 
-	case HIO_BSP_LED_G:
+	case CTR_BSP_LED_G:
 		ret = gpio_pin_set(DEV_LED_G, PIN_LED_G, on ? 1 : 0);
 
 		if (ret < 0) {
@@ -355,7 +355,7 @@ int hio_bsp_set_led(enum hio_bsp_led led, bool on)
 
 		break;
 
-	case HIO_BSP_LED_Y:
+	case CTR_BSP_LED_Y:
 		ret = gpio_pin_set(DEV_LED_Y, PIN_LED_Y, on ? 1 : 0);
 
 		if (ret < 0) {
@@ -365,7 +365,7 @@ int hio_bsp_set_led(enum hio_bsp_led led, bool on)
 
 		break;
 
-	case HIO_BSP_LED_EXT:
+	case CTR_BSP_LED_EXT:
 		ret = gpio_pin_set(DEV_LED_EXT, PIN_LED_EXT, on ? 1 : 0);
 
 		if (ret < 0) {
@@ -382,12 +382,12 @@ int hio_bsp_set_led(enum hio_bsp_led led, bool on)
 	return 0;
 }
 
-int hio_bsp_get_button(enum hio_bsp_button button, bool *pressed)
+int ctr_bsp_get_button(enum ctr_bsp_button button, bool *pressed)
 {
 	int ret;
 
 	switch (button) {
-	case HIO_BSP_BUTTON_INT:
+	case CTR_BSP_BUTTON_INT:
 		ret = gpio_pin_get(DEV_BTN_INT, PIN_BTN_INT);
 
 		if (ret < 0) {
@@ -398,7 +398,7 @@ int hio_bsp_get_button(enum hio_bsp_button button, bool *pressed)
 		*pressed = ret == 0 ? true : false;
 		break;
 
-	case HIO_BSP_BUTTON_EXT:
+	case CTR_BSP_BUTTON_EXT:
 
 		ret = gpio_pin_get(DEV_BTN_EXT, PIN_BTN_EXT);
 
@@ -417,7 +417,7 @@ int hio_bsp_get_button(enum hio_bsp_button button, bool *pressed)
 	return 0;
 }
 
-int hio_bsp_set_batt_load(bool on)
+int ctr_bsp_set_batt_load(bool on)
 {
 	int ret;
 
@@ -431,7 +431,7 @@ int hio_bsp_set_batt_load(bool on)
 	return 0;
 }
 
-int hio_bsp_set_batt_test(bool on)
+int ctr_bsp_set_batt_test(bool on)
 {
 	int ret;
 
@@ -445,7 +445,7 @@ int hio_bsp_set_batt_test(bool on)
 	return 0;
 }
 
-int hio_bsp_set_gnss_on(bool on)
+int ctr_bsp_set_gnss_on(bool on)
 {
 	int ret;
 
@@ -459,7 +459,7 @@ int hio_bsp_set_gnss_on(bool on)
 	return 0;
 }
 
-int hio_bsp_set_gnss_rtc(bool on)
+int ctr_bsp_set_gnss_rtc(bool on)
 {
 	int ret;
 
@@ -473,7 +473,7 @@ int hio_bsp_set_gnss_rtc(bool on)
 	return 0;
 }
 
-int hio_bsp_set_w1b_slpz(int level)
+int ctr_bsp_set_w1b_slpz(int level)
 {
 	int ret;
 
@@ -487,12 +487,12 @@ int hio_bsp_set_w1b_slpz(int level)
 	return 0;
 }
 
-int hio_bsp_set_rf_ant(enum hio_bsp_rf_ant ant)
+int ctr_bsp_set_rf_ant(enum ctr_bsp_rf_ant ant)
 {
 	int ret;
 
 	switch (ant) {
-	case HIO_BSP_RF_ANT_NONE:
+	case CTR_BSP_RF_ANT_NONE:
 		ret = gpio_pin_set(DEV_RF_INT, PIN_RF_INT, 0);
 
 		if (ret < 0) {
@@ -508,7 +508,7 @@ int hio_bsp_set_rf_ant(enum hio_bsp_rf_ant ant)
 		}
 		break;
 
-	case HIO_BSP_RF_ANT_INT:
+	case CTR_BSP_RF_ANT_INT:
 		ret = gpio_pin_set(DEV_RF_EXT, PIN_RF_EXT, 0);
 
 		if (ret < 0) {
@@ -525,7 +525,7 @@ int hio_bsp_set_rf_ant(enum hio_bsp_rf_ant ant)
 
 		break;
 
-	case HIO_BSP_RF_ANT_EXT:
+	case CTR_BSP_RF_ANT_EXT:
 		ret = gpio_pin_set(DEV_RF_INT, PIN_RF_INT, 0);
 
 		if (ret < 0) {
@@ -549,12 +549,12 @@ int hio_bsp_set_rf_ant(enum hio_bsp_rf_ant ant)
 	return 0;
 }
 
-int hio_bsp_set_rf_mux(enum hio_bsp_rf_mux mux)
+int ctr_bsp_set_rf_mux(enum ctr_bsp_rf_mux mux)
 {
 	int ret;
 
 	switch (mux) {
-	case HIO_BSP_RF_MUX_NONE:
+	case CTR_BSP_RF_MUX_NONE:
 		ret = gpio_pin_set(DEV_RF_LTE, PIN_RF_LTE, 0);
 
 		if (ret < 0) {
@@ -571,7 +571,7 @@ int hio_bsp_set_rf_mux(enum hio_bsp_rf_mux mux)
 
 		break;
 
-	case HIO_BSP_RF_MUX_LTE:
+	case CTR_BSP_RF_MUX_LTE:
 		ret = gpio_pin_set(DEV_RF_LRW, PIN_RF_LRW, 0);
 
 		if (ret < 0) {
@@ -588,7 +588,7 @@ int hio_bsp_set_rf_mux(enum hio_bsp_rf_mux mux)
 
 		break;
 
-	case HIO_BSP_RF_MUX_LRW:
+	case CTR_BSP_RF_MUX_LRW:
 		ret = gpio_pin_set(DEV_RF_LTE, PIN_RF_LTE, 0);
 
 		if (ret < 0) {
@@ -612,7 +612,7 @@ int hio_bsp_set_rf_mux(enum hio_bsp_rf_mux mux)
 	return 0;
 }
 
-int hio_bsp_set_lte_reset(int level)
+int ctr_bsp_set_lte_reset(int level)
 {
 	int ret;
 
@@ -635,7 +635,7 @@ int hio_bsp_set_lte_reset(int level)
 	return 0;
 }
 
-int hio_bsp_set_lte_wkup(int level)
+int ctr_bsp_set_lte_wkup(int level)
 {
 	int ret;
 
@@ -649,7 +649,7 @@ int hio_bsp_set_lte_wkup(int level)
 	return 0;
 }
 
-int hio_bsp_set_lrw_reset(int level)
+int ctr_bsp_set_lrw_reset(int level)
 {
 	int ret;
 
@@ -673,28 +673,28 @@ int hio_bsp_set_lrw_reset(int level)
 	return 0;
 }
 
-int hio_bsp_sht30_measure(float *t, float *rh)
+int ctr_bsp_sht30_measure(float *t, float *rh)
 {
 	int ret;
 
-	ret = hio_drv_sht30_measure(&m_sht30, t, rh);
+	ret = ctr_drv_sht30_measure(&m_sht30, t, rh);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_drv_sht30_measure` failed: %d", ret);
+		LOG_ERR("Call `ctr_drv_sht30_measure` failed: %d", ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-int hio_bsp_tmp112_measure(float *t)
+int ctr_bsp_tmp112_measure(float *t)
 {
 	int ret;
 
-	ret = hio_drv_tmp112_measure(&m_tmp112, t);
+	ret = ctr_drv_tmp112_measure(&m_tmp112, t);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_tmp112_measure` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_tmp112_measure` failed: %d", ret);
 		return ret;
 	}
 
@@ -782,4 +782,4 @@ static int init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init, APPLICATION, CONFIG_HIO_BSP_INIT_PRIORITY);
+SYS_INIT(init, APPLICATION, CONFIG_CTR_BSP_INIT_PRIORITY);

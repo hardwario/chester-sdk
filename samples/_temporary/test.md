@@ -9,13 +9,13 @@
 
 
 config MCUMGR_SMP_BT_AUTHEN
-	default y if HIO_BLE
+	default y if CTR_BLE
 
 config MCUMGR_SMP_SHELL
-	default y if HIO_BLE
+	default y if CTR_BLE
 
 config BT_FIXED_PASSKEY
-    default y if HIO_BLE
+    default y if CTR_BLE
 
 
 

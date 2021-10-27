@@ -11,9 +11,9 @@
 extern "C" {
 #endif
 
-typedef int (*hio_config_show_cb)(const struct shell *shell, size_t argc, char **argv);
+typedef int (*ctr_config_show_cb)(const struct shell *shell, size_t argc, char **argv);
 
-void hio_config_append_show(const char *name, hio_config_show_cb cb);
+void ctr_config_append_show(const char *name, ctr_config_show_cb cb);
 
 #ifdef __cplusplus
 }

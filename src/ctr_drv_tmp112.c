@@ -7,9 +7,9 @@
 /* Standard includes */
 #include <string.h>
 
-LOG_MODULE_REGISTER(hio_drv_tmp112, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_drv_tmp112, LOG_LEVEL_DBG);
 
-int hio_drv_tmp112_init(struct hio_drv_tmp112 *ctx, struct hio_bus_i2c *i2c, uint8_t dev_addr)
+int ctr_drv_tmp112_init(struct ctr_drv_tmp112 *ctx, struct ctr_bus_i2c *i2c, uint8_t dev_addr)
 {
 	memset(ctx, 0, sizeof(*ctx));
 
@@ -19,43 +19,43 @@ int hio_drv_tmp112_init(struct hio_drv_tmp112 *ctx, struct hio_bus_i2c *i2c, uin
 	return 0;
 }
 
-static int init(struct hio_drv_tmp112 *ctx)
+static int init(struct ctr_drv_tmp112 *ctx)
 {
 	int ret;
 
-	ret = hio_bus_i2c_mem_write_16b(ctx->i2c, ctx->dev_addr, 0x01, 0x0180);
+	ret = ctr_bus_i2c_mem_write_16b(ctx->i2c, ctx->dev_addr, 0x01, 0x0180);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_mem_write_16b` failed [%p]: %d", ctx, ret);
+		LOG_ERR("Call `ctr_bus_i2c_mem_write_16b` failed [%p]: %d", ctx, ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-static int measure(struct hio_drv_tmp112 *ctx)
+static int measure(struct ctr_drv_tmp112 *ctx)
 {
 	int ret;
 
-	ret = hio_bus_i2c_mem_write_8b(ctx->i2c, ctx->dev_addr, 0x01, 0x81);
+	ret = ctr_bus_i2c_mem_write_8b(ctx->i2c, ctx->dev_addr, 0x01, 0x81);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_mem_write_8b` failed [%p]: %d", ctx, ret);
+		LOG_ERR("Call `ctr_bus_i2c_mem_write_8b` failed [%p]: %d", ctx, ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-static int read(struct hio_drv_tmp112 *ctx, uint16_t *data)
+static int read(struct ctr_drv_tmp112 *ctx, uint16_t *data)
 {
 	int ret;
 	uint8_t reg;
 
-	ret = hio_bus_i2c_mem_read_8b(ctx->i2c, ctx->dev_addr, 0x01, &reg);
+	ret = ctr_bus_i2c_mem_read_8b(ctx->i2c, ctx->dev_addr, 0x01, &reg);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_mem_read_8b` failed [%p]: %d", ctx, ret);
+		LOG_ERR("Call `ctr_bus_i2c_mem_read_8b` failed [%p]: %d", ctx, ret);
 		return ret;
 	}
 
@@ -64,17 +64,17 @@ static int read(struct hio_drv_tmp112 *ctx, uint16_t *data)
 		return -EIO;
 	}
 
-	ret = hio_bus_i2c_mem_read_16b(ctx->i2c, ctx->dev_addr, 0x00, data);
+	ret = ctr_bus_i2c_mem_read_16b(ctx->i2c, ctx->dev_addr, 0x00, data);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_mem_read_16b` failed [%p]: %d", ctx, ret);
+		LOG_ERR("Call `ctr_bus_i2c_mem_read_16b` failed [%p]: %d", ctx, ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-int hio_drv_tmp112_measure(struct hio_drv_tmp112 *ctx, float *t)
+int ctr_drv_tmp112_measure(struct ctr_drv_tmp112 *ctx, float *t)
 {
 	int ret;
 
@@ -117,7 +117,7 @@ int hio_drv_tmp112_measure(struct hio_drv_tmp112 *ctx, float *t)
 	return 0;
 }
 
-int hio_drv_tmp112_sleep(struct hio_drv_tmp112 *ctx)
+int ctr_drv_tmp112_sleep(struct ctr_drv_tmp112 *ctx)
 {
 	int ret;
 

@@ -16,136 +16,136 @@ int test_adc(void)
 
 	LOG_INF("Started");
 
-	ret = hio_adc_init(HIO_ADC_CHANNEL_A0);
+	ret = ctr_adc_init(CTR_ADC_CHANNEL_A0);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_adc_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_adc_init(HIO_ADC_CHANNEL_A1);
+	ret = ctr_adc_init(CTR_ADC_CHANNEL_A1);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_adc_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_adc_init(HIO_ADC_CHANNEL_A2);
+	ret = ctr_adc_init(CTR_ADC_CHANNEL_A2);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_adc_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_adc_init(HIO_ADC_CHANNEL_A3);
+	ret = ctr_adc_init(CTR_ADC_CHANNEL_A3);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_adc_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_adc_init(HIO_ADC_CHANNEL_B0);
+	ret = ctr_adc_init(CTR_ADC_CHANNEL_B0);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_adc_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_adc_init(HIO_ADC_CHANNEL_B1);
+	ret = ctr_adc_init(CTR_ADC_CHANNEL_B1);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_adc_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_adc_init(HIO_ADC_CHANNEL_B2);
+	ret = ctr_adc_init(CTR_ADC_CHANNEL_B2);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_adc_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_adc_init(HIO_ADC_CHANNEL_B3);
+	ret = ctr_adc_init(CTR_ADC_CHANNEL_B3);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_adc_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 		return ret;
 	}
 
 	for (;;) {
 		uint16_t sample;
 
-		ret = hio_adc_read(HIO_ADC_CHANNEL_A0, &sample);
+		ret = ctr_adc_read(CTR_ADC_CHANNEL_A0, &sample);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_adc_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
 			return ret;
 		}
 
-		LOG_INF("Sample A0: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample A0: %u <0x%04x> %u mV", sample, sample, CTR_ADC_MILLIVOLTS(sample));
 
-		ret = hio_adc_read(HIO_ADC_CHANNEL_A1, &sample);
+		ret = ctr_adc_read(CTR_ADC_CHANNEL_A1, &sample);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_adc_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
 			return ret;
 		}
 
-		LOG_INF("Sample A1: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample A1: %u <0x%04x> %u mV", sample, sample, CTR_ADC_MILLIVOLTS(sample));
 
-		ret = hio_adc_read(HIO_ADC_CHANNEL_A2, &sample);
+		ret = ctr_adc_read(CTR_ADC_CHANNEL_A2, &sample);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_adc_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
 			return ret;
 		}
 
-		LOG_INF("Sample A2: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample A2: %u <0x%04x> %u mV", sample, sample, CTR_ADC_MILLIVOLTS(sample));
 
-		ret = hio_adc_read(HIO_ADC_CHANNEL_A3, &sample);
+		ret = ctr_adc_read(CTR_ADC_CHANNEL_A3, &sample);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_adc_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
 			return ret;
 		}
 
-		LOG_INF("Sample A3: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample A3: %u <0x%04x> %u mV", sample, sample, CTR_ADC_MILLIVOLTS(sample));
 
-		ret = hio_adc_read(HIO_ADC_CHANNEL_B0, &sample);
+		ret = ctr_adc_read(CTR_ADC_CHANNEL_B0, &sample);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_adc_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
 			return ret;
 		}
 
-		LOG_INF("Sample B0: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample B0: %u <0x%04x> %u mV", sample, sample, CTR_ADC_MILLIVOLTS(sample));
 
-		ret = hio_adc_read(HIO_ADC_CHANNEL_B1, &sample);
+		ret = ctr_adc_read(CTR_ADC_CHANNEL_B1, &sample);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_adc_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
 			return ret;
 		}
 
-		LOG_INF("Sample B1: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample B1: %u <0x%04x> %u mV", sample, sample, CTR_ADC_MILLIVOLTS(sample));
 
-		ret = hio_adc_read(HIO_ADC_CHANNEL_B2, &sample);
+		ret = ctr_adc_read(CTR_ADC_CHANNEL_B2, &sample);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_adc_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
 			return ret;
 		}
 
-		LOG_INF("Sample B2: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample B2: %u <0x%04x> %u mV", sample, sample, CTR_ADC_MILLIVOLTS(sample));
 
-		ret = hio_adc_read(HIO_ADC_CHANNEL_B3, &sample);
+		ret = ctr_adc_read(CTR_ADC_CHANNEL_B3, &sample);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_adc_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
 			return ret;
 		}
 
-		LOG_INF("Sample B3: %u <0x%04x> %u mV", sample, sample, HIO_ADC_MILLIVOLTS(sample));
+		LOG_INF("Sample B3: %u <0x%04x> %u mV", sample, sample, CTR_ADC_MILLIVOLTS(sample));
 
 		k_sleep(K_MSEC(200));
 	}

@@ -9,7 +9,7 @@
 #include <shell/shell.h>
 #include <zephyr.h>
 
-LOG_MODULE_REGISTER(hio_test, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_test, LOG_LEVEL_DBG);
 
 /* TODO Delete this variable */
 static atomic_t m_is_active;
@@ -19,7 +19,7 @@ static atomic_t m_is_blocked;
 static struct k_poll_signal m_start_sig;
 
 /* TODO Remove this function */
-bool hio_test_is_active(void)
+bool ctr_test_is_active(void)
 {
 	return atomic_get(&m_is_active);
 }
@@ -49,10 +49,10 @@ static int cmd_test_lte_ant_int(const struct shell *shell, size_t argc, char **a
 		return -ENOEXEC;
 	}
 
-	ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
+	ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_INT);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_rf_ant` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_rf_ant` failed: %d", ret);
 		return ret;
 	}
 
@@ -71,10 +71,10 @@ static int cmd_test_lte_ant_ext(const struct shell *shell, size_t argc, char **a
 		return -ENOEXEC;
 	}
 
-	ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_EXT);
+	ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_EXT);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_rf_ant` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_rf_ant` failed: %d", ret);
 		return ret;
 	}
 
@@ -95,26 +95,26 @@ static int cmd_test_lte_reset(const struct shell *shell, size_t argc, char **arg
 
 	/* TODO Implement */
 	/*
-	ret = hio_lte_uart_enable();
+	ret = ctr_lte_uart_enable();
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lte_uart_enable` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_uart_enable` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_bsp_set_lte_reset(0);
+	ret = ctr_bsp_set_lte_reset(0);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_lte_reset` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_lte_reset` failed: %d", ret);
 		return ret;
 	}
 
 	k_sleep(K_MSEC(10));
 
-	ret = hio_bsp_set_lte_reset(1);
+	ret = ctr_bsp_set_lte_reset(1);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_lte_reset` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_lte_reset` failed: %d", ret);
 		return ret;
 	}
 	*/
@@ -136,26 +136,26 @@ static int cmd_test_lte_wakeup(const struct shell *shell, size_t argc, char **ar
 
 	/* TODO Implement */
 	/*
-	ret = hio_lte_uart_enable();
+	ret = ctr_lte_uart_enable();
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lte_uart_enable` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_uart_enable` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_bsp_set_lte_wkup(0);
+	ret = ctr_bsp_set_lte_wkup(0);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_lte_wkup` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_lte_wkup` failed: %d", ret);
 		return ret;
 	}
 
 	k_sleep(K_MSEC(10));
 
-	ret = hio_bsp_set_lte_wkup(1);
+	ret = ctr_bsp_set_lte_wkup(1);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_lte_wkup` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_lte_wkup` failed: %d", ret);
 		return ret;
 	}
 	*/
@@ -177,19 +177,19 @@ static int cmd_test_lte_sleep(const struct shell *shell, size_t argc, char **arg
 
 	/* TODO Implement */
 	/*
-	ret = hio_lte_talk_cmd("AT#XSLEEP=2");
+	ret = ctr_lte_talk_cmd("AT#XSLEEP=2");
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lte_talk_cmd` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_talk_cmd` failed: %d", ret);
 		return ret;
 	}
 
 	k_sleep(K_SECONDS(1));
 
-	ret = hio_lte_uart_disable();
+	ret = ctr_lte_uart_disable();
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lte_uart_disable` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_uart_disable` failed: %d", ret);
 		return ret;
 	}
 	*/
@@ -213,10 +213,10 @@ static int cmd_test_lte_cmd(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	ret = hio_lte_talk_cmd("%s", argv[1]);
+	ret = ctr_lte_talk_cmd("%s", argv[1]);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lte_talk_cmd` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_talk_cmd` failed: %d", ret);
 		return ret;
 	}
 	*/
@@ -253,26 +253,26 @@ static int cmd_test_start(const struct shell *shell, size_t argc, char **argv)
 
 	/* TODO Remove any initialization below */
 
-	ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
+	ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_INT);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_rf_ant` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_rf_ant` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_bsp_set_rf_mux(HIO_BSP_RF_MUX_LTE);
+	ret = ctr_bsp_set_rf_mux(CTR_BSP_RF_MUX_LTE);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_rf_mux` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_rf_mux` failed: %d", ret);
 		return ret;
 	}
 
 	/* TODO Implement */
 	/*
-	ret = hio_lte_uart_init();
+	ret = ctr_lte_uart_init();
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lte_uart_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_uart_init` failed: %d", ret);
 		return ret;
 	}
 	*/
@@ -340,4 +340,4 @@ static int init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init, APPLICATION, CONFIG_HIO_TEST_INIT_PRIORITY);
+SYS_INIT(init, APPLICATION, CONFIG_CTR_TEST_INIT_PRIORITY);

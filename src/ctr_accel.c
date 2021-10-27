@@ -13,7 +13,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-LOG_MODULE_REGISTER(hio_accel, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_accel, LOG_LEVEL_DBG);
 
 #define GRAVITY 9.80665f
 #define ORIENTATION_THR 0.4f
@@ -68,7 +68,7 @@ update:
 	}
 }
 
-int hio_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientation)
+int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientation)
 {
 	int ret;
 
@@ -143,10 +143,10 @@ static int cmd_accel_read(const struct shell *shell, size_t argc, char **argv)
 	float accel_z;
 	int orientation;
 
-	ret = hio_accel_read(&accel_x, &accel_y, &accel_z, &orientation);
+	ret = ctr_accel_read(&accel_x, &accel_y, &accel_z, &orientation);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_accel_read` failed: %d", ret);
+		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}

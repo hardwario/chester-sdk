@@ -1,5 +1,5 @@
-config HIO_ACCEL
-	bool "HIO_ACCEL"
+config CTR_ACCEL
+	bool "CTR_ACCEL"
 	select SENSOR
 	select LIS2DH
 
@@ -7,15 +7,15 @@ config HIO_ACCEL
 # https://github.com/zephyrproject-rtos/zephyr/pull/39303
 # choice LIS2DH_ACCEL_RANGE
 # 	default LIS2DH_ACCEL_RANGE_4G
-# 	depends on HIO_ACCEL
+# 	depends on CTR_ACCEL
 # endchoice
 #
 # choice LIS2DH_ODR
 # 	default LIS2DH_ODR_2
-# 	depends on HIO_ACCEL
+# 	depends on CTR_ACCEL
 # endchoice
 #
 # choice LIS2DH_TRIGGER_MODE
 # 	default LIS2DH_TRIGGER_GLOBAL_THREAD
-# 	depends on HIO_ACCEL
+# 	depends on CTR_ACCEL
 # endchoice

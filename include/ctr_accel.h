@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-int hio_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientation);
+int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientation);
 
 #ifdef __cplusplus
 }

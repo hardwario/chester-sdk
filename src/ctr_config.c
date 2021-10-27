@@ -12,17 +12,17 @@
 /* Standard includes */
 #include <stdint.h>
 
-LOG_MODULE_REGISTER(hio_config, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_config, LOG_LEVEL_DBG);
 
 struct show_item {
 	const char *name;
-	hio_config_show_cb cb;
+	ctr_config_show_cb cb;
 	sys_snode_t node;
 };
 
 static sys_slist_t m_show_list = SYS_SLIST_STATIC_INIT(&m_show_list);
 
-void hio_config_append_show(const char *name, hio_config_show_cb cb)
+void ctr_config_append_show(const char *name, ctr_config_show_cb cb)
 {
 	struct show_item *item = k_malloc(sizeof(*item));
 
@@ -194,4 +194,4 @@ static int init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init, APPLICATION, CONFIG_HIO_CONFIG_INIT_PRIORITY);
+SYS_INIT(init, APPLICATION, CONFIG_CTR_CONFIG_INIT_PRIORITY);

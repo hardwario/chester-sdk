@@ -11,17 +11,17 @@ int test_chester_x3(void)
 {
 	int ret;
 
-	ret = hio_chester_x3_init(HIO_CHESTER_X3_SLOT_A, HIO_CHESTER_X3_CHANNEL_1);
+	ret = ctr_chester_x3_init(CTR_CHESTER_X3_SLOT_A, CTR_CHESTER_X3_CHANNEL_1);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_chester_x3_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_chester_x3_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_chester_x3_init(HIO_CHESTER_X3_SLOT_A, HIO_CHESTER_X3_CHANNEL_2);
+	ret = ctr_chester_x3_init(CTR_CHESTER_X3_SLOT_A, CTR_CHESTER_X3_CHANNEL_2);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_chester_x3_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_chester_x3_init` failed: %d", ret);
 		return ret;
 	}
 
@@ -30,19 +30,19 @@ int test_chester_x3(void)
 
 		int32_t result;
 
-		ret = hio_chester_x3_measure(HIO_CHESTER_X3_SLOT_A, HIO_CHESTER_X3_CHANNEL_1,
+		ret = ctr_chester_x3_measure(CTR_CHESTER_X3_SLOT_A, CTR_CHESTER_X3_CHANNEL_1,
 		                             &result);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_chester_x3_measure` failed: %d", ret);
+			LOG_ERR("Call `ctr_chester_x3_measure` failed: %d", ret);
 			return ret;
 		}
 
-		ret = hio_chester_x3_measure(HIO_CHESTER_X3_SLOT_A, HIO_CHESTER_X3_CHANNEL_2,
+		ret = ctr_chester_x3_measure(CTR_CHESTER_X3_SLOT_A, CTR_CHESTER_X3_CHANNEL_2,
 		                             &result);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_chester_x3_measure` failed: %d", ret);
+			LOG_ERR("Call `ctr_chester_x3_measure` failed: %d", ret);
 			return ret;
 		}
 

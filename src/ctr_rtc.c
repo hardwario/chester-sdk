@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(hio_rtc, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_rtc, LOG_LEVEL_DBG);
 
 static const nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(2);
 static struct onoff_client m_lfclk_cli;
@@ -48,7 +48,7 @@ static int get_days_in_month(int year, int month)
 	return 31;
 }
 
-int hio_rtc_get(struct hio_rtc_tm *tm)
+int ctr_rtc_get(struct ctr_rtc_tm *tm)
 {
 	irq_disable(RTC2_IRQn);
 
@@ -64,7 +64,7 @@ int hio_rtc_get(struct hio_rtc_tm *tm)
 	return 0;
 }
 
-int hio_rtc_set(const struct hio_rtc_tm *tm)
+int ctr_rtc_set(const struct ctr_rtc_tm *tm)
 {
 	if (tm->year < 1970 || tm->year > 2099) {
 		return -EINVAL;
@@ -111,12 +111,12 @@ static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
 
 	int ret;
 
-	struct hio_rtc_tm tm;
+	struct ctr_rtc_tm tm;
 
-	ret = hio_rtc_get(&tm);
+	ret = ctr_rtc_get(&tm);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_rtc_get` failed: %d", ret);
+		LOG_ERR("Call `ctr_rtc_get` failed: %d", ret);
 		return ret;
 	}
 
@@ -159,7 +159,7 @@ static int cmd_rtc_set(const struct shell *shell, size_t argc, char **argv)
 	time[2] = '\0';
 	time[5] = '\0';
 
-	struct hio_rtc_tm tm;
+	struct ctr_rtc_tm tm;
 
 	tm.year = atoi(&date[0]);
 	tm.month = atoi(&date[5]);
@@ -168,10 +168,10 @@ static int cmd_rtc_set(const struct shell *shell, size_t argc, char **argv)
 	tm.minutes = atoi(&time[3]);
 	tm.seconds = atoi(&time[6]);
 
-	ret = hio_rtc_set(&tm);
+	ret = ctr_rtc_set(&tm);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_rtc_set` failed: %d", ret);
+		LOG_ERR("Call `ctr_rtc_set` failed: %d", ret);
 		return ret;
 	}
 
@@ -312,4 +312,4 @@ static int init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init, APPLICATION, CONFIG_HIO_RTC_INIT_PRIORITY);
+SYS_INIT(init, APPLICATION, CONFIG_CTR_RTC_INIT_PRIORITY);

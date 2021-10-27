@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
-int hio_hygro_init(void);
-int hio_hygro_read(float *temperature, float *humidity);
+int ctr_hygro_init(void);
+int ctr_hygro_read(float *temperature, float *humidity);
 
 #ifdef __cplusplus
 }

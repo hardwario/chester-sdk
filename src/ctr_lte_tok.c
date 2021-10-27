@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *hio_lte_tok_pfx(const char *s, const char *pfx)
+char *ctr_lte_tok_pfx(const char *s, const char *pfx)
 {
 	char *p = (char *)s;
 
@@ -18,7 +18,7 @@ char *hio_lte_tok_pfx(const char *s, const char *pfx)
 	return p + len;
 }
 
-char *hio_lte_tok_sep(const char *s)
+char *ctr_lte_tok_sep(const char *s)
 {
 	char *p = (char *)s;
 
@@ -29,7 +29,7 @@ char *hio_lte_tok_sep(const char *s)
 	return p;
 }
 
-char *hio_lte_tok_end(const char *s)
+char *ctr_lte_tok_end(const char *s)
 {
 	char *p = (char *)s;
 
@@ -40,7 +40,7 @@ char *hio_lte_tok_end(const char *s)
 	return p;
 }
 
-char *hio_lte_tok_str(const char *s, bool *def, char *str, size_t size)
+char *ctr_lte_tok_str(const char *s, bool *def, char *str, size_t size)
 {
 	if (str != NULL) {
 		memset(str, 0, size);
@@ -83,7 +83,7 @@ char *hio_lte_tok_str(const char *s, bool *def, char *str, size_t size)
 	return p + 1;
 }
 
-char *hio_lte_tok_num(const char *s, bool *def, long *num)
+char *ctr_lte_tok_num(const char *s, bool *def, long *num)
 {
 	if (num != NULL) {
 		*num = 0;

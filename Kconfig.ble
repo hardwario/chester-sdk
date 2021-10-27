@@ -1,6 +1,6 @@
-config HIO_BLE
-	bool "HIO_BLE"
-	select HIO_SDK
+config CTR_BLE
+	bool "CTR_BLE"
+	select CTR_SDK
 	select BT
 	select BT_NUS
 	select BT_PERIPHERAL
@@ -8,34 +8,34 @@ config HIO_BLE
 	select MCUMGR_CMD_OS_MGMT
 	select MCUMGR_SMP_BT
 
-config HIO_BLE_INIT_PRIORITY
-	int "HIO_BLE_INIT_PRIORITY"
-	depends on HIO_BLE
+config CTR_BLE_INIT_PRIORITY
+	int "CTR_BLE_INIT_PRIORITY"
+	depends on CTR_BLE
 	default 1
 
 config BT_RX_STACK_SIZE
-	default 4096 if HIO_BLE
+	default 4096 if CTR_BLE
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
-	default 2048 if HIO_BLE
+	default 2048 if CTR_BLE
 
 config BT_L2CAP_TX_MTU
-	default 252 if HIO_BLE
+	default 252 if CTR_BLE
 
 config BT_BUF_ACL_RX_SIZE
-	default 256 if HIO_BLE
+	default 256 if CTR_BLE
 
 config MCUMGR_SMP_BT_AUTHEN
-	default n if HIO_BLE
+	default n if CTR_BLE
 
 config BT_DEVICE_NAME
-	default "CHESTER 3" if HIO_BLE
+	default "CHESTER 3" if CTR_BLE
 
 config SHELL_BT_NUS
-	default y if HIO_BLE
+	default y if CTR_BLE
 
 config SHELL_BT_NUS_RX_RING_BUFFER_SIZE
-	default 256 if HIO_BLE
+	default 256 if CTR_BLE
 
 config SHELL_BT_NUS_TX_RING_BUFFER_SIZE
-	default 256 if HIO_BLE
+	default 256 if CTR_BLE

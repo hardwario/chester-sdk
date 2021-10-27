@@ -1,3 +1,3 @@
-config HIO_BUTTON
-	bool "HIO_BUTTON"
+config CTR_BUTTON
+	bool "CTR_BUTTON"
 	depends on SHELL

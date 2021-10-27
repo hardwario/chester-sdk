@@ -9,11 +9,11 @@
 extern "C" {
 #endif
 
-char *hio_lte_tok_pfx(const char *s, const char *pfx);
-char *hio_lte_tok_sep(const char *s);
-char *hio_lte_tok_end(const char *s);
-char *hio_lte_tok_str(const char *s, bool *def, char *str, size_t size);
-char *hio_lte_tok_num(const char *s, bool *def, long *num);
+char *ctr_lte_tok_pfx(const char *s, const char *pfx);
+char *ctr_lte_tok_sep(const char *s);
+char *ctr_lte_tok_end(const char *s);
+char *ctr_lte_tok_str(const char *s, bool *def, char *str, size_t size);
+char *ctr_lte_tok_num(const char *s, bool *def, long *num);
 
 #ifdef __cplusplus
 }

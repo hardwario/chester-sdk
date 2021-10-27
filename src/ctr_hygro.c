@@ -8,11 +8,11 @@
 #include <shell/shell.h>
 #include <zephyr.h>
 
-LOG_MODULE_REGISTER(hio_hygro, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_hygro, LOG_LEVEL_DBG);
 
 static K_MUTEX_DEFINE(m_mut);
 
-int hio_hygro_read(float *temperature, float *humidity)
+int ctr_hygro_read(float *temperature, float *humidity)
 {
 	int ret;
 
@@ -79,10 +79,10 @@ static int cmd_hygro_read(const struct shell *shell, size_t argc, char **argv)
 	float temperature;
 	float humidity;
 
-	ret = hio_hygro_read(&temperature, &humidity);
+	ret = ctr_hygro_read(&temperature, &humidity);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_therm_read` failed: %d", ret);
+		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}

@@ -10,13 +10,13 @@
 /* Standard includes */
 #include <stddef.h>
 
-LOG_MODULE_REGISTER(hio_adc, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_adc, LOG_LEVEL_DBG);
 
 #define ADC_DEVICE_NAME DT_LABEL(DT_NODELABEL(adc))
 
 static const struct device *m_dev;
 
-int hio_adc_init(enum hio_adc_channel channel)
+int ctr_adc_init(enum ctr_adc_channel channel)
 {
 	int ret;
 
@@ -50,7 +50,7 @@ int hio_adc_init(enum hio_adc_channel channel)
 	return 0;
 }
 
-int hio_adc_read(enum hio_adc_channel channel, uint16_t *sample)
+int ctr_adc_read(enum ctr_adc_channel channel, uint16_t *sample)
 {
 	int ret;
 

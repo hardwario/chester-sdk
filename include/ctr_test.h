@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 /* TODO Remove this function */
-bool hio_test_is_active(void);
+bool ctr_test_is_active(void);
 
 #ifdef __cplusplus
 }

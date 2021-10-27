@@ -1,9 +1,9 @@
-config HIO_RTC
-	bool "HIO_RTC"
-	select HIO_SDK
+config CTR_RTC
+	bool "CTR_RTC"
+	select CTR_SDK
 	select NRFX_RTC2
 
-config HIO_RTC_INIT_PRIORITY
-	int "HIO_RTC_INIT_PRIORITY"
+config CTR_RTC_INIT_PRIORITY
+	int "CTR_RTC_INIT_PRIORITY"
 	default 3
-	depends on HIO_RTC
+	depends on CTR_RTC

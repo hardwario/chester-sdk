@@ -8,12 +8,12 @@
 #include <shell/shell.h>
 #include <zephyr.h>
 
-LOG_MODULE_REGISTER(hio_therm, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_therm, LOG_LEVEL_DBG);
 
 static K_MUTEX_DEFINE(m_mut);
 static bool m_init;
 
-int hio_therm_init(void)
+int ctr_therm_init(void)
 {
 	int ret;
 
@@ -63,7 +63,7 @@ int hio_therm_init(void)
 	return 0;
 }
 
-int hio_therm_read(float *temperature)
+int ctr_therm_read(float *temperature)
 {
 	int ret;
 
@@ -118,10 +118,10 @@ static int cmd_therm_init(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	ret = hio_therm_init();
+	ret = ctr_therm_init();
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_therm_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_therm_init` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
@@ -135,10 +135,10 @@ static int cmd_therm_read(const struct shell *shell, size_t argc, char **argv)
 
 	float temperature;
 
-	ret = hio_therm_read(&temperature);
+	ret = ctr_therm_read(&temperature);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_therm_read` failed: %d", ret);
+		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}

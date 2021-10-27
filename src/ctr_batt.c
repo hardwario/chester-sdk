@@ -7,7 +7,7 @@
 #include <shell/shell.h>
 #include <zephyr.h>
 
-LOG_MODULE_REGISTER(hio_batt, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_batt, LOG_LEVEL_DBG);
 
 #define ADC_I2C_ADDR 0x4b
 #define WAIT_TIME K_SECONDS(1)
@@ -22,12 +22,12 @@ static int measure(uint16_t *voltage)
 {
 	int ret;
 
-	struct hio_bus_i2c *i2c = hio_bsp_get_i2c();
+	struct ctr_bus_i2c *i2c = ctr_bsp_get_i2c();
 
-	ret = hio_bus_i2c_mem_write_16b(i2c, ADC_I2C_ADDR, 0x01, 0xc583);
+	ret = ctr_bus_i2c_mem_write_16b(i2c, ADC_I2C_ADDR, 0x01, 0xc583);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_mem_write_16b` failed: %d", ret);
+		LOG_ERR("Call `ctr_bus_i2c_mem_write_16b` failed: %d", ret);
 		return ret;
 	}
 
@@ -35,10 +35,10 @@ static int measure(uint16_t *voltage)
 
 	int16_t result;
 
-	ret = hio_bus_i2c_mem_read_16b(i2c, ADC_I2C_ADDR, 0x00, &result);
+	ret = ctr_bus_i2c_mem_read_16b(i2c, ADC_I2C_ADDR, 0x00, &result);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_mem_read_16b` failed: %d", ret);
+		LOG_ERR("Call `ctr_bus_i2c_mem_read_16b` failed: %d", ret);
 		return ret;
 	}
 
@@ -57,24 +57,24 @@ static int measure(uint16_t *voltage)
 	return 0;
 }
 
-int hio_batt_measure(struct hio_batt_result *result)
+int ctr_batt_measure(struct ctr_batt_result *result)
 {
 	int ret;
 
 	k_mutex_lock(&m_mut, K_FOREVER);
 
-	ret = hio_bsp_set_batt_load(false);
+	ret = ctr_bsp_set_batt_load(false);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_batt_load` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_batt_load` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
 	}
 
-	ret = hio_bsp_set_batt_test(true);
+	ret = ctr_bsp_set_batt_test(true);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_batt_test` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_batt_test` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
 	}
@@ -91,10 +91,10 @@ int hio_batt_measure(struct hio_batt_result *result)
 
 	LOG_INF("Battery voltage (rest) = %u mV", result->voltage_rest_mv);
 
-	ret = hio_bsp_set_batt_load(true);
+	ret = ctr_bsp_set_batt_load(true);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_batt_load` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_batt_load` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
 	}
@@ -111,18 +111,18 @@ int hio_batt_measure(struct hio_batt_result *result)
 
 	LOG_INF("Battery voltage (load) = %u mV", result->voltage_load_mv);
 
-	ret = hio_bsp_set_batt_load(false);
+	ret = ctr_bsp_set_batt_load(false);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_batt_load` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_batt_load` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
 	}
 
-	ret = hio_bsp_set_batt_test(false);
+	ret = ctr_bsp_set_batt_test(false);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_batt_test` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_batt_test` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
 	}
@@ -139,12 +139,12 @@ static int cmd_batt_measure(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	struct hio_batt_result result;
+	struct ctr_batt_result result;
 
-	ret = hio_batt_measure(&result);
+	ret = ctr_batt_measure(&result);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_batt_measure` failed: %d", ret);
+		LOG_ERR("Call `ctr_batt_measure` failed: %d", ret);
 		return ret;
 	}
 
@@ -159,10 +159,10 @@ static int cmd_batt_load(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	ret = hio_bsp_set_batt_load(true);
+	ret = ctr_bsp_set_batt_load(true);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_batt_load` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_batt_load` failed: %d", ret);
 		return ret;
 	}
 
@@ -173,10 +173,10 @@ static int cmd_batt_unload(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	ret = hio_bsp_set_batt_load(false);
+	ret = ctr_bsp_set_batt_load(false);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_batt_load` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_batt_load` failed: %d", ret);
 		return ret;
 	}
 

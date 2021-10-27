@@ -8,7 +8,7 @@
 #include <shell/shell.h>
 #include <zephyr.h>
 
-LOG_MODULE_REGISTER(hio_chester_x0d, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_chester_x0d, LOG_LEVEL_DBG);
 
 /* TODO Remove this after K_MEM_SLAB_DEFINE_STATIC definition makes it to mainline */
 #define K_MEM_SLAB_DEFINE_STATIC(name, slab_block_size, slab_num_blocks, slab_align)               \
@@ -21,85 +21,85 @@ LOG_MODULE_REGISTER(hio_chester_x0d, LOG_LEVEL_DBG);
 #define EVENT_WORK_STACK_SIZE 1024
 #define EVENT_SLAB_MAX_ITEMS 64
 
-#define INPUT_1_DEV_A HIO_BSP_GP0A_DEV
-#define INPUT_1_PIN_A HIO_BSP_GP0A_PIN
-#define INPUT_2_DEV_A HIO_BSP_GP1A_DEV
-#define INPUT_2_PIN_A HIO_BSP_GP1A_PIN
-#define INPUT_3_DEV_A HIO_BSP_GP2A_DEV
-#define INPUT_3_PIN_A HIO_BSP_GP2A_PIN
-#define INPUT_4_DEV_A HIO_BSP_GP3A_DEV
-#define INPUT_4_PIN_A HIO_BSP_GP3A_PIN
+#define INPUT_1_DEV_A CTR_BSP_GP0A_DEV
+#define INPUT_1_PIN_A CTR_BSP_GP0A_PIN
+#define INPUT_2_DEV_A CTR_BSP_GP1A_DEV
+#define INPUT_2_PIN_A CTR_BSP_GP1A_PIN
+#define INPUT_3_DEV_A CTR_BSP_GP2A_DEV
+#define INPUT_3_PIN_A CTR_BSP_GP2A_PIN
+#define INPUT_4_DEV_A CTR_BSP_GP3A_DEV
+#define INPUT_4_PIN_A CTR_BSP_GP3A_PIN
 
-#define INPUT_1_DEV_B HIO_BSP_GP0B_DEV
-#define INPUT_1_PIN_B HIO_BSP_GP0B_PIN
-#define INPUT_2_DEV_B HIO_BSP_GP1B_DEV
-#define INPUT_2_PIN_B HIO_BSP_GP1B_PIN
-#define INPUT_3_DEV_B HIO_BSP_GP2B_DEV
-#define INPUT_3_PIN_B HIO_BSP_GP2B_PIN
-#define INPUT_4_DEV_B HIO_BSP_GP3B_DEV
-#define INPUT_4_PIN_B HIO_BSP_GP3B_PIN
+#define INPUT_1_DEV_B CTR_BSP_GP0B_DEV
+#define INPUT_1_PIN_B CTR_BSP_GP0B_PIN
+#define INPUT_2_DEV_B CTR_BSP_GP1B_DEV
+#define INPUT_2_PIN_B CTR_BSP_GP1B_PIN
+#define INPUT_3_DEV_B CTR_BSP_GP2B_DEV
+#define INPUT_3_PIN_B CTR_BSP_GP2B_PIN
+#define INPUT_4_DEV_B CTR_BSP_GP3B_DEV
+#define INPUT_4_PIN_B CTR_BSP_GP3B_PIN
 
 struct input {
 	bool initialized;
-	enum hio_chester_x0d_slot slot;
-	enum hio_chester_x0d_channel channel;
+	enum ctr_chester_x0d_slot slot;
+	enum ctr_chester_x0d_channel channel;
 	const char *device_name;
 	int pin;
-	hio_chester_x0d_event_cb event_callback;
+	ctr_chester_x0d_event_cb event_callback;
 	void *event_param;
 	struct gpio_callback gpio_callback;
 	bool rising;
 };
 
 static struct input m_inputs[2][4] = {
-	[HIO_CHESTER_X0D_SLOT_A] = { [HIO_CHESTER_X0D_CHANNEL_1] = { .slot = HIO_CHESTER_X0D_SLOT_A,
+	[CTR_CHESTER_X0D_SLOT_A] = { [CTR_CHESTER_X0D_CHANNEL_1] = { .slot = CTR_CHESTER_X0D_SLOT_A,
 	                                                             .channel =
-	                                                                     HIO_CHESTER_X0D_CHANNEL_1,
+	                                                                     CTR_CHESTER_X0D_CHANNEL_1,
 	                                                             .device_name = INPUT_1_DEV_A,
 	                                                             .pin = INPUT_1_PIN_A },
-	                             [HIO_CHESTER_X0D_CHANNEL_2] = { .slot = HIO_CHESTER_X0D_SLOT_A,
+	                             [CTR_CHESTER_X0D_CHANNEL_2] = { .slot = CTR_CHESTER_X0D_SLOT_A,
 	                                                             .channel =
-	                                                                     HIO_CHESTER_X0D_CHANNEL_2,
+	                                                                     CTR_CHESTER_X0D_CHANNEL_2,
 	                                                             .device_name = INPUT_2_DEV_A,
 	                                                             .pin = INPUT_2_PIN_A },
-	                             [HIO_CHESTER_X0D_CHANNEL_3] = { .slot = HIO_CHESTER_X0D_SLOT_A,
+	                             [CTR_CHESTER_X0D_CHANNEL_3] = { .slot = CTR_CHESTER_X0D_SLOT_A,
 	                                                             .channel =
-	                                                                     HIO_CHESTER_X0D_CHANNEL_3,
+	                                                                     CTR_CHESTER_X0D_CHANNEL_3,
 	                                                             .device_name = INPUT_3_DEV_A,
 	                                                             .pin = INPUT_3_PIN_A },
-	                             [HIO_CHESTER_X0D_CHANNEL_4] = { .slot = HIO_CHESTER_X0D_SLOT_A,
+	                             [CTR_CHESTER_X0D_CHANNEL_4] = { .slot = CTR_CHESTER_X0D_SLOT_A,
 	                                                             .channel =
-	                                                                     HIO_CHESTER_X0D_CHANNEL_4,
+	                                                                     CTR_CHESTER_X0D_CHANNEL_4,
 	                                                             .device_name = INPUT_4_DEV_A,
 	                                                             .pin = INPUT_4_PIN_A } },
-	[HIO_CHESTER_X0D_SLOT_B] = { [HIO_CHESTER_X0D_CHANNEL_1] = { .slot = HIO_CHESTER_X0D_SLOT_B,
+	[CTR_CHESTER_X0D_SLOT_B] = { [CTR_CHESTER_X0D_CHANNEL_1] = { .slot = CTR_CHESTER_X0D_SLOT_B,
 	                                                             .channel =
-	                                                                     HIO_CHESTER_X0D_CHANNEL_1,
+	                                                                     CTR_CHESTER_X0D_CHANNEL_1,
 	                                                             .device_name = INPUT_1_DEV_B,
 	                                                             .pin = INPUT_1_PIN_B },
-	                             [HIO_CHESTER_X0D_CHANNEL_2] = { .slot = HIO_CHESTER_X0D_SLOT_B,
+	                             [CTR_CHESTER_X0D_CHANNEL_2] = { .slot = CTR_CHESTER_X0D_SLOT_B,
 	                                                             .channel =
-	                                                                     HIO_CHESTER_X0D_CHANNEL_2,
+	                                                                     CTR_CHESTER_X0D_CHANNEL_2,
 	                                                             .device_name = INPUT_2_DEV_B,
 	                                                             .pin = INPUT_2_PIN_B },
-	                             [HIO_CHESTER_X0D_CHANNEL_3] = { .slot = HIO_CHESTER_X0D_SLOT_B,
+	                             [CTR_CHESTER_X0D_CHANNEL_3] = { .slot = CTR_CHESTER_X0D_SLOT_B,
 	                                                             .channel =
-	                                                                     HIO_CHESTER_X0D_CHANNEL_3,
+	                                                                     CTR_CHESTER_X0D_CHANNEL_3,
 	                                                             .device_name = INPUT_3_DEV_B,
 	                                                             .pin = INPUT_3_PIN_B },
-	                             [HIO_CHESTER_X0D_CHANNEL_4] = { .slot = HIO_CHESTER_X0D_SLOT_B,
+	                             [CTR_CHESTER_X0D_CHANNEL_4] = { .slot = CTR_CHESTER_X0D_SLOT_B,
 	                                                             .channel =
-	                                                                     HIO_CHESTER_X0D_CHANNEL_4,
+	                                                                     CTR_CHESTER_X0D_CHANNEL_4,
 	                                                             .device_name = INPUT_4_DEV_B,
 	                                                             .pin = INPUT_4_PIN_B } }
 };
 
 struct event_item {
 	struct k_work work;
-	enum hio_chester_x0d_slot slot;
-	enum hio_chester_x0d_channel channel;
-	enum hio_chester_x0d_event event;
-	hio_chester_x0d_event_cb callback;
+	enum ctr_chester_x0d_slot slot;
+	enum ctr_chester_x0d_channel channel;
+	enum ctr_chester_x0d_event event;
+	ctr_chester_x0d_event_cb callback;
 	void *param;
 };
 
@@ -133,8 +133,8 @@ static void gpio_callback_handler(const struct device *port, struct gpio_callbac
 		k_oops();
 	}
 
-	enum hio_chester_x0d_event event =
-	        input->rising ? HIO_CHESTER_X0D_EVENT_RISE : HIO_CHESTER_X0D_EVENT_FALL;
+	enum ctr_chester_x0d_event event =
+	        input->rising ? CTR_CHESTER_X0D_EVENT_RISE : CTR_CHESTER_X0D_EVENT_FALL;
 
 	ret = gpio_pin_interrupt_configure(
 	        dev, input->pin, input->rising ? GPIO_INT_EDGE_FALLING : GPIO_INT_EDGE_RISING);
@@ -211,8 +211,8 @@ static int setup(struct input *input)
 	return 0;
 }
 
-int hio_chester_x0d_init(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_channel channel,
-                         hio_chester_x0d_event_cb callback, void *param)
+int ctr_chester_x0d_init(enum ctr_chester_x0d_slot slot, enum ctr_chester_x0d_channel channel,
+                         ctr_chester_x0d_event_cb callback, void *param)
 {
 	int ret;
 
@@ -253,7 +253,7 @@ int hio_chester_x0d_init(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_ch
 	return 0;
 }
 
-int hio_chester_x0d_read(enum hio_chester_x0d_slot slot, enum hio_chester_x0d_channel channel,
+int ctr_chester_x0d_read(enum ctr_chester_x0d_slot slot, enum ctr_chester_x0d_channel channel,
                          int *level)
 {
 	int ret;
@@ -294,13 +294,13 @@ static int cmd_channel_read(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	enum hio_chester_x0d_slot slot;
+	enum ctr_chester_x0d_slot slot;
 
 	if (strcmp(argv[1], "a") == 0) {
-		slot = HIO_CHESTER_X0D_SLOT_A;
+		slot = CTR_CHESTER_X0D_SLOT_A;
 
 	} else if (strcmp(argv[1], "b") == 0) {
-		slot = HIO_CHESTER_X0D_SLOT_B;
+		slot = CTR_CHESTER_X0D_SLOT_B;
 
 	} else {
 		shell_error(shell, "invalid slot");
@@ -308,19 +308,19 @@ static int cmd_channel_read(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	enum hio_chester_x0d_channel channel;
+	enum ctr_chester_x0d_channel channel;
 
 	if (strcmp(argv[2], "1") == 0) {
-		channel = HIO_CHESTER_X0D_CHANNEL_1;
+		channel = CTR_CHESTER_X0D_CHANNEL_1;
 
 	} else if (strcmp(argv[2], "2") == 0) {
-		channel = HIO_CHESTER_X0D_CHANNEL_2;
+		channel = CTR_CHESTER_X0D_CHANNEL_2;
 
 	} else if (strcmp(argv[2], "3") == 0) {
-		channel = HIO_CHESTER_X0D_CHANNEL_3;
+		channel = CTR_CHESTER_X0D_CHANNEL_3;
 
 	} else if (strcmp(argv[2], "4") == 0) {
-		channel = HIO_CHESTER_X0D_CHANNEL_4;
+		channel = CTR_CHESTER_X0D_CHANNEL_4;
 
 	} else {
 		shell_error(shell, "invalid channel");
@@ -330,10 +330,10 @@ static int cmd_channel_read(const struct shell *shell, size_t argc, char **argv)
 
 	int level;
 
-	ret = hio_chester_x0d_read(slot, channel, &level);
+	ret = ctr_chester_x0d_read(slot, channel, &level);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_chester_x0d_read` failed: %d", ret);
+		LOG_ERR("Call `ctr_chester_x0d_read` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}

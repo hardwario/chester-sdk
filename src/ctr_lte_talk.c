@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(hio_lte_talk, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_lte_talk, LOG_LEVEL_DBG);
 
 #define SEND_GUARD_TIME K_MSEC(100)
 #define RESPONSE_TIMEOUT_S K_MSEC(1000)
@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(hio_lte_talk, LOG_LEVEL_DBG);
 typedef bool (*handler_cb)(const char *s, void *param);
 
 static handler_cb m_handler_cb;
-static hio_lte_talk_event_cb m_event_cb;
+static ctr_lte_talk_event_cb m_event_cb;
 static K_MUTEX_DEFINE(m_handler_mut);
 static K_MUTEX_DEFINE(m_talk_mut);
 static struct k_poll_signal m_response_sig;
@@ -98,11 +98,11 @@ static int talk_cmd_ok(k_timeout_t timeout, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	ret = hio_lte_uart_send(fmt, ap);
+	ret = ctr_lte_uart_send(fmt, ap);
 	va_end(ap);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lte_uart_send` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_uart_send` failed: %d", ret);
 		k_mutex_unlock(&m_talk_mut);
 		return ret;
 	}
@@ -119,7 +119,7 @@ static int talk_cmd_ok(k_timeout_t timeout, const char *fmt, ...)
 	return 0;
 }
 
-int hio_lte_talk_init(hio_lte_talk_event_cb event_cb)
+int ctr_lte_talk_init(ctr_lte_talk_event_cb event_cb)
 {
 	int ret;
 
@@ -127,45 +127,45 @@ int hio_lte_talk_init(hio_lte_talk_event_cb event_cb)
 
 	k_poll_signal_init(&m_response_sig);
 
-	ret = hio_lte_uart_init(recv_cb);
+	ret = ctr_lte_uart_init(recv_cb);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lte_uart_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_uart_init` failed: %d", ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-int hio_lte_talk_enable(void)
+int ctr_lte_talk_enable(void)
 {
 	int ret;
 
-	ret = hio_lte_uart_enable();
+	ret = ctr_lte_uart_enable();
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lte_uart_enable` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_uart_enable` failed: %d", ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-int hio_lte_talk_disable(void)
+int ctr_lte_talk_disable(void)
 {
 	int ret;
 
-	ret = hio_lte_uart_disable();
+	ret = ctr_lte_uart_disable();
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lte_uart_disable` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_uart_disable` failed: %d", ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-int hio_lte_talk_at(void)
+int ctr_lte_talk_at(void)
 {
 	int ret;
 

@@ -7,13 +7,13 @@
 extern "C" {
 #endif
 
-struct hio_batt_result {
+struct ctr_batt_result {
 	uint16_t voltage_rest_mv;
 	uint16_t voltage_load_mv;
 	uint16_t current_load_ma;
 };
 
-int hio_batt_measure(struct hio_batt_result *result);
+int ctr_batt_measure(struct ctr_batt_result *result);
 
 #ifdef __cplusplus
 }

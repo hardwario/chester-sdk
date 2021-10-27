@@ -10,7 +10,7 @@
 #include <shell/shell_bt_nus.h>
 #include <zephyr.h>
 
-LOG_MODULE_REGISTER(hio_ble, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_ble, LOG_LEVEL_DBG);
 
 static const struct bt_data ad_data[] = { BT_DATA_BYTES(BT_DATA_FLAGS,
 	                                                (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -82,4 +82,4 @@ static int init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init, APPLICATION, CONFIG_HIO_BLE_INIT_PRIORITY);
+SYS_INIT(init, APPLICATION, CONFIG_CTR_BLE_INIT_PRIORITY);

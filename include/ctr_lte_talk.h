@@ -9,16 +9,16 @@
 extern "C" {
 #endif
 
-enum hio_lte_talk_event {
-	HIO_LTE_TALK_EVENT_BOOT = 0,
+enum ctr_lte_talk_event {
+	CTR_LTE_TALK_EVENT_BOOT = 0,
 };
 
-typedef void (*hio_lte_talk_event_cb)(enum hio_lte_talk_event event);
+typedef void (*ctr_lte_talk_event_cb)(enum ctr_lte_talk_event event);
 
-int hio_lte_talk_init(hio_lte_talk_event_cb event_cb);
-int hio_lte_talk_enable(void);
-int hio_lte_talk_disable(void);
-int hio_lte_talk_at(void);
+int ctr_lte_talk_init(ctr_lte_talk_event_cb event_cb);
+int ctr_lte_talk_enable(void);
+int ctr_lte_talk_disable(void);
+int ctr_lte_talk_at(void);
 
 #ifdef __cplusplus
 }

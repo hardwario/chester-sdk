@@ -7,7 +7,7 @@
 #include <logging/log.h>
 #include <zephyr.h>
 
-LOG_MODULE_REGISTER(hio_bsp_i2c, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_bsp_i2c, LOG_LEVEL_DBG);
 
 static const struct device *m_dev;
 
@@ -48,7 +48,7 @@ static int disable(void *ctx)
 	return 0;
 }
 
-static int read(void *ctx, const struct hio_bus_i2c_xfer *xfer)
+static int read(void *ctx, const struct ctr_bus_i2c_xfer *xfer)
 {
 	int ret;
 
@@ -68,7 +68,7 @@ static int read(void *ctx, const struct hio_bus_i2c_xfer *xfer)
 	return 0;
 }
 
-static int write(void *ctx, const struct hio_bus_i2c_xfer *xfer)
+static int write(void *ctx, const struct ctr_bus_i2c_xfer *xfer)
 {
 	int ret;
 
@@ -88,7 +88,7 @@ static int write(void *ctx, const struct hio_bus_i2c_xfer *xfer)
 	return 0;
 }
 
-static int mem_read(void *ctx, const struct hio_bus_i2c_mem_xfer *xfer)
+static int mem_read(void *ctx, const struct ctr_bus_i2c_mem_xfer *xfer)
 {
 	int ret;
 
@@ -100,7 +100,7 @@ static int mem_read(void *ctx, const struct hio_bus_i2c_mem_xfer *xfer)
 	msgs[1].len = xfer->len;
 	msgs[1].flags = I2C_MSG_READ | I2C_MSG_STOP;
 
-	if ((xfer->mem_addr & HIO_BUS_I2C_MEM_ADDR_16B) != 0) {
+	if ((xfer->mem_addr & CTR_BUS_I2C_MEM_ADDR_16B) != 0) {
 		uint8_t buf[2] = { xfer->mem_addr >> 8, xfer->mem_addr };
 
 		msgs[0].buf = buf;
@@ -130,7 +130,7 @@ static int mem_read(void *ctx, const struct hio_bus_i2c_mem_xfer *xfer)
 	return 0;
 }
 
-static int mem_write(void *ctx, const struct hio_bus_i2c_mem_xfer *xfer)
+static int mem_write(void *ctx, const struct ctr_bus_i2c_mem_xfer *xfer)
 {
 	int ret;
 
@@ -139,7 +139,7 @@ static int mem_write(void *ctx, const struct hio_bus_i2c_mem_xfer *xfer)
 		return -ENOSPC;
 	}
 
-	if ((xfer->mem_addr & HIO_BUS_I2C_MEM_ADDR_16B) != 0) {
+	if ((xfer->mem_addr & CTR_BUS_I2C_MEM_ADDR_16B) != 0) {
 		uint8_t buf[2 + 64];
 
 		buf[0] = xfer->mem_addr >> 8;
@@ -184,9 +184,9 @@ static int mem_write(void *ctx, const struct hio_bus_i2c_mem_xfer *xfer)
 	return 0;
 }
 
-const struct hio_bus_i2c_driver *hio_bsp_i2c_get_driver(void)
+const struct ctr_bus_i2c_driver *ctr_bsp_i2c_get_driver(void)
 {
-	static struct hio_bus_i2c_driver driver = { .init = init,
+	static struct ctr_bus_i2c_driver driver = { .init = init,
 		                                    .enable = enable,
 		                                    .disable = disable,
 		                                    .read = read,

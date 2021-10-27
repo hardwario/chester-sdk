@@ -6,7 +6,7 @@
 /* Standard includes */
 #include <stdint.h>
 
-int hio_buf2hex(const void *src, size_t src_size, char *dst, size_t dst_size, bool upper)
+int ctr_buf2hex(const void *src, size_t src_size, char *dst, size_t dst_size, bool upper)
 {
 	if (src_size * 2 + 1 != dst_size) {
 		return -EINVAL;
@@ -28,7 +28,7 @@ int hio_buf2hex(const void *src, size_t src_size, char *dst, size_t dst_size, bo
 	return n * 2;
 }
 
-int hio_hex2buf(const char *src, void *dst, size_t dst_size, bool allow_spaces)
+int ctr_hex2buf(const char *src, void *dst, size_t dst_size, bool allow_spaces)
 {
 	size_t n;
 	const char *p;

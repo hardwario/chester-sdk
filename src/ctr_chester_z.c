@@ -10,15 +10,15 @@
 #include <logging/log.h>
 #include <zephyr.h>
 
-LOG_MODULE_REGISTER(hio_chester_z, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_chester_z, LOG_LEVEL_DBG);
 
 #define INT_DEV DT_LABEL(DT_NODELABEL(gpio1))
 #define INT_PIN 6
 
 #define DEV_ADDR 0x4f
 
-static struct hio_bus_i2c *m_i2c;
-static hio_chester_z_event_cb m_cb;
+static struct ctr_bus_i2c *m_i2c;
+static ctr_chester_z_event_cb m_cb;
 static void *m_param;
 static const struct device *m_int_dev;
 static struct gpio_callback m_int_callback;
@@ -28,10 +28,10 @@ static int read(uint8_t addr, uint16_t *data)
 {
 	int ret;
 
-	ret = hio_bus_i2c_mem_read_16b(m_i2c, DEV_ADDR, addr, data);
+	ret = ctr_bus_i2c_mem_read_16b(m_i2c, DEV_ADDR, addr, data);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_mem_read_16b` failed: %d", ret);
+		LOG_ERR("Call `ctr_bus_i2c_mem_read_16b` failed: %d", ret);
 		return ret;
 	}
 
@@ -42,10 +42,10 @@ static int write(uint8_t addr, uint16_t data)
 {
 	int ret;
 
-	ret = hio_bus_i2c_mem_write_16b(m_i2c, DEV_ADDR, addr, data);
+	ret = ctr_bus_i2c_mem_write_16b(m_i2c, DEV_ADDR, addr, data);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_mem_write_16b` failed: %d", ret);
+		LOG_ERR("Call `ctr_bus_i2c_mem_write_16b` failed: %d", ret);
 		return ret;
 	}
 
@@ -81,28 +81,28 @@ static void int_work_handler(struct k_work *work)
 	} while (0)
 
 	if (m_cb != NULL) {
-		CALLBACK(reg_irq0, 0x0080, HIO_CHESTER_Z_EVENT_DC_CONNECTED);
-		CALLBACK(reg_irq0, 0x0040, HIO_CHESTER_Z_EVENT_DC_DISCONNECTED);
-		CALLBACK(reg_irq0, 0x0008, HIO_CHESTER_Z_EVENT_BUTTON_0_PRESS);
-		CALLBACK(reg_irq0, 0x0004, HIO_CHESTER_Z_EVENT_BUTTON_0_CLICK);
-		CALLBACK(reg_irq0, 0x0002, HIO_CHESTER_Z_EVENT_BUTTON_0_HOLD);
-		CALLBACK(reg_irq0, 0x0001, HIO_CHESTER_Z_EVENT_BUTTON_0_RELEASE);
-		CALLBACK(reg_irq1, 0x8000, HIO_CHESTER_Z_EVENT_BUTTON_1_PRESS);
-		CALLBACK(reg_irq1, 0x4000, HIO_CHESTER_Z_EVENT_BUTTON_1_CLICK);
-		CALLBACK(reg_irq1, 0x2000, HIO_CHESTER_Z_EVENT_BUTTON_1_HOLD);
-		CALLBACK(reg_irq1, 0x1000, HIO_CHESTER_Z_EVENT_BUTTON_1_RELEASE);
-		CALLBACK(reg_irq1, 0x0800, HIO_CHESTER_Z_EVENT_BUTTON_2_PRESS);
-		CALLBACK(reg_irq1, 0x0400, HIO_CHESTER_Z_EVENT_BUTTON_2_CLICK);
-		CALLBACK(reg_irq1, 0x0200, HIO_CHESTER_Z_EVENT_BUTTON_2_HOLD);
-		CALLBACK(reg_irq1, 0x0100, HIO_CHESTER_Z_EVENT_BUTTON_2_RELEASE);
-		CALLBACK(reg_irq1, 0x0080, HIO_CHESTER_Z_EVENT_BUTTON_3_PRESS);
-		CALLBACK(reg_irq1, 0x0040, HIO_CHESTER_Z_EVENT_BUTTON_3_CLICK);
-		CALLBACK(reg_irq1, 0x0020, HIO_CHESTER_Z_EVENT_BUTTON_3_HOLD);
-		CALLBACK(reg_irq1, 0x0010, HIO_CHESTER_Z_EVENT_BUTTON_3_RELEASE);
-		CALLBACK(reg_irq1, 0x0008, HIO_CHESTER_Z_EVENT_BUTTON_4_PRESS);
-		CALLBACK(reg_irq1, 0x0004, HIO_CHESTER_Z_EVENT_BUTTON_4_CLICK);
-		CALLBACK(reg_irq1, 0x0002, HIO_CHESTER_Z_EVENT_BUTTON_4_HOLD);
-		CALLBACK(reg_irq1, 0x0001, HIO_CHESTER_Z_EVENT_BUTTON_4_RELEASE);
+		CALLBACK(reg_irq0, 0x0080, CTR_CHESTER_Z_EVENT_DC_CONNECTED);
+		CALLBACK(reg_irq0, 0x0040, CTR_CHESTER_Z_EVENT_DC_DISCONNECTED);
+		CALLBACK(reg_irq0, 0x0008, CTR_CHESTER_Z_EVENT_BUTTON_0_PRESS);
+		CALLBACK(reg_irq0, 0x0004, CTR_CHESTER_Z_EVENT_BUTTON_0_CLICK);
+		CALLBACK(reg_irq0, 0x0002, CTR_CHESTER_Z_EVENT_BUTTON_0_HOLD);
+		CALLBACK(reg_irq0, 0x0001, CTR_CHESTER_Z_EVENT_BUTTON_0_RELEASE);
+		CALLBACK(reg_irq1, 0x8000, CTR_CHESTER_Z_EVENT_BUTTON_1_PRESS);
+		CALLBACK(reg_irq1, 0x4000, CTR_CHESTER_Z_EVENT_BUTTON_1_CLICK);
+		CALLBACK(reg_irq1, 0x2000, CTR_CHESTER_Z_EVENT_BUTTON_1_HOLD);
+		CALLBACK(reg_irq1, 0x1000, CTR_CHESTER_Z_EVENT_BUTTON_1_RELEASE);
+		CALLBACK(reg_irq1, 0x0800, CTR_CHESTER_Z_EVENT_BUTTON_2_PRESS);
+		CALLBACK(reg_irq1, 0x0400, CTR_CHESTER_Z_EVENT_BUTTON_2_CLICK);
+		CALLBACK(reg_irq1, 0x0200, CTR_CHESTER_Z_EVENT_BUTTON_2_HOLD);
+		CALLBACK(reg_irq1, 0x0100, CTR_CHESTER_Z_EVENT_BUTTON_2_RELEASE);
+		CALLBACK(reg_irq1, 0x0080, CTR_CHESTER_Z_EVENT_BUTTON_3_PRESS);
+		CALLBACK(reg_irq1, 0x0040, CTR_CHESTER_Z_EVENT_BUTTON_3_CLICK);
+		CALLBACK(reg_irq1, 0x0020, CTR_CHESTER_Z_EVENT_BUTTON_3_HOLD);
+		CALLBACK(reg_irq1, 0x0010, CTR_CHESTER_Z_EVENT_BUTTON_3_RELEASE);
+		CALLBACK(reg_irq1, 0x0008, CTR_CHESTER_Z_EVENT_BUTTON_4_PRESS);
+		CALLBACK(reg_irq1, 0x0004, CTR_CHESTER_Z_EVENT_BUTTON_4_CLICK);
+		CALLBACK(reg_irq1, 0x0002, CTR_CHESTER_Z_EVENT_BUTTON_4_HOLD);
+		CALLBACK(reg_irq1, 0x0001, CTR_CHESTER_Z_EVENT_BUTTON_4_RELEASE);
 	}
 
 #undef CALLBACK
@@ -146,11 +146,11 @@ static void gpio_callback_handler(const struct device *port, struct gpio_callbac
 	k_work_submit(&m_int_work);
 }
 
-int hio_chester_z_init(hio_chester_z_event_cb cb, void *param)
+int ctr_chester_z_init(ctr_chester_z_event_cb cb, void *param)
 {
 	int ret;
 
-	m_i2c = hio_bsp_get_i2c();
+	m_i2c = ctr_bsp_get_i2c();
 	m_cb = cb;
 	m_param = param;
 
@@ -219,7 +219,7 @@ int hio_chester_z_init(hio_chester_z_event_cb cb, void *param)
 	return 0;
 }
 
-int hio_chester_z_apply(void)
+int ctr_chester_z_apply(void)
 {
 	int ret;
 
@@ -233,7 +233,7 @@ int hio_chester_z_apply(void)
 	return 0;
 }
 
-int hio_chester_z_get_status(struct hio_chester_z_status *status)
+int ctr_chester_z_get_status(struct ctr_chester_z_status *status)
 {
 	int ret;
 
@@ -256,7 +256,7 @@ int hio_chester_z_get_status(struct hio_chester_z_status *status)
 	return 0;
 }
 
-int hio_chester_z_get_vdc_mv(uint16_t *vdc)
+int ctr_chester_z_get_vdc_mv(uint16_t *vdc)
 {
 	int ret;
 
@@ -274,7 +274,7 @@ int hio_chester_z_get_vdc_mv(uint16_t *vdc)
 	return 0;
 }
 
-int hio_chester_z_get_vbat_mv(uint16_t *vbat)
+int ctr_chester_z_get_vbat_mv(uint16_t *vbat)
 {
 	int ret;
 
@@ -292,7 +292,7 @@ int hio_chester_z_get_vbat_mv(uint16_t *vbat)
 	return 0;
 }
 
-int hio_chester_z_get_serial_number(uint32_t *serial_number)
+int ctr_chester_z_get_serial_number(uint32_t *serial_number)
 {
 	int ret;
 
@@ -319,7 +319,7 @@ int hio_chester_z_get_serial_number(uint32_t *serial_number)
 	return 0;
 }
 
-int hio_chester_z_get_hw_revision(uint16_t *hw_revision)
+int ctr_chester_z_get_hw_revision(uint16_t *hw_revision)
 {
 	int ret;
 
@@ -337,7 +337,7 @@ int hio_chester_z_get_hw_revision(uint16_t *hw_revision)
 	return 0;
 }
 
-int hio_chester_z_get_hw_variant(uint32_t *hw_variant)
+int ctr_chester_z_get_hw_variant(uint32_t *hw_variant)
 {
 	int ret;
 
@@ -364,7 +364,7 @@ int hio_chester_z_get_hw_variant(uint32_t *hw_variant)
 	return 0;
 }
 
-int hio_chester_z_get_fw_version(uint32_t *fw_version)
+int ctr_chester_z_get_fw_version(uint32_t *fw_version)
 {
 	int ret;
 
@@ -391,7 +391,7 @@ int hio_chester_z_get_fw_version(uint32_t *fw_version)
 	return 0;
 }
 
-int hio_chester_z_get_vendor_name(char **vendor_name)
+int ctr_chester_z_get_vendor_name(char **vendor_name)
 {
 	int ret;
 
@@ -415,7 +415,7 @@ int hio_chester_z_get_vendor_name(char **vendor_name)
 	return 0;
 }
 
-int hio_chester_z_get_product_name(char **product_name)
+int ctr_chester_z_get_product_name(char **product_name)
 {
 	int ret;
 
@@ -439,7 +439,7 @@ int hio_chester_z_get_product_name(char **product_name)
 	return 0;
 }
 
-int hio_chester_z_set_buzzer(const struct hio_chester_z_buzzer_param *param)
+int ctr_chester_z_set_buzzer(const struct ctr_chester_z_buzzer_param *param)
 {
 	int ret;
 
@@ -457,8 +457,8 @@ int hio_chester_z_set_buzzer(const struct hio_chester_z_buzzer_param *param)
 	return 0;
 }
 
-int hio_chester_z_set_led(enum hio_chester_z_led_channel channel,
-                          const struct hio_chester_z_led_param *param)
+int ctr_chester_z_set_led(enum ctr_chester_z_led_channel channel,
+                          const struct ctr_chester_z_led_param *param)
 {
 	int ret;
 

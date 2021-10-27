@@ -1,5 +1,5 @@
-config HIO_LED
-	bool "HIO_LED"
+config CTR_LED
+	bool "CTR_LED"
 	depends on SHELL
 	select LED
 	select LED_GPIO

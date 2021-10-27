@@ -1,3 +1,3 @@
-config HIO_BATT
-	bool "HIO_BATT"
+config CTR_BATT
+	bool "CTR_BATT"
 	depends on SHELL

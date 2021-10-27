@@ -7,9 +7,9 @@
 /* Standard includes */
 #include <string.h>
 
-LOG_MODULE_REGISTER(hio_drv_sht30, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_drv_sht30, LOG_LEVEL_DBG);
 
-int hio_drv_sht30_init(struct hio_drv_sht30 *ctx, struct hio_bus_i2c *i2c, uint8_t dev_addr)
+int ctr_drv_sht30_init(struct ctr_drv_sht30 *ctx, struct ctr_bus_i2c *i2c, uint8_t dev_addr)
 {
 	memset(ctx, 0, sizeof(*ctx));
 
@@ -19,56 +19,56 @@ int hio_drv_sht30_init(struct hio_drv_sht30 *ctx, struct hio_bus_i2c *i2c, uint8
 	return 0;
 }
 
-static int reset(struct hio_drv_sht30 *ctx)
+static int reset(struct ctr_drv_sht30 *ctx)
 {
 	int ret;
 
 	uint8_t buf[] = { 0x30, 0xa2 };
 
-	struct hio_bus_i2c_xfer xfer = { .dev_addr = ctx->dev_addr,
+	struct ctr_bus_i2c_xfer xfer = { .dev_addr = ctx->dev_addr,
 		                         .buf = buf,
 		                         .len = sizeof(buf) };
 
-	ret = hio_bus_i2c_write(ctx->i2c, &xfer);
+	ret = ctr_bus_i2c_write(ctx->i2c, &xfer);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_write` failed [%p]: %d", ctx, ret);
+		LOG_ERR("Call `ctr_bus_i2c_write` failed [%p]: %d", ctx, ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-static int measure(struct hio_drv_sht30 *ctx)
+static int measure(struct ctr_drv_sht30 *ctx)
 {
 	int ret;
 
 	uint8_t buf[] = { 0x24, 0x00 };
 
-	struct hio_bus_i2c_xfer xfer = { .dev_addr = ctx->dev_addr,
+	struct ctr_bus_i2c_xfer xfer = { .dev_addr = ctx->dev_addr,
 		                         .buf = buf,
 		                         .len = sizeof(buf) };
 
-	ret = hio_bus_i2c_write(ctx->i2c, &xfer);
+	ret = ctr_bus_i2c_write(ctx->i2c, &xfer);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_write` failed [%p]: %d", ctx, ret);
+		LOG_ERR("Call `ctr_bus_i2c_write` failed [%p]: %d", ctx, ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-static int read(struct hio_drv_sht30 *ctx, uint8_t *buf)
+static int read(struct ctr_drv_sht30 *ctx, uint8_t *buf)
 {
 	int ret;
 
-	struct hio_bus_i2c_xfer xfer = { .dev_addr = ctx->dev_addr, .buf = buf, .len = 6 };
+	struct ctr_bus_i2c_xfer xfer = { .dev_addr = ctx->dev_addr, .buf = buf, .len = 6 };
 
-	ret = hio_bus_i2c_read(ctx->i2c, &xfer);
+	ret = ctr_bus_i2c_read(ctx->i2c, &xfer);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bus_i2c_read` failed [%p]: %d", ctx, ret);
+		LOG_ERR("Call `ctr_bus_i2c_read` failed [%p]: %d", ctx, ret);
 		return ret;
 	}
 
@@ -96,7 +96,7 @@ static uint8_t calc_crc(uint8_t *data, size_t len)
 	return crc;
 }
 
-int hio_drv_sht30_measure(struct hio_drv_sht30 *ctx, float *t, float *rh)
+int ctr_drv_sht30_measure(struct ctr_drv_sht30 *ctx, float *t, float *rh)
 {
 	int ret;
 

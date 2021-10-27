@@ -9,12 +9,12 @@
 extern "C" {
 #endif
 
-typedef void (*hio_lrw_recv_cb)(const char *s);
+typedef void (*ctr_lrw_recv_cb)(const char *s);
 
-int hio_lrw_uart_init(hio_lrw_recv_cb recv_cb);
-int hio_lrw_uart_enable(void);
-int hio_lrw_uart_disable(void);
-int hio_lrw_uart_send(const char *fmt, va_list ap);
+int ctr_lrw_uart_init(ctr_lrw_recv_cb recv_cb);
+int ctr_lrw_uart_enable(void);
+int ctr_lrw_uart_disable(void);
+int ctr_lrw_uart_send(const char *fmt, va_list ap);
 
 #ifdef __cplusplus
 }

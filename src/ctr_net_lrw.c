@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(hio_net_lrw, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_net_lrw, LOG_LEVEL_DBG);
 
 #define SETTINGS_PFX "lrw"
 
@@ -132,7 +132,7 @@ static struct k_poll_signal m_send_sig;
 K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
 
-static hio_net_lrw_event_cb m_callback;
+static ctr_net_lrw_event_cb m_callback;
 static void *m_param;
 static atomic_t m_corr_id;
 
@@ -140,27 +140,27 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len));
 
-static void talk_handler(enum hio_lrw_talk_event event)
+static void talk_handler(enum ctr_lrw_talk_event event)
 {
 	switch (event) {
-	case HIO_LRW_TALK_EVENT_BOOT:
-		LOG_DBG("Event `HIO_LRW_TALK_EVENT_BOOT`");
+	case CTR_LRW_TALK_EVENT_BOOT:
+		LOG_DBG("Event `CTR_LRW_TALK_EVENT_BOOT`");
 		k_poll_signal_raise(&m_boot_sig, 0);
 		break;
-	case HIO_LRW_TALK_EVENT_JOIN_OK:
-		LOG_DBG("Event `HIO_LRW_TALK_EVENT_JOIN_OK`");
+	case CTR_LRW_TALK_EVENT_JOIN_OK:
+		LOG_DBG("Event `CTR_LRW_TALK_EVENT_JOIN_OK`");
 		k_poll_signal_raise(&m_join_sig, 0);
 		break;
-	case HIO_LRW_TALK_EVENT_JOIN_ERR:
-		LOG_DBG("Event `HIO_LRW_TALK_EVENT_JOIN_ERR`");
+	case CTR_LRW_TALK_EVENT_JOIN_ERR:
+		LOG_DBG("Event `CTR_LRW_TALK_EVENT_JOIN_ERR`");
 		k_poll_signal_raise(&m_join_sig, 1);
 		break;
-	case HIO_LRW_TALK_EVENT_SEND_OK:
-		LOG_DBG("Event `HIO_LRW_TALK_EVENT_SEND_OK`");
+	case CTR_LRW_TALK_EVENT_SEND_OK:
+		LOG_DBG("Event `CTR_LRW_TALK_EVENT_SEND_OK`");
 		k_poll_signal_raise(&m_send_sig, 0);
 		break;
-	case HIO_LRW_TALK_EVENT_SEND_ERR:
-		LOG_DBG("Event `HIO_LRW_TALK_EVENT_SEND_ERR`");
+	case CTR_LRW_TALK_EVENT_SEND_ERR:
+		LOG_DBG("Event `CTR_LRW_TALK_EVENT_SEND_ERR`");
 		k_poll_signal_raise(&m_send_sig, 1);
 		break;
 	default:
@@ -172,13 +172,13 @@ static int boot_once(void)
 {
 	int ret;
 
-	hio_bsp_set_lrw_reset(0);
+	ctr_bsp_set_lrw_reset(0);
 
 	k_sleep(K_MSEC(100));
 
 	k_poll_signal_reset(&m_boot_sig);
 
-	hio_bsp_set_lrw_reset(1);
+	ctr_bsp_set_lrw_reset(1);
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_boot_sig),
@@ -206,20 +206,20 @@ static int boot(int retries, k_timeout_t delay)
 	LOG_INF("Operation BOOT started");
 
 	while (retries-- > 0) {
-		ret = hio_lrw_talk_enable();
+		ret = ctr_lrw_talk_enable();
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_enable` failed: %d", ret);
 			return ret;
 		}
 
 		ret = boot_once();
 
 		if (ret == 0) {
-			ret = hio_lrw_talk_disable();
+			ret = ctr_lrw_talk_disable();
 
 			if (ret < 0) {
-				LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+				LOG_ERR("Call `ctr_lrw_talk_disable` failed: %d", ret);
 				return ret;
 			}
 
@@ -231,10 +231,10 @@ static int boot(int retries, k_timeout_t delay)
 			LOG_WRN("Call `boot_once` failed: %d", ret);
 		}
 
-		ret = hio_lrw_talk_disable();
+		ret = ctr_lrw_talk_disable();
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_disable` failed: %d", ret);
 			return ret;
 		}
 
@@ -252,103 +252,103 @@ static int setup_once(void)
 {
 	int ret;
 
-	ret = hio_lrw_talk_at_dformat(1);
+	ret = ctr_lrw_talk_at_dformat(1);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_dformat` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_dformat` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_band((uint8_t)m_config.band);
+	ret = ctr_lrw_talk_at_band((uint8_t)m_config.band);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_band` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_band` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_class((uint8_t)m_config.class);
+	ret = ctr_lrw_talk_at_class((uint8_t)m_config.class);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_class` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_class` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_mode((uint8_t)m_config.mode);
+	ret = ctr_lrw_talk_at_mode((uint8_t)m_config.mode);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_mode` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_mode` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_nwk((uint8_t)m_config.nwk);
+	ret = ctr_lrw_talk_at_nwk((uint8_t)m_config.nwk);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_nwk` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_nwk` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_adr(m_config.adr ? 1 : 0);
+	ret = ctr_lrw_talk_at_adr(m_config.adr ? 1 : 0);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_adr` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_adr` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_dutycycle(m_config.dutycycle ? 1 : 0);
+	ret = ctr_lrw_talk_at_dutycycle(m_config.dutycycle ? 1 : 0);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_dutycycle` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_dutycycle` failed: %d", ret);
 		return ret;
 	}
 
 	if (m_config.mode != MODE_ABP) {
-		ret = hio_lrw_talk_at_joindc(m_config.dutycycle ? 1 : 0);
+		ret = ctr_lrw_talk_at_joindc(m_config.dutycycle ? 1 : 0);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_at_joindc` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_at_joindc` failed: %d", ret);
 			return ret;
 		}
 	}
 
-	ret = hio_lrw_talk_at_devaddr(m_config.devaddr, sizeof(m_config.devaddr));
+	ret = ctr_lrw_talk_at_devaddr(m_config.devaddr, sizeof(m_config.devaddr));
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_devaddr` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_devaddr` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_deveui(m_config.deveui, sizeof(m_config.deveui));
+	ret = ctr_lrw_talk_at_deveui(m_config.deveui, sizeof(m_config.deveui));
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_deveui` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_deveui` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_appeui(m_config.joineui, sizeof(m_config.joineui));
+	ret = ctr_lrw_talk_at_appeui(m_config.joineui, sizeof(m_config.joineui));
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_appeui` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_appeui` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_appkey(m_config.appkey, sizeof(m_config.appkey));
+	ret = ctr_lrw_talk_at_appkey(m_config.appkey, sizeof(m_config.appkey));
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_appkey` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_appkey` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_nwkskey(m_config.nwkskey, sizeof(m_config.nwkskey));
+	ret = ctr_lrw_talk_at_nwkskey(m_config.nwkskey, sizeof(m_config.nwkskey));
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_nwkskey` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_nwkskey` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_at_appskey(m_config.appskey, sizeof(m_config.appskey));
+	ret = ctr_lrw_talk_at_appskey(m_config.appskey, sizeof(m_config.appskey));
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_appskey` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_appskey` failed: %d", ret);
 		return ret;
 	}
 
@@ -362,20 +362,20 @@ static int setup(int retries, k_timeout_t delay)
 	LOG_INF("Operation SETUP started");
 
 	while (retries-- > 0) {
-		ret = hio_lrw_talk_enable();
+		ret = ctr_lrw_talk_enable();
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_enable` failed: %d", ret);
 			return ret;
 		}
 
 		ret = setup_once();
 
 		if (ret == 0) {
-			ret = hio_lrw_talk_disable();
+			ret = ctr_lrw_talk_disable();
 
 			if (ret < 0) {
-				LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+				LOG_ERR("Call `ctr_lrw_talk_disable` failed: %d", ret);
 				return ret;
 			}
 
@@ -387,10 +387,10 @@ static int setup(int retries, k_timeout_t delay)
 			LOG_WRN("Call `setup_once` failed: %d", ret);
 		}
 
-		ret = hio_lrw_talk_disable();
+		ret = ctr_lrw_talk_disable();
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_disable` failed: %d", ret);
 			return ret;
 		}
 
@@ -410,10 +410,10 @@ static int join_once(void)
 
 	k_poll_signal_reset(&m_join_sig);
 
-	ret = hio_lrw_talk_at_join();
+	ret = ctr_lrw_talk_at_join();
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_at_join` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_at_join` failed: %d", ret);
 		return ret;
 	}
 
@@ -451,20 +451,20 @@ static int join(int retries, k_timeout_t delay)
 	LOG_INF("Operation JOIN started");
 
 	while (retries-- > 0) {
-		ret = hio_lrw_talk_enable();
+		ret = ctr_lrw_talk_enable();
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_enable` failed: %d", ret);
 			return ret;
 		}
 
 		ret = join_once();
 
 		if (ret == 0) {
-			ret = hio_lrw_talk_disable();
+			ret = ctr_lrw_talk_disable();
 
 			if (ret < 0) {
-				LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+				LOG_ERR("Call `ctr_lrw_talk_disable` failed: %d", ret);
 				return ret;
 			}
 
@@ -476,10 +476,10 @@ static int join(int retries, k_timeout_t delay)
 			LOG_WRN("Call `join_once` failed: %d", ret);
 		}
 
-		ret = hio_lrw_talk_disable();
+		ret = ctr_lrw_talk_disable();
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_disable` failed: %d", ret);
 			return ret;
 		}
 
@@ -498,40 +498,40 @@ static int send_once(const struct send_msgq_data *data)
 	int ret;
 
 	if (!data->confirmed && data->port < 0) {
-		ret = hio_lrw_talk_at_utx(data->buf, data->len);
+		ret = ctr_lrw_talk_at_utx(data->buf, data->len);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_at_utx` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_at_utx` failed: %d", ret);
 			return ret;
 		}
 
 		k_poll_signal_raise(&m_send_sig, 0);
 
 	} else if (data->confirmed && data->port < 0) {
-		ret = hio_lrw_talk_at_ctx(data->buf, data->len);
+		ret = ctr_lrw_talk_at_ctx(data->buf, data->len);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_at_ctx` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_at_ctx` failed: %d", ret);
 			return ret;
 		}
 
 		k_poll_signal_reset(&m_send_sig);
 
 	} else if (!data->confirmed && data->port >= 0) {
-		ret = hio_lrw_talk_at_putx(data->port, data->buf, data->len);
+		ret = ctr_lrw_talk_at_putx(data->port, data->buf, data->len);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_at_putx` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_at_putx` failed: %d", ret);
 			return ret;
 		}
 
 		k_poll_signal_raise(&m_send_sig, 0);
 
 	} else {
-		ret = hio_lrw_talk_at_pctx(data->port, data->buf, data->len);
+		ret = ctr_lrw_talk_at_pctx(data->port, data->buf, data->len);
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_at_pctx` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_at_pctx` failed: %d", ret);
 			return ret;
 		}
 
@@ -577,10 +577,10 @@ static int send(int retries, k_timeout_t delay, const struct send_msgq_data *dat
 	LOG_INF("Operation SEND started");
 
 	while (retries-- > 0) {
-		ret = hio_lrw_talk_enable();
+		ret = ctr_lrw_talk_enable();
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_enable` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_enable` failed: %d", ret);
 			return ret;
 		}
 
@@ -588,10 +588,10 @@ static int send(int retries, k_timeout_t delay, const struct send_msgq_data *dat
 		err = ret;
 
 		if (ret == 0) {
-			ret = hio_lrw_talk_disable();
+			ret = ctr_lrw_talk_disable();
 
 			if (ret < 0) {
-				LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+				LOG_ERR("Call `ctr_lrw_talk_disable` failed: %d", ret);
 				return ret;
 			}
 
@@ -603,10 +603,10 @@ static int send(int retries, k_timeout_t delay, const struct send_msgq_data *dat
 			LOG_WRN("Call `send_once` failed: %d", ret);
 		}
 
-		ret = hio_lrw_talk_disable();
+		ret = ctr_lrw_talk_disable();
 
 		if (ret < 0) {
-			LOG_ERR("Call `hio_lrw_talk_disable` failed: %d", ret);
+			LOG_ERR("Call `ctr_lrw_talk_disable` failed: %d", ret);
 			return ret;
 		}
 
@@ -625,27 +625,27 @@ static int start(void)
 	int ret;
 
 	if (m_config.antenna == ANTENNA_EXT) {
-		ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_EXT);
+		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_EXT);
 	} else {
-		ret = hio_bsp_set_rf_ant(HIO_BSP_RF_ANT_INT);
+		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_INT);
 	}
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_rf_ant` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_rf_ant` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_bsp_set_rf_mux(HIO_BSP_RF_MUX_LRW);
+	ret = ctr_bsp_set_rf_mux(CTR_BSP_RF_MUX_LRW);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_bsp_set_rf_mux` failed: %d", ret);
+		LOG_ERR("Call `ctr_bsp_set_rf_mux` failed: %d", ret);
 		return ret;
 	}
 
-	ret = hio_lrw_talk_init(talk_handler);
+	ret = ctr_lrw_talk_init(talk_handler);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_lrw_talk_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_talk_init` failed: %d", ret);
 		return ret;
 	}
 
@@ -670,7 +670,7 @@ static int process_req_start(const struct cmd_msgq_item *item)
 {
 	int ret;
 
-	union hio_net_lrw_event_data data = { 0 };
+	union ctr_net_lrw_event_data data = { 0 };
 
 	ret = start();
 
@@ -680,7 +680,7 @@ static int process_req_start(const struct cmd_msgq_item *item)
 		data.start_err.corr_id = item->corr_id;
 
 		if (m_callback != NULL) {
-			m_callback(HIO_NET_LRW_EVENT_START_ERR, &data, m_param);
+			m_callback(CTR_NET_LRW_EVENT_START_ERR, &data, m_param);
 		}
 
 		return ret;
@@ -691,7 +691,7 @@ static int process_req_start(const struct cmd_msgq_item *item)
 	data.start_ok.corr_id = item->corr_id;
 
 	if (m_callback != NULL) {
-		m_callback(HIO_NET_LRW_EVENT_START_OK, &data, m_param);
+		m_callback(CTR_NET_LRW_EVENT_START_OK, &data, m_param);
 	}
 
 	return 0;
@@ -701,7 +701,7 @@ static int process_req_join(const struct cmd_msgq_item *item)
 {
 	int ret;
 
-	union hio_net_lrw_event_data data = { 0 };
+	union ctr_net_lrw_event_data data = { 0 };
 
 	ret = join(JOIN_RETRY_COUNT, JOIN_RETRY_DELAY);
 
@@ -711,7 +711,7 @@ static int process_req_join(const struct cmd_msgq_item *item)
 		data.join_err.corr_id = item->corr_id;
 
 		if (m_callback != NULL) {
-			m_callback(HIO_NET_LRW_EVENT_JOIN_ERR, &data, m_param);
+			m_callback(CTR_NET_LRW_EVENT_JOIN_ERR, &data, m_param);
 		}
 
 		return ret;
@@ -720,7 +720,7 @@ static int process_req_join(const struct cmd_msgq_item *item)
 	data.join_ok.corr_id = item->corr_id;
 
 	if (m_callback != NULL) {
-		m_callback(HIO_NET_LRW_EVENT_JOIN_OK, &data, m_param);
+		m_callback(CTR_NET_LRW_EVENT_JOIN_OK, &data, m_param);
 	}
 
 	return 0;
@@ -730,7 +730,7 @@ static int process_req_send(const struct send_msgq_item *item)
 {
 	int ret;
 
-	union hio_net_lrw_event_data data = { 0 };
+	union ctr_net_lrw_event_data data = { 0 };
 
 	if (item->data.ttl != 0) {
 		if (k_uptime_get() > item->data.ttl) {
@@ -753,7 +753,7 @@ static int process_req_send(const struct send_msgq_item *item)
 		data.send_err.corr_id = item->corr_id;
 
 		if (m_callback != NULL) {
-			m_callback(HIO_NET_LRW_EVENT_SEND_ERR, &data, m_param);
+			m_callback(CTR_NET_LRW_EVENT_SEND_ERR, &data, m_param);
 		}
 
 		return ret;
@@ -762,7 +762,7 @@ static int process_req_send(const struct send_msgq_item *item)
 	data.send_ok.corr_id = item->corr_id;
 
 	if (m_callback != NULL) {
-		m_callback(HIO_NET_LRW_EVENT_SEND_OK, &data, m_param);
+		m_callback(CTR_NET_LRW_EVENT_SEND_OK, &data, m_param);
 	}
 
 	return 0;
@@ -798,7 +798,7 @@ static void process_cmd_msgq(void)
 				k_msgq_purge(&m_cmd_msgq);
 
 				if (m_callback != NULL) {
-					m_callback(HIO_NET_LRW_EVENT_FAILURE, NULL, m_param);
+					m_callback(CTR_NET_LRW_EVENT_FAILURE, NULL, m_param);
 				}
 			}
 		}
@@ -820,7 +820,7 @@ static void process_cmd_msgq(void)
 				k_msgq_purge(&m_cmd_msgq);
 
 				if (m_callback != NULL) {
-					m_callback(HIO_NET_LRW_EVENT_FAILURE, NULL, m_param);
+					m_callback(CTR_NET_LRW_EVENT_FAILURE, NULL, m_param);
 				}
 			}
 		}
@@ -855,7 +855,7 @@ static void process_send_msgq(void)
 		k_msgq_purge(&m_cmd_msgq);
 
 		if (m_callback != NULL) {
-			m_callback(HIO_NET_LRW_EVENT_FAILURE, NULL, m_param);
+			m_callback(CTR_NET_LRW_EVENT_FAILURE, NULL, m_param);
 		}
 	}
 }
@@ -892,10 +892,10 @@ static void dispatcher_thread(void)
 	}
 }
 
-K_THREAD_DEFINE(hio_net_lrw, CONFIG_HIO_NET_LRW_THREAD_STACK_SIZE, dispatcher_thread, NULL, NULL,
-                NULL, CONFIG_HIO_NET_LRW_THREAD_PRIORITY, 0, 0);
+K_THREAD_DEFINE(ctr_net_lrw, CONFIG_CTR_NET_LRW_THREAD_STACK_SIZE, dispatcher_thread, NULL, NULL,
+                NULL, CONFIG_CTR_NET_LRW_THREAD_PRIORITY, 0, 0);
 
-int hio_net_lrw_init(hio_net_lrw_event_cb callback, void *param)
+int ctr_net_lrw_init(ctr_net_lrw_event_cb callback, void *param)
 {
 	m_callback = callback;
 	m_param = param;
@@ -903,7 +903,7 @@ int hio_net_lrw_init(hio_net_lrw_event_cb callback, void *param)
 	return 0;
 }
 
-int hio_net_lrw_start(int *corr_id)
+int ctr_net_lrw_start(int *corr_id)
 {
 	int ret;
 
@@ -926,7 +926,7 @@ int hio_net_lrw_start(int *corr_id)
 	return 0;
 }
 
-int hio_net_lrw_join(int *corr_id)
+int ctr_net_lrw_join(int *corr_id)
 {
 	int ret;
 
@@ -949,7 +949,7 @@ int hio_net_lrw_join(int *corr_id)
 	return 0;
 }
 
-int hio_net_lrw_send(const struct hio_net_lrw_send_opts *opts, const void *buf, size_t len,
+int ctr_net_lrw_send(const struct ctr_net_lrw_send_opts *opts, const void *buf, size_t len,
                      int *corr_id)
 {
 	int ret;
@@ -1161,7 +1161,7 @@ static void print_devaddr(const struct shell *shell)
 {
 	char buf[sizeof(m_config_interim.devaddr) * 2 + 1];
 
-	if (hio_buf2hex(m_config_interim.devaddr, sizeof(m_config_interim.devaddr), buf,
+	if (ctr_buf2hex(m_config_interim.devaddr, sizeof(m_config_interim.devaddr), buf,
 	                sizeof(buf), false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config devaddr %s", buf);
 	}
@@ -1171,7 +1171,7 @@ static void print_deveui(const struct shell *shell)
 {
 	char buf[sizeof(m_config_interim.deveui) * 2 + 1];
 
-	if (hio_buf2hex(m_config_interim.deveui, sizeof(m_config_interim.deveui), buf, sizeof(buf),
+	if (ctr_buf2hex(m_config_interim.deveui, sizeof(m_config_interim.deveui), buf, sizeof(buf),
 	                false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config deveui %s", buf);
 	}
@@ -1181,7 +1181,7 @@ static void print_joineui(const struct shell *shell)
 {
 	char buf[sizeof(m_config_interim.joineui) * 2 + 1];
 
-	if (hio_buf2hex(m_config_interim.joineui, sizeof(m_config_interim.joineui), buf,
+	if (ctr_buf2hex(m_config_interim.joineui, sizeof(m_config_interim.joineui), buf,
 	                sizeof(buf), false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config joineui %s", buf);
 	}
@@ -1191,7 +1191,7 @@ static void print_appkey(const struct shell *shell)
 {
 	char buf[sizeof(m_config_interim.appkey) * 2 + 1];
 
-	if (hio_buf2hex(m_config_interim.appkey, sizeof(m_config_interim.appkey), buf, sizeof(buf),
+	if (ctr_buf2hex(m_config_interim.appkey, sizeof(m_config_interim.appkey), buf, sizeof(buf),
 	                false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config appkey %s", buf);
 	}
@@ -1201,7 +1201,7 @@ static void print_nwkskey(const struct shell *shell)
 {
 	char buf[sizeof(m_config_interim.nwkskey) * 2 + 1];
 
-	if (hio_buf2hex(m_config_interim.nwkskey, sizeof(m_config_interim.nwkskey), buf,
+	if (ctr_buf2hex(m_config_interim.nwkskey, sizeof(m_config_interim.nwkskey), buf,
 	                sizeof(buf), false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config nwkskey %s", buf);
 	}
@@ -1211,7 +1211,7 @@ static void print_appskey(const struct shell *shell)
 {
 	char buf[sizeof(m_config_interim.appskey) * 2 + 1];
 
-	if (hio_buf2hex(m_config_interim.appskey, sizeof(m_config_interim.appskey), buf,
+	if (ctr_buf2hex(m_config_interim.appskey, sizeof(m_config_interim.appskey), buf,
 	                sizeof(buf), false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config appskey %s", buf);
 	}
@@ -1411,7 +1411,7 @@ static int cmd_config_devaddr(const struct shell *shell, size_t argc, char **arg
 	}
 
 	if (argc == 2) {
-		int ret = hio_hex2buf(argv[1], m_config_interim.devaddr,
+		int ret = ctr_hex2buf(argv[1], m_config_interim.devaddr,
 		                      sizeof(m_config_interim.devaddr), true);
 
 		if (ret == sizeof(m_config_interim.devaddr)) {
@@ -1431,7 +1431,7 @@ static int cmd_config_deveui(const struct shell *shell, size_t argc, char **argv
 	}
 
 	if (argc == 2) {
-		int ret = hio_hex2buf(argv[1], m_config_interim.deveui,
+		int ret = ctr_hex2buf(argv[1], m_config_interim.deveui,
 		                      sizeof(m_config_interim.deveui), true);
 
 		if (ret == sizeof(m_config_interim.deveui)) {
@@ -1451,7 +1451,7 @@ static int cmd_config_joineui(const struct shell *shell, size_t argc, char **arg
 	}
 
 	if (argc == 2) {
-		int ret = hio_hex2buf(argv[1], m_config_interim.joineui,
+		int ret = ctr_hex2buf(argv[1], m_config_interim.joineui,
 		                      sizeof(m_config_interim.joineui), true);
 
 		if (ret >= 0) {
@@ -1471,7 +1471,7 @@ static int cmd_config_appkey(const struct shell *shell, size_t argc, char **argv
 	}
 
 	if (argc == 2) {
-		int ret = hio_hex2buf(argv[1], m_config_interim.appkey,
+		int ret = ctr_hex2buf(argv[1], m_config_interim.appkey,
 		                      sizeof(m_config_interim.appkey), true);
 
 		if (ret >= 0) {
@@ -1491,7 +1491,7 @@ static int cmd_config_nwkskey(const struct shell *shell, size_t argc, char **arg
 	}
 
 	if (argc == 2) {
-		int ret = hio_hex2buf(argv[1], m_config_interim.nwkskey,
+		int ret = ctr_hex2buf(argv[1], m_config_interim.nwkskey,
 		                      sizeof(m_config_interim.nwkskey), true);
 
 		if (ret >= 0) {
@@ -1511,7 +1511,7 @@ static int cmd_config_appskey(const struct shell *shell, size_t argc, char **arg
 	}
 
 	if (argc == 2) {
-		int ret = hio_hex2buf(argv[1], m_config_interim.appskey,
+		int ret = ctr_hex2buf(argv[1], m_config_interim.appskey,
 		                      sizeof(m_config_interim.appskey), true);
 
 		if (ret >= 0) {
@@ -1535,10 +1535,10 @@ static int cmd_start(const struct shell *shell, size_t argc, char **argv)
 
 	int corr_id;
 
-	ret = hio_net_lrw_start(&corr_id);
+	ret = ctr_net_lrw_start(&corr_id);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_net_lrw_start` failed: %d", ret);
+		LOG_ERR("Call `ctr_net_lrw_start` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
@@ -1560,10 +1560,10 @@ static int cmd_join(const struct shell *shell, size_t argc, char **argv)
 
 	int corr_id;
 
-	ret = hio_net_lrw_join(&corr_id);
+	ret = ctr_net_lrw_join(&corr_id);
 
 	if (ret < 0) {
-		LOG_ERR("Call `hio_net_lrw_join` failed: %d", ret);
+		LOG_ERR("Call `ctr_net_lrw_join` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
@@ -1660,7 +1660,7 @@ static int init(const struct device *dev)
 		return ret;
 	}
 
-	hio_config_append_show(SETTINGS_PFX, cmd_config_show);
+	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
 
 	return 0;
 }
