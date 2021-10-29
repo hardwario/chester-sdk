@@ -1,0 +1,64 @@
+config CTR_LOG
+	bool "CTR_LOG"
+
+config LOG
+	default y
+	depends on CTR_LOG
+
+choice LOG_MODE
+	# TODO Change to LOG2_MODE_DEFERRED in the future
+	default LOG2_MODE_IMMEDIATE
+	depends on CTR_LOG
+endchoice
+
+config LOG_PROCESS_THREAD_STACK_SIZE
+	default 2048
+	depends on CTR_LOG
+
+config LOG_BUFFER_SIZE
+	default 4096
+	depends on CTR_LOG
+
+config LOG_PROCESS_TRIGGER_THRESHOLD
+	default 1
+	depends on CTR_LOG
+
+config LOG_PROCESS_THREAD_SLEEP_MS
+	default 100
+	depends on CTR_LOG
+
+config LOG_FUNC_NAME_PREFIX_ERR
+	default y
+	depends on CTR_LOG
+
+config LOG_FUNC_NAME_PREFIX_WRN
+	default y
+	depends on CTR_LOG
+
+config LOG_FUNC_NAME_PREFIX_INF
+	default y
+	depends on CTR_LOG
+
+config LOG_FUNC_NAME_PREFIX_DBG
+	default y
+	depends on CTR_LOG
+
+config LOG_BACKEND_SHOW_COLOR
+	default n
+	depends on CTR_LOG
+
+config LOG_BACKEND_RTT
+	default y
+	depends on CTR_LOG
+
+config LOG_BACKEND_RTT_BUFFER
+	default 1
+	depends on CTR_LOG
+
+config LOG_BACKEND_RTT_BUFFER_SIZE
+	default 4096
+	depends on CTR_LOG
+
+config LOG_BACKEND_RTT_MESSAGE_SIZE
+	default 256
+	depends on CTR_LOG

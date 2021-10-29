@@ -51,41 +51,6 @@ config HEAP_MEM_POOL_SIZE
 config KERNEL_SHELL
 	default y if CTR_SDK
 
-choice LOG_MODE
-	default LOG2_MODE_DEFERRED
-	depends on CTR_SDK
-endchoice
-
-config LOG
-	default y if CTR_SDK
-
-config LOG_BACKEND_RTT
-	default y if CTR_SDK
-
-config LOG_BACKEND_RTT_BUFFER
-	default 1 if CTR_SDK
-
-config LOG_BACKEND_RTT_BUFFER_SIZE
-	default 4096 if CTR_SDK
-
-config LOG_BACKEND_SHOW_COLOR
-	default n if CTR_SDK
-
-config LOG_FUNC_NAME_PREFIX_ERR
-	default y if CTR_SDK
-
-config LOG_FUNC_NAME_PREFIX_WRN
-	default y if CTR_SDK
-
-config LOG_FUNC_NAME_PREFIX_INF
-	default y if CTR_SDK
-
-config LOG_FUNC_NAME_PREFIX_DBG
-	default y if CTR_SDK
-
-config LOG_SPEED
-	default y if CTR_SDK
-
 config MAIN_STACK_SIZE
 	default 4096 if CTR_SDK
 
@@ -247,6 +212,7 @@ rsource "Kconfig.chester_x0d"
 rsource "Kconfig.config"
 rsource "Kconfig.hygro"
 rsource "Kconfig.led"
+rsource "Kconfig.log"
 rsource "Kconfig.lrw"
 rsource "Kconfig.rtc"
 rsource "Kconfig.therm"
