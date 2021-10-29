@@ -12,21 +12,21 @@ LOG_MODULE_REGISTER(ctr_hygro, LOG_LEVEL_DBG);
 
 static K_MUTEX_DEFINE(m_mut);
 
+static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(sht30));
+
 int ctr_hygro_read(float *temperature, float *humidity)
 {
 	int ret;
 
 	k_mutex_lock(&m_mut, K_FOREVER);
 
-	const struct device *dev = device_get_binding("SHT30");
-
-	if (dev == NULL) {
-		LOG_ERR("Call `device_get_binding` failed");
+	if (!device_is_ready(m_dev)) {
+		LOG_ERR("Device not ready");
 		k_mutex_unlock(&m_mut);
 		return -ENODEV;
 	}
 
-	ret = sensor_sample_fetch(dev);
+	ret = sensor_sample_fetch(m_dev);
 
 	if (ret < 0) {
 		LOG_ERR("Call `sensor_sample_fetch` failed: %d", ret);
@@ -36,7 +36,7 @@ int ctr_hygro_read(float *temperature, float *humidity)
 
 	struct sensor_value val;
 
-	ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &val);
+	ret = sensor_channel_get(m_dev, SENSOR_CHAN_AMBIENT_TEMP, &val);
 
 	if (ret < 0) {
 		LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
@@ -52,7 +52,7 @@ int ctr_hygro_read(float *temperature, float *humidity)
 		*temperature = tmp_temperature;
 	}
 
-	ret = sensor_channel_get(dev, SENSOR_CHAN_HUMIDITY, &val);
+	ret = sensor_channel_get(m_dev, SENSOR_CHAN_HUMIDITY, &val);
 
 	if (ret < 0) {
 		LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
