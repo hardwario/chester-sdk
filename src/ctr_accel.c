@@ -82,9 +82,18 @@ int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientat
 		return -ENODEV;
 	}
 
-	ret = sensor_sample_fetch(m_dev);
+	/* TODO Check if this is the best aprroach */
+	for (int i = 0; i < 5; i++) {
+		ret = sensor_sample_fetch(m_dev);
 
-	if (ret < 0 && ret != -EBADMSG) {
+		if (ret != ENODATA) {
+			break;
+		}
+
+		k_sleep(K_MSEC(10));
+	}
+
+	if (ret < 0) {
 		LOG_ERR("Call `sensor_sample_fetch` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
