@@ -13,6 +13,8 @@ LOG_MODULE_REGISTER(ctr_therm, LOG_LEVEL_DBG);
 static K_MUTEX_DEFINE(m_mut);
 static bool m_init;
 
+static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(tmp112));
+
 int ctr_therm_init(void)
 {
 	int ret;
@@ -25,10 +27,8 @@ int ctr_therm_init(void)
 		return -EACCES;
 	}
 
-	const struct device *dev = device_get_binding("TMP112");
-
-	if (dev == NULL) {
-		LOG_ERR("Call `device_get_binding` failed");
+	if (!device_is_ready(m_dev)) {
+		LOG_ERR("Device not ready");
 		k_mutex_unlock(&m_mut);
 		return -ENODEV;
 	}
@@ -38,7 +38,7 @@ int ctr_therm_init(void)
 	val.val1 = 128;
 	val.val2 = 0;
 
-	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_FULL_SCALE, &val);
+	ret = sensor_attr_set(m_dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_FULL_SCALE, &val);
 
 	if (ret < 0) {
 		LOG_ERR("Call `sensor_attr_set` failed: %d", ret);
@@ -49,7 +49,8 @@ int ctr_therm_init(void)
 	val.val1 = 0;
 	val.val2 = 250000;
 
-	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_SAMPLING_FREQUENCY, &val);
+	ret = sensor_attr_set(m_dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_SAMPLING_FREQUENCY,
+	                      &val);
 
 	if (ret < 0) {
 		LOG_ERR("Call `sensor_attr_set` failed: %d", ret);
@@ -75,15 +76,13 @@ int ctr_therm_read(float *temperature)
 		return -EACCES;
 	}
 
-	const struct device *dev = device_get_binding("TMP112");
-
-	if (dev == NULL) {
-		LOG_ERR("Call `device_get_binding` failed");
+	if (!device_is_ready(m_dev)) {
+		LOG_ERR("Device not ready");
 		k_mutex_unlock(&m_mut);
 		return -ENODEV;
 	}
 
-	ret = sensor_sample_fetch(dev);
+	ret = sensor_sample_fetch(m_dev);
 
 	if (ret < 0) {
 		LOG_ERR("Call `sensor_sample_fetch` failed: %d", ret);
@@ -93,7 +92,7 @@ int ctr_therm_read(float *temperature)
 
 	struct sensor_value val;
 
-	ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &val);
+	ret = sensor_channel_get(m_dev, SENSOR_CHAN_AMBIENT_TEMP, &val);
 
 	if (ret < 0) {
 		LOG_ERR("Call `sensor_channel_get` failed:t %d", ret);
