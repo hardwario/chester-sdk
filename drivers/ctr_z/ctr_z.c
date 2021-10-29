@@ -122,7 +122,8 @@ static int ctr_z_get_status_(const struct device *dev, struct ctr_z_status *stat
 		return ret;
 	}
 
-	status->dc_input_connected = (bool)(reg_status & BIT(5));
+	status->dc_input_connected = (bool)(reg_status & BIT(6));
+
 	status->button_0_pressed = (bool)(reg_status & BIT(4));
 	status->button_1_pressed = (bool)(reg_status & BIT(3));
 	status->button_2_pressed = (bool)(reg_status & BIT(2));
