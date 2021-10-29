@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(ctr_chester_x0d, LOG_LEVEL_DBG);
 	        name, _k_mem_slab_buf_##name, WB_UP(slab_block_size), slab_num_blocks)
 
 #define EVENT_WORK_NAME "chester_x0d"
-#define EVENT_WORK_STACK_SIZE 1024
+#define EVENT_WORK_STACK_SIZE 2048
 #define EVENT_SLAB_MAX_ITEMS 64
 
 #define INPUT_1_DEV_A CTR_BSP_GP0A_DEV
