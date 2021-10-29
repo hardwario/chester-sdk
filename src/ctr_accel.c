@@ -27,6 +27,8 @@ static int m_orientation;
 
 static K_MUTEX_DEFINE(m_mut);
 
+static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(lis2dh12));
+
 static void update_orientation(float coeff_x, float coeff_y, float coeff_z)
 {
 	int vector_x = m_vectors[m_orientation][0];
@@ -74,15 +76,13 @@ int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientat
 
 	k_mutex_lock(&m_mut, K_FOREVER);
 
-	const struct device *dev = device_get_binding("LIS2DH12");
-
-	if (dev == NULL) {
-		LOG_ERR("Call `device_get_binding` failed");
+	if (!device_is_ready(m_dev)) {
+		LOG_ERR("Device not ready");
 		k_mutex_unlock(&m_mut);
 		return -ENODEV;
 	}
 
-	ret = sensor_sample_fetch(dev);
+	ret = sensor_sample_fetch(m_dev);
 
 	if (ret < 0 && ret != -EBADMSG) {
 		LOG_ERR("Call `sensor_sample_fetch` failed: %d", ret);
@@ -92,7 +92,7 @@ int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientat
 
 	struct sensor_value val[3];
 
-	ret = sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, val);
+	ret = sensor_channel_get(m_dev, SENSOR_CHAN_ACCEL_XYZ, val);
 
 	if (ret < 0) {
 		LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
