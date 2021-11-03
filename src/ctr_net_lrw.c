@@ -992,8 +992,6 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	int ret;
 	const char *next;
 
-	LOG_DBG("key: %s len: %u", key, len);
-
 #define SETTINGS_SET(_key, _var, _size)                                                            \
 	do {                                                                                       \
 		if (settings_name_steq(key, _key, &next) && !next) {                               \
