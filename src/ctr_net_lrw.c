@@ -136,10 +136,6 @@ static ctr_net_lrw_event_cb m_callback;
 static void *m_param;
 static atomic_t m_corr_id;
 
-static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg);
-
-static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len));
-
 static void talk_handler(enum ctr_lrw_talk_event event)
 {
 	switch (event) {
@@ -164,7 +160,7 @@ static void talk_handler(enum ctr_lrw_talk_event event)
 		k_poll_signal_raise(&m_send_sig, 1);
 		break;
 	default:
-		LOG_WRN("Unknown event: %d", (int)event);
+		LOG_WRN("Unknown event: %d", event);
 	}
 }
 
