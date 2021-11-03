@@ -1,0 +1,15 @@
+config CTR_NET_LTE
+	bool "CTR_NET_LTE"
+	depends on CTR_CONFIG
+	select CTR_SDK
+	select CTR_BSP
+
+config CTR_NET_LTE_THREAD_STACK_SIZE
+	int "CTR_NET_LTE_THREAD_STACK_SIZE"
+	default 4096
+	depends on CTR_NET_LTE
+
+config CTR_NET_LTE_THREAD_PRIORITY
+	int "CTR_NET_LTE_THREAD_PRIORITY"
+	default 10
+	depends on CTR_NET_LTE

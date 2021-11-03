@@ -1,5 +1,6 @@
 config CTR_NET_LRW
 	bool "CTR_NET_LRW"
+	depends on CTR_CONFIG
 	select CTR_SDK
 	select CTR_BSP
 

@@ -75,7 +75,7 @@ struct ctr_net_lte_send_opts {
 
 #define CTR_NET_LTE_SEND_OPTS_DEFAULTS                                                             \
 	{                                                                                          \
-		.ttl = CTR_SYS_FOREVER, .addr = { 192, 168, 168, 1 }, .port = 7777,                \
+		.ttl = 0, .addr = { 192, 168, 168, 1 }, .port = 10000,                             \
 	}
 
 int ctr_net_lte_set_event_cb(ctr_net_lte_event_cb user_cb, void *user_data);
