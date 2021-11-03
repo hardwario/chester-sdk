@@ -1,7 +1,187 @@
 #include <ctr_net_lte.h>
+#include <ctr_config.h>
 
-int ctr_net_lte_set_event_cb(ctr_net_lte_event_cb user_cb, void *user_data)
+/* Zephyr includes */
+#include <init.h>
+#include <logging/log.h>
+#include <settings/settings.h>
+#include <shell/shell.h>
+#include <zephyr.h>
+
+/* Standard includes */
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <string.h>
+
+LOG_MODULE_REGISTER(ctr_net_lte, LOG_LEVEL_DBG);
+
+#define SETTINGS_PFX "lte"
+
+#define BOOT_RETRY_COUNT 3
+#define BOOT_RETRY_DELAY K_SECONDS(10)
+#define SETUP_RETRY_COUNT 3
+#define SETUP_RETRY_DELAY K_SECONDS(10)
+
+#define CMD_MSGQ_MAX_ITEMS 16
+#define SEND_MSGQ_MAX_ITEMS 16
+
+enum cmd_msgq_req {
+	CMD_MSGQ_REQ_START = 0,
+	CMD_MSGQ_REQ_ATTACH = 1,
+	CMD_MSGQ_REQ_DETACH = 2,
+};
+
+struct cmd_msgq_item {
+	int corr_id;
+	enum cmd_msgq_req req;
+};
+
+struct send_msgq_data {
+	int64_t ttl;
+	uint8_t addr[4];
+	int port;
+	void *buf;
+	size_t len;
+};
+
+struct send_msgq_item {
+	int corr_id;
+	struct send_msgq_data data;
+};
+
+enum state {
+	STATE_ERROR = -1,
+	STATE_INIT = 0,
+	STATE_READY = 1,
+};
+
+enum antenna {
+	ANTENNA_INT = 0,
+	ANTENNA_EXT = 1,
+};
+
+struct config {
+	enum antenna antenna;
+};
+
+static enum state m_state = STATE_INIT;
+
+static struct config m_config_interim = {
+	.antenna = ANTENNA_INT,
+};
+
+static struct config m_config;
+
+K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
+K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
+
+static ctr_net_lte_event_cb m_event_cb;
+static void *m_user_data;
+static atomic_t m_corr_id;
+
+static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg);
+
+static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len));
+
+static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
+	int ret;
+	const char *next;
+
+#define SETTINGS_SET(_key, _var, _size)                                                            \
+	do {                                                                                       \
+		if (settings_name_steq(key, _key, &next) && !next) {                               \
+			if (len != _size) {                                                        \
+				return -EINVAL;                                                    \
+			}                                                                          \
+                                                                                                   \
+			ret = read_cb(cb_arg, _var, len);                                          \
+                                                                                                   \
+			if (ret < 0) {                                                             \
+				LOG_ERR("Call `read_cb` failed: %d", ret);                         \
+				return ret;                                                        \
+			}                                                                          \
+                                                                                                   \
+			return 0;                                                                  \
+		}                                                                                  \
+	} while (0)
+
+	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
+
+#undef SETTINGS_SET
+
+	return -ENOENT;
+}
+
+static int h_commit(void)
+{
+	LOG_DBG("Loaded settings in full");
+	memcpy(&m_config, &m_config_interim, sizeof(m_config));
+	return 0;
+}
+
+static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len))
+{
+#define EXPORT_FUNC(_key, _var, _size)                                                             \
+	do {                                                                                       \
+		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
+	} while (0)
+
+	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
+
+#undef EXPORT_FUNC
+
+	return 0;
+}
+
+static void print_antenna(const struct shell *shell)
+{
+	switch (m_config_interim.antenna) {
+	case ANTENNA_INT:
+		shell_print(shell, SETTINGS_PFX " config antenna int");
+		break;
+	case ANTENNA_EXT:
+		shell_print(shell, SETTINGS_PFX " config antenna ext");
+		break;
+	default:
+		shell_print(shell, SETTINGS_PFX " config antenna (unknown)");
+	}
+}
+
+static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
+{
+	print_antenna(shell);
+
+	return 0;
+}
+
+static int cmd_config_antenna(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_antenna(shell);
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "int") == 0) {
+		m_config_interim.antenna = ANTENNA_INT;
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "ext") == 0) {
+		m_config_interim.antenna = ANTENNA_EXT;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+int ctr_net_lte_set_event_cb(ctr_net_lte_event_cb event_cb, void *user_data)
+{
+	m_event_cb = event_cb;
+	m_user_data = user_data;
+
 	return 0;
 }
 
@@ -25,6 +205,122 @@ int ctr_net_lte_send(const struct ctr_net_lte_send_opts *opts, const void *buf, 
 {
 	return 0;
 }
+
+static int cmd_start(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	int corr_id;
+
+	ret = ctr_net_lte_start(&corr_id);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_net_lte_start` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "correlation id: %d", corr_id);
+
+	return 0;
+}
+
+static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	int corr_id;
+
+	ret = ctr_net_lte_attach(&corr_id);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_net_lte_attach` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "correlation id: %d", corr_id);
+
+	return 0;
+}
+
+static int print_help(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	shell_help(shell);
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_lte_config,
+                               SHELL_CMD_ARG(show, NULL, "List current configuration.",
+                                             cmd_config_show, 1, 0),
+                               SHELL_CMD_ARG(antenna, NULL,
+                                             "Get/Set LoRaWAN antenna (format: <int|ext>).",
+                                             cmd_config_antenna, 1, 1),
+                               SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_lte,
+                               SHELL_CMD_ARG(config, &sub_lte_config, "Configuration commands.",
+                                             print_help, 1, 0),
+                               SHELL_CMD_ARG(start, NULL, "Start interface.", cmd_start, 1, 0),
+                               SHELL_CMD_ARG(attach, NULL, "Attach to network.", cmd_attach, 1, 0),
+                               SHELL_SUBCMD_SET_END);
+
+SHELL_CMD_REGISTER(lte, &sub_lte, "LTE commands.", print_help);
+
+static int init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	int ret;
+
+	LOG_INF("System initialization");
+
+	static struct settings_handler sh = {
+		.name = SETTINGS_PFX,
+		.h_set = h_set,
+		.h_commit = h_commit,
+		.h_export = h_export,
+	};
+
+	ret = settings_register(&sh);
+
+	if (ret < 0) {
+		LOG_ERR("Call `settings_register` failed: %d", ret);
+		return ret;
+	}
+
+	ret = settings_load_subtree(SETTINGS_PFX);
+
+	if (ret < 0) {
+		LOG_ERR("Call `settings_load_subtree` failed: %d", ret);
+		return ret;
+	}
+
+	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
+
+	return 0;
+}
+
+SYS_INIT(init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
 #if 0
 #include <ctr_net_lte.h>
