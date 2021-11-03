@@ -1,5 +1,6 @@
 #include <ctr_net_lte.h>
 #include <ctr_config.h>
+#include <ctr_lte_talk.h>
 
 /* Zephyr includes */
 #include <init.h>
@@ -73,6 +74,8 @@ static struct config m_config_interim = {
 
 static struct config m_config;
 
+static struct k_poll_signal m_boot_sig;
+
 K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
 
@@ -80,9 +83,17 @@ static ctr_net_lte_event_cb m_event_cb;
 static void *m_user_data;
 static atomic_t m_corr_id;
 
-static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg);
-
-static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len));
+static void talk_handler(enum ctr_lte_talk_event event)
+{
+	switch (event) {
+	case CTR_LTE_TALK_EVENT_BOOT:
+		LOG_DBG("Event `CTR_LTE_TALK_EVENT_BOOT`");
+		k_poll_signal_raise(&m_boot_sig, 0);
+		break;
+	default:
+		LOG_WRN("Unknown event: %d", event);
+	}
+}
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
@@ -293,6 +304,8 @@ static int init(const struct device *dev)
 	int ret;
 
 	LOG_INF("System initialization");
+
+	k_poll_signal_init(&m_boot_sig);
 
 	static struct settings_handler sh = {
 		.name = SETTINGS_PFX,
