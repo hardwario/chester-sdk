@@ -107,11 +107,18 @@
 		            <&gpio0 17 GPIO_ACTIVE_HIGH>;
 	};
 
-	sht30: sht30@45 {
+	sht30_int: sht30_int@45 {
 		status = "disabled";
 		compatible = "sensirion,sht3xd";
 		reg = <0x45>;
-		label = "SHT30";
+		label = "SHT30_INT";
+	};
+
+	sht30_ext: sht30_ext@44 {
+		status = "disabled";
+		compatible = "sensirion,sht3xd";
+		reg = <0x44>;
+		label = "SHT30_EXT";
 	};
 
 	tmp112: tmp112@48 {
