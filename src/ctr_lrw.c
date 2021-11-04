@@ -413,8 +413,9 @@ static int join_once(void)
 		return ret;
 	}
 
-	struct k_poll_event events[] = { K_POLL_EVENT_INITIALIZER(
-		K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_join_sig) };
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_join_sig),
+	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), JOIN_TIMEOUT);
 
@@ -865,7 +866,7 @@ static void dispatcher_thread(void)
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
 			                         K_POLL_MODE_NOTIFY_ONLY, &m_cmd_msgq),
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-			                         K_POLL_MODE_NOTIFY_ONLY, &m_send_msgq)
+			                         K_POLL_MODE_NOTIFY_ONLY, &m_send_msgq),
 		};
 
 		ret = k_poll(events, m_state != STATE_READY ? 1 : 2, K_FOREVER);
@@ -903,8 +904,10 @@ int ctr_lrw_start(int *corr_id)
 {
 	int ret;
 
-	struct cmd_msgq_item item = { .corr_id = (int)atomic_inc(&m_corr_id),
-		                      .req = CMD_MSGQ_REQ_START };
+	struct cmd_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.req = CMD_MSGQ_REQ_START,
+	};
 
 	LOG_INF("Enqueing START command (correlation id: %d)", item.corr_id);
 
@@ -926,8 +929,10 @@ int ctr_lrw_join(int *corr_id)
 {
 	int ret;
 
-	struct cmd_msgq_item item = { .corr_id = (int)atomic_inc(&m_corr_id),
-		                      .req = CMD_MSGQ_REQ_JOIN };
+	struct cmd_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.req = CMD_MSGQ_REQ_JOIN,
+	};
 
 	if (corr_id != NULL) {
 		*corr_id = item.corr_id;
@@ -958,12 +963,14 @@ int ctr_lrw_send(const struct ctr_lrw_send_opts *opts, const void *buf, size_t l
 
 	memcpy(p, buf, len);
 
-	struct send_msgq_item item = { .corr_id = (int)atomic_inc(&m_corr_id),
-		                       .data = { .ttl = opts->ttl,
-		                                 .confirmed = opts->confirmed,
-		                                 .port = opts->port,
-		                                 .buf = p,
-		                                 .len = len } };
+	struct send_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.data = { .ttl = opts->ttl,
+		          .confirmed = opts->confirmed,
+		          .port = opts->port,
+		          .buf = p,
+		          .len = len },
+	};
 
 	LOG_INF("Enqueing SEND command (correlation id: %d)", item.corr_id);
 
