@@ -1,9 +1,6 @@
 config CTR_LOG
 	bool "CTR_LOG"
-
-config LOG
-	default y
-	depends on CTR_LOG
+	select LOG
 
 choice LOG_MODE
 	# TODO Change to LOG2_MODE_DEFERRED in the future
