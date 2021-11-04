@@ -1,4 +1,5 @@
 #include <ctr_lte.h>
+#include <ctr_bsp.h>
 #include <ctr_config.h>
 #include <ctr_lte_talk.h>
 
@@ -80,7 +81,7 @@ K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
 
 static ctr_lte_event_cb m_event_cb;
-static void *m_user_data;
+static void *m_event_user_data;
 static atomic_t m_corr_id;
 
 static void talk_handler(enum ctr_lte_talk_event event)
@@ -94,6 +95,299 @@ static void talk_handler(enum ctr_lte_talk_event event)
 		LOG_WRN("Unknown event: %d", event);
 	}
 }
+
+static int boot_once(void)
+{
+	int ret;
+
+	ctr_bsp_set_lte_reset(0);
+	k_sleep(K_MSEC(100));
+	ctr_bsp_set_lte_reset(1);
+
+	k_poll_signal_reset(&m_boot_sig);
+	k_sleep(K_MSEC(1000));
+
+	ctr_bsp_set_lte_wkup(0);
+	k_sleep(K_MSEC(100));
+	ctr_bsp_set_lte_wkup(1);
+
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_boot_sig),
+	};
+
+	ret = k_poll(events, ARRAY_SIZE(events), K_MSEC(1000));
+
+	if (ret == -EAGAIN) {
+		LOG_WRN("Boot message timed out");
+		return -ETIMEDOUT;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_poll` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int boot(int retries, k_timeout_t delay)
+{
+	int ret;
+
+	LOG_INF("Operation BOOT started");
+
+	while (retries-- > 0) {
+		ret = ctr_lte_talk_enable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_enable` failed: %d", ret);
+			return ret;
+		}
+
+		ret = boot_once();
+
+		if (ret == 0) {
+			ret = ctr_lte_talk_disable();
+
+			if (ret < 0) {
+				LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+				return ret;
+			}
+
+			LOG_INF("Operation BOOT succeeded");
+			return 0;
+		}
+
+		if (ret < 0) {
+			LOG_WRN("Call `boot_once` failed: %d", ret);
+		}
+
+		ret = ctr_lte_talk_disable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+			return ret;
+		}
+
+		if (retries > 0) {
+			k_sleep(delay);
+			LOG_WRN("Repeating BOOT operation (retries left: %d)", retries);
+		}
+	}
+
+	LOG_ERR("Operation BOOT failed");
+	return -ENOLINK;
+}
+
+static int start(void)
+{
+	int ret;
+
+	if (m_config.antenna == ANTENNA_EXT) {
+		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_EXT);
+	} else {
+		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_INT);
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_bsp_set_rf_ant` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_bsp_set_rf_mux(CTR_BSP_RF_MUX_LTE);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_bsp_set_rf_mux` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_init(talk_handler);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_init` failed: %d", ret);
+		return ret;
+	}
+
+	ret = boot(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
+
+	if (ret < 0) {
+		LOG_ERR("Call `boot` failed: %d", ret);
+		return ret;
+	}
+
+	// TODO
+	// ret = setup(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
+	ret = 0;
+
+	if (ret < 0) {
+		LOG_ERR("Call `setup` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int process_req_start(const struct cmd_msgq_item *item)
+{
+	int ret;
+
+	union ctr_lte_event_data data = { 0 };
+
+	ret = start();
+
+	if (ret < 0) {
+		LOG_ERR("Call `start` failed: %d", ret);
+
+		data.start_err.corr_id = item->corr_id;
+
+		if (m_event_cb != NULL) {
+			m_event_cb(CTR_LTE_EVENT_START_ERR, &data, m_event_user_data);
+		}
+
+		return ret;
+	}
+
+	m_state = STATE_READY;
+
+	data.start_ok.corr_id = item->corr_id;
+
+	if (m_event_cb != NULL) {
+		m_event_cb(CTR_LTE_EVENT_START_OK, &data, m_event_user_data);
+	}
+
+	return 0;
+}
+
+static void process_cmd_msgq(void)
+{
+	int ret;
+
+	struct cmd_msgq_item item;
+
+	ret = k_msgq_get(&m_cmd_msgq, &item, K_NO_WAIT);
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_msgq_get` failed: %d", ret);
+		return;
+	}
+
+	if (item.req == CMD_MSGQ_REQ_START) {
+		LOG_INF("Dequeued START command (correlation id: %d)", item.corr_id);
+
+		if (m_state != STATE_INIT && m_state != STATE_ERROR) {
+			LOG_WRN("No reason for START operation - ignoring");
+
+		} else {
+			ret = process_req_start(&item);
+
+			m_state = ret < 0 ? STATE_ERROR : STATE_READY;
+
+			if (m_state == STATE_ERROR) {
+				LOG_ERR("Error - flushing all control commands from queue");
+
+				k_msgq_purge(&m_cmd_msgq);
+
+				if (m_event_cb != NULL) {
+					m_event_cb(CTR_LTE_EVENT_FAILURE, NULL, m_event_user_data);
+				}
+			}
+		}
+
+	} else if (item.req == CMD_MSGQ_REQ_ATTACH) {
+		LOG_INF("Dequeued ATTACH command (correlation id: %d)", item.corr_id);
+
+		if (m_state != STATE_READY) {
+			LOG_WRN("Not ready for JOIN command - ignoring");
+
+		} else {
+			// TODO
+			// ret = process_req_join(&item);
+			ret = 0;
+
+			m_state = ret < 0 ? STATE_ERROR : STATE_READY;
+
+			if (m_state == STATE_ERROR) {
+				LOG_ERR("Error - flushing all control commands from queue");
+
+				k_msgq_purge(&m_cmd_msgq);
+
+				if (m_event_cb != NULL) {
+					m_event_cb(CTR_LTE_EVENT_FAILURE, NULL, m_event_user_data);
+				}
+			}
+		}
+
+	} else {
+		LOG_ERR("Unknown message: %d", (int)item.req);
+	}
+}
+
+static void process_send_msgq(void)
+{
+	int ret;
+
+	struct send_msgq_item item;
+
+	ret = k_msgq_get(&m_send_msgq, &item, K_NO_WAIT);
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_msgq_get` failed: %d", ret);
+		return;
+	}
+
+	LOG_INF("Dequeued SEND command (correlation id: %d)", item.corr_id);
+
+	// TODO
+	// ret = process_req_send(&item);
+	ret = 0;
+
+	m_state = ret < 0 ? STATE_ERROR : STATE_READY;
+
+	if (m_state == STATE_ERROR) {
+		LOG_ERR("Error - flushing all control commands from queue");
+
+		k_msgq_purge(&m_cmd_msgq);
+
+		if (m_event_cb != NULL) {
+			m_event_cb(CTR_LTE_EVENT_FAILURE, NULL, m_event_user_data);
+		}
+	}
+}
+
+static void dispatcher_thread(void)
+{
+	int ret;
+
+	for (;;) {
+		struct k_poll_event events[] = {
+			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+			                         K_POLL_MODE_NOTIFY_ONLY, &m_cmd_msgq),
+			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+			                         K_POLL_MODE_NOTIFY_ONLY, &m_send_msgq),
+		};
+
+		ret = k_poll(events, m_state != STATE_READY ? 1 : 2, K_FOREVER);
+
+		if (ret < 0) {
+			LOG_ERR("Call `k_poll` failed: %d", ret);
+			k_sleep(K_SECONDS(5));
+			continue;
+		}
+
+		if (events[0].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+			process_cmd_msgq();
+		}
+
+		if (events[1].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+			if (m_state == STATE_READY) {
+				process_send_msgq();
+			}
+		}
+	}
+}
+
+K_THREAD_DEFINE(ctr_lte, CONFIG_CTR_LTE_THREAD_STACK_SIZE, dispatcher_thread, NULL, NULL, NULL,
+                CONFIG_CTR_LTE_THREAD_PRIORITY, 0, 0);
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
@@ -188,26 +482,86 @@ static int cmd_config_antenna(const struct shell *shell, size_t argc, char **arg
 	return -EINVAL;
 }
 
-int ctr_lte_set_event_cb(ctr_lte_event_cb event_cb, void *user_data)
+int ctr_lte_set_event_cb(ctr_lte_event_cb cb, void *user_data)
 {
-	m_event_cb = event_cb;
-	m_user_data = user_data;
+	m_event_cb = cb;
+	m_event_user_data = user_data;
 
 	return 0;
 }
 
 int ctr_lte_start(int *corr_id)
 {
+	int ret;
+
+	struct cmd_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.req = CMD_MSGQ_REQ_START,
+	};
+
+	LOG_INF("Enqueing START command (correlation id: %d)", item.corr_id);
+
+	if (corr_id != NULL) {
+		*corr_id = item.corr_id;
+	}
+
+	ret = k_msgq_put(&m_cmd_msgq, &item, K_NO_WAIT);
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_msgq_put` failed: %d", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
 int ctr_lte_attach(int *corr_id)
 {
+	int ret;
+
+	struct cmd_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.req = CMD_MSGQ_REQ_ATTACH,
+	};
+
+	if (corr_id != NULL) {
+		*corr_id = item.corr_id;
+	}
+
+	LOG_INF("Enqueing ATTACH command (correlation id: %d)", item.corr_id);
+
+	ret = k_msgq_put(&m_cmd_msgq, &item, K_NO_WAIT);
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_msgq_put` failed: %d", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
 int ctr_lte_detach(int *corr_id)
 {
+	int ret;
+
+	struct cmd_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.req = CMD_MSGQ_REQ_DETACH,
+	};
+
+	if (corr_id != NULL) {
+		*corr_id = item.corr_id;
+	}
+
+	LOG_INF("Enqueing DETACH command (correlation id: %d)", item.corr_id);
+
+	ret = k_msgq_put(&m_cmd_msgq, &item, K_NO_WAIT);
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_msgq_put` failed: %d", ret);
+		return ret;
+	}
+
 	return 0;
 }
 

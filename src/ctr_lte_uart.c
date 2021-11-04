@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(ctr_lte_uart, LOG_LEVEL_DBG);
 static atomic_t m_enabled;
 static atomic_t m_reset;
 static atomic_t m_stop;
-static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(uart1));
+static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(uart0));
 static ctr_lte_recv_cb m_recv_cb;
 K_MEM_SLAB_DEFINE_STATIC(m_rx_slab, RX_BLOCK_SIZE, 2, 4);
 static K_MUTEX_DEFINE(m_mut);

@@ -27,6 +27,13 @@ static void *m_handler_param;
 
 static void process_urc(const char *s)
 {
+	if (strcmp(s, "Ready") == 0) {
+		if (m_event_cb != NULL) {
+			m_event_cb(CTR_LTE_TALK_EVENT_BOOT);
+		}
+
+		return;
+	}
 }
 
 static void recv_cb(const char *s)
