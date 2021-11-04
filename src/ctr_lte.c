@@ -1,4 +1,4 @@
-#include <ctr_net_lte.h>
+#include <ctr_lte.h>
 #include <ctr_config.h>
 #include <ctr_lte_talk.h>
 
@@ -15,7 +15,7 @@
 #include <stddef.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(ctr_net_lte, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_lte, LOG_LEVEL_DBG);
 
 #define SETTINGS_PFX "lte"
 
@@ -79,7 +79,7 @@ static struct k_poll_signal m_boot_sig;
 K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
 
-static ctr_net_lte_event_cb m_event_cb;
+static ctr_lte_event_cb m_event_cb;
 static void *m_user_data;
 static atomic_t m_corr_id;
 
@@ -188,7 +188,7 @@ static int cmd_config_antenna(const struct shell *shell, size_t argc, char **arg
 	return -EINVAL;
 }
 
-int ctr_net_lte_set_event_cb(ctr_net_lte_event_cb event_cb, void *user_data)
+int ctr_lte_set_event_cb(ctr_lte_event_cb event_cb, void *user_data)
 {
 	m_event_cb = event_cb;
 	m_user_data = user_data;
@@ -196,23 +196,22 @@ int ctr_net_lte_set_event_cb(ctr_net_lte_event_cb event_cb, void *user_data)
 	return 0;
 }
 
-int ctr_net_lte_start(int *corr_id)
+int ctr_lte_start(int *corr_id)
 {
 	return 0;
 }
 
-int ctr_net_lte_attach(int *corr_id)
+int ctr_lte_attach(int *corr_id)
 {
 	return 0;
 }
 
-int ctr_net_lte_detach(int *corr_id)
+int ctr_lte_detach(int *corr_id)
 {
 	return 0;
 }
 
-int ctr_net_lte_send(const struct ctr_net_lte_send_opts *opts, const void *buf, size_t len,
-                     int *corr_id)
+int ctr_lte_send(const struct ctr_lte_send_opts *opts, const void *buf, size_t len, int *corr_id)
 {
 	return 0;
 }
@@ -229,10 +228,10 @@ static int cmd_start(const struct shell *shell, size_t argc, char **argv)
 
 	int corr_id;
 
-	ret = ctr_net_lte_start(&corr_id);
+	ret = ctr_lte_start(&corr_id);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_net_lte_start` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_start` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
@@ -254,10 +253,10 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 
 	int corr_id;
 
-	ret = ctr_net_lte_attach(&corr_id);
+	ret = ctr_lte_attach(&corr_id);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_net_lte_attach` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_attach` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
@@ -336,7 +335,7 @@ static int init(const struct device *dev)
 SYS_INIT(init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
 #if 0
-#include <ctr_net_lte.h>
+#include <ctr_lte.h>
 #include <ctr_bsp.h>
 #include <ctr_lte_talk.h>
 #include <ctr_lte_tok.h>
@@ -351,7 +350,7 @@ SYS_INIT(init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 #include <stdio.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(ctr_net_lte, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_lte, LOG_LEVEL_DBG);
 
 #define SEND_MSGQ_MAX_ITEMS 16
 #define RECV_MSGQ_MAX_ITEMS 16
@@ -383,8 +382,8 @@ typedef enum {
 } state_t;
 
 typedef struct {
-	const ctr_net_lte_cfg_t *cfg;
-	ctr_net_lte_callback_t cb;
+	const ctr_lte_cfg_t *cfg;
+	ctr_lte_callback_t cb;
 	void *param;
 	ctr_sys_mut_t mut;
 	ctr_sys_sem_t sem;
@@ -398,14 +397,14 @@ typedef struct {
 	state_t state_req;
 	bool registered;
 	char buf[2 * SEND_MAX_LEN + 1];
-} ctr_net_lte_t;
+} ctr_lte_t;
 
-static ctr_net_lte_t inst;
+static ctr_lte_t inst;
 
 static int sleep(void)
 {
 #if 1
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	int ret = 0;
 
@@ -433,7 +432,7 @@ static int sleep(void)
 static int wake_up(void)
 {
 #if 1
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	LOG_INF("Wake up initiated [%p]", ctx);
 
@@ -463,7 +462,7 @@ static int wake_up(void)
 
 static int attach_once(void)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	if (ctr_bsp_set_lte_reset(0) < 0) {
 		LOG_ERR("Call `ctr_bsp_set_lte_reset` failed [%p]", ctx);
@@ -650,7 +649,7 @@ static int attach_once(void)
 
 static int attach(void)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	LOG_INF("Attach started [%p]", ctx);
 
@@ -673,8 +672,8 @@ static int attach(void)
 		LOG_INF("Attach succeeded [%p]", ctx);
 
 		if (ctx->cb != NULL) {
-			ctr_net_lte_event_t event = { 0 };
-			event.source = CTR_NET_LTE_EVENT_ATTACH_DONE;
+			ctr_lte_event_t event = { 0 };
+			event.source = CTR_LTE_EVENT_ATTACH_DONE;
 			ctx->cb(&event, ctx->param);
 		}
 
@@ -684,8 +683,8 @@ static int attach(void)
 		LOG_WRN("Attach failed [%p]", ctx);
 
 		if (ctx->cb != NULL) {
-			ctr_net_lte_event_t event = { 0 };
-			event.source = CTR_NET_LTE_EVENT_ATTACH_ERROR;
+			ctr_lte_event_t event = { 0 };
+			event.source = CTR_LTE_EVENT_ATTACH_ERROR;
 			ctx->cb(&event, ctx->param);
 			if (event.opts.attach_error.stop) {
 				LOG_INF("Attach cancelled [%p]", ctx);
@@ -702,7 +701,7 @@ static int attach(void)
 
 static int detach(void)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	LOG_INF("Detach started [%p]", ctx);
 
@@ -729,8 +728,8 @@ static int detach(void)
 	LOG_INF("Detach succeeded [%p]", ctx);
 
 	if (ctx->cb != NULL) {
-		ctr_net_lte_event_t event = { 0 };
-		event.source = CTR_NET_LTE_EVENT_DETACH_DONE;
+		ctr_lte_event_t event = { 0 };
+		event.source = CTR_LTE_EVENT_DETACH_DONE;
 		ctx->cb(&event, ctx->param);
 	}
 
@@ -740,8 +739,8 @@ error:
 	LOG_WRN("Detach failed [%p]", ctx);
 
 	if (ctx->cb != NULL) {
-		ctr_net_lte_event_t event = { 0 };
-		event.source = CTR_NET_LTE_EVENT_DETACH_ERROR;
+		ctr_lte_event_t event = { 0 };
+		event.source = CTR_LTE_EVENT_DETACH_ERROR;
 		ctx->cb(&event, ctx->param);
 	}
 
@@ -750,7 +749,7 @@ error:
 
 static state_t check_state(void)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	ctr_sys_mut_acquire(&ctx->mut);
 	state_t state_now = ctx->state_now;
@@ -808,7 +807,7 @@ static int hexify(char *dst, size_t size, const void *src, size_t len)
 
 static int send_once(send_item_t *item)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	if (hexify(ctx->buf, sizeof(ctx->buf), item->buf, item->len) < 0) {
 		LOG_ERR("Call `hexify` failed [%p]", ctx);
@@ -871,7 +870,7 @@ static int send_once(send_item_t *item)
 
 static int send(send_item_t *item)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	LOG_INF("Send started [%p]", ctx);
 
@@ -898,8 +897,8 @@ static int send(send_item_t *item)
 		LOG_INF("Send succeeded [%p]", ctx);
 
 		if (ctx->cb != NULL) {
-			ctr_net_lte_event_t event = { 0 };
-			event.source = CTR_NET_LTE_EVENT_SEND_DONE;
+			ctr_lte_event_t event = { 0 };
+			event.source = CTR_LTE_EVENT_SEND_DONE;
 			event.info.send_done.buf = item->buf;
 			event.info.send_done.len = item->len;
 			ctx->cb(&event, ctx->param);
@@ -911,8 +910,8 @@ static int send(send_item_t *item)
 		LOG_WRN("Send failed [%p]", ctx);
 
 		if (ctx->cb != NULL) {
-			ctr_net_lte_event_t event = { 0 };
-			event.source = CTR_NET_LTE_EVENT_SEND_ERROR;
+			ctr_lte_event_t event = { 0 };
+			event.source = CTR_LTE_EVENT_SEND_ERROR;
 			ctx->cb(&event, ctx->param);
 			if (event.opts.send_error.stop) {
 				LOG_INF("Send cancelled [%p]", ctx);
@@ -934,7 +933,7 @@ static int send(send_item_t *item)
 
 static void check_send(void)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	for (;;) {
 		send_item_t item;
@@ -954,7 +953,7 @@ static void check_send(void)
 
 static void entry(void *param)
 {
-	ctr_net_lte_t *ctx = param;
+	ctr_lte_t *ctx = param;
 
 	if (ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_INT) < 0) {
 		LOG_ERR("Call `ctr_bsp_set_rf_ant` failed [%p]", ctx);
@@ -985,9 +984,9 @@ static void entry(void *param)
 	}
 }
 
-int ctr_net_lte_init(const ctr_net_lte_cfg_t *cfg)
+int ctr_lte_init(const ctr_lte_cfg_t *cfg)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	memset(ctx, 0, sizeof(*ctx));
 
@@ -999,15 +998,15 @@ int ctr_net_lte_init(const ctr_net_lte_cfg_t *cfg)
 	                  SEND_MSGQ_MAX_ITEMS);
 	ctr_sys_msgq_init(&ctx->recv_msgq, ctx->recv_msgq_mem, sizeof(recv_item_t),
 	                  RECV_MSGQ_MAX_ITEMS);
-	ctr_sys_task_init(&ctx->task, "ctr_net_lte", ctx->stack,
+	ctr_sys_task_init(&ctx->task, "ctr_lte", ctx->stack,
 	                  CTR_SYS_TASK_STACK_SIZEOF(ctx->stack), entry, ctx);
 
 	return 0;
 }
 
-int ctr_net_lte_set_callback(ctr_net_lte_callback_t cb, void *param)
+int ctr_lte_set_callback(ctr_lte_callback_t cb, void *param)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	ctx->cb = cb;
 	ctx->param = param;
@@ -1015,9 +1014,9 @@ int ctr_net_lte_set_callback(ctr_net_lte_callback_t cb, void *param)
 	return 0;
 }
 
-int ctr_net_lte_attach(void)
+int ctr_lte_attach(void)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	ctr_sys_mut_acquire(&ctx->mut);
 	ctx->state_req = STATE_ATTACHED;
@@ -1028,9 +1027,9 @@ int ctr_net_lte_attach(void)
 	return 0;
 }
 
-int ctr_net_lte_detach(void)
+int ctr_lte_detach(void)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	ctr_sys_mut_acquire(&ctx->mut);
 	ctx->state_req = STATE_DETACHED;
@@ -1041,9 +1040,9 @@ int ctr_net_lte_detach(void)
 	return 0;
 }
 
-int ctr_net_lte_send(const ctr_net_send_opts_t *opts, const void *buf, size_t len)
+int ctr_lte_send(const ctr_net_send_opts_t *opts, const void *buf, size_t len)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	send_item_t item = {
 		.ttl = opts->ttl,
@@ -1063,14 +1062,14 @@ int ctr_net_lte_send(const ctr_net_send_opts_t *opts, const void *buf, size_t le
 	return 0;
 }
 
-int ctr_net_lte_recv(ctr_net_recv_info_t *info, void *buf, size_t size)
+int ctr_lte_recv(ctr_net_recv_info_t *info, void *buf, size_t size)
 {
 	return 0;
 }
 
-void ctr_net_lte_set_reg(bool state)
+void ctr_lte_set_reg(bool state)
 {
-	ctr_net_lte_t *ctx = &inst;
+	ctr_lte_t *ctx = &inst;
 
 	ctr_sys_mut_acquire(&ctx->mut);
 	ctx->registered = state;
