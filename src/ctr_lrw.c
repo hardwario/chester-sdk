@@ -653,7 +653,7 @@ static int start(void)
 		return ret;
 	}
 
-	ret = setup(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
+	ret = setup(SETUP_RETRY_COUNT, SETUP_RETRY_DELAY);
 
 	if (ret < 0) {
 		LOG_ERR("Call `setup` failed: %d", ret);
