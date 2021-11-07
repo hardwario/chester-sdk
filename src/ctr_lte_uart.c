@@ -33,8 +33,8 @@ LOG_MODULE_REGISTER(ctr_lte_uart, LOG_LEVEL_DBG);
 #define TX_LINE_MAX_SIZE 1024
 #define TX_PREFIX ""
 #define TX_PREFIX_LEN 0
-#define TX_SUFFIX "\r"
-#define TX_SUFFIX_LEN 1
+#define TX_SUFFIX "\r\n"
+#define TX_SUFFIX_LEN 2
 
 static atomic_t m_enabled;
 static atomic_t m_reset;
@@ -80,9 +80,13 @@ static void rx_receive_work_handler(struct k_work *work)
 		if (c == '\r' || c == '\n') {
 			if (len > 0) {
 				LOG_DBG("RX: %s", buf);
-
 				if (m_recv_cb != NULL) {
 					m_recv_cb(buf);
+				}
+
+			} else if (c == '\n') {
+				if (m_recv_cb != NULL) {
+					m_recv_cb("");
 				}
 			}
 

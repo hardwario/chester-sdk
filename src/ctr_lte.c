@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(ctr_lte, LOG_LEVEL_DBG);
 
 #define BOOT_RETRY_COUNT 3
 #define BOOT_RETRY_DELAY K_SECONDS(10)
-#define SETUP_RETRY_COUNT 3
+#define SETUP_RETRY_COUNT 1
 #define SETUP_RETRY_DELAY K_SECONDS(10)
 
 #define CMD_MSGQ_MAX_ITEMS 16
@@ -179,34 +179,83 @@ static int boot(int retries, k_timeout_t delay)
 	return -ENOLINK;
 }
 
-static int start(void)
+static int setup_once(void)
 {
 	int ret;
 
-	if (m_config.antenna == ANTENNA_EXT) {
-		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_EXT);
-	} else {
-		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_INT);
-	}
+	ret = ctr_lte_talk_at();
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_bsp_set_rf_ant` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_talk_at` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_bsp_set_rf_mux(CTR_BSP_RF_MUX_LTE);
+	char buf[64];
+
+	ret = ctr_lte_talk_at_hwversion(buf, sizeof(buf));
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_bsp_set_rf_mux` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_talk_at_hwversion` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_lte_talk_init(talk_handler);
+	LOG_INF("HW version: %s", buf);
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_talk_init` failed: %d", ret);
-		return ret;
+	return 0;
+}
+
+static int setup(int retries, k_timeout_t delay)
+{
+	int ret;
+
+	LOG_INF("Operation SETUP started");
+
+	while (retries-- > 0) {
+		ret = ctr_lte_talk_enable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_enable` failed: %d", ret);
+			return ret;
+		}
+
+		ret = setup_once();
+
+		if (ret == 0) {
+			ret = ctr_lte_talk_disable();
+
+			if (ret < 0) {
+				LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+				return ret;
+			}
+
+			LOG_INF("Operation SETUP succeeded");
+			return 0;
+		}
+
+		if (ret < 0) {
+			LOG_WRN("Call `setup_once` failed: %d", ret);
+		}
+
+		ret = ctr_lte_talk_disable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+			return ret;
+		}
+
+		if (retries > 0) {
+			k_sleep(delay);
+			LOG_WRN("Repeating SETUP operation (retries left: %d)", retries);
+		}
 	}
+
+	LOG_ERR("Operation SETUP failed");
+	return -EPIPE;
+}
+
+static int start(void)
+{
+	int ret;
 
 	ret = boot(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
 
@@ -215,9 +264,7 @@ static int start(void)
 		return ret;
 	}
 
-	// TODO
-	// ret = setup(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
-	ret = 0;
+	ret = setup(SETUP_RETRY_COUNT, SETUP_RETRY_DELAY);
 
 	if (ret < 0) {
 		LOG_ERR("Call `setup` failed: %d", ret);
@@ -682,6 +729,31 @@ static int init(const struct device *dev)
 	}
 
 	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
+
+	if (m_config.antenna == ANTENNA_EXT) {
+		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_EXT);
+	} else {
+		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_INT);
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_bsp_set_rf_ant` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_bsp_set_rf_mux(CTR_BSP_RF_MUX_LTE);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_bsp_set_rf_mux` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_init(talk_handler);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_init` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }

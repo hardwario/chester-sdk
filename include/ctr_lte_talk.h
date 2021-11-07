@@ -19,6 +19,7 @@ int ctr_lte_talk_init(ctr_lte_talk_event_cb event_cb);
 int ctr_lte_talk_enable(void);
 int ctr_lte_talk_disable(void);
 int ctr_lte_talk_at(void);
+int ctr_lte_talk_at_hwversion(char *rsp, size_t rsp_size);
 
 #ifdef __cplusplus
 }
