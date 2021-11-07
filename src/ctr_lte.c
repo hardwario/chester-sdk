@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(ctr_lte, LOG_LEVEL_DBG);
 #define BOOT_RETRY_DELAY K_SECONDS(10)
 #define SETUP_RETRY_COUNT 1
 #define SETUP_RETRY_DELAY K_SECONDS(10)
+#define ATTACH_RETRY_COUNT 3
+#define ATTACH_RETRY_DELAY K_SECONDS(60)
 
 #define CMD_MSGQ_MAX_ITEMS 16
 #define SEND_MSGQ_MAX_ITEMS 16
@@ -201,6 +203,113 @@ static int setup_once(void)
 
 	LOG_INF("HW version: %s", buf);
 
+	ret = ctr_lte_talk_at_shortswver(buf, sizeof(buf));
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_shortswver` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("SW version: %s", buf);
+
+	ret = ctr_lte_talk_at_xpofwarn(1, 30);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xpofwarn` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_xsystemmode(0, 1, 0, 0);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xsystemmode` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_rel14feat(1, 1, 1, 1, 0);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_rel14feat` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_xdataprfl(0);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xdataprfl` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_xsim(1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xsim` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_xnettime(1, NULL);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xnettime` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_xtime(1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xtime` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_cereg(5);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cereg` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_cgerep(1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cgerep` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_cscon(1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cscon` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_cpsms((int[]){ 1 }, "00111000", "00000000");
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cpsms` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_cnec(24);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cnec` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_cmee(1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cmee` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_ceppi(1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_ceppi` failed: %d", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -251,6 +360,71 @@ static int setup(int retries, k_timeout_t delay)
 
 	LOG_ERR("Operation SETUP failed");
 	return -EPIPE;
+}
+
+static int attach_once(void)
+{
+	int ret;
+
+	ret = ctr_lte_talk_at_cfun(1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cfun` failed: %d", ret);
+		return ret;
+	}
+
+	k_sleep(K_MINUTES(10));
+
+	return 0;
+}
+
+static int attach(int retries, k_timeout_t delay)
+{
+	int ret;
+
+	LOG_INF("Operation ATTACH started");
+
+	while (retries-- > 0) {
+		ret = ctr_lte_talk_enable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_enable` failed: %d", ret);
+			return ret;
+		}
+
+		ret = attach_once();
+
+		if (ret == 0) {
+			ret = ctr_lte_talk_disable();
+
+			if (ret < 0) {
+				LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+				return ret;
+			}
+
+			LOG_INF("Operation ATTACH succeeded");
+			return 0;
+		}
+
+		if (ret < 0) {
+			LOG_WRN("Call `join_once` failed: %d", ret);
+		}
+
+		ret = ctr_lte_talk_disable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+			return ret;
+		}
+
+		if (retries > 0) {
+			k_sleep(delay);
+			LOG_WRN("Repeating ATTACH operation (retries left: %d)", retries);
+		}
+	}
+
+	LOG_WRN("Operation ATTACH failed");
+	return -ENOTCONN;
 }
 
 static int start(void)
@@ -305,6 +479,35 @@ static int process_req_start(const struct cmd_msgq_item *item)
 	return 0;
 }
 
+static int process_req_attach(const struct cmd_msgq_item *item)
+{
+	int ret;
+
+	union ctr_lte_event_data data = { 0 };
+
+	ret = attach(ATTACH_RETRY_COUNT, ATTACH_RETRY_DELAY);
+
+	if (ret < 0) {
+		LOG_ERR("Call `attach` failed: %d", ret);
+
+		data.attach_err.corr_id = item->corr_id;
+
+		if (m_event_cb != NULL) {
+			m_event_cb(CTR_LTE_EVENT_ATTACH_ERR, &data, m_event_user_data);
+		}
+
+		return ret;
+	}
+
+	data.attach_ok.corr_id = item->corr_id;
+
+	if (m_event_cb != NULL) {
+		m_event_cb(CTR_LTE_EVENT_ATTACH_OK, &data, m_event_user_data);
+	}
+
+	return 0;
+}
+
 static void process_cmd_msgq(void)
 {
 	int ret;
@@ -347,9 +550,7 @@ static void process_cmd_msgq(void)
 			LOG_WRN("Not ready for JOIN command - ignoring");
 
 		} else {
-			// TODO
-			// ret = process_req_join(&item);
-			ret = 0;
+			ret = process_req_attach(&item);
 
 			m_state = ret < 0 ? STATE_ERROR : STATE_READY;
 

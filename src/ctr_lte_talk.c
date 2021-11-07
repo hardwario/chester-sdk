@@ -380,6 +380,129 @@ int ctr_lte_talk_at(void)
 	return 0;
 }
 
+int ctr_lte_talk_at_ceppi(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CEPPI=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_cereg(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CEREG=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_cfun(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CFUN=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_cgerep(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGEREP=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_cmee(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CMEE=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_cnec(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CNEC=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_cpsms(int *p1, const char *p2, const char *p3)
+{
+	int ret;
+
+	if (p1 == NULL && p2 == NULL && p3 == NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CPSMS=");
+
+	} else if (p1 != NULL && p2 == NULL && p3 == NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CPSMS=%d", *p1);
+
+	} else if (p1 != NULL && p2 != NULL && p3 != NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CPSMS=%d,,,\"%s\",\"%s\"", *p1, p2, p3);
+
+	} else {
+		return -EINVAL;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_cscon(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CSCON=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static int at_hwversion_response_handler(int idx, int count, const char *s, void *p1, void *p2,
                                          void *p3)
 {
@@ -401,15 +524,154 @@ static int at_hwversion_response_handler(int idx, int count, const char *s, void
 	return -EINVAL;
 }
 
-int ctr_lte_talk_at_hwversion(char *rsp, size_t rsp_size)
+int ctr_lte_talk_at_hwversion(char *buf, size_t size)
 {
 	int ret;
 
-	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_hwversion_response_handler, rsp,
-	                           &rsp_size, NULL, "AT%%HWVERSION");
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_hwversion_response_handler, buf, &size,
+	                           NULL, "AT%%HWVERSION");
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_rel14feat(int p1, int p2, int p3, int p4, int p5)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%REL14FEAT=%d,%d,%d,%d,%d", p1, p2, p3, p4, p5);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int at_shortswver_response_handler(int idx, int count, const char *s, void *p1, void *p2,
+                                          void *p3)
+{
+	ARG_UNUSED(p3);
+
+	char *p = p1;
+	size_t *size = p2;
+
+	if (idx == 0 && count == 1) {
+		if (strlen(s) >= *size) {
+			return -ENOBUFS;
+		}
+
+		strcpy(p, s);
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_shortswver(char *buf, size_t size)
+{
+	int ret;
+
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_shortswver_response_handler, buf, &size,
+	                           NULL, "AT%%SHORTSWVER");
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_xdataprfl(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%XDATAPRFL=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_xnettime(int p1, int *p2)
+{
+	int ret;
+
+	if (p2 == NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%XNETTIME=%d", p1);
+
+	} else {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%XNETTIME=%d,%d", p1, *p2);
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_xpofwarn(int p1, int p2)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%XPOFWARN=%d,%d", p1, p2);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_xsim(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%XSIM=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_xsystemmode(int p1, int p2, int p3, int p4)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%XSYSTEMMODE=%d,%d,%d,%d", p1, p2, p3, p4);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_xtime(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%XTIME=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
 		return ret;
 	}
 
