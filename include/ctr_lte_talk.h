@@ -12,6 +12,7 @@ extern "C" {
 enum ctr_lte_talk_event {
 	CTR_LTE_TALK_EVENT_BOOT = 0,
 	CTR_LTE_TALK_EVENT_SIM_CARD = 1,
+	CTR_LTE_TALK_EVENT_TIME = 2,
 };
 
 typedef void (*ctr_lte_talk_event_cb)(enum ctr_lte_talk_event event);
@@ -20,6 +21,7 @@ int ctr_lte_talk_init(ctr_lte_talk_event_cb event_cb);
 int ctr_lte_talk_enable(void);
 int ctr_lte_talk_disable(void);
 int ctr_lte_talk_at(void);
+int ctr_lte_talk_at_cclk_q(char *buf, size_t size);
 int ctr_lte_talk_at_ceppi(int p1);
 int ctr_lte_talk_at_cimi(char *buf, size_t size);
 int ctr_lte_talk_at_cereg(int p1);

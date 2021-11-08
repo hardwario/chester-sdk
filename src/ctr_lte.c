@@ -1,7 +1,9 @@
 #include <ctr_lte.h>
+#include <ctr_lte_parse.h>
+#include <ctr_lte_talk.h>
 #include <ctr_bsp.h>
 #include <ctr_config.h>
-#include <ctr_lte_talk.h>
+#include <ctr_rtc.h>
 
 /* Zephyr includes */
 #include <init.h>
@@ -80,6 +82,7 @@ static struct config m_config;
 
 static struct k_poll_signal m_boot_sig;
 static struct k_poll_signal m_sim_card_sig;
+static struct k_poll_signal m_time_sig;
 
 K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
@@ -98,9 +101,15 @@ static void talk_handler(enum ctr_lte_talk_event event)
 		LOG_DBG("Event `CTR_LTE_TALK_EVENT_BOOT`");
 		k_poll_signal_raise(&m_boot_sig, 0);
 		break;
+
 	case CTR_LTE_TALK_EVENT_SIM_CARD:
 		LOG_DBG("Event `CTR_LTE_TALK_EVENT_SIM_CARD`");
 		k_poll_signal_raise(&m_sim_card_sig, 0);
+		break;
+
+	case CTR_LTE_TALK_EVENT_TIME:
+		LOG_DBG("Event `CTR_LTE_TALK_EVENT_TIME`");
+		k_poll_signal_raise(&m_time_sig, 0);
 		break;
 
 	default:
@@ -377,6 +386,7 @@ static int attach_once(void)
 	int ret;
 
 	k_poll_signal_reset(&m_sim_card_sig);
+	k_poll_signal_reset(&m_time_sig);
 
 	ret = ctr_lte_talk_at_cfun(1);
 
@@ -385,12 +395,12 @@ static int attach_once(void)
 		return ret;
 	}
 
-	struct k_poll_event events[] = {
+	struct k_poll_event events_1[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
 		                         &m_sim_card_sig),
 	};
 
-	ret = k_poll(events, ARRAY_SIZE(events), K_SECONDS(10));
+	ret = k_poll(events_1, ARRAY_SIZE(events_1), K_SECONDS(10));
 
 	if (ret == -EAGAIN) {
 		LOG_WRN("SIM card detection timed out");
@@ -407,7 +417,7 @@ static int attach_once(void)
 	ret = ctr_lte_talk_at_cimi(imsi, sizeof(imsi));
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_talk_at_cfun` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_talk_at_cimi` failed: %d", ret);
 		return ret;
 	}
 
@@ -416,6 +426,50 @@ static int attach_once(void)
 	k_mutex_lock(&m_mut, K_FOREVER);
 	m_imsi = strtoull(imsi, NULL, 10);
 	k_mutex_unlock(&m_mut);
+
+	struct k_poll_event events_2[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_time_sig),
+	};
+
+	ret = k_poll(events_2, ARRAY_SIZE(events_2), K_SECONDS(180));
+
+	if (ret == -EAGAIN) {
+		LOG_WRN("Network time synchronization timed out");
+		return -ETIMEDOUT;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_poll` failed: %d", ret);
+		return ret;
+	}
+
+	char cclk[64];
+
+	ret = ctr_lte_talk_at_cclk_q(cclk, sizeof(cclk));
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cclk_q` failed: %d", ret);
+		return ret;
+	}
+
+	struct ctr_rtc_tm tm;
+
+	ret = ctr_lte_parse_cclk(cclk, &tm.year, &tm.month, &tm.day, &tm.hours, &tm.minutes,
+	                         &tm.seconds);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_parse_cclk` failed: %d", ret);
+		return ret;
+	}
+
+	tm.year += 2000;
+
+	ret = ctr_rtc_set(&tm);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_rtc_set` failed: %d", ret);
+		return ret;
+	}
 
 	k_sleep(K_SECONDS(30));
 
@@ -968,6 +1022,7 @@ static int init(const struct device *dev)
 
 	k_poll_signal_init(&m_boot_sig);
 	k_poll_signal_init(&m_sim_card_sig);
+	k_poll_signal_init(&m_time_sig);
 
 	static struct settings_handler sh = {
 		.name = SETTINGS_PFX,

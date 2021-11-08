@@ -64,6 +64,13 @@ static void process_urc(const char *s)
 
 		return;
 	}
+	if (strncmp(s, "%XTIME:", 7) == 0) {
+		if (m_event_cb != NULL) {
+			m_event_cb(CTR_LTE_TALK_EVENT_TIME);
+		}
+
+		return;
+	}
 }
 
 static void recv_cb(const char *s)
@@ -390,10 +397,44 @@ int ctr_lte_talk_at(void)
 	return 0;
 }
 
+static int at_cclk_q_response_handler(int idx, int count, const char *s, void *p1, void *p2,
+                                      void *p3)
+{
+	ARG_UNUSED(p3);
+
+	char *buf = p1;
+	size_t *size = p2;
+
+	if (idx == 0 && count == 1) {
+		if (strlen(s) >= *size) {
+			return -ENOBUFS;
+		}
+
+		strcpy(buf, s);
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_cclk_q(char *buf, size_t size)
+{
+	int ret;
+
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_cclk_q_response_handler, buf, &size, NULL,
+	                           "AT+CCLK?");
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static int at_cimi_response_handler(int idx, int count, const char *s, void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
 	char *buf = p1;
@@ -407,13 +448,13 @@ static int at_cimi_response_handler(int idx, int count, const char *s, void *p1,
 			return -EINVAL;
 		}
 
-		for (size_t i = 0; i < strlen(s); i++) {
+		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)s[i])) {
 				return -EINVAL;
 			}
 		}
 
-		if (strlen(s) >= *size) {
+		if (len >= *size) {
 			return -ENOBUFS;
 		}
 
