@@ -117,16 +117,11 @@ static void talk_handler(enum ctr_lte_talk_event event)
 	}
 }
 
-static int boot_once(void)
+static int wake_up(void)
 {
 	int ret;
 
-	ctr_bsp_set_lte_reset(0);
-	k_sleep(K_MSEC(100));
-	ctr_bsp_set_lte_reset(1);
-
 	k_poll_signal_reset(&m_boot_sig);
-	k_sleep(K_MSEC(1000));
 
 	ctr_bsp_set_lte_wkup(0);
 	k_sleep(K_MSEC(100));
@@ -145,6 +140,26 @@ static int boot_once(void)
 
 	if (ret < 0) {
 		LOG_ERR("Call `k_poll` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int boot_once(void)
+{
+	int ret;
+
+	ctr_bsp_set_lte_reset(0);
+	k_sleep(K_MSEC(100));
+	ctr_bsp_set_lte_reset(1);
+
+	k_sleep(K_MSEC(1000));
+
+	ret = wake_up();
+
+	if (ret < 0) {
+		LOG_ERR("Call `wake_up` failed: %d", ret);
 		return ret;
 	}
 
@@ -329,6 +344,13 @@ static int setup_once(void)
 		return ret;
 	}
 
+	ret = ctr_lte_talk_at_xsleep(2);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xsleep` failed: %d", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -384,6 +406,13 @@ static int setup(int retries, k_timeout_t delay)
 static int attach_once(void)
 {
 	int ret;
+
+	ret = wake_up();
+
+	if (ret < 0) {
+		LOG_ERR("Call `wake_up` failed: %d", ret);
+		return ret;
+	}
 
 	k_poll_signal_reset(&m_sim_card_sig);
 	k_poll_signal_reset(&m_time_sig);
@@ -480,7 +509,12 @@ static int attach_once(void)
 	}
 #endif
 
-	k_sleep(K_SECONDS(30));
+	ret = ctr_lte_talk_at_xsleep(2);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xsleep` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }

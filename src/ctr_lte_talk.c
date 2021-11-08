@@ -751,6 +751,20 @@ int ctr_lte_talk_at_xsim(int p1)
 	return 0;
 }
 
+int ctr_lte_talk_at_xsleep(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT#XSLEEP=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lte_talk_at_xsystemmode(int p1, int p2, int p3, int p4)
 {
 	int ret;

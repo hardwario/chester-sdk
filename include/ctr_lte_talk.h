@@ -38,6 +38,7 @@ int ctr_lte_talk_at_xdataprfl(int p1);
 int ctr_lte_talk_at_xnettime(int p1, int *p2);
 int ctr_lte_talk_at_xpofwarn(int p1, int p2);
 int ctr_lte_talk_at_xsim(int p1);
+int ctr_lte_talk_at_xsleep(int p1);
 int ctr_lte_talk_at_xsystemmode(int p1, int p2, int p3, int p4);
 int ctr_lte_talk_at_xtime(int p1);
 
