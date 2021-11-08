@@ -7,6 +7,7 @@
 #include <zephyr.h>
 
 /* Standard includes */
+#include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
@@ -43,13 +44,22 @@ static void *m_handler_param;
 
 static void process_urc(const char *s)
 {
-	if (strlen(s) != 0) {
-		LOG_INF("URC: %s", s);
+	if (strlen(s) == 0) {
+		return;
 	}
+
+	LOG_INF("URC: %s", s);
 
 	if (strcmp(s, "Ready") == 0) {
 		if (m_event_cb != NULL) {
 			m_event_cb(CTR_LTE_TALK_EVENT_BOOT);
+		}
+
+		return;
+	}
+	if (strcmp(s, "%XSIM: 1") == 0) {
+		if (m_event_cb != NULL) {
+			m_event_cb(CTR_LTE_TALK_EVENT_SIM_CARD);
 		}
 
 		return;
@@ -380,6 +390,56 @@ int ctr_lte_talk_at(void)
 	return 0;
 }
 
+static int at_cimi_response_handler(int idx, int count, const char *s, void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	char *buf = p1;
+	size_t *size = p2;
+
+	if (idx == 0 && count == 1) {
+		size_t len = strlen(s);
+
+		/* TODO Verify IMSI can be 14-15 digits long only */
+		if (len < 14 || len > 15) {
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < strlen(s); i++) {
+			if (!isdigit((int)s[i])) {
+				return -EINVAL;
+			}
+		}
+
+		if (strlen(s) >= *size) {
+			return -ENOBUFS;
+		}
+
+		strcpy(buf, s);
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_cimi(char *buf, size_t size)
+{
+	int ret;
+
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_cimi_response_handler, buf, &size, NULL,
+	                           "AT+CIMI");
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lte_talk_at_ceppi(int p1)
 {
 	int ret;
@@ -508,7 +568,7 @@ static int at_hwversion_response_handler(int idx, int count, const char *s, void
 {
 	ARG_UNUSED(p3);
 
-	char *p = p1;
+	char *buf = p1;
 	size_t *size = p2;
 
 	if (idx == 0 && count == 1) {
@@ -516,7 +576,7 @@ static int at_hwversion_response_handler(int idx, int count, const char *s, void
 			return -ENOBUFS;
 		}
 
-		strcpy(p, s);
+		strcpy(buf, s);
 
 		return 0;
 	}

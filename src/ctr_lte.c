@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(ctr_lte, LOG_LEVEL_DBG);
@@ -78,6 +79,7 @@ static struct config m_config_interim = {
 static struct config m_config;
 
 static struct k_poll_signal m_boot_sig;
+static struct k_poll_signal m_sim_card_sig;
 
 K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
@@ -86,6 +88,9 @@ static ctr_lte_event_cb m_event_cb;
 static void *m_event_user_data;
 static atomic_t m_corr_id;
 
+static K_MUTEX_DEFINE(m_mut);
+static uint64_t m_imsi;
+
 static void talk_handler(enum ctr_lte_talk_event event)
 {
 	switch (event) {
@@ -93,6 +98,11 @@ static void talk_handler(enum ctr_lte_talk_event event)
 		LOG_DBG("Event `CTR_LTE_TALK_EVENT_BOOT`");
 		k_poll_signal_raise(&m_boot_sig, 0);
 		break;
+	case CTR_LTE_TALK_EVENT_SIM_CARD:
+		LOG_DBG("Event `CTR_LTE_TALK_EVENT_SIM_CARD`");
+		k_poll_signal_raise(&m_sim_card_sig, 0);
+		break;
+
 	default:
 		LOG_WRN("Unknown event: %d", event);
 	}
@@ -366,6 +376,8 @@ static int attach_once(void)
 {
 	int ret;
 
+	k_poll_signal_reset(&m_sim_card_sig);
+
 	ret = ctr_lte_talk_at_cfun(1);
 
 	if (ret < 0) {
@@ -373,7 +385,39 @@ static int attach_once(void)
 		return ret;
 	}
 
-	k_sleep(K_MINUTES(10));
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+		                         &m_sim_card_sig),
+	};
+
+	ret = k_poll(events, ARRAY_SIZE(events), K_SECONDS(10));
+
+	if (ret == -EAGAIN) {
+		LOG_WRN("SIM card detection timed out");
+		return -ETIMEDOUT;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_poll` failed: %d", ret);
+		return ret;
+	}
+
+	char imsi[32];
+
+	ret = ctr_lte_talk_at_cimi(imsi, sizeof(imsi));
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cfun` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("IMSI: %s", imsi);
+
+	k_mutex_lock(&m_mut, K_FOREVER);
+	m_imsi = strtoull(imsi, NULL, 10);
+	k_mutex_unlock(&m_mut);
+
+	k_sleep(K_SECONDS(30));
 
 	return 0;
 }
@@ -730,6 +774,22 @@ static int cmd_config_antenna(const struct shell *shell, size_t argc, char **arg
 	return -EINVAL;
 }
 
+int ctr_lte_get_imsi(uint64_t *imsi)
+{
+	k_mutex_lock(&m_mut, K_FOREVER);
+
+	if (m_imsi == 0) {
+		k_mutex_unlock(&m_mut);
+		return -ENODATA;
+	}
+
+	*imsi = m_imsi;
+
+	k_mutex_unlock(&m_mut);
+
+	return 0;
+}
+
 int ctr_lte_set_event_cb(ctr_lte_event_cb cb, void *user_data)
 {
 	m_event_cb = cb;
@@ -907,6 +967,7 @@ static int init(const struct device *dev)
 	LOG_INF("System initialization");
 
 	k_poll_signal_init(&m_boot_sig);
+	k_poll_signal_init(&m_sim_card_sig);
 
 	static struct settings_handler sh = {
 		.name = SETTINGS_PFX,
