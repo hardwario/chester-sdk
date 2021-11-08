@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(ctr_lte, LOG_LEVEL_DBG);
 #define SETUP_RETRY_DELAY K_SECONDS(10)
 #define ATTACH_RETRY_COUNT 3
 #define ATTACH_RETRY_DELAY K_SECONDS(60)
+#define SEND_RETRY_COUNT 3
+#define SEND_RETRY_DELAY K_SECONDS(10)
 
 #define CMD_MSGQ_MAX_ITEMS 16
 #define SEND_MSGQ_MAX_ITEMS 16
@@ -568,6 +570,64 @@ static int attach(int retries, k_timeout_t delay)
 	return -ENOTCONN;
 }
 
+static int send_once(const struct send_msgq_data *data)
+{
+	int ret;
+
+	return 0;
+}
+
+static int send(int retries, k_timeout_t delay, const struct send_msgq_data *data)
+{
+	int ret;
+	int err = 0;
+
+	LOG_INF("Operation SEND started");
+
+	while (retries-- > 0) {
+		ret = ctr_lte_talk_enable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_enable` failed: %d", ret);
+			return ret;
+		}
+
+		ret = send_once(data);
+		err = ret;
+
+		if (ret == 0) {
+			ret = ctr_lte_talk_disable();
+
+			if (ret < 0) {
+				LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+				return ret;
+			}
+
+			LOG_INF("Operation SEND succeeded");
+			return 0;
+		}
+
+		if (ret < 0) {
+			LOG_WRN("Call `send_once` failed: %d", ret);
+		}
+
+		ret = ctr_lte_talk_disable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+			return ret;
+		}
+
+		if (retries > 0) {
+			k_sleep(delay);
+			LOG_WRN("Repeating SEND operation (retries left: %d)", retries);
+		}
+	}
+
+	LOG_WRN("Operation SEND failed");
+	return err;
+}
+
 static int start(void)
 {
 	int ret;
@@ -711,6 +771,48 @@ static void process_cmd_msgq(void)
 	}
 }
 
+static int process_req_send(const struct send_msgq_item *item)
+{
+	int ret;
+
+	union ctr_lte_event_data data = { 0 };
+
+	if (item->data.ttl != 0) {
+		if (k_uptime_get() > item->data.ttl) {
+			LOG_WRN("Message TTL expired");
+
+			k_free(item->data.buf);
+
+			/* Return positive error code intentionally */
+			return ECANCELED;
+		}
+	}
+
+	ret = send(SEND_RETRY_COUNT, SEND_RETRY_DELAY, &item->data);
+
+	k_free(item->data.buf);
+
+	if (ret != 0) {
+		LOG_ERR("Call `send` failed: %d", ret);
+
+		data.send_err.corr_id = item->corr_id;
+
+		if (m_event_cb != NULL) {
+			m_event_cb(CTR_LTE_EVENT_SEND_ERR, &data, m_event_user_data);
+		}
+
+		return ret;
+	}
+
+	data.send_ok.corr_id = item->corr_id;
+
+	if (m_event_cb != NULL) {
+		m_event_cb(CTR_LTE_EVENT_SEND_OK, &data, m_event_user_data);
+	}
+
+	return 0;
+}
+
 static void process_send_msgq(void)
 {
 	int ret;
@@ -726,9 +828,7 @@ static void process_send_msgq(void)
 
 	LOG_INF("Dequeued SEND command (correlation id: %d)", item.corr_id);
 
-	// TODO
-	// ret = process_req_send(&item);
-	ret = 0;
+	ret = process_req_send(&item);
 
 	m_state = ret < 0 ? STATE_ERROR : STATE_READY;
 
@@ -972,6 +1072,41 @@ int ctr_lte_detach(int *corr_id)
 
 int ctr_lte_send(const struct ctr_lte_send_opts *opts, const void *buf, size_t len, int *corr_id)
 {
+	int ret;
+
+	void *p = k_malloc(len);
+
+	if (p == NULL) {
+		LOG_ERR("Call `k_malloc` failed");
+		return -ENOMEM;
+	}
+
+	memcpy(p, buf, len);
+
+	struct send_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.data = { .ttl = opts->ttl,
+		          .port = opts->port,
+		          .buf = p,
+		          .len = len, },
+	};
+
+	memcpy(item.data.addr, opts->addr, sizeof(item.data.addr));
+
+	LOG_INF("Enqueing SEND command (correlation id: %d)", item.corr_id);
+
+	if (corr_id != NULL) {
+		*corr_id = item.corr_id;
+	}
+
+	ret = k_msgq_put(&m_send_msgq, &item, K_NO_WAIT);
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_msgq_put` failed: %d", ret);
+		k_free(p);
+		return ret;
+	}
+
 	return 0;
 }
 

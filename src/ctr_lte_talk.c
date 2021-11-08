@@ -15,8 +15,8 @@
 LOG_MODULE_REGISTER(ctr_lte_talk, LOG_LEVEL_DBG);
 
 #define SEND_GUARD_TIME K_MSEC(100)
-#define RESPONSE_TIMEOUT_S K_MSEC(1000)
-#define RESPONSE_TIMEOUT_L K_SECONDS(10)
+#define RESPONSE_TIMEOUT_S K_SECONDS(3)
+#define RESPONSE_TIMEOUT_L K_SECONDS(30)
 
 typedef bool (*handler_cb)(const char *s, void *param);
 typedef int (*response_cb)(int idx, int count, const char *s, void *p1, void *p2, void *p3);
@@ -513,7 +513,7 @@ int ctr_lte_talk_at_cfun(int p1)
 {
 	int ret;
 
-	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CFUN=%d", p1);
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_L, "AT+CFUN=%d", p1);
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
