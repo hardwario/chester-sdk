@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 int ctr_lte_parse_cclk(const char *s, int *year, int *month, int *day, int *hours, int *minutes,
@@ -49,13 +50,29 @@ int ctr_lte_parse_cclk(const char *s, int *year, int *month, int *day, int *hour
 
 	buf[2] = buf[5] = buf[8] = buf[11] = buf[14] = buf[17] = '\0';
 
-	*year = atoi(&buf[0]);
-	*month = atoi(&buf[3]);
-	*day = atoi(&buf[6]);
+	if (year != NULL) {
+		*year = atoi(&buf[0]);
+	}
 
-	*hours = atoi(&buf[9]);
-	*minutes = atoi(&buf[12]);
-	*seconds = atoi(&buf[15]);
+	if (month != NULL) {
+		*month = atoi(&buf[3]);
+	}
+
+	if (day != NULL) {
+		*day = atoi(&buf[6]);
+	}
+
+	if (hours != NULL) {
+		*hours = atoi(&buf[9]);
+	}
+
+	if (minutes != NULL) {
+		*minutes = atoi(&buf[12]);
+	}
+
+	if (seconds != NULL) {
+		*seconds = atoi(&buf[15]);
+	}
 
 	return 0;
 }

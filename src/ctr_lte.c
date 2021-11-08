@@ -452,6 +452,7 @@ static int attach_once(void)
 		return ret;
 	}
 
+#if defined(CONFIG_CTR_RTC)
 	struct ctr_rtc_tm tm;
 
 	ret = ctr_lte_parse_cclk(cclk, &tm.year, &tm.month, &tm.day, &tm.hours, &tm.minutes,
@@ -470,6 +471,14 @@ static int attach_once(void)
 		LOG_ERR("Call `ctr_rtc_set` failed: %d", ret);
 		return ret;
 	}
+#else
+	ret = ctr_lte_parse_cclk(cclk, NULL, NULL, NULL, NULL, NULL, NULL);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_parse_cclk` failed: %d", ret);
+		return ret;
+	}
+#endif
 
 	k_sleep(K_SECONDS(30));
 
