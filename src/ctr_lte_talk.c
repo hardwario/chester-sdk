@@ -357,8 +357,6 @@ static int talk_cmd_raw_ok(k_timeout_t timeout, const void *buf, size_t len, con
 		return ret;
 	}
 
-	k_sleep(K_SECONDS(10));
-
 	ret = ctr_lte_uart_send_raw(buf, len);
 
 	if (ret < 0) {
@@ -367,7 +365,7 @@ static int talk_cmd_raw_ok(k_timeout_t timeout, const void *buf, size_t len, con
 		return ret;
 	}
 
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_MSEC(1500));
 
 	char terminator[3 + 1];
 
@@ -380,8 +378,6 @@ static int talk_cmd_raw_ok(k_timeout_t timeout, const void *buf, size_t len, con
 		k_mutex_unlock(&m_talk_mut);
 		return ret;
 	}
-
-	k_sleep(K_SECONDS(10));
 
 	struct response response;
 
