@@ -357,7 +357,6 @@ static int talk_cmd_raw_ok(k_timeout_t timeout, const void *buf, size_t len, con
 		return ret;
 	}
 
-	/*
 	k_sleep(K_SECONDS(10));
 
 	ret = ctr_lte_uart_send_raw(buf, len);
@@ -370,7 +369,11 @@ static int talk_cmd_raw_ok(k_timeout_t timeout, const void *buf, size_t len, con
 
 	k_sleep(K_SECONDS(10));
 
-	ret = ctr_lte_uart_send_raw("+++", 3);
+	char terminator[3 + 1];
+
+	strcpy(terminator, "+++");
+
+	ret = ctr_lte_uart_send_raw(terminator, strlen(terminator));
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lte_uart_send_raw` failed: %d", ret);
@@ -379,7 +382,6 @@ static int talk_cmd_raw_ok(k_timeout_t timeout, const void *buf, size_t len, con
 	}
 
 	k_sleep(K_SECONDS(10));
-	*/
 
 	struct response response;
 
@@ -808,8 +810,7 @@ int ctr_lte_talk_at_xsendto(const char *p1, int p2, const void *buf, size_t len)
 {
 	int ret;
 
-	ret = talk_cmd_raw_ok(RESPONSE_TIMEOUT_L, buf, len, "AT#XSENDTO=\"%s\",%d,\"Hello\"", p1,
-	                      p2);
+	ret = talk_cmd_raw_ok(RESPONSE_TIMEOUT_L, buf, len, "AT#XSENDTO=\"%s\",%d", p1, p2);
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_raw_ok` failed: %d", ret);
