@@ -97,6 +97,8 @@ static atomic_t m_corr_id;
 static K_MUTEX_DEFINE(m_mut);
 static uint64_t m_imsi;
 
+static bool m_setup = true;
+
 static void talk_handler(enum ctr_lte_talk_event event)
 {
 	switch (event) {
@@ -138,7 +140,9 @@ static int wake_up(void)
 
 	if (ret == -EAGAIN) {
 		LOG_WRN("Boot message timed out");
-		return -ETIMEDOUT;
+
+		/* Return positive error code intentionally */
+		return ETIMEDOUT;
 	}
 
 	if (ret < 0) {
@@ -361,6 +365,13 @@ static int setup(int retries, k_timeout_t delay)
 {
 	int ret;
 
+	ret = boot(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
+
+	if (ret < 0) {
+		LOG_ERR("Call `boot` failed: %d", ret);
+		return ret;
+	}
+
 	LOG_INF("Operation SETUP started");
 
 	while (retries-- > 0) {
@@ -380,6 +391,8 @@ static int setup(int retries, k_timeout_t delay)
 				LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
 				return ret;
 			}
+
+			m_setup = false;
 
 			LOG_INF("Operation SETUP succeeded");
 			return 0;
@@ -463,7 +476,7 @@ static int attach_once(void)
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_time_sig),
 	};
 
-	ret = k_poll(events_2, ARRAY_SIZE(events_2), K_SECONDS(180));
+	ret = k_poll(events_2, ARRAY_SIZE(events_2), K_MINUTES(10));
 
 	if (ret == -EAGAIN) {
 		LOG_WRN("Network time synchronization timed out");
@@ -543,10 +556,20 @@ static int attach(int retries, k_timeout_t delay)
 	LOG_INF("Operation ATTACH started");
 
 	while (retries-- > 0) {
+		if (m_setup) {
+			ret = setup(SETUP_RETRY_COUNT, SETUP_RETRY_DELAY);
+
+			if (ret < 0) {
+				LOG_ERR("Call `setup` failed: %d", ret);
+				return ret;
+			}
+		}
+
 		ret = ctr_lte_talk_enable();
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_enable` failed: %d", ret);
+			m_setup = true;
 			return ret;
 		}
 
@@ -557,6 +580,7 @@ static int attach(int retries, k_timeout_t delay)
 
 			if (ret < 0) {
 				LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+				m_setup = true;
 				return ret;
 			}
 
@@ -565,13 +589,15 @@ static int attach(int retries, k_timeout_t delay)
 		}
 
 		if (ret < 0) {
-			LOG_WRN("Call `join_once` failed: %d", ret);
+			LOG_WRN("Call `attach_once` failed: %d", ret);
+			m_setup = true;
 		}
 
 		ret = ctr_lte_talk_disable();
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+			m_setup = true;
 			return ret;
 		}
 
@@ -580,6 +606,8 @@ static int attach(int retries, k_timeout_t delay)
 			LOG_WRN("Repeating ATTACH operation (retries left: %d)", retries);
 		}
 	}
+
+	m_setup = true;
 
 	LOG_WRN("Operation ATTACH failed");
 	return -ENOTCONN;
@@ -626,10 +654,20 @@ static int send(int retries, k_timeout_t delay, const struct send_msgq_data *dat
 	LOG_INF("Operation SEND started");
 
 	while (retries-- > 0) {
+		if (m_setup) {
+			ret = setup(SETUP_RETRY_COUNT, SETUP_RETRY_DELAY);
+
+			if (ret < 0) {
+				LOG_ERR("Call `setup` failed: %d", ret);
+				return ret;
+			}
+		}
+
 		ret = ctr_lte_talk_enable();
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_enable` failed: %d", ret);
+			m_setup = true;
 			return ret;
 		}
 
@@ -641,6 +679,7 @@ static int send(int retries, k_timeout_t delay, const struct send_msgq_data *dat
 
 			if (ret < 0) {
 				LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+				m_setup = true;
 				return ret;
 			}
 
@@ -656,6 +695,7 @@ static int send(int retries, k_timeout_t delay, const struct send_msgq_data *dat
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+			m_setup = true;
 			return ret;
 		}
 
@@ -665,6 +705,8 @@ static int send(int retries, k_timeout_t delay, const struct send_msgq_data *dat
 		}
 	}
 
+	m_setup = true;
+
 	LOG_WRN("Operation SEND failed");
 	return err;
 }
@@ -672,13 +714,6 @@ static int send(int retries, k_timeout_t delay, const struct send_msgq_data *dat
 static int start(void)
 {
 	int ret;
-
-	ret = boot(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
-
-	if (ret < 0) {
-		LOG_ERR("Call `boot` failed: %d", ret);
-		return ret;
-	}
 
 	ret = setup(SETUP_RETRY_COUNT, SETUP_RETRY_DELAY);
 
