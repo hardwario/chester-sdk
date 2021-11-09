@@ -3,6 +3,7 @@
 
 /* Standard includes */
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -15,6 +16,7 @@ int ctr_lte_uart_init(ctr_lte_recv_cb recv_cb);
 int ctr_lte_uart_enable(void);
 int ctr_lte_uart_disable(void);
 int ctr_lte_uart_send(const char *fmt, va_list ap);
+int ctr_lte_uart_send_raw(const void *buf, size_t len);
 
 #ifdef __cplusplus
 }

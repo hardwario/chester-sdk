@@ -1,6 +1,6 @@
 /* TODO Implement retries settings parameter */
 
-#include <ctr_net_lrw.h>
+#include <ctr_lrw.h>
 #include <ctr_bsp.h>
 #include <ctr_config.h>
 #include <ctr_lrw_talk.h>
@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(ctr_net_lrw, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_lrw, LOG_LEVEL_DBG);
 
 #define SETTINGS_PFX "lrw"
 
@@ -132,13 +132,9 @@ static struct k_poll_signal m_send_sig;
 K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
 
-static ctr_net_lrw_event_cb m_callback;
+static ctr_lrw_event_cb m_callback;
 static void *m_param;
 static atomic_t m_corr_id;
-
-static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg);
-
-static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len));
 
 static void talk_handler(enum ctr_lrw_talk_event event)
 {
@@ -164,7 +160,7 @@ static void talk_handler(enum ctr_lrw_talk_event event)
 		k_poll_signal_raise(&m_send_sig, 1);
 		break;
 	default:
-		LOG_WRN("Unknown event: %d", (int)event);
+		LOG_WRN("Unknown event: %d", event);
 	}
 }
 
@@ -417,8 +413,9 @@ static int join_once(void)
 		return ret;
 	}
 
-	struct k_poll_event events[] = { K_POLL_EVENT_INITIALIZER(
-		K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_join_sig) };
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_join_sig),
+	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), JOIN_TIMEOUT);
 
@@ -656,7 +653,7 @@ static int start(void)
 		return ret;
 	}
 
-	ret = setup(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
+	ret = setup(SETUP_RETRY_COUNT, SETUP_RETRY_DELAY);
 
 	if (ret < 0) {
 		LOG_ERR("Call `setup` failed: %d", ret);
@@ -670,7 +667,7 @@ static int process_req_start(const struct cmd_msgq_item *item)
 {
 	int ret;
 
-	union ctr_net_lrw_event_data data = { 0 };
+	union ctr_lrw_event_data data = { 0 };
 
 	ret = start();
 
@@ -680,7 +677,7 @@ static int process_req_start(const struct cmd_msgq_item *item)
 		data.start_err.corr_id = item->corr_id;
 
 		if (m_callback != NULL) {
-			m_callback(CTR_NET_LRW_EVENT_START_ERR, &data, m_param);
+			m_callback(CTR_LRW_EVENT_START_ERR, &data, m_param);
 		}
 
 		return ret;
@@ -691,7 +688,7 @@ static int process_req_start(const struct cmd_msgq_item *item)
 	data.start_ok.corr_id = item->corr_id;
 
 	if (m_callback != NULL) {
-		m_callback(CTR_NET_LRW_EVENT_START_OK, &data, m_param);
+		m_callback(CTR_LRW_EVENT_START_OK, &data, m_param);
 	}
 
 	return 0;
@@ -701,7 +698,7 @@ static int process_req_join(const struct cmd_msgq_item *item)
 {
 	int ret;
 
-	union ctr_net_lrw_event_data data = { 0 };
+	union ctr_lrw_event_data data = { 0 };
 
 	ret = join(JOIN_RETRY_COUNT, JOIN_RETRY_DELAY);
 
@@ -711,7 +708,7 @@ static int process_req_join(const struct cmd_msgq_item *item)
 		data.join_err.corr_id = item->corr_id;
 
 		if (m_callback != NULL) {
-			m_callback(CTR_NET_LRW_EVENT_JOIN_ERR, &data, m_param);
+			m_callback(CTR_LRW_EVENT_JOIN_ERR, &data, m_param);
 		}
 
 		return ret;
@@ -720,7 +717,7 @@ static int process_req_join(const struct cmd_msgq_item *item)
 	data.join_ok.corr_id = item->corr_id;
 
 	if (m_callback != NULL) {
-		m_callback(CTR_NET_LRW_EVENT_JOIN_OK, &data, m_param);
+		m_callback(CTR_LRW_EVENT_JOIN_OK, &data, m_param);
 	}
 
 	return 0;
@@ -730,7 +727,7 @@ static int process_req_send(const struct send_msgq_item *item)
 {
 	int ret;
 
-	union ctr_net_lrw_event_data data = { 0 };
+	union ctr_lrw_event_data data = { 0 };
 
 	if (item->data.ttl != 0) {
 		if (k_uptime_get() > item->data.ttl) {
@@ -753,7 +750,7 @@ static int process_req_send(const struct send_msgq_item *item)
 		data.send_err.corr_id = item->corr_id;
 
 		if (m_callback != NULL) {
-			m_callback(CTR_NET_LRW_EVENT_SEND_ERR, &data, m_param);
+			m_callback(CTR_LRW_EVENT_SEND_ERR, &data, m_param);
 		}
 
 		return ret;
@@ -762,7 +759,7 @@ static int process_req_send(const struct send_msgq_item *item)
 	data.send_ok.corr_id = item->corr_id;
 
 	if (m_callback != NULL) {
-		m_callback(CTR_NET_LRW_EVENT_SEND_OK, &data, m_param);
+		m_callback(CTR_LRW_EVENT_SEND_OK, &data, m_param);
 	}
 
 	return 0;
@@ -798,7 +795,7 @@ static void process_cmd_msgq(void)
 				k_msgq_purge(&m_cmd_msgq);
 
 				if (m_callback != NULL) {
-					m_callback(CTR_NET_LRW_EVENT_FAILURE, NULL, m_param);
+					m_callback(CTR_LRW_EVENT_FAILURE, NULL, m_param);
 				}
 			}
 		}
@@ -820,7 +817,7 @@ static void process_cmd_msgq(void)
 				k_msgq_purge(&m_cmd_msgq);
 
 				if (m_callback != NULL) {
-					m_callback(CTR_NET_LRW_EVENT_FAILURE, NULL, m_param);
+					m_callback(CTR_LRW_EVENT_FAILURE, NULL, m_param);
 				}
 			}
 		}
@@ -855,7 +852,7 @@ static void process_send_msgq(void)
 		k_msgq_purge(&m_cmd_msgq);
 
 		if (m_callback != NULL) {
-			m_callback(CTR_NET_LRW_EVENT_FAILURE, NULL, m_param);
+			m_callback(CTR_LRW_EVENT_FAILURE, NULL, m_param);
 		}
 	}
 }
@@ -869,7 +866,7 @@ static void dispatcher_thread(void)
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
 			                         K_POLL_MODE_NOTIFY_ONLY, &m_cmd_msgq),
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-			                         K_POLL_MODE_NOTIFY_ONLY, &m_send_msgq)
+			                         K_POLL_MODE_NOTIFY_ONLY, &m_send_msgq),
 		};
 
 		ret = k_poll(events, m_state != STATE_READY ? 1 : 2, K_FOREVER);
@@ -892,10 +889,10 @@ static void dispatcher_thread(void)
 	}
 }
 
-K_THREAD_DEFINE(ctr_net_lrw, CONFIG_CTR_NET_LRW_THREAD_STACK_SIZE, dispatcher_thread, NULL, NULL,
-                NULL, CONFIG_CTR_NET_LRW_THREAD_PRIORITY, 0, 0);
+K_THREAD_DEFINE(ctr_lrw, CONFIG_CTR_LRW_THREAD_STACK_SIZE, dispatcher_thread, NULL, NULL, NULL,
+                CONFIG_CTR_LRW_THREAD_PRIORITY, 0, 0);
 
-int ctr_net_lrw_init(ctr_net_lrw_event_cb callback, void *param)
+int ctr_lrw_init(ctr_lrw_event_cb callback, void *param)
 {
 	m_callback = callback;
 	m_param = param;
@@ -903,12 +900,14 @@ int ctr_net_lrw_init(ctr_net_lrw_event_cb callback, void *param)
 	return 0;
 }
 
-int ctr_net_lrw_start(int *corr_id)
+int ctr_lrw_start(int *corr_id)
 {
 	int ret;
 
-	struct cmd_msgq_item item = { .corr_id = (int)atomic_inc(&m_corr_id),
-		                      .req = CMD_MSGQ_REQ_START };
+	struct cmd_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.req = CMD_MSGQ_REQ_START,
+	};
 
 	LOG_INF("Enqueing START command (correlation id: %d)", item.corr_id);
 
@@ -926,12 +925,14 @@ int ctr_net_lrw_start(int *corr_id)
 	return 0;
 }
 
-int ctr_net_lrw_join(int *corr_id)
+int ctr_lrw_join(int *corr_id)
 {
 	int ret;
 
-	struct cmd_msgq_item item = { .corr_id = (int)atomic_inc(&m_corr_id),
-		                      .req = CMD_MSGQ_REQ_JOIN };
+	struct cmd_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.req = CMD_MSGQ_REQ_JOIN,
+	};
 
 	if (corr_id != NULL) {
 		*corr_id = item.corr_id;
@@ -949,8 +950,7 @@ int ctr_net_lrw_join(int *corr_id)
 	return 0;
 }
 
-int ctr_net_lrw_send(const struct ctr_net_lrw_send_opts *opts, const void *buf, size_t len,
-                     int *corr_id)
+int ctr_lrw_send(const struct ctr_lrw_send_opts *opts, const void *buf, size_t len, int *corr_id)
 {
 	int ret;
 
@@ -963,12 +963,14 @@ int ctr_net_lrw_send(const struct ctr_net_lrw_send_opts *opts, const void *buf, 
 
 	memcpy(p, buf, len);
 
-	struct send_msgq_item item = { .corr_id = (int)atomic_inc(&m_corr_id),
-		                       .data = { .ttl = opts->ttl,
-		                                 .confirmed = opts->confirmed,
-		                                 .port = opts->port,
-		                                 .buf = p,
-		                                 .len = len } };
+	struct send_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.data = { .ttl = opts->ttl,
+		          .confirmed = opts->confirmed,
+		          .port = opts->port,
+		          .buf = p,
+		          .len = len },
+	};
 
 	LOG_INF("Enqueing SEND command (correlation id: %d)", item.corr_id);
 
@@ -991,8 +993,6 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 {
 	int ret;
 	const char *next;
-
-	LOG_DBG("key: %s len: %u", key, len);
 
 #define SETTINGS_SET(_key, _var, _size)                                                            \
 	do {                                                                                       \
@@ -1535,10 +1535,10 @@ static int cmd_start(const struct shell *shell, size_t argc, char **argv)
 
 	int corr_id;
 
-	ret = ctr_net_lrw_start(&corr_id);
+	ret = ctr_lrw_start(&corr_id);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_net_lrw_start` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_start` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
@@ -1560,10 +1560,10 @@ static int cmd_join(const struct shell *shell, size_t argc, char **argv)
 
 	int corr_id;
 
-	ret = ctr_net_lrw_join(&corr_id);
+	ret = ctr_lrw_join(&corr_id);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_net_lrw_join` failed: %d", ret);
+		LOG_ERR("Call `ctr_lrw_join` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}

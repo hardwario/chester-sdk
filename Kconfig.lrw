@@ -1,14 +1,15 @@
-config CTR_NET_LRW
-	bool "CTR_NET_LRW"
+config CTR_LRW
+	bool "CTR_LRW"
+	depends on CTR_CONFIG
 	select CTR_SDK
 	select CTR_BSP
 
-config CTR_NET_LRW_THREAD_STACK_SIZE
-	int "CTR_NET_LRW_THREAD_STACK_SIZE"
+config CTR_LRW_THREAD_STACK_SIZE
+	int "CTR_LRW_THREAD_STACK_SIZE"
 	default 4096
-	depends on CTR_NET_LRW
+	depends on CTR_LRW
 
-config CTR_NET_LRW_THREAD_PRIORITY
-	int "CTR_NET_LRW_THREAD_PRIORITY"
+config CTR_LRW_THREAD_PRIORITY
+	int "CTR_LRW_THREAD_PRIORITY"
 	default 10
-	depends on CTR_NET_LRW
+	depends on CTR_LRW

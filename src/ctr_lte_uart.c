@@ -12,7 +12,6 @@
 
 /* Standard includes */
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -33,13 +32,13 @@ LOG_MODULE_REGISTER(ctr_lte_uart, LOG_LEVEL_DBG);
 #define TX_LINE_MAX_SIZE 1024
 #define TX_PREFIX ""
 #define TX_PREFIX_LEN 0
-#define TX_SUFFIX "\r"
-#define TX_SUFFIX_LEN 1
+#define TX_SUFFIX "\r\n"
+#define TX_SUFFIX_LEN 2
 
 static atomic_t m_enabled;
 static atomic_t m_reset;
 static atomic_t m_stop;
-static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(uart1));
+static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(uart0));
 static ctr_lte_recv_cb m_recv_cb;
 K_MEM_SLAB_DEFINE_STATIC(m_rx_slab, RX_BLOCK_SIZE, 2, 4);
 static K_MUTEX_DEFINE(m_mut);
@@ -80,9 +79,13 @@ static void rx_receive_work_handler(struct k_work *work)
 		if (c == '\r' || c == '\n') {
 			if (len > 0) {
 				LOG_DBG("RX: %s", buf);
-
 				if (m_recv_cb != NULL) {
 					m_recv_cb(buf);
+				}
+
+			} else if (c == '\n') {
+				if (m_recv_cb != NULL) {
+					m_recv_cb("");
 				}
 			}
 
@@ -446,6 +449,46 @@ int ctr_lte_uart_send(const char *fmt, va_list ap)
 
 	memcpy(&buf[len], TX_SUFFIX, TX_SUFFIX_LEN);
 	len += TX_SUFFIX_LEN;
+
+	k_poll_signal_reset(&m_tx_done_sig);
+
+	ret = uart_tx(m_dev, buf, len, SYS_FOREVER_MS);
+
+	if (ret < 0) {
+		LOG_ERR("Call `uart_tx` failed: %d", ret);
+		k_mutex_unlock(&m_mut);
+		return ret;
+	}
+
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+		                         &m_tx_done_sig),
+	};
+
+	ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_poll` failed: %d", ret);
+		k_mutex_unlock(&m_mut);
+		return ret;
+	}
+
+	k_mutex_unlock(&m_mut);
+	return 0;
+}
+
+int ctr_lte_uart_send_raw(const void *buf, size_t len)
+{
+	int ret;
+
+	k_mutex_lock(&m_mut, K_FOREVER);
+
+	if (!atomic_get(&m_enabled)) {
+		k_mutex_unlock(&m_mut);
+		return -EBUSY;
+	}
+
+	LOG_INF("TX (raw): %u byte(s)", len);
 
 	k_poll_signal_reset(&m_tx_done_sig);
 
