@@ -20,6 +20,7 @@ typedef void (*ctr_lte_talk_event_cb)(enum ctr_lte_talk_event event);
 int ctr_lte_talk_init(ctr_lte_talk_event_cb event_cb);
 int ctr_lte_talk_enable(void);
 int ctr_lte_talk_disable(void);
+int ctr_lte_talk_(const char *s);
 int ctr_lte_talk_at(void);
 int ctr_lte_talk_at_cclk_q(char *buf, size_t size);
 int ctr_lte_talk_at_ceppi(int p1);
