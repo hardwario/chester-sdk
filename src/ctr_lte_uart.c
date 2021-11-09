@@ -12,7 +12,6 @@
 
 /* Standard includes */
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -450,6 +449,46 @@ int ctr_lte_uart_send(const char *fmt, va_list ap)
 
 	memcpy(&buf[len], TX_SUFFIX, TX_SUFFIX_LEN);
 	len += TX_SUFFIX_LEN;
+
+	k_poll_signal_reset(&m_tx_done_sig);
+
+	ret = uart_tx(m_dev, buf, len, SYS_FOREVER_MS);
+
+	if (ret < 0) {
+		LOG_ERR("Call `uart_tx` failed: %d", ret);
+		k_mutex_unlock(&m_mut);
+		return ret;
+	}
+
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+		                         &m_tx_done_sig),
+	};
+
+	ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_poll` failed: %d", ret);
+		k_mutex_unlock(&m_mut);
+		return ret;
+	}
+
+	k_mutex_unlock(&m_mut);
+	return 0;
+}
+
+int ctr_lte_uart_send_raw(const void *buf, size_t len)
+{
+	int ret;
+
+	k_mutex_lock(&m_mut, K_FOREVER);
+
+	if (!atomic_get(&m_enabled)) {
+		k_mutex_unlock(&m_mut);
+		return -EBUSY;
+	}
+
+	LOG_INF("TX (raw): %u byte(s)", len);
 
 	k_poll_signal_reset(&m_tx_done_sig);
 

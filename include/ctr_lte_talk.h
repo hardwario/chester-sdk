@@ -37,8 +37,10 @@ int ctr_lte_talk_at_shortswver(char *buf, size_t size);
 int ctr_lte_talk_at_xdataprfl(int p1);
 int ctr_lte_talk_at_xnettime(int p1, int *p2);
 int ctr_lte_talk_at_xpofwarn(int p1, int p2);
+int ctr_lte_talk_at_xsendto(const char *p1, int p2, const void *buf, size_t len);
 int ctr_lte_talk_at_xsim(int p1);
 int ctr_lte_talk_at_xsleep(int p1);
+int ctr_lte_talk_at_xsocket(int p1, int *p2, int *p3, char *buf, size_t size);
 int ctr_lte_talk_at_xsystemmode(int p1, int p2, int p3, int p4);
 int ctr_lte_talk_at_xtime(int p1);
 

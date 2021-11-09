@@ -14,8 +14,9 @@
 
 /* Standard includes */
 #include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -511,6 +512,20 @@ static int attach_once(void)
 	}
 #endif
 
+	char xsocket[32];
+
+	ret = ctr_lte_talk_at_xsocket(1, (int[]){ 2 }, (int[]){ 0 }, xsocket, sizeof(xsocket));
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xsocket` failed: %d", ret);
+		return ret;
+	}
+
+	if (strcmp(xsocket, "#XSOCKET: 1,2,17") != 0) {
+		LOG_ERR("Unexpected socket response");
+		return -ENOTCONN;
+	}
+
 	ret = ctr_lte_talk_at_xsleep(2);
 
 	if (ret < 0) {
@@ -573,6 +588,32 @@ static int attach(int retries, k_timeout_t delay)
 static int send_once(const struct send_msgq_data *data)
 {
 	int ret;
+
+	ret = wake_up();
+
+	if (ret < 0) {
+		LOG_ERR("Call `wake_up` failed: %d", ret);
+		return ret;
+	}
+
+	char addr[15 + 1];
+
+	snprintf(addr, sizeof(addr), "%d.%d.%d.%d", data->addr[0], data->addr[1], data->addr[2],
+	         data->addr[3]);
+
+	ret = ctr_lte_talk_at_xsendto(addr, data->port, data->buf, data->len);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xsendto` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_xsleep(2);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xsleep` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }

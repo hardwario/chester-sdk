@@ -337,6 +337,71 @@ static int talk_cmd_response_ok(k_timeout_t timeout, response_cb cb, void *p1, v
 	return 0;
 }
 
+static int talk_cmd_raw_ok(k_timeout_t timeout, const void *buf, size_t len, const char *fmt, ...)
+{
+	int ret;
+
+	/* TODO Do not block long operation by mutex but return -EBUSY instead */
+	k_mutex_lock(&m_talk_mut, K_FOREVER);
+	k_sleep(SEND_GUARD_TIME);
+
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = ctr_lte_uart_send(fmt, ap);
+	va_end(ap);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_uart_send` failed: %d", ret);
+		k_mutex_unlock(&m_talk_mut);
+		return ret;
+	}
+
+	k_sleep(K_SECONDS(10));
+
+	ret = ctr_lte_uart_send_raw(buf, len);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_uart_send_raw` failed: %d", ret);
+		k_mutex_unlock(&m_talk_mut);
+		return ret;
+	}
+
+	k_sleep(K_SECONDS(10));
+
+	ret = ctr_lte_uart_send_raw("+++", 3);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_uart_send_raw` failed: %d", ret);
+		k_mutex_unlock(&m_talk_mut);
+		return ret;
+	}
+
+	k_sleep(K_SECONDS(10));
+
+	struct response response;
+
+	ret = gather_response(timeout, &response, 0);
+
+	if (ret < 0) {
+		LOG_ERR("Call `gather_response` failed: %d", ret);
+		release_response(&response);
+		k_mutex_unlock(&m_talk_mut);
+		return ret;
+	}
+
+	if (strcmp(response.result, "OK") != 0) {
+		LOG_ERR("Unexpected result: %s", response.result);
+		release_response(&response);
+		k_mutex_unlock(&m_talk_mut);
+		return -ENOMSG;
+	}
+
+	release_response(&response);
+	k_mutex_unlock(&m_talk_mut);
+	return 0;
+}
+
 int ctr_lte_talk_init(ctr_lte_talk_event_cb event_cb)
 {
 	int ret;
@@ -737,6 +802,20 @@ int ctr_lte_talk_at_xpofwarn(int p1, int p2)
 	return 0;
 }
 
+int ctr_lte_talk_at_xsendto(const char *p1, int p2, const void *buf, size_t len)
+{
+	int ret;
+
+	ret = talk_cmd_raw_ok(RESPONSE_TIMEOUT_L, buf, len, "AT#XSENDTO=\"%s\",%d", p1, p2);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_raw_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lte_talk_at_xsim(int p1)
 {
 	int ret;
@@ -759,6 +838,51 @@ int ctr_lte_talk_at_xsleep(int p1)
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int at_xsocket_response_handler(int idx, int count, const char *s, void *p1, void *p2,
+                                       void *p3)
+{
+	ARG_UNUSED(p3);
+
+	char *p = p1;
+	size_t *size = p2;
+
+	if (idx == 0 && count == 1) {
+		if (strlen(s) >= *size) {
+			return -ENOBUFS;
+		}
+
+		strcpy(p, s);
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_xsocket(int p1, int *p2, int *p3, char *buf, size_t size)
+{
+	int ret;
+
+	if (p2 == NULL && p3 == NULL) {
+		ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_xsocket_response_handler, buf,
+		                           &size, NULL, "AT#XSOCKET=%d", p1);
+
+	} else if (p2 != NULL && p3 != NULL) {
+		ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_xsocket_response_handler, buf,
+		                           &size, NULL, "AT#XSOCKET=%d,%d,%d", p1, *p2, *p3);
+
+	} else {
+		return -EINVAL;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
 		return ret;
 	}
 
