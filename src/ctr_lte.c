@@ -1295,6 +1295,38 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_test_uart(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc == 2 && strcmp(argv[1], "enable") == 0) {
+		ret = ctr_lte_talk_enable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_enable` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "disable") == 0) {
+		ret = ctr_lte_talk_disable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
 static int cmd_test_reset(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -1409,7 +1441,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
         SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-        sub_lte_test, SHELL_CMD_ARG(reset, NULL, "Reset modem.", cmd_test_reset, 1, 0),
+        sub_lte_test,
+        SHELL_CMD_ARG(uart, NULL, "Enable/Disable UART interface (format: <enable|disable>).",
+                      cmd_test_uart, 2, 0),
+        SHELL_CMD_ARG(reset, NULL, "Reset modem.", cmd_test_reset, 1, 0),
         SHELL_CMD_ARG(wakeup, NULL, "Wake up modem.", cmd_test_wakeup, 1, 0),
         SHELL_CMD_ARG(cmd, NULL, "Send command to modem. (format: <command>)", cmd_test_cmd, 2, 0),
         SHELL_SUBCMD_SET_END);
@@ -1483,15 +1518,6 @@ static int init(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lte_talk_init` failed: %d", ret);
 		return ret;
-	}
-
-	if (m_config.test) {
-		ret = ctr_lte_talk_enable();
-
-		if (ret < 0) {
-			LOG_ERR("Call `ctr_lte_talk_enable` failed: %d", ret);
-			return ret;
-		}
 	}
 
 	return 0;
