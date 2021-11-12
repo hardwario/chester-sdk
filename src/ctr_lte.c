@@ -74,7 +74,7 @@ enum antenna {
 struct config {
 	bool test;
 	enum antenna antenna;
-	bool clocksync;
+	bool clksync;
 };
 
 static enum state m_state = STATE_INIT;
@@ -498,7 +498,7 @@ static int attach_once(void)
 		return -ETIMEDOUT;
 	}
 
-	if (m_config.clocksync) {
+	if (m_config.clksync) {
 		struct k_poll_event events_3[] = {
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
 			                         &m_time_sig),
@@ -1008,7 +1008,7 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 	SETTINGS_SET("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
-	SETTINGS_SET("clocksync", &m_config_interim.clocksync, sizeof(m_config_interim.clocksync));
+	SETTINGS_SET("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
 
 #undef SETTINGS_SET
 
@@ -1031,7 +1031,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 	EXPORT_FUNC("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
-	EXPORT_FUNC("clocksync", &m_config_interim.clocksync, sizeof(m_config_interim.clocksync));
+	EXPORT_FUNC("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
 
 #undef EXPORT_FUNC
 
@@ -1058,17 +1058,17 @@ static void print_antenna(const struct shell *shell)
 	}
 }
 
-static void print_clocksync(const struct shell *shell)
+static void print_clksync(const struct shell *shell)
 {
-	shell_print(shell, SETTINGS_PFX " config clocksync %s",
-	            m_config_interim.clocksync ? "true" : "false");
+	shell_print(shell, SETTINGS_PFX " config clksync %s",
+	            m_config_interim.clksync ? "true" : "false");
 }
 
 static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
 	print_test(shell);
 	print_antenna(shell);
-	print_clocksync(shell);
+	print_clksync(shell);
 
 	return 0;
 }
@@ -1115,20 +1115,20 @@ static int cmd_config_antenna(const struct shell *shell, size_t argc, char **arg
 	return -EINVAL;
 }
 
-static int cmd_config_clocksync(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config_clksync(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		print_clocksync(shell);
+		print_clksync(shell);
 		return 0;
 	}
 
 	if (argc == 2 && strcmp(argv[1], "true") == 0) {
-		m_config_interim.clocksync = true;
+		m_config_interim.clksync = true;
 		return 0;
 	}
 
 	if (argc == 2 && strcmp(argv[1], "false") == 0) {
-		m_config_interim.clocksync = false;
+		m_config_interim.clksync = false;
 		return 0;
 	}
 
@@ -1496,8 +1496,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
         SHELL_CMD_ARG(test, NULL, "Get/Set LTE test mode.", cmd_config_test, 1, 1),
         SHELL_CMD_ARG(antenna, NULL, "Get/Set LTE antenna (format: <int|ext>).", cmd_config_antenna,
                       1, 1),
-        SHELL_CMD_ARG(clocksync, NULL, "Get/Set clock synchronization (format: <true|false>).",
-                      cmd_config_clocksync, 1, 1),
+        SHELL_CMD_ARG(clksync, NULL, "Get/Set clock synchronization (format: <true|false>).",
+                      cmd_config_clksync, 1, 1),
         SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
