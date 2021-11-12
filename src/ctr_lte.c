@@ -74,6 +74,7 @@ enum antenna {
 struct config {
 	bool test;
 	enum antenna antenna;
+	bool clocksync;
 };
 
 static enum state m_state = STATE_INIT;
@@ -87,6 +88,7 @@ static struct config m_config;
 static struct k_poll_signal m_boot_sig;
 static struct k_poll_signal m_sim_card_sig;
 static struct k_poll_signal m_time_sig;
+static struct k_poll_signal m_attach_sig;
 
 K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
@@ -116,6 +118,16 @@ static void talk_handler(enum ctr_lte_talk_event event)
 	case CTR_LTE_TALK_EVENT_TIME:
 		LOG_DBG("Event `CTR_LTE_TALK_EVENT_TIME`");
 		k_poll_signal_raise(&m_time_sig, 0);
+		break;
+
+	case CTR_LTE_TALK_EVENT_ATTACH:
+		LOG_DBG("Event `CTR_LTE_TALK_EVENT_ATTACH`");
+		k_poll_signal_raise(&m_attach_sig, 0);
+		break;
+
+	case CTR_LTE_TALK_EVENT_DETACH:
+		LOG_DBG("Event `CTR_LTE_TALK_EVENT_DETACH`");
+		/* TODO Handle event */
 		break;
 
 	default:
@@ -433,6 +445,7 @@ static int attach_once(void)
 
 	k_poll_signal_reset(&m_sim_card_sig);
 	k_poll_signal_reset(&m_time_sig);
+	k_poll_signal_reset(&m_attach_sig);
 
 	ret = ctr_lte_talk_at_cfun(1);
 
@@ -474,57 +487,72 @@ static int attach_once(void)
 	k_mutex_unlock(&m_mut);
 
 	struct k_poll_event events_2[] = {
-		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_time_sig),
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+		                         &m_attach_sig),
 	};
 
-	ret = k_poll(events_2, ARRAY_SIZE(events_2), K_MINUTES(10));
+	ret = k_poll(events_2, ARRAY_SIZE(events_2), K_MINUTES(5));
 
 	if (ret == -EAGAIN) {
-		LOG_WRN("Network time synchronization timed out");
+		LOG_WRN("Network registration timed out");
 		return -ETIMEDOUT;
 	}
 
-	if (ret < 0) {
-		LOG_ERR("Call `k_poll` failed: %d", ret);
-		return ret;
-	}
+	if (m_config.clocksync) {
+		struct k_poll_event events_3[] = {
+			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+			                         &m_time_sig),
+		};
 
-	char cclk[64];
+		ret = k_poll(events_3, ARRAY_SIZE(events_3), K_MINUTES(10));
 
-	ret = ctr_lte_talk_at_cclk_q(cclk, sizeof(cclk));
+		if (ret == -EAGAIN) {
+			LOG_WRN("Network time synchronization timed out");
+			return -ETIMEDOUT;
+		}
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_talk_at_cclk_q` failed: %d", ret);
-		return ret;
-	}
+		if (ret < 0) {
+			LOG_ERR("Call `k_poll` failed: %d", ret);
+			return ret;
+		}
+
+		char cclk[64];
+
+		ret = ctr_lte_talk_at_cclk_q(cclk, sizeof(cclk));
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_at_cclk_q` failed: %d", ret);
+			return ret;
+		}
 
 #if defined(CONFIG_CTR_RTC)
-	struct ctr_rtc_tm tm;
+		struct ctr_rtc_tm tm;
 
-	ret = ctr_lte_parse_cclk(cclk, &tm.year, &tm.month, &tm.day, &tm.hours, &tm.minutes,
-	                         &tm.seconds);
+		ret = ctr_lte_parse_cclk(cclk, &tm.year, &tm.month, &tm.day, &tm.hours, &tm.minutes,
+		                         &tm.seconds);
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_parse_cclk` failed: %d", ret);
-		return ret;
-	}
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_parse_cclk` failed: %d", ret);
+			return ret;
+		}
 
-	tm.year += 2000;
+		tm.year += 2000;
 
-	ret = ctr_rtc_set(&tm);
+		ret = ctr_rtc_set(&tm);
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_rtc_set` failed: %d", ret);
-		return ret;
-	}
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_rtc_set` failed: %d", ret);
+			return ret;
+		}
 #else
-	ret = ctr_lte_parse_cclk(cclk, NULL, NULL, NULL, NULL, NULL, NULL);
+		ret = ctr_lte_parse_cclk(cclk, NULL, NULL, NULL, NULL, NULL, NULL);
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_parse_cclk` failed: %d", ret);
-		return ret;
-	}
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_parse_cclk` failed: %d", ret);
+			return ret;
+		}
 #endif
+	}
 
 	char xsocket[32];
 
@@ -980,6 +1008,7 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 	SETTINGS_SET("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
+	SETTINGS_SET("clocksync", &m_config_interim.clocksync, sizeof(m_config_interim.clocksync));
 
 #undef SETTINGS_SET
 
@@ -1002,6 +1031,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 	EXPORT_FUNC("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
+	EXPORT_FUNC("clocksync", &m_config_interim.clocksync, sizeof(m_config_interim.clocksync));
 
 #undef EXPORT_FUNC
 
@@ -1028,10 +1058,17 @@ static void print_antenna(const struct shell *shell)
 	}
 }
 
+static void print_clocksync(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config clocksync %s",
+	            m_config_interim.clocksync ? "true" : "false");
+}
+
 static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
 	print_test(shell);
 	print_antenna(shell);
+	print_clocksync(shell);
 
 	return 0;
 }
@@ -1071,6 +1108,27 @@ static int cmd_config_antenna(const struct shell *shell, size_t argc, char **arg
 
 	if (argc == 2 && strcmp(argv[1], "ext") == 0) {
 		m_config_interim.antenna = ANTENNA_EXT;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_clocksync(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_clocksync(shell);
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "true") == 0) {
+		m_config_interim.clocksync = true;
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "false") == 0) {
+		m_config_interim.clocksync = false;
 		return 0;
 	}
 
@@ -1438,6 +1496,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
         SHELL_CMD_ARG(test, NULL, "Get/Set LTE test mode.", cmd_config_test, 1, 1),
         SHELL_CMD_ARG(antenna, NULL, "Get/Set LTE antenna (format: <int|ext>).", cmd_config_antenna,
                       1, 1),
+        SHELL_CMD_ARG(clocksync, NULL, "Get/Set clock synchronization (format: <true|false>).",
+                      cmd_config_clocksync, 1, 1),
         SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -1471,6 +1531,7 @@ static int init(const struct device *dev)
 	k_poll_signal_init(&m_boot_sig);
 	k_poll_signal_init(&m_sim_card_sig);
 	k_poll_signal_init(&m_time_sig);
+	k_poll_signal_init(&m_attach_sig);
 
 	static struct settings_handler sh = {
 		.name = SETTINGS_PFX,

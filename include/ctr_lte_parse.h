@@ -11,6 +11,7 @@ extern "C" {
 
 int ctr_lte_parse_cclk(const char *s, int *year, int *month, int *day, int *hours, int *minutes,
                        int *seconds);
+int ctr_lte_parse_cereg(const char *s, int *stat);
 
 #ifdef __cplusplus
 }

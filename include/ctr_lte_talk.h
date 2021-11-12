@@ -13,6 +13,8 @@ enum ctr_lte_talk_event {
 	CTR_LTE_TALK_EVENT_BOOT = 0,
 	CTR_LTE_TALK_EVENT_SIM_CARD = 1,
 	CTR_LTE_TALK_EVENT_TIME = 2,
+	CTR_LTE_TALK_EVENT_ATTACH = 3,
+	CTR_LTE_TALK_EVENT_DETACH = 4,
 };
 
 typedef void (*ctr_lte_talk_event_cb)(enum ctr_lte_talk_event event);

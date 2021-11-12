@@ -1,4 +1,5 @@
 #include <ctr_lte_talk.h>
+#include <ctr_lte_parse.h>
 #include <ctr_lte_uart.h>
 #include <ctr_util.h>
 
@@ -44,6 +45,8 @@ static void *m_handler_param;
 
 static void process_urc(const char *s)
 {
+	int ret;
+
 	if (strlen(s) == 0) {
 		return;
 	}
@@ -57,6 +60,7 @@ static void process_urc(const char *s)
 
 		return;
 	}
+
 	if (strcmp(s, "%XSIM: 1") == 0) {
 		if (m_event_cb != NULL) {
 			m_event_cb(CTR_LTE_TALK_EVENT_SIM_CARD);
@@ -64,9 +68,33 @@ static void process_urc(const char *s)
 
 		return;
 	}
+
 	if (strncmp(s, "%XTIME:", 7) == 0) {
 		if (m_event_cb != NULL) {
 			m_event_cb(CTR_LTE_TALK_EVENT_TIME);
+		}
+
+		return;
+	}
+
+	if (strncmp(s, "+CEREG:", 7) == 0) {
+		int stat;
+
+		ret = ctr_lte_parse_cereg(s, &stat);
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_parse` failed: %d", ret);
+		}
+
+		if (stat == 1 || stat == 5) {
+			if (m_event_cb != NULL) {
+				m_event_cb(CTR_LTE_TALK_EVENT_ATTACH);
+			}
+
+		} else {
+			if (m_event_cb != NULL) {
+				m_event_cb(CTR_LTE_TALK_EVENT_DETACH);
+			}
 		}
 
 		return;

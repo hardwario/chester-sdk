@@ -76,3 +76,27 @@ int ctr_lte_parse_cclk(const char *s, int *year, int *month, int *day, int *hour
 
 	return 0;
 }
+
+int ctr_lte_parse_cereg(const char *s, int *stat)
+{
+	/* +CEREG: 5,"AF66","009DE067",9,,,"00000000","00111000" */
+
+	char *p = (char *)s;
+
+	if ((p = ctr_lte_tok_pfx(p, "+CEREG: ")) == NULL) {
+		return -EINVAL;
+	}
+
+	bool def;
+	long num;
+
+	if ((p = ctr_lte_tok_num(p, &def, &num)) == NULL) {
+		return -EINVAL;
+	}
+
+	if (stat != NULL) {
+		*stat = num;
+	}
+
+	return 0;
+}
