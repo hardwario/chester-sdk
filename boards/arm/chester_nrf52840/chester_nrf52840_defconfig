@@ -18,6 +18,7 @@ CONFIG_SOC_SERIES_NRF52X=y
 # TODO These options should be part of Kconfig
 # (now these are unnamed choice, so we cannot select them)
 
+CONFIG_LOG_BACKEND_RTT_MODE_DROP=y
 CONFIG_LIS2DH_ACCEL_RANGE_4G=y
 CONFIG_LIS2DH_ODR_2=y
 CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD=y
