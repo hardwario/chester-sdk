@@ -9,3 +9,5 @@ manifest:
       revision: v1.7.1
       path: nrf
       import: true
+  self:
+    path: chester
