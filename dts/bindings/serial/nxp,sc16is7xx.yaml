@@ -1,0 +1,46 @@
+description: NXP SC16IS7XX, I2C to UART interface
+
+compatible: "nxp,sc16is7xx"
+
+include: [i2c-device.yaml, uart-controller.yaml]
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: Clock frequency in Hz
+
+  prescaler:
+    type: int
+    required: false
+    default: 1
+    description: Clock prescaler for programmable baud rate generator
+    enum:
+      - 1
+      - 4
+
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: tbd
+
+  reset-gpios:
+    type: phandle-array
+    required: false
+    description: tbd
+
+  reset-delay:
+    type: int
+    required: false
+    default: 1000
+    description: Reset delay in microseconds
+
+  rts-control:
+    type: boolean
+    required: false
+    description: Enable the transmitter to control the RTS pin
+
+  rts-invert:
+    type: boolean
+    required: false
+    description: Invert RTS signal in RS-485 mode

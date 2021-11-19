@@ -1,0 +1,12 @@
+config UART_SC16IS7XX
+	bool "NXP SC16IS7XX UART driver"
+	depends on I2C
+	select REQUIRES_FULL_LIBC
+
+if UART_SC16IS7XX
+
+module = UART_SC16IS7XX
+module-str = uart_sc16is7xx
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # UART_SC16IS7XX
