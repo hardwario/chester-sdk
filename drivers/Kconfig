@@ -1,5 +1,6 @@
 menu "Device Drivers"
 
 rsource "ctr_z/Kconfig"
+rsource "serial/Kconfig"
 
 endmenu
