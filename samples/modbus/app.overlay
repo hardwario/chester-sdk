@@ -1,6 +1,6 @@
 &i2c0 {
 	uart_x2: uart@50 {
-		compatible = "nxp,sc16is740";
+		compatible = "nxp,sc16is7xx";
 		reg = <0x50>;
 		clock-frequency = <13560000>;
 		prescaler = <1>;
