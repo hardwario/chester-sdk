@@ -4,6 +4,6 @@ set(SHIELD ctr_z)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-project(ctr_z)
+project(chester-z-sample)
 
 target_sources(app PRIVATE src/main.c)
