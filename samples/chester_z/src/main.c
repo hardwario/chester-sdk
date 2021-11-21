@@ -60,4 +60,30 @@ void main(void)
 	}
 
 	LOG_INF("Firmware version: %u", fw_version);
+
+	for (;;) {
+		uint16_t vdc;
+
+		ret = ctr_z_get_vdc_mv(chester_z_dev, &vdc);
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_z_get_vdc_mv` failed: %d", ret);
+
+		} else {
+			LOG_INF("Voltage VDC: %u mV", vdc);
+		}
+
+		uint16_t vbat;
+
+		ret = ctr_z_get_vbat_mv(chester_z_dev, &vbat);
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_z_get_vbat_mv` failed: %d", ret);
+
+		} else {
+			LOG_INF("Voltage VBAT: %u mV", vbat);
+		}
+
+		k_sleep(K_MSEC(1000));
+	}
 }
