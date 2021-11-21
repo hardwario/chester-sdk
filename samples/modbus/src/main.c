@@ -25,7 +25,7 @@ static void init_modbus(void)
 
 	const struct modbus_iface_param client_param = {
 		.mode = MODBUS_MODE_RTU,
-		.rx_timeout = 50000,
+		.rx_timeout = 500000,
 		.serial = {
 			.baud = 9600,
 			.parity = UART_CFG_PARITY_NONE,
@@ -57,7 +57,6 @@ static void read_modbus(void)
 
 void main(void)
 {
-	k_sleep(K_SECONDS(3));
 	init_modbus();
 
 	for (;;) {
