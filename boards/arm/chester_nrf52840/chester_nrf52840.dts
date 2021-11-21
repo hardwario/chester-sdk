@@ -155,7 +155,7 @@
 };
 
 &uart0 {
-	status = "okay";
+	status = "disabled";
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	tx-pin = <13>;
@@ -166,7 +166,7 @@
 };
 
 &uart1 {
-	status = "okay";
+	status = "disabled";
 	compatible = "nordic,nrf-uarte";
 	current-speed = <19200>;
 	tx-pin = <7>;
