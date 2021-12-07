@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.20.0)
-
+set(BOARD chester_nrf52840)
 set(SHIELD ctr_z)
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-
-project(chester-z-sample)
+project(chester_z)
 
 target_sources(app PRIVATE src/main.c)
