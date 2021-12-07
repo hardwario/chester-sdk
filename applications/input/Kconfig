@@ -1,0 +1,9 @@
+mainmenu "CHESTER Input"
+
+config APP_X0D
+	bool "APP_X0D"
+
+config APP_Z
+	bool "APP_Z"
+
+source "Kconfig.zephyr"

@@ -1,0 +1,13 @@
+&i2c0 {
+	sht30_ext: sht30_ext@44 {
+		status = "okay";
+	};
+};
+
+&ctr_z {
+	status = "disabled";
+};
+
+&uart1 {
+	status = "okay";
+};
