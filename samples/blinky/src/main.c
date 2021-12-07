@@ -11,7 +11,7 @@ void main(void)
 {
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
-	bool state;
+	bool state = false;
 
 	for (;;) {
 		LOG_INF("Alive");
