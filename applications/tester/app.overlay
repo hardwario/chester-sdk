@@ -1,0 +1,9 @@
+&i2c0 {
+	sht30_ext: sht30_ext@44 {
+		status = "okay";
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
