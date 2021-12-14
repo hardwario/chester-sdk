@@ -308,11 +308,13 @@ static int setup_once(void)
 		return ret;
 	}
 
-	ret = ctr_lte_talk_at_xtime(1);
+	if (m_config.clksync) {
+		ret = ctr_lte_talk_at_xtime(1);
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_talk_at_xtime` failed: %d", ret);
-		return ret;
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_at_xtime` failed: %d", ret);
+			return ret;
+		}
 	}
 
 	ret = ctr_lte_talk_at_cereg(5);
@@ -446,6 +448,13 @@ static int attach_once(void)
 	k_poll_signal_reset(&m_sim_card_sig);
 	k_poll_signal_reset(&m_time_sig);
 	k_poll_signal_reset(&m_attach_sig);
+
+	ret = ctr_lte_talk_at_cops(1, (int[]){ 2 }, "23003");
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cops` failed: %d", ret);
+		return ret;
+	}
 
 	ret = ctr_lte_talk_at_cfun(1);
 

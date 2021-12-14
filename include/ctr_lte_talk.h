@@ -32,6 +32,7 @@ int ctr_lte_talk_at_cfun(int p1);
 int ctr_lte_talk_at_cgerep(int p1);
 int ctr_lte_talk_at_cmee(int p1);
 int ctr_lte_talk_at_cnec(int p1);
+int ctr_lte_talk_at_cops(int p1, int *p2, const char *p3);
 int ctr_lte_talk_at_cpsms(int *p1, const char *p2, const char *p3);
 int ctr_lte_talk_at_cscon(int p1);
 int ctr_lte_talk_at_hwversion(char *buf, size_t size);
