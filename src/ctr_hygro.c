@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(ctr_hygro, LOG_LEVEL_DBG);
 
 static K_MUTEX_DEFINE(m_mut);
 
-static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(sht30));
+static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(sht30_ext));
 
 int ctr_hygro_read(float *temperature, float *humidity)
 {
