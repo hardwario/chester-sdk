@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #if IS_ENABLED(CONFIG_APP_Z)
 static const struct device *m_ctr_z_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_Z) */
 
 struct data_errors {
 	bool orientation;
@@ -170,13 +170,14 @@ error:
 	return ret;
 }
 
-#if IS_ENABLED(CONFIG_APP_X0D)
+#if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
 static void chester_x0d_event_handler(enum ctr_chester_x0d_slot slot,
                                       enum ctr_chester_x0d_channel channel,
                                       enum ctr_chester_x0d_event event, void *param)
 {
 	LOG_DBG("slot: %d channel: %d event: %d", (int)slot, (int)channel, (int)event);
 
+#if IS_ENABLED(CONFIG_APP_X0D_A)
 	if (slot == CTR_CHESTER_X0D_SLOT_A && channel == CTR_CHESTER_X0D_CHANNEL_1) {
 		if (event == CTR_CHESTER_X0D_EVENT_RISE) {
 			LOG_INF("Channel 1 detected rising edge");
@@ -248,7 +249,9 @@ static void chester_x0d_event_handler(enum ctr_chester_x0d_slot slot,
 			k_sem_give(&m_loop_sem);
 		}
 	}
+#endif /* IS_ENABLED(CONFIG_APP_X0D_A) */
 
+#if IS_ENABLED(CONFIG_APP_X0D_B)
 	if (slot == CTR_CHESTER_X0D_SLOT_B && channel == CTR_CHESTER_X0D_CHANNEL_1) {
 		if (event == CTR_CHESTER_X0D_EVENT_RISE) {
 			LOG_INF("Channel 5 detected rising edge");
@@ -320,14 +323,16 @@ static void chester_x0d_event_handler(enum ctr_chester_x0d_slot slot,
 			k_sem_give(&m_loop_sem);
 		}
 	}
+#endif /* IS_ENABLED(CONFIG_APP_X0D_B) */
 }
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B) */
 
-#if IS_ENABLED(CONFIG_APP_X0D)
+#if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
 static int init_chester_x0d(void)
 {
 	int ret;
 
+#if IS_ENABLED(CONFIG_APP_X0D_A)
 	ret = ctr_chester_x0d_init(CTR_CHESTER_X0D_SLOT_A, CTR_CHESTER_X0D_CHANNEL_1,
 	                           chester_x0d_event_handler, NULL);
 
@@ -359,7 +364,9 @@ static int init_chester_x0d(void)
 		LOG_ERR("Call `ctr_chester_x0d_init` failed: %d", ret);
 		return ret;
 	}
+#endif /* IS_ENABLED(CONFIG_APP_X0D_A) */
 
+#if IS_ENABLED(CONFIG_APP_X0D_B)
 	ret = ctr_chester_x0d_init(CTR_CHESTER_X0D_SLOT_B, CTR_CHESTER_X0D_CHANNEL_1,
 	                           chester_x0d_event_handler, NULL);
 
@@ -391,18 +398,20 @@ static int init_chester_x0d(void)
 		LOG_ERR("Call `ctr_chester_x0d_init` failed: %d", ret);
 		return ret;
 	}
+#endif /* IS_ENABLED(CONFIG_APP_X0D_B) */
 
 	return 0;
 }
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B) */
 
-#if IS_ENABLED(CONFIG_APP_X0D)
+#if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
 static int task_chester_x0d(void)
 {
 	int ret;
 
 	bool error = false;
 
+#if IS_ENABLED(CONFIG_APP_X0D_A)
 	ret = ctr_chester_x0d_read(CTR_CHESTER_X0D_SLOT_A, CTR_CHESTER_X0D_CHANNEL_1,
 	                           &m_data.states.input_1_level);
 
@@ -450,7 +459,9 @@ static int task_chester_x0d(void)
 		LOG_INF("Channel 4 level: %d", m_data.states.input_4_level);
 		m_data.errors.input_4 = false;
 	}
+#endif /* IS_ENABLED(CONFIG_APP_X0D_A) */
 
+#if IS_ENABLED(CONFIG_APP_X0D_B)
 	ret = ctr_chester_x0d_read(CTR_CHESTER_X0D_SLOT_B, CTR_CHESTER_X0D_CHANNEL_1,
 	                           &m_data.states.input_5_level);
 
@@ -498,10 +509,11 @@ static int task_chester_x0d(void)
 		LOG_INF("Channel 8 level: %d", m_data.states.input_8_level);
 		m_data.errors.input_8 = false;
 	}
+#endif /* IS_ENABLED(CONFIG_APP_X0D_B) */
 
 	return error ? -EIO : 0;
 }
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B) */
 
 #if IS_ENABLED(CONFIG_APP_Z)
 void ctr_z_event_handler(const struct device *dev, enum ctr_z_event event, void *param)
@@ -523,7 +535,7 @@ void ctr_z_event_handler(const struct device *dev, enum ctr_z_event event, void 
 		break;
 	}
 }
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_Z) */
 
 #if IS_ENABLED(CONFIG_APP_Z)
 static int init_chester_z(void)
@@ -610,7 +622,7 @@ static int init_chester_z(void)
 
 	return 0;
 }
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_Z) */
 
 #if IS_ENABLED(CONFIG_APP_Z)
 static int task_chester_z(void)
@@ -668,7 +680,7 @@ error:
 
 	return ret;
 }
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_Z) */
 
 static int init_sensors(void)
 {
@@ -963,13 +975,13 @@ static void loop(void)
 		LOG_ERR("Call `task_battery` failed: %d", ret);
 	}
 
-#if IS_ENABLED(CONFIG_APP_X0D)
+#if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
 	ret = task_chester_x0d();
 
 	if (ret < 0) {
 		LOG_ERR("Call `task_chester_x0d` failed: %d", ret);
 	}
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B) */
 
 #if IS_ENABLED(CONFIG_APP_Z)
 	ret = task_chester_z();
@@ -977,7 +989,7 @@ static void loop(void)
 	if (ret < 0) {
 		LOG_ERR("Call `task_chester_z` failed: %d", ret);
 	}
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_Z) */
 
 	ret = task_sensors();
 
@@ -1008,14 +1020,14 @@ void main(void)
 	k_sleep(K_MSEC(2000));
 	ctr_bsp_set_led(CTR_BSP_LED_G, false);
 
-#if IS_ENABLED(CONFIG_APP_X0D)
+#if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
 	ret = init_chester_x0d();
 
 	if (ret < 0) {
 		LOG_ERR("Call `init_chester_x0d` failed: %d", ret);
 		k_oops();
 	}
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B) */
 
 #if IS_ENABLED(CONFIG_APP_Z)
 	ret = init_chester_z();
@@ -1024,7 +1036,7 @@ void main(void)
 		LOG_ERR("Call `init_chester_z` failed: %d", ret);
 		k_oops();
 	}
-#endif
+#endif /* IS_ENABLED(CONFIG_APP_Z) */
 
 	ret = init_sensors();
 

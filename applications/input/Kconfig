@@ -1,7 +1,10 @@
 mainmenu "CHESTER Input"
 
-config APP_X0D
-	bool "APP_X0D"
+config APP_X0D_A
+	bool "APP_X0D_A"
+
+config APP_X0D_B
+	bool "APP_X0D_B"
 
 config APP_Z
 	bool "APP_Z"
