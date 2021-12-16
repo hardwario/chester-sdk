@@ -291,6 +291,13 @@ static int setup_once(void)
 		return ret;
 	}
 
+	ret = ctr_lte_talk_at_rai(1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_rai` failed: %d", ret);
+		return ret;
+	}
+
 	ret = ctr_lte_talk_at_xdataprfl(0);
 
 	if (ret < 0) {
@@ -453,13 +460,41 @@ static int attach_once(void)
 	k_poll_signal_reset(&m_time_sig);
 	k_poll_signal_reset(&m_attach_sig);
 
+	/* Enabled bands: B08, B20, B28 */
+	const char *bands =
+	        /* B88 - B81 */
+	        "00000000"
+	        /* B80 - B71 */
+	        "0000000000"
+	        /* B70 - B61 */
+	        "0000000000"
+	        /* B60 - B51 */
+	        "0000000000"
+	        /* B50 - B41 */
+	        "0000000000"
+	        /* B40 - B31 */
+	        "0000000000"
+	        /* B30 - B21 */
+	        "0010000000"
+	        /* B20 - B11 */
+	        "1000000000"
+	        /* B10 - B01 */
+	        "0010000000";
+
+	ret = ctr_lte_talk_at_xbandlock(1, bands);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xbandlock` failed: %d", ret);
+		return ret;
+	}
+
 	if (!m_config.autoconn) {
 		ret = ctr_lte_talk_at_cops(1, (int[]){ 2 }, m_config.plmnid);
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_talk_at_cops` failed: %d", ret);
-		return ret;
-	}
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_at_cops` failed: %d", ret);
+			return ret;
+		}
 	}
 
 	ret = ctr_lte_talk_at_cfun(1);
@@ -665,6 +700,13 @@ static int send_once(const struct send_msgq_data *data)
 
 	if (ret < 0) {
 		LOG_ERR("Call `wake_up` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_xsocketopt(1, 50, NULL);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xsocketopt` failed: %d", ret);
 		return ret;
 	}
 

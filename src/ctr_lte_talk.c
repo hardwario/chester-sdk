@@ -793,6 +793,20 @@ int ctr_lte_talk_at_hwversion(char *buf, size_t size)
 	return 0;
 }
 
+int ctr_lte_talk_at_rai(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%RAI=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lte_talk_at_rel14feat(int p1, int p2, int p3, int p4, int p5)
 {
 	int ret;
@@ -837,6 +851,25 @@ int ctr_lte_talk_at_shortswver(char *buf, size_t size)
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_xbandlock(int p1, const char *p2)
+{
+	int ret;
+
+	if (p2 == NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%XBANDLOCK=%d", p1);
+
+	} else {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%XBANDLOCK=%d,\"%s\"", p1, p2);
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
 		return ret;
 	}
 
@@ -898,6 +931,25 @@ int ctr_lte_talk_at_xsendto(const char *p1, int p2, const void *buf, size_t len)
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_raw_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_xsocketopt(int p1, int p2, int *p3)
+{
+	int ret;
+
+	if (p3 == NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT#XSOCKETOPT=%d,%d", p1, p2);
+
+	} else {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT#XSOCKETOPT=%d,%d,%d", p1, p2, *p3);
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
 		return ret;
 	}
 
