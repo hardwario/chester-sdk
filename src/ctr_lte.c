@@ -13,6 +13,7 @@
 #include <zephyr.h>
 
 /* Standard includes */
+#include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -74,6 +75,8 @@ enum antenna {
 struct config {
 	bool test;
 	enum antenna antenna;
+	bool autoconn;
+	char plmnid[6 + 1];
 	bool clksync;
 };
 
@@ -81,6 +84,7 @@ static enum state m_state = STATE_INIT;
 
 static struct config m_config_interim = {
 	.antenna = ANTENNA_INT,
+	.plmnid = "23003",
 };
 
 static struct config m_config;
@@ -449,11 +453,13 @@ static int attach_once(void)
 	k_poll_signal_reset(&m_time_sig);
 	k_poll_signal_reset(&m_attach_sig);
 
-	ret = ctr_lte_talk_at_cops(1, (int[]){ 2 }, "23003");
+	if (!m_config.autoconn) {
+		ret = ctr_lte_talk_at_cops(1, (int[]){ 2 }, m_config.plmnid);
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lte_talk_at_cops` failed: %d", ret);
 		return ret;
+	}
 	}
 
 	ret = ctr_lte_talk_at_cfun(1);
@@ -1017,6 +1023,8 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 	SETTINGS_SET("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
+	SETTINGS_SET("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
+	SETTINGS_SET("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	SETTINGS_SET("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
 
 #undef SETTINGS_SET
@@ -1040,6 +1048,8 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 	EXPORT_FUNC("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
+	EXPORT_FUNC("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
+	EXPORT_FUNC("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	EXPORT_FUNC("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
 
 #undef EXPORT_FUNC
@@ -1067,6 +1077,17 @@ static void print_antenna(const struct shell *shell)
 	}
 }
 
+static void print_autoconn(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config autoconn %s",
+	            m_config_interim.autoconn ? "true" : "false");
+}
+
+static void print_plmnid(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config plmnid %s", m_config_interim.plmnid);
+}
+
 static void print_clksync(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config clksync %s",
@@ -1077,6 +1098,8 @@ static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
 	print_test(shell);
 	print_antenna(shell);
+	print_autoconn(shell);
+	print_plmnid(shell);
 	print_clksync(shell);
 
 	return 0;
@@ -1117,6 +1140,57 @@ static int cmd_config_antenna(const struct shell *shell, size_t argc, char **arg
 
 	if (argc == 2 && strcmp(argv[1], "ext") == 0) {
 		m_config_interim.antenna = ANTENNA_EXT;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_autoconn(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_autoconn(shell);
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "true") == 0) {
+		m_config_interim.autoconn = true;
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "false") == 0) {
+		m_config_interim.autoconn = false;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_plmnid(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_plmnid(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len != 5 && len != 6) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		memcpy(m_config_interim.plmnid, argv[1], len);
 		return 0;
 	}
 
@@ -1505,6 +1579,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
         SHELL_CMD_ARG(test, NULL, "Get/Set LTE test mode.", cmd_config_test, 1, 1),
         SHELL_CMD_ARG(antenna, NULL, "Get/Set LTE antenna (format: <int|ext>).", cmd_config_antenna,
                       1, 1),
+        SHELL_CMD_ARG(autoconn, NULL, "Get/Set auto-connect feature (format: <true|false>).",
+                      cmd_config_autoconn, 1, 1),
+        SHELL_CMD_ARG(plmnid, NULL, "Get/Set network PLMN ID (format: 5-6 digits).",
+                      cmd_config_plmnid, 1, 1),
         SHELL_CMD_ARG(clksync, NULL, "Get/Set clock synchronization (format: <true|false>).",
                       cmd_config_clksync, 1, 1),
         SHELL_SUBCMD_SET_END);
