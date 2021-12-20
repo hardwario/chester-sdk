@@ -1,5 +1,5 @@
 &i2c0 {
-	sht30_ext: sht30_ext@44 {
+	sht30_ext: sht30_ext@45 {
 		status = "okay";
 	};
 };
