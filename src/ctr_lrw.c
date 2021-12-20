@@ -14,9 +14,11 @@
 #include <zephyr.h>
 
 /* Standard includes */
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(ctr_lrw, LOG_LEVEL_DBG);
@@ -102,6 +104,7 @@ struct config {
 	enum mode mode;
 	enum nwk nwk;
 	bool adr;
+	int datarate;
 	bool dutycycle;
 	uint8_t devaddr[4];
 	uint8_t deveui[8];
@@ -120,6 +123,7 @@ static struct config m_config_interim = {
 	.mode = MODE_OTAA,
 	.nwk = NWK_PUBLIC,
 	.adr = true,
+	.datarate = 0,
 	.dutycycle = true,
 };
 
@@ -288,6 +292,15 @@ static int setup_once(void)
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lrw_talk_at_adr` failed: %d", ret);
 		return ret;
+	}
+
+	if (!m_config.adr) {
+		ret = ctr_lrw_talk_at_dr(m_config.datarate);
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lrw_talk_at_dr` failed: %d", ret);
+			return ret;
+		}
 	}
 
 	ret = ctr_lrw_talk_at_dutycycle(m_config.dutycycle ? 1 : 0);
@@ -1018,6 +1031,7 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET("mode", &m_config_interim.mode, sizeof(m_config_interim.mode));
 	SETTINGS_SET("nwk", &m_config_interim.nwk, sizeof(m_config_interim.nwk));
 	SETTINGS_SET("adr", &m_config_interim.adr, sizeof(m_config_interim.adr));
+	SETTINGS_SET("datarate", &m_config_interim.datarate, sizeof(m_config_interim.datarate));
 	SETTINGS_SET("dutycycle", &m_config_interim.dutycycle, sizeof(m_config_interim.dutycycle));
 	SETTINGS_SET("devaddr", m_config_interim.devaddr, sizeof(m_config_interim.devaddr));
 	SETTINGS_SET("deveui", m_config_interim.deveui, sizeof(m_config_interim.deveui));
@@ -1051,6 +1065,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC("mode", &m_config_interim.mode, sizeof(m_config_interim.mode));
 	EXPORT_FUNC("nwk", &m_config_interim.nwk, sizeof(m_config_interim.nwk));
 	EXPORT_FUNC("adr", &m_config_interim.adr, sizeof(m_config_interim.adr));
+	EXPORT_FUNC("datarate", &m_config_interim.datarate, sizeof(m_config_interim.datarate));
 	EXPORT_FUNC("dutycycle", &m_config_interim.dutycycle, sizeof(m_config_interim.dutycycle));
 	EXPORT_FUNC("devaddr", m_config_interim.devaddr, sizeof(m_config_interim.devaddr));
 	EXPORT_FUNC("deveui", m_config_interim.deveui, sizeof(m_config_interim.deveui));
@@ -1151,6 +1166,11 @@ static void print_adr(const struct shell *shell)
 	shell_print(shell, SETTINGS_PFX " config adr %s", m_config_interim.adr ? "true" : "false");
 }
 
+static void print_datarate(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config datarate %d", m_config_interim.datarate);
+}
+
 static void print_dutycycle(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config dutycycle %s",
@@ -1225,6 +1245,7 @@ static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 	print_mode(shell);
 	print_nwk(shell);
 	print_adr(shell);
+	print_datarate(shell);
 	print_dutycycle(shell);
 	print_devaddr(shell);
 	print_deveui(shell);
@@ -1376,6 +1397,30 @@ static int cmd_config_adr(const struct shell *shell, size_t argc, char **argv)
 	if (argc == 2 && strcmp(argv[1], "false") == 0) {
 		m_config_interim.adr = false;
 		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_datarate(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_datarate(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		if ((strlen(argv[1]) == 1 && isdigit((int)argv[1][0])) ||
+		    (strlen(argv[1]) == 2 && isdigit((int)argv[1][0]) &&
+		     isdigit((int)argv[1][1]))) {
+			int datarate = atoi(argv[1]);
+
+			if (datarate >= 0 && datarate <= 15) {
+				m_config_interim.datarate = datarate;
+				return 0;
+			}
+		}
 	}
 
 	shell_help(shell);
@@ -1602,6 +1647,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
                       1, 1),
         SHELL_CMD_ARG(adr, NULL, "Get/Set adaptive data rate (format: <true|false>).",
                       cmd_config_adr, 1, 1),
+        SHELL_CMD_ARG(datarate, NULL, "Get/Set data rate (format: <number 1-15>).",
+                      cmd_config_datarate, 1, 1),
         SHELL_CMD_ARG(dutycycle, NULL, "Get/Set duty cycle (format: <true|false>).",
                       cmd_config_dutycycle, 1, 1),
         SHELL_CMD_ARG(devaddr, NULL, "Get/Set DevAddr (format: <8 hexadecimal digits>).",

@@ -26,6 +26,7 @@ int ctr_lrw_talk_at(void);
 int ctr_lrw_talk_at_dformat(uint8_t df);
 int ctr_lrw_talk_at_band(uint8_t band);
 int ctr_lrw_talk_at_class(uint8_t class);
+int ctr_lrw_talk_at_dr(uint8_t dr);
 int ctr_lrw_talk_at_mode(uint8_t mode);
 int ctr_lrw_talk_at_nwk(uint8_t network);
 int ctr_lrw_talk_at_adr(uint8_t adr);

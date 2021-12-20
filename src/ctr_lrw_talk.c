@@ -260,6 +260,20 @@ int ctr_lrw_talk_at_class(uint8_t class)
 	return 0;
 }
 
+int ctr_lrw_talk_at_dr(uint8_t dr)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+DR=%u", dr);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lrw_talk_at_mode(uint8_t mode)
 {
 	int ret;
