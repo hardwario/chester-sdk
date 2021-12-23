@@ -1,0 +1,17 @@
+description: HARDWARIO LTE Interface Driver
+
+compatible: "hardwario,ctr-lte-if"
+
+include: uart-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Modem reset line (active low)
+
+  wakeup-gpios:
+    type: phandle-array
+    required: true
+    description: Modem wakeup line (active low)
+

@@ -1,0 +1,1 @@
+add_subdirectory_ifdef(CONFIG_CTR_LTE ctr_lte)

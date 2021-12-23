@@ -1,4 +1,5 @@
 add_subdirectory(drivers)
+add_subdirectory(subsys)
 
 zephyr_include_directories(include)
 
@@ -18,11 +19,6 @@ zephyr_library_sources_ifdef(CONFIG_CTR_LED src/ctr_led.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_LRW src/ctr_lrw_talk.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_LRW src/ctr_lrw_uart.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_LRW src/ctr_lrw.c)
-zephyr_library_sources_ifdef(CONFIG_CTR_LTE src/ctr_lte_parse.c)
-zephyr_library_sources_ifdef(CONFIG_CTR_LTE src/ctr_lte_talk.c)
-zephyr_library_sources_ifdef(CONFIG_CTR_LTE src/ctr_lte_tok.c)
-zephyr_library_sources_ifdef(CONFIG_CTR_LTE src/ctr_lte_uart.c)
-zephyr_library_sources_ifdef(CONFIG_CTR_LTE src/ctr_lte.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_RTC src/ctr_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_SDK src/ctr_adc.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_SDK src/ctr_buf.c)

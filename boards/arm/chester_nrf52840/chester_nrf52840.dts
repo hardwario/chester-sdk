@@ -7,6 +7,7 @@
 	compatible = "hardwario,chester-nrf52840";
 
 	chosen {
+		ctr,lte_if = &ctr_lte_if;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -172,6 +173,14 @@
 	/delete-property/ hw-flow-control;
 	/delete-property/ rts-pin;
 	/delete-property/ cts-pin;
+
+	ctr_lte_if: ctr_lte_if {
+		compatible = "hardwario,ctr-lte-if";
+		status = "disabled";
+		label = "CTR_LTE_IF";
+		reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		wakeup-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &uart1 {

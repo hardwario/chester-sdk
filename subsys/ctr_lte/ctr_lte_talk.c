@@ -1,7 +1,7 @@
 #include <ctr_lte_talk.h>
 #include <ctr_lte_parse.h>
-#include <ctr_lte_uart.h>
 #include <ctr_util.h>
+#include <drivers/ctr_lte_if.h>
 
 /* Zephyr includes */
 #include <logging/log.h>
@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(ctr_lte_talk, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_lte_talk, CONFIG_CTR_LTE_LOG_LEVEL);
 
 #define SEND_GUARD_TIME K_MSEC(100)
 #define RESPONSE_TIMEOUT_S K_SECONDS(3)
@@ -35,6 +35,8 @@ struct response {
 	bool started;
 	bool finished;
 };
+
+static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(ctr_lte_if));
 
 static handler_cb m_handler_cb;
 static ctr_lte_talk_event_cb m_event_cb;
@@ -274,11 +276,11 @@ static int talk_cmd(const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	ret = ctr_lte_uart_send(fmt, ap);
+	ret = ctr_lte_if_send(dev, fmt, ap);
 	va_end(ap);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_uart_send` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_if_send` failed: %d", ret);
 		k_mutex_unlock(&m_talk_mut);
 		return ret;
 	}
@@ -298,11 +300,11 @@ static int talk_cmd_ok(k_timeout_t timeout, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	ret = ctr_lte_uart_send(fmt, ap);
+	ret = ctr_lte_if_send(dev, fmt, ap);
 	va_end(ap);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_uart_send` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_if_send` failed: %d", ret);
 		k_mutex_unlock(&m_talk_mut);
 		return ret;
 	}
@@ -342,11 +344,11 @@ static int talk_cmd_response_ok(k_timeout_t timeout, response_cb cb, void *p1, v
 	va_list ap;
 
 	va_start(ap, fmt);
-	ret = ctr_lte_uart_send(fmt, ap);
+	ret = ctr_lte_if_send(dev, fmt, ap);
 	va_end(ap);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_uart_send` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_if_send` failed: %d", ret);
 		k_mutex_unlock(&m_talk_mut);
 		return ret;
 	}
@@ -400,21 +402,21 @@ static int talk_cmd_raw_ok(k_timeout_t timeout, const void *buf, size_t len, con
 	va_list ap;
 
 	va_start(ap, fmt);
-	ret = ctr_lte_uart_send(fmt, ap);
+	ret = ctr_lte_if_send(dev, fmt, ap);
 	va_end(ap);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_uart_send` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_if_send` failed: %d", ret);
 		k_mutex_unlock(&m_talk_mut);
 		return ret;
 	}
 
 	k_sleep(K_MSEC(100));
 
-	ret = ctr_lte_uart_send_raw(buf, len);
+	ret = ctr_lte_if_send_raw(dev, buf, len);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_uart_send_raw` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_if_send_raw` failed: %d", ret);
 		k_mutex_unlock(&m_talk_mut);
 		return ret;
 	}
@@ -425,10 +427,10 @@ static int talk_cmd_raw_ok(k_timeout_t timeout, const void *buf, size_t len, con
 
 	strcpy(terminator, "+++");
 
-	ret = ctr_lte_uart_send_raw(terminator, strlen(terminator));
+	ret = ctr_lte_if_send_raw(dev, terminator, strlen(terminator));
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_uart_send_raw` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_if_send_raw` failed: %d", ret);
 		k_mutex_unlock(&m_talk_mut);
 		return ret;
 	}
@@ -464,10 +466,10 @@ int ctr_lte_talk_init(ctr_lte_talk_event_cb event_cb)
 
 	k_poll_signal_init(&m_response_sig);
 
-	ret = ctr_lte_uart_init(recv_cb);
+	ret = ctr_lte_if_init(dev, recv_cb);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_uart_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_if_init` failed: %d", ret);
 		return ret;
 	}
 
@@ -478,10 +480,10 @@ int ctr_lte_talk_enable(void)
 {
 	int ret;
 
-	ret = ctr_lte_uart_enable();
+	ret = ctr_lte_if_enable(dev);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_uart_enable` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_if_enable` failed: %d", ret);
 		return ret;
 	}
 
@@ -492,10 +494,10 @@ int ctr_lte_talk_disable(void)
 {
 	int ret;
 
-	ret = ctr_lte_uart_disable();
+	ret = ctr_lte_if_disable(dev);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_lte_uart_disable` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_if_disable` failed: %d", ret);
 		return ret;
 	}
 

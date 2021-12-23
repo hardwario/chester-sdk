@@ -53,17 +53,8 @@ LOG_MODULE_REGISTER(ctr_bsp, LOG_LEVEL_DBG);
 #define DEV_RF_EXT m_dev_gpio_0
 #define PIN_RF_EXT 10
 
-#define DEV_RF_LTE m_dev_gpio_0
-#define PIN_RF_LTE 25
-
 #define DEV_RF_LRW m_dev_gpio_1
 #define PIN_RF_LRW 2
-
-#define DEV_LTE_RESET m_dev_gpio_1
-#define PIN_LTE_RESET 7
-
-#define DEV_LTE_WKUP m_dev_gpio_0
-#define PIN_LTE_WKUP 15
 
 #define DEV_LRW_RESET m_dev_gpio_0
 #define PIN_LRW_RESET 11
@@ -231,13 +222,6 @@ int init_rf_mux(void)
 		return ret;
 	}
 
-	ret = gpio_pin_configure(DEV_RF_LTE, PIN_RF_LTE, GPIO_OUTPUT_INACTIVE);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-		return ret;
-	}
-
 	ret = gpio_pin_configure(DEV_RF_LRW, PIN_RF_LRW, GPIO_OUTPUT_INACTIVE);
 
 	if (ret < 0) {
@@ -260,27 +244,6 @@ int init_gnss(void)
 	}
 
 	ret = gpio_pin_configure(DEV_GNSS_RTC, PIN_GNSS_RTC, GPIO_OUTPUT_INACTIVE);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int init_lte(void)
-{
-	int ret;
-
-	ret = gpio_pin_configure(DEV_LTE_RESET, PIN_LTE_RESET, GPIO_DISCONNECTED);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-		return ret;
-	}
-
-	ret = gpio_pin_configure(DEV_LTE_WKUP, PIN_LTE_WKUP, GPIO_OUTPUT_ACTIVE);
 
 	if (ret < 0) {
 		LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
@@ -555,31 +518,7 @@ int ctr_bsp_set_rf_mux(enum ctr_bsp_rf_mux mux)
 
 	switch (mux) {
 	case CTR_BSP_RF_MUX_NONE:
-		ret = gpio_pin_set(DEV_RF_LTE, PIN_RF_LTE, 0);
-
-		if (ret < 0) {
-			LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-			return ret;
-		}
-
 		ret = gpio_pin_set(DEV_RF_LRW, PIN_RF_LRW, 0);
-
-		if (ret < 0) {
-			LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-			return ret;
-		}
-
-		break;
-
-	case CTR_BSP_RF_MUX_LTE:
-		ret = gpio_pin_set(DEV_RF_LRW, PIN_RF_LRW, 0);
-
-		if (ret < 0) {
-			LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-			return ret;
-		}
-
-		ret = gpio_pin_set(DEV_RF_LTE, PIN_RF_LTE, 1);
 
 		if (ret < 0) {
 			LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
@@ -589,13 +528,6 @@ int ctr_bsp_set_rf_mux(enum ctr_bsp_rf_mux mux)
 		break;
 
 	case CTR_BSP_RF_MUX_LRW:
-		ret = gpio_pin_set(DEV_RF_LTE, PIN_RF_LTE, 0);
-
-		if (ret < 0) {
-			LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-			return ret;
-		}
-
 		ret = gpio_pin_set(DEV_RF_LRW, PIN_RF_LRW, 1);
 
 		if (ret < 0) {
@@ -607,43 +539,6 @@ int ctr_bsp_set_rf_mux(enum ctr_bsp_rf_mux mux)
 
 	default:
 		return -EINVAL;
-	}
-
-	return 0;
-}
-
-int ctr_bsp_set_lte_reset(int level)
-{
-	int ret;
-
-	if (level == 0) {
-		ret = gpio_pin_configure(DEV_LTE_RESET, PIN_LTE_RESET, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
-			LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-			return ret;
-		}
-
-	} else {
-		ret = gpio_pin_configure(DEV_LTE_RESET, PIN_LTE_RESET, GPIO_DISCONNECTED);
-
-		if (ret < 0) {
-			LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-			return ret;
-		}
-	}
-
-	return 0;
-}
-
-int ctr_bsp_set_lte_wkup(int level)
-{
-	int ret;
-
-	ret = gpio_pin_set(DEV_LTE_WKUP, PIN_LTE_WKUP, level == 0 ? 0 : 1);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_set` failed");
-		return ret;
 	}
 
 	return 0;
@@ -755,13 +650,6 @@ static int init(const struct device *dev)
 
 	if (ret < 0) {
 		LOG_ERR("Call `init_gnss` failed: %d", ret);
-		return ret;
-	}
-
-	ret = init_lte();
-
-	if (ret < 0) {
-		LOG_ERR("Call `init_lte` failed: %d", ret);
 		return ret;
 	}
 

@@ -1,9 +1,10 @@
 #include <ctr_lte.h>
 #include <ctr_lte_parse.h>
 #include <ctr_lte_talk.h>
-#include <ctr_bsp.h>
 #include <ctr_config.h>
 #include <ctr_rtc.h>
+#include <drivers/ctr_lte_if.h>
+#include <drivers/ctr_rfmux.h>
 
 /* Zephyr includes */
 #include <init.h>
@@ -21,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(ctr_lte, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 
 #define SETTINGS_PFX "lte"
 
@@ -79,6 +80,9 @@ struct config {
 	char plmnid[6 + 1];
 	bool clksync;
 };
+
+static const struct device *dev_lte_if = DEVICE_DT_GET(DT_CHOSEN(ctr_lte_if));
+static const struct device *dev_rfmux = DEVICE_DT_GET(DT_NODELABEL(ctr_rfmux));
 
 static enum state m_state = STATE_INIT;
 
@@ -145,9 +149,7 @@ static int wake_up(void)
 
 	k_poll_signal_reset(&m_boot_sig);
 
-	ctr_bsp_set_lte_wkup(0);
-	k_sleep(K_MSEC(100));
-	ctr_bsp_set_lte_wkup(1);
+	ctr_lte_if_wakeup(dev_lte_if);
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_boot_sig),
@@ -174,9 +176,7 @@ static int boot_once(void)
 {
 	int ret;
 
-	ctr_bsp_set_lte_reset(0);
-	k_sleep(K_MSEC(100));
-	ctr_bsp_set_lte_reset(1);
+	ctr_lte_if_reset(dev_lte_if);
 
 	k_sleep(K_MSEC(1000));
 
@@ -1523,9 +1523,7 @@ static int cmd_test_reset(const struct shell *shell, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	ctr_bsp_set_lte_reset(0);
-	k_sleep(K_MSEC(100));
-	ctr_bsp_set_lte_reset(1);
+	ctr_lte_if_reset(dev_lte_if);
 
 	k_sleep(K_MSEC(1000));
 
@@ -1549,9 +1547,7 @@ static int cmd_test_wakeup(const struct shell *shell, size_t argc, char **argv)
 
 	k_poll_signal_reset(&m_boot_sig);
 
-	ctr_bsp_set_lte_wkup(0);
-	k_sleep(K_MSEC(100));
-	ctr_bsp_set_lte_wkup(1);
+	ctr_lte_if_wakeup(dev_lte_if);
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_boot_sig),
@@ -1685,26 +1681,23 @@ static int init(const struct device *dev)
 
 	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
 
-	if (m_config.antenna == ANTENNA_EXT) {
-		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_EXT);
-	} else {
-		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_INT);
-	}
+	ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
+	                                               CTR_RFMUX_ANTENNA_EXT :
+                                                       CTR_RFMUX_ANTENNA_INT);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_bsp_set_rf_ant` failed: %d", ret);
+		LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_bsp_set_rf_mux(CTR_BSP_RF_MUX_LTE);
+	ret = ctr_rfmux_set_interface(dev_rfmux, CTR_RFMUX_INTERFACE_LTE);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_bsp_set_rf_mux` failed: %d", ret);
+		LOG_ERR("Call `ctr_rfmux_set_interface` failed: %d", ret);
 		return ret;
 	}
 
 	ret = ctr_lte_talk_init(talk_handler);
-
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lte_talk_init` failed: %d", ret);
 		return ret;

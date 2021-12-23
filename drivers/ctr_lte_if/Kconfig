@@ -1,0 +1,11 @@
+config CTR_LTE_IF
+	bool "CHESTER LTE Interface Driver"
+	depends on SERIAL && SERIAL_HAS_DRIVER
+
+if CTR_LTE_IF
+
+module = CTR_LTE_IF
+module-str = CHESTER LTE Interface Driver
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_LTE_IF
