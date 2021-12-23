@@ -248,7 +248,7 @@ int ctr_lte_uart_init(ctr_lte_recv_cb recv_cb)
 		return ret;
 	}
 
-	ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPEND);
+	ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPENDED);
 
 	if (ret < 0) {
 		LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
@@ -392,7 +392,7 @@ int ctr_lte_uart_disable(void)
 		return ret;
 	}
 
-	ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPEND);
+	ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPENDED);
 
 	if (ret < 0) {
 		LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
