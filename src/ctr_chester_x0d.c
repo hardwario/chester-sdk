@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(ctr_chester_x0d, LOG_LEVEL_DBG);
 #define K_MEM_SLAB_DEFINE_STATIC(name, slab_block_size, slab_num_blocks, slab_align)               \
 	static char __noinit __aligned(WB_UP(slab_align))                                          \
 	        _k_mem_slab_buf_##name[(slab_num_blocks)*WB_UP(slab_block_size)];                  \
-	static Z_STRUCT_SECTION_ITERABLE(k_mem_slab, name) = Z_MEM_SLAB_INITIALIZER(               \
+	static STRUCT_SECTION_ITERABLE(k_mem_slab, name) = Z_MEM_SLAB_INITIALIZER(                 \
 	        name, _k_mem_slab_buf_##name, WB_UP(slab_block_size), slab_num_blocks)
 
 #define EVENT_WORK_NAME "chester_x0d"
