@@ -13,3 +13,7 @@ cd chester-sdk
 ```
 west update
 ```
+
+```
+west config build.board chester_nrf52840
+```
