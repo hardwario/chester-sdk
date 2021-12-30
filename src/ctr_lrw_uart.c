@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(ctr_lrw_uart, LOG_LEVEL_DBG);
 #define K_MEM_SLAB_DEFINE_STATIC(name, slab_block_size, slab_num_blocks, slab_align)               \
 	static char __noinit __aligned(WB_UP(slab_align))                                          \
 	        _k_mem_slab_buf_##name[(slab_num_blocks)*WB_UP(slab_block_size)];                  \
-	static Z_STRUCT_SECTION_ITERABLE(k_mem_slab, name) = Z_MEM_SLAB_INITIALIZER(               \
+	static STRUCT_SECTION_ITERABLE(k_mem_slab, name) = Z_MEM_SLAB_INITIALIZER(                 \
 	        name, _k_mem_slab_buf_##name, WB_UP(slab_block_size), slab_num_blocks)
 
 #define RX_BLOCK_SIZE 64
@@ -245,7 +245,7 @@ int ctr_lrw_uart_init(ctr_lrw_recv_cb recv_cb)
 		return ret;
 	}
 
-	ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPEND);
+	ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPENDED);
 
 	if (ret < 0) {
 		LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
@@ -389,7 +389,7 @@ int ctr_lrw_uart_disable(void)
 		return ret;
 	}
 
-	ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPEND);
+	ret = pm_device_state_set(m_dev, PM_DEVICE_STATE_SUSPENDED);
 
 	if (ret < 0) {
 		LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
