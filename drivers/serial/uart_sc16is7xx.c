@@ -55,10 +55,6 @@ struct sc16is7xx_data {
 	 * Enhanced register set
 	 */
 	uint8_t reg_efr;
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
-#endif /* CONFIG_PM_DEVICE */
 };
 
 static inline const struct sc16is7xx_config *get_config(const struct device *dev)
@@ -679,10 +675,6 @@ static int sc16is7xx_init(const struct device *dev)
 {
 	int ret;
 
-#ifdef CONFIG_PM_DEVICE
-	get_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif /* CONFIG_PM_DEVICE */
-
 	k_work_init(&get_data(dev)->work, work_handler);
 	k_mutex_init(&get_data(dev)->lock);
 
@@ -743,81 +735,130 @@ static int sc16is7xx_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 
-/*
- * WAKEUP
- *
- * // Redundant??? (sleep)
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_RHR, 0x00))
- *
- * // Divisor latch
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_LCR, 0x80))
- *
- * // Baudrate
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_DLL, 0x58))
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_DLH, 0x00))
- *
- * // Disable latch and enable 8 bits data word
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_LCR, 0x03))
- *
- * // Enable data interrupt
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_RHR, 0x01))
- *
- * // Enable FIFO + Reset TX/TX
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_FCR, 0x07))
- */
-
-/*
- * SLEEP
- *
- * // Divisor latch
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_LCR, 0x80))
- *
- * // Disable baudrate generator
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_DLL, 0x00))
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_DLH, 0x00))
- *
- * // Disable divisor latch
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_LCR, 0x03))
- *
- * // Enable Sleep mode
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_RHR, 0x10))
- *
- * // Disable FIFO + flush RX+TX
- * CHECK(_sc16is7xx_write_register(ctx, _SC16IS7XX_REG_FCR, 0x06))
- */
-
-static int get_pm_state(const struct device *dev, enum pm_device_state *state)
+static int enable_sleep_mode(const struct device *dev)
 {
-	*state = get_data(dev)->pm_state;
+	int ret;
+
+	WRITE_BIT(get_data(dev)->reg_ier, SC16IS7XX_IER_SLEEP_MODE_BIT, 1);
+
+	ret = write_register(dev, SC16IS7XX_REG_IER, get_data(dev)->reg_ier);
+	if (ret) {
+		LOG_ERR("Call `write_register` (IER) failed: %d", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
-static int set_pm_state(const struct device *dev, enum pm_device_state state)
+static int disable_sleep_mode(const struct device *dev)
 {
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
-	case PM_DEVICE_STATE_LOW_POWER:
-	case PM_DEVICE_STATE_SUSPEND:
-	case PM_DEVICE_STATE_FORCE_SUSPEND:
-	case PM_DEVICE_STATE_OFF:
-	case PM_DEVICE_STATE_RESUMING:
-	case PM_DEVICE_STATE_SUSPENDING:
-	default:
-		return 0;
+	int ret;
+
+	WRITE_BIT(get_data(dev)->reg_ier, SC16IS7XX_IER_SLEEP_MODE_BIT, 0);
+
+	ret = write_register(dev, SC16IS7XX_REG_IER, get_data(dev)->reg_ier);
+	if (ret) {
+		LOG_ERR("Call `write_register` (IER) failed: %d", ret);
+		return ret;
 	}
+
+	return 0;
 }
 
-static int sc16is7xx_pm_control(const struct device *dev, uint32_t ctrl_command,
-                                enum pm_device_state *state)
+static int pm_control_suspend(const struct device *dev)
 {
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_GET:
-		return get_pm_state(dev, state);
-	case PM_DEVICE_STATE_SET:
-		return set_pm_state(dev, *state);
-	default:
-		return -EINVAL;
+	int ret;
+
+	WRITE_BIT(get_data(dev)->reg_lcr, SC16IS7XX_LCR_DIVISOR_LATCH_ENABLE_BIT, 1);
+
+	ret = write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
+	if (ret) {
+		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
+		return ret;
 	}
+
+	ret = write_register(dev, SC16IS7XX_REG_DLL, 0);
+	if (ret) {
+		LOG_ERR("Call `write_register` (DLL) failed: %d", ret);
+		return ret;
+	}
+
+	ret = write_register(dev, SC16IS7XX_REG_DLH, 0);
+	if (ret) {
+		LOG_ERR("Call `write_register` (DLH) failed: %d", ret);
+		return ret;
+	}
+
+	WRITE_BIT(get_data(dev)->reg_lcr, SC16IS7XX_LCR_DIVISOR_LATCH_ENABLE_BIT, 0);
+
+	ret = write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
+	if (ret) {
+		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
+		return ret;
+	}
+
+	ret = enable_sleep_mode(dev);
+	if (ret) {
+		LOG_ERR("Call `enable_sleep_mode` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int pm_control_resume(const struct device *dev)
+{
+	int ret;
+
+	ret = disable_sleep_mode(dev);
+	if (ret) {
+		LOG_ERR("Call `disable_sleep_mode` failed: %d", ret);
+		return ret;
+	}
+
+	WRITE_BIT(get_data(dev)->reg_lcr, SC16IS7XX_LCR_DIVISOR_LATCH_ENABLE_BIT, 1);
+
+	ret = write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
+	if (ret) {
+		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
+		return ret;
+	}
+
+	ret = write_register(dev, SC16IS7XX_REG_DLL, get_data(dev)->reg_dll);
+	if (ret) {
+		LOG_ERR("Call `write_register` (DLL) failed: %d", ret);
+		return ret;
+	}
+
+	ret = write_register(dev, SC16IS7XX_REG_DLH, get_data(dev)->reg_dlh);
+	if (ret) {
+		LOG_ERR("Call `write_register` (DLH) failed: %d", ret);
+		return ret;
+	}
+
+	WRITE_BIT(get_data(dev)->reg_lcr, SC16IS7XX_LCR_DIVISOR_LATCH_ENABLE_BIT, 0);
+
+	ret = write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
+	if (ret) {
+		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int sc16is7xx_pm_control(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		return pm_control_suspend(dev);
+	case PM_DEVICE_ACTION_RESUME:
+		return pm_control_resume(dev);
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 
 #endif /* CONFIG_PM_DEVICE */
