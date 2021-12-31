@@ -1,0 +1,11 @@
+config CTR_RFMUX
+	bool "CHESTER RF Multiplexer Driver"
+	depends on GPIO
+
+if CTR_RFMUX
+
+module = CTR_RFMUX
+module-str = CHESTER RF Multiplexer Driver
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_RFMUX

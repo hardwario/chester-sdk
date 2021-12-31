@@ -1,2 +1,3 @@
+add_subdirectory_ifdef(CONFIG_CTR_RFMUX ctr_rfmux)
 add_subdirectory_ifdef(CONFIG_CTR_Z ctr_z)
 add_subdirectory_ifdef(CONFIG_SERIAL serial)
