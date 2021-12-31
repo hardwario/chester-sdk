@@ -1,0 +1,30 @@
+description: HARDWARIO CHESTER RF Multiplexer
+
+compatible: "hardwario,ctr-rfmux"
+
+include: base.yaml
+
+properties:
+  rf-lte-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Enable LTE RF switch (active high)
+
+  rf-lrw-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Enable LoRaWAN RF switch (active high)
+
+  rf-int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Enable internal antenna RF switch (active high)
+
+  rf-ext-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Enable external antenna RF switch (active high)

@@ -54,6 +54,15 @@
 		};
 	};
 
+	ctr_rfmux: ctr_rfmux {
+		compatible = "hardwario,ctr-rfmux";
+		label = "CTR_RFMUX";
+		rf-lte-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		rf-lrw-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		rf-int-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		rf-ext-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+	};
+
 	aliases {
 		led0 = &led_r;
 		led1 = &led_g;

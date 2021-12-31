@@ -1,5 +1,6 @@
 menu "Device Drivers"
 
+rsource "ctr_rfmux/Kconfig"
 rsource "ctr_z/Kconfig"
 rsource "serial/Kconfig"
 
