@@ -14,8 +14,7 @@
 LOG_MODULE_REGISTER(sc16is7xx, CONFIG_UART_SC16IS7XX_LOG_LEVEL);
 
 struct sc16is7xx_config {
-	const struct device *i2c_dev;
-	uint16_t i2c_addr;
+	const struct i2c_dt_spec i2c_spec;
 	uint32_t clock_frequency;
 	uint8_t prescaler;
 	const struct gpio_dt_spec irq_spec;
@@ -76,12 +75,12 @@ static int read_register(const struct device *dev, uint8_t reg, uint8_t *val)
 {
 	reg <<= SC16IS7XX_REG_SHIFT;
 
-	if (!device_is_ready(get_config(dev)->i2c_dev)) {
+	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
 
-	return i2c_write_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, &reg, 1, val, 1);
+	return i2c_write_read_dt(&get_config(dev)->i2c_spec, &reg, 1, val, 1);
 }
 
 static int write_register(const struct device *dev, uint8_t reg, uint8_t val)
@@ -90,12 +89,12 @@ static int write_register(const struct device *dev, uint8_t reg, uint8_t val)
 
 	uint8_t buf[] = { reg, val };
 
-	if (!device_is_ready(get_config(dev)->i2c_dev)) {
+	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
 
-	return i2c_write(get_config(dev)->i2c_dev, buf, ARRAY_SIZE(buf), get_config(dev)->i2c_addr);
+	return i2c_write_dt(&get_config(dev)->i2c_spec, buf, ARRAY_SIZE(buf));
 }
 
 static int sc16is7xx_poll_in(const struct device *dev, unsigned char *c)
@@ -372,15 +371,14 @@ static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, in
 		},
 	};
 
-	if (!device_is_ready(get_config(dev)->i2c_dev)) {
+	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
 
-	ret = i2c_transfer(get_config(dev)->i2c_dev, msg, ARRAY_SIZE(msg),
-	                   get_config(dev)->i2c_addr);
+	ret = i2c_transfer_dt(&get_config(dev)->i2c_spec, msg, ARRAY_SIZE(msg));
 	if (ret) {
-		LOG_ERR("i2c_write failed: %d", ret);
+		LOG_ERR("Call `i2c_transfer_dt` failed: %d", ret);
 		return ret;
 	}
 
@@ -410,15 +408,14 @@ static int sc16is7xx_fifo_read(const struct device *dev, uint8_t *data, const in
 		},
 	};
 
-	if (!device_is_ready(get_config(dev)->i2c_dev)) {
+	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
 
-	ret = i2c_transfer(get_config(dev)->i2c_dev, msg, ARRAY_SIZE(msg),
-	                   get_config(dev)->i2c_addr);
+	ret = i2c_transfer_dt(&get_config(dev)->i2c_spec, msg, ARRAY_SIZE(msg));
 	if (ret) {
-		LOG_ERR("i2c_write_read failed: %d", ret);
+		LOG_ERR("Call `i2c_transfer_dt` failed: %d", ret);
 		return ret;
 	}
 
@@ -840,8 +837,7 @@ static const struct uart_driver_api sc16is7xx_driver_api = {
 
 #define SC16IS7XX_INIT(n)                                                                          \
 	static const struct sc16is7xx_config inst_##n##_config = {                                 \
-		.i2c_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                          \
-		.i2c_addr = DT_INST_REG_ADDR(n),                                                   \
+		.i2c_spec = I2C_DT_SPEC_INST_GET(n),                                               \
 		.clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
 		.prescaler = DT_INST_PROP(n, prescaler),                                           \
 		.irq_spec = GPIO_DT_SPEC_INST_GET(n, irq_gpios),                                   \
