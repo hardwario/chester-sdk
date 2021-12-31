@@ -106,7 +106,7 @@ static void sc16is7xx_poll_out(const struct device *dev, unsigned char c)
 {
 	int ret = write_register(dev, SC16IS7XX_REG_THR, c);
 	if (ret) {
-		LOG_ERR("poll_out failed: %d", ret);
+		LOG_ERR("Call `poll_out` failed: %d", ret);
 	}
 }
 
@@ -205,7 +205,7 @@ static int configure_line(const struct device *dev, const struct uart_config *cf
 
 	ret = write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
 	if (ret) {
-		LOG_ERR("write_register (LCR) failed: %d", ret);
+		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
 		return ret;
 	}
 
@@ -221,7 +221,7 @@ static int enable_enhanced_features(const struct device *dev)
 	 */
 	ret = write_register(dev, SC16IS7XX_REG_LCR, SC16IS7XX_LCR_MAGIC);
 	if (ret) {
-		LOG_ERR("write_register (LCR) failed: %d", ret);
+		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
 		return ret;
 	}
 
@@ -229,7 +229,7 @@ static int enable_enhanced_features(const struct device *dev)
 
 	ret = write_register(dev, SC16IS7XX_REG_FCR, get_data(dev)->reg_efr);
 	if (ret) {
-		LOG_ERR("write_register (EFR) failed: %d", ret);
+		LOG_ERR("Call `write_register` (EFR) failed: %d", ret);
 		return ret;
 	}
 
@@ -238,7 +238,7 @@ static int enable_enhanced_features(const struct device *dev)
 	 */
 	ret = write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
 	if (ret) {
-		LOG_ERR("write_register (LCR) failed: %d", ret);
+		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
 		return ret;
 	}
 
@@ -259,7 +259,7 @@ static int enable_extra_features(const struct device *dev)
 
 	ret = write_register(dev, SC16IS7XX_REG_EFCR, get_data(dev)->reg_efcr);
 	if (ret) {
-		LOG_ERR("write_register (EFCR) failed: %d", ret);
+		LOG_ERR("Call `write_register` (EFCR) failed: %d", ret);
 		return ret;
 	}
 
@@ -285,7 +285,7 @@ static int configure_baudrate(const struct device *dev, const struct uart_config
 
 	ret = write_register(dev, SC16IS7XX_REG_MCR, get_data(dev)->reg_mcr);
 	if (ret) {
-		LOG_ERR("write_register (MCR) failed: %d", ret);
+		LOG_ERR("Call `write_register` (MCR) failed: %d", ret);
 		return ret;
 	}
 
@@ -293,19 +293,19 @@ static int configure_baudrate(const struct device *dev, const struct uart_config
 
 	ret = write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
 	if (ret) {
-		LOG_ERR("write_register (LCR) failed: %d", ret);
+		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
 		return ret;
 	}
 
 	ret = write_register(dev, SC16IS7XX_REG_DLL, get_data(dev)->reg_dll);
 	if (ret) {
-		LOG_ERR("write_register (DLL) failed: %d", ret);
+		LOG_ERR("Call `write_register` (DLL) failed: %d", ret);
 		return ret;
 	}
 
 	ret = write_register(dev, SC16IS7XX_REG_DLH, get_data(dev)->reg_dlh);
 	if (ret) {
-		LOG_ERR("write_register (DLH) failed: %d", ret);
+		LOG_ERR("Call `write_register` (DLH) failed: %d", ret);
 		return ret;
 	}
 
@@ -313,7 +313,7 @@ static int configure_baudrate(const struct device *dev, const struct uart_config
 
 	ret = write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
 	if (ret) {
-		LOG_ERR("write_register (LCR) failed: %d", ret);
+		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
 		return ret;
 	}
 
@@ -430,7 +430,7 @@ static void sc16is7xx_irq_tx_enable(const struct device *dev)
 
 	ret = write_register(dev, SC16IS7XX_REG_IER, get_data(dev)->reg_ier);
 	if (ret) {
-		LOG_ERR("write_register (IER) failed: %d", ret);
+		LOG_ERR("Call `write_register` (IER) failed: %d", ret);
 		return;
 	}
 }
@@ -443,7 +443,7 @@ static void sc16is7xx_irq_tx_disable(const struct device *dev)
 
 	ret = write_register(dev, SC16IS7XX_REG_IER, get_data(dev)->reg_ier);
 	if (ret) {
-		LOG_ERR("write_register (IER) failed: %d", ret);
+		LOG_ERR("Call `write_register` (IER) failed: %d", ret);
 		return;
 	}
 }
@@ -468,7 +468,7 @@ static void sc16is7xx_irq_rx_enable(const struct device *dev)
 
 	ret = write_register(dev, SC16IS7XX_REG_IER, get_data(dev)->reg_ier);
 	if (ret) {
-		LOG_ERR("write_register (IER) failed: %d", ret);
+		LOG_ERR("Call `write_register` (IER) failed: %d", ret);
 		return;
 	}
 }
@@ -481,7 +481,7 @@ static void sc16is7xx_irq_rx_disable(const struct device *dev)
 
 	ret = write_register(dev, SC16IS7XX_REG_IER, get_data(dev)->reg_ier);
 	if (ret) {
-		LOG_ERR("write_register (IER) failed: %d", ret);
+		LOG_ERR("Call `write_register` (IER) failed: %d", ret);
 		return;
 	}
 }
@@ -519,17 +519,17 @@ static int sc16is7xx_irq_update(const struct device *dev)
 
 	ret = read_register(dev, SC16IS7XX_REG_IIR, &get_data(dev)->reg_iir);
 	if (ret) {
-		LOG_WRN("read_register (IIR) failed: %d", ret);
+		LOG_WRN("Call `read_register` (IIR) failed: %d", ret);
 	}
 
 	ret = read_register(dev, SC16IS7XX_REG_TXLVL, &get_data(dev)->reg_txlvl);
 	if (ret) {
-		LOG_WRN("read_register (TXLVL) failed: %d", ret);
+		LOG_WRN("Call `read_register` (TXLVL) failed: %d", ret);
 	}
 
 	ret = read_register(dev, SC16IS7XX_REG_RXLVL, &get_data(dev)->reg_rxlvl);
 	if (ret) {
-		LOG_WRN("read_register (RXLVL) failed: %d", ret);
+		LOG_WRN("Call `read_register` (RXLVL) failed: %d", ret);
 	}
 
 	return 1;
@@ -583,7 +583,7 @@ static int trigger_reset(const struct device *dev)
 
 		ret = gpio_pin_set_dt(&get_config(dev)->reset_spec, 1);
 		if (ret) {
-			LOG_ERR("gpio_pin_set_dt failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
 			return ret;
 		}
 
@@ -591,7 +591,7 @@ static int trigger_reset(const struct device *dev)
 
 		ret = gpio_pin_set_dt(&get_config(dev)->reset_spec, 0);
 		if (ret) {
-			LOG_ERR("gpio_pin_set_dt failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
 			return ret;
 		}
 	}
@@ -614,7 +614,7 @@ static int configure_interrupt_pin(const struct device *dev)
 
 	ret = gpio_add_callback(get_config(dev)->irq_spec.port, &get_data(dev)->cb);
 	if (ret) {
-		LOG_ERR("gpio_add_callback failed: %d", ret);
+		LOG_ERR("Call `gpio_add_callback` failed: %d", ret);
 		return ret;
 	}
 
@@ -638,7 +638,7 @@ static int enable_interrupt_pin(const struct device *dev)
 
 	ret = gpio_pin_interrupt_configure_dt(&get_config(dev)->irq_spec, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret) {
-		LOG_ERR("gpio_pin_interrupt_configure_dt failed: %d", ret);
+		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 		return ret;
 	}
 
@@ -655,7 +655,7 @@ static int enable_fifo(const struct device *dev)
 
 	ret = write_register(dev, SC16IS7XX_REG_FCR, get_data(dev)->reg_fcr);
 	if (ret) {
-		LOG_ERR("write_register (FCR) failed: %d", ret);
+		LOG_ERR("Call `write_register` (FCR) failed: %d", ret);
 		return ret;
 	}
 
@@ -684,49 +684,49 @@ static int sc16is7xx_init(const struct device *dev)
 
 	ret = configure_reset(dev);
 	if (ret) {
-		LOG_ERR("configure_reset failed: %d", ret);
+		LOG_ERR("Call `configure_reset` failed: %d", ret);
 		return ret;
 	}
 
 	ret = configure_interrupt_pin(dev);
 	if (ret) {
-		LOG_ERR("configure_interrupt_pin failed: %d", ret);
+		LOG_ERR("Call `configure_interrupt_pin` failed: %d", ret);
 		return ret;
 	}
 
 	ret = trigger_reset(dev);
 	if (ret) {
-		LOG_ERR("trigger_reset failed: %d", ret);
+		LOG_ERR("Call `trigger_reset` failed: %d", ret);
 		return ret;
 	}
 
 	ret = enable_interrupt_pin(dev);
 	if (ret) {
-		LOG_ERR("enable_interrupt_pin failed: %d", ret);
+		LOG_ERR("Call `enable_interrupt_pin` failed: %d", ret);
 		return ret;
 	}
 
 	ret = enable_enhanced_features(dev);
 	if (ret) {
-		LOG_ERR("enable_enhanced_features failed: %d", ret);
+		LOG_ERR("Call `enable_enhanced_features` failed: %d", ret);
 		return ret;
 	}
 
 	ret = enable_extra_features(dev);
 	if (ret) {
-		LOG_ERR("enable_extra_features failed: %d", ret);
+		LOG_ERR("Call `enable_extra_features` failed: %d", ret);
 		return ret;
 	}
 
 	ret = enable_fifo(dev);
 	if (ret) {
-		LOG_ERR("enable_fifo failed: %d", ret);
+		LOG_ERR("Call `enable_fifo` failed: %d", ret);
 		return ret;
 	}
 
 	ret = sc16is7xx_configure(dev, &get_data(dev)->uart_config);
 	if (ret) {
-		LOG_ERR("sc16is7xx_configure failed: %d", ret);
+		LOG_ERR("Call `configure` failed: %d", ret);
 		return ret;
 	}
 
