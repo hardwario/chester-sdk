@@ -1,7 +1,9 @@
 config UART_SC16IS7XX
 	bool "NXP SC16IS7XX UART driver"
-	depends on I2C
+	depends on GPIO && I2C && SERIAL
 	select REQUIRES_FULL_LIBC
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 
 if UART_SC16IS7XX
 
