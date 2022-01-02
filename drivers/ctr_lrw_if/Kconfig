@@ -1,0 +1,11 @@
+config CTR_LRW_IF
+	bool "CHESTER LRW Interface Driver"
+	depends on SERIAL && SERIAL_HAS_DRIVER
+
+if CTR_LRW_IF
+
+module = CTR_LRW_IF
+module-str = CHESTER LRW Interface Driver
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_LRW_IF

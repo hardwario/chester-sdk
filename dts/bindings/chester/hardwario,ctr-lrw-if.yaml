@@ -1,0 +1,11 @@
+description: HARDWARIO LoRaWAN Interface Driver
+
+compatible: "hardwario,ctr-lrw-if"
+
+include: uart-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Modem reset line (active low)

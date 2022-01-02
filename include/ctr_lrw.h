@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_NET_LRW_H_
-#define CHESTER_INCLUDE_NET_LRW_H_
+#ifndef CHESTER_INCLUDE_CTR_LRW_H_
+#define CHESTER_INCLUDE_CTR_LRW_H_
 
 /* Standard includes */
 #include <stdbool.h>
@@ -76,4 +76,4 @@ int ctr_lrw_send(const struct ctr_lrw_send_opts *opts, const void *buf, size_t l
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_NET_LRW_H_ */
+#endif /* CHESTER_INCLUDE_CTR_LRW_H_ */

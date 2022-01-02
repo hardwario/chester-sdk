@@ -213,7 +213,6 @@ rsource "Kconfig.config"
 rsource "Kconfig.hygro"
 rsource "Kconfig.led"
 rsource "Kconfig.log"
-rsource "Kconfig.lrw"
 rsource "Kconfig.rtc"
 rsource "Kconfig.therm"
 

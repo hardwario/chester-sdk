@@ -8,6 +8,7 @@
 
 	chosen {
 		ctr,lte_if = &ctr_lte_if;
+		ctr,lrw_if = &ctr_lrw_if;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -192,6 +193,13 @@
 	/delete-property/ hw-flow-control;
 	/delete-property/ rts-pin;
 	/delete-property/ cts-pin;
+
+	ctr_lrw_if: ctr_lrw_if {
+		compatible = "hardwario,ctr-lrw-if";
+		status = "disabled";
+		label = "CTR_LRW_IF";
+		reset-gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
 };
 
 &flash0 {

@@ -1,10 +1,11 @@
 /* TODO Implement retries settings parameter */
 
 #include <ctr_lrw.h>
-#include <ctr_bsp.h>
 #include <ctr_config.h>
 #include <ctr_lrw_talk.h>
 #include <ctr_util.h>
+#include <drivers/ctr_lrw_if.h>
+#include <drivers/ctr_rfmux.h>
 
 /* Zephyr includes */
 #include <init.h>
@@ -21,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(ctr_lrw, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_lrw, CONFIG_CTR_LRW_LOG_LEVEL);
 
 #define SETTINGS_PFX "lrw"
 
@@ -114,6 +115,9 @@ struct config {
 	uint8_t appskey[16];
 };
 
+static const struct device *dev_lrw_if = DEVICE_DT_GET(DT_CHOSEN(ctr_lrw_if));
+static const struct device *dev_rfmux = DEVICE_DT_GET(DT_NODELABEL(ctr_rfmux));
+
 static enum state m_state = STATE_INIT;
 
 static struct config m_config_interim = {
@@ -172,13 +176,9 @@ static int boot_once(void)
 {
 	int ret;
 
-	ctr_bsp_set_lrw_reset(0);
-
-	k_sleep(K_MSEC(100));
-
+	/* TODO Address critical timing between m_boot_sig and reset? */
 	k_poll_signal_reset(&m_boot_sig);
-
-	ctr_bsp_set_lrw_reset(1);
+	ctr_lrw_if_reset(dev_lrw_if);
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_boot_sig),
@@ -634,21 +634,19 @@ static int start(void)
 {
 	int ret;
 
-	if (m_config.antenna == ANTENNA_EXT) {
-		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_EXT);
-	} else {
-		ret = ctr_bsp_set_rf_ant(CTR_BSP_RF_ANT_INT);
-	}
+	ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
+                                                       CTR_RFMUX_ANTENNA_EXT :
+                                                       CTR_RFMUX_ANTENNA_INT);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_bsp_set_rf_ant` failed: %d", ret);
+		LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_bsp_set_rf_mux(CTR_BSP_RF_MUX_LRW);
+	ret = ctr_rfmux_set_interface(dev_rfmux, CTR_RFMUX_INTERFACE_LRW);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_bsp_set_rf_mux` failed: %d", ret);
+		LOG_ERR("Call `ctr_rfmux_set_interface` failed: %d", ret);
 		return ret;
 	}
 

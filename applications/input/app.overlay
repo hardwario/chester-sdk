@@ -11,3 +11,7 @@
 &uart1 {
 	status = "okay";
 };
+
+&ctr_lrw_if {
+	status = "okay";
+};

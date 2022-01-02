@@ -43,18 +43,6 @@ enum ctr_bsp_button {
 	CTR_BSP_BUTTON_EXT = 1,
 };
 
-enum ctr_bsp_rf_ant {
-	CTR_BSP_RF_ANT_NONE = 0,
-	CTR_BSP_RF_ANT_INT = 1,
-	CTR_BSP_RF_ANT_EXT = 2,
-};
-
-enum ctr_bsp_rf_mux {
-	CTR_BSP_RF_MUX_NONE = 0,
-	CTR_BSP_RF_MUX_LTE = 1,
-	CTR_BSP_RF_MUX_LRW = 2,
-};
-
 struct ctr_bus_i2c *ctr_bsp_get_i2c(void);
 int ctr_bsp_set_led(enum ctr_bsp_led led, bool on);
 int ctr_bsp_get_button(enum ctr_bsp_button button, bool *pressed);
@@ -63,11 +51,6 @@ int ctr_bsp_set_batt_test(bool on);
 int ctr_bsp_set_gnss_on(bool on);
 int ctr_bsp_set_gnss_rtc(bool on);
 int ctr_bsp_set_w1b_slpz(int level);
-int ctr_bsp_set_rf_ant(enum ctr_bsp_rf_ant ant);
-int ctr_bsp_set_rf_mux(enum ctr_bsp_rf_mux mux);
-int ctr_bsp_set_lte_reset(int level);
-int ctr_bsp_set_lte_wkup(int level);
-int ctr_bsp_set_lrw_reset(int level);
 int ctr_bsp_sht30_measure(float *t, float *rh);
 int ctr_bsp_tmp112_measure(float *t);
 

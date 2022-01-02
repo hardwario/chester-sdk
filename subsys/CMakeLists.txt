@@ -1,1 +1,2 @@
+add_subdirectory_ifdef(CONFIG_CTR_LRW ctr_lrw)
 add_subdirectory_ifdef(CONFIG_CTR_LTE ctr_lte)
