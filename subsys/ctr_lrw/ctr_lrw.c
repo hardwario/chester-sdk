@@ -634,29 +634,6 @@ static int start(void)
 {
 	int ret;
 
-	ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
-                                                       CTR_RFMUX_ANTENNA_EXT :
-                                                       CTR_RFMUX_ANTENNA_INT);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_rfmux_set_interface(dev_rfmux, CTR_RFMUX_INTERFACE_LRW);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_rfmux_set_interface` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_lrw_talk_init(talk_handler);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_lrw_talk_init` failed: %d", ret);
-		return ret;
-	}
-
 	ret = boot(BOOT_RETRY_COUNT, BOOT_RETRY_DELAY);
 
 	if (ret < 0) {
@@ -1706,6 +1683,29 @@ static int init(const struct device *dev)
 	}
 
 	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
+
+	ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
+                                                       CTR_RFMUX_ANTENNA_EXT :
+                                                       CTR_RFMUX_ANTENNA_INT);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_rfmux_set_interface(dev_rfmux, CTR_RFMUX_INTERFACE_LRW);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_rfmux_set_interface` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lrw_talk_init(talk_handler);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lrw_talk_init` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }
