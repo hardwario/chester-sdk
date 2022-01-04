@@ -88,6 +88,9 @@ static enum state m_state = STATE_INIT;
 
 static struct config m_config_interim = {
 	.antenna = ANTENNA_INT,
+#if IS_ENABLED(CONFIG_CTR_LTE_CLKSYNC)
+	.clksync = true,
+#endif
 	.plmnid = "23003",
 };
 
@@ -1682,7 +1685,7 @@ static int init(const struct device *dev)
 	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
 
 	ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
-	                                               CTR_RFMUX_ANTENNA_EXT :
+                                                       CTR_RFMUX_ANTENNA_EXT :
                                                        CTR_RFMUX_ANTENNA_INT);
 
 	if (ret < 0) {
