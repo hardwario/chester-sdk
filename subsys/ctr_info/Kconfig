@@ -1,0 +1,15 @@
+config CTR_INFO
+	bool "CTR_INFO"
+
+if CTR_INFO
+
+config CTR_INFO_SHELL
+	depends on SHELL
+	bool "CTR_INFO_SHELL"
+	default y
+
+module = CTR_INFO
+module-str = CHESTER Firmware Information Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_INFO
