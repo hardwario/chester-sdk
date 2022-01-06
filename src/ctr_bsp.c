@@ -41,12 +41,6 @@ LOG_MODULE_REGISTER(ctr_bsp, LOG_LEVEL_DBG);
 #define DEV_SLPZ m_dev_gpio_1
 #define PIN_SLPZ 10
 
-#define DEV_GNSS_ON m_dev_gpio_1
-#define PIN_GNSS_ON 1
-
-#define DEV_GNSS_RTC m_dev_gpio_1
-#define PIN_GNSS_RTC 3
-
 static const struct device *m_dev_gpio_0;
 static const struct device *m_dev_gpio_1;
 static const struct device *m_dev_i2c_0;
@@ -186,27 +180,6 @@ static int init_flash(void)
 
 	if (ret < 0) {
 		LOG_ERR("Call `spi_transceive` failed");
-		return ret;
-	}
-
-	return 0;
-}
-
-int init_gnss(void)
-{
-	int ret;
-
-	ret = gpio_pin_configure(DEV_GNSS_ON, PIN_GNSS_ON, GPIO_OUTPUT_INACTIVE);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-		return ret;
-	}
-
-	ret = gpio_pin_configure(DEV_GNSS_RTC, PIN_GNSS_RTC, GPIO_OUTPUT_INACTIVE);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
 		return ret;
 	}
 
@@ -368,34 +341,6 @@ int ctr_bsp_set_batt_test(bool on)
 	return 0;
 }
 
-int ctr_bsp_set_gnss_on(bool on)
-{
-	int ret;
-
-	ret = gpio_pin_set(DEV_GNSS_ON, PIN_GNSS_ON, on ? 1 : 0);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int ctr_bsp_set_gnss_rtc(bool on)
-{
-	int ret;
-
-	ret = gpio_pin_set(DEV_GNSS_RTC, PIN_GNSS_RTC, on ? 1 : 0);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 int ctr_bsp_set_w1b_slpz(int level)
 {
 	int ret;
@@ -478,13 +423,6 @@ static int init(const struct device *dev)
 
 	if (ret < 0) {
 		LOG_ERR("Call `init_flash` failed: %d", ret);
-		return ret;
-	}
-
-	ret = init_gnss();
-
-	if (ret < 0) {
-		LOG_ERR("Call `init_gnss` failed: %d", ret);
 		return ret;
 	}
 

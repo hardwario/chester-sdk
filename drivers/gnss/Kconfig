@@ -1,0 +1,4 @@
+config GNSS
+	bool "GNSS support"
+
+rsource "Kconfig.gnss_m8"

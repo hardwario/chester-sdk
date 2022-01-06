@@ -1,0 +1,26 @@
+config CTR_GNSS
+	bool "CTR_GNSS"
+	select CTR_SDK
+	select GNSS
+	select GNSS_M8
+	select I2C
+
+if CTR_GNSS
+
+config CTR_GNSS_INIT_PRIORITY
+	int "Initialization priority"
+	default APPLICATION_INIT_PRIORITY
+
+config CTR_GNSS_THREAD_PRIORITY
+	int "CTR_GNSS_THREAD_PRIORITY"
+	default 10
+
+config CTR_GNSS_THREAD_STACK_SIZE
+	int "CTR_GNSS_THREAD_STACK_SIZE"
+	default 2048
+
+module = CTR_GNSS
+module-str = CHESTER GNSS Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_GNSS

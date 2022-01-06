@@ -1,0 +1,18 @@
+description: u-blox M8 GNSS Receiver
+
+compatible: "ublox,m8"
+
+include: [i2c-device.yaml]
+
+properties:
+  main-en-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Enable main power domain (active high)
+
+  bckp-en-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Enable backup power domain (active high)

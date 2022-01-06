@@ -1,0 +1,12 @@
+config GNSS_M8
+	bool "u-blox M8 GNSS Receiver Driver"
+	depends on GNSS
+	depends on I2C
+
+if GNSS_M8
+
+module = GNSS_M8
+module-str = gnss_m8
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # GNSS_M8
