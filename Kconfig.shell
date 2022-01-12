@@ -8,6 +8,7 @@ config CTR_SHELL
 	select SHELL_MINIMAL
 	select SHELL_STATS
 	select USE_SEGGER_RTT
+	select SHELL_BT_NUS if CTR_BLE
 
 config SHELL_LOG_BACKEND
 	default n if CTR_SHELL

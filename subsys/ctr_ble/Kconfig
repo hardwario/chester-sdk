@@ -1,0 +1,39 @@
+config CTR_BLE
+	bool "CTR_BLE"
+	select BOOTLOADER_MCUBOOT
+	select BT
+	select BT_DEVICE_NAME_DYNAMIC
+	select BT_NUS
+	select BT_PERIPHERAL
+	select BT_SMP
+	select CTR_INFO
+	select MCUMGR
+	select MCUMGR_CMD_IMG_MGMT
+	select MCUMGR_CMD_OS_MGMT
+	select MCUMGR_SMP_BT
+
+if CTR_BLE
+
+module = CTR_BLE
+module-str = CHESTER BLE Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_BLE
+
+config BT_DEVICE_NAME
+	default "CHESTER" if CTR_BLE
+
+config BT_L2CAP_TX_MTU
+	default 252 if CTR_BLE
+
+config BT_BUF_ACL_RX_SIZE
+	default 256 if CTR_BLE
+
+config MCUMGR_SMP_BT_AUTHEN
+	default n if MCUMGR_SMP_BT
+
+config SHELL_BT_NUS_RX_RING_BUFFER_SIZE
+	default 256 if SHELL_BT_NUS
+
+config SHELL_BT_NUS_TX_RING_BUFFER_SIZE
+	default 256 if SHELL_BT_NUS
