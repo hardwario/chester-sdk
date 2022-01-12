@@ -601,6 +601,8 @@ static int trigger_reset(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
 static int configure_interrupt_pin(const struct device *dev)
 {
 	int ret;
@@ -626,6 +628,8 @@ static int configure_interrupt_pin(const struct device *dev)
 
 	return 0;
 }
+
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static int enable_interrupt_pin(const struct device *dev)
 {
@@ -688,11 +692,15 @@ static int sc16is7xx_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
 	ret = configure_interrupt_pin(dev);
 	if (ret) {
 		LOG_ERR("Call `configure_interrupt_pin` failed: %d", ret);
 		return ret;
 	}
+
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 	ret = trigger_reset(dev);
 	if (ret) {
