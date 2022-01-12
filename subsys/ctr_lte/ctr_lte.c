@@ -22,6 +22,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)		\
+	static char __noinit __aligned(q_align)				\
+		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
+	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
+	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
+				  q_msg_size, q_max_msgs)
+
 LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 
 #define SETTINGS_PFX "lte"
@@ -101,8 +108,8 @@ static struct k_poll_signal m_sim_card_sig;
 static struct k_poll_signal m_time_sig;
 static struct k_poll_signal m_attach_sig;
 
-K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
-K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
+K_MSGQ_DEFINE_STATIC(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
+K_MSGQ_DEFINE_STATIC(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
 
 static ctr_lte_event_cb m_event_cb;
 static void *m_event_user_data;
