@@ -1,6 +1,7 @@
 menu "Subsystems"
 
 rsource "ctr_gnss/Kconfig"
+rsource "ctr_gpio/Kconfig"
 rsource "ctr_info/Kconfig"
 rsource "ctr_lrw/Kconfig"
 rsource "ctr_lte/Kconfig"

@@ -1,0 +1,11 @@
+config CTR_GPIO
+	bool "CTR_GPIO"
+	depends on GPIO
+
+if CTR_GPIO
+
+module = CTR_GPIO
+module-str = CHESTER GPIO Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_GPIO
