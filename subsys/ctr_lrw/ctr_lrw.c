@@ -766,6 +766,9 @@ static void process_cmd_msgq(void)
 		return;
 	}
 
+	/* Slow down processing (workaround modem BUSY state) */
+	k_sleep(K_SECONDS(3));
+
 	if (item.req == CMD_MSGQ_REQ_START) {
 		LOG_INF("Dequeued START command (correlation id: %d)", item.corr_id);
 
@@ -827,6 +830,9 @@ static void process_send_msgq(void)
 		LOG_ERR("Call `k_msgq_get` failed: %d", ret);
 		return;
 	}
+
+	/* Slow down processing (workaround modem BUSY state) */
+	k_sleep(K_SECONDS(3));
 
 	LOG_INF("Dequeued SEND command (correlation id: %d)", item.corr_id);
 
