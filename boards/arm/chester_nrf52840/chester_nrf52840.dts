@@ -145,6 +145,13 @@
 		reg = <0x48>;
 		label = "TMP112";
 	};
+
+	tla2021: tla2021@4b {
+		compatible = "ti,tla2021";
+		reg = <0x4b>;
+		label = "TLA2021";
+		#io-channel-cells = <1>;
+	};
 };
 
 &spi1 {

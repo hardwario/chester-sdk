@@ -1,0 +1,3 @@
+config ADC_TLA2021
+	bool "TI TLA2021 Low-Power ADC"
+	depends on I2C
