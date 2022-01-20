@@ -18,8 +18,6 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 const struct device *m_wdt_dev = DEVICE_DT_GET(DT_NODELABEL(wdt0));
 
-#define WDT_NAME DT_LABEL(DT_INST(0, nordic_nrf_watchdog))
-
 static uint64_t m_input_1_count;
 static K_MUTEX_DEFINE(m_count_mut);
 
