@@ -30,12 +30,6 @@ endif # CTR_SDK
 # #############################################################################
 # CTR_SDK
 
-config ADC
-	default y if CTR_SDK
-
-config ADC_SHELL
-	default n if CTR_SDK
-
 config ASSERT
 	default y if CTR_SDK
 
