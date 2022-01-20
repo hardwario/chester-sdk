@@ -16,7 +16,6 @@
 #include <logging/log.h>
 #include <random/rand32.h>
 #include <shell/shell.h>
-#include <sys/reboot.h>
 #include <zephyr.h>
 
 /* Standard includes */
