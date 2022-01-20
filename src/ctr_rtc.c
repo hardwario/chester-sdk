@@ -8,6 +8,7 @@
 #include <logging/log.h>
 #include <nrfx_rtc.h>
 #include <shell/shell.h>
+#include <sys/timeutil.h>
 #include <zephyr.h>
 
 /* Standard includes */
@@ -48,7 +49,7 @@ static int get_days_in_month(int year, int month)
 	return 31;
 }
 
-int ctr_rtc_get(struct ctr_rtc_tm *tm)
+int ctr_rtc_get_tm(struct ctr_rtc_tm *tm)
 {
 	irq_disable(RTC2_IRQn);
 
@@ -64,7 +65,7 @@ int ctr_rtc_get(struct ctr_rtc_tm *tm)
 	return 0;
 }
 
-int ctr_rtc_set(const struct ctr_rtc_tm *tm)
+int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm)
 {
 	if (tm->year < 1970 || tm->year > 2099) {
 		return -EINVAL;
@@ -104,6 +105,27 @@ int ctr_rtc_set(const struct ctr_rtc_tm *tm)
 	return 0;
 }
 
+int ctr_rtc_get_ts(int64_t *ts)
+{
+	struct tm tm = { 0 };
+
+	irq_disable(RTC2_IRQn);
+
+	tm.tm_year = m_year - 1900;
+	tm.tm_mon = m_month - 1;
+	tm.tm_mday = m_day;
+	tm.tm_hour = m_hours;
+	tm.tm_min = m_minutes;
+	tm.tm_sec = m_seconds;
+	tm.tm_isdst = -1;
+
+	irq_enable(RTC2_IRQn);
+
+	*ts = timeutil_timegm64(&tm);
+
+	return 0;
+}
+
 static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -113,10 +135,10 @@ static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
 
 	struct ctr_rtc_tm tm;
 
-	ret = ctr_rtc_get(&tm);
+	ret = ctr_rtc_get_tm(&tm);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_rtc_get` failed: %d", ret);
+		LOG_ERR("Call `ctr_rtc_get_tm` failed: %d", ret);
 		return ret;
 	}
 
@@ -168,10 +190,10 @@ static int cmd_rtc_set(const struct shell *shell, size_t argc, char **argv)
 	tm.minutes = atoi(&time[3]);
 	tm.seconds = atoi(&time[6]);
 
-	ret = ctr_rtc_set(&tm);
+	ret = ctr_rtc_set_tm(&tm);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_rtc_set` failed: %d", ret);
+		LOG_ERR("Call `ctr_rtc_set_tm` failed: %d", ret);
 		return ret;
 	}
 

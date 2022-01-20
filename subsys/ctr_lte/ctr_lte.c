@@ -22,12 +22,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)		\
-	static char __noinit __aligned(q_align)				\
-		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
-	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
-	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
-				  q_msg_size, q_max_msgs)
+#define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)                              \
+	static char __noinit __aligned(q_align) _k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)]; \
+	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =                                           \
+	        Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name, q_msg_size, q_max_msgs)
 
 LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 
@@ -598,10 +596,10 @@ static int attach_once(void)
 
 		tm.year += 2000;
 
-		ret = ctr_rtc_set(&tm);
+		ret = ctr_rtc_set_tm(&tm);
 
 		if (ret < 0) {
-			LOG_ERR("Call `ctr_rtc_set` failed: %d", ret);
+			LOG_ERR("Call `ctr_rtc_set_tm` failed: %d", ret);
 			return ret;
 		}
 #else
