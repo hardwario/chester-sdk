@@ -1,0 +1,14 @@
+config CTR_SIGNAL
+	bool "CTR_SIGNAL"
+	select NRFX_PPI
+	select NRFX_SAADC
+	select NRFX_TIMER
+	select NRFX_TIMER4
+
+if CTR_SIGNAL
+
+module = CTR_SIGNAL
+module-str = CHESTER Signal Measurement Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_SIGNAL
