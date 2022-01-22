@@ -9,6 +9,19 @@ LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 void event_cb(const struct device *dev, enum ctr_z_event event, void *user_data)
 {
 	LOG_DBG("event: %d, user_data: %p", event, user_data);
+
+	if (event == CTR_Z_EVENT_BUTTON_1_CLICK) {
+		static int led;
+
+		struct ctr_z_led_param param = {
+			.brightness = CTR_Z_LED_BRIGHTNESS_HIGH,
+			.command = CTR_Z_LED_COMMAND_1X_1_2,
+			.pattern = CTR_Z_LED_PATTERN_NONE,
+		};
+
+		ctr_z_set_led(dev, led++ % 15, &param);
+		ctr_z_apply(dev);
+	}
 }
 
 void main(void)
