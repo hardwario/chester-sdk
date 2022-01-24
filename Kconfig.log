@@ -1,6 +1,7 @@
 config CTR_LOG
 	bool "CTR_LOG"
 	select LOG
+	select USE_SEGGER_RTT
 
 choice LOG_MODE
 	# TODO Change to LOG2_MODE_DEFERRED in the future
