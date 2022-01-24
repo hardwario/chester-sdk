@@ -1,0 +1,4 @@
+zephyr_library()
+
+zephyr_library_sources(ctr_batt.c)
+zephyr_library_sources_ifdef(CONFIG_CTR_BATT_SHELL ctr_batt_shell.c)

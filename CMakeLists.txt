@@ -6,7 +6,6 @@ zephyr_include_directories(include)
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_CTR_ACCEL src/ctr_accel.c)
-zephyr_library_sources_ifdef(CONFIG_CTR_BATT src/ctr_batt.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_BLE src/ctr_ble.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_BSP src/ctr_bsp_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_BSP src/ctr_bsp.c)

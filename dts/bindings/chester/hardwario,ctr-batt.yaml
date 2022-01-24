@@ -1,0 +1,31 @@
+description: HARDWARIO CHESTER Battery Measurement Circuit Driver
+
+compatible: "hardwario,ctr-batt"
+
+include: base.yaml
+
+properties:
+  load-gpios:
+    type: phandle-array
+    required: true
+    description: Enable load circuit - active high
+
+  test-gpios:
+    type: phandle-array
+    required: true
+    description: enable test circuit - active high
+
+  load-resistor:
+    type: int
+    required: true
+    description: Load resistance in Ohm
+
+  divider-r1:
+    type: int
+    required: true
+    description: Voltage divider R1 (Ohm)
+
+  divider-r2:
+    type: int
+    required: true
+    description: Voltage divider R2 (Ohm)

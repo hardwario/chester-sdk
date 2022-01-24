@@ -1,4 +1,5 @@
 add_subdirectory_ifdef(CONFIG_ADC adc)
+add_subdirectory_ifdef(CONFIG_CTR_BATT ctr_batt)
 add_subdirectory_ifdef(CONFIG_CTR_LRW ctr_lrw_if)
 add_subdirectory_ifdef(CONFIG_CTR_LTE ctr_lte_if)
 add_subdirectory_ifdef(CONFIG_CTR_RFMUX ctr_rfmux)

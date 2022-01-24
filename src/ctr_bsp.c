@@ -32,12 +32,6 @@ LOG_MODULE_REGISTER(ctr_bsp, LOG_LEVEL_DBG);
 #define DEV_BTN_EXT m_dev_gpio_0
 #define PIN_BTN_EXT 26
 
-#define DEV_BAT_LOAD m_dev_gpio_1
-#define PIN_BAT_LOAD 14
-
-#define DEV_BAT_TEST m_dev_gpio_1
-#define PIN_BAT_TEST 15
-
 #define DEV_SLPZ m_dev_gpio_1
 #define PIN_SLPZ 10
 
@@ -186,27 +180,6 @@ static int init_flash(void)
 	return 0;
 }
 
-int init_batt(void)
-{
-	int ret;
-
-	ret = gpio_pin_configure(DEV_BAT_LOAD, PIN_BAT_LOAD, GPIO_OUTPUT_INACTIVE);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-		return ret;
-	}
-
-	ret = gpio_pin_configure(DEV_BAT_TEST, PIN_BAT_TEST, GPIO_OUTPUT_INACTIVE);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 int init_w1b(void)
 {
 	int ret;
@@ -313,34 +286,6 @@ int ctr_bsp_get_button(enum ctr_bsp_button button, bool *pressed)
 	return 0;
 }
 
-int ctr_bsp_set_batt_load(bool on)
-{
-	int ret;
-
-	ret = gpio_pin_set(DEV_BAT_LOAD, PIN_BAT_LOAD, on ? 1 : 0);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int ctr_bsp_set_batt_test(bool on)
-{
-	int ret;
-
-	ret = gpio_pin_set(DEV_BAT_TEST, PIN_BAT_TEST, on ? 1 : 0);
-
-	if (ret < 0) {
-		LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 int ctr_bsp_set_w1b_slpz(int level)
 {
 	int ret;
@@ -423,13 +368,6 @@ static int init(const struct device *dev)
 
 	if (ret < 0) {
 		LOG_ERR("Call `init_flash` failed: %d", ret);
-		return ret;
-	}
-
-	ret = init_batt();
-
-	if (ret < 0) {
-		LOG_ERR("Call `init_batt` failed: %d", ret);
 		return ret;
 	}
 

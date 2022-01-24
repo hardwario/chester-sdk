@@ -1,0 +1,19 @@
+config CTR_BATT
+	bool "CHESTER Battery Measurement Circuit Driver"
+	select GPIO
+	select I2C
+	select ADC
+	select ADC_TLA2021
+
+if CTR_BATT
+
+config CTR_BATT_SHELL
+	depends on SHELL
+	bool "CTR_BATT_SHELL"
+	default y
+
+module = CTR_BATT
+module-str = CHESTER Battery Measurement Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_BATT

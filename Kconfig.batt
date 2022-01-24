@@ -1,3 +1,0 @@
-config CTR_BATT
-	bool "CTR_BATT"
-	depends on SHELL

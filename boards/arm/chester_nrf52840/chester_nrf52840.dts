@@ -7,6 +7,7 @@
 	compatible = "hardwario,chester-nrf52840";
 
 	chosen {
+		ctr,batt_adc = &tla2021;
 		ctr,lte_if = &ctr_lte_if;
 		ctr,lrw_if = &ctr_lrw_if;
 		zephyr,sram = &sram0;
@@ -54,6 +55,16 @@
 			label = "LED_EXT";
 			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	ctr_batt: ctr_batt {
+		compatible = "hardwario,ctr-batt";
+		label = "CTR_BATT";
+		load-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		test-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+		load-resistor = <100>;
+		divider-r1 = <10>;
+		divider-r2 = <5>;
 	};
 
 	ctr_rfmux: ctr_rfmux {

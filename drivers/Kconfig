@@ -1,6 +1,7 @@
 menu "Drivers"
 
 rsource "adc/Kconfig"
+rsource "ctr_batt/Kconfig"
 rsource "ctr_lrw_if/Kconfig"
 rsource "ctr_lte_if/Kconfig"
 rsource "ctr_rfmux/Kconfig"
