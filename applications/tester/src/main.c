@@ -43,10 +43,10 @@ static int cmd_gpio_test(const struct shell *shell, size_t argc, char **argv)
 	ctr_gpio_read(CTR_GPIO_CHANNEL_A3, &pin_a3);
 	ctr_gpio_read(CTR_GPIO_CHANNEL_B3, &pin_b3);
 
-	// Print pin state, should be all zeros
+	/* Print pins' state (should be all zeros) */
 	shell_print(shell, "off: A1 %u, B1 %u, A3 %u, B3 %u", pin_a1, pin_b1, pin_a3, pin_b3);
 
-	// Enable outputs
+	/* Enable outputs */
 	ctr_gpio_write(CTR_GPIO_CHANNEL_A0, 1);
 	ctr_gpio_write(CTR_GPIO_CHANNEL_B0, 1);
 	ctr_gpio_write(CTR_GPIO_CHANNEL_A2, 1);
@@ -57,10 +57,10 @@ static int cmd_gpio_test(const struct shell *shell, size_t argc, char **argv)
 	ctr_gpio_read(CTR_GPIO_CHANNEL_A3, &pin_a3);
 	ctr_gpio_read(CTR_GPIO_CHANNEL_B3, &pin_b3);
 
-	// Print pin state, should be all ones
+	/* Print pins' state (should be all ones) */
 	shell_print(shell, "on: A1 %u, B1 %u, A3 %u, B3 %u", pin_a1, pin_b1, pin_a3, pin_b3);
 
-	// Turn off outputs
+	/* Deassert all outputs */
 	ctr_gpio_write(CTR_GPIO_CHANNEL_A0, 0);
 	ctr_gpio_write(CTR_GPIO_CHANNEL_B0, 0);
 	ctr_gpio_write(CTR_GPIO_CHANNEL_A2, 0);
