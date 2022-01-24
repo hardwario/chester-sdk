@@ -1,0 +1,19 @@
+config CTR_SHELL
+	bool "CTR_SHELL"
+	select SHELL
+	select SHELL_BACKEND_RTT
+	select SHELL_CMDS
+	select SHELL_HELP
+	select SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
+	select SHELL_MINIMAL
+	select SHELL_STATS
+	select USE_SEGGER_RTT
+
+config SHELL_LOG_BACKEND
+	default n if CTR_SHELL
+
+config SHELL_ECHO_STATUS
+	default n if CTR_SHELL
+
+config SHELL_PROMPT_RTT
+	default "" if CTR_SHELL

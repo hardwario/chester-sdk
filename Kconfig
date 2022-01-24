@@ -1,5 +1,6 @@
 menuconfig CTR_SDK
 	bool "CTR_SDK"
+	select CTR_SHELL
 
 if CTR_SDK
 
@@ -79,42 +80,6 @@ config SEGGER_RTT_BUFFER_SIZE_UP
 	default 4096 if CTR_SDK
 
 config SERIAL
-	default y if CTR_SDK
-
-config SHELL
-	default y if CTR_SDK
-
-config SHELL_BACKEND_RTT
-	default y if CTR_SDK
-
-config SHELL_CMDS
-	default y if CTR_SDK
-
-config SHELL_DEFAULT_TERMINAL_WIDTH
-	default 1024 if CTR_SDK
-
-config SHELL_ECHO_STATUS
-	default n if CTR_SDK
-
-config SHELL_HELP
-	default y if CTR_SDK
-
-config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
-	default y if CTR_SDK
-
-config SHELL_LOG_BACKEND
-	default n if CTR_SDK
-
-config SHELL_MINIMAL
-	default y if CTR_SDK
-
-config SHELL_PROMPT_RTT
-	default "" if CTR_SDK
-
-config SHELL_RTT_RX_POLL_PERIOD
-	default 200 if CTR_SDK
-
-config SHELL_STATS
 	default y if CTR_SDK
 
 config SYSTEM_WORKQUEUE_STACK_SIZE
@@ -208,6 +173,7 @@ rsource "Kconfig.hygro"
 rsource "Kconfig.led"
 rsource "Kconfig.log"
 rsource "Kconfig.rtc"
+rsource "Kconfig.shell"
 rsource "Kconfig.therm"
 
 rsource "drivers/Kconfig"
