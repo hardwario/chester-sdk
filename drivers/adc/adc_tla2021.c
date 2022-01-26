@@ -10,23 +10,35 @@
 
 LOG_MODULE_REGISTER(tla2021, CONFIG_ADC_LOG_LEVEL);
 
+#define CONVERSION_TIMEOUT_US(data_rate) (USEC_PER_SEC / data_rate)
+#define CONVERSION_START_DELAY_US 25
+
 #define REG_DATA 0x00
-#define REG_DATA_SHIFT 4
+#define REG_DATA_pos 4
+
 #define REG_CONFIG 0x01
-#define REG_CONFIG_DEFAULT 0x8583
-#define REG_CONFIG_DR_OFFSET 5
-#define REG_CONFIG_MODE_OFFSET 8
-#define REG_CONFIG_PGA_OFFSET 9
-#define REG_CONFIG_MUX_OFFSET 12
-#define REG_CONFIG_OS_OFFSET 15
+#define REG_CONFIG_DEFAULT 0x0003
+#define REG_CONFIG_DR_pos 5
+#define REG_CONFIG_MODE_pos 8
+#define REG_CONFIG_PGA_pos 9
+#define REG_CONFIG_MUX_pos 12
+#define REG_CONFIG_OS_pos 15
+#define REG_CONFIG_OS_msk BIT(15)
+
+#define REG_CONFIG_MODE_DEFAULT 1
+#define REG_CONFIG_PGA_DEFAULT 2
+#define REG_CONFIG_MUX_DEFAULT 0
 
 struct tla2021_config {
 	const struct i2c_dt_spec i2c_spec;
+	int data_rate;
 };
 
 struct tla2021_data {
 	uint16_t reg_config;
 };
+
+static const int data_rate_value[] = { 128, 250, 490, 920, 1600, 2400, 3300, 3300 };
 
 static inline const struct tla2021_config *get_config(const struct device *dev)
 {
@@ -143,10 +155,34 @@ int tla2021_read(const struct device *dev, const struct adc_sequence *sequence)
 		}
 	}
 
+	const int conversion_timeout_us =
+	        USEC_PER_SEC / data_rate_value[get_config(dev)->data_rate];
+
+	LOG_DBG("Conversion timeout: %d us", conversion_timeout_us);
+
 	enum adc_action action;
+	uint16_t reg_config;
 
 	for (int i = 0; i < num_samples; i += (action == ADC_ACTION_REPEAT ? 0 : 1)) {
 		action = ADC_ACTION_CONTINUE;
+		reg_config = get_data(dev)->reg_config | REG_CONFIG_OS_msk;
+
+		ret = write(dev, REG_CONFIG, reg_config);
+		if (ret) {
+			LOG_ERR("Failed to start single-shot conversion: %d", ret);
+			return ret;
+		}
+
+		k_usleep(CONVERSION_START_DELAY_US);
+
+		do {
+			k_usleep(conversion_timeout_us);
+
+			ret = read(dev, REG_CONFIG, &reg_config);
+			if (ret) {
+				LOG_ERR("Call `read` failed: %d", ret);
+			}
+		} while (!(reg_config & REG_CONFIG_OS_msk));
 
 		ret = read(dev, REG_DATA, &buffer[i]);
 		if (ret) {
@@ -154,7 +190,7 @@ int tla2021_read(const struct device *dev, const struct adc_sequence *sequence)
 			return ret;
 		}
 
-		buffer[i] >>= REG_DATA_SHIFT;
+		buffer[i] >>= REG_DATA_pos;
 
 		if (sequence->options && sequence->options->callback) {
 			action = sequence->options->callback(dev, sequence, i);
@@ -172,7 +208,13 @@ static int tla2021_init(const struct device *dev)
 {
 	int ret;
 
-	WRITE_BIT(get_data(dev)->reg_config, REG_CONFIG_MODE_OFFSET, 0);
+	get_data(dev)->reg_config = REG_CONFIG_DEFAULT;
+	get_data(dev)->reg_config |= get_config(dev)->data_rate << REG_CONFIG_DR_pos;
+	get_data(dev)->reg_config |= REG_CONFIG_MODE_DEFAULT << REG_CONFIG_MODE_pos;
+	get_data(dev)->reg_config |= REG_CONFIG_PGA_DEFAULT << REG_CONFIG_PGA_pos;
+	get_data(dev)->reg_config |= REG_CONFIG_MUX_DEFAULT << REG_CONFIG_MUX_pos;
+
+	LOG_DBG("Configuration register: 0x%04x", get_data(dev)->reg_config);
 
 	ret = write(dev, REG_CONFIG, get_data(dev)->reg_config);
 	if (ret) {
@@ -192,10 +234,9 @@ static const struct adc_driver_api tla2021_driver_api = {
 #define TLA2021_INIT(n)                                                                            \
 	static const struct tla2021_config inst_##n##_config = {                                   \
 		.i2c_spec = I2C_DT_SPEC_INST_GET(n),                                               \
+		.data_rate = DT_INST_PROP(n, data_rate),                                           \
 	};                                                                                         \
-	static struct tla2021_data inst_##n##_data = {                                             \
-		.reg_config = REG_CONFIG_DEFAULT,                                                  \
-	};                                                                                         \
+	static struct tla2021_data inst_##n##_data = {};                                           \
 	DEVICE_DT_INST_DEFINE(n, &tla2021_init, NULL, &inst_##n##_data, &inst_##n##_config,        \
 	                      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &tla2021_driver_api);
 
