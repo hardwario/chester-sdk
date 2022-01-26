@@ -1,6 +1,8 @@
 #ifndef CHESTER_INCLUDE_LTE_TALK_H_
 #define CHESTER_INCLUDE_LTE_TALK_H_
 
+#include <ctr_lte.h>
+
 /* Standard includes */
 #include <stddef.h>
 #include <stdint.h>
@@ -32,6 +34,7 @@ int ctr_lte_talk_at_cfun(int p1);
 int ctr_lte_talk_at_cgerep(int p1);
 int ctr_lte_talk_at_cmee(int p1);
 int ctr_lte_talk_at_cnec(int p1);
+int ctr_lte_talk_at_coneval(struct ctr_lte_eval *eval);
 int ctr_lte_talk_at_cops(int p1, int *p2, const char *p3);
 int ctr_lte_talk_at_cpsms(int *p1, const char *p2, const char *p3);
 int ctr_lte_talk_at_cscon(int p1);

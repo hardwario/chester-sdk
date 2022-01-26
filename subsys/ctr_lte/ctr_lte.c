@@ -15,7 +15,6 @@
 
 /* Standard includes */
 #include <ctype.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -37,6 +36,8 @@ LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 #define SETUP_RETRY_DELAY K_SECONDS(10)
 #define ATTACH_RETRY_COUNT 3
 #define ATTACH_RETRY_DELAY K_SECONDS(60)
+#define EVAL_RETRY_COUNT 3
+#define EVAL_RETRY_DELAY K_SECONDS(3)
 #define SEND_RETRY_COUNT 3
 #define SEND_RETRY_DELAY K_SECONDS(10)
 
@@ -47,6 +48,7 @@ enum cmd_msgq_req {
 	CMD_MSGQ_REQ_START = 0,
 	CMD_MSGQ_REQ_ATTACH = 1,
 	CMD_MSGQ_REQ_DETACH = 2,
+	CMD_MSGQ_REQ_EVAL = 3,
 };
 
 struct cmd_msgq_item {
@@ -157,7 +159,11 @@ static int wake_up(void)
 
 	k_poll_signal_reset(&m_boot_sig);
 
-	ctr_lte_if_wakeup(dev_lte_if);
+	ret = ctr_lte_if_wakeup(dev_lte_if);
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_if_wakeup` failed: %d", ret);
+		return ret;
+	}
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_boot_sig),
@@ -700,6 +706,96 @@ static int attach(int retries, k_timeout_t delay)
 	return -ENOTCONN;
 }
 
+static int eval_once(struct ctr_lte_eval *eval)
+{
+	int ret;
+
+	ret = wake_up();
+	if (ret < 0) {
+		LOG_ERR("Call `wake_up` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_coneval(eval);
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_coneval` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_talk_at_xsleep(2);
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_xsleep` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int eval(int retries, k_timeout_t delay, struct ctr_lte_eval *eval)
+{
+	int ret;
+	int err = 0;
+
+	LOG_INF("Operation EVAL started");
+
+	while (retries-- > 0) {
+		if (m_setup) {
+			ret = setup(SETUP_RETRY_COUNT, SETUP_RETRY_DELAY);
+
+			if (ret < 0) {
+				LOG_ERR("Call `setup` failed: %d", ret);
+				return ret;
+			}
+		}
+
+		ret = ctr_lte_talk_enable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_enable` failed: %d", ret);
+			m_setup = true;
+			return ret;
+		}
+
+		ret = eval_once(eval);
+		err = ret;
+
+		if (ret == 0) {
+			ret = ctr_lte_talk_disable();
+
+			if (ret < 0) {
+				LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+				m_setup = true;
+				return ret;
+			}
+
+			LOG_INF("Operation EVAL succeeded");
+			return 0;
+		}
+
+		if (ret < 0) {
+			LOG_WRN("Call `eval_once` failed: %d", ret);
+		}
+
+		ret = ctr_lte_talk_disable();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
+			m_setup = true;
+			return ret;
+		}
+
+		if (retries > 0) {
+			k_sleep(delay);
+			LOG_WRN("Repeating EVAL operation (retries left: %d)", retries);
+		}
+	}
+
+	m_setup = true;
+
+	LOG_WRN("Operation EVAL failed");
+	return err;
+}
+
 static int send_once(const struct send_msgq_data *data)
 {
 	int ret;
@@ -879,6 +975,35 @@ static int process_req_attach(const struct cmd_msgq_item *item)
 	return 0;
 }
 
+static int process_req_eval(const struct cmd_msgq_item *item)
+{
+	int ret;
+
+	union ctr_lte_event_data data = { 0 };
+
+	ret = eval(EVAL_RETRY_COUNT, EVAL_RETRY_DELAY, &data.eval_ok.eval);
+
+	if (ret < 0) {
+		LOG_ERR("Call `eval` failed: %d", ret);
+
+		data.eval_err.corr_id = item->corr_id;
+
+		if (m_event_cb != NULL) {
+			m_event_cb(CTR_LTE_EVENT_EVAL_ERR, &data, m_event_user_data);
+		}
+
+		return ret;
+	}
+
+	data.eval_ok.corr_id = item->corr_id;
+
+	if (m_event_cb != NULL) {
+		m_event_cb(CTR_LTE_EVENT_EVAL_OK, &data, m_event_user_data);
+	}
+
+	return 0;
+}
+
 static void process_cmd_msgq(void)
 {
 	int ret;
@@ -918,10 +1043,32 @@ static void process_cmd_msgq(void)
 		LOG_INF("Dequeued ATTACH command (correlation id: %d)", item.corr_id);
 
 		if (m_state != STATE_READY) {
-			LOG_WRN("Not ready for JOIN command - ignoring");
+			LOG_WRN("Not ready for ATTACH command - ignoring");
 
 		} else {
 			ret = process_req_attach(&item);
+
+			m_state = ret < 0 ? STATE_ERROR : STATE_READY;
+
+			if (m_state == STATE_ERROR) {
+				LOG_ERR("Error - flushing all control commands from queue");
+
+				k_msgq_purge(&m_cmd_msgq);
+
+				if (m_event_cb != NULL) {
+					m_event_cb(CTR_LTE_EVENT_FAILURE, NULL, m_event_user_data);
+				}
+			}
+		}
+
+	} else if (item.req == CMD_MSGQ_REQ_EVAL) {
+		LOG_INF("Dequeued EVAL command (correlation id: %d)", item.corr_id);
+
+		if (m_state != STATE_READY) {
+			LOG_WRN("Not ready for EVAL command - ignoring");
+
+		} else {
+			ret = process_req_eval(&item);
 
 			m_state = ret < 0 ? STATE_ERROR : STATE_READY;
 
@@ -1298,10 +1445,8 @@ int ctr_lte_start(int *corr_id)
 	int ret;
 
 	if (m_config.test) {
-		LOG_ERR("Test mode activated - ignoring");
-
-		/* Return positive error code intentionally */
-		return ENOEXEC;
+		LOG_WRN("Test mode activated - ignoring");
+		return 0;
 	}
 
 	struct cmd_msgq_item item = {
@@ -1330,10 +1475,8 @@ int ctr_lte_attach(int *corr_id)
 	int ret;
 
 	if (m_config.test) {
-		LOG_ERR("Test mode activated - ignoring");
-
-		/* Return positive error code intentionally */
-		return ENOEXEC;
+		LOG_WRN("Test mode activated - ignoring");
+		return 0;
 	}
 
 	struct cmd_msgq_item item = {
@@ -1362,10 +1505,8 @@ int ctr_lte_detach(int *corr_id)
 	int ret;
 
 	if (m_config.test) {
-		LOG_ERR("Test mode activated - ignoring");
-
-		/* Return positive error code intentionally */
-		return ENOEXEC;
+		LOG_WRN("Test mode activated - ignoring");
+		return 0;
 	}
 
 	struct cmd_msgq_item item = {
@@ -1389,15 +1530,43 @@ int ctr_lte_detach(int *corr_id)
 	return 0;
 }
 
+int ctr_lte_eval(int *corr_id)
+{
+	int ret;
+
+	if (m_config.test) {
+		LOG_WRN("Test mode activated - ignoring");
+		return 0;
+	}
+
+	struct cmd_msgq_item item = {
+		.corr_id = (int)atomic_inc(&m_corr_id),
+		.req = CMD_MSGQ_REQ_EVAL,
+	};
+
+	if (corr_id != NULL) {
+		*corr_id = item.corr_id;
+	}
+
+	LOG_INF("Enqueing EVAL command (correlation id: %d)", item.corr_id);
+
+	ret = k_msgq_put(&m_cmd_msgq, &item, K_NO_WAIT);
+
+	if (ret < 0) {
+		LOG_ERR("Call `k_msgq_put` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lte_send(const struct ctr_lte_send_opts *opts, const void *buf, size_t len, int *corr_id)
 {
 	int ret;
 
 	if (m_config.test) {
-		LOG_ERR("Test mode activated - ignoring");
-
-		/* Return positive error code intentionally */
-		return ENOEXEC;
+		LOG_WRN("Test mode activated - ignoring");
+		return 0;
 	}
 
 	void *p = k_malloc(len);
@@ -1555,7 +1724,11 @@ static int cmd_test_wakeup(const struct shell *shell, size_t argc, char **argv)
 
 	k_poll_signal_reset(&m_boot_sig);
 
-	ctr_lte_if_wakeup(dev_lte_if);
+	ret = ctr_lte_if_wakeup(dev_lte_if);
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_if_wakeup` failed: %d", ret);
+		return ret;
+	}
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_boot_sig),

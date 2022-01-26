@@ -5,12 +5,14 @@
 
 /* Zephyr includes */
 #include <logging/log.h>
+#include <sys/byteorder.h>
 #include <zephyr.h>
 
 /* Standard includes */
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(ctr_lte_talk, CONFIG_CTR_LTE_LOG_LEVEL);
@@ -85,7 +87,7 @@ static void process_urc(const char *s)
 		ret = ctr_lte_parse_cereg(s, &stat);
 
 		if (ret < 0) {
-			LOG_ERR("Call `ctr_lte_parse` failed: %d", ret);
+			LOG_ERR("Call `ctr_lte_parse_cereg` failed: %d", ret);
 		}
 
 		if (stat == 1 || stat == 5) {
@@ -694,6 +696,79 @@ int ctr_lte_talk_at_cnec(int p1)
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int at_coneval_response_handler(int idx, int count, const char *s, void *p1, void *p2,
+                                       void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	int ret;
+
+	struct ctr_lte_eval *eval = p1;
+
+	if (idx == 0 && count == 1) {
+		long result;
+		long energy_estimate;
+		long rsrp;
+		long rsrq;
+		long snr;
+		char cell_id[8 + 1];
+		char plmn[6 + 1];
+		long earfcn;
+		long band;
+		long ce_level;
+
+		ret = ctr_lte_parse_coneval(s, &result, NULL, &energy_estimate, &rsrp, &rsrq, &snr,
+		                            cell_id, sizeof(cell_id), plmn, sizeof(plmn), NULL,
+		                            &earfcn, &band, NULL, &ce_level, NULL, NULL, NULL,
+		                            NULL);
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_parse_coneval` failed: %d", ret);
+			return -EINVAL;
+		}
+
+		if (result == 0) {
+			uint8_t cell_id_buf[4] = { 0 };
+			ret = ctr_hex2buf(cell_id, cell_id_buf, sizeof(cell_id_buf), false);
+			if (ret < 0) {
+				LOG_ERR("Call `ctr_hex2buf` (cell_id) failed: %d", ret);
+				return -EINVAL;
+			}
+
+			eval->eest = energy_estimate;
+			eval->ecl = ce_level;
+			eval->rsrp = rsrp - 140;
+			eval->rsrq = (rsrq - 39) / 2;
+			eval->snr = snr - 24;
+			eval->plmn = strtol(plmn, NULL, 10);
+			eval->cid = sys_get_be32(cell_id_buf);
+			eval->band = band;
+			eval->earfcn = earfcn;
+
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_coneval(struct ctr_lte_eval *eval)
+{
+	int ret;
+
+	/* TODO Clarify response timeout requirements */
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_L, at_coneval_response_handler, eval, NULL,
+	                           NULL, "AT%%CONEVAL");
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
 		return ret;
 	}
 

@@ -7,7 +7,6 @@
 /* Standard includes */
 #include <ctype.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -96,6 +95,165 @@ int ctr_lte_parse_cereg(const char *s, int *stat)
 
 	if (stat != NULL) {
 		*stat = num;
+	}
+
+	return 0;
+}
+
+int ctr_lte_parse_coneval(const char *s, long *result, long *rrc_state, long *energy_estimate,
+                          long *rsrp, long *rsrq, long *snr, char *cell_id, size_t cell_id_size,
+                          char *plmn, size_t plmn_size, long *phys_cell_id, long *earfcn,
+                          long *band, long *tau_triggered, long *ce_level, long *tx_power,
+                          long *tx_repetitions, long *rx_repetitions, long *dl_pathloss)
+{
+	/* %CONEVAL: 0,1,5,8,2,14,"011B0780”,"26295",7,1575,3,1,1,23,16,32,130 */
+
+	char *p = (char *)s;
+
+	if ((p = ctr_lte_tok_pfx(p, "%CONEVAL: ")) == NULL) {
+		return -EINVAL;
+	}
+
+	bool def;
+
+	if ((p = ctr_lte_tok_num(p, &def, result)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if (ctr_lte_tok_end(p) != NULL) {
+		return 0;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, rrc_state)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, energy_estimate)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, rsrp)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, rsrq)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, snr)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_str(p, &def, cell_id, cell_id_size)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_str(p, &def, plmn, plmn_size)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, phys_cell_id)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, earfcn)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, band)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, tau_triggered)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, ce_level)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, tx_power)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, tx_repetitions)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, rx_repetitions)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_num(p, &def, dl_pathloss)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if (ctr_lte_tok_end(p) == NULL) {
+		return -EINVAL;
 	}
 
 	return 0;
