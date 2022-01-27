@@ -117,7 +117,7 @@
 		status = "disabled";
 		compatible = "hardwario,ctr-z";
 		reg = <0x4f>;
-		label = "CHESTER_Z";
+		label = "CTR_Z";
 		irq-gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 

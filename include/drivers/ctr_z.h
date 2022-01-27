@@ -6,6 +6,7 @@
 
 /* Standard include */
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -128,9 +129,9 @@ struct ctr_z_status {
 	bool button_4_pressed;
 };
 
-typedef void (*ctr_z_event_cb)(const struct device *dev, enum ctr_z_event event, void *user_data);
-typedef int (*ctr_z_api_set_callback)(const struct device *dev, ctr_z_event_cb callback,
-                                      void *user_data);
+typedef void (*ctr_z_user_cb)(const struct device *dev, enum ctr_z_event event, void *user_data);
+typedef int (*ctr_z_api_set_handler)(const struct device *dev, ctr_z_user_cb callback,
+                                     void *user_data);
 typedef int (*ctr_z_api_apply)(const struct device *dev);
 typedef int (*ctr_z_api_get_status)(const struct device *dev, struct ctr_z_status *status);
 typedef int (*ctr_z_api_get_vdc_mv)(const struct device *dev, uint16_t *vdc);
@@ -139,15 +140,15 @@ typedef int (*ctr_z_api_get_serial_number)(const struct device *dev, uint32_t *s
 typedef int (*ctr_z_api_get_hw_revision)(const struct device *dev, uint16_t *hw_revision);
 typedef int (*ctr_z_api_get_hw_variant)(const struct device *dev, uint32_t *hw_variant);
 typedef int (*ctr_z_api_get_fw_version)(const struct device *dev, uint32_t *fw_version);
-typedef int (*ctr_z_api_get_vendor_name)(const struct device *dev, char **vendor_name);
-typedef int (*ctr_z_api_get_product_name)(const struct device *dev, char **product_name);
+typedef int (*ctr_z_api_get_vendor_name)(const struct device *dev, char *buf, size_t buf_size);
+typedef int (*ctr_z_api_get_product_name)(const struct device *dev, char *buf, size_t buf_size);
 typedef int (*ctr_z_api_set_buzzer)(const struct device *dev,
                                     const struct ctr_z_buzzer_param *param);
 typedef int (*ctr_z_api_set_led)(const struct device *dev, enum ctr_z_led_channel channel,
                                  const struct ctr_z_led_param *param);
 
 struct ctr_z_driver_api {
-	ctr_z_api_set_callback set_callback;
+	ctr_z_api_set_handler set_handler;
 	ctr_z_api_apply apply;
 	ctr_z_api_get_status get_status;
 	ctr_z_api_get_vdc_mv get_vdc_mv;
@@ -162,12 +163,12 @@ struct ctr_z_driver_api {
 	ctr_z_api_set_led set_led;
 };
 
-static inline int ctr_z_set_callback(const struct device *dev, ctr_z_event_cb callback,
-                                     void *user_data)
+static inline int ctr_z_set_handler(const struct device *dev, ctr_z_user_cb user_cb,
+                                    void *user_data)
 {
 	const struct ctr_z_driver_api *api = (const struct ctr_z_driver_api *)dev->api;
 
-	return api->set_callback(dev, callback, user_data);
+	return api->set_handler(dev, user_cb, user_data);
 }
 
 static inline int ctr_z_apply(const struct device *dev)
@@ -226,18 +227,18 @@ static inline int ctr_z_get_fw_version(const struct device *dev, uint32_t *fw_ve
 	return api->get_fw_version(dev, fw_version);
 }
 
-static inline int ctr_z_get_vendor_name(const struct device *dev, char **vendor_name)
+static inline int ctr_z_get_vendor_name(const struct device *dev, char *buf, size_t buf_size)
 {
 	const struct ctr_z_driver_api *api = (const struct ctr_z_driver_api *)dev->api;
 
-	return api->get_vendor_name(dev, vendor_name);
+	return api->get_vendor_name(dev, buf, buf_size);
 }
 
-static inline int ctr_z_get_product_name(const struct device *dev, char **product_name)
+static inline int ctr_z_get_product_name(const struct device *dev, char *buf, size_t buf_size)
 {
 	const struct ctr_z_driver_api *api = (const struct ctr_z_driver_api *)dev->api;
 
-	return api->get_product_name(dev, product_name);
+	return api->get_product_name(dev, buf, buf_size);
 }
 
 static inline int ctr_z_set_buzzer(const struct device *dev, const struct ctr_z_buzzer_param *param)

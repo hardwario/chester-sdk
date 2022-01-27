@@ -1,11 +1,15 @@
 #include "ctr_z_reg.h"
 
+/* CHESTER includes */
+#include <drivers/ctr_z.h>
+
+/* Zephyr includes */
 #include <devicetree.h>
 #include <drivers/gpio.h>
-#include <drivers/ctr_z.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
 #include <sys/byteorder.h>
+#include <sys/util.h>
 #include <zephyr.h>
 
 #define DT_DRV_COMPAT hardwario_ctr_z
@@ -22,8 +26,8 @@ struct ctr_z_config {
 struct ctr_z_data {
 	const struct device *dev;
 	struct k_work work;
-	struct gpio_callback cb;
-	ctr_z_event_cb user_cb;
+	struct gpio_callback gpio_cb;
+	ctr_z_user_cb user_cb;
 	void *user_data;
 };
 
@@ -55,7 +59,7 @@ static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 
 	ret = i2c_transfer(get_config(dev)->i2c_dev, msgs, ARRAY_SIZE(msgs),
 	                   get_config(dev)->i2c_addr);
-	if (ret < 0) {
+	if (ret) {
 		LOG_WRN("Call `i2c_transfer` failed: %d", ret);
 		return ret;
 	}
@@ -81,7 +85,7 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 
 	ret = i2c_transfer(get_config(dev)->i2c_dev, msgs, ARRAY_SIZE(msgs),
 	                   get_config(dev)->i2c_addr);
-	if (ret < 0) {
+	if (ret) {
 		LOG_WRN("Call `i2c_transfer` failed: %d", ret);
 		return ret;
 	}
@@ -89,9 +93,9 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 	return 0;
 }
 
-static int ctr_z_set_callback_(const struct device *dev, ctr_z_event_cb callback, void *user_data)
+static int ctr_z_set_handler_(const struct device *dev, ctr_z_user_cb user_cb, void *user_data)
 {
-	get_data(dev)->user_cb = callback;
+	get_data(dev)->user_cb = user_cb;
 	get_data(dev)->user_data = user_data;
 
 	return 0;
@@ -102,7 +106,7 @@ static int ctr_z_apply_(const struct device *dev)
 	int ret;
 
 	ret = write(dev, REG_CONTROL, BIT(0) | (get_config(dev)->auto_beep ? BIT(1) : 0) | BIT(15));
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
 		return ret;
 	}
@@ -117,7 +121,7 @@ static int ctr_z_get_status_(const struct device *dev, struct ctr_z_status *stat
 	uint16_t reg_status;
 
 	ret = read(dev, REG_STATUS, &reg_status);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
@@ -140,7 +144,7 @@ static int ctr_z_get_vdc_mv_(const struct device *dev, uint16_t *vdc)
 	uint16_t reg_vdc;
 
 	ret = read(dev, REG_VDC, &reg_vdc);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
@@ -157,7 +161,7 @@ static int ctr_z_get_vbat_mv_(const struct device *dev, uint16_t *vbat)
 	uint16_t reg_vbat;
 
 	ret = read(dev, REG_VBAT, &reg_vbat);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
@@ -173,7 +177,7 @@ static int ctr_z_get_serial_number_(const struct device *dev, uint32_t *serial_n
 	uint16_t reg_serno0;
 
 	ret = read(dev, REG_SERNO0, &reg_serno0);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
@@ -181,7 +185,7 @@ static int ctr_z_get_serial_number_(const struct device *dev, uint32_t *serial_n
 	uint16_t reg_serno1;
 
 	ret = read(dev, REG_SERNO1, &reg_serno1);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
@@ -197,7 +201,7 @@ static int ctr_z_get_hw_revision_(const struct device *dev, uint16_t *hw_revisio
 	uint16_t reg_hwrev;
 
 	ret = read(dev, REG_HWREV, &reg_hwrev);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
@@ -213,7 +217,7 @@ static int ctr_z_get_hw_variant_(const struct device *dev, uint32_t *hw_variant)
 	uint16_t reg_hwvar0;
 
 	ret = read(dev, REG_HWVAR0, &reg_hwvar0);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
@@ -221,7 +225,7 @@ static int ctr_z_get_hw_variant_(const struct device *dev, uint32_t *hw_variant)
 	uint16_t reg_hwvar1;
 
 	ret = read(dev, REG_HWVAR1, &reg_hwvar1);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
@@ -237,7 +241,7 @@ static int ctr_z_get_fw_version_(const struct device *dev, uint32_t *fw_version)
 	uint16_t reg_fwver0;
 
 	ret = read(dev, REG_FWVER0, &reg_fwver0);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
@@ -245,7 +249,7 @@ static int ctr_z_get_fw_version_(const struct device *dev, uint32_t *fw_version)
 	uint16_t reg_fwver1;
 
 	ret = read(dev, REG_FWVER1, &reg_fwver1);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
@@ -255,48 +259,44 @@ static int ctr_z_get_fw_version_(const struct device *dev, uint32_t *fw_version)
 	return 0;
 }
 
-static int ctr_z_get_vendor_name_(const struct device *dev, char **vendor_name)
+static int ctr_z_get_vendor_name_(const struct device *dev, char *buf, size_t buf_size)
 {
 	int ret;
 
-	static char buf[32];
-
-	for (size_t i = 0; i < ARRAY_SIZE(buf); i++) {
+	for (size_t i = 0; i < MIN(32, buf_size); i++) {
 		uint16_t reg_vend;
 
 		ret = read(dev, REG_VEND0 + (uint8_t)i, &reg_vend);
-		if (ret < 0) {
+		if (ret) {
 			LOG_ERR("Call `read` failed: %d", ret);
 			return ret;
 		}
 
-		buf[i] = (char)reg_vend;
+		buf[i] = reg_vend;
 	}
 
-	*vendor_name = buf;
+	buf[buf_size - 1] = '\0';
 
 	return 0;
 }
 
-static int ctr_z_get_product_name_(const struct device *dev, char **product_name)
+static int ctr_z_get_product_name_(const struct device *dev, char *buf, size_t buf_size)
 {
 	int ret;
 
-	static char buf[32];
-
-	for (size_t i = 0; i < ARRAY_SIZE(buf); i++) {
+	for (size_t i = 0; i < MIN(32, buf_size); i++) {
 		uint16_t reg_prod;
 
 		ret = read(dev, REG_PROD0 + (uint8_t)i, &reg_prod);
-		if (ret < 0) {
+		if (ret) {
 			LOG_ERR("Call `read` failed: %d", ret);
 			return ret;
 		}
 
-		buf[i] = (char)reg_prod;
+		buf[i] = reg_prod;
 	}
 
-	*product_name = buf;
+	buf[buf_size - 1] = '\0';
 
 	return 0;
 }
@@ -310,7 +310,7 @@ static int ctr_z_set_buzzer_(const struct device *dev, const struct ctr_z_buzzer
 	reg_buzzer = (uint16_t)param->command << 4 | (uint16_t)param->pattern;
 
 	ret = write(dev, REG_BUZZER, reg_buzzer);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
 		return ret;
 	}
@@ -327,7 +327,7 @@ static int ctr_z_set_led_(const struct device *dev, enum ctr_z_led_channel chann
 	                   (uint16_t)param->pattern;
 
 	ret = write(dev, REG_LED0R + (uint8_t)channel, reg_led);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
 		return ret;
 	}
@@ -345,24 +345,24 @@ static void work_handler(struct k_work *work)
 	uint16_t reg_irq0;
 
 	ret = read(data->dev, REG_IRQ0, &reg_irq0);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 	}
 
 	ret = write(data->dev, REG_IRQ0, reg_irq0);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
 	}
 
 	uint16_t reg_irq1;
 
 	ret = read(data->dev, REG_IRQ1, &reg_irq1);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
 	}
 
 	ret = write(data->dev, REG_IRQ1, reg_irq1);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
 	}
 
@@ -376,20 +376,20 @@ static void work_handler(struct k_work *work)
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->irq_spec, GPIO_INT_LEVEL_ACTIVE);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 	}
 }
 
-static void irq_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+static void irq_handler(const struct device *dev, struct gpio_callback *gpio_cb, uint32_t pins)
 {
 	int ret;
 
-	struct ctr_z_data *data = CONTAINER_OF(cb, struct ctr_z_data, cb);
+	struct ctr_z_data *data = CONTAINER_OF(gpio_cb, struct ctr_z_data, gpio_cb);
 	const struct ctr_z_config *config = get_config(data->dev);
 
 	ret = gpio_pin_interrupt_configure_dt(&config->irq_spec, GPIO_INT_DISABLE);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 		return;
 	}
@@ -409,33 +409,34 @@ static int ctr_z_init(const struct device *dev)
 	}
 
 	if (!device_is_ready(get_config(dev)->irq_spec.port)) {
-		LOG_ERR("IRQ port not ready");
+		LOG_ERR("Port `IRQ` not ready");
 		return -EINVAL;
 	}
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->irq_spec, GPIO_INPUT);
-	if (ret < 0) {
-		LOG_ERR("Unable to configure IRQ pin: %d", ret);
+	if (ret) {
+		LOG_ERR("Pin `IRQ` configuration failed: %d", ret);
 		return ret;
 	}
 
-	gpio_init_callback(&get_data(dev)->cb, irq_handler, BIT(get_config(dev)->irq_spec.pin));
+	gpio_init_callback(&get_data(dev)->gpio_cb, irq_handler,
+	                   BIT(get_config(dev)->irq_spec.pin));
 
-	ret = gpio_add_callback(get_config(dev)->irq_spec.port, &get_data(dev)->cb);
-	if (ret < 0) {
+	ret = gpio_add_callback(get_config(dev)->irq_spec.port, &get_data(dev)->gpio_cb);
+	if (ret) {
 		LOG_ERR("Call `gpio_add_callback` failed: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&get_config(dev)->irq_spec, GPIO_INT_LEVEL_ACTIVE);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 		return ret;
 	}
 
 #define INIT_REGISTER(reg, val)                                                                    \
 	ret = write(dev, reg, val);                                                                \
-	if (ret < 0) {                                                                             \
+	if (ret) {                                                                                 \
 		LOG_WRN("Register initialization (" STRINGIFY(reg) ") failed: %d", ret);           \
 	}
 
@@ -457,19 +458,15 @@ static int ctr_z_init(const struct device *dev)
 	INIT_REGISTER(REG_LED4G, 0);
 	INIT_REGISTER(REG_LED4B, 0);
 
-	/*
-	 * Clear all pending interrupts
-	 */
+	/* Clear all pending interrupts */
 	INIT_REGISTER(REG_IRQ0, BIT_MASK(16));
 	INIT_REGISTER(REG_IRQ1, BIT_MASK(16));
 
 #undef INIT_REGISTER
 
-	/*
-	 * Apply register clearance, enable alert pin and enable auto-beep if configured
-	 */
+	/* Apply indicator reset, enable alert pin and enable auto-beep (if configured) */
 	ret = write(dev, REG_CONTROL, BIT(0) | (get_config(dev)->auto_beep ? BIT(1) : 0) | BIT(15));
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
 		return ret;
 	}
@@ -478,7 +475,7 @@ static int ctr_z_init(const struct device *dev)
 }
 
 static const struct ctr_z_driver_api ctr_z_driver_api = {
-	.set_callback = ctr_z_set_callback_,
+	.set_handler = ctr_z_set_handler_,
 	.apply = ctr_z_apply_,
 	.get_status = ctr_z_get_status_,
 	.get_vdc_mv = ctr_z_get_vdc_mv_,
@@ -503,7 +500,7 @@ static const struct ctr_z_driver_api ctr_z_driver_api = {
 	static struct ctr_z_data inst_##n##_data = {                                               \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &ctr_z_init, NULL, &inst_##n##_data, &inst_##n##_config,          \
+	DEVICE_DT_INST_DEFINE(n, ctr_z_init, NULL, &inst_##n##_data, &inst_##n##_config,           \
 	                      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &ctr_z_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_Z_INIT)

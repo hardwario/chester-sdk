@@ -546,10 +546,10 @@ static int init_chester_z(void)
 		return -ENODEV;
 	}
 
-	ret = ctr_z_set_callback(m_ctr_z_dev, ctr_z_event_handler, NULL);
+	ret = ctr_z_set_handler(m_ctr_z_dev, ctr_z_event_handler, NULL);
 
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_z_set_callback` failed: %d", ret);
+		LOG_ERR("Call `ctr_z_set_handler` failed: %d", ret);
 		return ret;
 	}
 
