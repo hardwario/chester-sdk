@@ -5,35 +5,38 @@
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 
+static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_batt));
+
 void main(void)
 {
 	int ret;
 
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_batt));
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		return;
+	if (!device_is_ready(m_dev)) {
+		LOG_ERR("Device `CTR_BATT` not ready");
+		k_oops();
 	}
 
-	while (1) {
+	for (;;) {
 		int rest_mv;
-		ret = ctr_batt_get_rest_voltage_mv(dev, &rest_mv,
-		                                   K_MSEC(CTR_BATT_REST_TIMEOUT_DEFAULT_MS));
-		if (ret < 0) {
-			LOG_WRN("Call `ctr_batt_get_rest_voltage` failed: %d", ret);
+		ret = ctr_batt_get_rest_voltage_mv(m_dev, &rest_mv,
+		                                   CTR_BATT_REST_TIMEOUT_DEFAULT_MS);
+		if (ret) {
+			LOG_ERR("Call `ctr_batt_get_rest_voltage` failed: %d", ret);
+			k_oops();
 		}
 
 		int load_mv;
-		ret = ctr_batt_get_load_voltage_mv(dev, &load_mv,
-		                                   K_MSEC(CTR_BATT_LOAD_TIMEOUT_DEFAULT_MS));
-		if (ret < 0) {
-			LOG_WRN("Call `ctr_batt_get_load_voltage` failed: %d", ret);
+		ret = ctr_batt_get_load_voltage_mv(m_dev, &load_mv,
+		                                   CTR_BATT_LOAD_TIMEOUT_DEFAULT_MS);
+		if (ret) {
+			LOG_ERR("Call `ctr_batt_get_load_voltage` failed: %d", ret);
+			k_oops();
 		}
 
 		int current_ma;
-		ctr_batt_get_load_current_ma(dev, &current_ma, load_mv);
+		ctr_batt_get_load_current_ma(m_dev, &current_ma, load_mv);
 
 		LOG_INF("Battery rest voltage = %u mV", rest_mv);
 		LOG_INF("Battery load voltage = %u mV", load_mv);

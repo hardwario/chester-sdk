@@ -1,9 +1,17 @@
+/* CHESTER includes */
+#include <drivers/ctr_batt.h>
+
+/* Zephyr includes */
 #include <devicetree.h>
 #include <drivers/adc.h>
-#include <drivers/ctr_batt.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>
 #include <zephyr.h>
+
+/* Standard includes */
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #define DT_DRV_COMPAT hardwario_ctr_batt
 
@@ -23,6 +31,7 @@ struct ctr_batt_data {
 	struct k_mutex lock;
 	struct adc_sequence adc_sequence;
 	int16_t adc_buf[1];
+	bool busy;
 };
 
 static inline const struct ctr_batt_config *get_config(const struct device *dev)
@@ -40,52 +49,47 @@ static inline int batt_measure_to_sys(const struct device *dev, int u)
 	return u * (get_config(dev)->r1 + get_config(dev)->r2) / get_config(dev)->r2;
 }
 
-static int ctr_batt_get_rest_voltage_mv_(const struct device *dev, int *rest_mv,
-                                         k_timeout_t timeout)
+static int ctr_batt_get_rest_voltage_mv_(const struct device *dev, int *rest_mv, int delay_ms)
 {
-	int ret;
+	int ret = -EINVAL;
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
+	if (get_data(dev)->busy) {
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -EBUSY;
+	}
+
 	if (!device_is_ready(get_config(dev)->test_spec.port)) {
 		LOG_ERR("Port `TEST` not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
+		goto error;
 	}
 
 	if (!device_is_ready(get_config(dev)->adc_dev)) {
 		LOG_ERR("Device `ADC` not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
+		goto error;
 	}
 
 	ret = gpio_pin_set_dt(&get_config(dev)->test_spec, 1);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
+		goto error;
 	}
 
-	ret = k_sleep(timeout);
-	if (ret) {
-		LOG_ERR("Waking too early: %d ms remaining", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -ECANCELED;
+	while ((delay_ms = k_msleep(delay_ms))) {
+		continue;
 	}
 
 	ret = adc_read(get_config(dev)->adc_dev, &get_data(dev)->adc_sequence);
 	if (ret) {
 		LOG_ERR("Call `adc_read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
+		goto error;
 	}
 
 	ret = gpio_pin_set_dt(&get_config(dev)->test_spec, 0);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-
-		return ret;
+		goto error;
 	}
 
 	k_mutex_unlock(&get_data(dev)->lock);
@@ -103,73 +107,74 @@ static int ctr_batt_get_rest_voltage_mv_(const struct device *dev, int *rest_mv,
 	*rest_mv = u;
 
 	return 0;
+
+error:
+	gpio_pin_set_dt(&get_config(dev)->test_spec, 0);
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return ret;
 }
 
-static int ctr_batt_get_load_voltage_mv_(const struct device *dev, int *load_mv,
-                                         k_timeout_t timeout)
+static int ctr_batt_get_load_voltage_mv_(const struct device *dev, int *load_mv, int delay_ms)
 {
-	int ret;
+	int ret = -EINVAL;
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
+	if (get_data(dev)->busy) {
+		LOG_ERR("Battery driver busy");
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -EBUSY;
+	}
+
 	if (!device_is_ready(get_config(dev)->load_spec.port)) {
 		LOG_ERR("Port `LOAD` not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
+		goto error;
 	}
 
 	if (!device_is_ready(get_config(dev)->test_spec.port)) {
 		LOG_ERR("Port `TEST` not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
+		goto error;
 	}
 
 	if (!device_is_ready(get_config(dev)->adc_dev)) {
 		LOG_ERR("Device `ADC` not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
+		goto error;
 	}
 
 	ret = gpio_pin_set_dt(&get_config(dev)->load_spec, 1);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
+		goto error;
 	}
 
 	ret = gpio_pin_set_dt(&get_config(dev)->test_spec, 1);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
+		goto error;
 	}
 
-	ret = k_sleep(timeout);
-	if (ret) {
-		LOG_ERR("Waking too early: %d ms remaining", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -ECANCELED;
+	while ((delay_ms = k_msleep(delay_ms))) {
+		continue;
 	}
 
 	ret = adc_read(get_config(dev)->adc_dev, &get_data(dev)->adc_sequence);
 	if (ret) {
 		LOG_ERR("Call `adc_read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
+		goto error;
 	}
 
 	ret = gpio_pin_set_dt(&get_config(dev)->test_spec, 0);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
+		goto error;
 	}
 
 	ret = gpio_pin_set_dt(&get_config(dev)->load_spec, 0);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
+		goto error;
 	}
 
 	k_mutex_unlock(&get_data(dev)->lock);
@@ -187,11 +192,59 @@ static int ctr_batt_get_load_voltage_mv_(const struct device *dev, int *load_mv,
 	*load_mv = u;
 
 	return 0;
+
+error:
+	gpio_pin_set_dt(&get_config(dev)->test_spec, 0);
+	gpio_pin_set_dt(&get_config(dev)->load_spec, 0);
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return ret;
 }
 
 static void ctr_batt_get_load_current_ma_(const struct device *dev, int *current_ma, int load_mv)
 {
 	*current_ma = load_mv / get_config(dev)->r_load;
+}
+
+static inline int ctr_batt_load_(const struct device *dev)
+{
+	int ret;
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	get_data(dev)->busy = true;
+
+	ret = gpio_pin_set_dt(&get_config(dev)->load_spec, 1);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return 0;
+}
+
+static inline int ctr_batt_unload_(const struct device *dev)
+{
+	int ret;
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	ret = gpio_pin_set_dt(&get_config(dev)->load_spec, 0);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	get_data(dev)->busy = false;
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return 0;
 }
 
 static int ctr_batt_init(const struct device *dev)
@@ -243,6 +296,8 @@ static const struct ctr_batt_driver_api ctr_batt_driver_api = {
 	.get_rest_voltage_mv = ctr_batt_get_rest_voltage_mv_,
 	.get_load_voltage_mv = ctr_batt_get_load_voltage_mv_,
 	.get_load_current_ma = ctr_batt_get_load_current_ma_,
+	.load = ctr_batt_load_,
+	.unload = ctr_batt_unload_,
 };
 
 #define CTR_BATT_INIT(n)                                                                           \
