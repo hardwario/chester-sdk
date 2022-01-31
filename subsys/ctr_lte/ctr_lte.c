@@ -116,6 +116,7 @@ static void *m_event_user_data;
 static atomic_t m_corr_id;
 
 static K_MUTEX_DEFINE(m_mut);
+static atomic_t m_attached;
 static uint64_t m_imei;
 static uint64_t m_imsi;
 
@@ -664,6 +665,8 @@ static int attach(int retries, k_timeout_t delay)
 
 	LOG_INF("Operation ATTACH started");
 
+	atomic_set(&m_attached, false);
+
 	while (retries-- > 0) {
 		if (m_setup) {
 			ret = setup(SETUP_RETRY_COUNT, SETUP_RETRY_DELAY);
@@ -982,6 +985,8 @@ static int process_req_attach(const struct cmd_msgq_item *item)
 		return ret;
 	}
 
+	atomic_set(&m_attached, true);
+
 	data.attach_ok.corr_id = item->corr_id;
 
 	if (m_event_cb != NULL) {
@@ -1047,6 +1052,8 @@ static void process_cmd_msgq(void)
 			if (m_state == STATE_ERROR) {
 				LOG_ERR("Error - flushing all control commands from queue");
 
+				atomic_set(&m_attached, false);
+
 				k_msgq_purge(&m_cmd_msgq);
 
 				if (m_event_cb != NULL) {
@@ -1069,6 +1076,8 @@ static void process_cmd_msgq(void)
 			if (m_state == STATE_ERROR) {
 				LOG_ERR("Error - flushing all control commands from queue");
 
+				atomic_set(&m_attached, false);
+
 				k_msgq_purge(&m_cmd_msgq);
 
 				if (m_event_cb != NULL) {
@@ -1090,6 +1099,8 @@ static void process_cmd_msgq(void)
 
 			if (m_state == STATE_ERROR) {
 				LOG_ERR("Error - flushing all control commands from queue");
+
+				atomic_set(&m_attached, false);
 
 				k_msgq_purge(&m_cmd_msgq);
 
@@ -1167,6 +1178,8 @@ static void process_send_msgq(void)
 
 	if (m_state == STATE_ERROR) {
 		LOG_ERR("Error - flushing all control commands from queue");
+
+		atomic_set(&m_attached, false);
 
 		k_msgq_purge(&m_cmd_msgq);
 
@@ -1472,6 +1485,13 @@ int ctr_lte_get_imsi(uint64_t *imsi)
 	return 0;
 }
 
+int ctr_lte_is_attached(bool *attached)
+{
+	*attached = atomic_get(&m_attached) ? true : false;
+
+	return 0;
+}
+
 int ctr_lte_start(int *corr_id)
 {
 	int ret;
@@ -1735,6 +1755,29 @@ static int cmd_imsi(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_state(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	bool attached;
+	ret = ctr_lte_is_attached(&attached);
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_is_attached` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "attached: %s", attached ? "yes" : "no");
+
+	return 0;
+}
+
 static int cmd_test_uart(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
@@ -1902,6 +1945,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_lte,
                                SHELL_CMD_ARG(attach, NULL, "Attach to network.", cmd_attach, 1, 0),
                                SHELL_CMD_ARG(imei, NULL, "Get modem IMEI.", cmd_imei, 1, 0),
                                SHELL_CMD_ARG(imsi, NULL, "Get SIM card IMSI.", cmd_imsi, 1, 0),
+                               SHELL_CMD_ARG(state, NULL, "Get LTE state.", cmd_state, 1, 0),
                                SHELL_CMD_ARG(test, &sub_lte_test, "Test commands.", print_help, 1,
                                              0),
                                SHELL_SUBCMD_SET_END);

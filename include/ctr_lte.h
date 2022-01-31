@@ -107,6 +107,7 @@ struct ctr_lte_send_opts {
 int ctr_lte_set_event_cb(ctr_lte_event_cb cb, void *user_data);
 int ctr_lte_get_imei(uint64_t *imei);
 int ctr_lte_get_imsi(uint64_t *imsi);
+int ctr_lte_is_attached(bool *attached);
 int ctr_lte_start(int *corr_id);
 int ctr_lte_attach(int *corr_id);
 int ctr_lte_detach(int *corr_id);
