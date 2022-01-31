@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(ctr_lrw, CONFIG_CTR_LRW_LOG_LEVEL);
 #define SEND_TIMEOUT K_SECONDS(120)
 #define SEND_RETRY_COUNT 3
 #define SEND_RETRY_DELAY K_SECONDS(30)
+#define REQ_INTRA_DELAY_MSEC 8000
 
 #define CMD_MSGQ_MAX_ITEMS 16
 #define SEND_MSGQ_MAX_ITEMS 16
@@ -143,6 +144,7 @@ K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4
 static ctr_lrw_event_cb m_callback;
 static void *m_param;
 static atomic_t m_corr_id;
+static int64_t m_last_req;
 
 static void talk_handler(enum ctr_lrw_talk_event event)
 {
@@ -753,6 +755,21 @@ static int process_req_send(const struct send_msgq_item *item)
 	return 0;
 }
 
+static void wait_intra_req_delay(void)
+{
+	int64_t delta = k_uptime_get() - m_last_req;
+
+	if (delta < REQ_INTRA_DELAY_MSEC) {
+		delta = REQ_INTRA_DELAY_MSEC - delta;
+
+		LOG_INF("Waiting %lld millisecond(s)", delta);
+
+		while ((delta = k_msleep(delta))) {
+			continue;
+		}
+	}
+}
+
 static void process_cmd_msgq(void)
 {
 	int ret;
@@ -766,8 +783,7 @@ static void process_cmd_msgq(void)
 		return;
 	}
 
-	/* Slow down processing (workaround modem BUSY state) */
-	k_sleep(K_SECONDS(3));
+	wait_intra_req_delay();
 
 	if (item.req == CMD_MSGQ_REQ_START) {
 		LOG_INF("Dequeued START command (correlation id: %d)", item.corr_id);
@@ -816,6 +832,8 @@ static void process_cmd_msgq(void)
 	} else {
 		LOG_ERR("Unknown message: %d", (int)item.req);
 	}
+
+	m_last_req = k_uptime_get();
 }
 
 static void process_send_msgq(void)
@@ -831,8 +849,7 @@ static void process_send_msgq(void)
 		return;
 	}
 
-	/* Slow down processing (workaround modem BUSY state) */
-	k_sleep(K_SECONDS(3));
+	wait_intra_req_delay();
 
 	LOG_INF("Dequeued SEND command (correlation id: %d)", item.corr_id);
 
@@ -849,6 +866,8 @@ static void process_send_msgq(void)
 			m_callback(CTR_LRW_EVENT_FAILURE, NULL, m_param);
 		}
 	}
+
+	m_last_req = k_uptime_get();
 }
 
 static void dispatcher_thread(void)
