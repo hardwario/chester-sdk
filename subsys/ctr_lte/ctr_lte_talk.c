@@ -674,6 +674,54 @@ int ctr_lte_talk_at_cgerep(int p1)
 	return 0;
 }
 
+static int at_cgsn_response_handler(int idx, int count, const char *s, void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p3);
+
+	char *buf = p1;
+	size_t *size = p2;
+
+	if (idx == 0 && count == 1) {
+		size_t len = strlen(s);
+
+		/* TODO Verify IMEI can be 15-16 digits long only */
+		if (len < 15 || len > 16) {
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)s[i])) {
+				return -EINVAL;
+			}
+		}
+
+		if (len >= *size) {
+			return -ENOBUFS;
+		}
+
+		strcpy(buf, s);
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_cgsn(char *buf, size_t size)
+{
+	int ret;
+
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_cgsn_response_handler, buf, &size, NULL,
+	                           "AT+CGSN");
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lte_talk_at_cmee(int p1)
 {
 	int ret;

@@ -32,6 +32,7 @@ int ctr_lte_talk_at_cimi(char *buf, size_t size);
 int ctr_lte_talk_at_cereg(int p1);
 int ctr_lte_talk_at_cfun(int p1);
 int ctr_lte_talk_at_cgerep(int p1);
+int ctr_lte_talk_at_cgsn(char *buf, size_t size);
 int ctr_lte_talk_at_cmee(int p1);
 int ctr_lte_talk_at_cnec(int p1);
 int ctr_lte_talk_at_coneval(struct ctr_lte_eval *eval);

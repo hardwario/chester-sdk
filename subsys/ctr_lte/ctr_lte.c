@@ -116,6 +116,7 @@ static void *m_event_user_data;
 static atomic_t m_corr_id;
 
 static K_MUTEX_DEFINE(m_mut);
+static uint64_t m_imei;
 static uint64_t m_imsi;
 
 static bool m_setup = true;
@@ -534,6 +535,21 @@ static int attach_once(void)
 		LOG_ERR("Call `k_poll` failed: %d", ret);
 		return ret;
 	}
+
+	char imei[32];
+
+	ret = ctr_lte_talk_at_cgsn(imei, sizeof(imei));
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cgsn` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("IMEI: %s", imei);
+
+	k_mutex_lock(&m_mut, K_FOREVER);
+	m_imei = strtoull(imei, NULL, 10);
+	k_mutex_unlock(&m_mut);
 
 	char imsi[32];
 
@@ -1416,6 +1432,30 @@ static int cmd_config_clksync(const struct shell *shell, size_t argc, char **arg
 	return -EINVAL;
 }
 
+int ctr_lte_set_event_cb(ctr_lte_event_cb cb, void *user_data)
+{
+	m_event_cb = cb;
+	m_event_user_data = user_data;
+
+	return 0;
+}
+
+int ctr_lte_get_imei(uint64_t *imei)
+{
+	k_mutex_lock(&m_mut, K_FOREVER);
+
+	if (m_imei == 0) {
+		k_mutex_unlock(&m_mut);
+		return -ENODATA;
+	}
+
+	*imei = m_imei;
+
+	k_mutex_unlock(&m_mut);
+
+	return 0;
+}
+
 int ctr_lte_get_imsi(uint64_t *imsi)
 {
 	k_mutex_lock(&m_mut, K_FOREVER);
@@ -1428,14 +1468,6 @@ int ctr_lte_get_imsi(uint64_t *imsi)
 	*imsi = m_imsi;
 
 	k_mutex_unlock(&m_mut);
-
-	return 0;
-}
-
-int ctr_lte_set_event_cb(ctr_lte_event_cb cb, void *user_data)
-{
-	m_event_cb = cb;
-	m_event_user_data = user_data;
 
 	return 0;
 }
@@ -1655,6 +1687,54 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_imei(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	uint64_t imei;
+	ret = ctr_lte_get_imei(&imei);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_get_imei` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "imei: %llu", imei);
+
+	return 0;
+}
+
+static int cmd_imsi(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	uint64_t imsi;
+	ret = ctr_lte_get_imsi(&imsi);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_get_imsi` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "imsi: %llu", imsi);
+
+	return 0;
+}
+
 static int cmd_test_uart(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
@@ -1820,6 +1900,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_lte,
                                              print_help, 1, 0),
                                SHELL_CMD_ARG(start, NULL, "Start interface.", cmd_start, 1, 0),
                                SHELL_CMD_ARG(attach, NULL, "Attach to network.", cmd_attach, 1, 0),
+                               SHELL_CMD_ARG(imei, NULL, "Get modem IMEI.", cmd_imei, 1, 0),
+                               SHELL_CMD_ARG(imsi, NULL, "Get SIM card IMSI.", cmd_imsi, 1, 0),
                                SHELL_CMD_ARG(test, &sub_lte_test, "Test commands.", print_help, 1,
                                              0),
                                SHELL_SUBCMD_SET_END);
