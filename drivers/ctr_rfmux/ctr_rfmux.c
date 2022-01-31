@@ -1,8 +1,14 @@
-#include <devicetree.h>
+/* CHESTER includes */
 #include <drivers/ctr_rfmux.h>
+
+/* Zephyr includes */
+#include <devicetree.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>
 #include <zephyr.h>
+
+/* Standard includes */
+#include <stddef.h>
 
 #define DT_DRV_COMPAT hardwario_ctr_rfmux
 
@@ -37,29 +43,31 @@ static int ctr_rfmux_set_interface_(const struct device *dev, enum ctr_rfmux_int
 	k_mutex_lock(&get_data(dev)->mut, K_FOREVER);
 
 	if (!device_is_ready(get_config(dev)->rf_lte_spec.port)) {
-		LOG_ERR("Port RF_LTE not ready");
+		LOG_ERR("Port `RF_LTE` not ready");
 		k_mutex_unlock(&get_data(dev)->mut);
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(get_config(dev)->rf_lrw_spec.port)) {
-		LOG_ERR("Port RF_LRW not ready");
+		LOG_ERR("Port `RF_LRW` not ready");
 		k_mutex_unlock(&get_data(dev)->mut);
 		return -EINVAL;
 	}
 
 	switch (interface) {
 	case CTR_RFMUX_INTERFACE_NONE:
+		LOG_INF("Setting interface: NONE");
+
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_lte_spec, 0);
 		if (ret) {
-			LOG_ERR("Pin RF_LTE setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_LTE): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_lrw_spec, 0);
 		if (ret) {
-			LOG_ERR("Pin RF_LRW setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_LRW): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
@@ -67,16 +75,18 @@ static int ctr_rfmux_set_interface_(const struct device *dev, enum ctr_rfmux_int
 		break;
 
 	case CTR_RFMUX_INTERFACE_LTE:
+		LOG_INF("Setting interface: LTE");
+
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_lrw_spec, 0);
 		if (ret) {
-			LOG_ERR("Pin RF_LRW setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_LRW): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_lte_spec, 1);
 		if (ret) {
-			LOG_ERR("Pin RF_LTE setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_LTE): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
@@ -84,16 +94,18 @@ static int ctr_rfmux_set_interface_(const struct device *dev, enum ctr_rfmux_int
 		break;
 
 	case CTR_RFMUX_INTERFACE_LRW:
+		LOG_INF("Setting interface: LRW");
+
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_lte_spec, 0);
 		if (ret) {
-			LOG_ERR("Pin RF_LTE setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_LTE): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_lrw_spec, 1);
 		if (ret) {
-			LOG_ERR("Pin RF_LRW setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_LRW): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
@@ -101,6 +113,7 @@ static int ctr_rfmux_set_interface_(const struct device *dev, enum ctr_rfmux_int
 		break;
 
 	default:
+		LOG_ERR("Unknown interface: %d", interface);
 		k_mutex_unlock(&get_data(dev)->mut);
 		return -EINVAL;
 	}
@@ -116,29 +129,31 @@ static int ctr_rfmux_set_antenna_(const struct device *dev, enum ctr_rfmux_anten
 	k_mutex_lock(&get_data(dev)->mut, K_FOREVER);
 
 	if (!device_is_ready(get_config(dev)->rf_int_spec.port)) {
-		LOG_ERR("Port RF_INT not ready");
+		LOG_ERR("Port `RF_INT` not ready");
 		k_mutex_unlock(&get_data(dev)->mut);
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(get_config(dev)->rf_ext_spec.port)) {
-		LOG_ERR("Port RF_EXT not ready");
+		LOG_ERR("Port `RF_EXT` not ready");
 		k_mutex_unlock(&get_data(dev)->mut);
 		return -EINVAL;
 	}
 
 	switch (antenna) {
 	case CTR_RFMUX_ANTENNA_NONE:
+		LOG_INF("Setting antenna: NONE");
+
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_int_spec, 0);
 		if (ret) {
-			LOG_ERR("Pin RF_INT setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_INT): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_ext_spec, 0);
 		if (ret) {
-			LOG_ERR("Pin RF_EXT setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_EXT): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
@@ -146,16 +161,18 @@ static int ctr_rfmux_set_antenna_(const struct device *dev, enum ctr_rfmux_anten
 		break;
 
 	case CTR_RFMUX_ANTENNA_INT:
+		LOG_INF("Setting antenna: INT");
+
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_ext_spec, 0);
 		if (ret) {
-			LOG_ERR("Pin RF_EXT setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_EXT): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_int_spec, 1);
 		if (ret) {
-			LOG_ERR("Pin RF_INT setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_INT): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
@@ -163,16 +180,18 @@ static int ctr_rfmux_set_antenna_(const struct device *dev, enum ctr_rfmux_anten
 		break;
 
 	case CTR_RFMUX_ANTENNA_EXT:
+		LOG_INF("Setting antenna: EXT");
+
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_int_spec, 0);
 		if (ret) {
-			LOG_ERR("Pin RF_INT setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_INT): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&get_config(dev)->rf_ext_spec, 1);
 		if (ret) {
-			LOG_ERR("Pin RF_EXT setting failed: %d", ret);
+			LOG_ERR("Call `gpio_pin_set_dt` failed (RF_EXT): %d", ret);
 			k_mutex_unlock(&get_data(dev)->mut);
 			return ret;
 		}
@@ -180,6 +199,7 @@ static int ctr_rfmux_set_antenna_(const struct device *dev, enum ctr_rfmux_anten
 		break;
 
 	default:
+		LOG_ERR("Unknown antenna: %d", antenna);
 		k_mutex_unlock(&get_data(dev)->mut);
 		return -EINVAL;
 	}
@@ -195,46 +215,46 @@ static int ctr_rfmux_init(const struct device *dev)
 	k_mutex_init(&get_data(dev)->mut);
 
 	if (!device_is_ready(get_config(dev)->rf_lte_spec.port)) {
-		LOG_ERR("Port RF_LTE not ready");
+		LOG_ERR("Port `RF_LTE` not ready");
+		return -EINVAL;
+	}
+
+	if (!device_is_ready(get_config(dev)->rf_lrw_spec.port)) {
+		LOG_ERR("Port `RF_LRW` not ready");
+		return -EINVAL;
+	}
+
+	if (!device_is_ready(get_config(dev)->rf_int_spec.port)) {
+		LOG_ERR("Port `RF_INT` not ready");
+		return -EINVAL;
+	}
+
+	if (!device_is_ready(get_config(dev)->rf_ext_spec.port)) {
+		LOG_ERR("Port `RF_EXT` not ready");
 		return -EINVAL;
 	}
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->rf_lte_spec, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
-		LOG_ERR("Pin RF_LTE configuration failed: %d", ret);
+		LOG_ERR("Call `gpio_pin_configure_dt` failed (RF_LTE): %d", ret);
 		return ret;
-	}
-
-	if (!device_is_ready(get_config(dev)->rf_lrw_spec.port)) {
-		LOG_ERR("Port RF_LRW not ready");
-		return -EINVAL;
 	}
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->rf_lrw_spec, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
-		LOG_ERR("Pin RF_LRW configuration failed: %d", ret);
+		LOG_ERR("Call `gpio_pin_configure_dt` failed (RF_LRW): %d", ret);
 		return ret;
-	}
-
-	if (!device_is_ready(get_config(dev)->rf_int_spec.port)) {
-		LOG_ERR("Port RF_INT not ready");
-		return -EINVAL;
 	}
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->rf_int_spec, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
-		LOG_ERR("Pin RF_INT configuration failed: %d", ret);
+		LOG_ERR("Call `gpio_pin_configure_dt` failed (RF_INT): %d", ret);
 		return ret;
-	}
-
-	if (!device_is_ready(get_config(dev)->rf_ext_spec.port)) {
-		LOG_ERR("Port RF_EXT not ready");
-		return -EINVAL;
 	}
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->rf_ext_spec, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
-		LOG_ERR("Pin RF_EXT configuration failed: %d", ret);
+		LOG_ERR("Call `gpio_pin_configure_dt` failed (RF_EXT): %d", ret);
 		return ret;
 	}
 
@@ -258,6 +278,6 @@ static const struct ctr_rfmux_driver_api ctr_rfmux_driver_api = {
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ctr_rfmux_init, NULL, &inst_##n##_data, &inst_##n##_config,       \
 	                      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                     \
-			      &ctr_rfmux_driver_api);
+	                      &ctr_rfmux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_RFMUX_INIT)
