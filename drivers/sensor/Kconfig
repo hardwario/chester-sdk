@@ -1,0 +1,11 @@
+menu "Sensor Drivers"
+
+if SENSOR
+
+comment "Device Drivers"
+
+rsource "ds18b20/Kconfig"
+
+endif # SENSOR
+
+endmenu
