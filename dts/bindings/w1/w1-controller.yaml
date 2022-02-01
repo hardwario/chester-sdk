@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for W1 controllers
+
+include: base.yaml
+
+bus: w1
+
+properties:
+    label:
+      required: true

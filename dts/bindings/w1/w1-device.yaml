@@ -1,0 +1,26 @@
+# Copyright (c) 2021, Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for W1 peripheral devices
+
+include: base.yaml
+
+on-bus: w1
+
+properties:
+    reg:
+        required: false
+        description: |
+          8-bit 1-Wire family code, which is also part of the 64 bit ROM ID.
+    inverted-tx:
+      type: boolean
+      required: false
+      description: |
+          The gpio transmit logic is inverted.
+
+          Instead of pulling the line low during the dominant state, the output
+          is pulled up in these dominat phases.
+          This property migh be enabled in case a FET is used to drive the bus.
+
+    label:
+      required: true
