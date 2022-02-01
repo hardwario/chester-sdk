@@ -1,0 +1,18 @@
+description: DS4284 Single-Channel 1-Wire Master
+
+compatible: "maxim,ds2484"
+
+include: [i2c-device.yaml, w1-controller.yaml]
+
+properties:
+  slpz-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Enable sleep mode (active low)
+
+  active-pullup:
+    type: boolean
+    description: |
+      Controls whether an active pullup or a passive pullup is used to drive a
+      1-Wire line from low to high.

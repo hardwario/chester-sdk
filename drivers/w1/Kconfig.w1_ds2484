@@ -1,0 +1,3 @@
+config W1_DS2484
+	bool "DS2484 Single-Channel 1-Wire Master Driver"
+	depends on I2C
