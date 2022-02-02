@@ -24,9 +24,6 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 const struct device *m_wdt_dev = DEVICE_DT_GET(DT_NODELABEL(wdt0));
 
-#define MEASUREMENT_INTERVAL_MSEC (60 * 1000)
-#define REPORT_INTERVAL_MSEC (15 * 60 * 1000)
-
 #define FULLSCALE_MV 625.0
 
 struct sample {
@@ -171,8 +168,8 @@ static int send(void)
 {
 	int ret;
 
-	int64_t jitter = (int32_t)sys_rand32_get() % (REPORT_INTERVAL_MSEC / 5);
-	int64_t duration = REPORT_INTERVAL_MSEC + jitter;
+	int64_t jitter = (int32_t)sys_rand32_get() % (g_app_config.report_interval * 1000 / 5);
+	int64_t duration = g_app_config.report_interval * 1000 + jitter;
 
 	LOG_INF("Scheduling next report in %lld second(s)", duration / 1000);
 
@@ -222,7 +219,7 @@ static int measure(void)
 {
 	int ret;
 
-	k_timer_start(&m_measure_timer, Z_TIMEOUT_MS(MEASUREMENT_INTERVAL_MSEC), K_FOREVER);
+	k_timer_start(&m_measure_timer, Z_TIMEOUT_MS(g_app_config.scan_interval * 1000), K_FOREVER);
 
 	if (m_data.sample_count >= ARRAY_SIZE(m_data.samples)) {
 		LOG_WRN("Buffer sample full");
@@ -237,13 +234,15 @@ static int measure(void)
 		return ret;
 	}
 
-	ret = ctr_gpio_write(CTR_GPIO_CHANNEL_B3, 1);
-	if (ret) {
-		LOG_ERR("Call `ctr_gpio_write` failed: %d", ret);
-		return ret;
+	if (!g_app_config.sensor_test) {
+		ret = ctr_gpio_write(CTR_GPIO_CHANNEL_B3, 1);
+		if (ret) {
+			LOG_ERR("Call `ctr_gpio_write` failed: %d", ret);
+			return ret;
+		}
 	}
 
-	k_sleep(K_MSEC(100));
+	k_sleep(K_MSEC(1000));
 
 	double avg;
 	double rms;
@@ -254,14 +253,16 @@ static int measure(void)
 		return ret;
 	}
 
-	ret = ctr_gpio_write(CTR_GPIO_CHANNEL_B3, 0);
-	if (ret) {
-		LOG_ERR("Call `ctr_gpio_write` failed: %d", ret);
-		return ret;
+	if (!g_app_config.sensor_test) {
+		ret = ctr_gpio_write(CTR_GPIO_CHANNEL_B3, 0);
+		if (ret) {
+			LOG_ERR("Call `ctr_gpio_write` failed: %d", ret);
+			return ret;
+		}
 	}
 
-	int current_avg = avg * (1000 * g_app_config.range / FULLSCALE_MV);
-	int current_rms = rms * (1000 * g_app_config.range / FULLSCALE_MV);
+	int current_avg = avg * (1000 * g_app_config.current_range / FULLSCALE_MV);
+	int current_rms = rms * (1000 * g_app_config.current_range / FULLSCALE_MV);
 
 	LOG_INF("Current AVG: %d mA RMS: %d mA", current_avg, current_rms);
 
@@ -371,6 +372,14 @@ void main(void)
 		k_oops();
 	}
 
+	if (g_app_config.sensor_test) {
+		ret = ctr_gpio_write(CTR_GPIO_CHANNEL_B3, 1);
+		if (ret) {
+			LOG_ERR("Call `ctr_gpio_write` failed: %d", ret);
+			k_oops();
+		}
+	}
+
 	for (;;) {
 		feed_wdt();
 
@@ -395,7 +404,7 @@ void main(void)
 
 	k_sleep(K_SECONDS(2));
 
-	k_timer_start(&m_measure_timer, Z_TIMEOUT_MS(MEASUREMENT_INTERVAL_MSEC), K_FOREVER);
+	k_timer_start(&m_measure_timer, Z_TIMEOUT_MS(g_app_config.scan_interval * 1000), K_FOREVER);
 
 	for (;;) {
 		LOG_INF("Alive");

@@ -25,11 +25,26 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_app_config,
 
-	SHELL_CMD_ARG(show, NULL, "List current configuration.",
+	SHELL_CMD_ARG(show, NULL,
+	              "List current configuration.",
 	              app_config_cmd_config_show, 1, 0),
 
-	SHELL_CMD_ARG(range, NULL, "Get/Set sensor range in amps (format: <1-10000>).",
-	              app_config_cmd_config_range, 1, 1),
+	SHELL_CMD_ARG(current-range, NULL,
+	              "Get/Set sensor current range in amps (format: <1-10000>).",
+	              app_config_cmd_config_current_range, 1, 1),
+
+	SHELL_CMD_ARG(report-interval, NULL,
+	              "Get/Set report interval in seconds (format: <30-86400>).",
+	              app_config_cmd_config_report_interval, 1, 1),
+
+	SHELL_CMD_ARG(scan-interval, NULL,
+	              "Get/Set scan interval in seconds (format: <5-3600>).",
+	              app_config_cmd_config_scan_interval, 1, 1),
+
+	SHELL_CMD_ARG(sensor-test, NULL,
+	              "Get/Set sensor test mode (format: <true|false>).",
+	              app_config_cmd_config_sensor_test, 1, 1),
+
 
 	SHELL_SUBCMD_SET_END
 );
