@@ -15,8 +15,7 @@ void main(void)
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
 	ret = ctr_therm_init();
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
 		k_oops();
 	}
@@ -29,14 +28,12 @@ void main(void)
 		ctr_led_set(CTR_LED_CHANNEL_R, false);
 
 		float temperature;
-
 		ret = ctr_therm_read(&temperature);
-
-		if (ret < 0) {
+		if (ret) {
 			LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
 
 		} else {
-			LOG_INF("Temperature: %.1f C", temperature);
+			LOG_INF("Temperature: %.2f C", temperature);
 		}
 
 		k_sleep(K_SECONDS(5));
