@@ -1,5 +1,6 @@
 config CTR_HYGRO
 	bool "CTR_HYGRO"
+	select I2C
 	select SENSOR
 	select SHT3XD
 

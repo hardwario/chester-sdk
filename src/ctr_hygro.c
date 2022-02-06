@@ -1,3 +1,4 @@
+/* CHESTER includes */
 #include <ctr_hygro.h>
 
 /* Zephyr includes */
@@ -7,6 +8,9 @@
 #include <logging/log.h>
 #include <shell/shell.h>
 #include <zephyr.h>
+
+/* Standard includes */
+#include <stddef.h>
 
 LOG_MODULE_REGISTER(ctr_hygro, LOG_LEVEL_DBG);
 
@@ -21,51 +25,48 @@ int ctr_hygro_read(float *temperature, float *humidity)
 	k_mutex_lock(&m_mut, K_FOREVER);
 
 	if (!device_is_ready(m_dev)) {
-		LOG_ERR("Device not ready");
+		LOG_ERR("Device `SHT30_EXT` not ready");
 		k_mutex_unlock(&m_mut);
-		return -ENODEV;
+		return -EINVAL;
 	}
 
 	ret = sensor_sample_fetch(m_dev);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `sensor_sample_fetch` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
 	}
 
-	struct sensor_value val;
-
-	ret = sensor_channel_get(m_dev, SENSOR_CHAN_AMBIENT_TEMP, &val);
-
-	if (ret < 0) {
+	struct sensor_value val_temperature;
+	ret = sensor_channel_get(m_dev, SENSOR_CHAN_AMBIENT_TEMP, &val_temperature);
+	if (ret) {
 		LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
 	}
 
-	float tmp_temperature = sensor_value_to_double(&val);
+	float temperature_ = sensor_value_to_double(&val_temperature);
 
-	LOG_DBG("Temperature: %.2f C", tmp_temperature);
+	LOG_DBG("Temperature: %.2f C", temperature_);
 
 	if (temperature != NULL) {
-		*temperature = tmp_temperature;
+		*temperature = temperature_;
 	}
 
-	ret = sensor_channel_get(m_dev, SENSOR_CHAN_HUMIDITY, &val);
-
-	if (ret < 0) {
+	struct sensor_value val_humidity;
+	ret = sensor_channel_get(m_dev, SENSOR_CHAN_HUMIDITY, &val_humidity);
+	if (ret) {
 		LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
 	}
 
-	float tmp_humidity = sensor_value_to_double(&val);
+	float humidity_ = sensor_value_to_double(&val_humidity);
 
-	LOG_DBG("Humidity: %.1f %%", tmp_humidity);
+	LOG_DBG("Humidity: %.1f %%", humidity_);
 
 	if (humidity != NULL) {
-		*humidity = tmp_humidity;
+		*humidity = humidity_;
 	}
 
 	k_mutex_unlock(&m_mut);
@@ -78,10 +79,8 @@ static int cmd_hygro_read(const struct shell *shell, size_t argc, char **argv)
 
 	float temperature;
 	float humidity;
-
 	ret = ctr_hygro_read(&temperature, &humidity);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
@@ -106,8 +105,18 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_hygro,
-                               SHELL_CMD_ARG(read, NULL, "Read sensor data.", cmd_hygro_read, 1, 0),
-                               SHELL_SUBCMD_SET_END);
+/* clang-format off */
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_hygro,
+
+	SHELL_CMD_ARG(read, NULL,
+	              "Read sensor data.",
+		      cmd_hygro_read, 1, 0),
+
+	SHELL_SUBCMD_SET_END
+);
 
 SHELL_CMD_REGISTER(hygro, &sub_hygro, "Hygrometer commands.", print_help);
+
+/* clang-format on */
