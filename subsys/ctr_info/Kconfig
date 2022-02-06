@@ -8,6 +8,10 @@ config CTR_INFO_SHELL
 	bool "CTR_INFO_SHELL"
 	default y
 
+config CTR_INFO_INIT_PRIORITY
+	int "Initialization priority"
+	default 0
+
 module = CTR_INFO
 module-str = CHESTER Firmware Information Subsystem
 source "subsys/logging/Kconfig.template.log_config"

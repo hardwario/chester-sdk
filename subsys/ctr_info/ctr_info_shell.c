@@ -1,27 +1,233 @@
+/* CHESTER includes */
 #include <ctr_info.h>
 
+/* Zephyr includes */
+#include <logging/log.h>
 #include <shell/shell.h>
 #include <zephyr.h>
 
-static int cmd_sn(const struct shell *shell, size_t argc, char **argv)
+/* Standard includes */
+#include <stddef.h>
+#include <stdint.h>
+
+LOG_MODULE_REGISTER(ctr_info_shell, CONFIG_CTR_INFO_LOG_LEVEL);
+
+static int cmd_vendor_name(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	uint32_t sn;
-
-	ret = ctr_info_get_serial_number(&sn);
-	if (ret < 0) {
-		shell_error(shell, "failed to read serial number: %d", ret);
+	char *vendor_name;
+	ret = ctr_info_get_vendor_name(&vendor_name);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_vendor_name` failed: %d", ret);
+		shell_error(shell, "command failed");
 		return ret;
 	}
 
-	shell_print(shell, "serial number: %u", sn);
+	shell_print(shell, "vendor name: %s", vendor_name);
 
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_info,
-                               SHELL_CMD_ARG(sn, NULL, "Get serial number", cmd_sn, 0, 0),
-                               SHELL_SUBCMD_SET_END);
+static int cmd_product_name(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
 
-SHELL_CMD_REGISTER(info, &sub_info, "Info commands.", NULL);
+	char *product_name;
+	ret = ctr_info_get_product_name(&product_name);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_product_name` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "product name: %s", product_name);
+
+	return 0;
+}
+
+static int cmd_hw_variant(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	char *hw_variant;
+	ret = ctr_info_get_hw_variant(&hw_variant);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_hw_variant` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "hardware variant: %s", hw_variant);
+
+	return 0;
+}
+
+static int cmd_hw_revision(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	char *hw_revision;
+	ret = ctr_info_get_hw_revision(&hw_revision);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_hw_revision` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "hardware revision: %s", hw_revision);
+
+	return 0;
+}
+
+static int cmd_fw_version(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	char *fw_version;
+	ret = ctr_info_get_fw_version(&fw_version);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_fw_version` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "firmware version: %s", fw_version);
+
+	return 0;
+}
+
+static int cmd_serial_number(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	char *serial_number;
+	ret = ctr_info_get_serial_number(&serial_number);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_serial_number` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "serial number: %s", serial_number);
+
+	return 0;
+}
+
+static int cmd_claim_token(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	char *claim_token;
+	ret = ctr_info_get_claim_token(&claim_token);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_claim_token` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "claim token: %s", claim_token);
+
+	return 0;
+}
+
+static int cmd_ble_devaddr(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	char *ble_devaddr;
+	ret = ctr_info_get_ble_devaddr(&ble_devaddr);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_ble_devaddr` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "ble devaddr: %s", ble_devaddr);
+
+	return 0;
+}
+
+static int cmd_ble_passkey(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	char *ble_passkey;
+	ret = ctr_info_get_ble_passkey(&ble_passkey);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_ble_passkey` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "ble passkey: %s", ble_passkey);
+
+	return 0;
+}
+
+static int cmd_show(const struct shell *shell, size_t argc, char **argv)
+{
+	cmd_vendor_name(shell, argc, argv);
+	cmd_product_name(shell, argc, argv);
+	cmd_hw_variant(shell, argc, argv);
+	cmd_hw_revision(shell, argc, argv);
+	cmd_fw_version(shell, argc, argv);
+	cmd_serial_number(shell, argc, argv);
+	cmd_claim_token(shell, argc, argv);
+	cmd_ble_devaddr(shell, argc, argv);
+	cmd_ble_passkey(shell, argc, argv);
+
+	return 0;
+}
+
+/* clang-format off */
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_info,
+
+	SHELL_CMD_ARG(show, NULL,
+	              "Get all information at once.",
+	              cmd_show, 1, 0),
+
+	SHELL_CMD_ARG(vendor-name, NULL,
+	              "Get vendor name.",
+	              cmd_vendor_name, 1, 0),
+
+	SHELL_CMD_ARG(product-name, NULL,
+	              "Get product name.",
+	              cmd_product_name, 1, 0),
+
+	SHELL_CMD_ARG(hw-variant, NULL,
+	              "Get hardware variant.",
+	              cmd_hw_variant, 1, 0),
+
+	SHELL_CMD_ARG(hw-revision, NULL,
+	              "Get hardware revision.",
+	              cmd_hw_revision, 1, 0),
+
+	SHELL_CMD_ARG(fw-version, NULL,
+	              "Get firmware version.",
+	              cmd_fw_version, 1, 0),
+
+	SHELL_CMD_ARG(serial-number, NULL,
+	              "Get serial number.",
+	              cmd_serial_number, 1, 0),
+
+	SHELL_CMD_ARG(claim-token, NULL,
+	              "Get claim token.",
+	              cmd_claim_token, 1, 0),
+
+	SHELL_CMD_ARG(ble-devaddr, NULL,
+	              "Get BLE device address.",
+	              cmd_ble_devaddr, 1, 0),
+
+	SHELL_CMD_ARG(ble-passkey, NULL,
+	              "Get BLE passkey.",
+	              cmd_ble_passkey, 1, 0),
+
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_CMD_REGISTER(info, &sub_info, "Device information commands.", NULL);
+
+/* clang-format on */
