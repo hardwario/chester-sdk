@@ -104,6 +104,12 @@ struct ctr_lte_send_opts {
 		.ttl = 0, .addr = { 192, 168, 168, 1 }, .port = 10000,                             \
 	}
 
+#define CTR_LTE_SEND_OPTS_DEFAULTS_PUBLIC_IP                                                       \
+	{                                                                                          \
+		.ttl = 0, .addr = { 165, 227, 146, 193 }, .port = 10000,                           \
+	}
+
+int ctr_lte_get_imsi(uint64_t *imsi);
 int ctr_lte_set_event_cb(ctr_lte_event_cb cb, void *user_data);
 int ctr_lte_get_imei(uint64_t *imei);
 int ctr_lte_get_imsi(uint64_t *imsi);

@@ -122,19 +122,18 @@ static int send(void)
 {
 	int ret;
 
-	uint64_t imsi;
+	CTR_BUF_DEFINE(buf, 128);
 
+	uint64_t imsi;
 	ret = ctr_lte_get_imsi(&imsi);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lte_get_imsi` failed: %d", ret);
 		return -EBUSY;
 	}
 
-	static uint32_t counter;
-
-	CTR_BUF_DEFINE(buf, 128);
-
 	ctr_buf_append_u64(&buf, imsi);
+
+	static uint32_t counter;
 	ctr_buf_append_u32(&buf, counter++);
 
 	k_mutex_lock(&m_lte_eval_mut, K_FOREVER);
@@ -161,7 +160,11 @@ static int send(void)
 		return ret;
 	}
 
+#if 1
 	struct ctr_lte_send_opts opts = CTR_LTE_SEND_OPTS_DEFAULTS;
+#else
+	struct ctr_lte_send_opts opts = CTR_LTE_SEND_OPTS_DEFAULTS_PUBLIC_IP;
+#endif
 
 	ret = ctr_lte_send(&opts, ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), NULL);
 	if (ret) {
