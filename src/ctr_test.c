@@ -6,6 +6,9 @@
 #include <shell/shell.h>
 #include <zephyr.h>
 
+/* Standard includes */
+#include <stddef.h>
+
 LOG_MODULE_REGISTER(ctr_test, LOG_LEVEL_DBG);
 
 static atomic_t m_is_blocked;
@@ -28,12 +31,12 @@ static int cmd_test(const struct shell *shell, size_t argc, char **argv)
 	k_poll_signal_check(&m_start_sig, &signaled, &result);
 
 	if (signaled != 0) {
-		shell_warn(shell, "Test mode is already active");
+		shell_warn(shell, "test mode already active");
 		return -ENOEXEC;
 	}
 
 	if (atomic_get(&m_is_blocked)) {
-		shell_error(shell, "Test mode activation is blocked");
+		shell_error(shell, "test mode activation blocked");
 		return -EBUSY;
 	}
 
@@ -61,14 +64,12 @@ static int init(const struct device *dev)
 	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), K_MSEC(5000));
-
 	if (ret == -EAGAIN) {
 		LOG_INF("Test mode entry timed out");
 		atomic_set(&m_is_blocked, true);
 		return 0;
-	}
 
-	if (ret < 0) {
+	} else if (ret) {
 		LOG_ERR("Call `k_poll` failed: %d", ret);
 		return ret;
 	}

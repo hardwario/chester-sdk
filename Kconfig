@@ -6,13 +6,7 @@ if CTR_SDK
 config CTR_CHESTER_X3
 	bool "CTR_CHESTER_X3"
 
-config CTR_TEST
-	bool "CTR_TEST"
-
 endif # CTR_SDK
-
-# #############################################################################
-# CTR_SDK
 
 config ASSERT
 	default y if CTR_SDK
@@ -95,19 +89,6 @@ config UART_LINE_CTRL # TODO We should not need to enable this
 config USE_SEGGER_RTT
 	default y if CTR_SDK
 
-# #############################################################################
-# CTR_TEST
-
-if CTR_TEST
-
-config CTR_TEST_INIT_PRIORITY
-	int "CTR_TEST_INIT_PRIORITY"
-	default 99
-
-endif # CTR_TEST
-
-# rsource "Kconfig.test"
-
 rsource "Kconfig.accel"
 rsource "Kconfig.bsp"
 rsource "Kconfig.button"
@@ -118,6 +99,7 @@ rsource "Kconfig.led"
 rsource "Kconfig.log"
 rsource "Kconfig.rtc"
 rsource "Kconfig.shell"
+rsource "Kconfig.test"
 rsource "Kconfig.therm"
 
 rsource "drivers/Kconfig"
