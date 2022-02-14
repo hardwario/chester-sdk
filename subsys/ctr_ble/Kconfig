@@ -2,6 +2,8 @@ config CTR_BLE
 	bool "CTR_BLE"
 	select BOOTLOADER_MCUBOOT
 	select BT
+	select BT_CTLR
+	select BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 	select BT_DEVICE_NAME_DYNAMIC
 	select BT_NUS
 	select BT_PERIPHERAL
@@ -20,20 +22,78 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endif # CTR_BLE
 
+config BT_BUF_ACL_RX_SIZE
+	default 251 if CTR_BLE
+
+config BT_BUF_ACL_TX_COUNT
+	default 10 if CTR_BLE
+
+config BT_BUF_ACL_TX_SIZE
+	default 251 if CTR_BLE
+
+config BT_BUF_CMD_TX_SIZE
+	default 255 if CTR_BLE
+
+config BT_BUF_EVT_DISCARDABLE_SIZE
+	default 255 if CTR_BLE
+
+config BT_BUF_EVT_RX_SIZE
+	default 255 if CTR_BLE
+
+config BT_CONN_TX_MAX
+	default 10 if CTR_BLE
+
+config BT_CTLR_DATA_LENGTH_MAX
+	default 251 if CTR_BLE
+
+config BT_CTLR_RX_BUFFERS
+	default 10 if CTR_BLE
+
+choice BT_CTLR_TX_PWR
+	default BT_CTLR_TX_PWR_PLUS_8 if CTR_BLE
+endchoice
+
 config BT_DEVICE_NAME
 	default "CHESTER" if CTR_BLE
 
-config BT_L2CAP_TX_MTU
-	default 252 if CTR_BLE
+config BT_HCI_ECC_STACK_SIZE
+	default 2048 if CTR_BLE
 
-config BT_BUF_ACL_RX_SIZE
-	default 256 if CTR_BLE
+config BT_HCI_TX_STACK_SIZE
+	default 2048 if CTR_BLE
+
+config BT_L2CAP_TX_MTU
+	default 498 if CTR_BLE
+
+config BT_L2CAP_TX_BUF_COUNT
+	default 10 if CTR_BLE
+
+config BT_MAX_CONN
+	default 4 if CTR_BLE
+
+config BT_MAX_PAIRED
+	default 4 if CTR_BLE
+
+config BT_PERIPHERAL_PREF_MAX_INT
+	default 6 if CTR_BLE
+
+config BT_PERIPHERAL_PREF_MIN_INT
+	default 6 if CTR_BLE
+
+config BT_PERIPHERAL_PREF_TIMEOUT
+	default 400 if CTR_BLE
+
+config BT_RX_STACK_SIZE
+	default 4096 if CTR_BLE
 
 config MCUMGR_SMP_BT_AUTHEN
 	default n if MCUMGR_SMP_BT
 
+config SDC_RX_STACK_SIZE
+	default 2048 if CTR_BLE
+
 config SHELL_BT_NUS_RX_RING_BUFFER_SIZE
-	default 256 if SHELL_BT_NUS
+	default 1024 if SHELL_BT_NUS
 
 config SHELL_BT_NUS_TX_RING_BUFFER_SIZE
-	default 256 if SHELL_BT_NUS
+	default 1024 if SHELL_BT_NUS
