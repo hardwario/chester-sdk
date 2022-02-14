@@ -1,6 +1,5 @@
 menuconfig CTR_SDK
 	bool "CTR_SDK"
-	select CTR_SHELL
 
 if CTR_SDK
 
