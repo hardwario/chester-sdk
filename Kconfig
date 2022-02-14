@@ -24,10 +24,7 @@ config DEBUG
 	default y if CTR_SDK
 
 config HEAP_MEM_POOL_SIZE
-	default 2048 if CTR_SDK
-
-config KERNEL_SHELL
-	default y if CTR_SDK
+	default 8192 if CTR_SDK
 
 config MAIN_STACK_SIZE
 	default 4096 if CTR_SDK
@@ -66,7 +63,7 @@ config SERIAL
 	default y if CTR_SDK
 
 config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 3072 if CTR_SDK
+	default 4096 if CTR_SDK
 
 config UART_0_INTERRUPT_DRIVEN
 	default n if CTR_SDK
