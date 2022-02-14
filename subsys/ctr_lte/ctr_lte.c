@@ -477,6 +477,7 @@ static int attach_once(void)
 	k_poll_signal_reset(&m_attach_sig);
 
 	/* Enabled bands: B08, B20, B28 */
+#if 1
 	const char *bands =
 	        /* B88 - B81 */
 	        "00000000"
@@ -493,9 +494,30 @@ static int attach_once(void)
 	        /* B30 - B21 */
 	        "0010000000"
 	        /* B20 - B11 */
-	        "1000000000"
+	        "1000000010"
 	        /* B10 - B01 */
-	        "0010000000";
+	        "0010011010";
+#else
+	const char *bands =
+	        /* B88 - B81 */
+	        "111111"
+	        /* B80 - B71 */
+	        "1111111111"
+	        /* B70 - B61 */
+	        "1111111111"
+	        /* B60 - B51 */
+	        "1111111111"
+	        /* B50 - B41 */
+	        "1111111111"
+	        /* B40 - B31 */
+	        "1111111111"
+	        /* B30 - B21 */
+	        "1111111111"
+	        /* B20 - B11 */
+	        "1111111111"
+	        /* B10 - B01 */
+	        "1111111111";
+#endif
 
 	ret = ctr_lte_talk_at_xbandlock(1, bands);
 
@@ -1989,7 +2011,7 @@ static int init(const struct device *dev)
 	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
 
 	ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
-                                                       CTR_RFMUX_ANTENNA_EXT :
+	                                               CTR_RFMUX_ANTENNA_EXT :
                                                        CTR_RFMUX_ANTENNA_INT);
 
 	if (ret < 0) {
