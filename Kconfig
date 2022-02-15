@@ -38,9 +38,6 @@ config NRFX_UARTE1
 config PM_DEVICE
 	default y if CTR_SDK
 
-config REBOOT
-	default y if CTR_SDK
-
 config REQUIRES_FULL_LIBC
 	default y if CTR_SDK
 

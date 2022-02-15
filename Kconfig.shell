@@ -1,5 +1,6 @@
 config CTR_SHELL
 	bool "CTR_SHELL"
+	select REBOOT
 	select SHELL
 	select SHELL_BACKEND_RTT
 	select SHELL_CMDS
