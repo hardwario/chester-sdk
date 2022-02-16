@@ -1,6 +1,7 @@
 config CTR_LOG
 	bool "CTR_LOG"
 	select LOG
+	select LOG_BACKEND_RTT
 	select USE_SEGGER_RTT
 
 choice LOG_MODE
@@ -43,10 +44,6 @@ config LOG_FUNC_NAME_PREFIX_DBG
 
 config LOG_BACKEND_SHOW_COLOR
 	default n
-	depends on CTR_LOG
-
-config LOG_BACKEND_RTT
-	default y
 	depends on CTR_LOG
 
 config LOG_BACKEND_RTT_BUFFER
