@@ -1,5 +1,9 @@
+# Todo: Remove and ensure that other subsystems still work
 menuconfig CTR_SDK
 	bool "CTR_SDK"
+	select ASSERT
+	select DEBUG
+	select POLL
 
 if CTR_SDK
 
@@ -7,84 +11,6 @@ config CTR_CHESTER_X3
 	bool "CTR_CHESTER_X3"
 
 endif # CTR_SDK
-
-config ASSERT
-	default y if CTR_SDK
-
-config CBPRINTF_FP_SUPPORT
-	default y if CTR_SDK
-
-config DEBUG
-	default y if CTR_SDK
-
-config HEAP_MEM_POOL_SIZE
-	default 8192 if CTR_SDK
-
-config MAIN_STACK_SIZE
-	default 4096 if CTR_SDK
-
-config NEWLIB_LIBC_FLOAT_PRINTF
-	default y if CTR_SDK
-
-config NEWLIB_LIBC_FLOAT_SCANF
-	default y if CTR_SDK
-
-config NRFX_UARTE0
-	default y if CTR_SDK
-
-config NRFX_UARTE1
-	default y if CTR_SDK
-
-config PM_DEVICE
-	default y if CTR_SDK
-
-config REQUIRES_FULL_LIBC
-	default y if CTR_SDK
-
-config RING_BUFFER
-	default y if CTR_SDK
-
-config SEGGER_RTT_BUFFER_SIZE_DOWN
-	default 4096 if CTR_SDK
-
-config SEGGER_RTT_BUFFER_SIZE_UP
-	default 4096 if CTR_SDK
-
-config SERIAL
-	default y if CTR_SDK
-
-config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 4096 if CTR_SDK
-
-config UART_0_INTERRUPT_DRIVEN
-	default n if CTR_SDK
-
-config UART_0_NRF_HW_ASYNC
-	default y if CTR_SDK
-
-config UART_0_NRF_HW_ASYNC_TIMER
-	default 1 if CTR_SDK
-
-config UART_1_INTERRUPT_DRIVEN
-	default n if CTR_SDK
-
-config UART_1_NRF_HW_ASYNC
-	default y if CTR_SDK
-
-config UART_1_NRF_HW_ASYNC_TIMER
-	default 2 if CTR_SDK
-
-config UART_ASYNC_API
-	default y if CTR_SDK
-
-config UART_INTERRUPT_DRIVEN
-	default y if CTR_SDK
-
-config UART_LINE_CTRL # TODO We should not need to enable this
-	default y if CTR_SDK
-
-config USE_SEGGER_RTT
-	default y if CTR_SDK
 
 rsource "Kconfig.accel"
 rsource "Kconfig.bsp"
