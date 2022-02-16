@@ -1,7 +1,13 @@
 config CTR_LRW
 	bool "CTR_LRW"
-	depends on CTR_CONFIG
-	select CTR_SDK
+	depends on HEAP_MEM_POOL_SIZE >= 8192
+	select CTR_CONFIG
+	select CTR_LRW_IF
+	select CTR_RFMUX
+	select CTR_SHELL
+	select PM_DEVICE
+	select REQUIRES_FULL_LIBC
+	select RING_BUFFER
 
 if CTR_LRW
 

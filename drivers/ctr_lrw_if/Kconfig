@@ -1,6 +1,10 @@
 config CTR_LRW_IF
 	bool "CHESTER LRW Interface Driver"
-	depends on SERIAL && SERIAL_HAS_DRIVER
+	select NRFX_TIMER2
+	select POLL
+	select SERIAL
+	select UART_1_NRF_HW_ASYNC
+	select UART_ASYNC_API
 
 if CTR_LRW_IF
 
@@ -9,3 +13,6 @@ module-str = CHESTER LRW Interface Driver
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # CTR_LRW_IF
+
+config UART_1_NRF_HW_ASYNC_TIMER
+	default 2 if CTR_LRW_IF
