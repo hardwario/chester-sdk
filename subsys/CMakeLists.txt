@@ -1,3 +1,4 @@
+add_subdirectory_ifdef(CONFIG_CTR_ADC ctr_adc)
 add_subdirectory_ifdef(CONFIG_CTR_BLE ctr_ble)
 add_subdirectory_ifdef(CONFIG_CTR_GNSS ctr_gnss)
 add_subdirectory_ifdef(CONFIG_CTR_GPIO ctr_gpio)

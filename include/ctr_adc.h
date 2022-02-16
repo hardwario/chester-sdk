@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_ADC_H_
-#define CHESTER_INCLUDE_ADC_H_
+#ifndef CHESTER_INCLUDE_CTR_ADC_H_
+#define CHESTER_INCLUDE_CTR_ADC_H_
 
 /* Standard includes */
 #include <stdint.h>
@@ -28,4 +28,4 @@ int ctr_adc_read(enum ctr_adc_channel channel, uint16_t *sample);
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_ADC_H_ */
+#endif /* CHESTER_INCLUDE_CTR_ADC_H_ */

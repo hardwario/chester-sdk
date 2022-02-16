@@ -1,0 +1,11 @@
+config CTR_ADC
+	bool "CTR_ADC"
+	select ADC
+
+if CTR_ADC
+
+module = CTR_ADC
+module-str = CHESTER ADC Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_ADC
