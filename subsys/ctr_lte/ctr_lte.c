@@ -1,6 +1,7 @@
+#include "ctr_lte_parse.h"
+#include "ctr_lte_talk.h"
+
 #include <ctr_lte.h>
-#include <ctr_lte_parse.h>
-#include <ctr_lte_talk.h>
 #include <ctr_config.h>
 #include <ctr_rtc.h>
 #include <drivers/ctr_lte_if.h>

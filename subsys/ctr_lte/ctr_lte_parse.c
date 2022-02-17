@@ -1,5 +1,5 @@
-#include <ctr_lte_parse.h>
-#include <ctr_lte_tok.h>
+#include "ctr_lte_parse.h"
+#include "ctr_lte_tok.h"
 
 /* Zephyr includes */
 #include <zephyr.h>

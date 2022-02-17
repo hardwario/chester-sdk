@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_LTE_PARSE_H_
-#define CHESTER_INCLUDE_LTE_PARSE_H_
+#ifndef CHESTER_SUBSYS_CTR_LTE_PARSE_H_
+#define CHESTER_SUBSYS_CTR_LTE_PARSE_H_
 
 /* Standard includes */
 #include <stddef.h>
@@ -21,4 +21,4 @@ int ctr_lte_parse_coneval(const char *s, long *result, long *rrc_state, long *en
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_LTE_PARSE_H_ */
+#endif /* CHESTER_SUBSYS_CTR_LTE_PARSE_H_ */

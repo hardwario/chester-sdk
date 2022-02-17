@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_LTE_TALK_H_
-#define CHESTER_INCLUDE_LTE_TALK_H_
+#ifndef CHESTER_SUBSYS_CTR_LTE_TALK_H_
+#define CHESTER_SUBSYS_CTR_LTE_TALK_H_
 
 #include <ctr_lte.h>
 
@@ -59,4 +59,4 @@ int ctr_lte_talk_at_xtime(int p1);
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_LTE_TALK_H_ */
+#endif /* CHESTER_SUBSYS_CTR_LTE_TALK_H_ */

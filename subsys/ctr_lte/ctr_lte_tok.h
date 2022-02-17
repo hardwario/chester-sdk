@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_LTE_TOK_H_
-#define CHESTER_INCLUDE_LTE_TOK_H_
+#ifndef CHESTER_SUBSYS_CTR_LTE_TOK_H_
+#define CHESTER_SUBSYS_CTR_LTE_TOK_H_
 
 /* Standard includes */
 #include <stdbool.h>
@@ -19,4 +19,4 @@ char *ctr_lte_tok_num(const char *s, bool *def, long *num);
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_LTE_TOK_H_ */
+#endif /* CHESTER_SUBSYS_CTR_LTE_TOK_H_ */
