@@ -1,3 +1,4 @@
+/* CHESTER includes */
 #include <ctr_led.h>
 
 /* Zephyr includes */
@@ -36,10 +37,10 @@ static int cmd_led_switch(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (strcmp(argv[2], "on") == 0) {
-		ret = set_led(channel, true);
+		ret = ctr_led_set(channel, true);
 
 	} else if (strcmp(argv[2], "off") == 0) {
-		ret = set_led(channel, false);
+		ret = ctr_led_set(channel, false);
 
 	} else {
 		shell_error(shell, "invalid command");
