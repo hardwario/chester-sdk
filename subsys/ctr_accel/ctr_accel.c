@@ -1,3 +1,4 @@
+/* CHESTER includes */
 #include <ctr_accel.h>
 
 /* Zephyr includes */
@@ -5,7 +6,6 @@
 #include <devicetree.h>
 #include <drivers/sensor.h>
 #include <logging/log.h>
-#include <shell/shell.h>
 #include <zephyr.h>
 
 /* Standard includes */
@@ -13,7 +13,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-LOG_MODULE_REGISTER(ctr_accel, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_accel, CONFIG_CTR_ACCEL_LOG_LEVEL);
 
 #define GRAVITY 9.80665f
 #define ORIENTATION_THR 0.4f
@@ -77,9 +77,9 @@ int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientat
 	k_mutex_lock(&m_mut, K_FOREVER);
 
 	if (!device_is_ready(m_dev)) {
-		LOG_ERR("Device not ready");
+		LOG_ERR("Device `LIS2DH12` not ready");
 		k_mutex_unlock(&m_mut);
-		return -ENODEV;
+		return -EINVAL;
 	}
 
 	/* TODO Check if this is the best aprroach */
@@ -93,96 +93,51 @@ int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientat
 		k_sleep(K_MSEC(10));
 	}
 
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `sensor_sample_fetch` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
 	}
 
 	struct sensor_value val[3];
-
 	ret = sensor_channel_get(m_dev, SENSOR_CHAN_ACCEL_XYZ, val);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
 		k_mutex_unlock(&m_mut);
 		return ret;
 	}
 
-	float tmp_accel_x = sensor_value_to_double(&val[0]);
-	float tmp_accel_y = sensor_value_to_double(&val[1]);
-	float tmp_accel_z = sensor_value_to_double(&val[2]);
+	float accel_x_ = sensor_value_to_double(&val[0]);
+	float accel_y_ = sensor_value_to_double(&val[1]);
+	float accel_z_ = sensor_value_to_double(&val[2]);
 
-	LOG_DBG("Acceleration X: %.3f m/s^2", tmp_accel_x);
-	LOG_DBG("Acceleration Y: %.3f m/s^2", tmp_accel_y);
-	LOG_DBG("Acceleration Z: %.3f m/s^2", tmp_accel_z);
+	LOG_DBG("Acceleration X: %.3f m/s^2", accel_x_);
+	LOG_DBG("Acceleration Y: %.3f m/s^2", accel_y_);
+	LOG_DBG("Acceleration Z: %.3f m/s^2", accel_z_);
 
 	if (accel_x != NULL) {
-		*accel_x = tmp_accel_x;
+		*accel_x = accel_x_;
 	}
 
 	if (accel_y != NULL) {
-		*accel_y = tmp_accel_y;
+		*accel_y = accel_y_;
 	}
 
 	if (accel_z != NULL) {
-		*accel_z = tmp_accel_z;
+		*accel_z = accel_z_;
 	}
 
-	update_orientation(tmp_accel_x / GRAVITY, tmp_accel_y / GRAVITY, tmp_accel_z / GRAVITY);
+	update_orientation(accel_x_ / GRAVITY, accel_y_ / GRAVITY, accel_z_ / GRAVITY);
 
-	int tmp_orientation = m_orientation;
+	int orientation_ = m_orientation;
 
-	LOG_DBG("Orientation: %d", tmp_orientation);
+	LOG_DBG("Orientation: %d", orientation_);
 
 	if (orientation != NULL) {
-		*orientation = tmp_orientation;
+		*orientation = orientation_;
 	}
 
 	k_mutex_unlock(&m_mut);
-	return 0;
-}
-
-static int cmd_accel_read(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	float accel_x;
-	float accel_y;
-	float accel_z;
-	int orientation;
-
-	ret = ctr_accel_read(&accel_x, &accel_y, &accel_z, &orientation);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	shell_print(shell, "accel-axis-x: %.3f m/s^2", accel_x);
-	shell_print(shell, "accel-axis-y: %.3f m/s^2", accel_y);
-	shell_print(shell, "accel-axis-z: %.3f m/s^2", accel_z);
-	shell_print(shell, "orientation: %d", orientation);
 
 	return 0;
 }
-
-static int print_help(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc > 1) {
-		shell_error(shell, "command not found: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	shell_help(shell);
-
-	return 0;
-}
-
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_accel,
-                               SHELL_CMD_ARG(read, NULL, "Read sensor data.", cmd_accel_read, 1, 0),
-                               SHELL_SUBCMD_SET_END);
-
-SHELL_CMD_REGISTER(accel, &sub_accel, "Accelerometer commands.", print_help);

@@ -1,7 +1,23 @@
 config CTR_ACCEL
 	bool "CTR_ACCEL"
-	select SENSOR
+	select CBPRINTF_FP_SUPPORT if CTR_ACCEL_LOG_LEVEL_DBG
+	select I2C
 	select LIS2DH
+	select REQUIRES_FULL_LIBC
+	select SENSOR
+
+if CTR_ACCEL
+
+module = CTR_ACCEL
+module-str = CHESTER Accelerometer Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_ACCEL_SHELL
+	bool "CTR_ACCEL_SHELL"
+	depends on SHELL
+	default y
+
+endif # CTR_ACCEL
 
 # TODO Uncomment this when named choices get to mainline
 # https://github.com/zephyrproject-rtos/zephyr/pull/39303
