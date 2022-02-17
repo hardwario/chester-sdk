@@ -1,6 +1,6 @@
 description: u-blox M8 GNSS Receiver
 
-compatible: "ublox,m8"
+compatible: "u-blox,m8"
 
 include: [i2c-device.yaml]
 
