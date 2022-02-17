@@ -1,8 +1,9 @@
 /* TODO Implement retries settings parameter */
 
+#include "ctr_lrw_talk.h"
+
 #include <ctr_lrw.h>
 #include <ctr_config.h>
-#include <ctr_lrw_talk.h>
 #include <ctr_util.h>
 #include <drivers/ctr_lrw_if.h>
 #include <drivers/ctr_rfmux.h>
@@ -1710,7 +1711,7 @@ static int init(const struct device *dev)
 	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
 
 	ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
-                                                       CTR_RFMUX_ANTENNA_EXT :
+	                                               CTR_RFMUX_ANTENNA_EXT :
                                                        CTR_RFMUX_ANTENNA_INT);
 
 	if (ret < 0) {

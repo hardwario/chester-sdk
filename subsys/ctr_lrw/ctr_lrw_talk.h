@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_LRW_TALK_H_
-#define CHESTER_INCLUDE_LRW_TALK_H_
+#ifndef CHESTER_SUBSYS_CTR_LRW_TALK_H_
+#define CHESTER_SUBSYS_CTR_LRW_TALK_H_
 
 /* Standard includes */
 #include <stddef.h>
@@ -48,4 +48,4 @@ int ctr_lrw_talk_at_pctx(uint8_t port, const void *payload, size_t payload_len);
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_LRW_TALK_H_ */
+#endif /* CHESTER_SUBSYS_CTR_LRW_TALK_H_ */
