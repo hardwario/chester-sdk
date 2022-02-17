@@ -31,20 +31,12 @@ extern "C" {
 #define CTR_BSP_GP3B_DEV DT_LABEL(DT_NODELABEL(gpio0))
 #define CTR_BSP_GP3B_PIN 5
 
-enum ctr_bsp_led {
-	CTR_BSP_LED_R = 0,
-	CTR_BSP_LED_G = 1,
-	CTR_BSP_LED_Y = 2,
-	CTR_BSP_LED_EXT = 3,
-};
-
 enum ctr_bsp_button {
 	CTR_BSP_BUTTON_INT = 0,
 	CTR_BSP_BUTTON_EXT = 1,
 };
 
 struct ctr_bus_i2c *ctr_bsp_get_i2c(void);
-int ctr_bsp_set_led(enum ctr_bsp_led led, bool on);
 int ctr_bsp_get_button(enum ctr_bsp_button button, bool *pressed);
 int ctr_bsp_set_w1b_slpz(int level);
 int ctr_bsp_sht30_measure(float *t, float *rh);

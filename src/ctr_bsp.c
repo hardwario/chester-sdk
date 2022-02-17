@@ -14,18 +14,6 @@
 
 LOG_MODULE_REGISTER(ctr_bsp, LOG_LEVEL_DBG);
 
-#define DEV_LED_R m_dev_gpio_1
-#define PIN_LED_R 13
-
-#define DEV_LED_G m_dev_gpio_1
-#define PIN_LED_G 11
-
-#define DEV_LED_Y m_dev_gpio_1
-#define PIN_LED_Y 12
-
-#define DEV_LED_EXT m_dev_gpio_1
-#define PIN_LED_EXT 4
-
 #define DEV_BTN_INT m_dev_gpio_0
 #define PIN_BTN_INT 27
 
@@ -197,58 +185,6 @@ int init_w1b(void)
 struct ctr_bus_i2c *ctr_bsp_get_i2c(void)
 {
 	return &m_i2c;
-}
-
-int ctr_bsp_set_led(enum ctr_bsp_led led, bool on)
-{
-	int ret;
-
-	switch (led) {
-	case CTR_BSP_LED_R:
-		ret = gpio_pin_set(DEV_LED_R, PIN_LED_R, on ? 1 : 0);
-
-		if (ret < 0) {
-			LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-			return ret;
-		}
-
-		break;
-
-	case CTR_BSP_LED_G:
-		ret = gpio_pin_set(DEV_LED_G, PIN_LED_G, on ? 1 : 0);
-
-		if (ret < 0) {
-			LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-			return ret;
-		}
-
-		break;
-
-	case CTR_BSP_LED_Y:
-		ret = gpio_pin_set(DEV_LED_Y, PIN_LED_Y, on ? 1 : 0);
-
-		if (ret < 0) {
-			LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-			return ret;
-		}
-
-		break;
-
-	case CTR_BSP_LED_EXT:
-		ret = gpio_pin_set(DEV_LED_EXT, PIN_LED_EXT, on ? 1 : 0);
-
-		if (ret < 0) {
-			LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-			return ret;
-		}
-
-		break;
-
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
 }
 
 int ctr_bsp_get_button(enum ctr_bsp_button button, bool *pressed)

@@ -1,5 +1,0 @@
-config CTR_LED
-	bool "CTR_LED"
-	depends on SHELL
-	select LED
-	select LED_GPIO

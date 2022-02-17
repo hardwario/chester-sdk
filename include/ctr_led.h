@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_LED_H_
-#define CHESTER_INCLUDE_LED_H_
+#ifndef CHESTER_INCLUDE_CTR_LED_H_
+#define CHESTER_INCLUDE_CTR_LED_H_
 
 #include <stdbool.h>
 
@@ -20,4 +20,4 @@ int ctr_led_set(enum ctr_led_channel channel, bool is_on);
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_LED_H_ */
+#endif /* CHESTER_INCLUDE_CTR_LED_H_ */
