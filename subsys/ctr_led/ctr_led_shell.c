@@ -7,7 +7,7 @@
 #include <zephyr.h>
 
 /* Standard includes */
-#include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(ctr_led_shell, CONFIG_CTR_LED_LOG_LEVEL);
@@ -48,8 +48,8 @@ static int cmd_led_switch(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	if (ret < 0) {
-		LOG_ERR("Call `set_led` failed: %d", ret);
+	if (ret) {
+		LOG_ERR("Call `ctr_led_set` failed: %d", ret);
 		return ret;
 	}
 
@@ -69,11 +69,19 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_led,
-                               SHELL_CMD_ARG(switch, NULL,
-                                             "Switch LED channel"
-                                             " (format red|green|yellow|ext on|off).",
-                                             cmd_led_switch, 3, 0),
-                               SHELL_SUBCMD_SET_END);
+/* clang-format off */
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_led,
+
+	SHELL_CMD_ARG(switch, NULL,
+	              "Switch LED channel"
+	              " (format red|green|yellow|ext on|off).",
+	              cmd_led_switch, 3, 0),
+
+	SHELL_SUBCMD_SET_END
+);
 
 SHELL_CMD_REGISTER(led, &sub_led, "LED commands.", print_help);
+
+/* clang-format on */

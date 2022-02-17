@@ -10,8 +10,8 @@ module-str = CHESTER LED Subsystem
 source "subsys/logging/Kconfig.template.log_config"
 
 config CTR_LED_SHELL
-	depends on SHELL
 	bool "CTR_LED_SHELL"
+	depends on SHELL
 	default y
 
 endif # CTR_LED
