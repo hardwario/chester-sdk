@@ -6,17 +6,15 @@
 #include <devicetree.h>
 #include <drivers/sensor.h>
 #include <logging/log.h>
-#include <shell/shell.h>
 #include <zephyr.h>
 
 /* Standard includes */
 #include <stddef.h>
 
-LOG_MODULE_REGISTER(ctr_therm, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_therm, CONFIG_CTR_THERM_LOG_LEVEL);
 
 static K_MUTEX_DEFINE(m_mut);
 static bool m_init;
-
 static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(tmp112));
 
 int ctr_therm_init(void)
@@ -63,6 +61,7 @@ int ctr_therm_init(void)
 	m_init = true;
 
 	k_mutex_unlock(&m_mut);
+
 	return 0;
 }
 
@@ -108,69 +107,6 @@ int ctr_therm_read(float *temperature)
 	}
 
 	k_mutex_unlock(&m_mut);
-	return 0;
-}
-
-static int cmd_therm_init(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	ret = ctr_therm_init();
-	if (ret) {
-		LOG_ERR("Call `ctr_therm_init` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
 
 	return 0;
 }
-
-static int cmd_therm_read(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	float temperature;
-	ret = ctr_therm_read(&temperature);
-	if (ret) {
-		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	shell_print(shell, "temperature: %.2f C", temperature);
-
-	return 0;
-}
-
-static int print_help(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc > 1) {
-		shell_error(shell, "command not found: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	shell_help(shell);
-
-	return 0;
-}
-
-/* clang-format off */
-
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_therm,
-
-	SHELL_CMD_ARG(init, NULL,
-	              "Initialize sensor.",
-	              cmd_therm_init, 1, 0),
-
-	SHELL_CMD_ARG(read, NULL,
-	              "Read sensor data.",
-	              cmd_therm_read, 1, 0),
-
-        SHELL_SUBCMD_SET_END
-);
-
-SHELL_CMD_REGISTER(therm, &sub_therm, "Thermometer commands.", print_help);
-
-/* clang-format on */

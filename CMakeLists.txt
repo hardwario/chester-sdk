@@ -22,6 +22,5 @@ zephyr_library_sources_ifdef(CONFIG_CTR_SDK src/ctr_drv_tmp112.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_SDK src/ctr_sys.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_SDK src/ctr_util.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_TEST src/ctr_test.c)
-zephyr_library_sources_ifdef(CONFIG_CTR_THERM src/ctr_therm.c)
 
 zephyr_library_link_libraries_ifdef(CONFIG_CTR_BLE MCUMGR)

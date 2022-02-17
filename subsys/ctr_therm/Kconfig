@@ -1,0 +1,19 @@
+config CTR_THERM
+	bool "CTR_THERM"
+	select CBPRINTF_FP_SUPPORT if CTR_THERM_LOG_LEVEL_DBG
+	select I2C
+	select SENSOR
+	select TMP112
+
+if CTR_THERM
+
+module = CTR_THERM
+module-str = CHESTER Thermometer Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_THERM_SHELL
+	bool "CTR_THERM_SHELL"
+	depends on SHELL
+	default y
+
+endif # CTR_THERM

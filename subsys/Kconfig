@@ -10,5 +10,6 @@ rsource "ctr_led/Kconfig"
 rsource "ctr_lrw/Kconfig"
 rsource "ctr_lte/Kconfig"
 rsource "ctr_signal/Kconfig"
+rsource "ctr_therm/Kconfig"
 
 endmenu
