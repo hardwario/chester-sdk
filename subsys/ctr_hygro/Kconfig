@@ -1,0 +1,19 @@
+config CTR_HYGRO
+	bool "CTR_HYGRO"
+	select CBPRINTF_FP_SUPPORT if CTR_HYGRO_LOG_LEVEL_DBG
+	select I2C
+	select SENSOR
+	select SHT3XD
+
+if CTR_HYGRO
+
+module = CTR_HYGRO
+module-str = CHESTER Hygrometer Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_HYGRO_SHELL
+	bool "CTR_HYGRO_SHELL"
+	depends on SHELL
+	default y
+
+endif # CTR_HYGRO
