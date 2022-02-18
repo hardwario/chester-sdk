@@ -1,5 +1,4 @@
 #include <ctr_chester_x0d.h>
-#include <ctr_bsp.h>
 
 /* Zephyr includes */
 #include <device.h>
@@ -21,23 +20,23 @@ LOG_MODULE_REGISTER(ctr_chester_x0d, LOG_LEVEL_DBG);
 #define EVENT_WORK_STACK_SIZE 2048
 #define EVENT_SLAB_MAX_ITEMS 64
 
-#define INPUT_1_DEV_A CTR_BSP_GP0A_DEV
-#define INPUT_1_PIN_A CTR_BSP_GP0A_PIN
-#define INPUT_2_DEV_A CTR_BSP_GP1A_DEV
-#define INPUT_2_PIN_A CTR_BSP_GP1A_PIN
-#define INPUT_3_DEV_A CTR_BSP_GP2A_DEV
-#define INPUT_3_PIN_A CTR_BSP_GP2A_PIN
-#define INPUT_4_DEV_A CTR_BSP_GP3A_DEV
-#define INPUT_4_PIN_A CTR_BSP_GP3A_PIN
+#define INPUT_1_DEV_A DT_LABEL(DT_NODELABEL(gpio0))
+#define INPUT_1_PIN_A 3
+#define INPUT_2_DEV_A DT_LABEL(DT_NODELABEL(gpio0))
+#define INPUT_2_PIN_A 29
+#define INPUT_3_DEV_A DT_LABEL(DT_NODELABEL(gpio0))
+#define INPUT_3_PIN_A 2
+#define INPUT_4_DEV_A DT_LABEL(DT_NODELABEL(gpio0))
+#define INPUT_4_PIN_A 31
 
-#define INPUT_1_DEV_B CTR_BSP_GP0B_DEV
-#define INPUT_1_PIN_B CTR_BSP_GP0B_PIN
-#define INPUT_2_DEV_B CTR_BSP_GP1B_DEV
-#define INPUT_2_PIN_B CTR_BSP_GP1B_PIN
-#define INPUT_3_DEV_B CTR_BSP_GP2B_DEV
-#define INPUT_3_PIN_B CTR_BSP_GP2B_PIN
-#define INPUT_4_DEV_B CTR_BSP_GP3B_DEV
-#define INPUT_4_PIN_B CTR_BSP_GP3B_PIN
+#define INPUT_1_DEV_B DT_LABEL(DT_NODELABEL(gpio0))
+#define INPUT_1_PIN_B 28
+#define INPUT_2_DEV_B DT_LABEL(DT_NODELABEL(gpio0))
+#define INPUT_2_PIN_B 30
+#define INPUT_3_DEV_B DT_LABEL(DT_NODELABEL(gpio0))
+#define INPUT_3_PIN_B 4
+#define INPUT_4_DEV_B DT_LABEL(DT_NODELABEL(gpio0))
+#define INPUT_4_PIN_B 5
 
 struct input {
 	bool initialized;

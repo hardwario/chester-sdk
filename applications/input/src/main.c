@@ -3,7 +3,6 @@
 /* CHESTER includes */
 #include <ctr_accel.h>
 #include <ctr_batt.h>
-#include <ctr_bsp.h>
 #include <ctr_buf.h>
 #include <ctr_chester_x0d.h>
 #include <ctr_hygro.h>
@@ -1015,9 +1014,9 @@ void main(void)
 
 	atomic_inc(&m_data.events.device_boot);
 
-	ctr_bsp_set_led(CTR_BSP_LED_G, true);
+	ctr_led_set(CTR_LED_CHANNEL_G, true);
 	k_sleep(K_MSEC(2000));
-	ctr_bsp_set_led(CTR_BSP_LED_G, false);
+	ctr_led_set(CTR_LED_CHANNEL_G, false);
 
 #if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
 	ret = init_chester_x0d();

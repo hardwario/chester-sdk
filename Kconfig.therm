@@ -1,6 +1,0 @@
-config CTR_THERM
-	bool "CTR_THERM"
-	select CTR_BSP
-	select I2C
-	select SENSOR
-	select TMP112

@@ -12,7 +12,6 @@ config CTR_CHESTER_X3
 
 endif # CTR_SDK
 
-rsource "Kconfig.bsp"
 rsource "Kconfig.button"
 rsource "Kconfig.chester_x0d"
 rsource "Kconfig.config"
@@ -21,7 +20,6 @@ rsource "Kconfig.log"
 rsource "Kconfig.rtc"
 rsource "Kconfig.shell"
 rsource "Kconfig.test"
-rsource "Kconfig.therm"
 
 rsource "drivers/Kconfig"
 rsource "subsys/Kconfig"
