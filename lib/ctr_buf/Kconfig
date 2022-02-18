@@ -1,0 +1,2 @@
+config CTR_BUF
+	bool "CTR_BUF"

@@ -1,1 +1,2 @@
+rsource "ctr_buf/Kconfig"
 rsource "ctr_util/Kconfig"
