@@ -39,7 +39,6 @@ enum ctr_bsp_button {
 struct ctr_bus_i2c *ctr_bsp_get_i2c(void);
 int ctr_bsp_get_button(enum ctr_bsp_button button, bool *pressed);
 int ctr_bsp_set_w1b_slpz(int level);
-int ctr_bsp_sht30_measure(float *t, float *rh);
 int ctr_bsp_tmp112_measure(float *t);
 
 #ifdef __cplusplus

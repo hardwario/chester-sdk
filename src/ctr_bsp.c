@@ -1,6 +1,5 @@
 #include <ctr_bsp.h>
 #include <ctr_bsp_i2c.h>
-#include <ctr_drv_sht30.h>
 #include <ctr_drv_tmp112.h>
 #include <ctr_rtc.h>
 
@@ -30,7 +29,6 @@ static const struct device *m_dev_spi_1;
 
 static struct ctr_bus_i2c m_i2c;
 
-static struct ctr_drv_sht30 m_sht30;
 static struct ctr_drv_tmp112 m_tmp112;
 
 static int init_gpio(void)
@@ -90,13 +88,6 @@ static int init_i2c(void)
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_bus_i2c_init` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_drv_sht30_init(&m_sht30, &m_i2c, 0x45);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_drv_sht30_init` failed: %d", ret);
 		return ret;
 	}
 
@@ -230,20 +221,6 @@ int ctr_bsp_set_w1b_slpz(int level)
 
 	if (ret < 0) {
 		LOG_ERR("Call `gpio_pin_set` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int ctr_bsp_sht30_measure(float *t, float *rh)
-{
-	int ret;
-
-	ret = ctr_drv_sht30_measure(&m_sht30, t, rh);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_drv_sht30_measure` failed: %d", ret);
 		return ret;
 	}
 
