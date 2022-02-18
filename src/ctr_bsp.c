@@ -1,5 +1,4 @@
 #include <ctr_bsp.h>
-#include <ctr_bsp_i2c.h>
 #include <ctr_rtc.h>
 
 /* Zephyr includes */
@@ -23,10 +22,7 @@ LOG_MODULE_REGISTER(ctr_bsp, LOG_LEVEL_DBG);
 
 static const struct device *m_dev_gpio_0;
 static const struct device *m_dev_gpio_1;
-static const struct device *m_dev_i2c_0;
 static const struct device *m_dev_spi_1;
-
-static struct ctr_bus_i2c m_i2c;
 
 static int init_gpio(void)
 {
@@ -62,29 +58,6 @@ static int init_button(void)
 
 	if (ret < 0) {
 		LOG_ERR("Call `gpio_pin_configure` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-static int init_i2c(void)
-{
-	int ret;
-
-	m_dev_i2c_0 = device_get_binding("I2C_0");
-
-	if (m_dev_i2c_0 == NULL) {
-		LOG_ERR("Call `device_get_binding` failed");
-		return -ENODEV;
-	}
-
-	const struct ctr_bus_i2c_driver *i2c_drv = ctr_bsp_i2c_get_driver();
-
-	ret = ctr_bus_i2c_init(&m_i2c, i2c_drv, (void *)m_dev_i2c_0);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_bus_i2c_init` failed: %d", ret);
 		return ret;
 	}
 
@@ -147,11 +120,6 @@ int init_w1b(void)
 	}
 
 	return 0;
-}
-
-struct ctr_bus_i2c *ctr_bsp_get_i2c(void)
-{
-	return &m_i2c;
 }
 
 int ctr_bsp_get_button(enum ctr_bsp_button button, bool *pressed)
@@ -222,13 +190,6 @@ static int init(const struct device *dev)
 
 	if (ret < 0) {
 		LOG_ERR("Call `init_button` failed: %d", ret);
-		return ret;
-	}
-
-	ret = init_i2c();
-
-	if (ret < 0) {
-		LOG_ERR("Call `init_i2c` failed: %d", ret);
 		return ret;
 	}
 

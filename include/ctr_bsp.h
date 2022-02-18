@@ -1,8 +1,6 @@
 #ifndef CHESTER_INCLUDE_BSP_H_
 #define CHESTER_INCLUDE_BSP_H_
 
-#include <ctr_bus_i2c.h>
-
 /* Zephyr includes */
 #include <devicetree.h>
 
@@ -36,7 +34,6 @@ enum ctr_bsp_button {
 	CTR_BSP_BUTTON_EXT = 1,
 };
 
-struct ctr_bus_i2c *ctr_bsp_get_i2c(void);
 int ctr_bsp_get_button(enum ctr_bsp_button button, bool *pressed);
 int ctr_bsp_set_w1b_slpz(int level);
 
