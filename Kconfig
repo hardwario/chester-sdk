@@ -22,4 +22,5 @@ rsource "Kconfig.shell"
 rsource "Kconfig.test"
 
 rsource "drivers/Kconfig"
+rsource "lib/Kconfig"
 rsource "subsys/Kconfig"

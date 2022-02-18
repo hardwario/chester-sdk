@@ -5,6 +5,7 @@ config CTR_LRW
 	select CTR_LRW_IF
 	select CTR_RFMUX
 	select CTR_SHELL
+	select CTR_UTIL
 	select PM_DEVICE
 	select REQUIRES_FULL_LIBC
 	select RING_BUFFER
