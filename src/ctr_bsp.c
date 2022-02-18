@@ -1,6 +1,5 @@
 #include <ctr_bsp.h>
 #include <ctr_bsp_i2c.h>
-#include <ctr_drv_tmp112.h>
 #include <ctr_rtc.h>
 
 /* Zephyr includes */
@@ -28,8 +27,6 @@ static const struct device *m_dev_i2c_0;
 static const struct device *m_dev_spi_1;
 
 static struct ctr_bus_i2c m_i2c;
-
-static struct ctr_drv_tmp112 m_tmp112;
 
 static int init_gpio(void)
 {
@@ -88,27 +85,6 @@ static int init_i2c(void)
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_bus_i2c_init` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_drv_tmp112_init(&m_tmp112, &m_i2c, 0x48);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_drv_tmp112_init` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-static int init_tmp112(void)
-{
-	int ret;
-
-	ret = ctr_drv_tmp112_sleep(&m_tmp112);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_drv_tmp112_sleep` failed: %d", ret);
 		return ret;
 	}
 
@@ -227,20 +203,6 @@ int ctr_bsp_set_w1b_slpz(int level)
 	return 0;
 }
 
-int ctr_bsp_tmp112_measure(float *t)
-{
-	int ret;
-
-	ret = ctr_drv_tmp112_measure(&m_tmp112, t);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_bsp_tmp112_measure` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 static int init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -267,13 +229,6 @@ static int init(const struct device *dev)
 
 	if (ret < 0) {
 		LOG_ERR("Call `init_i2c` failed: %d", ret);
-		return ret;
-	}
-
-	ret = init_tmp112();
-
-	if (ret < 0) {
-		LOG_ERR("Call `init_tmp112` failed: %d", ret);
 		return ret;
 	}
 
