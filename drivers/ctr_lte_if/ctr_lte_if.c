@@ -8,6 +8,7 @@
 #include <drivers/gpio.h>
 #include <drivers/uart.h>
 #include <logging/log.h>
+#include <pm/device.h>
 #include <sys/ring_buffer.h>
 #include <zephyr.h>
 
@@ -262,9 +263,9 @@ static int ctr_lte_if_init_(const struct device *dev, ctr_lte_recv_cb recv_cb)
 		return ret;
 	}
 
-	ret = pm_device_state_set(get_config(dev)->uart_dev, PM_DEVICE_STATE_SUSPENDED);
+	ret = pm_device_action_run(get_config(dev)->uart_dev, PM_DEVICE_ACTION_SUSPEND);
 	if (ret < 0) {
-		LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
+		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
 		return ret;
 	}
 
@@ -369,9 +370,9 @@ static int ctr_lte_if_enable_(const struct device *dev)
 		return ret;
 	}
 
-	ret = pm_device_state_set(get_config(dev)->uart_dev, PM_DEVICE_STATE_ACTIVE);
+	ret = pm_device_action_run(get_config(dev)->uart_dev, PM_DEVICE_ACTION_RESUME);
 	if (ret < 0) {
-		LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
+		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
 		k_mutex_unlock(&get_data(dev)->mut);
 		return ret;
 	}
@@ -449,9 +450,9 @@ static int ctr_lte_if_disable_(const struct device *dev)
 		return ret;
 	}
 
-	ret = pm_device_state_set(get_config(dev)->uart_dev, PM_DEVICE_STATE_SUSPENDED);
+	ret = pm_device_action_run(get_config(dev)->uart_dev, PM_DEVICE_ACTION_SUSPEND);
 	if (ret < 0) {
-		LOG_ERR("Call `pm_device_state_set` failed: %d", ret);
+		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
 		k_mutex_unlock(&get_data(dev)->mut);
 		return ret;
 	}

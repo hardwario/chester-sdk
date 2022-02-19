@@ -1,9 +1,10 @@
 /* Zephyr includes */
-#include <drivers/w1.h>
 #include <devicetree.h>
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
+#include <drivers/w1.h>
 #include <logging/log.h>
+#include <pm/device.h>
 #include <zephyr.h>
 
 /* Standard includes */
@@ -352,7 +353,6 @@ static int ds2484_pm_control(const struct device *dev, enum pm_device_action act
 		}
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
-	case PM_DEVICE_ACTION_LOW_POWER:
 	default:
 		return -ENOTSUP;
 	}
@@ -472,7 +472,8 @@ static const struct w1_driver_api ds2484_driver_api = {
 		.apu = DT_INST_PROP(n, active_pullup),                                             \
 	};                                                                                         \
 	static struct ds2484_data inst_##n##_data = {};                                            \
-	DEVICE_DT_INST_DEFINE(n, ds2484_init, ds2484_pm_control, &inst_##n##_data,                 \
+	PM_DEVICE_DT_INST_DEFINE(n, ds2484_pm_control);                                            \
+	DEVICE_DT_INST_DEFINE(n, ds2484_init, PM_DEVICE_DT_INST_REF(n), &inst_##n##_data,          \
 	                      &inst_##n##_config, POST_KERNEL, CONFIG_W1_INIT_PRIORITY,            \
 	                      &ds2484_driver_api);
 
