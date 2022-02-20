@@ -5,7 +5,6 @@ menuconfig CTR_SDK
 	select DEBUG
 	select POLL
 
-rsource "Kconfig.button"
 rsource "Kconfig.chester_x0d"
 rsource "Kconfig.defaults"
 rsource "Kconfig.log"

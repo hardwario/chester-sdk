@@ -1,0 +1,16 @@
+config CTR_BUTTON
+	bool "CTR_BUTTON"
+	depends on SHELL
+	select GPIO
+
+if CTR_BUTTON
+
+module = CTR_BUTTON
+module-str = CHESTER Button Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_BUTTON_INIT_PRIORITY
+	int "Initialization priority"
+	default APPLICATION_INIT_PRIORITY
+
+endif # CTR_BUTTON

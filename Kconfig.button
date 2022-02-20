@@ -1,3 +1,0 @@
-config CTR_BUTTON
-	bool "CTR_BUTTON"
-	depends on SHELL
