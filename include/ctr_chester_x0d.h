@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_CHESTER_X0D_H_
-#define CHESTER_INCLUDE_CHESTER_X0D_H_
+#ifndef CHESTER_INCLUDE_CTR_CHESTER_X0D_H_
+#define CHESTER_INCLUDE_CTR_CHESTER_X0D_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,4 +35,4 @@ int ctr_chester_x0d_read(enum ctr_chester_x0d_slot slot, enum ctr_chester_x0d_ch
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_CHESTER_X0D_H_ */
+#endif /* CHESTER_INCLUDE_CTR_CHESTER_X0D_H_ */

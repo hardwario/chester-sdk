@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_DRIVERS_BATT_H_
-#define CHESTER_INCLUDE_DRIVERS_BATT_H_
+#ifndef CHESTER_INCLUDE_DRIVERS_CTR_BATT_H_
+#define CHESTER_INCLUDE_DRIVERS_CTR_BATT_H_
 
 /* Zephyr includes */
 #include <device.h>
@@ -68,4 +68,4 @@ static inline int ctr_batt_unload(const struct device *dev)
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_DRIVERS_BATT_H_ */
+#endif /* CHESTER_INCLUDE_DRIVERS_CTR_BATT_H_ */

@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_RTC_H_
-#define CHESTER_INCLUDE_RTC_H_
+#ifndef CHESTER_INCLUDE_CTR_RTC_H_
+#define CHESTER_INCLUDE_CTR_RTC_H_
 
 /* Standard includes */
 #include <stdint.h>
@@ -25,4 +25,4 @@ int ctr_rtc_get_ts(int64_t *ts);
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_RTC_H_ */
+#endif /* CHESTER_INCLUDE_CTR_RTC_H_ */

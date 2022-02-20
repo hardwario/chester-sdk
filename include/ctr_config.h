@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_CONFIG_H_
-#define CHESTER_INCLUDE_CONFIG_H_
+#ifndef CHESTER_INCLUDE_CTR_CONFIG_H_
+#define CHESTER_INCLUDE_CTR_CONFIG_H_
 
 /* Zephyr includes */
 #include <shell/shell.h>
@@ -19,4 +19,4 @@ void ctr_config_append_show(const char *name, ctr_config_show_cb cb);
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_CONFIG_H_ */
+#endif /* CHESTER_INCLUDE_CTR_CONFIG_H_ */

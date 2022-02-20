@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_GNSS_H_
-#define CHESTER_INCLUDE_GNSS_H_
+#ifndef CHESTER_INCLUDE_CTR_GNSS_H_
+#define CHESTER_INCLUDE_CTR_GNSS_H_
 
 /* Standard includes */
 #include <stdbool.h>
@@ -60,4 +60,4 @@ int ctr_gnss_stop(bool keep_bckp_domain, int *corr_id);
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_GNSS_H_ */
+#endif /* CHESTER_INCLUDE_CTR_GNSS_H_ */

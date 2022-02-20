@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_BUTTON_H_
-#define CHESTER_INCLUDE_BUTTON_H_
+#ifndef CHESTER_INCLUDE_CTR_BUTTON_H_
+#define CHESTER_INCLUDE_CTR_BUTTON_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,4 +14,4 @@ enum ctr_button_channel {
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_BUTTON_H_ */
+#endif /* CHESTER_INCLUDE_CTR_BUTTON_H_ */

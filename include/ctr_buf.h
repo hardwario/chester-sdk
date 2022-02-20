@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_BUF_H_
-#define CHESTER_INCLUDE_BUF_H_
+#ifndef CHESTER_INCLUDE_CTR_BUF_H_
+#define CHESTER_INCLUDE_CTR_BUF_H_
 
 /* Standard includes */
 #include <stddef.h>
@@ -52,4 +52,4 @@ int ctr_buf_append_u64(struct ctr_buf *ctx, uint64_t val);
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_BUF_H_ */
+#endif /* CHESTER_INCLUDE_CTR_BUF_H_ */

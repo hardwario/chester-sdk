@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_TEST_H_
-#define CHESTER_INCLUDE_TEST_H_
+#ifndef CHESTER_INCLUDE_CTR_TEST_H_
+#define CHESTER_INCLUDE_CTR_TEST_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,4 +9,4 @@ extern "C" {
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_TEST_H_ */
+#endif /* CHESTER_INCLUDE_CTR_TEST_H_ */

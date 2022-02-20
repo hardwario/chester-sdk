@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_ACCEL_H_
-#define CHESTER_INCLUDE_ACCEL_H_
+#ifndef CHESTER_INCLUDE_CTR_ACCEL_H_
+#define CHESTER_INCLUDE_CTR_ACCEL_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,4 +11,4 @@ int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientat
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_ACCEL_H_ */
+#endif /* CHESTER_INCLUDE_CTR_ACCEL_H_ */
