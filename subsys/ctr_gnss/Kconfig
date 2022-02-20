@@ -1,9 +1,9 @@
 config CTR_GNSS
 	bool "CTR_GNSS"
-	select CTR_SDK
 	select GNSS
 	select GNSS_M8
 	select I2C
+	select REQUIRES_FULL_LIBC
 
 if CTR_GNSS
 
