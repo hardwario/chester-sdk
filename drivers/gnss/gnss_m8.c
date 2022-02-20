@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define DT_DRV_COMPAT ublox_m8
+#define DT_DRV_COMPAT u_blox_m8
 
 LOG_MODULE_REGISTER(m8, CONFIG_GNSS_M8_LOG_LEVEL);
 
