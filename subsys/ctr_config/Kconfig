@@ -1,0 +1,21 @@
+config CTR_CONFIG
+	bool "CTR_CONFIG"
+	depends on SHELL
+	select FLASH
+	select FLASH_MAP
+	select NVS
+	select REBOOT
+	select SETTINGS
+	select SETTINGS_RUNTIME
+
+if CTR_CONFIG
+
+module = CTR_CONFIG
+module-str = CHESTER Configuration Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_CONFIG_INIT_PRIORITY
+	int "Initialization priority"
+	default 0
+
+endif # CTR_CONFIG
