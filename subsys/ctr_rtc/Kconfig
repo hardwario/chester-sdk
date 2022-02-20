@@ -1,0 +1,17 @@
+config CTR_RTC
+	bool "CTR_RTC"
+	depends on SHELL
+	select NRFX_RTC2
+	select POLL
+
+if CTR_RTC
+
+module = CTR_RTC
+module-str = CHESTER Real-time Clock Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_RTC_INIT_PRIORITY
+	int "Initialization priority"
+	default 3
+
+endif # CTR_RTC

@@ -10,7 +10,6 @@ rsource "Kconfig.chester_x0d"
 rsource "Kconfig.config"
 rsource "Kconfig.defaults"
 rsource "Kconfig.log"
-rsource "Kconfig.rtc"
 rsource "Kconfig.shell"
 rsource "Kconfig.test"
 

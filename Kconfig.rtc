@@ -1,9 +1,0 @@
-config CTR_RTC
-	bool "CTR_RTC"
-	select CTR_SDK
-	select NRFX_RTC2
-
-config CTR_RTC_INIT_PRIORITY
-	int "CTR_RTC_INIT_PRIORITY"
-	default 3
-	depends on CTR_RTC
