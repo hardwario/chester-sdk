@@ -1,16 +1,9 @@
-# Todo: Remove and ensure that other subsystems still work
+# TODO Remove CTR_SDK and ensure that everything still works
 menuconfig CTR_SDK
 	bool "CTR_SDK"
 	select ASSERT
 	select DEBUG
 	select POLL
-
-if CTR_SDK
-
-config CTR_CHESTER_X3
-	bool "CTR_CHESTER_X3"
-
-endif # CTR_SDK
 
 rsource "Kconfig.button"
 rsource "Kconfig.chester_x0d"
