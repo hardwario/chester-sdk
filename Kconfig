@@ -7,7 +7,6 @@ menuconfig CTR_SDK
 
 rsource "Kconfig.button"
 rsource "Kconfig.chester_x0d"
-rsource "Kconfig.config"
 rsource "Kconfig.defaults"
 rsource "Kconfig.log"
 rsource "Kconfig.shell"
