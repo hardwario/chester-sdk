@@ -1,0 +1,16 @@
+config CTR_TEST
+	bool "CTR_TEST"
+	depends on SHELL
+	select POLL
+
+if CTR_TEST
+
+module = CTR_TEST
+module-str = CHESTER Test Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_TEST_INIT_PRIORITY
+	int "Initialization priority"
+	default 99
+
+endif # CTR_TEST

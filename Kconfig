@@ -11,7 +11,6 @@ rsource "Kconfig.config"
 rsource "Kconfig.defaults"
 rsource "Kconfig.log"
 rsource "Kconfig.shell"
-rsource "Kconfig.test"
 
 rsource "drivers/Kconfig"
 rsource "lib/Kconfig"

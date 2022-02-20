@@ -1,5 +1,3 @@
-#include <ctr_test.h>
-
 /* Zephyr includes */
 #include <init.h>
 #include <logging/log.h>
@@ -9,7 +7,7 @@
 /* Standard includes */
 #include <stddef.h>
 
-LOG_MODULE_REGISTER(ctr_test, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ctr_test, CONFIG_CTR_TEST_LOG_LEVEL);
 
 static atomic_t m_is_blocked;
 
@@ -27,7 +25,6 @@ static int cmd_test(const struct shell *shell, size_t argc, char **argv)
 
 	unsigned int signaled;
 	int result;
-
 	k_poll_signal_check(&m_start_sig, &signaled, &result);
 
 	if (signaled != 0) {
@@ -62,7 +59,6 @@ static int init(const struct device *dev)
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_start_sig),
 	};
-
 	ret = k_poll(events, ARRAY_SIZE(events), K_MSEC(5000));
 	if (ret == -EAGAIN) {
 		LOG_INF("Test mode entry timed out");

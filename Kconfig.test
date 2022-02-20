@@ -1,8 +1,0 @@
-config CTR_TEST
-	bool "CTR_TEST"
-	select CTR_SDK
-
-config CTR_TEST_INIT_PRIORITY
-	int "CTR_TEST_INIT_PRIORITY"
-	default 99
-	depends on CTR_TEST
