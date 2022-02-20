@@ -2,16 +2,18 @@
 
 /* CHESTER includes */
 #include <ctr_accel.h>
-#include <ctr_batt.h>
 #include <ctr_buf.h>
 #include <ctr_chester_x0d.h>
 #include <ctr_hygro.h>
 #include <ctr_led.h>
 #include <ctr_lrw.h>
 #include <ctr_therm.h>
+#include <drivers/ctr_batt.h>
 #include <drivers/ctr_z.h>
 
 /* Zephyr includes */
+#include <device.h>
+#include <devicetree.h>
 #include <logging/log.h>
 #include <random/rand32.h>
 #include <shell/shell.h>
@@ -31,6 +33,8 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #if IS_ENABLED(CONFIG_APP_Z)
 static const struct device *m_ctr_z_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
 #endif /* IS_ENABLED(CONFIG_APP_Z) */
+
+static const struct device *m_ctr_batt_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_batt));
 
 struct data_errors {
 	bool orientation;
@@ -133,18 +137,33 @@ static int task_battery(void)
 	static int64_t next;
 
 	if (k_uptime_get() >= next) {
-		struct ctr_batt_result result;
+		if (!device_is_ready(m_ctr_batt_dev)) {
+			LOG_ERR("Device `CTR_BATT` not ready");
+			return -EINVAL;
+		}
 
-		ret = ctr_batt_measure(&result);
-
-		if (ret < 0) {
-			LOG_ERR("Call `ctr_batt_measure` failed: %d", ret);
+		int rest_mv;
+		ret = ctr_batt_get_rest_voltage_mv(m_ctr_batt_dev, &rest_mv,
+		                                   CTR_BATT_REST_TIMEOUT_DEFAULT_MS);
+		if (ret) {
+			LOG_ERR("Call `ctr_batt_get_rest_voltage_mv` failed: %d", ret);
 			goto error;
 		}
 
-		LOG_INF("Battery voltage (rest): %u mV", result.voltage_rest_mv);
-		LOG_INF("Battery voltage (load): %u mV", result.voltage_load_mv);
-		LOG_INF("Battery current (load): %u mA", result.current_load_ma);
+		int load_mv;
+		ret = ctr_batt_get_load_voltage_mv(m_ctr_batt_dev, &load_mv,
+		                                   CTR_BATT_LOAD_TIMEOUT_DEFAULT_MS);
+		if (ret) {
+			LOG_ERR("Call `ctr_batt_get_load_voltage_mv` failed: %d", ret);
+			goto error;
+		}
+
+		int current_ma;
+		ctr_batt_get_load_current_ma(m_ctr_batt_dev, &current_ma, load_mv);
+
+		LOG_INF("Battery voltage (rest): %u mV", rest_mv);
+		LOG_INF("Battery voltage (load): %u mV", load_mv);
+		LOG_INF("Battery current (load): %u mA", current_ma);
 
 		next = k_uptime_get() + BATT_TEST_INTERVAL_MSEC;
 
@@ -152,9 +171,9 @@ static int task_battery(void)
 		m_data.errors.batt_voltage_load = false;
 		m_data.errors.batt_current_load = false;
 
-		m_data.states.batt_voltage_rest = result.voltage_rest_mv / 1000.f;
-		m_data.states.batt_voltage_load = result.voltage_load_mv / 1000.f;
-		m_data.states.batt_current_load = result.current_load_ma;
+		m_data.states.batt_voltage_rest = rest_mv / 1000.f;
+		m_data.states.batt_voltage_load = load_mv / 1000.f;
+		m_data.states.batt_current_load = current_ma;
 	}
 
 	return 0;
@@ -564,10 +583,8 @@ static int init_chester_z(void)
 	LOG_INF("Serial number: %08x", serial_number);
 
 	uint16_t hw_revision;
-
 	ret = ctr_z_get_hw_revision(m_ctr_z_dev, &hw_revision);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_z_get_hw_revision` failed: %d", ret);
 		return ret;
 	}
@@ -575,10 +592,8 @@ static int init_chester_z(void)
 	LOG_INF("HW revision: %04x", hw_revision);
 
 	uint32_t hw_variant;
-
 	ret = ctr_z_get_hw_variant(m_ctr_z_dev, &hw_variant);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_z_get_hw_variant` failed: %d", ret);
 		return ret;
 	}
@@ -586,32 +601,26 @@ static int init_chester_z(void)
 	LOG_INF("HW variant: %08x", hw_variant);
 
 	uint32_t fw_version;
-
 	ret = ctr_z_get_fw_version(m_ctr_z_dev, &fw_version);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_z_get_fw_version` failed: %d", ret);
 		return ret;
 	}
 
 	LOG_INF("FW version: %08x", fw_version);
 
-	char *vendor_name;
-
-	ret = ctr_z_get_vendor_name(m_ctr_z_dev, &vendor_name);
-
-	if (ret < 0) {
+	char vendor_name[32];
+	ret = ctr_z_get_vendor_name(m_ctr_z_dev, vendor_name, sizeof(vendor_name));
+	if (ret) {
 		LOG_ERR("Call `ctr_z_get_vendor_name` failed: %d", ret);
 		return ret;
 	}
 
 	LOG_INF("Vendor name: %s", vendor_name);
 
-	char *product_name;
-
-	ret = ctr_z_get_product_name(m_ctr_z_dev, &product_name);
-
-	if (ret < 0) {
+	char product_name[32];
+	ret = ctr_z_get_product_name(m_ctr_z_dev, product_name, sizeof(product_name));
+	if (ret) {
 		LOG_ERR("Call `ctr_z_get_product_name` failed: %d", ret);
 		return ret;
 	}
