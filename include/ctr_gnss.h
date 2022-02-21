@@ -49,10 +49,10 @@ union ctr_gnss_event_data {
 	struct ctr_gnss_data_update update;
 };
 
-typedef void (*ctr_gnss_event_cb)(enum ctr_gnss_event event, union ctr_gnss_event_data *data,
-                                  void *user_data);
+typedef void (*ctr_gnss_user_cb)(enum ctr_gnss_event event, union ctr_gnss_event_data *data,
+                                 void *user_data);
 
-int ctr_gnss_set_event_cb(ctr_gnss_event_cb cb, void *user_data);
+int ctr_gnss_set_handler(ctr_gnss_user_cb user_cb, void *user_data);
 int ctr_gnss_start(int *corr_id);
 int ctr_gnss_stop(bool keep_bckp_domain, int *corr_id);
 

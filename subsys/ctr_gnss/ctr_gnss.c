@@ -1,26 +1,24 @@
-#include <ctr_gnss.h>
 #include "minmea.h"
 
 /* CHESTER includes */
+#include <ctr_gnss.h>
 #include <drivers/m8.h>
 
 /* Zephyr includes */
-#include <init.h>
 #include <logging/log.h>
 #include <shell/shell.h>
 #include <zephyr.h>
 
 /* Standard includes */
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)		\
-	static char __noinit __aligned(q_align)				\
-		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
-	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
-	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
-				  q_msg_size, q_max_msgs)
+#define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)                              \
+	static char __noinit __aligned(q_align) _k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)]; \
+	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =                                           \
+	        Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name, q_msg_size, q_max_msgs)
 
 LOG_MODULE_REGISTER(ctr_gnss, CONFIG_CTR_GNSS_LOG_LEVEL);
 
@@ -46,8 +44,8 @@ struct cmd_msgq_item {
 };
 
 static const struct device *m_m8_dev = DEVICE_DT_GET(DT_NODELABEL(m8));
-static ctr_gnss_event_cb m_event_cb;
-static void *m_event_user_data;
+static ctr_gnss_user_cb m_user_cb;
+static void *m_user_data;
 static atomic_t m_corr_id;
 static bool m_running;
 static char m_line_buf[256];
@@ -67,13 +65,13 @@ static int process_req_start(const struct cmd_msgq_item *item)
 
 	ret = m8_set_main_power(m_m8_dev, true);
 	if (ret) {
-		LOG_ERR("Enabling MAIN power failed: %d", ret);
+		LOG_ERR("Call `m8_set_main_power` failed: %d", ret);
 		return -EIO;
 	}
 
 	ret = m8_set_bckp_power(m_m8_dev, true);
 	if (ret) {
-		LOG_ERR("Enabling BCKP power failed: %d", ret);
+		LOG_ERR("Call `m8_set_bckp_power` failed: %d", ret);
 		return -EIO;
 	}
 
@@ -96,14 +94,14 @@ static int process_req_stop(const struct cmd_msgq_item *item)
 
 	ret = m8_set_main_power(m_m8_dev, false);
 	if (ret) {
-		LOG_ERR("Disabling MAIN power failed: %d", ret);
+		LOG_ERR("Call `m8_set_main_power` failed: %d", ret);
 		return -EIO;
 	}
 
 	if (!item->data.stop.keep_bckp_domain) {
 		ret = m8_set_bckp_power(m_m8_dev, false);
 		if (ret) {
-			LOG_ERR("Disabling BCKP power failed: %d", ret);
+			LOG_ERR("Call `m8_set_bckp_power` failed: %d", ret);
 			return -EIO;
 		}
 	}
@@ -124,7 +122,7 @@ static void process_cmd_msgq(void)
 		return;
 
 	} else if (ret) {
-		LOG_ERR("Failed reading from command queue: %d", ret);
+		LOG_ERR("Call `k_msgq_get` failed: %d", ret);
 		k_sleep(K_SECONDS(1));
 		return;
 	}
@@ -141,23 +139,21 @@ static void process_cmd_msgq(void)
 			union ctr_gnss_event_data data = { 0 };
 
 			if (ret) {
-				LOG_ERR("Processing START command failed: %d", ret);
+				LOG_ERR("Call `process_req_start` failed: %d", ret);
 
-				if (m_event_cb) {
+				if (m_user_cb) {
 					data.start_err.corr_id = item.corr_id;
 
-					m_event_cb(CTR_GNSS_EVENT_START_ERR, &data,
-					           m_event_user_data);
+					m_user_cb(CTR_GNSS_EVENT_START_ERR, &data, m_user_data);
 				}
 
 			} else {
 				m_running = true;
 
-				if (m_event_cb) {
+				if (m_user_cb) {
 					data.start_ok.corr_id = item.corr_id;
 
-					m_event_cb(CTR_GNSS_EVENT_START_OK, &data,
-					           m_event_user_data);
+					m_user_cb(CTR_GNSS_EVENT_START_OK, &data, m_user_data);
 				}
 			}
 		}
@@ -172,23 +168,21 @@ static void process_cmd_msgq(void)
 			union ctr_gnss_event_data data = { 0 };
 
 			if (ret) {
-				LOG_ERR("Processing STOP command failed: %d", ret);
+				LOG_ERR("Call `process_req_stop` failed: %d", ret);
 
-				if (m_event_cb) {
+				if (m_user_cb) {
 					data.stop_err.corr_id = item.corr_id;
 
-					m_event_cb(CTR_GNSS_EVENT_STOP_ERR, &data,
-					           m_event_user_data);
+					m_user_cb(CTR_GNSS_EVENT_STOP_ERR, &data, m_user_data);
 				}
 
 			} else {
 				m_running = false;
 
-				if (m_event_cb) {
+				if (m_user_cb) {
 					data.stop_ok.corr_id = item.corr_id;
 
-					m_event_cb(CTR_GNSS_EVENT_STOP_OK, &data,
-					           m_event_user_data);
+					m_user_cb(CTR_GNSS_EVENT_STOP_OK, &data, m_user_data);
 				}
 			}
 		}
@@ -225,8 +219,8 @@ static void parse_nmea(const char *line)
 			LOG_DBG("Longitude: %.7f", data.update.longitude);
 			LOG_DBG("Altitude: %.1f", data.update.altitude);
 
-			if (m_event_cb) {
-				m_event_cb(CTR_GNSS_EVENT_UPDATE, &data, m_event_user_data);
+			if (m_user_cb) {
+				m_user_cb(CTR_GNSS_EVENT_UPDATE, &data, m_user_data);
 			}
 		}
 	}
@@ -275,11 +269,11 @@ static void dispatcher_thread(void)
 			for (;;) {
 				ret = m8_read_buffer(m_m8_dev, buf, sizeof(buf), &bytes_read);
 				if (ret) {
-					LOG_ERR("Reading from M8 failed: %d", ret);
+					LOG_ERR("Call `m8_read_buffer` failed: %d", ret);
 
-					if (m_event_cb) {
-						m_event_cb(CTR_GNSS_EVENT_FAILURE, NULL,
-						           m_event_user_data);
+					if (m_user_cb) {
+						m_user_cb(CTR_GNSS_EVENT_FAILURE, NULL,
+						          m_user_data);
 					}
 				}
 
@@ -300,10 +294,10 @@ static void dispatcher_thread(void)
 K_THREAD_DEFINE(ctr_gnss, CONFIG_CTR_GNSS_THREAD_STACK_SIZE, dispatcher_thread, NULL, NULL, NULL,
                 CONFIG_CTR_GNSS_THREAD_PRIORITY, 0, 0);
 
-int ctr_gnss_set_event_cb(ctr_gnss_event_cb cb, void *user_data)
+int ctr_gnss_set_handler(ctr_gnss_user_cb user_cb, void *user_data)
 {
-	m_event_cb = cb;
-	m_event_user_data = user_data;
+	m_user_cb = user_cb;
+	m_user_data = user_data;
 
 	return 0;
 }
@@ -325,7 +319,7 @@ int ctr_gnss_start(int *corr_id)
 
 	ret = k_msgq_put(&m_cmd_msgq, &item, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Failed writing to command queue: %d", ret);
+		LOG_ERR("Call `k_msgq_put` failed: %d", ret);
 		return ret;
 	}
 
@@ -350,7 +344,7 @@ int ctr_gnss_stop(bool keep_bckp_domain, int *corr_id)
 
 	ret = k_msgq_put(&m_cmd_msgq, &item, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Failed writing to command queue: %d", ret);
+		LOG_ERR("Call `k_msgq_put` failed: %d", ret);
 		return ret;
 	}
 
@@ -368,10 +362,9 @@ static int cmd_start(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	int corr_id;
-
 	ret = ctr_gnss_start(&corr_id);
 	if (ret) {
-		LOG_ERR("Starting GNSS failed: %d", ret);
+		LOG_ERR("Call `ctr_gnss_start` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
@@ -392,10 +385,9 @@ static int cmd_stop(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	int corr_id;
-
 	ret = ctr_gnss_stop(false, &corr_id);
 	if (ret) {
-		LOG_ERR("Stopping GNSS failed: %d", ret);
+		LOG_ERR("Call `ctr_gnss_stop` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
@@ -418,20 +410,22 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_gnss,
-                               SHELL_CMD_ARG(start, NULL, "Start receiver.", cmd_start, 1, 0),
-                               SHELL_CMD_ARG(stop, NULL, "Stop receiver.", cmd_stop, 1, 0),
-                               SHELL_SUBCMD_SET_END);
+/* clang-format off */
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_gnss,
+
+	SHELL_CMD_ARG(start, NULL,
+	              "Start receiver.",
+	              cmd_start, 1, 0),
+
+	SHELL_CMD_ARG(stop, NULL,
+	              "Stop receiver.",
+	              cmd_stop, 1, 0),
+
+        SHELL_SUBCMD_SET_END
+);
 
 SHELL_CMD_REGISTER(gnss, &sub_gnss, "GNSS commands.", print_help);
 
-static int init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	LOG_INF("System initialization");
-
-	return 0;
-}
-
-SYS_INIT(init, APPLICATION, CONFIG_CTR_GNSS_INIT_PRIORITY);
+/* clang-format on */

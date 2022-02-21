@@ -1,5 +1,6 @@
 config CTR_GNSS
 	bool "CTR_GNSS"
+	select CBPRINTF_FP_SUPPORT if CTR_GNSS_LOG_LEVEL_DBG
 	select GNSS
 	select GNSS_M8
 	select I2C

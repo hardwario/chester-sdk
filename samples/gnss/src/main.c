@@ -7,7 +7,7 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-void gnss_event_handler(enum ctr_gnss_event event, union ctr_gnss_event_data *data, void *user_data)
+void gnss_handler(enum ctr_gnss_event event, union ctr_gnss_event_data *data, void *user_data)
 {
 	if (event == CTR_GNSS_EVENT_UPDATE) {
 		LOG_DBG("Fix quality: %d", data->update.fix_quality);
@@ -22,7 +22,7 @@ void main(void)
 {
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
-	ctr_gnss_set_event_cb(gnss_event_handler, NULL);
+	ctr_gnss_set_handler(gnss_handler, NULL);
 
 	for (;;) {
 		k_sleep(K_FOREVER);

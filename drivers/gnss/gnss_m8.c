@@ -1,6 +1,8 @@
+/* CHESTER includes */
 #include <drivers/m8.h>
 
 /* Zephyr includes */
+#include <device.h>
 #include <devicetree.h>
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
@@ -9,8 +11,9 @@
 #include <zephyr.h>
 
 /* Standard includes */
-#include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define DT_DRV_COMPAT u_blox_m8
 
@@ -26,7 +29,6 @@ struct m8_data {
 	const struct device *dev;
 
 #if IS_ENABLED(CONFIG_PM_DEVICE)
-
 	enum pm_device_state pm_state;
 #endif /* IS_ENABLED(CONFIG_PM_DEVICE) */
 };
@@ -86,7 +88,6 @@ static int m8_read_buffer_(const struct device *dev, void *buf, size_t buf_size,
 	}
 
 	uint8_t available_buf[2];
-
 	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, (uint8_t[]){ 0xfd }, 1, available_buf,
 	                        sizeof(available_buf));
 	if (ret) {
@@ -95,14 +96,13 @@ static int m8_read_buffer_(const struct device *dev, void *buf, size_t buf_size,
 	}
 
 	uint16_t available = sys_get_be16(available_buf);
-
 	*bytes_read = MIN(available, buf_size);
 
 	if (available == 0) {
 		return 0;
 	}
 
-	LOG_DBG("Available %u byte(s), reading %u byte(s)", available, *bytes_read);
+	LOG_DBG("Available %" PRIu16 " byte(s), reading %zu byte(s)", available, *bytes_read);
 
 	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, (uint8_t[]){ 0xff }, 1, buf,
 	                        *bytes_read);
@@ -123,15 +123,15 @@ static int m8_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	if (!device_is_ready(get_config(dev)->bckp_en_spec.port)) {
+		LOG_ERR("Port `BCKP POWER` not ready");
+		return -EINVAL;
+	}
+
 	ret = gpio_pin_configure_dt(&get_config(dev)->main_en_spec, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		LOG_ERR("Pin `MAIN POWER` configuration failed: %d", ret);
 		return ret;
-	}
-
-	if (!device_is_ready(get_config(dev)->bckp_en_spec.port)) {
-		LOG_ERR("Port `BCKP POWER` not ready");
-		return -EINVAL;
 	}
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->bckp_en_spec, GPIO_OUTPUT_INACTIVE);
