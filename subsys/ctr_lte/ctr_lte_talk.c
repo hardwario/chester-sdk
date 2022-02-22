@@ -661,6 +661,26 @@ int ctr_lte_talk_at_cfun(int p1)
 	return 0;
 }
 
+int ctr_lte_talk_at_cgdcont(int p1, const char *p2, const char *p3)
+{
+	int ret;
+
+	if (p2 == NULL && p3 == NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGDCONT=%d", p1);
+
+	} else if (p2 != NULL && p3 == NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGDCONT=%d,\"%s\"", p1, p2);
+
+	} else if (p2 != NULL && p3 != NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGDCONT=%d,\"%s\",\"%s\"", p1, p2, p3);
+
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int ctr_lte_talk_at_cgerep(int p1)
 {
 	int ret;

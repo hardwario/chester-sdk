@@ -87,6 +87,7 @@ struct config {
 	bool autoconn;
 	char plmnid[6 + 1];
 	bool clksync;
+	char apn[63 + 1];
 };
 
 static const struct device *dev_lte_if = DEVICE_DT_GET(DT_CHOSEN(ctr_lte_if));
@@ -100,6 +101,7 @@ static struct config m_config_interim = {
 	.clksync = true,
 #endif
 	.plmnid = "23003",
+	.apn = "hardwario.com",
 };
 
 static struct config m_config;
@@ -477,7 +479,7 @@ static int attach_once(void)
 	k_poll_signal_reset(&m_time_sig);
 	k_poll_signal_reset(&m_attach_sig);
 
-	/* Enabled bands: B08, B20, B28 */
+	/* Enabled bands: B2, B4, B5, B8, B12, B20, B28 */
 #if 1
 	const char *bands =
 	        /* B88 - B81 */
@@ -496,7 +498,7 @@ static int attach_once(void)
 	        "0010000000"
 	        /* B20 - B11 */
 	        "1000000010"
-	        /* B10 - B01 */
+	        /* B10 -  B1 */
 	        "0010011010";
 #else
 	const char *bands =
@@ -532,6 +534,15 @@ static int attach_once(void)
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_at_cops` failed: %d", ret);
+			return ret;
+		}
+	}
+
+	if (strlen(m_config.apn)) {
+		ret = ctr_lte_talk_at_cgdcont(1, "IP", m_config.apn);
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_at_cgdcont` failed: %d", ret);
 			return ret;
 		}
 	}
@@ -1303,6 +1314,7 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
 	SETTINGS_SET("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	SETTINGS_SET("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
+	SETTINGS_SET("apn", m_config_interim.apn, sizeof(m_config_interim.apn));
 
 #undef SETTINGS_SET
 
@@ -1328,6 +1340,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
 	EXPORT_FUNC("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	EXPORT_FUNC("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
+	EXPORT_FUNC("apn", m_config_interim.apn, sizeof(m_config_interim.apn));
 
 #undef EXPORT_FUNC
 
@@ -1371,6 +1384,11 @@ static void print_clksync(const struct shell *shell)
 	            m_config_interim.clksync ? "true" : "false");
 }
 
+static void print_apn(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config apn %s", m_config_interim.apn);
+}
+
 static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
 	print_test(shell);
@@ -1378,6 +1396,7 @@ static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 	print_autoconn(shell);
 	print_plmnid(shell);
 	print_clksync(shell);
+	print_apn(shell);
 
 	return 0;
 }
@@ -1489,6 +1508,37 @@ static int cmd_config_clksync(const struct shell *shell, size_t argc, char **arg
 
 	if (argc == 2 && strcmp(argv[1], "false") == 0) {
 		m_config_interim.clksync = false;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_apn(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_apn(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len > 63) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			char c = argv[1][i];
+			if (!isalnum((int)c) && c != '-' && c != '.') {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		memcpy(m_config_interim.apn, argv[1], len);
 		return 0;
 	}
 
@@ -1966,42 +2016,100 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+/* clang-format off */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
         sub_lte_config,
-        SHELL_CMD_ARG(show, NULL, "List current configuration.", cmd_config_show, 1, 0),
-        SHELL_CMD_ARG(test, NULL, "Get/Set LTE test mode.", cmd_config_test, 1, 1),
-        SHELL_CMD_ARG(antenna, NULL, "Get/Set LTE antenna (format: <int|ext>).", cmd_config_antenna,
-                      1, 1),
-        SHELL_CMD_ARG(autoconn, NULL, "Get/Set auto-connect feature (format: <true|false>).",
-                      cmd_config_autoconn, 1, 1),
-        SHELL_CMD_ARG(plmnid, NULL, "Get/Set network PLMN ID (format: 5-6 digits).",
-                      cmd_config_plmnid, 1, 1),
-        SHELL_CMD_ARG(clksync, NULL, "Get/Set clock synchronization (format: <true|false>).",
-                      cmd_config_clksync, 1, 1),
-        SHELL_SUBCMD_SET_END);
+
+        SHELL_CMD_ARG(show, NULL,
+	              "List current configuration.",
+	              cmd_config_show, 1, 0),
+
+        SHELL_CMD_ARG(test, NULL,
+	              "Get/Set LTE test mode.",
+	              cmd_config_test, 1, 1),
+
+        SHELL_CMD_ARG(antenna, NULL,
+	              "Get/Set LTE antenna (format: <int|ext>).",
+	              cmd_config_antenna, 1, 1),
+
+        SHELL_CMD_ARG(autoconn, NULL,
+	              "Get/Set auto-connect feature (format: <true|false>).",
+	              cmd_config_autoconn, 1, 1),
+
+        SHELL_CMD_ARG(plmnid, NULL,
+	              "Get/Set network PLMN ID (format: <5-6 digits>).",
+	              cmd_config_plmnid, 1, 1),
+
+        SHELL_CMD_ARG(clksync, NULL,
+	              "Get/Set clock synchronization (format: <true|false>).",
+	              cmd_config_clksync, 1, 1),
+
+        SHELL_CMD_ARG(apn, NULL,
+	              "Get/Set network APN (format: <empty or up to 63 octets>.",
+	              cmd_config_apn, 1, 1),
+
+        SHELL_SUBCMD_SET_END
+);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-        sub_lte_test,
-        SHELL_CMD_ARG(uart, NULL, "Enable/Disable UART interface (format: <enable|disable>).",
-                      cmd_test_uart, 2, 0),
-        SHELL_CMD_ARG(reset, NULL, "Reset modem.", cmd_test_reset, 1, 0),
-        SHELL_CMD_ARG(wakeup, NULL, "Wake up modem.", cmd_test_wakeup, 1, 0),
-        SHELL_CMD_ARG(cmd, NULL, "Send command to modem. (format: <command>)", cmd_test_cmd, 2, 0),
-        SHELL_SUBCMD_SET_END);
+	sub_lte_test,
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_lte,
-                               SHELL_CMD_ARG(config, &sub_lte_config, "Configuration commands.",
-                                             print_help, 1, 0),
-                               SHELL_CMD_ARG(start, NULL, "Start interface.", cmd_start, 1, 0),
-                               SHELL_CMD_ARG(attach, NULL, "Attach to network.", cmd_attach, 1, 0),
-                               SHELL_CMD_ARG(imei, NULL, "Get modem IMEI.", cmd_imei, 1, 0),
-                               SHELL_CMD_ARG(imsi, NULL, "Get SIM card IMSI.", cmd_imsi, 1, 0),
-                               SHELL_CMD_ARG(state, NULL, "Get LTE state.", cmd_state, 1, 0),
-                               SHELL_CMD_ARG(test, &sub_lte_test, "Test commands.", print_help, 1,
-                                             0),
-                               SHELL_SUBCMD_SET_END);
+	SHELL_CMD_ARG(uart, NULL,
+	              "Enable/Disable UART interface (format: <enable|disable>).",
+	              cmd_test_uart, 2, 0),
+
+	SHELL_CMD_ARG(reset, NULL,
+	              "Reset modem.",
+	              cmd_test_reset, 1, 0),
+
+	SHELL_CMD_ARG(wakeup, NULL,
+	              "Wake up modem.",
+	              cmd_test_wakeup, 1, 0),
+
+	SHELL_CMD_ARG(cmd, NULL,
+	              "Send command to modem. (format: <command>)",
+	              cmd_test_cmd, 2, 0),
+
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_lte,
+
+	SHELL_CMD_ARG(config, &sub_lte_config,
+	              "Configuration commands.",
+	              print_help, 1, 0),
+
+	SHELL_CMD_ARG(start, NULL,
+	              "Start interface.", cmd_start, 1, 0),
+
+	SHELL_CMD_ARG(attach, NULL,
+	              "Attach to network.",
+	              cmd_attach, 1, 0),
+
+	SHELL_CMD_ARG(imei, NULL,
+	              "Get modem IMEI.",
+	              cmd_imei, 1, 0),
+
+	SHELL_CMD_ARG(imsi, NULL,
+	              "Get SIM card IMSI.",
+	              cmd_imsi, 1, 0),
+
+	SHELL_CMD_ARG(state, NULL,
+	              "Get LTE state.",
+	              cmd_state, 1, 0),
+
+	SHELL_CMD_ARG(test, &sub_lte_test,
+	              "Test commands.",
+	              print_help, 1, 0),
+
+	SHELL_SUBCMD_SET_END
+);
 
 SHELL_CMD_REGISTER(lte, &sub_lte, "LTE commands.", print_help);
+
+/* clang-format on */
 
 static int init(const struct device *dev)
 {
