@@ -1,0 +1,10 @@
+selectinterface SWD
+speed 4000
+device NRF52840_XXAA
+connect
+halt
+erase
+loadfile zephyr.hex, 0x00000000
+reset
+go
+quit
