@@ -17,6 +17,9 @@ config CLOCK_CONTROL_NRF_SHELL
 config KERNEL_SHELL
 	default y if CTR_SHELL
 
+config SHELL_CMD_BUFF_SIZE
+	default 256 if CTR_SHELL
+
 config SHELL_ECHO_STATUS
 	default n if CTR_SHELL
 
