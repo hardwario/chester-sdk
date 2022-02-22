@@ -262,10 +262,6 @@ int ctr_info_get_ble_devaddr(char **ble_devaddr)
 
 int ctr_info_get_ble_devaddr_uint64(uint64_t *ble_devaddr)
 {
-	if (!m_uicr_customer_valid) {
-		return -EIO;
-	}
-
 	*ble_devaddr = NRF_FICR->DEVICEADDR[1];
 	*ble_devaddr &= BIT_MASK(16);
 	*ble_devaddr |= BIT(15) | BIT(14);
