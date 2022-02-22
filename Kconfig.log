@@ -5,8 +5,7 @@ config CTR_LOG
 	select USE_SEGGER_RTT
 
 choice LOG_MODE
-	# TODO Change to LOG2_MODE_DEFERRED in the future
-	default LOG2_MODE_IMMEDIATE
+	default LOG2_MODE_DEFERRED
 	depends on CTR_LOG
 endchoice
 
