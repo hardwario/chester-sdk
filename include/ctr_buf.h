@@ -37,6 +37,8 @@ size_t ctr_buf_get_free(struct ctr_buf *ctx);
 size_t ctr_buf_get_used(struct ctr_buf *ctx);
 void ctr_buf_reset(struct ctr_buf *ctx);
 void ctr_buf_fill(struct ctr_buf *ctx, int val);
+int ctr_buf_seek(struct ctr_buf *ctx, size_t pos);
+int ctr_buf_append_mem(struct ctr_buf *ctx, const void *mem, size_t len);
 int ctr_buf_append_char(struct ctr_buf *ctx, char val);
 int ctr_buf_append_float(struct ctr_buf *ctx, float val);
 int ctr_buf_append_s8(struct ctr_buf *ctx, int8_t val);

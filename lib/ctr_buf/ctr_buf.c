@@ -46,6 +46,29 @@ void ctr_buf_fill(struct ctr_buf *ctx, int val)
 	ctr_buf_reset(ctx);
 }
 
+int ctr_buf_seek(struct ctr_buf *ctx, size_t pos)
+{
+	if (pos > ctx->size) {
+		return -EINVAL;
+	}
+
+	ctx->len = pos;
+
+	return 0;
+}
+
+int ctr_buf_append_mem(struct ctr_buf *ctx, const void *mem, size_t len)
+{
+	if (ctr_buf_get_free(ctx) < len) {
+		return -ENOSPC;
+	}
+
+	memcpy(&ctx->mem[ctx->len], mem, len);
+	ctx->len += len;
+
+	return 0;
+}
+
 #define CTR_BUF_APPEND(_name, _type)                                                               \
 	int ctr_buf_append_##_name(struct ctr_buf *ctx, _type val)                                 \
 	{                                                                                          \
