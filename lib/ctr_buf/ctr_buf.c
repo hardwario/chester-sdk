@@ -3,6 +3,8 @@
 
 /* Standard includes */
 #include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 int ctr_buf_init(struct ctr_buf *ctx, void *mem, size_t size)
@@ -57,7 +59,7 @@ int ctr_buf_seek(struct ctr_buf *ctx, size_t pos)
 	return 0;
 }
 
-int ctr_buf_append_mem(struct ctr_buf *ctx, const void *mem, size_t len)
+int ctr_buf_append_mem(struct ctr_buf *ctx, const uint8_t *mem, size_t len)
 {
 	if (ctr_buf_get_free(ctx) < len) {
 		return -ENOSPC;
