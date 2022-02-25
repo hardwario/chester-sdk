@@ -1486,7 +1486,7 @@ static int cmd_config_plmnid(const struct shell *shell, size_t argc, char **argv
 			}
 		}
 
-		memcpy(m_config_interim.plmnid, argv[1], len);
+		strcpy(m_config_interim.plmnid, argv[1]);
 		return 0;
 	}
 
@@ -1525,7 +1525,7 @@ static int cmd_config_apn(const struct shell *shell, size_t argc, char **argv)
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len > 63) {
+		if (len >= sizeof(m_config_interim.apn)) {
 			shell_error(shell, "invalid format");
 			return -EINVAL;
 		}
@@ -1538,7 +1538,7 @@ static int cmd_config_apn(const struct shell *shell, size_t argc, char **argv)
 			}
 		}
 
-		memcpy(m_config_interim.apn, argv[1], len);
+		strcpy(m_config_interim.apn, argv[1]);
 		return 0;
 	}
 
