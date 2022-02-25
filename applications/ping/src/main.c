@@ -1,22 +1,49 @@
+#include "app_config.h"
+
 /* CHESTER includes */
 #include <ctr_buf.h>
+#include <ctr_hygro.h>
 #include <ctr_led.h>
 #include <ctr_lte.h>
+#include <ctr_therm.h>
 
 /* Zephyr includes */
+#include <device.h>
+#include <devicetree.h>
+#include <drivers/watchdog.h>
 #include <logging/log.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include <zephyr.h>
 
+/* Standard includes */
+#include <math.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
+struct data {
+	float therm_temperature;
+	float hygro_temperature;
+	float hygro_humidity;
+};
+
+static atomic_t m_measure = true;
 static atomic_t m_send = true;
 static bool m_lte_eval_valid;
+static const struct device *m_wdt_dev = DEVICE_DT_GET(DT_NODELABEL(wdt0));
+static int m_wdt_id;
 static K_MUTEX_DEFINE(m_lte_eval_mut);
 static K_SEM_DEFINE(m_loop_sem, 1, 1);
 static K_SEM_DEFINE(m_run_sem, 0, 1);
 static struct ctr_lte_eval m_lte_eval;
+static struct data m_data = {
+	.therm_temperature = NAN,
+	.hygro_temperature = NAN,
+	.hygro_humidity = NAN,
+};
 
 static void start(void)
 {
@@ -125,7 +152,106 @@ static void lte_event_handler(enum ctr_lte_event event, union ctr_lte_event_data
 	}
 }
 
-void send_timer(struct k_timer *timer_id)
+static int compose(struct ctr_buf *buf)
+{
+	int ret;
+	int err = 0;
+
+	ctr_buf_reset(buf);
+	err |= ctr_buf_seek(buf, 8);
+
+	static uint32_t sequence;
+	err |= ctr_buf_append_u32(buf, sequence++);
+
+	uint8_t protocol = 1;
+	err |= ctr_buf_append_u8(buf, protocol);
+
+	uint32_t uptime = k_uptime_get() / 1000;
+	err |= ctr_buf_append_u32(buf, uptime);
+
+	uint64_t imei;
+	ret = ctr_lte_get_imei(&imei);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_get_imei` failed: %d", ret);
+		return ret;
+	}
+
+	err |= ctr_buf_append_u64(buf, imei);
+
+	uint64_t imsi;
+	ret = ctr_lte_get_imsi(&imsi);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_get_imsi` failed: %d", ret);
+		return ret;
+	}
+
+	err |= ctr_buf_append_u64(buf, imsi);
+
+	k_mutex_lock(&m_lte_eval_mut, K_FOREVER);
+
+	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.eest);
+	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.ecl);
+	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.rsrp);
+	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.rsrq);
+	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.snr);
+	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.plmn);
+	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.cid);
+	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.band);
+	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.earfcn);
+
+	m_lte_eval_valid = false;
+
+	k_mutex_unlock(&m_lte_eval_mut);
+
+	if (isnan(m_data.therm_temperature)) {
+		err |= ctr_buf_append_s16(buf, INT16_MAX);
+	} else {
+		err |= ctr_buf_append_s16(buf, m_data.therm_temperature * 10.f);
+	}
+
+	if (isnan(m_data.hygro_temperature)) {
+		err |= ctr_buf_append_s16(buf, INT16_MAX);
+	} else {
+		err |= ctr_buf_append_s16(buf, m_data.hygro_temperature * 10.f);
+	}
+
+	if (isnan(m_data.hygro_humidity)) {
+		err |= ctr_buf_append_u16(buf, UINT16_MAX);
+	} else {
+		err |= ctr_buf_append_u16(buf, m_data.hygro_humidity * 10.f);
+	}
+
+	size_t len = ctr_buf_get_used(buf);
+
+	struct tc_sha256_state_struct s;
+	ret = tc_sha256_init(&s);
+	if (ret != TC_CRYPTO_SUCCESS) {
+		LOG_ERR("Call `tc_sha256_init` failed: %d", ret);
+		return ret;
+	}
+
+	ret = tc_sha256_update(&s, ctr_buf_get_mem(buf) + 8, len - 8);
+	if (ret != TC_CRYPTO_SUCCESS) {
+		LOG_ERR("Call `tc_sha256_update` failed: %d", ret);
+		return ret;
+	}
+
+	uint8_t digest[32];
+	ret = tc_sha256_final(digest, &s);
+	if (ret != TC_CRYPTO_SUCCESS) {
+		LOG_ERR("Call `tc_sha256_final` failed: %d", ret);
+		return ret;
+	}
+
+	err |= ctr_buf_seek(buf, 0);
+	err |= ctr_buf_append_u16(buf, len);
+	err |= ctr_buf_append_mem(buf, digest, 6);
+	err |= ctr_buf_seek(buf, len);
+
+	return err ? -ENOSPC : 0;
+}
+
+static void send_timer(struct k_timer *timer_id)
 {
 	LOG_INF("Send timer expired");
 
@@ -141,65 +267,13 @@ static int send(void)
 
 	k_timer_start(&m_send_timer, K_SECONDS(60), K_FOREVER);
 
-	CTR_BUF_DEFINE(buf, 128);
-	ctr_buf_seek(&buf, 2);
+	CTR_BUF_DEFINE_STATIC(buf, 128);
 
-	uint64_t imsi;
-	ret = ctr_lte_get_imsi(&imsi);
+	ret = compose(&buf);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_get_imsi` failed: %d", ret);
-		return -EBUSY;
-	}
-
-	ctr_buf_append_u64(&buf, imsi);
-
-	static uint32_t counter;
-	ctr_buf_append_u32(&buf, counter++);
-
-	k_mutex_lock(&m_lte_eval_mut, K_FOREVER);
-
-	if (m_lte_eval_valid) {
-		ctr_buf_append_s32(&buf, m_lte_eval.eest);
-		ctr_buf_append_s32(&buf, m_lte_eval.ecl);
-		ctr_buf_append_s32(&buf, m_lte_eval.rsrp);
-		ctr_buf_append_s32(&buf, m_lte_eval.rsrq);
-		ctr_buf_append_s32(&buf, m_lte_eval.snr);
-		ctr_buf_append_s32(&buf, m_lte_eval.plmn);
-		ctr_buf_append_s32(&buf, m_lte_eval.cid);
-		ctr_buf_append_s32(&buf, m_lte_eval.band);
-		ctr_buf_append_s32(&buf, m_lte_eval.earfcn);
-	}
-
-	m_lte_eval_valid = false;
-
-	k_mutex_unlock(&m_lte_eval_mut);
-
-	size_t len = ctr_buf_get_used(&buf);
-	ctr_buf_seek(&buf, 0);
-	ctr_buf_append_s16(&buf, len + 6);
-	ctr_buf_seek(&buf, len);
-
-	struct tc_sha256_state_struct s;
-	ret = tc_sha256_init(&s);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_init` failed: %d", ret);
+		LOG_ERR("Call `compose` failed: %d", ret);
 		return ret;
 	}
-
-	ret = tc_sha256_update(&s, ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf));
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_update` failed: %d", ret);
-		return ret;
-	}
-
-	uint8_t digest[32];
-	ret = tc_sha256_final(digest, &s);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_final` failed: %d", ret);
-		return ret;
-	}
-
-	ctr_buf_append_mem(&buf, digest, 6);
 
 	ret = ctr_lte_eval(NULL);
 	if (ret) {
@@ -225,7 +299,6 @@ static int send(void)
 
 static void init_wdt(void)
 {
-	/*
 	int ret;
 
 	if (!device_is_ready(m_wdt_dev)) {
@@ -254,24 +327,68 @@ static void init_wdt(void)
 		LOG_ERR("Call `wdt_setup` failed: %d", ret);
 		k_oops();
 	}
-	*/
 }
 
 static void feed_wdt(void)
 {
-	/*
 	if (!device_is_ready(m_wdt_dev)) {
 		LOG_ERR("Call `device_is_ready` failed");
 		k_oops();
 	}
 
 	wdt_feed(m_wdt_dev, m_wdt_id);
-	*/
+}
+
+static void measure_timer(struct k_timer *timer_id)
+{
+	LOG_INF("Measurement timer expired");
+
+	atomic_set(&m_measure, true);
+	k_sem_give(&m_loop_sem);
+}
+
+static K_TIMER_DEFINE(m_measure_timer, measure_timer, NULL);
+
+static int measure(void)
+{
+	int ret;
+
+	k_timer_start(&m_measure_timer, Z_TIMEOUT_MS(g_app_config.measurement_interval * 1000),
+	              K_FOREVER);
+
+#if IS_ENABLED(CONFIG_CTR_THERM)
+	ret = ctr_therm_read(&m_data.therm_temperature);
+	if (ret) {
+		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
+		m_data.therm_temperature = NAN;
+	}
+#endif
+
+#if IS_ENABLED(CONFIG_CTR_HYGRO)
+	ret = ctr_hygro_read(&m_data.hygro_temperature, &m_data.hygro_humidity);
+	if (ret) {
+		LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);
+		m_data.hygro_temperature = NAN;
+		m_data.hygro_humidity = NAN;
+	}
+#endif
+
+	return 0;
 }
 
 static int loop(void)
 {
 	int ret;
+
+	if (atomic_get(&m_measure)) {
+		atomic_set(&m_measure, false);
+
+		ret = measure();
+		if (ret) {
+			LOG_ERR("Call `measure` failed: %d", ret);
+			return ret;
+		}
+	}
 
 	if (atomic_get(&m_send)) {
 		atomic_set(&m_send, false);
@@ -293,6 +410,14 @@ void main(void)
 	ctr_led_set(CTR_LED_CHANNEL_R, true);
 
 	init_wdt();
+
+#if IS_ENABLED(CONFIG_CTR_THERM)
+	ret = ctr_therm_init();
+	if (ret) {
+		LOG_ERR("Call `ctr_therm_init` failed: %d", ret);
+		k_oops();
+	}
+#endif
 
 	ret = ctr_lte_set_event_cb(lte_event_handler, NULL);
 	if (ret) {
@@ -346,3 +471,46 @@ void main(void)
 		}
 	}
 }
+
+static int cmd_measure(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	ret = measure();
+	if (ret) {
+		LOG_ERR("Call `measure` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int cmd_send(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	ret = send();
+	if (ret) {
+		LOG_ERR("Call `send` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	return 0;
+}
+
+SHELL_CMD_REGISTER(measure, NULL, "Start measurement immediately.", cmd_measure);
+SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);

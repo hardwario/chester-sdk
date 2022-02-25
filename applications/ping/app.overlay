@@ -1,7 +1,11 @@
+&ctr_lte_if {
+	status = "okay";
+};
+
 &uart0 {
 	status = "okay";
 };
 
-&ctr_lte_if {
+&sht30_ext {
 	status = "okay";
 };
