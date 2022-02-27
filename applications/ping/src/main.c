@@ -6,11 +6,9 @@
 #include <ctr_led.h>
 #include <ctr_lte.h>
 #include <ctr_therm.h>
+#include <ctr_wdog.h>
 
 /* Zephyr includes */
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/watchdog.h>
 #include <logging/log.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
@@ -33,8 +31,6 @@ struct data {
 static atomic_t m_measure = true;
 static atomic_t m_send = true;
 static bool m_lte_eval_valid;
-static const struct device *m_wdt_dev = DEVICE_DT_GET(DT_NODELABEL(wdt0));
-static int m_wdt_id;
 static K_MUTEX_DEFINE(m_lte_eval_mut);
 static K_SEM_DEFINE(m_loop_sem, 1, 1);
 static K_SEM_DEFINE(m_run_sem, 0, 1);
@@ -44,6 +40,7 @@ static struct data m_data = {
 	.hygro_temperature = NAN,
 	.hygro_humidity = NAN,
 };
+static struct ctr_wdog_channel m_wdog_channel;
 
 static void start(void)
 {
@@ -297,48 +294,6 @@ static int send(void)
 	return 0;
 }
 
-static void init_wdt(void)
-{
-	int ret;
-
-	if (!device_is_ready(m_wdt_dev)) {
-		LOG_ERR("Call `device_is_ready` failed");
-		k_oops();
-	}
-
-	struct wdt_timeout_cfg wdt_config = {
-		.flags = WDT_FLAG_RESET_SOC,
-		.window.min = 0U,
-		.window.max = 120000,
-	};
-
-	ret = wdt_install_timeout(m_wdt_dev, &wdt_config);
-
-	if (ret < 0) {
-		LOG_ERR("Call `wdt_install_timeout` failed: %d", ret);
-		k_oops();
-	}
-
-	m_wdt_id = ret;
-
-	ret = wdt_setup(m_wdt_dev, WDT_OPT_PAUSE_HALTED_BY_DBG);
-
-	if (ret < 0) {
-		LOG_ERR("Call `wdt_setup` failed: %d", ret);
-		k_oops();
-	}
-}
-
-static void feed_wdt(void)
-{
-	if (!device_is_ready(m_wdt_dev)) {
-		LOG_ERR("Call `device_is_ready` failed");
-		k_oops();
-	}
-
-	wdt_feed(m_wdt_dev, m_wdt_id);
-}
-
 static void measure_timer(struct k_timer *timer_id)
 {
 	LOG_INF("Measurement timer expired");
@@ -409,7 +364,17 @@ void main(void)
 
 	ctr_led_set(CTR_LED_CHANNEL_R, true);
 
-	init_wdt();
+	ret = ctr_wdog_set_timeout(120000);
+	if (ret) {
+		LOG_ERR("Call `ctr_wdog_set_timeout` failed: %d", ret);
+		k_oops();
+	}
+
+	ret = ctr_wdog_install(&m_wdog_channel);
+	if (ret) {
+		LOG_ERR("Call `ctr_wdog_install` failed: %d", ret);
+		k_oops();
+	}
 
 #if IS_ENABLED(CONFIG_CTR_THERM)
 	ret = ctr_therm_init();
@@ -432,7 +397,11 @@ void main(void)
 	}
 
 	for (;;) {
-		feed_wdt();
+		ret = ctr_wdog_feed(&m_wdog_channel);
+		if (ret) {
+			LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
+			k_oops();
+		}
 
 		ret = k_sem_take(&m_run_sem, K_FOREVER);
 		if (ret == -EAGAIN) {
@@ -450,7 +419,11 @@ void main(void)
 	for (;;) {
 		LOG_INF("Alive");
 
-		feed_wdt();
+		ret = ctr_wdog_feed(&m_wdog_channel);
+		if (ret) {
+			LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
+			k_oops();
+		}
 
 		ctr_led_set(CTR_LED_CHANNEL_G, true);
 		k_sleep(K_MSEC(30));
