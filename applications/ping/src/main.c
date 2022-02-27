@@ -10,6 +10,7 @@
 
 /* Zephyr includes */
 #include <logging/log.h>
+#include <random/rand32.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include <zephyr.h>
@@ -262,9 +263,14 @@ static int send(void)
 {
 	int ret;
 
-	k_timer_start(&m_send_timer, K_SECONDS(60), K_FOREVER);
+	int64_t jitter = (int32_t)sys_rand32_get() % (g_app_config.report_interval * 1000 / 5);
+	int64_t duration = g_app_config.report_interval * 1000 + jitter;
 
-	CTR_BUF_DEFINE_STATIC(buf, 128);
+	LOG_INF("Scheduling next report in %lld second(s)", duration / 1000);
+
+	k_timer_start(&m_send_timer, Z_TIMEOUT_MS(duration), K_FOREVER);
+
+	CTR_BUF_DEFINE_STATIC(buf, 1024);
 
 	ret = compose(&buf);
 	if (ret) {
