@@ -1,7 +1,7 @@
 menu "Subsystems"
 
-rsource "ctr_adc/Kconfig"
 rsource "ctr_accel/Kconfig"
+rsource "ctr_adc/Kconfig"
 rsource "ctr_ble/Kconfig"
 rsource "ctr_button/Kconfig"
 rsource "ctr_config/Kconfig"
@@ -16,5 +16,6 @@ rsource "ctr_rtc/Kconfig"
 rsource "ctr_signal/Kconfig"
 rsource "ctr_test/Kconfig"
 rsource "ctr_therm/Kconfig"
+rsource "ctr_wdog/Kconfig"
 
 endmenu

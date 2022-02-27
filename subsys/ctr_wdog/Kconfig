@@ -1,0 +1,11 @@
+config CTR_WDOG
+	bool "CTR_WDOG"
+	select WATCHDOG
+
+if CTR_WDOG
+
+module = CTR_WDOG
+module-str = CHESTER Watchdog Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_WDOG
