@@ -7,5 +7,5 @@
 };
 
 &sht30_ext {
-	status = "okay";
+	status = "disabled";
 };
