@@ -284,13 +284,8 @@ static int send(void)
 		return ret;
 	}
 
-#if 1
 	struct ctr_lte_send_opts opts = CTR_LTE_SEND_OPTS_DEFAULTS;
-#else
-	struct ctr_lte_send_opts opts = CTR_LTE_SEND_OPTS_DEFAULTS_PUBLIC_IP;
-#endif
 	opts.port = 4101;
-
 	ret = ctr_lte_send(&opts, ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
