@@ -88,6 +88,8 @@ struct config {
 	char plmnid[6 + 1];
 	bool clksync;
 	char apn[63 + 1];
+	uint8_t addr[4];
+	int port;
 };
 
 static const struct device *dev_lte_if = DEVICE_DT_GET(DT_CHOSEN(ctr_lte_if));
@@ -102,6 +104,8 @@ static struct config m_config_interim = {
 #endif
 	.plmnid = "23003",
 	.apn = "hardwario.com",
+	.addr = { 192, 168, 168, 1 },
+	.port = 10000,
 };
 
 static struct config m_config;
@@ -869,10 +873,23 @@ static int send_once(const struct send_msgq_data *data)
 
 	char addr[15 + 1];
 
-	snprintf(addr, sizeof(addr), "%d.%d.%d.%d", data->addr[0], data->addr[1], data->addr[2],
-	         data->addr[3]);
+	if (data->addr[0] == 0 && data->addr[1] == 0 && data->addr[2] == 0 && data->addr[3] == 0) {
+		snprintf(addr, sizeof(addr), "%u.%u.%u.%u", m_config.addr[0], m_config.addr[1],
+		         m_config.addr[2], m_config.addr[3]);
+	} else {
+		snprintf(addr, sizeof(addr), "%u.%u.%u.%u", data->addr[0], data->addr[1],
+		         data->addr[2], data->addr[3]);
+	}
 
-	ret = ctr_lte_talk_at_xsendto(addr, data->port, data->buf, data->len);
+	int port;
+
+	if (data->port == -1) {
+		port = m_config.port;
+	} else {
+		port = data->port;
+	}
+
+	ret = ctr_lte_talk_at_xsendto(addr, port, data->buf, data->len);
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lte_talk_at_xsendto` failed: %d", ret);
@@ -1315,6 +1332,8 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	SETTINGS_SET("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
 	SETTINGS_SET("apn", m_config_interim.apn, sizeof(m_config_interim.apn));
+	SETTINGS_SET("addr", m_config_interim.addr, sizeof(m_config_interim.addr));
+	SETTINGS_SET("port", &m_config_interim.port, sizeof(m_config_interim.port));
 
 #undef SETTINGS_SET
 
@@ -1341,6 +1360,8 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	EXPORT_FUNC("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
 	EXPORT_FUNC("apn", m_config_interim.apn, sizeof(m_config_interim.apn));
+	EXPORT_FUNC("addr", m_config_interim.addr, sizeof(m_config_interim.addr));
+	EXPORT_FUNC("port", &m_config_interim.port, sizeof(m_config_interim.port));
 
 #undef EXPORT_FUNC
 
@@ -1389,6 +1410,17 @@ static void print_apn(const struct shell *shell)
 	shell_print(shell, SETTINGS_PFX " config apn %s", m_config_interim.apn);
 }
 
+static void print_addr(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config addr %u.%u.%u.%u", m_config_interim.addr[0],
+	            m_config_interim.addr[1], m_config_interim.addr[2], m_config_interim.addr[3]);
+}
+
+static void print_port(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config port %d", m_config_interim.port);
+}
+
 static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
 	print_test(shell);
@@ -1397,6 +1429,8 @@ static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 	print_plmnid(shell);
 	print_clksync(shell);
 	print_apn(shell);
+	print_addr(shell);
+	print_port(shell);
 
 	return 0;
 }
@@ -1539,6 +1573,86 @@ static int cmd_config_apn(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		strcpy(m_config_interim.apn, argv[1]);
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_addr(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc == 1) {
+		print_addr(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len > 15) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		unsigned int addr[4];
+
+		ret = sscanf(argv[1], "%u.%u.%u.%u", &addr[0], &addr[1], &addr[2], &addr[3]);
+		if (ret != 4) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		if ((addr[0] < 0 || addr[0] > 255) || (addr[1] < 0 || addr[1] > 255) ||
+		    (addr[2] < 0 || addr[2] > 255) || (addr[3] < 0 || addr[3] > 255)) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_config_interim.addr[0] = addr[0];
+		m_config_interim.addr[1] = addr[1];
+		m_config_interim.addr[2] = addr[2];
+		m_config_interim.addr[3] = addr[3];
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_port(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_port(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len < 1 || len > 5) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		int port = strtol(argv[1], NULL, 10);
+
+		if (port < 0 || port > 65535) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_config_interim.port = port;
 		return 0;
 	}
 
@@ -2019,13 +2133,13 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 /* clang-format off */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-        sub_lte_config,
+	sub_lte_config,
 
-        SHELL_CMD_ARG(show, NULL,
+	SHELL_CMD_ARG(show, NULL,
 	              "List current configuration.",
 	              cmd_config_show, 1, 0),
 
-        SHELL_CMD_ARG(test, NULL,
+	SHELL_CMD_ARG(test, NULL,
 	              "Get/Set LTE test mode.",
 	              cmd_config_test, 1, 1),
 
@@ -2033,23 +2147,32 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "Get/Set LTE antenna (format: <int|ext>).",
 	              cmd_config_antenna, 1, 1),
 
-        SHELL_CMD_ARG(autoconn, NULL,
+	SHELL_CMD_ARG(autoconn, NULL,
 	              "Get/Set auto-connect feature (format: <true|false>).",
 	              cmd_config_autoconn, 1, 1),
 
-        SHELL_CMD_ARG(plmnid, NULL,
+	SHELL_CMD_ARG(plmnid, NULL,
 	              "Get/Set network PLMN ID (format: <5-6 digits>).",
 	              cmd_config_plmnid, 1, 1),
 
-        SHELL_CMD_ARG(clksync, NULL,
+	SHELL_CMD_ARG(clksync, NULL,
 	              "Get/Set clock synchronization (format: <true|false>).",
 	              cmd_config_clksync, 1, 1),
 
-        SHELL_CMD_ARG(apn, NULL,
+	SHELL_CMD_ARG(apn, NULL,
 	              "Get/Set network APN (format: <empty or up to 63 octets>.",
 	              cmd_config_apn, 1, 1),
 
-        SHELL_SUBCMD_SET_END
+	SHELL_CMD_ARG(addr, NULL,
+	              "Get/Set default IP address (format: a.b.c.d).",
+	              cmd_config_addr, 1, 1),
+
+
+	SHELL_CMD_ARG(port, NULL,
+	              "Get/Set default UDP port (format: <1-5 digits>).",
+	              cmd_config_port, 1, 1),
+
+	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
