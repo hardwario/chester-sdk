@@ -1,0 +1,31 @@
+image: "hardwario/nrf-connect-sdk-build:v1.0.0"
+
+variables:
+  CI_DEBUG_TRACE: "false"
+
+build:
+  stage: build
+  variables:
+    GIT_STRATEGY: none
+
+  script:
+    - git clone -n $CI_REPOSITORY_URL chester
+    - git -C chester config advice.detachedHead false
+    - git -C chester checkout "$CI_BUILD_REF"
+    - west init -l --mf west.yml chester
+    - west update
+    - west config build.board chester_nrf52840
+    - |
+      for app_dir in chester/samples/*/
+      do
+        printf '\n\033[1;36m*****************************************************\033[0m'
+        printf '\n\033[1;36mBuild: %s\033[0m\n' ${app_dir::-1}
+        west build -d "${app_dir}/build" ${app_dir}
+      done
+    - |
+      for app_dir in chester/applications/*/
+      do
+        printf '\n\033[1;36m*****************************************************\033[0m'
+        printf '\n\033[1;36mBuild: %s\033[0m\n' ${app_dir::-1}
+        west build -d "${app_dir}/build" ${app_dir}
+      done
