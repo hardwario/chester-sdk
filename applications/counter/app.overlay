@@ -1,3 +1,7 @@
 &uart0 {
 	status = "okay";
 };
+
+&ctr_lte_if {
+	status = "okay";
+};
