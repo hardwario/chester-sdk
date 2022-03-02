@@ -16,16 +16,22 @@ build:
     - west update
     - west config build.board chester_nrf52840
     - |
-      for app_dir in chester/samples/*/
+      for sample in chester/samples/*/
       do
-        printf '\n\033[1;36m*****************************************************\033[0m'
-        printf '\n\033[1;36mBuild: %s\033[0m\n' ${app_dir::-1}
-        west build -d "${app_dir}/build" ${app_dir}
+        printf '\n\033[1;36m'
+        printf '*%.0s' {1..50}
+        printf '\033[0m'
+        printf '\n\033[1;36mBuild: %s\033[0m\n' ${sample::-1}
+        west build -d "${sample}/build" ${sample}
       done
     - |
-      for app_dir in chester/applications/*/
+      for application in chester/applications/*/
       do
-        printf '\n\033[1;36m*****************************************************\033[0m'
-        printf '\n\033[1;36mBuild: %s\033[0m\n' ${app_dir::-1}
-        west build -d "${app_dir}/build" ${app_dir}
+        printf '\n\033[1;36m'
+        printf '*%.0s' {1..50}
+        printf '\033[0m'
+        printf '\n\033[1;36m'
+        printf 'Build: %s' ${application::-1}
+        printf '\033[0m\n'
+        west build -d "${application}/build" ${application}
       done
