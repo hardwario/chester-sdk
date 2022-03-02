@@ -1,4 +1,4 @@
-image: "hardwario/nrf-connect-sdk-build:v1.0.0"
+image: "hardwario/nrf-connect-sdk-build:v1.8.0-1"
 
 variables:
   CI_DEBUG_TRACE: "false"
@@ -9,9 +9,9 @@ build:
     GIT_STRATEGY: none
 
   script:
-    - git clone -n $CI_REPOSITORY_URL chester
+    - git clone -n ${CI_REPOSITORY_URL} chester
     - git -C chester config advice.detachedHead false
-    - git -C chester checkout "$CI_BUILD_REF"
+    - git -C chester checkout "${CI_BUILD_REF}"
     - west init -l --mf west.yml chester
     - west update
     - west config build.board chester_nrf52840
