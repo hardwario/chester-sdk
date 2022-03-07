@@ -1,0 +1,3 @@
+config ADC_ADS122C04
+	bool "TI ADS122C04 24-Bit 4-Channel 2-kSPS Delta-Sigma ADC"
+	depends on I2C

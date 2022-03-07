@@ -1,0 +1,12 @@
+description: Texas Instruments ADS122C04 24-Bit 4-Channel 2-kSPS Delta-Sigma ADC
+
+compatible: "ti,ads122c04"
+
+include: [i2c-device.yaml, adc-controller.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

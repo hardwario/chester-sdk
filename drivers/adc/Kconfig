@@ -1,1 +1,2 @@
+rsource "Kconfig.adc_ads122c04"
 rsource "Kconfig.adc_tla2021"
