@@ -1,7 +1,7 @@
 /* CHESTER includes */
 #include <drivers/ctr_batt.h>
 
-/* Zephyr includes*/
+/* Zephyr includes */
 #include <devicetree.h>
 #include <logging/log.h>
 #include <shell/shell.h>
