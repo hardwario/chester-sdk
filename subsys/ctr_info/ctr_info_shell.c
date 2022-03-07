@@ -14,16 +14,8 @@ LOG_MODULE_REGISTER(ctr_info_shell, CONFIG_CTR_INFO_LOG_LEVEL);
 
 static int cmd_vendor_name(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
-
 	char *vendor_name;
-	ret = ctr_info_get_vendor_name(&vendor_name);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_vendor_name` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
+	ctr_info_get_vendor_name(&vendor_name);
 	shell_print(shell, "vendor name: %s", vendor_name);
 
 	return 0;
@@ -31,16 +23,8 @@ static int cmd_vendor_name(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_product_name(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
-
 	char *product_name;
-	ret = ctr_info_get_product_name(&product_name);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_product_name` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
+	ctr_info_get_product_name(&product_name);
 	shell_print(shell, "product name: %s", product_name);
 
 	return 0;
@@ -48,16 +32,8 @@ static int cmd_product_name(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_hw_variant(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
-
 	char *hw_variant;
-	ret = ctr_info_get_hw_variant(&hw_variant);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_hw_variant` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
+	ctr_info_get_hw_variant(&hw_variant);
 	shell_print(shell, "hardware variant: %s", hw_variant);
 
 	return 0;
@@ -65,16 +41,8 @@ static int cmd_hw_variant(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_hw_revision(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
-
 	char *hw_revision;
-	ret = ctr_info_get_hw_revision(&hw_revision);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_hw_revision` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
+	ctr_info_get_hw_revision(&hw_revision);
 	shell_print(shell, "hardware revision: %s", hw_revision);
 
 	return 0;
@@ -82,16 +50,8 @@ static int cmd_hw_revision(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_fw_version(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
-
 	char *fw_version;
-	ret = ctr_info_get_fw_version(&fw_version);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_fw_version` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
+	ctr_info_get_fw_version(&fw_version);
 	shell_print(shell, "firmware version: %s", fw_version);
 
 	return 0;
@@ -99,16 +59,8 @@ static int cmd_fw_version(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_serial_number(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
-
 	char *serial_number;
-	ret = ctr_info_get_serial_number(&serial_number);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_serial_number` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
+	ctr_info_get_serial_number(&serial_number);
 	shell_print(shell, "serial number: %s", serial_number);
 
 	return 0;
@@ -116,16 +68,8 @@ static int cmd_serial_number(const struct shell *shell, size_t argc, char **argv
 
 static int cmd_claim_token(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
-
 	char *claim_token;
-	ret = ctr_info_get_claim_token(&claim_token);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_claim_token` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
+	ctr_info_get_claim_token(&claim_token);
 	shell_print(shell, "claim token: %s", claim_token);
 
 	return 0;
@@ -133,16 +77,8 @@ static int cmd_claim_token(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_ble_devaddr(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
-
 	char *ble_devaddr;
-	ret = ctr_info_get_ble_devaddr(&ble_devaddr);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_ble_devaddr` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
+	ctr_info_get_ble_devaddr(&ble_devaddr);
 	shell_print(shell, "ble devaddr: %s", ble_devaddr);
 
 	return 0;
@@ -150,16 +86,8 @@ static int cmd_ble_devaddr(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_ble_passkey(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
-
 	char *ble_passkey;
-	ret = ctr_info_get_ble_passkey(&ble_passkey);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_ble_passkey` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
+	ctr_info_get_ble_passkey(&ble_passkey);
 	shell_print(shell, "ble passkey: %s", ble_passkey);
 
 	return 0;

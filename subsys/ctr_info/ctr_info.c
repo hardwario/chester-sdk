@@ -142,6 +142,7 @@ static int load_uicr_customer(void)
 int ctr_info_get_vendor_name(char **vendor_name)
 {
 	if (!m_uicr_customer_valid) {
+		*vendor_name = "(unset)";
 		return -EIO;
 	}
 
@@ -153,6 +154,7 @@ int ctr_info_get_vendor_name(char **vendor_name)
 int ctr_info_get_product_name(char **product_name)
 {
 	if (!m_uicr_customer_valid) {
+		*product_name = "(unset)";
 		return -EIO;
 	}
 
@@ -164,6 +166,7 @@ int ctr_info_get_product_name(char **product_name)
 int ctr_info_get_hw_variant(char **hw_variant)
 {
 	if (!m_uicr_customer_valid) {
+		*hw_variant = "(unset)";
 		return -EIO;
 	}
 
@@ -175,6 +178,7 @@ int ctr_info_get_hw_variant(char **hw_variant)
 int ctr_info_get_hw_revision(char **hw_revision)
 {
 	if (!m_uicr_customer_valid) {
+		*hw_revision = "(unset)";
 		return -EIO;
 	}
 
@@ -205,6 +209,7 @@ int ctr_info_get_fw_version(char **fw_version)
 int ctr_info_get_serial_number(char **serial_number)
 {
 	if (!m_uicr_customer_valid) {
+		*serial_number = "(unset)";
 		return -EIO;
 	}
 
@@ -216,6 +221,7 @@ int ctr_info_get_serial_number(char **serial_number)
 int ctr_info_get_serial_number_uint32(uint32_t *serial_number)
 {
 	if (!m_uicr_customer_valid) {
+		*serial_number = 0;
 		return -EIO;
 	}
 
@@ -227,6 +233,7 @@ int ctr_info_get_serial_number_uint32(uint32_t *serial_number)
 int ctr_info_get_claim_token(char **claim_token)
 {
 	if (!m_uicr_customer_valid) {
+		*claim_token = "(unset)";
 		return -EIO;
 	}
 
@@ -276,6 +283,7 @@ int ctr_info_get_ble_devaddr_uint64(uint64_t *ble_devaddr)
 int ctr_info_get_ble_passkey(char **ble_passkey)
 {
 	if (!m_uicr_customer_valid) {
+		*ble_passkey = "(unset)";
 		return -EIO;
 	}
 
