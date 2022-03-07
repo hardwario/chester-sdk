@@ -44,6 +44,8 @@ LOG_MODULE_REGISTER(ctr_info, CONFIG_CTR_INFO_LOG_LEVEL);
 #define HW_REVISION_OFFSET 0x33
 #define HW_REVISION_LENGTH 7
 
+#define FW_VERSION_LENGTH 17
+
 #define SERIAL_NUMBER_OFFSET 0x3a
 #define SERIAL_NUMBER_LENGTH 11
 
@@ -186,7 +188,7 @@ int ctr_info_get_fw_version(char **fw_version)
 #if defined(VERSION)
 	int ret;
 
-	static char buf[16];
+	static char buf[FW_VERSION_LENGTH];
 	ret = snprintf(buf, sizeof(buf), "%s", STRINGIFY(VERSION));
 	if (ret != strlen(buf)) {
 		return -ENOSPC;
