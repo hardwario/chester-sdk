@@ -1,0 +1,24 @@
+description: HARDWARIO CHESTER-X3 Driver
+
+compatible: "hardwario,ctr-x3"
+
+include: base.yaml
+
+properties:
+  slot:
+    type: string
+    required: true
+    description: Slot position (A or B) on CHESTER mainboard
+    enum:
+      - "A"
+      - "B"
+
+  pwr0-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for switched power rail (active low)
+
+  pwr1-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for switched power rail (active low)

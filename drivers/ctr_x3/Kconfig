@@ -1,0 +1,14 @@
+config CTR_X3
+	bool "CHESTER Battery Measurement Circuit Driver"
+	select ADC
+	select ADC_ADS122C04
+	select GPIO
+	select I2C
+
+if CTR_X3
+
+module = CTR_X3
+module-str = ctr_x3
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_X3

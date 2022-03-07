@@ -57,6 +57,24 @@
 		};
 	};
 
+	ctr_x3_a: ctr_x3_a {
+		compatible = "hardwario,ctr-x3";
+		label = "CTR_X3_A";
+		status = "disabled";
+		slot = "A";
+		pwr0-gpios = <&gpio0 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		pwr1-gpios = <&gpio0 31 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+
+	ctr_x3_b: ctr_x3_b {
+		compatible = "hardwario,ctr-x3";
+		label = "CTR_X3_B";
+		status = "disabled";
+		slot = "B";
+		pwr0-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		pwr1-gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+
 	ctr_batt: ctr_batt {
 		compatible = "hardwario,ctr-batt";
 		label = "CTR_BATT";
@@ -113,8 +131,39 @@
 	sda-pin = <21>;
 	scl-pin = <20>;
 
-	ctr_z: ctr_z@4f {
+	ctr_x3_ads122c04_a1: ctr_x3_ads122c04@46 {
+		compatible = "ti,ads122c04";
+		label = "CTR_X3_ADS122C04_A1";
 		status = "disabled";
+		reg = <0x46>;
+		#io-channel-cells = <1>;
+	};
+
+	ctr_x3_ads122c04_a2: ctr_x3_ads122c04@47 {
+		compatible = "ti,ads122c04";
+		label = "CTR_X3_ADS122C04_A2";
+		status = "disabled";
+		reg = <0x47>;
+		#io-channel-cells = <1>;
+	};
+
+	ctr_x3_ads122c04_b1: ctr_x3_ads122c04@4a {
+		compatible = "ti,ads122c04";
+		label = "CTR_X3_ADS122C04_B1";
+		status = "disabled";
+		reg = <0x4a>;
+		#io-channel-cells = <1>;
+	};
+
+	ctr_x3_ads122c04_b2: ctr_x3_ads122c04@4f {
+		compatible = "ti,ads122c04";
+		label = "CTR_X3_ADS122C04_B2";
+		status = "disabled";
+		reg = <0x4f>;
+		#io-channel-cells = <1>;
+	};
+
+	ctr_z: ctr_z@4f {
 		compatible = "hardwario,ctr-z";
 		reg = <0x4f>;
 		label = "CTR_Z";

@@ -1,0 +1,8 @@
+&i2c0 {
+	ads122c04_x3: ads122c04_x3@46 {
+		compatible = "ti,ads122c04";
+		reg = <0x46>;
+		label = "X3_ADS122C04";
+		#io-channel-cells = <1>;
+	};
+};

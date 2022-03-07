@@ -1,0 +1,11 @@
+&ctr_x3_b {
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_b1 {
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_b2 {
+	status = "okay";
+};
