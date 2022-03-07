@@ -1,6 +1,7 @@
 #ifndef CHESTER_INCLUDE_CTR_LED_H_
 #define CHESTER_INCLUDE_CTR_LED_H_
 
+/* Standard includes */
 #include <stdbool.h>
 
 #ifdef __cplusplus
