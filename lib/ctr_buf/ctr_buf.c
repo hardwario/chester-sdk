@@ -71,6 +71,20 @@ int ctr_buf_append_mem(struct ctr_buf *ctx, const uint8_t *mem, size_t len)
 	return 0;
 }
 
+int ctr_buf_append_str(struct ctr_buf *ctx, const char *str)
+{
+	size_t len = strlen(str);
+
+	if (ctr_buf_get_free(ctx) < len + 1) {
+		return -ENOSPC;
+	}
+
+	strcpy(&ctx->mem[ctx->len], str);
+	ctx->len += len + 1;
+
+	return 0;
+}
+
 #define CTR_BUF_APPEND(_name, _type)                                                               \
 	int ctr_buf_append_##_name(struct ctr_buf *ctx, _type val)                                 \
 	{                                                                                          \
