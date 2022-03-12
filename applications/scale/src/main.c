@@ -33,7 +33,6 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 /* TODO Would be nice to define using K_SECONDS, etc. Proper macros? */
 #define BATT_TEST_INTERVAL_MSEC (6 * 60 * 60 * 1000)
-#define REPORT_INTERVAL_MSEC (15 * 60 * 1000)
 
 struct measurement {
 	int timestamp_offset;
