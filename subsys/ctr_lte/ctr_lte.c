@@ -682,7 +682,8 @@ static int attach_once(void)
 		return ret;
 	}
 
-	if (strcmp(xsocket, "#XSOCKET: 1,2,17") != 0) {
+	/* TODO We accept both answers as correct since there was a change in the SLM application */
+	if (strcmp(xsocket, "#XSOCKET: 1,2,17") != 0 && strcmp(xsocket, "#XSOCKET: 0,2,17") != 0) {
 		LOG_ERR("Unexpected socket response");
 		return -ENOTCONN;
 	}
