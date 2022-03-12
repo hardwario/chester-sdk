@@ -598,7 +598,7 @@ static int send(void)
 
 	k_timer_start(&m_send_timer, Z_TIMEOUT_MS(duration), K_FOREVER);
 
-	CTR_BUF_DEFINE_STATIC(buf, 256);
+	CTR_BUF_DEFINE_STATIC(buf, 512);
 
 	ret = compose(&buf);
 	if (ret) {
