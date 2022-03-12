@@ -136,6 +136,7 @@
 		label = "CTR_X3_ADS122C04_A1";
 		status = "disabled";
 		reg = <0x46>;
+		mux = <3>;
 		#io-channel-cells = <1>;
 	};
 
@@ -144,6 +145,7 @@
 		label = "CTR_X3_ADS122C04_A2";
 		status = "disabled";
 		reg = <0x47>;
+		mux = <3>;
 		#io-channel-cells = <1>;
 	};
 
@@ -152,6 +154,7 @@
 		label = "CTR_X3_ADS122C04_B1";
 		status = "disabled";
 		reg = <0x4a>;
+		mux = <3>;
 		#io-channel-cells = <1>;
 	};
 
@@ -160,6 +163,7 @@
 		label = "CTR_X3_ADS122C04_B2";
 		status = "disabled";
 		reg = <0x4f>;
+		mux = <3>;
 		#io-channel-cells = <1>;
 	};
 

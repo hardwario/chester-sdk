@@ -8,5 +8,50 @@ properties:
   "#io-channel-cells":
     const: 1
 
+  gain:
+    type: int
+    description: Gain configuration
+    default: 0
+    enum:
+      - 0 # Gain 1
+      - 1 # Gain 2
+      - 2 # Gain 4
+      - 3 # Gain 8
+      - 4 # Gain 16
+      - 5 # Gain 32
+      - 6 # Gain 64
+      - 7 # Gain 128
+
+  mux:
+    type: int
+    description: Input multiplexer configuration
+    default: 0
+    enum:
+      - 0 # AINP = AIN0, AINN = AIN1
+      - 1 # AINP = AIN0, AINN = AIN2
+      - 2 # AINP = AIN0, AINN = AIN3
+      - 3 # AINP = AIN1, AINN = AIN0
+      - 4 # AINP = AIN1, AINN = AIN2
+      - 5 # AINP = AIN1, AINN = AIN3
+      - 6 # AINP = AIN2, AINN = AIN3
+      - 7 # AINP = AIN3, AINN = AIN2
+      - 8 # AINP = AIN0, AINN = AVSS
+      - 9 # AINP = AIN1, AINN = AVSS
+      - 10 # AINP = AIN2, AINN = AVSS
+      - 11 # AINP = AIN3, AINN = AVSS
+      - 12 # (VREFP – VREFN) / 4 monitor (PGA bypassed)
+      - 13 # (AVDD – AVSS) / 4 monitor (PGA bypassed)
+      - 14 # AINP and AINN shorted to (AVDD + AVSS) / 2
+
+  vref:
+    type: int
+    description: Reference selection
+    default: 0
+    enum:
+      - 0 # Internal 2048 mV reference
+      - 1 # External reference (REFP + REFN)
+      - 2 # Analog supply (AVDD - AVSS)
+      - 3 # Analog supply (AVDD - AVSS)
+
 io-channel-cells:
   - input
