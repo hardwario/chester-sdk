@@ -57,6 +57,50 @@
 		};
 	};
 
+	ctr_x0_a: ctr_x0_a {
+		compatible = "hardwario,ctr-x0";
+		label = "CTR_X0_A";
+		status = "disabled";
+		on1-gpios = <&ctr_x0_pcal6416a_a 11 GPIO_ACTIVE_LOW>;
+		pu1-gpios = <&ctr_x0_pcal6416a_a 13 GPIO_ACTIVE_LOW>;
+		pd1-gpios = <&ctr_x0_pcal6416a_a 15 GPIO_ACTIVE_HIGH>;
+		cl1-gpios = <&ctr_x0_pcal6416a_a 14 GPIO_ACTIVE_HIGH>;
+		on2-gpios = <&ctr_x0_pcal6416a_a 10 GPIO_ACTIVE_LOW>;
+		pu2-gpios = <&ctr_x0_pcal6416a_a 8 GPIO_ACTIVE_LOW>;
+		pd2-gpios = <&ctr_x0_pcal6416a_a 12 GPIO_ACTIVE_HIGH>;
+		cl2-gpios = <&ctr_x0_pcal6416a_a 9 GPIO_ACTIVE_HIGH>;
+		on3-gpios = <&ctr_x0_pcal6416a_a 3 GPIO_ACTIVE_LOW>;
+		pu3-gpios = <&ctr_x0_pcal6416a_a 5 GPIO_ACTIVE_LOW>;
+		pd3-gpios = <&ctr_x0_pcal6416a_a 7 GPIO_ACTIVE_HIGH>;
+		cl3-gpios = <&ctr_x0_pcal6416a_a 6 GPIO_ACTIVE_HIGH>;
+		on4-gpios = <&ctr_x0_pcal6416a_a 0 GPIO_ACTIVE_LOW>;
+		pu4-gpios = <&ctr_x0_pcal6416a_a 2 GPIO_ACTIVE_LOW>;
+		pd4-gpios = <&ctr_x0_pcal6416a_a 4 GPIO_ACTIVE_HIGH>;
+		cl4-gpios = <&ctr_x0_pcal6416a_a 1 GPIO_ACTIVE_HIGH>;
+	};
+
+	ctr_x0_b: ctr_x0_b {
+		compatible = "hardwario,ctr-x0";
+		label = "CTR_X0_B";
+		status = "disabled";
+		on1-gpios = <&ctr_x0_pcal6416a_b 11 GPIO_ACTIVE_LOW>;
+		pu1-gpios = <&ctr_x0_pcal6416a_b 13 GPIO_ACTIVE_LOW>;
+		pd1-gpios = <&ctr_x0_pcal6416a_b 15 GPIO_ACTIVE_HIGH>;
+		cl1-gpios = <&ctr_x0_pcal6416a_b 14 GPIO_ACTIVE_HIGH>;
+		on2-gpios = <&ctr_x0_pcal6416a_b 10 GPIO_ACTIVE_LOW>;
+		pu2-gpios = <&ctr_x0_pcal6416a_b 8 GPIO_ACTIVE_LOW>;
+		pd2-gpios = <&ctr_x0_pcal6416a_b 12 GPIO_ACTIVE_HIGH>;
+		cl2-gpios = <&ctr_x0_pcal6416a_b 9 GPIO_ACTIVE_HIGH>;
+		on3-gpios = <&ctr_x0_pcal6416a_b 3 GPIO_ACTIVE_LOW>;
+		pu3-gpios = <&ctr_x0_pcal6416a_b 5 GPIO_ACTIVE_LOW>;
+		pd3-gpios = <&ctr_x0_pcal6416a_b 7 GPIO_ACTIVE_HIGH>;
+		cl3-gpios = <&ctr_x0_pcal6416a_b 6 GPIO_ACTIVE_HIGH>;
+		on4-gpios = <&ctr_x0_pcal6416a_b 0 GPIO_ACTIVE_LOW>;
+		pu4-gpios = <&ctr_x0_pcal6416a_b 2 GPIO_ACTIVE_LOW>;
+		pd4-gpios = <&ctr_x0_pcal6416a_b 4 GPIO_ACTIVE_HIGH>;
+		cl4-gpios = <&ctr_x0_pcal6416a_b 1 GPIO_ACTIVE_HIGH>;
+	};
+
 	ctr_x3_a: ctr_x3_a {
 		compatible = "hardwario,ctr-x3";
 		label = "CTR_X3_A";
@@ -130,6 +174,26 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sda-pin = <21>;
 	scl-pin = <20>;
+
+	ctr_x0_pcal6416a_a: ctr_x0_pcal6416a_a@20 {
+		compatible = "nxp,pcal6416a";
+		label = "CTR_X0_PCAL6416A_A";
+		status = "disabled";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+	};
+
+	ctr_x0_pcal6416a_b: ctr_x0_pcal6416a_b@21 {
+		compatible = "nxp,pcal6416a";
+		label = "CTR_X0_PCAL6416A_B";
+		status = "disabled";
+		reg = <0x21>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+	};
 
 	ctr_x3_ads122c04_a1: ctr_x3_ads122c04_a1@46 {
 		compatible = "ti,ads122c04";

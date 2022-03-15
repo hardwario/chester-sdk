@@ -1,0 +1,87 @@
+description: HARDWARIO CHESTER-X0 Driver
+
+compatible: "hardwario,ctr-x0"
+
+include: base.yaml
+
+properties:
+
+  on1-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH1 switched power rail (active low)
+
+  pu1-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH1 switched pull-up resistor (active low)
+
+  pd1-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH1 switched pull-down resistor (active high)
+
+  cl1-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH1 switched current loop shunt resistor (active high)
+
+  on2-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH2 switched power rail (active low)
+
+  pu2-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH2 switched pull-up resistor (active low)
+
+  pd2-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH2 switched pull-down resistor (active high)
+
+  cl2-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH2 switched current loop shunt resistor (active high)
+
+  on3-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH3 switched power rail (active low)
+
+  pu3-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH3 switched pull-up resistor (active low)
+
+  pd3-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH3 switched pull-down resistor (active high)
+
+  cl3-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH3 switched current loop shunt resistor (active high)
+
+  on4-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH4 switched power rail (active low)
+
+  pu4-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH4 switched pull-up resistor (active low)
+
+  pd4-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH4 switched pull-down resistor (active high)
+
+  cl4-gpios:
+    type: phandle-array
+    required: true
+    description: Enable pin for CH4 switched current loop shunt resistor (active high)

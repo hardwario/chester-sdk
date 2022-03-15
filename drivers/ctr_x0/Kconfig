@@ -1,0 +1,19 @@
+config CTR_X0
+	bool "HARDWARIO CHESTER-X0 (Configurable Inputs) Driver"
+	select GPIO
+	select GPIO_PCAL6416A
+	select I2C
+
+if CTR_X0
+
+module = CTR_X0
+module-str = ctr_x0
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_X0_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+endif # CTR_X0

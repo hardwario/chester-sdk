@@ -1,0 +1,11 @@
+&ctr_x0_b {
+	status = "okay";
+};
+
+&ctr_x0_pcal6416a_b {
+	status = "okay";
+};
+
+&ctr_x0_pcal6416a_b {
+	status = "okay";
+};
