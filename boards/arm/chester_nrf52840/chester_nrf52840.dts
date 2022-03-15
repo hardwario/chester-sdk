@@ -131,7 +131,7 @@
 	sda-pin = <21>;
 	scl-pin = <20>;
 
-	ctr_x3_ads122c04_a1: ctr_x3_ads122c04@46 {
+	ctr_x3_ads122c04_a1: ctr_x3_ads122c04_a1@46 {
 		compatible = "ti,ads122c04";
 		label = "CTR_X3_ADS122C04_A1";
 		status = "disabled";
@@ -140,7 +140,7 @@
 		#io-channel-cells = <1>;
 	};
 
-	ctr_x3_ads122c04_a2: ctr_x3_ads122c04@47 {
+	ctr_x3_ads122c04_a2: ctr_x3_ads122c04_a2@47 {
 		compatible = "ti,ads122c04";
 		label = "CTR_X3_ADS122C04_A2";
 		status = "disabled";
@@ -149,7 +149,7 @@
 		#io-channel-cells = <1>;
 	};
 
-	ctr_x3_ads122c04_b1: ctr_x3_ads122c04@4a {
+	ctr_x3_ads122c04_b1: ctr_x3_ads122c04_b1@4a {
 		compatible = "ti,ads122c04";
 		label = "CTR_X3_ADS122C04_B1";
 		status = "disabled";
@@ -158,7 +158,7 @@
 		#io-channel-cells = <1>;
 	};
 
-	ctr_x3_ads122c04_b2: ctr_x3_ads122c04@4f {
+	ctr_x3_ads122c04_b2: ctr_x3_ads122c04b2@4f {
 		compatible = "ti,ads122c04";
 		label = "CTR_X3_ADS122C04_B2";
 		status = "disabled";
