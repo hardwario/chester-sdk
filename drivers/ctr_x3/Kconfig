@@ -1,5 +1,5 @@
 config CTR_X3
-	bool "CHESTER Battery Measurement Circuit Driver"
+	bool "HARDWARIO CHESTER-X3 (Precision Analog) Driver"
 	select ADC
 	select ADC_ADS122C04
 	select GPIO
