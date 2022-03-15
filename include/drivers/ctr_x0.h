@@ -21,7 +21,7 @@ enum ctr_x0_mode {
 	CTR_X0_MODE_PNP_INPUT = 2,
 	CTR_X0_MODE_AI_INPUT = 3,
 	CTR_X0_MODE_CL_INPUT = 4,
-	CTR_X0_MODE_5V_OUTPUT = 5,
+	CTR_X0_MODE_PWR_SOURCE = 5,
 };
 
 typedef int (*ctr_x0_api_set_mode)(const struct device *dev, enum ctr_x0_channel channel,

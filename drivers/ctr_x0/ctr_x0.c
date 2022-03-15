@@ -126,7 +126,7 @@ static int ctr_x0_set_mode_(const struct device *dev, enum ctr_x0_channel channe
 					return ret;                                                \
 				}                                                                  \
 				break;                                                             \
-			case CTR_X0_MODE_5V_OUTPUT:                                                \
+			case CTR_X0_MODE_PWR_SOURCE:                                               \
 				ret = gpio_pin_configure_dt(&get_config(dev)->on##channel##_spec,  \
 				                            GPIO_OUTPUT_ACTIVE);                   \
 				if (ret) {                                                         \

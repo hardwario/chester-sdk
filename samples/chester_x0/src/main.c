@@ -42,7 +42,7 @@ void main(void)
 		k_oops();
 	}
 
-	ret = ctr_x0_set_mode(dev, CTR_X0_CHANNEL_4, CTR_X0_MODE_5V_OUTPUT);
+	ret = ctr_x0_set_mode(dev, CTR_X0_CHANNEL_4, CTR_X0_MODE_PWR_SOURCE);
 	if (ret) {
 		LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);
 		k_oops();
