@@ -1,6 +1,0 @@
-if SHIELD_CTR_X3_A || SHIELD_CTR_X3_B
-
-config CTR_X3
-	default y
-
-endif # SHIELD_CTR_X3_A || SHIELD_CTR_X3_B

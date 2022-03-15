@@ -1,5 +1,0 @@
-config SHIELD_CTR_X3_A
-	def_bool $(shields_list_contains,ctr_x3_a)
-
-config SHIELD_CTR_X3_B
-	def_bool $(shields_list_contains,ctr_x3_b)
