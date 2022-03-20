@@ -18,6 +18,8 @@
 #include <drivers/adc.h>
 #include <logging/log.h>
 #include <random/rand32.h>
+#include <tinycbor/cbor.h>
+#include <tinycbor/cbor_buf_writer.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include <zephyr.h>
@@ -377,7 +379,7 @@ static int measure(void)
 
 	if (m_data.measurement_count >= ARRAY_SIZE(m_data.measurements)) {
 		LOG_WRN("Measurements buffer full");
-		return 0;
+		return -ENOSPC;
 	}
 
 	int64_t timestamp;
@@ -436,115 +438,385 @@ static int measure(void)
 	return 0;
 }
 
+enum {
+	MSG_KEY_FRAME = 0,
+	MSG_KEY_SEQUENCE = 1,
+	MSG_KEY_PROTOCOL = 2,
+	MSG_KEY_ATTRIBUTES = 3,
+	MSG_KEY_VENDOR_NAME = 4,
+	MSG_KEY_PRODUCT_NAME = 5,
+	MSG_KEY_HW_VARIANT = 6,
+	MSG_KEY_HW_REVISION = 7,
+	MSG_KEY_FW_VERSION = 8,
+	MSG_KEY_SERIAL_NUMBER = 9,
+	MSG_KEY_STATE = 10,
+	MSG_KEY_UPTIME = 11,
+	MSG_KEY_BATTERY = 12,
+	MSG_KEY_VOLTAGE_REST = 13,
+	MSG_KEY_VOLTAGE_LOAD = 14,
+	MSG_KEY_CURRENT_LOAD = 15,
+	MSG_KEY_NETWORK = 16,
+	MSG_KEY_IMEI = 17,
+	MSG_KEY_IMSI = 18,
+	MSG_KEY_PARAMS = 19,
+	MSG_KEY_EEST = 20,
+	MSG_KEY_ECL = 21,
+	MSG_KEY_RSRP = 22,
+	MSG_KEY_RSRQ = 23,
+	MSG_KEY_SNR = 24,
+	MSG_KEY_PLMN = 25,
+	MSG_KEY_CID = 26,
+	MSG_KEY_BAND = 27,
+	MSG_KEY_EARFCN = 28,
+	MSG_KEY_THERMOMETER = 29,
+	MSG_KEY_TEMPERATURE = 30,
+	MSG_KEY_ACCELEROMETER = 31,
+	MSG_KEY_ACCEL_X = 32,
+	MSG_KEY_ACCEL_Y = 33,
+	MSG_KEY_ACCEL_Z = 34,
+	MSG_KEY_ORIENTATION = 35,
+	MSG_KEY_MEASUREMENTS = 36,
+	MSG_KEY_TIMESTAMP = 37,
+	MSG_KEY_LOAD_CELL = 38,
+	MSG_KEY_A1_RAW = 39,
+	MSG_KEY_A2_RAW = 40,
+	MSG_KEY_B1_RAW = 41,
+	MSG_KEY_B2_RAW = 42,
+};
+
 static int compose(struct ctr_buf *buf)
 {
 	int ret;
-	int err = 0;
 
 	ctr_buf_reset(buf);
-	err |= ctr_buf_seek(buf, 8);
-
-	static uint32_t sequence;
-	err |= ctr_buf_append_u32(buf, sequence++);
-
-	uint8_t protocol = 3;
-	err |= ctr_buf_append_u8(buf, protocol);
-
-	char *vendor_name;
-	ctr_info_get_vendor_name(&vendor_name);
-
-	char *product_name;
-	ctr_info_get_product_name(&product_name);
-
-	char *hw_variant;
-	ctr_info_get_hw_variant(&hw_variant);
-
-	char *hw_revision;
-	ctr_info_get_hw_revision(&hw_revision);
-
-	char *fw_version;
-	ctr_info_get_fw_version(&fw_version);
-
-	char *serial_number;
-	ctr_info_get_serial_number(&serial_number);
-
-	err |= ctr_buf_append_str(buf, vendor_name);
-	err |= ctr_buf_append_str(buf, product_name);
-	err |= ctr_buf_append_str(buf, hw_variant);
-	err |= ctr_buf_append_str(buf, hw_revision);
-	err |= ctr_buf_append_str(buf, fw_version);
-	err |= ctr_buf_append_str(buf, serial_number);
-
-	uint32_t uptime = k_uptime_get() / 1000;
-	err |= ctr_buf_append_u32(buf, uptime);
-
-	err |= ctr_buf_append_u16(buf, isnan(m_data.batt_voltage_rest) ?
-	                                       UINT16_MAX :
-                                               m_data.batt_voltage_rest * 1000.f);
-	err |= ctr_buf_append_u16(buf, isnan(m_data.batt_voltage_load) ?
-	                                       UINT16_MAX :
-                                               m_data.batt_voltage_load * 1000.f);
-	err |= ctr_buf_append_u16(buf, isnan(m_data.batt_current_load) ? UINT16_MAX :
-                                                                         m_data.batt_current_load);
-
-	uint64_t imei;
-	ret = ctr_lte_get_imei(&imei);
+	ret = ctr_buf_seek(buf, 8);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_get_imei` failed: %d", ret);
+		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
 		return ret;
 	}
 
-	err |= ctr_buf_append_u64(buf, imei);
+	CborError err = 0;
 
-	uint64_t imsi;
-	ret = ctr_lte_get_imsi(&imsi);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_get_imsi` failed: %d", ret);
-		return ret;
+	struct cbor_buf_writer writer;
+	cbor_buf_writer_init(&writer, ctr_buf_get_mem(buf) + 8, ctr_buf_get_free(buf));
+
+	CborEncoder enc;
+	cbor_encoder_init(&enc, &writer.enc, 0);
+
+	CborEncoder map;
+	err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+	err |= cbor_encode_uint(&map, MSG_KEY_FRAME);
+	{
+		CborEncoder map;
+		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+		static uint32_t sequence;
+		err |= cbor_encode_uint(&map, MSG_KEY_SEQUENCE);
+		err |= cbor_encode_uint(&map, sequence++);
+
+		uint8_t protocol = 3;
+		err |= cbor_encode_uint(&map, MSG_KEY_PROTOCOL);
+		err |= cbor_encode_uint(&map, protocol);
+
+		err |= cbor_encoder_close_container(&enc, &map);
 	}
 
-	err |= ctr_buf_append_u64(buf, imsi);
+	err |= cbor_encode_uint(&map, MSG_KEY_ATTRIBUTES);
+	{
+		CborEncoder map;
+		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
 
-	k_mutex_lock(&m_lte_eval_mut, K_FOREVER);
+		char *vendor_name;
+		ctr_info_get_vendor_name(&vendor_name);
 
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.eest);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.ecl);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.rsrp);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.rsrq);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.snr);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.plmn);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.cid);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.band);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.earfcn);
+		err |= cbor_encode_uint(&map, MSG_KEY_VENDOR_NAME);
+		err |= cbor_encode_text_stringz(&map, vendor_name);
 
-	m_lte_eval_valid = false;
+		char *product_name;
+		ctr_info_get_product_name(&product_name);
 
-	k_mutex_unlock(&m_lte_eval_mut);
+		err |= cbor_encode_uint(&map, MSG_KEY_PRODUCT_NAME);
+		err |= cbor_encode_text_stringz(&map, product_name);
 
-	err |= ctr_buf_append_s16(
-	        buf, isnan(m_data.therm_temperature) ? INT16_MAX : m_data.therm_temperature * 10.f);
+		char *hw_variant;
+		ctr_info_get_hw_variant(&hw_variant);
 
-	err |= ctr_buf_append_s16(buf, isnan(m_data.accel_x) ? INT16_MAX : m_data.accel_x * 1000.f);
-	err |= ctr_buf_append_s16(buf, isnan(m_data.accel_y) ? INT16_MAX : m_data.accel_y * 1000.f);
-	err |= ctr_buf_append_s16(buf, isnan(m_data.accel_z) ? INT16_MAX : m_data.accel_z * 1000.f);
+		err |= cbor_encode_uint(&map, MSG_KEY_HW_VARIANT);
+		err |= cbor_encode_text_stringz(&map, hw_variant);
 
-	err |= ctr_buf_append_u8(
-	        buf, m_data.accel_orientation == INT_MAX ? UINT8_MAX : m_data.accel_orientation);
+		char *hw_revision;
+		ctr_info_get_hw_revision(&hw_revision);
 
-	err |= ctr_buf_append_u16(buf, m_data.measurement_count);
+		err |= cbor_encode_uint(&map, MSG_KEY_HW_REVISION);
+		err |= cbor_encode_text_stringz(&map, hw_revision);
 
-	if (m_data.measurement_count) {
-		err |= ctr_buf_append_u64(buf, m_data.measurement_timestamp);
+		char *fw_version;
+		ctr_info_get_fw_version(&fw_version);
 
-		LOG_INF("Populating %d measurement(s)", m_data.measurement_count);
+		err |= cbor_encode_uint(&map, MSG_KEY_FW_VERSION);
+		err |= cbor_encode_text_stringz(&map, fw_version);
+
+		char *serial_number;
+		ctr_info_get_serial_number(&serial_number);
+
+		err |= cbor_encode_uint(&map, MSG_KEY_SERIAL_NUMBER);
+		err |= cbor_encode_text_stringz(&map, serial_number);
+
+		err |= cbor_encoder_close_container(&enc, &map);
+	}
+
+	err |= cbor_encode_uint(&map, MSG_KEY_STATE);
+	{
+		CborEncoder map;
+		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+		err |= cbor_encode_uint(&map, MSG_KEY_UPTIME);
+		err |= cbor_encode_uint(&map, k_uptime_get() / 1000);
+
+		err |= cbor_encoder_close_container(&enc, &map);
+	}
+
+	err |= cbor_encode_uint(&map, MSG_KEY_BATTERY);
+	{
+		CborEncoder map;
+		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+		err |= cbor_encode_uint(&map, MSG_KEY_VOLTAGE_REST);
+		if (isnan(m_data.batt_voltage_rest)) {
+			err |= cbor_encode_null(&map);
+		} else {
+			err |= cbor_encode_uint(&map, m_data.batt_voltage_rest * 1000.f);
+		}
+
+		err |= cbor_encode_uint(&map, MSG_KEY_VOLTAGE_LOAD);
+		if (isnan(m_data.batt_voltage_load)) {
+			err |= cbor_encode_null(&map);
+		} else {
+			err |= cbor_encode_uint(&map, m_data.batt_voltage_load * 1000.f);
+		}
+
+		err |= cbor_encode_uint(&map, MSG_KEY_CURRENT_LOAD);
+		if (isnan(m_data.batt_current_load)) {
+			err |= cbor_encode_null(&map);
+		} else {
+			err |= cbor_encode_uint(&map, m_data.batt_current_load);
+		}
+
+		err |= cbor_encoder_close_container(&enc, &map);
+	}
+
+	err |= cbor_encode_uint(&map, MSG_KEY_NETWORK);
+	{
+		CborEncoder map;
+		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+		uint64_t imei;
+		ret = ctr_lte_get_imei(&imei);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_get_imei` failed: %d", ret);
+			return ret;
+		}
+
+		err |= cbor_encode_uint(&map, MSG_KEY_IMEI);
+		err |= cbor_encode_uint(&map, imei);
+
+		uint64_t imsi;
+		ret = ctr_lte_get_imsi(&imsi);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_get_imsi` failed: %d", ret);
+			return ret;
+		}
+
+		err |= cbor_encode_uint(&map, MSG_KEY_IMSI);
+		err |= cbor_encode_uint(&map, imsi);
+
+		err |= cbor_encode_uint(&map, MSG_KEY_PARAMS);
+		{
+			CborEncoder map;
+			err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+			k_mutex_lock(&m_lte_eval_mut, K_FOREVER);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_EEST);
+			if (m_lte_eval_valid) {
+				err |= cbor_encode_int(&map, m_lte_eval.eest);
+			} else {
+				err |= cbor_encode_null(&map);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_ECL);
+			if (m_lte_eval_valid) {
+				err |= cbor_encode_int(&map, m_lte_eval.ecl);
+			} else {
+				err |= cbor_encode_null(&map);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_RSRP);
+			if (m_lte_eval_valid) {
+				err |= cbor_encode_int(&map, m_lte_eval.rsrp);
+			} else {
+				err |= cbor_encode_null(&map);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_RSRQ);
+			if (m_lte_eval_valid) {
+				err |= cbor_encode_int(&map, m_lte_eval.rsrq);
+			} else {
+				err |= cbor_encode_null(&map);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_SNR);
+			if (m_lte_eval_valid) {
+				err |= cbor_encode_int(&map, m_lte_eval.snr);
+			} else {
+				err |= cbor_encode_null(&map);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_PLMN);
+			if (m_lte_eval_valid) {
+				err |= cbor_encode_int(&map, m_lte_eval.plmn);
+			} else {
+				err |= cbor_encode_null(&map);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_CID);
+			if (m_lte_eval_valid) {
+				err |= cbor_encode_int(&map, m_lte_eval.cid);
+			} else {
+				err |= cbor_encode_null(&map);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_BAND);
+			if (m_lte_eval_valid) {
+				err |= cbor_encode_int(&map, m_lte_eval.band);
+			} else {
+				err |= cbor_encode_null(&map);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_EARFCN);
+			if (m_lte_eval_valid) {
+				err |= cbor_encode_int(&map, m_lte_eval.earfcn);
+			} else {
+				err |= cbor_encode_null(&map);
+			}
+
+			m_lte_eval_valid = false;
+
+			k_mutex_unlock(&m_lte_eval_mut);
+
+			err |= cbor_encoder_close_container(&enc, &map);
+		}
+
+		err |= cbor_encoder_close_container(&enc, &map);
+	}
+
+	err |= cbor_encode_uint(&map, MSG_KEY_THERMOMETER);
+	{
+		CborEncoder map;
+		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+		err |= cbor_encode_uint(&map, MSG_KEY_TEMPERATURE);
+		if (isnan(m_data.therm_temperature)) {
+			err |= cbor_encode_null(&map);
+		} else {
+			err |= cbor_encode_int(&map, m_data.therm_temperature * 10.f);
+		}
+
+		err |= cbor_encoder_close_container(&enc, &map);
+	}
+
+	err |= cbor_encode_uint(&map, MSG_KEY_ACCELEROMETER);
+	{
+		CborEncoder map;
+		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+		err |= cbor_encode_uint(&map, MSG_KEY_ACCEL_X);
+		if (isnan(m_data.accel_x)) {
+			err |= cbor_encode_null(&map);
+		} else {
+			err |= cbor_encode_int(&map, m_data.accel_x * 1000.f);
+		}
+
+		err |= cbor_encode_uint(&map, MSG_KEY_ACCEL_Y);
+		if (isnan(m_data.accel_y)) {
+			err |= cbor_encode_null(&map);
+		} else {
+			err |= cbor_encode_int(&map, m_data.accel_y * 1000.f);
+		}
+
+		err |= cbor_encode_uint(&map, MSG_KEY_ACCEL_Z);
+		if (isnan(m_data.accel_z)) {
+			err |= cbor_encode_null(&map);
+		} else {
+			err |= cbor_encode_int(&map, m_data.accel_z * 1000.f);
+		}
+
+		err |= cbor_encode_uint(&map, MSG_KEY_ORIENTATION);
+		if (m_data.accel_orientation == INT_MAX) {
+			err |= cbor_encode_null(&map);
+		} else {
+			err |= cbor_encode_uint(&map, m_data.accel_orientation);
+		}
+
+		err |= cbor_encoder_close_container(&enc, &map);
+	}
+
+	err |= cbor_encode_uint(&map, MSG_KEY_MEASUREMENTS);
+	{
+		CborEncoder arr;
+		err |= cbor_encoder_create_array(&enc, &arr, CborIndefiniteLength);
 
 		for (int i = 0; i < m_data.measurement_count; i++) {
-			err |= ctr_buf_append_u16(buf, m_data.measurements[i].timestamp_offset);
-			err |= ctr_buf_append_s32(buf, m_data.measurements[i].a1_raw);
-			err |= ctr_buf_append_s32(buf, m_data.measurements[i].a2_raw);
-			err |= ctr_buf_append_s32(buf, m_data.measurements[i].b1_raw);
-			err |= ctr_buf_append_s32(buf, m_data.measurements[i].b2_raw);
+			CborEncoder map;
+			err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+			uint64_t timestamp = m_data.measurement_timestamp +
+			                     m_data.measurements[i].timestamp_offset;
+
+			err |= cbor_encode_uint(&map, MSG_KEY_TIMESTAMP);
+			err |= cbor_encode_uint(&map, timestamp);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_A1_RAW);
+			if (m_data.measurements[i].a1_raw == INT32_MAX) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_int(&map, m_data.measurements[i].a1_raw);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_A2_RAW);
+			if (m_data.measurements[i].a2_raw == INT32_MAX) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_int(&map, m_data.measurements[i].a2_raw);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_B1_RAW);
+			if (m_data.measurements[i].b1_raw == INT32_MAX) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_int(&map, m_data.measurements[i].b1_raw);
+			}
+
+			err |= cbor_encode_uint(&map, MSG_KEY_B2_RAW);
+			if (m_data.measurements[i].b2_raw == INT32_MAX) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_int(&map, m_data.measurements[i].b2_raw);
+			}
+
+			err |= cbor_encoder_close_container(&enc, &map);
 		}
+
+		err |= cbor_encoder_close_container(&enc, &arr);
+	}
+
+	err |= cbor_encoder_close_container(&enc, &map);
+
+	ret = ctr_buf_seek(buf, 8 + enc.writer->bytes_written);
+	if (ret) {
+		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
+		return ret;
 	}
 
 	size_t len = ctr_buf_get_used(buf);
@@ -569,10 +841,29 @@ static int compose(struct ctr_buf *buf)
 		return ret;
 	}
 
-	err |= ctr_buf_seek(buf, 0);
-	err |= ctr_buf_append_u16(buf, len);
-	err |= ctr_buf_append_mem(buf, digest, 6);
-	err |= ctr_buf_seek(buf, len);
+	ret = ctr_buf_seek(buf, 0);
+	if (ret) {
+		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_buf_append_u16(buf, len);
+	if (ret) {
+		LOG_ERR("Call `ctr_buf_append_u16` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_buf_append_mem(buf, digest, 6);
+	if (ret) {
+		LOG_ERR("Call `ctr_buf_append_mem` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_buf_seek(buf, len);
+	if (ret) {
+		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
+		return ret;
+	}
 
 	return err ? -ENOSPC : 0;
 }
@@ -603,6 +894,9 @@ static int send(void)
 	ret = compose(&buf);
 	if (ret) {
 		LOG_ERR("Call `compose` failed: %d", ret);
+		if (ret == -ENOSPC) {
+			m_data.measurement_count = 0;
+		}
 		return ret;
 	}
 
@@ -613,7 +907,7 @@ static int send(void)
 	}
 
 	struct ctr_lte_send_opts opts = CTR_LTE_SEND_OPTS_DEFAULTS;
-	opts.port = 4102;
+	opts.port = 4103;
 	ret = ctr_lte_send(&opts, ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
@@ -754,7 +1048,6 @@ void main(void)
 		ret = loop();
 		if (ret) {
 			LOG_ERR("Call `loop` failed: %d", ret);
-			k_oops();
 		}
 	}
 }
@@ -767,8 +1060,7 @@ static int cmd_measure(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	atomic_set(&m_measure, true);
-	k_sem_give(&m_loop_sem);
+	k_timer_start(&m_measurement_timer, K_NO_WAIT, K_FOREVER);
 
 	return 0;
 }
@@ -781,8 +1073,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	atomic_set(&m_send, true);
-	k_sem_give(&m_loop_sem);
+	k_timer_start(&m_send_timer, K_NO_WAIT, K_FOREVER);
 
 	return 0;
 }
