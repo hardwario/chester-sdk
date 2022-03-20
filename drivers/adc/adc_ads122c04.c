@@ -70,6 +70,7 @@ struct ads122c04_config {
 };
 
 struct ads122c04_data {
+	struct k_sem lock;
 	uint8_t reg_config_0;
 	uint8_t reg_config_1;
 	uint8_t reg_config_2;
@@ -183,11 +184,18 @@ static int ads122c04_read(const struct device *dev, const struct adc_sequence *s
 {
 	int ret;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_sem_take(&get_data(dev)->lock, K_FOREVER);
+
 	int32_t *buffer = sequence->buffer;
 
 	ret = start_sync(dev);
 	if (ret) {
 		LOG_ERR("Call `start_sync` failed: %d", ret);
+		k_sem_give(&get_data(dev)->lock);
 		return ret;
 	}
 
@@ -198,6 +206,7 @@ static int ads122c04_read(const struct device *dev, const struct adc_sequence *s
 		ret = rreg(dev, REG_CONFIG_2, &val);
 		if (ret) {
 			LOG_ERR("Call `rreg` failed: %d", ret);
+			k_sem_give(&get_data(dev)->lock);
 			return ret;
 		}
 
@@ -207,6 +216,7 @@ static int ads122c04_read(const struct device *dev, const struct adc_sequence *s
 
 		if (++retries >= READ_MAX_RETRIES) {
 			LOG_ERR("Reached maximum DRDY poll attempts");
+			k_sem_give(&get_data(dev)->lock);
 			return -EIO;
 		}
 
@@ -217,16 +227,20 @@ static int ads122c04_read(const struct device *dev, const struct adc_sequence *s
 	ret = rdata(dev, buf, sizeof(buf));
 	if (ret) {
 		LOG_ERR("Call `rdata` failed: %d", ret);
+		k_sem_give(&get_data(dev)->lock);
 		return ret;
 	}
 
 	ret = powerdown(dev);
 	if (ret) {
 		LOG_ERR("Call `powerdown` failed: %d", ret);
+		k_sem_give(&get_data(dev)->lock);
 		return ret;
 	}
 
 	buffer[0] = (buf[2] << 24 | buf[1] << 16 | buf[0] << 8) / 256;
+
+	k_sem_give(&get_data(dev)->lock);
 
 	return 0;
 }
@@ -275,6 +289,8 @@ static int ads122c04_init(const struct device *dev)
 		return ret;
 	}
 
+	k_sem_give(&get_data(dev)->lock);
+
 	return 0;
 }
 
@@ -291,7 +307,9 @@ static const struct adc_driver_api ads122c04_driver_api = {
 		.mux = DT_INST_PROP(n, mux),                                                       \
 		.vref = DT_INST_PROP(n, vref),                                                     \
 	};                                                                                         \
-	static struct ads122c04_data inst_##n##_data;                                              \
+	static struct ads122c04_data inst_##n##_data = {                                           \
+		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 1, 1),                             \
+	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ads122c04_init, NULL, &inst_##n##_data, &inst_##n##_config,       \
 	                      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &ads122c04_driver_api);
 
