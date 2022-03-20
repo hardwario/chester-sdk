@@ -3,8 +3,8 @@
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
-#include <sys/byteorder.h>
-#include <sys/util_macro.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <zephyr.h>
 
 #define DT_DRV_COMPAT ti_ads122c04
@@ -61,6 +61,7 @@ LOG_MODULE_REGISTER(ads122c04, CONFIG_ADC_LOG_LEVEL);
 #define MSK_CONFIG_3_I1MUX (BIT(5) | BIT(6) | BIT(7))
 
 #define READ_MAX_RETRIES 100
+#define READ_RETRY_DELAY_MS 10
 
 struct ads122c04_config {
 	const struct i2c_dt_spec i2c_spec;
@@ -87,91 +88,82 @@ static inline struct ads122c04_data *get_data(const struct device *dev)
 	return dev->data;
 }
 
-static int read(const struct device *dev, uint8_t op, uint8_t *data, size_t len)
+static int send_cmd(const struct device *dev, uint8_t cmd)
 {
 	int ret;
-
-	uint8_t buf[len];
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
 
-	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, &op, sizeof(op), buf, len);
+	ret = i2c_write_dt(&get_config(dev)->i2c_spec, &cmd, 1);
 	if (ret) {
+		LOG_ERR("Call `i2c_write_dt` failed: %d", ret);
 		return ret;
 	}
-
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	sys_memcpy_swap(data, buf, len);
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	memcpy(data, buf, len);
-#else
-#error "Unknown byte order"
-#endif
 
 	return 0;
 }
 
-static int write(const struct device *dev, uint8_t op, const uint8_t *data, size_t len)
+static int read_data(const struct device *dev, uint8_t data[3])
 {
 	int ret;
-
-	uint8_t buf[1 + len];
-	buf[0] = op;
-
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	sys_memcpy_swap(buf + 1, data, len);
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	memcpy(buf + 1, data, len);
-#else
-#error "Unknown byte order"
-#endif
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
 
-	ret = i2c_write_dt(&get_config(dev)->i2c_spec, buf, sizeof(buf));
+	uint8_t cmd = CMD_RDATA;
+
+	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, &cmd, 1, data, 3);
 	if (ret) {
+		LOG_ERR("Call `i2c_write_read_dt` failed: %d", ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-static inline int reset(const struct device *dev)
+static int read_reg(const struct device *dev, uint8_t reg, uint8_t *val)
 {
-	return write(dev, CMD_RESET, NULL, 0);
+	int ret;
+
+	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
+		LOG_ERR("Bus not ready");
+		return -EINVAL;
+	}
+
+	reg = CMD_RREG | (reg & 0x03) << 2;
+
+	ret = i2c_reg_read_byte_dt(&get_config(dev)->i2c_spec, reg, val);
+	if (ret) {
+		LOG_ERR("Call `i2c_reg_read_byte_dt` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
-static inline int start_sync(const struct device *dev)
+static int write_reg(const struct device *dev, uint8_t reg, uint8_t val)
 {
-	return write(dev, CMD_START_SYNC, NULL, 0);
-}
+	int ret;
 
-static inline int powerdown(const struct device *dev)
-{
-	return write(dev, CMD_POWERDOWN, NULL, 0);
-}
+	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
+		LOG_ERR("Bus not ready");
+		return -EINVAL;
+	}
 
-static inline int rdata(const struct device *dev, uint8_t *val, uint8_t len)
-{
-	return read(dev, CMD_RDATA, val, len);
-}
+	reg = CMD_WREG | (reg & 0x03) << 2;
 
-static inline int rreg(const struct device *dev, uint8_t reg, uint8_t *val)
-{
-	return read(dev, CMD_RREG | reg << 2, val, 1);
-}
+	ret = i2c_reg_write_byte_dt(&get_config(dev)->i2c_spec, reg, val);
+	if (ret) {
+		LOG_ERR("Call `i2c_reg_write_byte_dt` failed: %d", ret);
+		return ret;
+	}
 
-static inline int wreg(const struct device *dev, uint8_t reg, uint8_t val)
-{
-	LOG_DBG("Reg: 0x%02x = 0x%02x", reg, val);
-
-	return write(dev, CMD_WREG | reg << 2, &val, 1);
+	return 0;
 }
 
 static int ads122c04_channel_setup(const struct device *dev,
@@ -184,30 +176,30 @@ static int ads122c04_read(const struct device *dev, const struct adc_sequence *s
 {
 	int ret;
 
+	if (sequence->buffer_size < sizeof(int32_t)) {
+		return -ENOSPC;
+	}
+
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
 	k_sem_take(&get_data(dev)->lock, K_FOREVER);
 
-	int32_t *buffer = sequence->buffer;
-
-	ret = start_sync(dev);
+	ret = send_cmd(dev, CMD_START_SYNC);
 	if (ret) {
-		LOG_ERR("Call `start_sync` failed: %d", ret);
-		k_sem_give(&get_data(dev)->lock);
-		return ret;
+		LOG_ERR("Call `send_cmd` (CMD_START_SYNC) failed: %d", ret);
+		goto error;
 	}
 
 	int retries = 0;
 
 	for (;;) {
 		uint8_t val;
-		ret = rreg(dev, REG_CONFIG_2, &val);
+		ret = read_reg(dev, REG_CONFIG_2, &val);
 		if (ret) {
-			LOG_ERR("Call `rreg` failed: %d", ret);
-			k_sem_give(&get_data(dev)->lock);
-			return ret;
+			LOG_ERR("Call `read_reg` (REG_CONFIG_2) failed: %d", ret);
+			goto error;
 		}
 
 		if (val & MSK_CONFIG_2_DRDY) {
@@ -216,33 +208,42 @@ static int ads122c04_read(const struct device *dev, const struct adc_sequence *s
 
 		if (++retries >= READ_MAX_RETRIES) {
 			LOG_ERR("Reached maximum DRDY poll attempts");
-			k_sem_give(&get_data(dev)->lock);
-			return -EIO;
+			ret = -EIO;
+			goto error;
 		}
 
-		k_msleep(10);
+		k_msleep(READ_RETRY_DELAY_MS);
 	}
 
-	uint8_t buf[3] = { 0 };
-	ret = rdata(dev, buf, sizeof(buf));
+	uint8_t data[3];
+	ret = read_data(dev, data);
 	if (ret) {
-		LOG_ERR("Call `rdata` failed: %d", ret);
-		k_sem_give(&get_data(dev)->lock);
-		return ret;
+		LOG_ERR("Call `read_data` failed: %d", ret);
+		goto error;
 	}
 
-	ret = powerdown(dev);
+	ret = send_cmd(dev, CMD_POWERDOWN);
 	if (ret) {
-		LOG_ERR("Call `powerdown` failed: %d", ret);
-		k_sem_give(&get_data(dev)->lock);
-		return ret;
+		LOG_ERR("Call `send_cmd` (CMD_POWERDOWN) failed: %d", ret);
+		goto error;
 	}
 
-	buffer[0] = (buf[2] << 24 | buf[1] << 16 | buf[0] << 8) / 256;
+	int32_t *result = sequence->buffer;
+
+	*result = (uint32_t)data[0] << 16 | (uint32_t)data[1] << 8 | (uint32_t)data[2];
+	*result <<= 8;
+	*result >>= 8;
 
 	k_sem_give(&get_data(dev)->lock);
 
 	return 0;
+
+error:
+	send_cmd(dev, CMD_POWERDOWN);
+
+	k_sem_give(&get_data(dev)->lock);
+
+	return ret;
 }
 
 static int ads122c04_init(const struct device *dev)
@@ -251,9 +252,9 @@ static int ads122c04_init(const struct device *dev)
 
 	LOG_INF("System initialization");
 
-	ret = reset(dev);
+	ret = send_cmd(dev, CMD_RESET);
 	if (ret) {
-		LOG_ERR("Call `reset` failed: %d", ret);
+		LOG_ERR("Call `send_cmd` (CMD_RESET) failed: %d", ret);
 		return ret;
 	}
 
@@ -265,27 +266,27 @@ static int ads122c04_init(const struct device *dev)
 	get_data(dev)->reg_config_2 = DEF_CONFIG_2;
 	get_data(dev)->reg_config_3 = DEF_CONFIG_3;
 
-	ret = wreg(dev, REG_CONFIG_0, get_data(dev)->reg_config_0);
+	ret = write_reg(dev, REG_CONFIG_0, get_data(dev)->reg_config_0);
 	if (ret) {
-		LOG_ERR("Call `wreg` failed: %d", ret);
+		LOG_ERR("Call `write_reg` (REG_CONFIG_0) failed: %d", ret);
 		return ret;
 	}
 
-	ret = wreg(dev, REG_CONFIG_1, get_data(dev)->reg_config_1);
+	ret = write_reg(dev, REG_CONFIG_1, get_data(dev)->reg_config_1);
 	if (ret) {
-		LOG_ERR("Call `wreg` failed: %d", ret);
+		LOG_ERR("Call `write_reg` (REG_CONFIG_1) failed: %d", ret);
 		return ret;
 	}
 
-	ret = wreg(dev, REG_CONFIG_2, get_data(dev)->reg_config_2);
+	ret = write_reg(dev, REG_CONFIG_2, get_data(dev)->reg_config_2);
 	if (ret) {
-		LOG_ERR("Call `wreg` failed: %d", ret);
+		LOG_ERR("Call `write_reg` (REG_CONFIG_2) failed: %d", ret);
 		return ret;
 	}
 
-	ret = wreg(dev, REG_CONFIG_3, get_data(dev)->reg_config_3);
+	ret = write_reg(dev, REG_CONFIG_3, get_data(dev)->reg_config_3);
 	if (ret) {
-		LOG_ERR("Call `wreg` failed: %d", ret);
+		LOG_ERR("Call `write_reg` (REG_CONFIG_3) failed: %d", ret);
 		return ret;
 	}
 
