@@ -35,6 +35,8 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 /* TODO Would be nice to define using K_SECONDS, etc. Proper macros? */
 #define BATT_TEST_INTERVAL_MSEC (6 * 60 * 60 * 1000)
+#define MAX_REPETITIONS 5
+#define MAX_DIFFERENCE 100
 
 struct measurement {
 	int timestamp_offset;
@@ -352,6 +354,46 @@ error:
 	return ret;
 }
 
+static int filter_weight(const char *id, enum measure_weight_slot slot, enum ctr_x3_channel channel,
+                         int32_t *result, int32_t *prev)
+{
+	int ret;
+
+	int i;
+	for (i = 0; i < MAX_REPETITIONS; i++) {
+		if (i != 0) {
+			LOG_INF("Channel %s: Repeating measurement (%d)", id, i);
+		}
+
+		ret = measure_weight(id, slot, channel, result);
+		if (ret) {
+			LOG_ERR("Call `measure_weight` failed: %d", ret);
+			return ret;
+		}
+
+		if (*prev == INT32_MAX) {
+			break;
+		}
+
+		int32_t diff = MAX(*result, *prev) - MIN(*result, *prev);
+
+		if (diff < MAX_DIFFERENCE) {
+			break;
+		} else {
+			*prev = *result;
+		}
+	}
+
+	*prev = *result;
+
+	if (i == MAX_REPETITIONS) {
+		*result ^= BIT(30);
+		LOG_WRN("Channel %s: Inverted ERROR flag (bit 30)", id);
+	}
+
+	return 0;
+}
+
 static int measure(void)
 {
 	int ret;
@@ -395,34 +437,38 @@ static int measure(void)
 	int32_t b2_raw = INT32_MAX;
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x3_a), okay)
-	ret = measure_weight("A1", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_1, &a1_raw);
+	static int32_t a1_raw_prev = INT32_MAX;
+	ret = filter_weight("A1", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_1, &a1_raw, &a1_raw_prev);
 	if (ret) {
-		LOG_ERR("Call `measure_weight` failed (A1): %d", ret);
-		return ret;
+		LOG_ERR("Call `filter_weight` failed (A1): %d", ret);
+		a1_raw = INT32_MAX;
 	}
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x3_a), okay)
-	ret = measure_weight("A2", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_2, &a2_raw);
+	static int32_t a2_raw_prev = INT32_MAX;
+	ret = filter_weight("A2", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_2, &a2_raw, &a2_raw_prev);
 	if (ret) {
-		LOG_ERR("Call `measure_weight` failed (A2): %d", ret);
-		return ret;
+		LOG_ERR("Call `filter_weight` failed (A2): %d", ret);
+		a2_raw = INT32_MAX;
 	}
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x3_b), okay)
-	ret = measure_weight("B1", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_1, &b1_raw);
+	static int32_t b1_raw_prev = INT32_MAX;
+	ret = filter_weight("B1", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_1, &b1_raw, &b1_raw_prev);
 	if (ret) {
-		LOG_ERR("Call `measure_weight` failed (B1): %d", ret);
-		return ret;
+		LOG_ERR("Call `filter_weight` failed (B1): %d", ret);
+		b1_raw = INT32_MAX;
 	}
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x3_b), okay)
-	ret = measure_weight("B2", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_2, &b2_raw);
+	static int32_t b2_raw_prev = INT32_MAX;
+	ret = filter_weight("B2", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_2, &b2_raw, &b2_raw_prev);
 	if (ret) {
-		LOG_ERR("Call `measure_weight` failed (B2): %d", ret);
-		return ret;
+		LOG_ERR("Call `filter_weight` failed (B2): %d", ret);
+		b2_raw = INT32_MAX;
 	}
 #endif
 
