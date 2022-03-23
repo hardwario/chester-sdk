@@ -57,36 +57,32 @@ static int ctr_x0_set_mode_(const struct device *dev, enum ctr_x0_channel channe
 {
 	int ret;
 
-#define SET_CHANNEL(channel)                                                                       \
+#define SET_CHANNEL(ch)                                                                            \
 	do {                                                                                       \
-		if (channel == CTR_X0_CHANNEL_##channel) {                                         \
-			if (!device_is_ready(get_config(dev)->on##channel##_spec.port)) {          \
+		if (channel == CTR_X0_CHANNEL_##ch) {                                              \
+			if (!device_is_ready(get_config(dev)->on##ch##_spec.port)) {               \
 				LOG_ERR("Device not ready");                                       \
 				return -EINVAL;                                                    \
 			}                                                                          \
-			if (mode == get_data(dev)->mode_##channel) {                               \
+			if (mode == get_data(dev)->mode_##ch) {                                    \
 				break;                                                             \
 			}                                                                          \
-			ret = gpio_pin_configure_dt(&get_config(dev)->on##channel##_spec,          \
-			                            GPIO_INPUT);                                   \
+			ret = gpio_pin_configure_dt(&get_config(dev)->on##ch##_spec, GPIO_INPUT);  \
 			if (ret) {                                                                 \
 				LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);           \
 				return ret;                                                        \
 			}                                                                          \
-			ret = gpio_pin_configure_dt(&get_config(dev)->pu##channel##_spec,          \
-			                            GPIO_INPUT);                                   \
+			ret = gpio_pin_configure_dt(&get_config(dev)->pu##ch##_spec, GPIO_INPUT);  \
 			if (ret) {                                                                 \
 				LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);           \
 				return ret;                                                        \
 			}                                                                          \
-			ret = gpio_pin_configure_dt(&get_config(dev)->pd##channel##_spec,          \
-			                            GPIO_INPUT);                                   \
+			ret = gpio_pin_configure_dt(&get_config(dev)->pd##ch##_spec, GPIO_INPUT);  \
 			if (ret) {                                                                 \
 				LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);           \
 				return ret;                                                        \
 			}                                                                          \
-			ret = gpio_pin_configure_dt(&get_config(dev)->cl##channel##_spec,          \
-			                            GPIO_INPUT);                                   \
+			ret = gpio_pin_configure_dt(&get_config(dev)->cl##ch##_spec, GPIO_INPUT);  \
 			if (ret) {                                                                 \
 				LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);           \
 				return ret;                                                        \
@@ -95,7 +91,7 @@ static int ctr_x0_set_mode_(const struct device *dev, enum ctr_x0_channel channe
 			case CTR_X0_MODE_DEFAULT:                                                  \
 				break;                                                             \
 			case CTR_X0_MODE_NPN_INPUT:                                                \
-				ret = gpio_pin_configure_dt(&get_config(dev)->pu##channel##_spec,  \
+				ret = gpio_pin_configure_dt(&get_config(dev)->pu##ch##_spec,       \
 				                            GPIO_OUTPUT_ACTIVE);                   \
 				if (ret) {                                                         \
 					LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);   \
@@ -103,7 +99,7 @@ static int ctr_x0_set_mode_(const struct device *dev, enum ctr_x0_channel channe
 				}                                                                  \
 				break;                                                             \
 			case CTR_X0_MODE_PNP_INPUT:                                                \
-				ret = gpio_pin_configure_dt(&get_config(dev)->pd##channel##_spec,  \
+				ret = gpio_pin_configure_dt(&get_config(dev)->pd##ch##_spec,       \
 				                            GPIO_OUTPUT_ACTIVE);                   \
 				if (ret) {                                                         \
 					LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);   \
@@ -111,7 +107,7 @@ static int ctr_x0_set_mode_(const struct device *dev, enum ctr_x0_channel channe
 				}                                                                  \
 				break;                                                             \
 			case CTR_X0_MODE_AI_INPUT:                                                 \
-				ret = gpio_pin_configure_dt(&get_config(dev)->pd##channel##_spec,  \
+				ret = gpio_pin_configure_dt(&get_config(dev)->pd##ch##_spec,       \
 				                            GPIO_OUTPUT_ACTIVE);                   \
 				if (ret) {                                                         \
 					LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);   \
@@ -119,7 +115,7 @@ static int ctr_x0_set_mode_(const struct device *dev, enum ctr_x0_channel channe
 				}                                                                  \
 				break;                                                             \
 			case CTR_X0_MODE_CL_INPUT:                                                 \
-				ret = gpio_pin_configure_dt(&get_config(dev)->cl##channel##_spec,  \
+				ret = gpio_pin_configure_dt(&get_config(dev)->cl##ch##_spec,       \
 				                            GPIO_OUTPUT_ACTIVE);                   \
 				if (ret) {                                                         \
 					LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);   \
@@ -127,7 +123,7 @@ static int ctr_x0_set_mode_(const struct device *dev, enum ctr_x0_channel channe
 				}                                                                  \
 				break;                                                             \
 			case CTR_X0_MODE_PWR_SOURCE:                                               \
-				ret = gpio_pin_configure_dt(&get_config(dev)->on##channel##_spec,  \
+				ret = gpio_pin_configure_dt(&get_config(dev)->on##ch##_spec,       \
 				                            GPIO_OUTPUT_ACTIVE);                   \
 				if (ret) {                                                         \
 					LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);   \
@@ -138,7 +134,7 @@ static int ctr_x0_set_mode_(const struct device *dev, enum ctr_x0_channel channe
 				LOG_ERR("Unknown mode: %d", mode);                                 \
 				return -EINVAL;                                                    \
 			}                                                                          \
-			get_data(dev)->mode_##channel = mode;                                      \
+			get_data(dev)->mode_##ch = mode;                                           \
 		}                                                                                  \
 	} while (0)
 
