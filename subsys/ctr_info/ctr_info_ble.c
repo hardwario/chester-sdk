@@ -64,63 +64,63 @@ BT_GATT_SERVICE_DEFINE(
 	BT_GATT_CHARACTERISTIC(
 		&m_vendor_name_chrc_uuid.uuid,
 		BT_GATT_CHRC_READ,
-		BT_GATT_PERM_READ,
+		BT_GATT_PERM_READ_AUTHEN,
 		pass_str, NULL, ctr_info_get_vendor_name
 	),
 
 	BT_GATT_CHARACTERISTIC(
 		&m_product_name_chrc_uuid.uuid,
 		BT_GATT_CHRC_READ,
-		BT_GATT_PERM_READ,
+		BT_GATT_PERM_READ_AUTHEN,
 		pass_str, NULL, ctr_info_get_product_name
 	),
 
 	BT_GATT_CHARACTERISTIC(
 		&m_hw_variant_chrc_uuid.uuid,
 		BT_GATT_CHRC_READ,
-		BT_GATT_PERM_READ,
+		BT_GATT_PERM_READ_AUTHEN,
 		pass_str, NULL, ctr_info_get_hw_variant
 	),
 
 	BT_GATT_CHARACTERISTIC(
 		&m_hw_revision_chrc_uuid.uuid,
 		BT_GATT_CHRC_READ,
-		BT_GATT_PERM_READ,
+		BT_GATT_PERM_READ_AUTHEN,
 		pass_str, NULL, ctr_info_get_hw_revision
 	),
 
 	BT_GATT_CHARACTERISTIC(
 		&m_fw_version_chrc_uuid.uuid,
 		BT_GATT_CHRC_READ,
-		BT_GATT_PERM_READ,
+		BT_GATT_PERM_READ_AUTHEN,
 		pass_str, NULL, ctr_info_get_fw_version
 	),
 
 	BT_GATT_CHARACTERISTIC(
 		&m_serial_number_chrc_uuid.uuid,
 		BT_GATT_CHRC_READ,
-		BT_GATT_PERM_READ,
+		BT_GATT_PERM_READ_AUTHEN,
 		pass_str, NULL, ctr_info_get_serial_number
 	),
 
 	BT_GATT_CHARACTERISTIC(
 		&m_claim_token_chrc_uuid.uuid,
 		BT_GATT_CHRC_READ,
-		BT_GATT_PERM_READ,
+		BT_GATT_PERM_READ_AUTHEN,
 		pass_str, NULL, ctr_info_get_claim_token
 	),
 
 	BT_GATT_CHARACTERISTIC(
 		&m_ble_devaddr_chrc_uuid.uuid,
 		BT_GATT_CHRC_READ,
-		BT_GATT_PERM_READ,
+		BT_GATT_PERM_READ_AUTHEN,
 		pass_str, NULL, ctr_info_get_ble_devaddr
 	),
 
 	BT_GATT_CHARACTERISTIC(
 		&m_ble_passkey_chrc_uuid.uuid,
 		BT_GATT_CHRC_READ,
-		BT_GATT_PERM_READ,
+		BT_GATT_PERM_READ_AUTHEN,
 		pass_str, NULL, ctr_info_get_ble_passkey
 	),
 );

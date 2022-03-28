@@ -1,18 +1,24 @@
 config CTR_BLE
 	bool "CTR_BLE"
-	depends on CTR_INFO
 	select BOOTLOADER_MCUBOOT
 	select BT
 	select BT_CTLR
 	select BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 	select BT_DEVICE_NAME_DYNAMIC
+	select BT_FIXED_PASSKEY
 	select BT_NUS
+	select BT_NUS_AUTHEN
 	select BT_PERIPHERAL
 	select BT_SMP
+	select BT_SMP_SC_ONLY
+	select BT_TINYCRYPT_ECC
+	select CTR_CONFIG
+	select CTR_INFO
+	select CTR_SHELL
 	select MCUMGR
 	select MCUMGR_CMD_IMG_MGMT
 	select MCUMGR_CMD_OS_MGMT
-	select MCUMGR_CMD_SHELL_MGMT if CTR_SHELL
+	select MCUMGR_CMD_SHELL_MGMT
 	select MCUMGR_SMP_BT
 	select MCUMGR_SMP_BT_CONN_PARAM_CONTROL
 	select MCUMGR_SMP_REASSEMBLY_BT
@@ -24,76 +30,73 @@ module = CTR_BLE
 module-str = CHESTER BLE Subsystem
 source "subsys/logging/Kconfig.template.log_config"
 
-endif # CTR_BLE
-
 config BT_BUF_ACL_RX_SIZE
-	default 502 if CTR_BLE
+	default 502
 
 config BT_BUF_ACL_TX_COUNT
-	default 10 if CTR_BLE
+	default 10
 
 config BT_BUF_ACL_TX_SIZE
-	default 251 if CTR_BLE
+	default 251
 
 config BT_CONN_TX_MAX
-	default 10 if CTR_BLE
+	default 10
 
 config BT_CTLR_DATA_LENGTH_MAX
-	default 251 if CTR_BLE
+	default 251
 
 config BT_CTLR_RX_BUFFERS
-	default 10 if CTR_BLE
+	default 10
 
 config BT_DEVICE_NAME
-	default "CHESTER" if CTR_BLE
+	default "CHESTER"
 
 config BT_HCI_ECC_STACK_SIZE
-	default 2048 if CTR_BLE
+	default 2048
 
 config BT_HCI_TX_STACK_SIZE
-	default 2048 if CTR_BLE
+	default 2048
 
 config BT_ID_MAX
-	default 5 if CTR_BLE
+	default 5
 
 config BT_L2CAP_TX_BUF_COUNT
-	default 10 if CTR_BLE
+	default 10
 
 config BT_L2CAP_TX_MTU
-	default 498 if CTR_BLE
+	default 498
 
 config BT_MAX_CONN
-	default 4 if CTR_BLE
+	default 4
 
 config BT_MAX_PAIRED
-	default 4 if CTR_BLE
+	default 4
 
  config BT_PERIPHERAL_PREF_MAX_INT
-	default 6 if CTR_BLE
+	default 6
 
  config BT_PERIPHERAL_PREF_MIN_INT
-	default 6 if CTR_BLE
+	default 6
 
  config BT_PERIPHERAL_PREF_TIMEOUT
-	default 400 if CTR_BLE
+	default 400
 
  config BT_RX_STACK_SIZE
-	default 4096 if CTR_BLE
+	default 4096
 
  config BT_CTLR_SDC_RX_STACK_SIZE
-	default 2048 if CTR_BLE
+	default 2048
 
 config MCUMGR_BUF_SIZE
-	default 2475 if CTR_BLE
-
-config MCUMGR_SMP_BT_AUTHEN
-	default n if CTR_BLE
+	default 2475
 
  config MPSL_WORK_STACK_SIZE
-	default 2048 if CTR_BLE
+	default 2048
 
  config SHELL_BT_NUS_RX_RING_BUFFER_SIZE
-	default 1024 if CTR_BLE
+	default 1024
 
  config SHELL_BT_NUS_TX_RING_BUFFER_SIZE
-	default 1024 if CTR_BLE
+	default 1024
+
+endif # CTR_BLE
