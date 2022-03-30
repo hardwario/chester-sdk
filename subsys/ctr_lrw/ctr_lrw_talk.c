@@ -351,7 +351,7 @@ int ctr_lrw_talk_at_join(void)
 {
 	int ret;
 
-	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+JOIN");
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_L, "AT+JOIN");
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
