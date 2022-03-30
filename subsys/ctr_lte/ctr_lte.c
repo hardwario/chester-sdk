@@ -273,6 +273,13 @@ static int setup_once(void)
 		return ret;
 	}
 
+	ret = ctr_lte_talk_at_cfun(0);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cfun` failed: %d", ret);
+		return ret;
+	}
+
 	char buf[64];
 
 	ret = ctr_lte_talk_at_hwversion(buf, sizeof(buf));
