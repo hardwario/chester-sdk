@@ -3,6 +3,11 @@ config CTR_INFO
 
 if CTR_INFO
 
+config CTR_INFO_BLE
+	depends on BT
+	bool "CTR_INFO_BLE"
+	default y
+
 config CTR_INFO_SHELL
 	depends on SHELL
 	bool "CTR_INFO_SHELL"

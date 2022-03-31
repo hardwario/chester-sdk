@@ -1,4 +1,5 @@
 zephyr_library()
 
 zephyr_library_sources(ctr_info.c)
+zephyr_library_sources_ifdef(CONFIG_CTR_INFO_BLE ctr_info_ble.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_INFO_SHELL ctr_info_shell.c)
