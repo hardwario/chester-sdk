@@ -5,6 +5,7 @@
 #include <drivers/i2c.h>
 #include <drivers/uart.h>
 #include <logging/log.h>
+#include <pm/device.h>
 #include <sys/util.h>
 
 #include <math.h>
@@ -903,7 +904,8 @@ static const struct uart_driver_api sc16is7xx_driver_api = {
 		                 .stop_bits = UART_CFG_STOP_BITS_1,                                \
 		                 .flow_ctrl = UART_CFG_FLOW_CTRL_NONE },                           \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, sc16is7xx_init, sc16is7xx_pm_control, &inst_##n##_data,           \
+	PM_DEVICE_DT_INST_DEFINE(n, sc16is7xx_pm_control);                                         \
+	DEVICE_DT_INST_DEFINE(n, sc16is7xx_init, PM_DEVICE_DT_INST_REF(n), &inst_##n##_data,       \
 	                      &inst_##n##_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,           \
 	                      &sc16is7xx_driver_api);
 
