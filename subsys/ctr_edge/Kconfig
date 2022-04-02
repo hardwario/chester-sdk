@@ -1,0 +1,11 @@
+config CTR_EDGE
+	bool "CTR_EDGE"
+	depends on GPIO
+
+if CTR_EDGE
+
+module = CTR_EDGE
+module-str = CHESTER Edge Filtering Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_EDGE
