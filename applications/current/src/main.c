@@ -366,7 +366,7 @@ void main(void)
 		k_oops();
 	}
 
-	ret = ctr_gpio_configure(CTR_GPIO_CHANNEL_B3, CTR_GPIO_MODE_OUTPUT);
+	ret = ctr_gpio_set_mode(CTR_GPIO_CHANNEL_B3, CTR_GPIO_MODE_OUTPUT);
 	if (ret) {
 		LOG_ERR("Failed initializing GPIO channel B3: %d", ret);
 		k_oops();

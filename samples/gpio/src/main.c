@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define CONFIGURE_GPIO(channel)                                                                    \
 	do {                                                                                       \
 		int ret;                                                                           \
-		ret = ctr_gpio_configure(CTR_GPIO_CHANNEL_##channel, CTR_GPIO_MODE_OUTPUT);        \
+		ret = ctr_gpio_set_mode(CTR_GPIO_CHANNEL_##channel, CTR_GPIO_MODE_OUTPUT);         \
 		if (ret) {                                                                         \
 			LOG_ERR("Failed initializing channel " Z_STRINGIFY(channel) ": %d", ret);  \
 			k_oops();                                                                  \

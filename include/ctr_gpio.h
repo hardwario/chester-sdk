@@ -6,14 +6,14 @@ extern "C" {
 #endif
 
 enum ctr_gpio_channel {
-	CTR_GPIO_CHANNEL_A0 = 3,
-	CTR_GPIO_CHANNEL_A1 = 29,
+	CTR_GPIO_CHANNEL_A0 = 0,
+	CTR_GPIO_CHANNEL_A1 = 1,
 	CTR_GPIO_CHANNEL_A2 = 2,
-	CTR_GPIO_CHANNEL_A3 = 31,
-	CTR_GPIO_CHANNEL_B0 = 28,
-	CTR_GPIO_CHANNEL_B1 = 30,
-	CTR_GPIO_CHANNEL_B2 = 4,
-	CTR_GPIO_CHANNEL_B3 = 5
+	CTR_GPIO_CHANNEL_A3 = 3,
+	CTR_GPIO_CHANNEL_B0 = 4,
+	CTR_GPIO_CHANNEL_B1 = 5,
+	CTR_GPIO_CHANNEL_B2 = 6,
+	CTR_GPIO_CHANNEL_B3 = 7,
 };
 
 enum ctr_gpio_mode {
@@ -25,7 +25,7 @@ enum ctr_gpio_mode {
 	CTR_GPIO_MODE_INPUT_PD = 5,
 };
 
-int ctr_gpio_configure(enum ctr_gpio_channel channel, enum ctr_gpio_mode mode);
+int ctr_gpio_set_mode(enum ctr_gpio_channel channel, enum ctr_gpio_mode mode);
 int ctr_gpio_read(enum ctr_gpio_channel channel, int *value);
 int ctr_gpio_write(enum ctr_gpio_channel channel, int value);
 

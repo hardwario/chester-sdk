@@ -1,3 +1,4 @@
+/* CHESTER includes */
 #include <ctr_gpio.h>
 
 /* Zephyr includes */
@@ -9,15 +10,31 @@
 
 LOG_MODULE_REGISTER(ctr_gpio, CONFIG_CTR_GPIO_LOG_LEVEL);
 
-static const struct device *m_gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio0));
+static const struct gpio_dt_spec m_specs[] = {
+	GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_gpio), a0_gpios),
+	GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_gpio), a1_gpios),
+	GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_gpio), a2_gpios),
+	GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_gpio), a3_gpios),
+	GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_gpio), b0_gpios),
+	GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_gpio), b1_gpios),
+	GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_gpio), b2_gpios),
+	GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_gpio), b3_gpios),
+};
 
-int ctr_gpio_configure(enum ctr_gpio_channel channel, enum ctr_gpio_mode mode)
+int ctr_gpio_set_mode(enum ctr_gpio_channel channel, enum ctr_gpio_mode mode)
 {
 	int ret;
 
-	if (!device_is_ready(m_gpio_dev)) {
-		LOG_ERR("Device not ready");
+	if (channel < 0 || channel >= ARRAY_SIZE(m_specs)) {
+		LOG_ERR("Invalid channel: %d", channel);
 		return -EINVAL;
+	}
+
+	const struct gpio_dt_spec spec = m_specs[channel];
+
+	if (!device_is_ready(spec.port)) {
+		LOG_ERR("Port not ready (channel: %d)", channel);
+		return -ENODEV;
 	}
 
 	gpio_flags_t flags;
@@ -45,9 +62,9 @@ int ctr_gpio_configure(enum ctr_gpio_channel channel, enum ctr_gpio_mode mode)
 		return -EINVAL;
 	}
 
-	ret = gpio_pin_configure(m_gpio_dev, (gpio_pin_t)channel, flags);
+	ret = gpio_pin_configure_dt(&spec, flags);
 	if (ret) {
-		LOG_ERR("Failed configuring pin %d: %d", channel, ret);
+		LOG_ERR("Call `gpio_pin_configure_dt` (%d) failed: %d", channel, ret);
 		return ret;
 	}
 
@@ -58,14 +75,21 @@ int ctr_gpio_read(enum ctr_gpio_channel channel, int *value)
 {
 	int ret;
 
-	if (!device_is_ready(m_gpio_dev)) {
-		LOG_ERR("Device not ready");
+	if (channel < 0 || channel >= ARRAY_SIZE(m_specs)) {
+		LOG_ERR("Invalid channel: %d", channel);
 		return -EINVAL;
 	}
 
-	ret = gpio_pin_get(m_gpio_dev, (gpio_pin_t)channel);
+	const struct gpio_dt_spec spec = m_specs[channel];
+
+	if (!device_is_ready(spec.port)) {
+		LOG_ERR("Port not ready (channel: %d)", channel);
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_get_dt(&spec);
 	if (ret != 0 && ret != 1) {
-		LOG_ERR("Failed reading pin %d: %d", channel, ret);
+		LOG_ERR("Call `gpio_pin_get_dt` (%d) failed: %d", channel, ret);
 		return ret;
 	}
 
@@ -78,14 +102,21 @@ int ctr_gpio_write(enum ctr_gpio_channel channel, int value)
 {
 	int ret;
 
-	if (!device_is_ready(m_gpio_dev)) {
-		LOG_ERR("Device not ready");
+	if (channel < 0 || channel >= ARRAY_SIZE(m_specs)) {
+		LOG_ERR("Invalid channel: %d", channel);
 		return -EINVAL;
 	}
 
-	ret = gpio_pin_set(m_gpio_dev, (gpio_pin_t)channel, value);
+	const struct gpio_dt_spec spec = m_specs[channel];
+
+	if (!device_is_ready(spec.port)) {
+		LOG_ERR("Port not ready (channel: %d)", channel);
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_set_dt(&spec, value);
 	if (ret) {
-		LOG_ERR("Failed writing pin %d: %d", channel, ret);
+		LOG_ERR("Call `gpio_pin_set_dt` (%d) failed: %d", channel, ret);
 		return ret;
 	}
 

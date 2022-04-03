@@ -57,6 +57,20 @@
 		};
 	};
 
+	ctr_gpio: ctr_gpio {
+		compatible = "hardwario,ctr-gpio";
+		label = "CTR_GPIO";
+		status = "disabled";
+		a0-gpios = <&gpio0 3 0>;
+		a1-gpios = <&gpio0 29 0>;
+		a2-gpios = <&gpio0 2 0>;
+		a3-gpios = <&gpio0 31 0>;
+		b0-gpios = <&gpio0 28 0>;
+		b1-gpios = <&gpio0 30 0>;
+		b2-gpios = <&gpio0 4 0>;
+		b3-gpios = <&gpio0 5 0>;
+	};
+
 	ctr_x0_a: ctr_x0_a {
 		compatible = "hardwario,ctr-x0";
 		label = "CTR_X0_A";

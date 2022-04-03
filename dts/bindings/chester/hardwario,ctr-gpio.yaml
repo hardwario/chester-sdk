@@ -1,0 +1,47 @@
+description: CHESTER-M GPIO Driver
+
+compatible: "hardwario,ctr-gpio"
+
+include: base.yaml
+
+properties:
+
+  a0-gpios:
+    type: phandle-array
+    required: true
+    description: Channel A0
+
+  a1-gpios:
+    type: phandle-array
+    required: true
+    description: Channel A1
+
+  a2-gpios:
+    type: phandle-array
+    required: true
+    description: Channel A2
+
+  a3-gpios:
+    type: phandle-array
+    required: true
+    description: Channel A3
+
+  b0-gpios:
+    type: phandle-array
+    required: true
+    description: Channel B0
+
+  b1-gpios:
+    type: phandle-array
+    required: true
+    description: Channel B1
+
+  b2-gpios:
+    type: phandle-array
+    required: true
+    description: Channel B2
+
+  b3-gpios:
+    type: phandle-array
+    required: true
+    description: Channel B3
