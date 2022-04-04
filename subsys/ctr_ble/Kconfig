@@ -6,7 +6,6 @@ config CTR_BLE
 	select BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 	select BT_DEVICE_NAME_DYNAMIC
 	select BT_NUS
-	select BT_OBSERVER
 	select BT_PERIPHERAL
 	select BT_SMP
 	select CTR_INFO
