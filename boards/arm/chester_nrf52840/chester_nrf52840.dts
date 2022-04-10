@@ -245,11 +245,11 @@
 		#io-channel-cells = <1>;
 	};
 
-	ctr_z: ctr_z@4f {
+	ctr_z: ctr_z@10 {
 		compatible = "hardwario,ctr-z";
 		label = "CTR_Z";
 		status = "disabled";
-		reg = <0x4f>;
+		reg = <0x10>;
 		irq-gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 
