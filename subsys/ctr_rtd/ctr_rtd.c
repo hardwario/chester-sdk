@@ -23,8 +23,10 @@ LOG_MODULE_REGISTER(ctr_rtd, CONFIG_CTR_RTD_LOG_LEVEL);
 #define R0_PT1000 1000.0
 #define R_REF 1800.0
 #define ADC_GAIN 1
-#define COEFF_A 3.9083e-3
-#define COEFF_B -5.775e-7
+#define A_ITS_90 3.9083e-3
+#define B_ITS_90 -5.775e-7
+#define A_IPTS_68 3.90802e-3
+#define B_IPTS_68 -5.80195e-7
 
 static double convert_r_to_t(double r, double r0, double a, double b)
 {
@@ -99,7 +101,7 @@ int ctr_rtd_read(enum ctr_rtd_channel channel, enum ctr_rtd_type type, float *te
 		return -ERANGE;
 	}
 
-	*temperature = convert_r_to_t(r_rtd, r0, COEFF_A, COEFF_B);
+	*temperature = convert_r_to_t(r_rtd, r0, A_ITS_90, B_ITS_90);
 
 	LOG_INF("Raw: %" PRId32 "; R: %.3f Ohm; T: %.3f C", result, r_rtd, *temperature);
 
