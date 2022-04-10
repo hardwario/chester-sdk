@@ -53,5 +53,45 @@ properties:
       - 2 # Analog supply (AVDD - AVSS)
       - 3 # Analog supply (AVDD - AVSS)
 
+  idac:
+    type: int
+    description: IDAC current setting
+    default: 0
+    enum:
+      - 0 # Off
+      - 1 # 10 uA
+      - 2 # 50 uA
+      - 3 # 100 uA
+      - 4 # 250 uA
+      - 5 # 500 uA
+      - 6 # 1000 uA
+      - 7 # 1500 uA
+
+  i1mux:
+    type: int
+    description: IDAC1 routing configuration
+    default: 0
+    enum:
+      - 0 # IDAC1 disabled
+      - 1 # IDAC1 connected to AIN0
+      - 2 # IDAC1 connected to AIN1
+      - 3 # IDAC1 connected to AIN2
+      - 4 # IDAC1 connected to AIN3
+      - 5 # IDAC1 connected to REFP
+      - 6 # IDAC1 connected to REFN
+
+  i2mux:
+    type: int
+    description: IDAC2 routing configuration
+    default: 0
+    enum:
+      - 0 # IDAC2 disabled
+      - 1 # IDAC2 connected to AIN0
+      - 2 # IDAC2 connected to AIN1
+      - 3 # IDAC2 connected to AIN2
+      - 4 # IDAC2 connected to AIN3
+      - 5 # IDAC2 connected to REFP
+      - 6 # IDAC2 connected to REFN
+
 io-channel-cells:
   - input

@@ -68,6 +68,9 @@ struct ads122c04_config {
 	int gain;
 	int mux;
 	int vref;
+	int idac;
+	int i1mux;
+	int i2mux;
 };
 
 struct ads122c04_data {
@@ -154,6 +157,8 @@ static int write_reg(const struct device *dev, uint8_t reg, uint8_t val)
 		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
+
+	LOG_DBG("reg: 0x%02x val: 0x%02x", reg, val);
 
 	reg = CMD_WREG | (reg & 0x03) << 2;
 
@@ -264,7 +269,10 @@ static int ads122c04_init(const struct device *dev)
 	get_data(dev)->reg_config_1 = DEF_CONFIG_1;
 	get_data(dev)->reg_config_1 |= get_config(dev)->vref << POS_CONFIG_1_VREF;
 	get_data(dev)->reg_config_2 = DEF_CONFIG_2;
+	get_data(dev)->reg_config_2 |= get_config(dev)->idac << POS_CONFIG_2_IDAC;
 	get_data(dev)->reg_config_3 = DEF_CONFIG_3;
+	get_data(dev)->reg_config_3 |= get_config(dev)->i1mux << POS_CONFIG_3_I1MUX;
+	get_data(dev)->reg_config_3 |= get_config(dev)->i2mux << POS_CONFIG_3_I2MUX;
 
 	ret = write_reg(dev, REG_CONFIG_0, get_data(dev)->reg_config_0);
 	if (ret) {
@@ -307,6 +315,9 @@ static const struct adc_driver_api ads122c04_driver_api = {
 		.gain = DT_INST_PROP(n, gain),                                                     \
 		.mux = DT_INST_PROP(n, mux),                                                       \
 		.vref = DT_INST_PROP(n, vref),                                                     \
+		.idac = DT_INST_PROP(n, idac),                                                     \
+		.i1mux = DT_INST_PROP(n, i1mux),                                                   \
+		.i2mux = DT_INST_PROP(n, i2mux),                                                   \
 	};                                                                                         \
 	static struct ads122c04_data inst_##n##_data = {                                           \
 		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 1, 1),                             \
