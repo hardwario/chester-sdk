@@ -1,0 +1,4 @@
+zephyr_library()
+
+zephyr_library_sources(ctr_rtd.c)
+zephyr_library_sources_ifdef(CONFIG_CTR_RTD_SHELL ctr_rtd_shell.c)

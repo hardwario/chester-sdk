@@ -1,0 +1,18 @@
+config CTR_RTD
+	bool "CTR_RTD"
+	depends on CTR_X3
+	select CBPRINTF_FP_SUPPORT if CTR_RTD_LOG_LEVEL_DBG || CTR_RTD_SHELL
+	select REQUIRES_FULL_LIBC
+
+if CTR_RTD
+
+module = CTR_RTD
+module-str = CHESTER Resistance Temperature Detectors Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_RTD_SHELL
+	bool "CTR_RTD_SHELL"
+	depends on SHELL
+	default y
+
+endif # CTR_RTD
