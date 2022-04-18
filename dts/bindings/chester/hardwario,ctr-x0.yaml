@@ -6,6 +6,11 @@ include: base.yaml
 
 properties:
 
+  ch1-gpios:
+    type: phandle-array
+    required: true
+    description: Microcontroller connection for CH1
+
   on1-gpios:
     type: phandle-array
     required: true
@@ -25,6 +30,11 @@ properties:
     type: phandle-array
     required: true
     description: Enable pin for CH1 switched current loop shunt resistor (active high)
+
+  ch2-gpios:
+    type: phandle-array
+    required: true
+    description: Microcontroller connection for CH2
 
   on2-gpios:
     type: phandle-array
@@ -46,6 +56,11 @@ properties:
     required: true
     description: Enable pin for CH2 switched current loop shunt resistor (active high)
 
+  ch3-gpios:
+    type: phandle-array
+    required: true
+    description: Microcontroller connection for CH3
+
   on3-gpios:
     type: phandle-array
     required: true
@@ -65,6 +80,11 @@ properties:
     type: phandle-array
     required: true
     description: Enable pin for CH3 switched current loop shunt resistor (active high)
+
+  ch4-gpios:
+    type: phandle-array
+    required: true
+    description: Microcontroller connection for CH4
 
   on4-gpios:
     type: phandle-array

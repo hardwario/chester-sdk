@@ -2,6 +2,7 @@
 #define CHESTER_INCLUDE_DRIVERS_CTR_X0_H_
 
 /* Zephyr includes */
+#include <drivers/gpio.h>
 #include <device.h>
 
 #ifdef __cplusplus
@@ -26,9 +27,12 @@ enum ctr_x0_mode {
 
 typedef int (*ctr_x0_api_set_mode)(const struct device *dev, enum ctr_x0_channel channel,
                                    enum ctr_x0_mode mode);
+typedef int (*ctr_x0_api_get_spec)(const struct device *dev, enum ctr_x0_channel channel,
+                                   const struct gpio_dt_spec **spec);
 
 struct ctr_x0_driver_api {
 	ctr_x0_api_set_mode set_mode;
+	ctr_x0_api_get_spec get_spec;
 };
 
 static inline int ctr_x0_set_mode(const struct device *dev, enum ctr_x0_channel channel,
@@ -37,6 +41,14 @@ static inline int ctr_x0_set_mode(const struct device *dev, enum ctr_x0_channel 
 	const struct ctr_x0_driver_api *api = (const struct ctr_x0_driver_api *)dev->api;
 
 	return api->set_mode(dev, channel, mode);
+}
+
+static inline int ctr_x0_get_spec(const struct device *dev, enum ctr_x0_channel channel,
+                                  const struct gpio_dt_spec **spec)
+{
+	const struct ctr_x0_driver_api *api = (const struct ctr_x0_driver_api *)dev->api;
+
+	return api->get_spec(dev, channel, spec);
 }
 
 #ifdef __cplusplus

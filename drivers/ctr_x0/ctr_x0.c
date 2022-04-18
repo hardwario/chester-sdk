@@ -16,18 +16,22 @@
 LOG_MODULE_REGISTER(ctr_x0, CONFIG_CTR_X0_LOG_LEVEL);
 
 struct ctr_x0_config {
+	const struct gpio_dt_spec ch1_spec;
 	const struct gpio_dt_spec on1_spec;
 	const struct gpio_dt_spec pu1_spec;
 	const struct gpio_dt_spec pd1_spec;
 	const struct gpio_dt_spec cl1_spec;
+	const struct gpio_dt_spec ch2_spec;
 	const struct gpio_dt_spec on2_spec;
 	const struct gpio_dt_spec pu2_spec;
 	const struct gpio_dt_spec pd2_spec;
 	const struct gpio_dt_spec cl2_spec;
+	const struct gpio_dt_spec ch3_spec;
 	const struct gpio_dt_spec on3_spec;
 	const struct gpio_dt_spec pu3_spec;
 	const struct gpio_dt_spec pd3_spec;
 	const struct gpio_dt_spec cl3_spec;
+	const struct gpio_dt_spec ch4_spec;
 	const struct gpio_dt_spec on4_spec;
 	const struct gpio_dt_spec pu4_spec;
 	const struct gpio_dt_spec pd4_spec;
@@ -148,6 +152,30 @@ static int ctr_x0_set_mode_(const struct device *dev, enum ctr_x0_channel channe
 	return 0;
 }
 
+static int ctr_x0_get_spec_(const struct device *dev, enum ctr_x0_channel channel,
+                            const struct gpio_dt_spec **spec)
+{
+	switch (channel) {
+	case CTR_X0_CHANNEL_1:
+		*spec = &get_config(dev)->ch1_spec;
+		break;
+	case CTR_X0_CHANNEL_2:
+		*spec = &get_config(dev)->ch2_spec;
+		break;
+	case CTR_X0_CHANNEL_3:
+		*spec = &get_config(dev)->ch3_spec;
+		break;
+	case CTR_X0_CHANNEL_4:
+		*spec = &get_config(dev)->ch4_spec;
+		break;
+	default:
+		LOG_ERR("Unknown channel: %d", channel);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int ctr_x0_init(const struct device *dev)
 {
 	int ret;
@@ -214,22 +242,27 @@ static int ctr_x0_init(const struct device *dev)
 
 static const struct ctr_x0_driver_api ctr_x0_driver_api = {
 	.set_mode = ctr_x0_set_mode_,
+	.get_spec = ctr_x0_get_spec_,
 };
 
 #define CTR_X0_INIT(n)                                                                             \
 	static const struct ctr_x0_config inst_##n##_config = {                                    \
+		.ch1_spec = GPIO_DT_SPEC_INST_GET(n, ch1_gpios),                                   \
 		.on1_spec = GPIO_DT_SPEC_INST_GET(n, on1_gpios),                                   \
 		.pu1_spec = GPIO_DT_SPEC_INST_GET(n, pu1_gpios),                                   \
 		.pd1_spec = GPIO_DT_SPEC_INST_GET(n, pd1_gpios),                                   \
 		.cl1_spec = GPIO_DT_SPEC_INST_GET(n, cl1_gpios),                                   \
+		.ch2_spec = GPIO_DT_SPEC_INST_GET(n, ch2_gpios),                                   \
 		.on2_spec = GPIO_DT_SPEC_INST_GET(n, on2_gpios),                                   \
 		.pu2_spec = GPIO_DT_SPEC_INST_GET(n, pu2_gpios),                                   \
 		.pd2_spec = GPIO_DT_SPEC_INST_GET(n, pd2_gpios),                                   \
 		.cl2_spec = GPIO_DT_SPEC_INST_GET(n, cl2_gpios),                                   \
+		.ch3_spec = GPIO_DT_SPEC_INST_GET(n, ch3_gpios),                                   \
 		.on3_spec = GPIO_DT_SPEC_INST_GET(n, on3_gpios),                                   \
 		.pu3_spec = GPIO_DT_SPEC_INST_GET(n, pu3_gpios),                                   \
 		.pd3_spec = GPIO_DT_SPEC_INST_GET(n, pd3_gpios),                                   \
 		.cl3_spec = GPIO_DT_SPEC_INST_GET(n, cl3_gpios),                                   \
+		.ch4_spec = GPIO_DT_SPEC_INST_GET(n, ch4_gpios),                                   \
 		.on4_spec = GPIO_DT_SPEC_INST_GET(n, on4_gpios),                                   \
 		.pu4_spec = GPIO_DT_SPEC_INST_GET(n, pu4_gpios),                                   \
 		.pd4_spec = GPIO_DT_SPEC_INST_GET(n, pd4_gpios),                                   \
