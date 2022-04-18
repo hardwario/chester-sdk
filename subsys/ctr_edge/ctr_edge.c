@@ -151,6 +151,13 @@ int ctr_edge_init(struct ctr_edge *edge, const struct gpio_dt_spec *spec, bool s
 	return 0;
 }
 
+int ctr_edge_get_active(struct ctr_edge *edge, bool *is_active)
+{
+	*is_active = atomic_get(&edge->is_active);
+
+	return 0;
+}
+
 int ctr_edge_set_callback(struct ctr_edge *edge, ctr_edge_cb_t cb, void *user_data)
 {
 	k_mutex_lock(&edge->lock, K_FOREVER);

@@ -40,6 +40,7 @@ struct ctr_edge {
 };
 
 int ctr_edge_init(struct ctr_edge *edge, const struct gpio_dt_spec *spec, bool start_active);
+int ctr_edge_get_active(struct ctr_edge *edge, bool *is_active);
 int ctr_edge_set_callback(struct ctr_edge *edge, ctr_edge_cb_t cb, void *user_data);
 int ctr_edge_set_cooldown_time(struct ctr_edge *edge, int msec);
 int ctr_edge_set_active_duration(struct ctr_edge *edge, int msec);
