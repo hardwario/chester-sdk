@@ -12,6 +12,7 @@ struct ctr_rtc_tm {
 	int year;
 	int month;
 	int day;
+	int wday;
 	int hours;
 	int minutes;
 	int seconds;

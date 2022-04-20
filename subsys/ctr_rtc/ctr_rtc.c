@@ -26,6 +26,7 @@ static struct onoff_client m_lfclk_cli;
 static int m_year = 1970;
 static int m_month = 1;
 static int m_day = 1;
+static int m_wday = 4;
 static int m_hours = 0;
 static int m_minutes = 0;
 static int m_seconds = 0;
@@ -51,6 +52,15 @@ static int get_days_in_month(int year, int month)
 	return 31;
 }
 
+static int get_day_of_week(int year, int month, int day)
+{
+	int adjustment = (14 - month) / 12;
+	int month_ = month + 12 * adjustment - 2;
+	int year_ = year - adjustment;
+
+	return (day + (13 * month_ - 1) / 5 + year_ + year_ / 4 - year_ / 100 + year_ / 400) % 7;
+}
+
 int ctr_rtc_get_tm(struct ctr_rtc_tm *tm)
 {
 	irq_disable(RTC2_IRQn);
@@ -58,6 +68,7 @@ int ctr_rtc_get_tm(struct ctr_rtc_tm *tm)
 	tm->year = m_year;
 	tm->month = m_month;
 	tm->day = m_day;
+	tm->wday = m_wday;
 	tm->hours = m_hours;
 	tm->minutes = m_minutes;
 	tm->seconds = m_seconds;
@@ -98,6 +109,7 @@ int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm)
 	m_year = tm->year;
 	m_month = tm->month;
 	m_day = tm->day;
+	m_wday = get_day_of_week(m_year, m_month, m_day);
 	m_hours = tm->hours;
 	m_minutes = tm->minutes;
 	m_seconds = tm->seconds;
@@ -142,8 +154,12 @@ static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	shell_print(shell, "%04d/%02d/%02d %02d:%02d:%02d", tm.year, tm.month, tm.day, tm.hours,
-	            tm.minutes, tm.seconds);
+	static const char *wday[] = {
+		"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
+	};
+
+	shell_print(shell, "%04d/%02d/%02d %02d:%02d:%02d %s", tm.year, tm.month, tm.day, tm.hours,
+	            tm.minutes, tm.seconds, wday[tm.wday]);
 
 	return 0;
 }
@@ -254,6 +270,10 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type)
 
 			if (++m_hours >= 24) {
 				m_hours = 0;
+
+				if (++m_wday >= 7) {
+					m_wday = 0;
+				}
 
 				if (++m_day > get_days_in_month(m_year, m_month)) {
 					m_day = 1;
