@@ -1,0 +1,27 @@
+description: HARDWARIO CHESTER-X4 Driver
+
+compatible: "hardwario,ctr-x4"
+
+include: base.yaml
+
+properties:
+
+  pwr1-gpios:
+    type: phandle-array
+    required: true
+    description: Power rail output enable 1
+
+  pwr2-gpios:
+    type: phandle-array
+    required: true
+    description: Power rail output enable 2
+
+  pwr3-gpios:
+    type: phandle-array
+    required: true
+    description: Power rail output enable 3
+
+  pwr4-gpios:
+    type: phandle-array
+    required: true
+    description: Power rail output enable 4

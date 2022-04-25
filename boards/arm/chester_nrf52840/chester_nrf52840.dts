@@ -141,6 +141,26 @@
 		pwr1-gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 
+	ctr_x4_a: ctr_x4_a {
+		compatible = "hardwario,ctr-x4";
+		label = "CTR_X4_A";
+		status = "disabled";
+		pwr1-gpios = <&gpio0 3 0>;
+		pwr2-gpios = <&gpio0 29 0>;
+		pwr3-gpios = <&gpio0 2 0>;
+		pwr4-gpios = <&gpio0 31 0>;
+	};
+
+	ctr_x4_b: ctr_x4_b {
+		compatible = "hardwario,ctr-x4";
+		label = "CTR_X4_B";
+		status = "disabled";
+		pwr1-gpios = <&gpio0 28 0>;
+		pwr2-gpios = <&gpio0 30 0>;
+		pwr3-gpios = <&gpio0 4 0>;
+		pwr4-gpios = <&gpio0 5 0>;
+	};
+
 	ctr_batt: ctr_batt {
 		compatible = "hardwario,ctr-batt";
 		label = "CTR_BATT";

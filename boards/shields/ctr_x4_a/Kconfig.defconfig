@@ -1,0 +1,6 @@
+if SHIELD_CTR_X4_A
+
+config CTR_X4
+	default y
+
+endif # SHIELD_CTR_X4_A

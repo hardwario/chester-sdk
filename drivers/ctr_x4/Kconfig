@@ -1,0 +1,17 @@
+config CTR_X4
+	bool "HARDWARIO CHESTER-X4 (DC/DC Converter w/ Power Rail Outputs) Driver"
+	select GPIO
+
+if CTR_X4
+
+module = CTR_X4
+module-str = ctr_x4
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_X4_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+endif # CTR_X4

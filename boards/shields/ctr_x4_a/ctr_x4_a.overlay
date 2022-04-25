@@ -1,0 +1,3 @@
+&ctr_x4_a {
+	status = "okay";
+};
