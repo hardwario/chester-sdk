@@ -55,10 +55,10 @@ static int get_days_in_month(int year, int month)
 static int get_day_of_week(int year, int month, int day)
 {
 	int adjustment = (14 - month) / 12;
-	int month_ = month + 12 * adjustment - 2;
-	int year_ = year - adjustment;
+	int m = month + 12 * adjustment - 2;
+	int y = year - adjustment;
 
-	return (day + (13 * month_ - 1) / 5 + year_ + year_ / 4 - year_ / 100 + year_ / 400) % 7;
+	return 1 + (day + (13 * m - 1) / 5 + y + y / 4 - y / 100 + y / 400) % 7;
 }
 
 int ctr_rtc_get_tm(struct ctr_rtc_tm *tm)
@@ -271,8 +271,8 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type)
 			if (++m_hours >= 24) {
 				m_hours = 0;
 
-				if (++m_wday >= 7) {
-					m_wday = 0;
+				if (++m_wday >= 8) {
+					m_wday = 1;
 				}
 
 				if (++m_day > get_days_in_month(m_year, m_month)) {
