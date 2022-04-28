@@ -1,12 +1,3 @@
 mainmenu "CHESTER Input"
 
-config APP_X0D_A
-	bool "APP_X0D_A"
-
-config APP_X0D_B
-	bool "APP_X0D_B"
-
-config APP_Z
-	bool "APP_Z"
-
 source "Kconfig.zephyr"

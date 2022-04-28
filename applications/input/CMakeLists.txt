@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 
-# TODO Use set_ifdef(CONFIG_CTR_Z) instead?
-set(SHIELD ctr_z)
-
+set(SHIELD ctr_x0_a ctr_x0_b ctr_z)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(input)
 

@@ -3,12 +3,13 @@
 /* CHESTER includes */
 #include <ctr_accel.h>
 #include <ctr_buf.h>
-#include <ctr_chester_x0d.h>
+#include <ctr_edge.h>
 #include <ctr_hygro.h>
 #include <ctr_led.h>
 #include <ctr_lrw.h>
 #include <ctr_therm.h>
 #include <drivers/ctr_batt.h>
+#include <drivers/ctr_x0.h>
 #include <drivers/ctr_z.h>
 
 /* Zephyr includes */
@@ -30,9 +31,14 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define BATT_TEST_INTERVAL_MSEC (6 * 60 * 60 * 1000)
 #define REPORT_INTERVAL_MSEC (15 * 60 * 1000)
 
-#if IS_ENABLED(CONFIG_APP_Z)
+#define HAS_CTR_S0 DT_NODE_HAS_STATUS(DT_NODELABEL(sht30_ext), okay)
+#define HAS_CTR_X0_A DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x0_a), okay)
+#define HAS_CTR_X0_B DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x0_b), okay)
+#define HAS_CTR_Z DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_z), okay)
+
+#if HAS_CTR_Z
 static const struct device *m_ctr_z_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
-#endif /* IS_ENABLED(CONFIG_APP_Z) */
+#endif /* HAS_CTR_Z */
 
 static const struct device *m_ctr_batt_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_batt));
 
@@ -130,6 +136,15 @@ static K_SEM_DEFINE(m_loop_sem, 1, 1);
 
 static atomic_t m_send;
 
+static struct ctr_edge edge_ch1;
+static struct ctr_edge edge_ch2;
+static struct ctr_edge edge_ch3;
+static struct ctr_edge edge_ch4;
+static struct ctr_edge edge_ch5;
+static struct ctr_edge edge_ch6;
+static struct ctr_edge edge_ch7;
+static struct ctr_edge edge_ch8;
+
 static int task_battery(void)
 {
 	int ret;
@@ -187,352 +202,180 @@ error:
 	return ret;
 }
 
-#if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
-static void chester_x0d_event_handler(enum ctr_chester_x0d_slot slot,
-                                      enum ctr_chester_x0d_channel channel,
-                                      enum ctr_chester_x0d_event event, void *param)
-{
-	LOG_DBG("slot: %d channel: %d event: %d", (int)slot, (int)channel, (int)event);
+#if HAS_CTR_X0_A || HAS_CTR_X0_B
 
-#if IS_ENABLED(CONFIG_APP_X0D_A)
-	if (slot == CTR_CHESTER_X0D_SLOT_A && channel == CTR_CHESTER_X0D_CHANNEL_1) {
-		if (event == CTR_CHESTER_X0D_EVENT_RISE) {
-			LOG_INF("Channel 1 detected rising edge");
-
-			atomic_inc(&m_data.events.input_1_rise);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-
-		if (event == CTR_CHESTER_X0D_EVENT_FALL) {
-			LOG_INF("Channel 1 detected falling edge");
-
-			atomic_inc(&m_data.events.input_1_fall);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
+#define EDGE_CALLBACK(ch)                                                                          \
+	void edge_ch##ch##_callback(struct ctr_edge *edge, enum ctr_edge_event event,              \
+	                            void *user_data)                                               \
+	{                                                                                          \
+		if (event == CTR_EDGE_EVENT_ACTIVE) {                                              \
+			LOG_INF("Channel " STRINGIFY(ch) " detected active edge");                 \
+			atomic_inc(&m_data.events.input_##ch##_rise);                              \
+			atomic_set(&m_send, true);                                                 \
+			k_sem_give(&m_loop_sem);                                                   \
+		}                                                                                  \
+		if (event == CTR_EDGE_EVENT_INACTIVE) {                                            \
+			LOG_INF("Channel " STRINGIFY(ch) " detected inactive edge");               \
+			atomic_inc(&m_data.events.input_##ch##_fall);                              \
+			atomic_set(&m_send, true);                                                 \
+			k_sem_give(&m_loop_sem);                                                   \
+		}                                                                                  \
 	}
 
-	if (slot == CTR_CHESTER_X0D_SLOT_A && channel == CTR_CHESTER_X0D_CHANNEL_2) {
-		if (event == CTR_CHESTER_X0D_EVENT_RISE) {
-			LOG_INF("Channel 2 detected rising edge");
+#if HAS_CTR_X0_A
+EDGE_CALLBACK(1)
+EDGE_CALLBACK(2)
+EDGE_CALLBACK(3)
+EDGE_CALLBACK(4)
+#endif /* HAS_CTR_X0_A */
 
-			atomic_inc(&m_data.events.input_2_rise);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
+#if HAS_CTR_X0_B
+EDGE_CALLBACK(5)
+EDGE_CALLBACK(6)
+EDGE_CALLBACK(7)
+EDGE_CALLBACK(8)
+#endif /* HAS_CTR_X0_B */
 
-		if (event == CTR_CHESTER_X0D_EVENT_FALL) {
-			LOG_INF("Channel 2 detected falling edge");
+#undef EDGE_CALLBACK
 
-			atomic_inc(&m_data.events.input_2_fall);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-	}
-
-	if (slot == CTR_CHESTER_X0D_SLOT_A && channel == CTR_CHESTER_X0D_CHANNEL_3) {
-		if (event == CTR_CHESTER_X0D_EVENT_RISE) {
-			LOG_INF("Channel 3 detected rising edge");
-
-			atomic_inc(&m_data.events.input_3_rise);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-
-		if (event == CTR_CHESTER_X0D_EVENT_FALL) {
-			LOG_INF("Channel 3 detected falling edge");
-
-			atomic_inc(&m_data.events.input_3_fall);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-	}
-
-	if (slot == CTR_CHESTER_X0D_SLOT_A && channel == CTR_CHESTER_X0D_CHANNEL_4) {
-		if (event == CTR_CHESTER_X0D_EVENT_RISE) {
-			LOG_INF("Channel 4 detected rising edge");
-
-			atomic_inc(&m_data.events.input_4_rise);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-
-		if (event == CTR_CHESTER_X0D_EVENT_FALL) {
-			LOG_INF("Channel 4 detected falling edge");
-
-			atomic_inc(&m_data.events.input_4_fall);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-	}
-#endif /* IS_ENABLED(CONFIG_APP_X0D_A) */
-
-#if IS_ENABLED(CONFIG_APP_X0D_B)
-	if (slot == CTR_CHESTER_X0D_SLOT_B && channel == CTR_CHESTER_X0D_CHANNEL_1) {
-		if (event == CTR_CHESTER_X0D_EVENT_RISE) {
-			LOG_INF("Channel 5 detected rising edge");
-
-			atomic_inc(&m_data.events.input_5_rise);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-
-		if (event == CTR_CHESTER_X0D_EVENT_FALL) {
-			LOG_INF("Channel 5 detected falling edge");
-
-			atomic_inc(&m_data.events.input_5_fall);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-	}
-
-	if (slot == CTR_CHESTER_X0D_SLOT_B && channel == CTR_CHESTER_X0D_CHANNEL_2) {
-		if (event == CTR_CHESTER_X0D_EVENT_RISE) {
-			LOG_INF("Channel 6 detected rising edge");
-
-			atomic_inc(&m_data.events.input_6_rise);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-
-		if (event == CTR_CHESTER_X0D_EVENT_FALL) {
-			LOG_INF("Channel 6 detected falling edge");
-
-			atomic_inc(&m_data.events.input_6_fall);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-	}
-
-	if (slot == CTR_CHESTER_X0D_SLOT_B && channel == CTR_CHESTER_X0D_CHANNEL_3) {
-		if (event == CTR_CHESTER_X0D_EVENT_RISE) {
-			LOG_INF("Channel 7 detected rising edge");
-
-			atomic_inc(&m_data.events.input_7_rise);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-
-		if (event == CTR_CHESTER_X0D_EVENT_FALL) {
-			LOG_INF("Channel 7 detected falling edge");
-
-			atomic_inc(&m_data.events.input_7_fall);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-	}
-
-	if (slot == CTR_CHESTER_X0D_SLOT_B && channel == CTR_CHESTER_X0D_CHANNEL_4) {
-		if (event == CTR_CHESTER_X0D_EVENT_RISE) {
-			LOG_INF("Channel 8 detected rising edge");
-
-			atomic_inc(&m_data.events.input_8_rise);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-
-		if (event == CTR_CHESTER_X0D_EVENT_FALL) {
-			LOG_INF("Channel 8 detected falling edge");
-
-			atomic_inc(&m_data.events.input_8_fall);
-			atomic_set(&m_send, true);
-			k_sem_give(&m_loop_sem);
-		}
-	}
-#endif /* IS_ENABLED(CONFIG_APP_X0D_B) */
-}
-#endif /* IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B) */
-
-#if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
-static int init_chester_x0d(void)
+static int init_chester_x0(void)
 {
 	int ret;
 
-#if IS_ENABLED(CONFIG_APP_X0D_A)
-	ret = ctr_chester_x0d_init(CTR_CHESTER_X0D_SLOT_A, CTR_CHESTER_X0D_CHANNEL_1,
-	                           chester_x0d_event_handler, NULL);
+#define SETUP(dev, n, ch)                                                                          \
+	do {                                                                                       \
+		ret = ctr_x0_set_mode(dev, CTR_X0_CHANNEL_##n, CTR_X0_MODE_NPN_INPUT);             \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);                         \
+			return ret;                                                                \
+		}                                                                                  \
+		const struct gpio_dt_spec *spec;                                                   \
+		ret = ctr_x0_get_spec(dev, CTR_X0_CHANNEL_##n, &spec);                             \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `ctr_x0_get_spec` failed: %d", ret);                         \
+			return ret;                                                                \
+		}                                                                                  \
+		ret = gpio_pin_configure_dt(spec, GPIO_INPUT | GPIO_ACTIVE_LOW);                   \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `gpio_configure_dt` failed: %d", ret);                       \
+			return ret;                                                                \
+		}                                                                                  \
+		ret = ctr_edge_init(&edge_ch##ch, spec, false);                                    \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `ctr_edge_init` failed: %d", ret);                           \
+			return ret;                                                                \
+		}                                                                                  \
+		ret = ctr_edge_set_callback(&edge_ch##ch, edge_ch##ch##_callback, NULL);           \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `ctr_edge_set_callback` failed: %d", ret);                   \
+			return ret;                                                                \
+		}                                                                                  \
+		ret = ctr_edge_set_cooldown_time(&edge_ch##ch, 10);                                \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `ctr_edge_set_cooldown_time` failed: %d", ret);              \
+			return ret;                                                                \
+		}                                                                                  \
+		ret = ctr_edge_set_active_duration(&edge_ch##ch, 50);                              \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `ctr_edge_set_active_duration` failed: %d", ret);            \
+			return ret;                                                                \
+		}                                                                                  \
+		ret = ctr_edge_set_inactive_duration(&edge_ch##ch, 50);                            \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `ctr_edge_set_inactive_duration` failed: %d", ret);          \
+			return ret;                                                                \
+		}                                                                                  \
+		ret = ctr_edge_watch(&edge_ch##ch);                                                \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `ctr_edge_watch` failed: %d", ret);                          \
+			return ret;                                                                \
+		}                                                                                  \
+	} while (0)
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_init` failed: %d", ret);
-		return ret;
+#if HAS_CTR_X0_A
+
+	static const struct device *dev_a = DEVICE_DT_GET(DT_NODELABEL(ctr_x0_a));
+
+	if (!device_is_ready(dev_a)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
 	}
 
-	ret = ctr_chester_x0d_init(CTR_CHESTER_X0D_SLOT_A, CTR_CHESTER_X0D_CHANNEL_2,
-	                           chester_x0d_event_handler, NULL);
+	SETUP(dev_a, 1, 1);
+	SETUP(dev_a, 2, 2);
+	SETUP(dev_a, 3, 3);
+	SETUP(dev_a, 4, 4);
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_init` failed: %d", ret);
-		return ret;
+#endif /* HAS_CTR_X0_A */
+
+#if HAS_CTR_X0_B
+
+	static const struct device *dev_b = DEVICE_DT_GET(DT_NODELABEL(ctr_x0_b));
+
+	if (!device_is_ready(dev_b)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
 	}
 
-	ret = ctr_chester_x0d_init(CTR_CHESTER_X0D_SLOT_A, CTR_CHESTER_X0D_CHANNEL_3,
-	                           chester_x0d_event_handler, NULL);
+	SETUP(dev_b, 1, 5);
+	SETUP(dev_b, 2, 6);
+	SETUP(dev_b, 3, 7);
+	SETUP(dev_b, 4, 8);
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_init` failed: %d", ret);
-		return ret;
-	}
+#endif /* HAS_CTR_X0_B */
 
-	ret = ctr_chester_x0d_init(CTR_CHESTER_X0D_SLOT_A, CTR_CHESTER_X0D_CHANNEL_4,
-	                           chester_x0d_event_handler, NULL);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_init` failed: %d", ret);
-		return ret;
-	}
-#endif /* IS_ENABLED(CONFIG_APP_X0D_A) */
-
-#if IS_ENABLED(CONFIG_APP_X0D_B)
-	ret = ctr_chester_x0d_init(CTR_CHESTER_X0D_SLOT_B, CTR_CHESTER_X0D_CHANNEL_1,
-	                           chester_x0d_event_handler, NULL);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_init` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_chester_x0d_init(CTR_CHESTER_X0D_SLOT_B, CTR_CHESTER_X0D_CHANNEL_2,
-	                           chester_x0d_event_handler, NULL);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_init` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_chester_x0d_init(CTR_CHESTER_X0D_SLOT_B, CTR_CHESTER_X0D_CHANNEL_3,
-	                           chester_x0d_event_handler, NULL);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_init` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_chester_x0d_init(CTR_CHESTER_X0D_SLOT_B, CTR_CHESTER_X0D_CHANNEL_4,
-	                           chester_x0d_event_handler, NULL);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_init` failed: %d", ret);
-		return ret;
-	}
-#endif /* IS_ENABLED(CONFIG_APP_X0D_B) */
+#undef SETUP
 
 	return 0;
 }
-#endif /* IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B) */
 
-#if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
-static int task_chester_x0d(void)
+#endif /* HAS_CTR_X0_A || HAS_CTR_X0_B */
+
+#if HAS_CTR_X0_A || HAS_CTR_X0_B
+
+static int task_chester_x0(void)
 {
 	int ret;
 
 	bool error = false;
 
-#if IS_ENABLED(CONFIG_APP_X0D_A)
-	ret = ctr_chester_x0d_read(CTR_CHESTER_X0D_SLOT_A, CTR_CHESTER_X0D_CHANNEL_1,
-	                           &m_data.states.input_1_level);
+#define READ(ch)                                                                                   \
+	do {                                                                                       \
+		bool is_active;                                                                    \
+		ret = ctr_edge_get_active(&edge_ch##ch, &is_active);                               \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `ctr_edge_get_active` failed: %d", ret);                     \
+			m_data.errors.input_##ch = true;                                           \
+			error = true;                                                              \
+		} else {                                                                           \
+			m_data.errors.input_##ch = false;                                          \
+			m_data.states.input_##ch##_level = is_active ? 0 : 1;                      \
+			LOG_INF("Channel " STRINGIFY(ch) " level: %d",                             \
+			        m_data.states.input_##ch##_level);                                 \
+		}                                                                                  \
+	} while (0)
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_read` failed: %d", ret);
-		m_data.errors.input_1 = true;
-		error = true;
-	} else {
-		LOG_INF("Channel 1 level: %d", m_data.states.input_1_level);
-		m_data.errors.input_1 = false;
-	}
+#if HAS_CTR_X0_A
+	READ(1);
+	READ(2);
+	READ(3);
+	READ(4);
+#endif /* HAS_CTR_X0_A */
 
-	ret = ctr_chester_x0d_read(CTR_CHESTER_X0D_SLOT_A, CTR_CHESTER_X0D_CHANNEL_2,
-	                           &m_data.states.input_2_level);
+#if HAS_CTR_X0_B
+	READ(5);
+	READ(6);
+	READ(7);
+	READ(8);
+#endif /* HAS_CTR_X0_B */
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_read` failed: %d", ret);
-		m_data.errors.input_2 = true;
-		error = true;
-	} else {
-		LOG_INF("Channel 2 level: %d", m_data.states.input_2_level);
-		m_data.errors.input_2 = false;
-	}
-
-	ret = ctr_chester_x0d_read(CTR_CHESTER_X0D_SLOT_A, CTR_CHESTER_X0D_CHANNEL_3,
-	                           &m_data.states.input_3_level);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_read` failed: %d", ret);
-		m_data.errors.input_3 = true;
-		error = true;
-	} else {
-		LOG_INF("Channel 3 level: %d", m_data.states.input_3_level);
-		m_data.errors.input_3 = false;
-	}
-
-	ret = ctr_chester_x0d_read(CTR_CHESTER_X0D_SLOT_A, CTR_CHESTER_X0D_CHANNEL_4,
-	                           &m_data.states.input_4_level);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_read` failed: %d", ret);
-		m_data.errors.input_4 = true;
-		error = true;
-	} else {
-		LOG_INF("Channel 4 level: %d", m_data.states.input_4_level);
-		m_data.errors.input_4 = false;
-	}
-#endif /* IS_ENABLED(CONFIG_APP_X0D_A) */
-
-#if IS_ENABLED(CONFIG_APP_X0D_B)
-	ret = ctr_chester_x0d_read(CTR_CHESTER_X0D_SLOT_B, CTR_CHESTER_X0D_CHANNEL_1,
-	                           &m_data.states.input_5_level);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_read` failed: %d", ret);
-		m_data.errors.input_5 = true;
-		error = true;
-	} else {
-		LOG_INF("Channel 5 level: %d", m_data.states.input_5_level);
-		m_data.errors.input_5 = false;
-	}
-
-	ret = ctr_chester_x0d_read(CTR_CHESTER_X0D_SLOT_B, CTR_CHESTER_X0D_CHANNEL_2,
-	                           &m_data.states.input_6_level);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_read` failed: %d", ret);
-		m_data.errors.input_6 = true;
-		error = true;
-	} else {
-		LOG_INF("Channel 6 level: %d", m_data.states.input_6_level);
-		m_data.errors.input_6 = false;
-	}
-
-	ret = ctr_chester_x0d_read(CTR_CHESTER_X0D_SLOT_B, CTR_CHESTER_X0D_CHANNEL_3,
-	                           &m_data.states.input_7_level);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_read` failed: %d", ret);
-		m_data.errors.input_7 = true;
-		error = true;
-	} else {
-		LOG_INF("Channel 7 level: %d", m_data.states.input_7_level);
-		m_data.errors.input_7 = false;
-	}
-
-	ret = ctr_chester_x0d_read(CTR_CHESTER_X0D_SLOT_B, CTR_CHESTER_X0D_CHANNEL_4,
-	                           &m_data.states.input_8_level);
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_chester_x0d_read` failed: %d", ret);
-		m_data.errors.input_8 = true;
-		error = true;
-	} else {
-		LOG_INF("Channel 8 level: %d", m_data.states.input_8_level);
-		m_data.errors.input_8 = false;
-	}
-#endif /* IS_ENABLED(CONFIG_APP_X0D_B) */
+#undef READ
 
 	return error ? -EIO : 0;
 }
-#endif /* IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B) */
+#endif /* HAS_CTR_X0_A || HAS_CTR_X0_B */
 
-#if IS_ENABLED(CONFIG_APP_Z)
+#if HAS_CTR_Z
 void ctr_z_event_handler(const struct device *dev, enum ctr_z_event event, void *param)
 {
 	switch (event) {
@@ -552,9 +395,9 @@ void ctr_z_event_handler(const struct device *dev, enum ctr_z_event event, void 
 		break;
 	}
 }
-#endif /* IS_ENABLED(CONFIG_APP_Z) */
+#endif /* HAS_CTR_Z */
 
-#if IS_ENABLED(CONFIG_APP_Z)
+#if HAS_CTR_Z
 static int init_chester_z(void)
 {
 	int ret;
@@ -629,9 +472,9 @@ static int init_chester_z(void)
 
 	return 0;
 }
-#endif /* IS_ENABLED(CONFIG_APP_Z) */
+#endif /* HAS_CTR_Z */
 
-#if IS_ENABLED(CONFIG_APP_Z)
+#if HAS_CTR_Z
 static int task_chester_z(void)
 {
 	int ret;
@@ -687,7 +530,7 @@ error:
 
 	return ret;
 }
-#endif /* IS_ENABLED(CONFIG_APP_Z) */
+#endif /* HAS_CTR_Z */
 
 static int init_sensors(void)
 {
@@ -731,7 +574,7 @@ static int task_sensors(void)
 		m_data.errors.int_temperature = false;
 	}
 
-#if IS_ENABLED(CONFIG_CTR_HYGRO)
+#if HAS_CTR_S0
 	ret = ctr_hygro_read(&m_data.states.ext_temperature, &m_data.states.ext_humidity);
 
 	if (ret < 0) {
@@ -982,21 +825,21 @@ static void loop(void)
 		LOG_ERR("Call `task_battery` failed: %d", ret);
 	}
 
-#if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
-	ret = task_chester_x0d();
+#if HAS_CTR_X0_A || HAS_CTR_X0_B
+	ret = task_chester_x0();
 
 	if (ret < 0) {
-		LOG_ERR("Call `task_chester_x0d` failed: %d", ret);
+		LOG_ERR("Call `task_chester_x0` failed: %d", ret);
 	}
-#endif /* IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B) */
+#endif /* HAS_CTR_X0_A || HAS_CTR_X0_B */
 
-#if IS_ENABLED(CONFIG_APP_Z)
+#if HAS_CTR_Z
 	ret = task_chester_z();
 
 	if (ret < 0) {
 		LOG_ERR("Call `task_chester_z` failed: %d", ret);
 	}
-#endif /* IS_ENABLED(CONFIG_APP_Z) */
+#endif /* HAS_CTR_Z */
 
 	ret = task_sensors();
 
@@ -1027,23 +870,23 @@ void main(void)
 	k_sleep(K_MSEC(2000));
 	ctr_led_set(CTR_LED_CHANNEL_G, false);
 
-#if IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B)
-	ret = init_chester_x0d();
+#if HAS_CTR_X0_A || HAS_CTR_X0_B
+	ret = init_chester_x0();
 
 	if (ret < 0) {
-		LOG_ERR("Call `init_chester_x0d` failed: %d", ret);
+		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
 		k_oops();
 	}
-#endif /* IS_ENABLED(CONFIG_APP_X0D_A) || IS_ENABLED(CONFIG_APP_X0D_B) */
+#endif /* HAS_CTR_X0_A || HAS_CTR_X0_B */
 
-#if IS_ENABLED(CONFIG_APP_Z)
+#if HAS_CTR_Z
 	ret = init_chester_z();
 
 	if (ret < 0) {
 		LOG_ERR("Call `init_chester_z` failed: %d", ret);
 		k_oops();
 	}
-#endif /* IS_ENABLED(CONFIG_APP_Z) */
+#endif /* HAS_CTR_Z */
 
 	ret = init_sensors();
 
