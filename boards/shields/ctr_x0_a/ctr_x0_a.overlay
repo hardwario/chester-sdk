@@ -5,7 +5,3 @@
 &ctr_x0_pcal6416a_a {
 	status = "okay";
 };
-
-&ctr_x0_pcal6416a_a {
-	status = "okay";
-};
