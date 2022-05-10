@@ -1,0 +1,5 @@
+&ctr_x4_a {
+	line-measurement-interval = <1000>;
+	line-threshold-min = <6000>;
+	line-threshold-max = <9000>;
+};

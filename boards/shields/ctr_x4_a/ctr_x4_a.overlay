@@ -1,3 +1,7 @@
 &ctr_x4_a {
 	status = "okay";
 };
+
+&ctr_x4_tla2021 {
+	status = "okay";
+};

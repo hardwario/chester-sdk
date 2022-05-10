@@ -25,3 +25,18 @@ properties:
     type: phandle-array
     required: true
     description: Power rail output enable 4
+
+  line-measurement-interval:
+    type: int
+    default: 5000
+    description: Time interval (in milliseconds) for line voltage measurement
+
+  line-threshold-min:
+    type: int
+    default: 7000
+    description: Minimum voltage threshold (in millivolts) for line presence detection
+
+  line-threshold-max:
+    type: int
+    default: 9000
+    description: Maximum voltage threshold (in millivolts) for line presence detection

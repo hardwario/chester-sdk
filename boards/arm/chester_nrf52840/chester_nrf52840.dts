@@ -273,6 +273,13 @@
 		#io-channel-cells = <1>;
 	};
 
+	ctr_x4_tla2021: ctr_x4_tla2021@49 {
+		compatible = "ti,tla2021";
+		label = "TLA2021";
+		reg = <0x49>;
+		#io-channel-cells = <1>;
+	};
+
 	ctr_z: ctr_z@10 {
 		compatible = "hardwario,ctr-z";
 		label = "CTR_Z";

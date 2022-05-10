@@ -1,6 +1,9 @@
 config CTR_X4
 	bool "HARDWARIO CHESTER-X4 (DC/DC Converter w/ Power Rail Outputs) Driver"
 	select GPIO
+	select I2C
+	select ADC
+	select ADC_TLA2021
 
 if CTR_X4
 
