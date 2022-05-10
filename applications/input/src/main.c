@@ -815,7 +815,7 @@ static int send(void)
 	return 0;
 }
 
-static void loop(void)
+static void loop(bool with_send)
 {
 	int ret;
 
@@ -847,9 +847,7 @@ static void loop(void)
 		LOG_ERR("Call `task_sensors` failed: %d", ret);
 	}
 
-	if (atomic_get(&m_send)) {
-		atomic_set(&m_send, false);
-
+	if (with_send) {
 		ret = send();
 
 		if (ret < 0) {
@@ -930,7 +928,12 @@ void main(void)
 			continue;
 		}
 
-		loop();
+#if 1
+		k_sleep(K_SECONDS(2));
+		loop(atomic_set(&m_send, false));
+#else
+		loop(true);
+#endif
 	}
 }
 
