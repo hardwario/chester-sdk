@@ -657,6 +657,11 @@ static int compose(struct ctr_buf *buf, const struct data *data)
 
 	ctr_buf_reset(buf);
 
+	int64_t timestamp = k_uptime_get();
+
+	ret |= ctr_buf_append_u32(buf, timestamp / 1000);
+	ret |= ctr_buf_append_u16(buf, timestamp % 1000);
+
 	uint32_t flags = 0;
 
 	flags |= data->states.input_1_level != 0 ? 0x00000001 : 0;

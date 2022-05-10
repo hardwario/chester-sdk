@@ -8,8 +8,9 @@ function Decode(port, bytes, variables) {
     // function Decoder(port, bytes) {
     buffer = bytes;
 
+    var timestamp_seconds = u32();
+    var timestamp_milliseconds = u16();
     var flags = u32();
-
     var states_orientation = u8();
     var states_int_temperature = s16();
     var states_ext_temperature = s16();
@@ -28,7 +29,6 @@ function Decode(port, bytes, variables) {
     var states_batt_voltage_rest = u16();
     var states_batt_voltage_load = u16();
     var states_batt_current_load = u16();
-
     var events_device_boot = u16();
     var events_device_tilt = u16();
     var events_input_1_deactivation = u8();
@@ -49,6 +49,7 @@ function Decode(port, bytes, variables) {
     var events_input_8_activation = u8();
 
     return {
+        timestamp: timestamp_seconds + timestamp_milliseconds / 1000,
         states: {
             orientation: states_orientation === 0 ? null : states_orientation,
             int_temperature: states_int_temperature === 0x7fff ? null : states_int_temperature / 100,
