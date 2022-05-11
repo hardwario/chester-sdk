@@ -27,10 +27,6 @@ struct m8_config {
 
 struct m8_data {
 	const struct device *dev;
-
-#if IS_ENABLED(CONFIG_PM_DEVICE)
-	enum pm_device_state pm_state;
-#endif /* IS_ENABLED(CONFIG_PM_DEVICE) */
 };
 
 static inline const struct m8_config *get_config(const struct device *dev)
