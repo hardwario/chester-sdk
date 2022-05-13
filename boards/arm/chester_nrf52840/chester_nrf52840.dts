@@ -374,6 +374,7 @@
 	current-speed = <115200>;
 	tx-pin = <13>;
 	rx-pin = <14>;
+	rx-pull-up;
 	/delete-property/ hw-flow-control;
 	/delete-property/ rts-pin;
 	/delete-property/ cts-pin;
@@ -393,6 +394,7 @@
 	current-speed = <19200>;
 	tx-pin = <7>;
 	rx-pin = <8>;
+	rx-pull-up;
 	/delete-property/ hw-flow-control;
 	/delete-property/ rts-pin;
 	/delete-property/ cts-pin;
