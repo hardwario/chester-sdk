@@ -11,6 +11,10 @@ module = CTR_HYGRO
 module-str = CHESTER Hygrometer Subsystem
 source "subsys/logging/Kconfig.template.log_config"
 
+choice SHT3XD_MEASUREMENT_MODE
+ 	default SHT3XD_SINGLE_SHOT_MODE
+endchoice
+
 config CTR_HYGRO_SHELL
 	bool "CTR_HYGRO_SHELL"
 	depends on SHELL
