@@ -1,0 +1,25 @@
+&ctr_lte_if {
+	status = "okay";
+};
+
+&ds2484 {
+	active-pullup;
+
+	ds18b20_0: ds18b20_0@28 {
+		compatible = "maxim,ds18b20";
+		reg = <0x28>;
+		resolution = <12>;
+		label = "DS18B20_0";
+	};
+
+	ds18b20_1: ds18b20_1@28 {
+		compatible = "maxim,ds18b20";
+		reg = <0x28>;
+		resolution = <12>;
+		label = "DS18B20_1";
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
