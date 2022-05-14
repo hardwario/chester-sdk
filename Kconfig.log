@@ -4,6 +4,11 @@ config CTR_LOG
 	select LOG_BACKEND_RTT
 	select USE_SEGGER_RTT
 
+choice LOG_BACKEND_RTT_MODE
+	default LOG_BACKEND_RTT_MODE_DROP
+	depends on CTR_LOG
+endchoice
+
 choice LOG_MODE
 	default LOG2_MODE_DEFERRED
 	depends on CTR_LOG
