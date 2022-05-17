@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
 	.measurement_interval = 60,
-	.report_interval = 600,
+	.report_interval = 900,
 };
 
 static void print_measurement_interval(const struct shell *shell)
