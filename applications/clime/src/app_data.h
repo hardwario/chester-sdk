@@ -11,7 +11,7 @@
 /* TODO Delete */
 #include <zephyr.h>
 
-#define W1_THERM_COUNT 1
+#define W1_THERM_COUNT 10
 #define W1_THERM_MAX_SAMPLES 128
 
 #ifdef __cplusplus
