@@ -189,11 +189,10 @@ int ctr_info_get_hw_revision(char **hw_revision)
 
 int ctr_info_get_fw_version(char **fw_version)
 {
-#if defined(VERSION)
+#if defined(FW_VERSION)
 	int ret;
-
 	static char buf[FW_VERSION_LENGTH];
-	ret = snprintf(buf, sizeof(buf), "%s", STRINGIFY(VERSION));
+	ret = snprintf(buf, sizeof(buf), "%s", STRINGIFY(FW_VERSION));
 	if (ret != strlen(buf)) {
 		return -ENOSPC;
 	}
