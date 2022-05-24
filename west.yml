@@ -1,13 +1,13 @@
 manifest:
-  version: "0.10"
+  version: "0.12"
   remotes:
-    - name: nrfconnect
-      url-base: https://github.com/nrfconnect
+    - name: hardwario
+      url-base: https://github.com/hardwario
   projects:
-    - name: sdk-nrf
-      remote: nrfconnect
-      revision: v1.9.1
-      path: nrf
+    - name: nrf
+      remote: hardwario
+      repo-path: ncs.git
+      revision: v1.9-chester-branch
       import: true
   self:
     path: chester
