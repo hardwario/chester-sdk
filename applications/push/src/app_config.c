@@ -1,4 +1,6 @@
 #include "app_config.h"
+
+/* CHESTER includes */
 #include <ctr_config.h>
 
 /* Zephyr includes */
@@ -8,8 +10,7 @@
 #include <zephyr.h>
 
 /* Standard includes */
-#include <ctype.h>
-#include <stdlib.h>
+#include <string.h>
 
 LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
@@ -88,15 +89,13 @@ static int init(const struct device *dev)
 	};
 
 	ret = settings_register(&sh);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `settings_register` failed: %d", ret);
 		return ret;
 	}
 
 	ret = settings_load_subtree(SETTINGS_PFX);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `settings_load_subtree` failed: %d", ret);
 		return ret;
 	}

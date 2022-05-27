@@ -1,11 +1,23 @@
 #include "app_config.h"
+#include "app_loop.h"
 
 /* Zephyr includes */
 #include <logging/log.h>
 #include <shell/shell.h>
 #include <zephyr.h>
 
-LOG_MODULE_REGISTER(app_shell, LOG_LEVEL_INF);
+/* Standard includes */
+#include <stddef.h>
+
+LOG_MODULE_REGISTER(app_shell, LOG_LEVEL_DBG);
+
+static int cmd_send(const struct shell *shell, size_t argc, char **argv)
+{
+	atomic_set(&g_app_loop_send, true);
+	k_sem_give(&g_app_loop_sem);
+
+	return 0;
+}
 
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
@@ -41,5 +53,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 
 SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
+SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
 
 /* clang-format on */
