@@ -1,1 +1,4 @@
 hardwario
+hardwario-chester
+hardwario-cloud
+hardwario-common
