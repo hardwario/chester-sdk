@@ -11,6 +11,7 @@
 /* Standard includes */
 #include <ctype.h>
 #include <stdlib.h>
+#include <string.h>
 
 LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
@@ -177,8 +178,6 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 static int init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	int ret;
 
 	LOG_INF("System initialization");
@@ -191,15 +190,13 @@ static int init(const struct device *dev)
 	};
 
 	ret = settings_register(&sh);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `settings_register` failed: %d", ret);
 		return ret;
 	}
 
 	ret = settings_load_subtree(SETTINGS_PFX);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `settings_load_subtree` failed: %d", ret);
 		return ret;
 	}
