@@ -640,6 +640,12 @@ static int start(void)
 	static bool initialized;
 
 	if (!initialized) {
+		ret = ctr_rfmux_acquire(dev_rfmux);
+		if (ret) {
+			LOG_ERR("Call `ctr_rfmux_acquire` failed: %d", ret);
+			return ret;
+		}
+
 		ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
 		                                               CTR_RFMUX_ANTENNA_EXT :
                                                                CTR_RFMUX_ANTENNA_INT);
