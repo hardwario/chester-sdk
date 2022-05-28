@@ -320,7 +320,7 @@ static const struct adc_driver_api ads122c04_driver_api = {
 		.i2mux = DT_INST_PROP(n, i2mux),                                                   \
 	};                                                                                         \
 	static struct ads122c04_data inst_##n##_data = {                                           \
-		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 1, 1),                             \
+		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 0, 1),                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ads122c04_init, NULL, &inst_##n##_data, &inst_##n##_config,       \
 	                      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &ads122c04_driver_api);
