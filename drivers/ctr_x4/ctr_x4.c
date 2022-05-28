@@ -269,7 +269,7 @@ static const struct ctr_x4_driver_api ctr_x4_driver_api = {
 		.line_threshold_max = DT_INST_PROP(n, line_threshold_max),                         \
 	};                                                                                         \
 	static struct ctr_x4_data inst_##n##_data = {                                              \
-		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 1, 1),                             \
+		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 0, 1),                             \
 		.timer = Z_TIMER_INITIALIZER(inst_##n##_data.timer, timer_handler, NULL),          \
 		.work = Z_WORK_INITIALIZER(work_handler),                                          \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
