@@ -2,10 +2,6 @@
 	status = "okay";
 };
 
-&ctr_z {
-	status = "okay";
-};
-
 &uart1 {
 	status = "okay";
 };

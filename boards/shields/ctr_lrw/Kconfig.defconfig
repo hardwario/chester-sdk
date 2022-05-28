@@ -1,0 +1,6 @@
+if SHIELD_CTR_LRW
+
+config CTR_LRW
+	default y
+
+endif # SHIELD_CTR_LRW
