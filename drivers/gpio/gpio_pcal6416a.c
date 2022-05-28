@@ -757,7 +757,7 @@ static const struct gpio_driver_api pcal6416a_drv_api = {
 		INIT_RESET_GPIO_FIELDS(idx)				   \
 	};                          \
 	static struct pcal6416a_drv_data pcal6416a_data##idx = {                                   \
-		.lock = Z_SEM_INITIALIZER(pcal6416a_data##idx.lock, 1, 1),                         \
+		.lock = Z_SEM_INITIALIZER(pcal6416a_data##idx.lock, 0, 1),                         \
 		.work = Z_WORK_INITIALIZER(pcal6416a_work_handler),                                \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 	};                                                                                         \
