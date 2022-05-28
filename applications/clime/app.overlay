@@ -1,7 +1,3 @@
-&ctr_lte_if {
-	status = "okay";
-};
-
 &ds2484 {
 	active-pullup;
 
@@ -18,8 +14,4 @@
 		resolution = <12>;
 		label = "DS18B20_1";
 	};
-};
-
-&uart0 {
-	status = "okay";
 };

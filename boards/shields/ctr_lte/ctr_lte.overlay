@@ -1,7 +1,7 @@
-&uart0 {
+&ctr_lte_if {
 	status = "okay";
 };
 
-&ctr_lte_if {
+&uart0 {
 	status = "okay";
 };

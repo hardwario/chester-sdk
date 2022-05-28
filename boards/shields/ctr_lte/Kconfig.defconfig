@@ -1,0 +1,6 @@
+if SHIELD_CTR_LTE
+
+config CTR_LTE
+	default y
+
+endif # SHIELD_CTR_LTE
