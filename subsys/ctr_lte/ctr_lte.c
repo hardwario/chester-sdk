@@ -168,8 +168,6 @@ static int wake_up(void)
 {
 	int ret;
 
-	k_sleep(K_MSEC(1000));
-
 	k_poll_signal_reset(&m_boot_sig);
 
 	ret = ctr_lte_if_wakeup(dev_lte_if);
