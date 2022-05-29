@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 #define SETTINGS_PFX "lte"
 
 #define XSLEEP_PAUSE K_MSEC(100)
+#define BOOT_TIMEOUT K_SECONDS(5)
 #define BOOT_RETRY_COUNT 3
 #define BOOT_RETRY_DELAY K_SECONDS(10)
 #define SETUP_RETRY_COUNT 1
@@ -181,8 +182,7 @@ static int wake_up(void)
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_boot_sig),
 	};
 
-	ret = k_poll(events, ARRAY_SIZE(events), K_MSEC(1000));
-
+	ret = k_poll(events, ARRAY_SIZE(events), BOOT_TIMEOUT);
 	if (ret == -EAGAIN) {
 		LOG_WRN("Boot message timed out");
 
@@ -2098,8 +2098,7 @@ static int cmd_test_wakeup(const struct shell *shell, size_t argc, char **argv)
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_boot_sig),
 	};
 
-	ret = k_poll(events, ARRAY_SIZE(events), K_MSEC(1000));
-
+	ret = k_poll(events, ARRAY_SIZE(events), BOOT_TIMEOUT);
 	if (ret == -EAGAIN) {
 		LOG_WRN("Boot message timed out");
 		shell_warn(shell, "boot message timed out");
