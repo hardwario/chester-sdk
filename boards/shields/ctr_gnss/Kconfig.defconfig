@@ -1,0 +1,6 @@
+if SHIELD_CTR_GNSS
+
+config CTR_GNSS
+	default y
+
+endif # SHIELD_CTR_GNSS
