@@ -5,7 +5,6 @@
 /* CHESTER includes */
 #include <ctr_led.h>
 #include <ctr_lte.h>
-#include <ctr_therm.h>
 #include <ctr_wdog.h>
 #include <drivers/sensor/w1_sensor.h>
 #include <drivers/w1.h>
@@ -87,12 +86,6 @@ int app_init(void)
 	ret = ctr_wdog_install(&g_app_wdog_channel);
 	if (ret) {
 		LOG_ERR("Call `ctr_wdog_install` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_therm_init();
-	if (ret) {
-		LOG_ERR("Call `ctr_therm_init` failed: %d", ret);
 		return ret;
 	}
 

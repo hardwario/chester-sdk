@@ -5,6 +5,7 @@
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/sensor.h>
+#include <init.h>
 #include <logging/log.h>
 #include <zephyr.h>
 
@@ -13,80 +14,25 @@
 
 LOG_MODULE_REGISTER(ctr_therm, CONFIG_CTR_THERM_LOG_LEVEL);
 
-static K_MUTEX_DEFINE(m_mut);
-static bool m_init;
+static struct k_sem m_lock = Z_SEM_INITIALIZER(m_lock, 0, 1);
 static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(tmp112));
-
-int ctr_therm_init(void)
-{
-	int ret;
-
-	k_mutex_lock(&m_mut, K_FOREVER);
-
-	if (m_init) {
-		LOG_ERR("Already initialized");
-		k_mutex_unlock(&m_mut);
-		return -EACCES;
-	}
-
-	if (!device_is_ready(m_dev)) {
-		LOG_ERR("Device `TMP112` not ready");
-		k_mutex_unlock(&m_mut);
-		return -EINVAL;
-	}
-
-	struct sensor_value val_scale = {
-		.val1 = 128,
-		.val2 = 0,
-	};
-	ret = sensor_attr_set(m_dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_FULL_SCALE, &val_scale);
-	if (ret) {
-		LOG_ERR("Call `sensor_attr_set` failed (SENSOR_ATTR_FULL_SCALE): %d", ret);
-		k_mutex_unlock(&m_mut);
-		return ret;
-	}
-
-	struct sensor_value val_freq = {
-		.val1 = 0,
-		.val2 = 250000,
-	};
-	ret = sensor_attr_set(m_dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_SAMPLING_FREQUENCY,
-	                      &val_freq);
-	if (ret) {
-		LOG_ERR("Call `sensor_attr_set` failed (SENSOR_ATTR_SAMPLING_FREQUENCY): %d", ret);
-		k_mutex_unlock(&m_mut);
-		return ret;
-	}
-
-	m_init = true;
-
-	k_mutex_unlock(&m_mut);
-
-	return 0;
-}
 
 int ctr_therm_read(float *temperature)
 {
 	int ret;
 
-	k_mutex_lock(&m_mut, K_FOREVER);
-
-	if (!m_init) {
-		LOG_ERR("Not initialized");
-		k_mutex_unlock(&m_mut);
-		return -EACCES;
-	}
+	k_sem_take(&m_lock, K_FOREVER);
 
 	if (!device_is_ready(m_dev)) {
-		LOG_ERR("Device `TMP112` not ready");
-		k_mutex_unlock(&m_mut);
-		return -EINVAL;
+		LOG_ERR("Device not ready");
+		k_sem_give(&m_lock);
+		return -ENODEV;
 	}
 
 	ret = sensor_sample_fetch(m_dev);
 	if (ret) {
 		LOG_ERR("Call `sensor_sample_fetch` failed: %d", ret);
-		k_mutex_unlock(&m_mut);
+		k_sem_give(&m_lock);
 		return ret;
 	}
 
@@ -94,7 +40,7 @@ int ctr_therm_read(float *temperature)
 	ret = sensor_channel_get(m_dev, SENSOR_CHAN_AMBIENT_TEMP, &val);
 	if (ret) {
 		LOG_ERR("Call `sensor_channel_get` failed:t %d", ret);
-		k_mutex_unlock(&m_mut);
+		k_sem_give(&m_lock);
 		return ret;
 	}
 
@@ -106,7 +52,51 @@ int ctr_therm_read(float *temperature)
 		*temperature = temperature_;
 	}
 
-	k_mutex_unlock(&m_mut);
+	k_sem_give(&m_lock);
 
 	return 0;
 }
+
+static int init(const struct device *dev)
+{
+	int ret;
+
+	LOG_INF("System initialization");
+
+	if (!device_is_ready(m_dev)) {
+		LOG_ERR("Device not ready");
+		k_sem_give(&m_lock);
+		return -ENODEV;
+	}
+
+	struct sensor_value val_scale = {
+		.val1 = 128,
+		.val2 = 0,
+	};
+	ret = sensor_attr_set(m_dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_FULL_SCALE, &val_scale);
+	if (ret) {
+		LOG_ERR("Call `sensor_attr_set` failed (SENSOR_ATTR_FULL_SCALE): %d", ret);
+		m_dev->state->initialized = false;
+		k_sem_give(&m_lock);
+		return ret;
+	}
+
+	struct sensor_value val_freq = {
+		.val1 = 0,
+		.val2 = 250000,
+	};
+	ret = sensor_attr_set(m_dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_SAMPLING_FREQUENCY,
+	                      &val_freq);
+	if (ret) {
+		LOG_ERR("Call `sensor_attr_set` failed (SENSOR_ATTR_SAMPLING_FREQUENCY): %d", ret);
+		m_dev->state->initialized = false;
+		k_sem_give(&m_lock);
+		return ret;
+	}
+
+	k_sem_give(&m_lock);
+
+	return 0;
+}
+
+SYS_INIT(init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

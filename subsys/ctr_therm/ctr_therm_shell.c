@@ -11,20 +11,6 @@
 
 LOG_MODULE_REGISTER(ctr_therm_shell, CONFIG_CTR_THERM_LOG_LEVEL);
 
-static int cmd_therm_init(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	ret = ctr_therm_init();
-	if (ret) {
-		LOG_ERR("Call `ctr_therm_init` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	return 0;
-}
-
 static int cmd_therm_read(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
@@ -59,10 +45,6 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_therm,
-
-	SHELL_CMD_ARG(init, NULL,
-	              "Initialize sensor.",
-	              cmd_therm_init, 1, 0),
 
 	SHELL_CMD_ARG(read, NULL,
 	              "Read sensor data.",

@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-int ctr_therm_init(void);
 int ctr_therm_read(float *temperature);
 
 #ifdef __cplusplus

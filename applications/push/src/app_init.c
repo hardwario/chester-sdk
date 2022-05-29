@@ -4,7 +4,6 @@
 /* CHESTER includes */
 #include <ctr_led.h>
 #include <ctr_lrw.h>
-#include <ctr_therm.h>
 #include <ctr_wdog.h>
 #include <drivers/ctr_z.h>
 
@@ -96,19 +95,6 @@ static int init_chester_z(void)
 	return 0;
 }
 
-static int init_sensors(void)
-{
-	int ret;
-
-	ret = ctr_therm_init();
-	if (ret) {
-		LOG_ERR("Call `ctr_therm_init` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 int app_init(void)
 {
 	int ret;
@@ -130,12 +116,6 @@ int app_init(void)
 	ret = init_chester_z();
 	if (ret) {
 		LOG_ERR("Call `init_chester_z` failed: %d", ret);
-		k_oops();
-	}
-
-	ret = init_sensors();
-	if (ret) {
-		LOG_ERR("Call `init_sensors` failed: %d", ret);
 		k_oops();
 	}
 

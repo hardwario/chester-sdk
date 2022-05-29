@@ -473,12 +473,6 @@ void main(void)
 {
 	int ret;
 
-	ret = ctr_therm_init();
-	if (ret) {
-		LOG_ERR("Call `ctr_therm_init` failed: %d", ret);
-		k_oops();
-	}
-
 	ret = ctr_lte_set_event_cb(lte_event_handler, NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_set_event_cb` failed: %d", ret);

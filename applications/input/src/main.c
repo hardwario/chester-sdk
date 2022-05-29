@@ -532,20 +532,6 @@ error:
 }
 #endif /* HAS_CTR_Z */
 
-static int init_sensors(void)
-{
-	int ret;
-
-	ret = ctr_therm_init();
-
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_therm_init` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 static int task_sensors(void)
 {
 	int ret;
@@ -887,13 +873,6 @@ void main(void)
 		k_oops();
 	}
 #endif /* HAS_CTR_Z */
-
-	ret = init_sensors();
-
-	if (ret < 0) {
-		LOG_ERR("Call `init_sensors` failed: %d", ret);
-		k_oops();
-	}
 
 	ret = ctr_lrw_init(lrw_event_handler, NULL);
 

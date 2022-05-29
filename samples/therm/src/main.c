@@ -14,12 +14,6 @@ void main(void)
 
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
-	ret = ctr_therm_init();
-	if (ret) {
-		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
-		k_oops();
-	}
-
 	for (;;) {
 		LOG_INF("Alive");
 
@@ -31,7 +25,6 @@ void main(void)
 		ret = ctr_therm_read(&temperature);
 		if (ret) {
 			LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
-
 		} else {
 			LOG_INF("Temperature: %.2f C", temperature);
 		}
