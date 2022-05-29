@@ -172,7 +172,7 @@ static int wake_up(void)
 	k_poll_signal_reset(&m_boot_sig);
 
 	ret = ctr_lte_if_wakeup(dev_lte_if);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lte_if_wakeup` failed: %d", ret);
 		return ret;
 	}
@@ -190,7 +190,7 @@ static int wake_up(void)
 		return ETIMEDOUT;
 	}
 
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `k_poll` failed: %d", ret);
 		return ret;
 	}
@@ -1911,8 +1911,7 @@ static int cmd_start(const struct shell *shell, size_t argc, char **argv)
 	int corr_id;
 
 	ret = ctr_lte_start(&corr_id);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lte_start` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
@@ -1936,8 +1935,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 	int corr_id;
 
 	ret = ctr_lte_attach(&corr_id);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lte_attach` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
@@ -1960,8 +1958,7 @@ static int cmd_imei(const struct shell *shell, size_t argc, char **argv)
 
 	uint64_t imei;
 	ret = ctr_lte_get_imei(&imei);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lte_get_imei` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
@@ -1984,8 +1981,7 @@ static int cmd_imsi(const struct shell *shell, size_t argc, char **argv)
 
 	uint64_t imsi;
 	ret = ctr_lte_get_imsi(&imsi);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lte_get_imsi` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
@@ -2008,7 +2004,7 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 
 	bool attached;
 	ret = ctr_lte_is_attached(&attached);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lte_is_attached` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
@@ -2025,8 +2021,7 @@ static int cmd_test_uart(const struct shell *shell, size_t argc, char **argv)
 
 	if (argc == 2 && strcmp(argv[1], "enable") == 0) {
 		ret = ctr_lte_talk_enable();
-
-		if (ret < 0) {
+		if (ret) {
 			LOG_ERR("Call `ctr_lte_talk_enable` failed: %d", ret);
 			shell_error(shell, "command failed");
 			return ret;
@@ -2037,8 +2032,7 @@ static int cmd_test_uart(const struct shell *shell, size_t argc, char **argv)
 
 	if (argc == 2 && strcmp(argv[1], "disable") == 0) {
 		ret = ctr_lte_talk_disable();
-
-		if (ret < 0) {
+		if (ret) {
 			LOG_ERR("Call `ctr_lte_talk_disable` failed: %d", ret);
 			shell_error(shell, "command failed");
 			return ret;
@@ -2094,8 +2088,9 @@ static int cmd_test_wakeup(const struct shell *shell, size_t argc, char **argv)
 	k_poll_signal_reset(&m_boot_sig);
 
 	ret = ctr_lte_if_wakeup(dev_lte_if);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lte_if_wakeup` failed: %d", ret);
+		shell_error(shell, "command failed");
 		return ret;
 	}
 
@@ -2108,12 +2103,10 @@ static int cmd_test_wakeup(const struct shell *shell, size_t argc, char **argv)
 	if (ret == -EAGAIN) {
 		LOG_WRN("Boot message timed out");
 		shell_warn(shell, "boot message timed out");
-
-		/* Return positive error code intentionally */
-		return ETIMEDOUT;
+		return 0;
 	}
 
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `k_poll` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
@@ -2138,8 +2131,7 @@ static int cmd_test_cmd(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	ret = ctr_lte_talk_(argv[1]);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `lte_talk_` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
@@ -2286,15 +2278,13 @@ static int init(const struct device *dev)
 	};
 
 	ret = settings_register(&sh);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `settings_register` failed: %d", ret);
 		return ret;
 	}
 
 	ret = settings_load_subtree(SETTINGS_PFX);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `settings_load_subtree` failed: %d", ret);
 		return ret;
 	}
