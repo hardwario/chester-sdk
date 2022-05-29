@@ -1018,12 +1018,6 @@ static int start(void)
 			return ret;
 		}
 
-		ret = ctr_lte_talk_init(talk_handler);
-		if (ret < 0) {
-			LOG_ERR("Call `ctr_lte_talk_init` failed: %d", ret);
-			return ret;
-		}
-
 		initialized = true;
 	}
 
@@ -2287,6 +2281,18 @@ static int init(const struct device *dev)
 	}
 
 	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
+
+	ret = ctr_lte_talk_init(talk_handler);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_talk_init` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_if_reset(dev_lte_if);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_if_reset` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }
