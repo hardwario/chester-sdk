@@ -8,7 +8,6 @@
 #include <drivers/gpio.h>
 #include <drivers/uart.h>
 #include <logging/log.h>
-#include <pm/device.h>
 #include <sys/ring_buffer.h>
 #include <zephyr.h>
 
@@ -265,12 +264,6 @@ static int ctr_lrw_if_init_(const struct device *dev, ctr_lrw_recv_cb recv_cb)
 		return ret;
 	}
 
-	ret = pm_device_action_run(get_config(dev)->uart_dev, PM_DEVICE_ACTION_SUSPEND);
-	if (ret < 0) {
-		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
-		return ret;
-	}
-
 	return 0;
 }
 
@@ -343,13 +336,6 @@ static int ctr_lrw_if_enable_(const struct device *dev)
 
 	if (ret < 0) {
 		LOG_ERR("Call `request_hfclk` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->mut);
-		return ret;
-	}
-
-	ret = pm_device_action_run(get_config(dev)->uart_dev, PM_DEVICE_ACTION_RESUME);
-	if (ret < 0) {
-		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
 		k_mutex_unlock(&get_data(dev)->mut);
 		return ret;
 	}
@@ -428,14 +414,6 @@ static int ctr_lrw_if_disable_(const struct device *dev)
 
 	if (ret < 0) {
 		LOG_ERR("Call `k_poll` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->mut);
-		return ret;
-	}
-
-	ret = pm_device_action_run(get_config(dev)->uart_dev, PM_DEVICE_ACTION_SUSPEND);
-
-	if (ret < 0) {
-		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
 		k_mutex_unlock(&get_data(dev)->mut);
 		return ret;
 	}
