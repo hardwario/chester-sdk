@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 
 #define SETTINGS_PFX "lte"
 
+#define XSLEEP_PAUSE K_MSEC(100)
 #define BOOT_RETRY_COUNT 3
 #define BOOT_RETRY_DELAY K_SECONDS(10)
 #define SETUP_RETRY_COUNT 1
@@ -414,6 +415,8 @@ static int setup_once(void)
 		return ret;
 	}
 
+	k_sleep(XSLEEP_PAUSE);
+
 	return 0;
 }
 
@@ -702,6 +705,8 @@ static int attach_once(void)
 		return ret;
 	}
 
+	k_sleep(XSLEEP_PAUSE);
+
 	return 0;
 }
 
@@ -792,6 +797,8 @@ static int eval_once(struct ctr_lte_eval *eval)
 		LOG_ERR("Call `ctr_lte_talk_at_xsleep` failed: %d", ret);
 		return ret;
 	}
+
+	k_sleep(XSLEEP_PAUSE);
 
 	return 0;
 }
@@ -910,6 +917,8 @@ static int send_once(const struct send_msgq_data *data)
 		LOG_ERR("Call `ctr_lte_talk_at_xsleep` failed: %d", ret);
 		return ret;
 	}
+
+	k_sleep(XSLEEP_PAUSE);
 
 	return 0;
 }
