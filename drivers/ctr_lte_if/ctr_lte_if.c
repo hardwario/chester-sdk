@@ -575,7 +575,7 @@ static int ctr_lte_if_drv_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	ret = gpio_pin_configure_dt(&get_config(dev)->wakeup_spec, GPIO_OUTPUT_ACTIVE);
+	ret = gpio_pin_configure_dt(&get_config(dev)->wakeup_spec, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
 		LOG_ERR("Unable to configure wakeup pin: %d", ret);
 		return ret;

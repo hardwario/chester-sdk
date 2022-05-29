@@ -384,8 +384,8 @@
 		compatible = "hardwario,ctr-lte-if";
 		label = "CTR_LTE_IF";
 		status = "disabled";
-		reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
-		wakeup-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		wakeup-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
 	};
 };
 
