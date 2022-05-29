@@ -538,8 +538,6 @@ int ctr_lte_talk_at(void)
 static int at_cclk_q_response_handler(int idx, int count, const char *s, void *p1, void *p2,
                                       void *p3)
 {
-	ARG_UNUSED(p3);
-
 	char *buf = p1;
 	size_t *size = p2;
 
@@ -573,8 +571,6 @@ int ctr_lte_talk_at_cclk_q(char *buf, size_t size)
 
 static int at_cimi_response_handler(int idx, int count, const char *s, void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(p3);
-
 	char *buf = p1;
 	size_t *size = p2;
 
@@ -697,8 +693,6 @@ int ctr_lte_talk_at_cgerep(int p1)
 
 static int at_cgsn_response_handler(int idx, int count, const char *s, void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(p3);
-
 	char *buf = p1;
 	size_t *size = p2;
 
@@ -774,9 +768,6 @@ int ctr_lte_talk_at_cnec(int p1)
 static int at_coneval_response_handler(int idx, int count, const char *s, void *p1, void *p2,
                                        void *p3)
 {
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
 	int ret;
 
 	struct ctr_lte_eval *eval = p1;
@@ -906,8 +897,6 @@ int ctr_lte_talk_at_cscon(int p1)
 static int at_hwversion_response_handler(int idx, int count, const char *s, void *p1, void *p2,
                                          void *p3)
 {
-	ARG_UNUSED(p3);
-
 	char *buf = p1;
 	size_t *size = p2;
 
@@ -970,8 +959,6 @@ int ctr_lte_talk_at_rel14feat(int p1, int p2, int p3, int p4, int p5)
 static int at_shortswver_response_handler(int idx, int count, const char *s, void *p1, void *p2,
                                           void *p3)
 {
-	ARG_UNUSED(p3);
-
 	char *p = p1;
 	size_t *size = p2;
 
@@ -1133,8 +1120,6 @@ int ctr_lte_talk_at_xsleep(int p1)
 static int at_xsocket_response_handler(int idx, int count, const char *s, void *p1, void *p2,
                                        void *p3)
 {
-	ARG_UNUSED(p3);
-
 	char *p = p1;
 	size_t *size = p2;
 

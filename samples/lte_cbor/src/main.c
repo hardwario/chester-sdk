@@ -52,8 +52,6 @@ static void attach(void)
 
 static void lte_event_handler(enum ctr_lte_event event, union ctr_lte_event_data *data, void *param)
 {
-	ARG_UNUSED(param);
-
 	switch (event) {
 	case CTR_LTE_EVENT_FAILURE:
 		LOG_ERR("Event `CTR_LTE_EVENT_FAILURE`");

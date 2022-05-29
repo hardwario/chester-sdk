@@ -142,9 +142,6 @@ int ctr_rtc_get_ts(int64_t *ts)
 
 static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
 {
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
 	int ret;
 
 	struct ctr_rtc_tm tm;
@@ -166,8 +163,6 @@ static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_rtc_set(const struct shell *shell, size_t argc, char **argv)
 {
-	ARG_UNUSED(argc);
-
 	int ret;
 
 	char *date = argv[1];
@@ -323,8 +318,6 @@ static int request_lfclk(void)
 
 static int init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	int ret;
 
 	LOG_INF("System initialization");

@@ -129,8 +129,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static int init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	int ret;
 
 	LOG_INF("System initialization");

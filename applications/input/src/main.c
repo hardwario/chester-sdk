@@ -598,9 +598,6 @@ static int task_sensors(void)
 
 static void lrw_event_handler(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param)
 {
-	ARG_UNUSED(data);
-	ARG_UNUSED(param);
-
 	int ret;
 
 	switch (event) {

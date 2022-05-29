@@ -189,8 +189,6 @@ SHELL_CMD_REGISTER(config, &sub_config, "Configuration commands.", print_help);
 
 static int init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	int ret;
 
 	LOG_INF("System initialization");

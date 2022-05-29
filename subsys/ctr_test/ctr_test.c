@@ -15,8 +15,6 @@ static struct k_poll_signal m_start_sig;
 
 static int cmd_test(const struct shell *shell, size_t argc, char **argv)
 {
-	ARG_UNUSED(argv);
-
 	if (argc > 1) {
 		shell_error(shell, "command not found: %s", argv[1]);
 		shell_help(shell);
@@ -46,8 +44,6 @@ SHELL_CMD_REGISTER(test, NULL, "Start test mode.", cmd_test);
 
 static int init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	int ret;
 
 	LOG_INF("System initialization");

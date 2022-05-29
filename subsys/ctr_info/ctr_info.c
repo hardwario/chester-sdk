@@ -293,8 +293,6 @@ int ctr_info_get_ble_passkey(char **ble_passkey)
 
 static int init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	LOG_INF("System initialization");
 
 	load_uicr_customer();

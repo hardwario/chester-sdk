@@ -227,8 +227,6 @@ int ctr_signal_measure(double *avg, double *rms)
 
 static int init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	int ret;
 
 	LOG_INF("System initialization");

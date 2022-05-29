@@ -258,8 +258,6 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 static int init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	int ret;
 
 	LOG_INF("System initialization");
