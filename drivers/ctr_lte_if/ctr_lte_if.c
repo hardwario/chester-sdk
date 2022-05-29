@@ -270,12 +270,12 @@ static int ctr_lte_if_reset_(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(get_config(dev)->reset_spec.port)) {
-		LOG_ERR("reset port not ready");
-		return -EINVAL;
+		LOG_ERR("Port not ready");
+		return -ENODEV;
 	}
 
 	ret = gpio_pin_set_dt(&get_config(dev)->reset_spec, 1);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
 		return ret;
 	}
@@ -283,10 +283,12 @@ static int ctr_lte_if_reset_(const struct device *dev)
 	k_sleep(K_MSEC(100));
 
 	ret = gpio_pin_set_dt(&get_config(dev)->reset_spec, 0);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
 		return ret;
 	}
+
+	k_sleep(K_MSEC(1000));
 
 	return 0;
 }
@@ -296,12 +298,12 @@ static int ctr_lte_if_wakeup_(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(get_config(dev)->wakeup_spec.port)) {
-		LOG_ERR("wakeup port not ready");
-		return -EINVAL;
+		LOG_ERR("Port not ready");
+		return -ENODEV;
 	}
 
 	ret = gpio_pin_set_dt(&get_config(dev)->wakeup_spec, 1);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
 		return ret;
 	}
@@ -309,7 +311,7 @@ static int ctr_lte_if_wakeup_(const struct device *dev)
 	k_sleep(K_MSEC(100));
 
 	ret = gpio_pin_set_dt(&get_config(dev)->wakeup_spec, 0);
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
 		return ret;
 	}
