@@ -181,7 +181,12 @@ static int boot_once(void)
 
 	/* TODO Address critical timing between m_boot_sig and reset? */
 	k_poll_signal_reset(&m_boot_sig);
-	ctr_lrw_if_reset(dev_lrw_if);
+
+	ret = ctr_lrw_if_reset(dev_lrw_if);
+	if (ret) {
+		LOG_ERR("Call `ctr_lrw_if_reset` failed: %d", ret);
+		return ret;
+	}
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_boot_sig),
@@ -659,13 +664,6 @@ static int start(void)
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_rfmux_set_interface` failed: %d", ret);
-			return ret;
-		}
-
-		ret = ctr_lrw_talk_init(talk_handler);
-
-		if (ret < 0) {
-			LOG_ERR("Call `ctr_lrw_talk_init` failed: %d", ret);
 			return ret;
 		}
 
@@ -1712,8 +1710,6 @@ SHELL_CMD_REGISTER(lrw, &sub_lrw, "LoRaWAN commands.", print_help);
 
 static int init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	int ret;
 
 	LOG_INF("System initialization");
@@ -1730,20 +1726,30 @@ static int init(const struct device *dev)
 	};
 
 	ret = settings_register(&sh);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `settings_register` failed: %d", ret);
 		return ret;
 	}
 
 	ret = settings_load_subtree(SETTINGS_PFX);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `settings_load_subtree` failed: %d", ret);
 		return ret;
 	}
 
 	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
+
+	ret = ctr_lrw_talk_init(talk_handler);
+	if (ret) {
+		LOG_ERR("Call `ctr_lrw_talk_init` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lrw_if_reset(dev_lrw_if);
+	if (ret) {
+		LOG_ERR("Call `ctr_lrw_if_reset` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }
