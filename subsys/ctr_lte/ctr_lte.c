@@ -202,11 +202,14 @@ static int boot_once(void)
 {
 	int ret;
 
-	ctr_lte_if_reset(dev_lte_if);
+	ret = ctr_lte_if_reset(dev_lte_if);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_if_reset` failed: %d", ret);
+		return ret;
+	}
 
 	ret = wake_up();
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `wake_up` failed: %d", ret);
 		return ret;
 	}
@@ -2050,6 +2053,8 @@ static int cmd_test_uart(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_test_reset(const struct shell *shell, size_t argc, char **argv)
 {
+	int ret;
+
 	if (argc > 1) {
 		shell_error(shell, "command not found: %s", argv[1]);
 		shell_help(shell);
@@ -2061,9 +2066,12 @@ static int cmd_test_reset(const struct shell *shell, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	ctr_lte_if_reset(dev_lte_if);
-
-	k_sleep(K_MSEC(1000));
+	ret = ctr_lte_if_reset(dev_lte_if);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_if_reset` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
 
 	return 0;
 }
