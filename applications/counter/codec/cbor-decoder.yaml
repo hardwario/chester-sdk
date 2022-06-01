@@ -1,0 +1,58 @@
+- accel_x:
+  - div: 1000
+  - fpp: 2
+- accel_y:
+  - div: 1000
+  - fpp: 2
+- accel_z:
+  - div: 1000
+  - fpp: 2
+- accelerometer:
+- attribute:
+- band:
+- battery:
+- channel_1:
+- channel_2:
+- channel_3:
+- channel_4:
+- channel_5:
+- channel_6:
+- channel_7:
+- channel_8:
+- cid:
+- counter:
+- current_load:
+- earfcn:
+- ecl:
+- eest:
+- frame:
+- fw_version:
+- hw_revision:
+- hw_variant:
+- imei:
+- imsi:
+- network:
+- orientation:
+- parameter:
+- plmn:
+- product_name:
+- protocol:
+- rsrp:
+- rsrq:
+- sequence:
+- serial_number:
+- snr:
+- state:
+- temperature:
+  - div: 100
+  - fpp: 2
+- thermometer:
+- timestamp:
+- uptime:
+- vendor_name:
+- voltage_load:
+  - div: 1000
+  - fpp: 2
+- voltage_rest:
+  - div: 1000
+  - fpp: 2
