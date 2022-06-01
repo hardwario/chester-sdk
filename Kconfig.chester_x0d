@@ -1,3 +1,0 @@
-config CTR_CHESTER_X0D
-	bool "CTR_CHESTER_X0D"
-	depends on SHELL
