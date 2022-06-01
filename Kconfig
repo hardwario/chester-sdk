@@ -1,10 +1,3 @@
-# TODO Remove CTR_SDK and ensure that everything still works
-menuconfig CTR_SDK
-	bool "CTR_SDK"
-	select ASSERT
-	select DEBUG
-	select POLL
-
 rsource "Kconfig.defaults"
 rsource "Kconfig.log"
 rsource "Kconfig.shell"
