@@ -4,10 +4,6 @@
 /* CHESTER includes */
 #include <ctr_lte.h>
 
-/* Zephyr includes */
-#include <device.h>
-#include <zephyr.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
