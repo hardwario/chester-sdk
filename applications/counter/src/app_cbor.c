@@ -34,7 +34,7 @@ int app_cbor_encode(CborEncoder *enc)
 		CborEncoder map;
 		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
-		uint8_t protocol = 3;
+		uint8_t protocol = 1;
 		err |= cbor_encode_uint(&map, MSG_KEY_PROTOCOL);
 		err |= cbor_encode_uint(&map, protocol);
 
