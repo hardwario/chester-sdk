@@ -22,7 +22,7 @@
 
 LOG_MODULE_REGISTER(app_loop, LOG_LEVEL_DBG);
 
-#define BATT_TEST_INTERVAL_MSEC (6 * 60 * 60 * 1000)
+#define BATT_TEST_INTERVAL_MSEC (12 * 60 * 60 * 1000)
 
 K_SEM_DEFINE(g_app_loop_sem, 1, 1);
 atomic_t g_app_loop_measure = true;

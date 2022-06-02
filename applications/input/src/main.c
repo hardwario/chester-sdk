@@ -28,7 +28,7 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 /* TODO Would be nice to define using K_SECONDS, etc. Proper macros? */
-#define BATT_TEST_INTERVAL_MSEC (6 * 60 * 60 * 1000)
+#define BATT_TEST_INTERVAL_MSEC (12 * 60 * 60 * 1000)
 #define REPORT_INTERVAL_MSEC (15 * 60 * 1000)
 
 #define HAS_CTR_S0 DT_NODE_HAS_STATUS(DT_NODELABEL(sht30_ext), okay)
