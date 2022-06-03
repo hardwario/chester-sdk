@@ -1,5 +1,6 @@
 #include "app_loop.h"
 #include "app_data.h"
+#include "app_measure.h"
 #include "app_send.h"
 
 /* CHESTER includes */
@@ -27,6 +28,7 @@ LOG_MODULE_REGISTER(app_loop, LOG_LEVEL_DBG);
 #define BATT_TEST_INTERVAL_MSEC (12 * 60 * 60 * 1000)
 
 K_SEM_DEFINE(g_app_loop_sem, 1, 1);
+atomic_t g_app_loop_measure = true;
 atomic_t g_app_loop_send = true;
 
 extern struct ctr_wdog_channel g_app_wdog_channel;
@@ -146,53 +148,6 @@ error:
 	return ret;
 }
 
-static int task_sensors(void)
-{
-	int ret;
-
-	bool error = false;
-
-	ret = ctr_accel_read(NULL, NULL, NULL, &g_app_data.states.orientation);
-	if (ret) {
-		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
-		g_app_data.errors.orientation = true;
-		error = true;
-	} else {
-		LOG_INF("Orientation: %d", g_app_data.states.orientation);
-		g_app_data.errors.orientation = false;
-	}
-
-	ret = ctr_therm_read(&g_app_data.states.int_temperature);
-	if (ret) {
-		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
-		g_app_data.errors.int_temperature = true;
-		error = true;
-	} else {
-		LOG_INF("Int. temperature: %.1f C", g_app_data.states.int_temperature);
-		g_app_data.errors.int_temperature = false;
-	}
-
-#if IS_ENABLED(CONFIG_CTR_HYGRO)
-	ret = ctr_hygro_read(&g_app_data.states.ext_temperature, &g_app_data.states.ext_humidity);
-	if (ret) {
-		LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);
-		g_app_data.errors.ext_temperature = true;
-		g_app_data.errors.ext_humidity = true;
-		error = true;
-	} else {
-		LOG_INF("Ext. temperature: %.1f C", g_app_data.states.ext_temperature);
-		LOG_INF("Ext. humidity: %.1f %%", g_app_data.states.ext_humidity);
-		g_app_data.errors.ext_temperature = false;
-		g_app_data.errors.ext_humidity = false;
-	}
-#else
-	g_app_data.errors.ext_temperature = true;
-	g_app_data.errors.ext_humidity = true;
-#endif
-
-	return error ? -EIO : 0;
-}
-
 int app_loop(void)
 {
 	int ret;
@@ -229,10 +184,12 @@ int app_loop(void)
 		return ret;
 	}
 
-	ret = task_sensors();
-	if (ret) {
-		LOG_ERR("Call `task_sensors` failed: %d", ret);
-		return ret;
+	if (atomic_set(&g_app_loop_measure, false)) {
+		ret = app_measure();
+		if (ret) {
+			LOG_ERR("Call `app_measure` failed: %d", ret);
+			return ret;
+		}
 	}
 
 	if (is_send) {

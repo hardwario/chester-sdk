@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 extern struct k_sem g_app_loop_sem;
+extern atomic_t g_app_loop_measure;
 extern atomic_t g_app_loop_send;
 
 int app_loop(void);

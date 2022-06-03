@@ -1,0 +1,76 @@
+- acceleration_x:
+  - div: 1000
+  - fpp: 2
+- acceleration_y:
+  - div: 1000
+  - fpp: 2
+- acceleration_z:
+  - div: 1000
+  - fpp: 2
+- accelerometer:
+- attribute:
+- backup:
+- band:
+- battery:
+- button:
+- button_x_click_event:
+- button_x_click_count:
+- button_x_hold_event:
+- button_x_hold_count:
+- button_1_click_event:
+- button_1_click_count:
+- button_1_hold_event:
+- button_1_hold_count:
+- button_2_click_event:
+- button_2_click_count:
+- button_2_hold_event:
+- button_2_hold_count:
+- button_3_click_event:
+- button_3_click_count:
+- button_3_hold_event:
+- button_3_hold_count:
+- button_4_click_event:
+- button_4_click_count:
+- button_4_hold_event:
+- button_4_hold_count:
+- cid:
+- current_load:
+- earfcn:
+- ecl:
+- eest:
+- frame:
+- fw_version:
+- hw_revision:
+- hw_variant:
+- imei:
+- imsi:
+- line:
+- network:
+- orientation:
+- parameter:
+- plmn:
+- present:
+- product_name:
+- protocol:
+- rsrp:
+- rsrq:
+- sequence:
+- serial_number:
+- snr:
+- state:
+- temperature:
+  - div: 100
+  - fpp: 2
+- thermometer:
+- timestamp:
+- uptime:
+- vendor_name:
+- voltage:
+  - div: 1000
+  - fpp: 2
+- voltage_load:
+  - div: 1000
+  - fpp: 2
+- voltage_rest:
+  - div: 1000
+  - fpp: 2

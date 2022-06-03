@@ -1,15 +1,16 @@
 #include "app_config.h"
-
-/* CHESTER includes */
 #include <ctr_config.h>
 
 /* Zephyr includes */
 #include <init.h>
 #include <logging/log.h>
 #include <settings/settings.h>
+#include <shell/shell.h>
 #include <zephyr.h>
 
 /* Standard includes */
+#include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
@@ -17,19 +18,111 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 #define SETTINGS_PFX "app"
 
 struct app_config g_app_config;
-static struct app_config m_app_config_interim;
+static struct app_config m_app_config_interim = {
+	.measurement_interval = 60,
+	.report_interval = 1800,
+};
+
+static void print_measurement_interval(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config measurement-interval %d",
+	            m_app_config_interim.measurement_interval);
+}
+
+static void print_report_interval(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config report-interval %d",
+	            m_app_config_interim.report_interval);
+}
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
+	print_measurement_interval(shell);
+	print_report_interval(shell);
+
 	return 0;
+}
+
+int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_measurement_interval(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len < 1 || len > 4) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		int measurement_interval = atoi(argv[1]);
+
+		if (measurement_interval < 5 || measurement_interval > 3600) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.measurement_interval = measurement_interval;
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_report_interval(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len < 1 || len > 4) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		int report_interval = atoi(argv[1]);
+
+		if (report_interval < 30 || report_interval > 86400) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.report_interval = report_interval;
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
 }
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
-	/*
 	int ret;
 	const char *next;
-	*/
 
 #define SETTINGS_SET(_key, _var, _size)                                                            \
 	do {                                                                                       \
@@ -49,6 +142,11 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 		}                                                                                  \
 	} while (0)
 
+	SETTINGS_SET("measurement-interval", &m_app_config_interim.measurement_interval,
+	             sizeof(m_app_config_interim.measurement_interval));
+	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
+	             sizeof(m_app_config_interim.report_interval));
+
 #undef SETTINGS_SET
 
 	return -ENOENT;
@@ -67,6 +165,11 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	do {                                                                                       \
 		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
 	} while (0)
+
+	EXPORT_FUNC("measurement-interval", &m_app_config_interim.measurement_interval,
+	            sizeof(m_app_config_interim.measurement_interval));
+	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
+	            sizeof(m_app_config_interim.report_interval));
 
 #undef EXPORT_FUNC
 
