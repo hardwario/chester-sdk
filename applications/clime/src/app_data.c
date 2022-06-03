@@ -1,6 +1,9 @@
 #include "app_data.h"
 #include "msg_key.h"
 
+/* CHESTER includes */
+#include <ctr_lte.h>
+
 /* Standard includes */
 #include <limits.h>
 #include <math.h>
