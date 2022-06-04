@@ -127,9 +127,9 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 		.sector_count = nvs_sector_count,
 		.offset = fa->fa_off,
 	};
-	ret = nvs_init(&fs, fa->fa_dev_name);
+	ret = nvs_mount(&fs);
 	if (ret) {
-		LOG_ERR("Call `nvs_init` failed: %d", ret);
+		LOG_ERR("Call `nvs_mount` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}

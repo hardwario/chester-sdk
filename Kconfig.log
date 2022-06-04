@@ -9,11 +9,6 @@ choice LOG_BACKEND_RTT_MODE
 	depends on CTR_LOG
 endchoice
 
-choice LOG_MODE
-	default LOG2_MODE_DEFERRED
-	depends on CTR_LOG
-endchoice
-
 config LOG_PROCESS_THREAD_STACK_SIZE
 	default 2048
 	depends on CTR_LOG

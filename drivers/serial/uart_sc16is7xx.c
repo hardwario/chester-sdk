@@ -1,12 +1,12 @@
 #include "uart_sc16is7xx_reg.h"
 
-#include <devicetree.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/uart.h>
-#include <logging/log.h>
-#include <pm/device.h>
-#include <sys/util.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/util.h>
 
 #include <math.h>
 
@@ -735,7 +735,6 @@ static int sc16is7xx_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-
 static int enable_sleep_mode(const struct device *dev)
 {
 	int ret;
@@ -861,7 +860,6 @@ static int sc16is7xx_pm_control(const struct device *dev, enum pm_device_action 
 
 	return 0;
 }
-
 #endif /* CONFIG_PM_DEVICE */
 
 static const struct uart_driver_api sc16is7xx_driver_api = {
@@ -905,7 +903,7 @@ static const struct uart_driver_api sc16is7xx_driver_api = {
 		                 .flow_ctrl = UART_CFG_FLOW_CTRL_NONE },                           \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(n, sc16is7xx_pm_control);                                         \
-	DEVICE_DT_INST_DEFINE(n, sc16is7xx_init, PM_DEVICE_DT_INST_REF(n), &inst_##n##_data,       \
+	DEVICE_DT_INST_DEFINE(n, sc16is7xx_init, PM_DEVICE_DT_INST_GET(n), &inst_##n##_data,       \
 	                      &inst_##n##_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,           \
 	                      &sc16is7xx_driver_api);
 
