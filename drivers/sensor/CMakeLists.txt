@@ -1,1 +1,0 @@
-add_subdirectory_ifdef(CONFIG_DS18B20 ds18b20)

@@ -11,8 +11,6 @@ rsource "ctr_x4/Kconfig"
 rsource "ctr_z/Kconfig"
 rsource "gnss/Kconfig"
 rsource "gpio/Kconfig"
-rsource "sensor/Kconfig"
 rsource "serial/Kconfig"
-rsource "w1/Kconfig"
 
 endmenu

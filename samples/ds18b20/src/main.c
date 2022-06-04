@@ -1,11 +1,12 @@
 /* Zephyr includes */
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/sensor.h>
-#include <drivers/w1.h>
-#include <drivers/sensor/w1_sensor.h>
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/w1_sensor.h>
+#include <zephyr/drivers/w1.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
@@ -37,10 +38,12 @@ void main(void)
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
 	w1_lock_bus(dev_bus);
+	pm_device_action_run(dev_bus, PM_DEVICE_ACTION_RESUME);
 
 	size_t num_devices = w1_search_rom(dev_bus, search_callback, NULL);
 	LOG_INF("Number of devices: %u", num_devices);
 
+	pm_device_action_run(dev_bus, PM_DEVICE_ACTION_SUSPEND);
 	w1_unlock_bus(dev_bus);
 
 	k_sleep(K_SECONDS(1));
@@ -48,12 +51,18 @@ void main(void)
 	for (;;) {
 		struct sensor_value temp;
 
+		w1_lock_bus(dev_bus);
+		pm_device_action_run(dev_bus, PM_DEVICE_ACTION_RESUME);
+
 		for (int j = 0; j < ARRAY_SIZE(dev_snsr); j++) {
 			sensor_sample_fetch(dev_snsr[j]);
 			sensor_channel_get(dev_snsr[j], SENSOR_CHAN_AMBIENT_TEMP, &temp);
-			LOG_INF("Temp %d: %d.%06d\n", j, temp.val1, temp.val2);
+			LOG_INF("Temp %d: %d.%06d", j, temp.val1, temp.val2);
 		}
 
-		k_sleep(K_SECONDS(10));
+		pm_device_action_run(dev_bus, PM_DEVICE_ACTION_SUSPEND);
+		w1_unlock_bus(dev_bus);
+
+		k_sleep(K_SECONDS(30));
 	}
 }

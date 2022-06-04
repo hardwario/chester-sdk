@@ -3,6 +3,7 @@
 #include <devicetree.h>
 #include <drivers/w1.h>
 #include <logging/log.h>
+#include <pm/device.h>
 #include <zephyr.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
@@ -22,20 +23,11 @@ void main(void)
 
 	const struct device *dev_ds2484 = DEVICE_DT_GET(DT_NODELABEL(ds2484));
 
-	w1_lock_bus(dev_ds2484);
-	bool ppd = w1_reset_bus(dev_ds2484);
-	w1_unlock_bus(dev_ds2484);
-
-	if (ppd) {
-		LOG_INF("At least one device present on bus");
-	} else {
-		LOG_INF("No devices present on bus");
-	}
-
 	for (;;) {
 		w1_lock_bus(dev_ds2484);
-		size_t num_devices = w1_search_bus(dev_ds2484, W1_CMD_SEARCH_ROM,
-		                                   W1_SEARCH_ALL_FAMILIES, search_callback, NULL);
+		pm_device_action_run(dev_ds2484, PM_DEVICE_ACTION_RESUME);
+		size_t num_devices = w1_search_rom(dev_ds2484, search_callback, NULL);
+		pm_device_action_run(dev_ds2484, PM_DEVICE_ACTION_SUSPEND);
 		w1_unlock_bus(dev_ds2484);
 
 		LOG_INF("Number of devices found on bus: %u", num_devices);
