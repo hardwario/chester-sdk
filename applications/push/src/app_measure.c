@@ -68,7 +68,7 @@ int app_measure(void)
 		g_app_data.errors.int_temperature = false;
 	}
 
-#if IS_ENABLED(CONFIG_CTR_HYGRO)
+#if defined(CONFIG_CTR_HYGRO)
 	ret = ctr_hygro_read(&g_app_data.states.ext_temperature, &g_app_data.states.ext_humidity);
 	if (ret) {
 		LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);

@@ -399,7 +399,7 @@ static int measure(void)
 	k_timer_start(&m_measurement_timer, Z_TIMEOUT_MS(g_app_config.measurement_interval * 1000),
 	              K_FOREVER);
 
-#if IS_ENABLED(CONFIG_CTR_THERM)
+#if defined(CONFIG_CTR_THERM)
 	ret = ctr_therm_read(&m_data.therm_temperature);
 	if (ret) {
 		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);

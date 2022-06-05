@@ -28,21 +28,21 @@ K_SEM_DEFINE(g_app_init_sem, 0, 1);
 
 struct ctr_wdog_channel g_app_wdog_channel;
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A)
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 static struct ctr_edge m_edge_ch1;
 static struct ctr_edge m_edge_ch2;
 static struct ctr_edge m_edge_ch3;
 static struct ctr_edge m_edge_ch4;
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 static struct ctr_edge m_edge_ch5;
 static struct ctr_edge m_edge_ch6;
 static struct ctr_edge m_edge_ch7;
 static struct ctr_edge m_edge_ch8;
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) || IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 
 #define EDGE_CALLBACK(ch)                                                                          \
 	void edge_ch##ch##_callback(struct ctr_edge *edge, enum ctr_edge_event event,              \
@@ -56,19 +56,19 @@ static struct ctr_edge m_edge_ch8;
 		}                                                                                  \
 	}
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A)
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 EDGE_CALLBACK(1)
 EDGE_CALLBACK(2)
 EDGE_CALLBACK(3)
 EDGE_CALLBACK(4)
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 EDGE_CALLBACK(5)
 EDGE_CALLBACK(6)
 EDGE_CALLBACK(7)
 EDGE_CALLBACK(8)
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #undef EDGE_CALLBACK
 
@@ -126,7 +126,7 @@ static int init_chester_x0(void)
 		}                                                                                  \
 	} while (0)
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A)
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 	static const struct device *dev_a = DEVICE_DT_GET(DT_NODELABEL(ctr_x0_a));
 
 	if (!device_is_ready(dev_a)) {
@@ -138,9 +138,9 @@ static int init_chester_x0(void)
 	SETUP(dev_a, 2, 2);
 	SETUP(dev_a, 3, 3);
 	SETUP(dev_a, 4, 4);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 	static const struct device *dev_b = DEVICE_DT_GET(DT_NODELABEL(ctr_x0_b));
 
 	if (!device_is_ready(dev_b)) {
@@ -152,14 +152,14 @@ static int init_chester_x0(void)
 	SETUP(dev_b, 2, 6);
 	SETUP(dev_b, 3, 7);
 	SETUP(dev_b, 4, 8);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #undef SETUP
 
 	return 0;
 }
 
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) || IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
 int app_init(void)
 {
@@ -179,13 +179,13 @@ int app_init(void)
 		return ret;
 	}
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) || IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 	ret = init_chester_x0();
 	if (ret) {
 		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
 		return ret;
 	}
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) || IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
 	ret = ctr_lte_set_event_cb(app_handler_lte, NULL);
 	if (ret) {

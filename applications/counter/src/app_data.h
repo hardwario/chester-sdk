@@ -25,19 +25,19 @@ struct data {
 	float accel_z;
 	int accel_orientation;
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A)
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 	uint64_t counter_ch1;
 	uint64_t counter_ch2;
 	uint64_t counter_ch3;
 	uint64_t counter_ch4;
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 	uint64_t counter_ch5;
 	uint64_t counter_ch6;
 	uint64_t counter_ch7;
 	uint64_t counter_ch8;
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 };
 
 extern struct data g_app_data;

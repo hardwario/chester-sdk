@@ -101,7 +101,7 @@ static enum state m_state = STATE_INIT;
 
 static struct config m_config_interim = {
 	.antenna = ANTENNA_INT,
-#if IS_ENABLED(CONFIG_CTR_LTE_CLKSYNC)
+#if defined(CONFIG_CTR_LTE_CLKSYNC)
 	.clksync = true,
 #endif
 	.plmnid = "23003",

@@ -310,7 +310,7 @@ static int measure(void)
 	k_timer_start(&m_measure_timer, Z_TIMEOUT_MS(g_app_config.measurement_interval * 1000),
 	              K_FOREVER);
 
-#if IS_ENABLED(CONFIG_CTR_THERM)
+#if defined(CONFIG_CTR_THERM)
 	ret = ctr_therm_read(&m_data.therm_temperature);
 	if (ret) {
 		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
@@ -318,7 +318,7 @@ static int measure(void)
 	}
 #endif
 
-#if IS_ENABLED(CONFIG_CTR_HYGRO)
+#if defined(CONFIG_CTR_HYGRO)
 	ret = ctr_hygro_read(&m_data.hygro_temperature, &m_data.hygro_humidity);
 	if (ret) {
 		LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);

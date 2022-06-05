@@ -300,83 +300,83 @@ int app_cbor_encode(CborEncoder *enc)
 		CborEncoder map;
 		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) || IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 		k_mutex_lock(&g_app_data_lock, K_FOREVER);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) || IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A)
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 		uint64_t counter_ch1 = g_app_data.counter_ch1;
 		uint64_t counter_ch2 = g_app_data.counter_ch2;
 		uint64_t counter_ch3 = g_app_data.counter_ch3;
 		uint64_t counter_ch4 = g_app_data.counter_ch4;
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 		uint64_t counter_ch5 = g_app_data.counter_ch5;
 		uint64_t counter_ch6 = g_app_data.counter_ch6;
 		uint64_t counter_ch7 = g_app_data.counter_ch7;
 		uint64_t counter_ch8 = g_app_data.counter_ch8;
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) || IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 		k_mutex_unlock(&g_app_data_lock);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) || IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
 		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_1);
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A)
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 		err |= cbor_encode_uint(&map, counter_ch1);
 #else
 		err |= cbor_encode_null(&map);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_2);
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A)
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 		err |= cbor_encode_uint(&map, counter_ch2);
 #else
 		err |= cbor_encode_null(&map);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_3);
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A)
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 		err |= cbor_encode_uint(&map, counter_ch3);
 #else
 		err |= cbor_encode_null(&map);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_4);
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_A)
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 		err |= cbor_encode_uint(&map, counter_ch4);
 #else
 		err |= cbor_encode_null(&map);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_5);
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 		err |= cbor_encode_uint(&map, counter_ch5);
 #else
 		err |= cbor_encode_null(&map);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_6);
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 		err |= cbor_encode_uint(&map, counter_ch6);
 #else
 		err |= cbor_encode_null(&map);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_7);
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 		err |= cbor_encode_uint(&map, counter_ch7);
 #else
 		err |= cbor_encode_null(&map);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_8);
-#if IS_ENABLED(CONFIG_SHIELD_CTR_X0_B)
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 		err |= cbor_encode_uint(&map, counter_ch8);
 #else
 		err |= cbor_encode_null(&map);
-#endif /* IS_ENABLED(CONFIG_SHIELD_CTR_X0_B) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 		err |= cbor_encoder_close_container(enc, &map);
 	}

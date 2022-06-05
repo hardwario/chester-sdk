@@ -12,7 +12,7 @@ struct ctr_wdog_channel {
 	int id;
 };
 
-#if IS_ENABLED(CONFIG_CTR_WDOG)
+#if defined(CONFIG_CTR_WDOG)
 
 int ctr_wdog_set_timeout(int timeout_msec);
 int ctr_wdog_install(struct ctr_wdog_channel *channel);
@@ -41,7 +41,7 @@ static inline int ctr_wdog_feed(struct ctr_wdog_channel *channel)
 	return 0;
 }
 
-#endif /* IS_ENABLED(CONFIG_CTR_WDOG) */
+#endif /* defined(CONFIG_CTR_WDOG) */
 
 #ifdef __cplusplus
 }
