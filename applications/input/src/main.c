@@ -414,6 +414,12 @@ static int init_chester_z(void)
 		return ret;
 	}
 
+	ret = ctr_z_enable_interrupts(m_ctr_z_dev);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_enable_interrupts` failed: %d", ret);
+		return ret;
+	}
+
 	uint32_t serial_number;
 
 	ret = ctr_z_get_serial_number(m_ctr_z_dev, &serial_number);

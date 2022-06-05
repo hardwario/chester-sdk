@@ -271,6 +271,10 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 #undef HANDLE_HOLD
 
 	switch (event) {
+	case CTR_Z_EVENT_DEVICE_RESET:
+		LOG_INF("Event `CTR_Z_EVENT_DEVICE_RESET`");
+		goto apply;
+
 	case CTR_Z_EVENT_DC_CONNECTED:
 		LOG_INF("Event `CTR_Z_EVENT_DC_CONNECTED`");
 		atomic_set(&g_app_loop_send, true);

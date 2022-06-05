@@ -85,28 +85,29 @@ enum ctr_z_led_pattern {
 };
 
 enum ctr_z_event {
-	CTR_Z_EVENT_BUTTON_4_RELEASE = 0,
-	CTR_Z_EVENT_BUTTON_4_HOLD = 1,
-	CTR_Z_EVENT_BUTTON_4_CLICK = 2,
-	CTR_Z_EVENT_BUTTON_4_PRESS = 3,
-	CTR_Z_EVENT_BUTTON_3_RELEASE = 4,
-	CTR_Z_EVENT_BUTTON_3_HOLD = 5,
-	CTR_Z_EVENT_BUTTON_3_CLICK = 6,
-	CTR_Z_EVENT_BUTTON_3_PRESS = 7,
-	CTR_Z_EVENT_BUTTON_2_RELEASE = 8,
-	CTR_Z_EVENT_BUTTON_2_HOLD = 9,
-	CTR_Z_EVENT_BUTTON_2_CLICK = 10,
-	CTR_Z_EVENT_BUTTON_2_PRESS = 11,
-	CTR_Z_EVENT_BUTTON_1_RELEASE = 12,
-	CTR_Z_EVENT_BUTTON_1_HOLD = 13,
-	CTR_Z_EVENT_BUTTON_1_CLICK = 14,
-	CTR_Z_EVENT_BUTTON_1_PRESS = 15,
-	CTR_Z_EVENT_BUTTON_0_RELEASE = 16,
-	CTR_Z_EVENT_BUTTON_0_HOLD = 17,
-	CTR_Z_EVENT_BUTTON_0_CLICK = 18,
-	CTR_Z_EVENT_BUTTON_0_PRESS = 19,
-	CTR_Z_EVENT_DC_DISCONNECTED = 22,
+	CTR_Z_EVENT_DEVICE_RESET = 31,
 	CTR_Z_EVENT_DC_CONNECTED = 23,
+	CTR_Z_EVENT_DC_DISCONNECTED = 22,
+	CTR_Z_EVENT_BUTTON_0_PRESS = 19,
+	CTR_Z_EVENT_BUTTON_0_CLICK = 18,
+	CTR_Z_EVENT_BUTTON_0_HOLD = 17,
+	CTR_Z_EVENT_BUTTON_0_RELEASE = 16,
+	CTR_Z_EVENT_BUTTON_1_PRESS = 15,
+	CTR_Z_EVENT_BUTTON_1_CLICK = 14,
+	CTR_Z_EVENT_BUTTON_1_HOLD = 13,
+	CTR_Z_EVENT_BUTTON_1_RELEASE = 12,
+	CTR_Z_EVENT_BUTTON_2_PRESS = 11,
+	CTR_Z_EVENT_BUTTON_2_CLICK = 10,
+	CTR_Z_EVENT_BUTTON_2_HOLD = 9,
+	CTR_Z_EVENT_BUTTON_2_RELEASE = 8,
+	CTR_Z_EVENT_BUTTON_3_PRESS = 7,
+	CTR_Z_EVENT_BUTTON_3_CLICK = 6,
+	CTR_Z_EVENT_BUTTON_3_HOLD = 5,
+	CTR_Z_EVENT_BUTTON_3_RELEASE = 4,
+	CTR_Z_EVENT_BUTTON_4_PRESS = 3,
+	CTR_Z_EVENT_BUTTON_4_CLICK = 2,
+	CTR_Z_EVENT_BUTTON_4_HOLD = 1,
+	CTR_Z_EVENT_BUTTON_4_RELEASE = 0,
 };
 
 struct ctr_z_buzzer_param {
@@ -132,6 +133,7 @@ struct ctr_z_status {
 typedef void (*ctr_z_user_cb)(const struct device *dev, enum ctr_z_event event, void *user_data);
 typedef int (*ctr_z_api_set_handler)(const struct device *dev, ctr_z_user_cb callback,
                                      void *user_data);
+typedef int (*ctr_z_api_enable_interrupts)(const struct device *dev);
 typedef int (*ctr_z_api_apply)(const struct device *dev);
 typedef int (*ctr_z_api_get_status)(const struct device *dev, struct ctr_z_status *status);
 typedef int (*ctr_z_api_get_vdc_mv)(const struct device *dev, uint16_t *vdc);
@@ -149,6 +151,7 @@ typedef int (*ctr_z_api_set_led)(const struct device *dev, enum ctr_z_led_channe
 
 struct ctr_z_driver_api {
 	ctr_z_api_set_handler set_handler;
+	ctr_z_api_enable_interrupts enable_interrupts;
 	ctr_z_api_apply apply;
 	ctr_z_api_get_status get_status;
 	ctr_z_api_get_vdc_mv get_vdc_mv;
@@ -169,6 +172,13 @@ static inline int ctr_z_set_handler(const struct device *dev, ctr_z_user_cb user
 	const struct ctr_z_driver_api *api = (const struct ctr_z_driver_api *)dev->api;
 
 	return api->set_handler(dev, user_cb, user_data);
+}
+
+static inline int ctr_z_enable_interrupts(const struct device *dev)
+{
+	const struct ctr_z_driver_api *api = (const struct ctr_z_driver_api *)dev->api;
+
+	return api->enable_interrupts(dev);
 }
 
 static inline int ctr_z_apply(const struct device *dev)

@@ -101,6 +101,55 @@ static int ctr_z_set_handler_(const struct device *dev, ctr_z_user_cb user_cb, v
 	return 0;
 }
 
+static void irq_handler(const struct device *dev, struct gpio_callback *gpio_cb, uint32_t pins)
+{
+	int ret;
+
+	struct ctr_z_data *data = CONTAINER_OF(gpio_cb, struct ctr_z_data, gpio_cb);
+	const struct ctr_z_config *config = get_config(data->dev);
+
+	ret = gpio_pin_interrupt_configure_dt(&config->irq_spec, GPIO_INT_DISABLE);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
+		return;
+	}
+
+	k_work_submit(&data->work);
+}
+
+static int ctr_z_enable_interrupts_(const struct device *dev)
+{
+	int ret;
+
+	if (!device_is_ready(get_config(dev)->irq_spec.port)) {
+		LOG_ERR("Port `IRQ` not ready");
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&get_config(dev)->irq_spec, GPIO_INPUT);
+	if (ret) {
+		LOG_ERR("Pin `IRQ` configuration failed: %d", ret);
+		return ret;
+	}
+
+	gpio_init_callback(&get_data(dev)->gpio_cb, irq_handler,
+	                   BIT(get_config(dev)->irq_spec.pin));
+
+	ret = gpio_add_callback(get_config(dev)->irq_spec.port, &get_data(dev)->gpio_cb);
+	if (ret) {
+		LOG_ERR("Call `gpio_add_callback` failed: %d", ret);
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&get_config(dev)->irq_spec, GPIO_INT_LEVEL_ACTIVE);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static int ctr_z_apply_(const struct device *dev)
 {
 	int ret;
@@ -119,7 +168,6 @@ static int ctr_z_get_status_(const struct device *dev, struct ctr_z_status *stat
 	int ret;
 
 	uint16_t reg_status;
-
 	ret = read(dev, REG_STATUS, &reg_status);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -142,7 +190,6 @@ static int ctr_z_get_vdc_mv_(const struct device *dev, uint16_t *vdc)
 	int ret;
 
 	uint16_t reg_vdc;
-
 	ret = read(dev, REG_VDC, &reg_vdc);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -159,7 +206,6 @@ static int ctr_z_get_vbat_mv_(const struct device *dev, uint16_t *vbat)
 	int ret;
 
 	uint16_t reg_vbat;
-
 	ret = read(dev, REG_VBAT, &reg_vbat);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -174,8 +220,8 @@ static int ctr_z_get_vbat_mv_(const struct device *dev, uint16_t *vbat)
 static int ctr_z_get_serial_number_(const struct device *dev, uint32_t *serial_number)
 {
 	int ret;
-	uint16_t reg_serno0;
 
+	uint16_t reg_serno0;
 	ret = read(dev, REG_SERNO0, &reg_serno0);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -183,7 +229,6 @@ static int ctr_z_get_serial_number_(const struct device *dev, uint32_t *serial_n
 	}
 
 	uint16_t reg_serno1;
-
 	ret = read(dev, REG_SERNO1, &reg_serno1);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -198,8 +243,8 @@ static int ctr_z_get_serial_number_(const struct device *dev, uint32_t *serial_n
 static int ctr_z_get_hw_revision_(const struct device *dev, uint16_t *hw_revision)
 {
 	int ret;
-	uint16_t reg_hwrev;
 
+	uint16_t reg_hwrev;
 	ret = read(dev, REG_HWREV, &reg_hwrev);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -214,8 +259,8 @@ static int ctr_z_get_hw_revision_(const struct device *dev, uint16_t *hw_revisio
 static int ctr_z_get_hw_variant_(const struct device *dev, uint32_t *hw_variant)
 {
 	int ret;
-	uint16_t reg_hwvar0;
 
+	uint16_t reg_hwvar0;
 	ret = read(dev, REG_HWVAR0, &reg_hwvar0);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -223,7 +268,6 @@ static int ctr_z_get_hw_variant_(const struct device *dev, uint32_t *hw_variant)
 	}
 
 	uint16_t reg_hwvar1;
-
 	ret = read(dev, REG_HWVAR1, &reg_hwvar1);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -238,8 +282,8 @@ static int ctr_z_get_hw_variant_(const struct device *dev, uint32_t *hw_variant)
 static int ctr_z_get_fw_version_(const struct device *dev, uint32_t *fw_version)
 {
 	int ret;
-	uint16_t reg_fwver0;
 
+	uint16_t reg_fwver0;
 	ret = read(dev, REG_FWVER0, &reg_fwver0);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -247,7 +291,6 @@ static int ctr_z_get_fw_version_(const struct device *dev, uint32_t *fw_version)
 	}
 
 	uint16_t reg_fwver1;
-
 	ret = read(dev, REG_FWVER1, &reg_fwver1);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -265,7 +308,6 @@ static int ctr_z_get_vendor_name_(const struct device *dev, char *buf, size_t bu
 
 	for (size_t i = 0; i < MIN(32, buf_size); i++) {
 		uint16_t reg_vend;
-
 		ret = read(dev, REG_VEND0 + (uint8_t)i, &reg_vend);
 		if (ret) {
 			LOG_ERR("Call `read` failed: %d", ret);
@@ -286,7 +328,6 @@ static int ctr_z_get_product_name_(const struct device *dev, char *buf, size_t b
 
 	for (size_t i = 0; i < MIN(32, buf_size); i++) {
 		uint16_t reg_prod;
-
 		ret = read(dev, REG_PROD0 + (uint8_t)i, &reg_prod);
 		if (ret) {
 			LOG_ERR("Call `read` failed: %d", ret);
@@ -305,10 +346,7 @@ static int ctr_z_set_buzzer_(const struct device *dev, const struct ctr_z_buzzer
 {
 	int ret;
 
-	uint16_t reg_buzzer;
-
-	reg_buzzer = (uint16_t)param->command << 4 | (uint16_t)param->pattern;
-
+	uint16_t reg_buzzer = (uint16_t)param->command << 4 | (uint16_t)param->pattern;
 	ret = write(dev, REG_BUZZER, reg_buzzer);
 	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
@@ -343,7 +381,6 @@ static void work_handler(struct k_work *work)
 	const struct ctr_z_config *config = get_config(data->dev);
 
 	uint16_t reg_irq0;
-
 	ret = read(data->dev, REG_IRQ0, &reg_irq0);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -355,7 +392,6 @@ static void work_handler(struct k_work *work)
 	}
 
 	uint16_t reg_irq1;
-
 	ret = read(data->dev, REG_IRQ1, &reg_irq1);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -366,35 +402,47 @@ static void work_handler(struct k_work *work)
 		LOG_ERR("Call `write` failed: %d", ret);
 	}
 
-	uint32_t reg_irq = reg_irq0 << 16 | reg_irq1;
+#define DISPATCH(event)                                                                            \
+	do {                                                                                       \
+		if (reg_irq & BIT(event)) {                                                        \
+			data->user_cb(data->dev, event, data->user_data);                          \
+		}                                                                                  \
+	} while (0);
 
 	if (data->user_cb) {
-		for (int idx = __builtin_ffs(reg_irq); idx != 0; idx = __builtin_ffs(reg_irq)) {
-			data->user_cb(data->dev, idx - 1, data->user_data);
-			WRITE_BIT(reg_irq, idx - 1, 0);
-		}
+		uint32_t reg_irq = reg_irq0 << 16 | reg_irq1;
+
+		DISPATCH(CTR_Z_EVENT_DEVICE_RESET);
+		DISPATCH(CTR_Z_EVENT_DC_CONNECTED);
+		DISPATCH(CTR_Z_EVENT_DC_DISCONNECTED);
+		DISPATCH(CTR_Z_EVENT_BUTTON_0_PRESS);
+		DISPATCH(CTR_Z_EVENT_BUTTON_0_CLICK);
+		DISPATCH(CTR_Z_EVENT_BUTTON_0_HOLD);
+		DISPATCH(CTR_Z_EVENT_BUTTON_0_RELEASE);
+		DISPATCH(CTR_Z_EVENT_BUTTON_1_PRESS);
+		DISPATCH(CTR_Z_EVENT_BUTTON_1_CLICK);
+		DISPATCH(CTR_Z_EVENT_BUTTON_1_HOLD);
+		DISPATCH(CTR_Z_EVENT_BUTTON_1_RELEASE);
+		DISPATCH(CTR_Z_EVENT_BUTTON_2_PRESS);
+		DISPATCH(CTR_Z_EVENT_BUTTON_2_CLICK);
+		DISPATCH(CTR_Z_EVENT_BUTTON_2_HOLD);
+		DISPATCH(CTR_Z_EVENT_BUTTON_2_RELEASE);
+		DISPATCH(CTR_Z_EVENT_BUTTON_3_PRESS);
+		DISPATCH(CTR_Z_EVENT_BUTTON_3_CLICK);
+		DISPATCH(CTR_Z_EVENT_BUTTON_3_HOLD);
+		DISPATCH(CTR_Z_EVENT_BUTTON_3_RELEASE);
+		DISPATCH(CTR_Z_EVENT_BUTTON_4_PRESS);
+		DISPATCH(CTR_Z_EVENT_BUTTON_4_CLICK);
+		DISPATCH(CTR_Z_EVENT_BUTTON_4_HOLD);
+		DISPATCH(CTR_Z_EVENT_BUTTON_4_RELEASE);
 	}
+
+#undef DISPATCH
 
 	ret = gpio_pin_interrupt_configure_dt(&config->irq_spec, GPIO_INT_LEVEL_ACTIVE);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 	}
-}
-
-static void irq_handler(const struct device *dev, struct gpio_callback *gpio_cb, uint32_t pins)
-{
-	int ret;
-
-	struct ctr_z_data *data = CONTAINER_OF(gpio_cb, struct ctr_z_data, gpio_cb);
-	const struct ctr_z_config *config = get_config(data->dev);
-
-	ret = gpio_pin_interrupt_configure_dt(&config->irq_spec, GPIO_INT_DISABLE);
-	if (ret) {
-		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
-		return;
-	}
-
-	k_work_submit(&data->work);
 }
 
 static int ctr_z_init(const struct device *dev)
@@ -408,29 +456,10 @@ static int ctr_z_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(get_config(dev)->irq_spec.port)) {
-		LOG_ERR("Port `IRQ` not ready");
-		return -EINVAL;
-	}
-
-	ret = gpio_pin_configure_dt(&get_config(dev)->irq_spec, GPIO_INPUT);
+	uint16_t reg_protocol;
+	ret = read(dev, REG_PROTOCOL, &reg_protocol);
 	if (ret) {
-		LOG_ERR("Pin `IRQ` configuration failed: %d", ret);
-		return ret;
-	}
-
-	gpio_init_callback(&get_data(dev)->gpio_cb, irq_handler,
-	                   BIT(get_config(dev)->irq_spec.pin));
-
-	ret = gpio_add_callback(get_config(dev)->irq_spec.port, &get_data(dev)->gpio_cb);
-	if (ret) {
-		LOG_ERR("Call `gpio_add_callback` failed: %d", ret);
-		return ret;
-	}
-
-	ret = gpio_pin_interrupt_configure_dt(&get_config(dev)->irq_spec, GPIO_INT_LEVEL_ACTIVE);
-	if (ret) {
-		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
+		LOG_ERR("Call `read` failed: %d", ret);
 		return ret;
 	}
 
@@ -440,42 +469,58 @@ static int ctr_z_init(const struct device *dev)
 		LOG_WRN("Register initialization (" STRINGIFY(reg) ") failed: %d", ret);           \
 	}
 
-	INIT_REGISTER(REG_CONTROL, 0);
-	INIT_REGISTER(REG_BUZZER, 0);
-	INIT_REGISTER(REG_LED0R, 0);
-	INIT_REGISTER(REG_LED0G, 0);
-	INIT_REGISTER(REG_LED0B, 0);
-	INIT_REGISTER(REG_LED1R, 0);
-	INIT_REGISTER(REG_LED1G, 0);
-	INIT_REGISTER(REG_LED1B, 0);
-	INIT_REGISTER(REG_LED2R, 0);
-	INIT_REGISTER(REG_LED2G, 0);
-	INIT_REGISTER(REG_LED2B, 0);
-	INIT_REGISTER(REG_LED3R, 0);
-	INIT_REGISTER(REG_LED3G, 0);
-	INIT_REGISTER(REG_LED3B, 0);
-	INIT_REGISTER(REG_LED4R, 0);
-	INIT_REGISTER(REG_LED4G, 0);
-	INIT_REGISTER(REG_LED4B, 0);
+	if (reg_protocol < 2) {
+		LOG_WRN("Legacy protocol version detected");
 
-	/* Clear all pending interrupts */
-	INIT_REGISTER(REG_IRQ0, BIT_MASK(16));
-	INIT_REGISTER(REG_IRQ1, BIT_MASK(16));
+		INIT_REGISTER(REG_CONTROL, 0);
+		INIT_REGISTER(REG_BUZZER, 0);
+		INIT_REGISTER(REG_LED0R, 0);
+		INIT_REGISTER(REG_LED0G, 0);
+		INIT_REGISTER(REG_LED0B, 0);
+		INIT_REGISTER(REG_LED1R, 0);
+		INIT_REGISTER(REG_LED1G, 0);
+		INIT_REGISTER(REG_LED1B, 0);
+		INIT_REGISTER(REG_LED2R, 0);
+		INIT_REGISTER(REG_LED2G, 0);
+		INIT_REGISTER(REG_LED2B, 0);
+		INIT_REGISTER(REG_LED3R, 0);
+		INIT_REGISTER(REG_LED3G, 0);
+		INIT_REGISTER(REG_LED3B, 0);
+		INIT_REGISTER(REG_LED4R, 0);
+		INIT_REGISTER(REG_LED4G, 0);
+		INIT_REGISTER(REG_LED4B, 0);
+
+		/* Clear all pending interrupts */
+		INIT_REGISTER(REG_IRQ0, BIT_MASK(16));
+		INIT_REGISTER(REG_IRQ1, BIT_MASK(16));
+
+		/* Apply indicator reset, enable alert pin and enable auto-beep (if configured) */
+		ret = write(dev, REG_CONTROL,
+		            BIT(0) | (get_config(dev)->auto_beep ? BIT(1) : 0) | BIT(15));
+		if (ret) {
+			LOG_ERR("Call `write` failed: %d", ret);
+			return ret;
+		}
+
+	} else {
+		/* Reset device */
+		ret = write(dev, REG_CONTROL, 0xffff);
+		if (ret) {
+			LOG_ERR("Call `write` failed: %d", ret);
+			return ret;
+		}
+
+		k_sleep(K_MSEC(500));
+	}
 
 #undef INIT_REGISTER
-
-	/* Apply indicator reset, enable alert pin and enable auto-beep (if configured) */
-	ret = write(dev, REG_CONTROL, BIT(0) | (get_config(dev)->auto_beep ? BIT(1) : 0) | BIT(15));
-	if (ret) {
-		LOG_ERR("Call `write` failed: %d", ret);
-		return ret;
-	}
 
 	return 0;
 }
 
 static const struct ctr_z_driver_api ctr_z_driver_api = {
 	.set_handler = ctr_z_set_handler_,
+	.enable_interrupts = ctr_z_enable_interrupts_,
 	.apply = ctr_z_apply_,
 	.get_status = ctr_z_get_status_,
 	.get_vdc_mv = ctr_z_get_vdc_mv_,
