@@ -296,7 +296,10 @@ int app_send(void)
 	}
 
 	ret = ctr_lte_eval(NULL);
-	if (ret) {
+	if (ret == -ENOMSG) {
+		LOG_WRN("LTE queue is full");
+		return 0;
+	} else if (ret) {
 		LOG_ERR("Call `ctr_lte_eval` failed: %d", ret);
 		return ret;
 	}
@@ -304,7 +307,10 @@ int app_send(void)
 	struct ctr_lte_send_opts opts = CTR_LTE_SEND_OPTS_DEFAULTS;
 	opts.port = 5000;
 	ret = ctr_lte_send(&opts, ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), NULL);
-	if (ret) {
+	if (ret == -ENOMSG) {
+		LOG_WRN("LTE queue is full");
+		return 0;
+	} else if (ret) {
 		LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
 		return ret;
 	}
