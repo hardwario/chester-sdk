@@ -96,50 +96,14 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	uint32_t sector_count = 1;
-	struct flash_sector flash_sector;
-	ret = flash_area_get_sectors(FLASH_AREA_ID(storage), &sector_count, &flash_sector);
-	if (ret && ret != -ENOMEM) {
-		LOG_ERR("Call `flash_area_get_sectors` failed: %d", ret);
+	ret = flash_area_erase(fa, 0, FLASH_AREA_SIZE(storage));
+	if (ret < 0) {
+		LOG_ERR("Call `flash_area_erase` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
 
-	uint16_t nvs_sector_size = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT * flash_sector.fs_size;
-	if (nvs_sector_size > UINT16_MAX) {
-		return -EDOM;
-	}
-
-	size_t nvs_size = 0;
-	uint16_t nvs_sector_count = 0;
-	while (nvs_sector_count < CONFIG_SETTINGS_NVS_SECTOR_COUNT) {
-		nvs_size += nvs_sector_size;
-
-		if (nvs_size > fa->fa_size) {
-			break;
-		}
-
-		nvs_sector_count++;
-	}
-
-	struct nvs_fs fs = {
-		.sector_size = nvs_sector_size,
-		.sector_count = nvs_sector_count,
-		.offset = fa->fa_off,
-	};
-	ret = nvs_mount(&fs);
-	if (ret) {
-		LOG_ERR("Call `nvs_mount` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	ret = nvs_clear(&fs);
-	if (ret) {
-		LOG_ERR("Call `nvs_clear` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
+	flash_area_close(fa);
 
 	sys_reboot(SYS_REBOOT_COLD);
 
