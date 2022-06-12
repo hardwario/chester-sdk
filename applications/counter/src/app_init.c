@@ -179,6 +179,12 @@ int app_init(void)
 		return ret;
 	}
 
+	ret = ctr_wdog_start();
+	if (ret) {
+		LOG_ERR("Call `ctr_wdog_start` failed: %d", ret);
+		return ret;
+	}
+
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 	ret = init_chester_x0();
 	if (ret) {

@@ -1022,6 +1022,12 @@ void main(void)
 		k_oops();
 	}
 
+	ret = ctr_wdog_start();
+	if (ret) {
+		LOG_ERR("Call `ctr_wdog_start` failed: %d", ret);
+		k_oops();
+	}
+
 	ret = ctr_lte_set_event_cb(lte_event_handler, NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_set_event_cb` failed: %d", ret);

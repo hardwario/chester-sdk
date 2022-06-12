@@ -89,6 +89,12 @@ int app_init(void)
 		return ret;
 	}
 
+	ret = ctr_wdog_start();
+	if (ret) {
+		LOG_ERR("Call `ctr_wdog_start` failed: %d", ret);
+		return ret;
+	}
+
 	ret = init_w1();
 	if (ret) {
 		LOG_ERR("Call `init_w1` failed: %d", ret);
