@@ -86,6 +86,8 @@ enum antenna {
 struct config {
 	bool test;
 	enum antenna antenna;
+	bool nb_iot_mode;
+	bool lte_m_mode;
 	bool autoconn;
 	char plmnid[6 + 1];
 	bool clksync;
@@ -101,6 +103,7 @@ static enum state m_state = STATE_INIT;
 
 static struct config m_config_interim = {
 	.antenna = ANTENNA_INT,
+	.nb_iot_mode = true,
 #if defined(CONFIG_CTR_LTE_CLKSYNC)
 	.clksync = true,
 #endif
@@ -309,7 +312,8 @@ static int setup_once(void)
 		return ret;
 	}
 
-	ret = ctr_lte_talk_at_xsystemmode(0, 1, 0, 0);
+	ret = ctr_lte_talk_at_xsystemmode(m_config.lte_m_mode ? 1 : 0, m_config.nb_iot_mode ? 1 : 0,
+	                                  0, 0);
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lte_talk_at_xsystemmode` failed: %d", ret);
@@ -1004,7 +1008,7 @@ static int start(void)
 
 		ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
 		                                               CTR_RFMUX_ANTENNA_EXT :
-                                                               CTR_RFMUX_ANTENNA_INT);
+		                                               CTR_RFMUX_ANTENNA_INT);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
@@ -1346,6 +1350,8 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 	SETTINGS_SET("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
+	SETTINGS_SET("nb-iot-mode", &m_config_interim.nb_iot_mode, sizeof(m_config_interim.nb_iot_mode));
+	SETTINGS_SET("lte-m-mode", &m_config_interim.lte_m_mode, sizeof(m_config_interim.lte_m_mode));
 	SETTINGS_SET("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
 	SETTINGS_SET("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	SETTINGS_SET("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
@@ -1374,6 +1380,8 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 	EXPORT_FUNC("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
+	EXPORT_FUNC("nb-iot-mode", &m_config_interim.nb_iot_mode, sizeof(m_config_interim.nb_iot_mode));
+	EXPORT_FUNC("lte-m-mode", &m_config_interim.lte_m_mode, sizeof(m_config_interim.lte_m_mode));
 	EXPORT_FUNC("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
 	EXPORT_FUNC("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	EXPORT_FUNC("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
@@ -1404,6 +1412,18 @@ static void print_antenna(const struct shell *shell)
 	default:
 		shell_print(shell, SETTINGS_PFX " config antenna (unknown)");
 	}
+}
+
+static void print_nb_iot_mode(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config nb-iot-mode %s",
+	            m_config_interim.nb_iot_mode ? "true" : "false");
+}
+
+static void print_lte_m_mode(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config lte-m-mode %s",
+	            m_config_interim.lte_m_mode ? "true" : "false");
 }
 
 static void print_autoconn(const struct shell *shell)
@@ -1443,6 +1463,8 @@ static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
 	print_test(shell);
 	print_antenna(shell);
+	print_nb_iot_mode(shell);
+	print_lte_m_mode(shell);
 	print_autoconn(shell);
 	print_plmnid(shell);
 	print_clksync(shell);
@@ -1488,6 +1510,48 @@ static int cmd_config_antenna(const struct shell *shell, size_t argc, char **arg
 
 	if (argc == 2 && strcmp(argv[1], "ext") == 0) {
 		m_config_interim.antenna = ANTENNA_EXT;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_nb_iot_mode(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_nb_iot_mode(shell);
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "true") == 0) {
+		m_config_interim.nb_iot_mode = true;
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "false") == 0) {
+		m_config_interim.nb_iot_mode = false;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_lte_m_mode(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_lte_m_mode(shell);
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "true") == 0) {
+		m_config_interim.lte_m_mode = true;
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "false") == 0) {
+		m_config_interim.lte_m_mode = false;
 		return 0;
 	}
 
@@ -2160,6 +2224,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
         SHELL_CMD_ARG(antenna, NULL,
 	              "Get/Set LTE antenna (format: <int|ext>).",
 	              cmd_config_antenna, 1, 1),
+
+	SHELL_CMD_ARG(nb-iot-mode, NULL,
+	              "Get/Set NB-IoT mode (format: <true|false>).",
+	              cmd_config_nb_iot_mode, 1, 1),
+
+	SHELL_CMD_ARG(lte-m-mode, NULL,
+	              "Get/Set LTE-M mode (format: <true|false>).",
+	              cmd_config_lte_m_mode, 1, 1),
 
 	SHELL_CMD_ARG(autoconn, NULL,
 	              "Get/Set auto-connect feature (format: <true|false>).",
