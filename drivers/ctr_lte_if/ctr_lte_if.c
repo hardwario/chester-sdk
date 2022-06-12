@@ -288,7 +288,7 @@ static int ctr_lte_if_reset_(const struct device *dev)
 		return ret;
 	}
 
-	k_sleep(K_MSEC(1000));
+	k_sleep(K_MSEC(3000));
 
 	return 0;
 }
