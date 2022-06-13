@@ -1,0 +1,6 @@
+if SHIELD_CTR_DS18B20
+
+config CTR_DS18B20
+	default y
+
+endif # SHIELD_CTR_DS18B20
