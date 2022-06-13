@@ -6,11 +6,12 @@
 
 /* CHESTER includes */
 #include <ctr_accel.h>
+#include <ctr_ds18b20.h>
+#include <ctr_hygro.h>
 #include <ctr_rtc.h>
 #include <ctr_therm.h>
 
 /* Zephyr includes */
-#include <drivers/sensor.h>
 #include <logging/log.h>
 #include <zephyr.h>
 
@@ -22,8 +23,6 @@
 #include <stdint.h>
 
 LOG_MODULE_REGISTER(app_measure, LOG_LEVEL_DBG);
-
-extern const struct device *g_app_ds18b20_dev[W1_THERM_COUNT];
 
 static void measure_timer(struct k_timer *timer_id)
 {
@@ -48,6 +47,15 @@ int app_measure(void)
 		g_app_data.therm_temperature = NAN;
 	}
 
+#if defined(CONFIG_SHIELD_CTR_S2)
+	ret = ctr_hygro_read(&g_app_data.hygro_temperature, &g_app_data.hygro_humidity);
+	if (ret) {
+		LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);
+		g_app_data.hygro_temperature = NAN;
+		g_app_data.hygro_humidity = NAN;
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
 	ret = ctr_accel_read(&g_app_data.accel_x, &g_app_data.accel_y, &g_app_data.accel_z,
 	                     &g_app_data.accel_orientation);
 	if (ret) {
@@ -58,7 +66,8 @@ int app_measure(void)
 		g_app_data.accel_orientation = INT_MAX;
 	}
 
-	for (size_t i = 0; i < W1_THERM_COUNT; i++) {
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	for (int i = 0; i < MIN(W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
 		struct w1_therm *therm = &g_app_data.w1_therm[i];
 
 		if (therm->sample_count >= ARRAY_SIZE(therm->samples)) {
@@ -66,7 +75,7 @@ int app_measure(void)
 			continue;
 		}
 
-		if (therm->sample_count == 0) {
+		if (!therm->sample_count) {
 			ret = ctr_rtc_get_ts(&therm->timestamp);
 			if (ret) {
 				LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
@@ -74,28 +83,20 @@ int app_measure(void)
 			}
 		}
 
-		if (!therm->serial_number) {
-			continue;
-		}
-
-		ret = sensor_sample_fetch(g_app_ds18b20_dev[i]);
+		uint64_t serial_number;
+		float temperature;
+		ret = ctr_ds18b20_read(i, &serial_number, &temperature);
 		if (ret) {
-			LOG_WRN("Call `sensor_sample_fetch` failed: %d", ret);
+			LOG_WRN("Call `ctr_ds18b20_read` failed: %d", ret);
 			continue;
 		}
 
-		struct sensor_value val;
-		ret = sensor_channel_get(g_app_ds18b20_dev[i], SENSOR_CHAN_AMBIENT_TEMP, &val);
-		if (ret) {
-			LOG_WRN("Call `sensor_channel_get` failed: %d", ret);
-			continue;
-		}
-
-		float temperature = (float)val.val1 + (float)val.val2 / 1000000.f;
+		therm->serial_number = serial_number;
 		therm->samples[therm->sample_count++] = temperature;
 
 		LOG_INF("1-Wire thermometer %u: Temperature: %.2f", i, temperature);
 	}
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 	return 0;
 }

@@ -20,6 +20,8 @@
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+
 static int compare(const void *a, const void *b)
 {
 	float fa = *(const float *)a;
@@ -55,6 +57,8 @@ static void aggregate(float *samples, size_t count, float *minimum, float *maxim
 	*median = samples[count / 2];
 }
 
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 int app_cbor_encode(CborEncoder *enc)
 {
 	int ret;
@@ -69,7 +73,7 @@ int app_cbor_encode(CborEncoder *enc)
 		CborEncoder map;
 		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
-		uint8_t protocol = 3;
+		uint8_t protocol = 1;
 		err |= cbor_encode_uint(&map, MSG_KEY_PROTOCOL);
 		err |= cbor_encode_uint(&map, protocol);
 
@@ -294,6 +298,30 @@ int app_cbor_encode(CborEncoder *enc)
 		err |= cbor_encoder_close_container(enc, &map);
 	}
 
+#if defined(CONFIG_SHIELD_CTR_S2)
+	err |= cbor_encode_uint(&map, MSG_KEY_HYGROMETER);
+	{
+		CborEncoder map;
+		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+
+		err |= cbor_encode_uint(&map, MSG_KEY_TEMPERATURE);
+		if (isnan(g_app_data.hygro_temperature)) {
+			err |= cbor_encode_null(&map);
+		} else {
+			err |= cbor_encode_int(&map, g_app_data.hygro_temperature * 100.f);
+		}
+
+		err |= cbor_encode_uint(&map, MSG_KEY_HUMIDITY);
+		if (isnan(g_app_data.hygro_humidity)) {
+			err |= cbor_encode_null(&map);
+		} else {
+			err |= cbor_encode_int(&map, g_app_data.hygro_humidity * 100.f);
+		}
+
+		err |= cbor_encoder_close_container(enc, &map);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
 	err |= cbor_encode_uint(&map, MSG_KEY_ACCELEROMETER);
 	{
 		CborEncoder map;
@@ -330,6 +358,7 @@ int app_cbor_encode(CborEncoder *enc)
 		err |= cbor_encoder_close_container(enc, &map);
 	}
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
 	err |= cbor_encode_uint(&map, MSG_KEY_W1_THERMOMETERS);
 	{
 		CborEncoder arr;
@@ -406,6 +435,7 @@ int app_cbor_encode(CborEncoder *enc)
 
 		err |= cbor_encoder_close_container(enc, &arr);
 	}
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 	err |= cbor_encoder_close_container(enc, &map);
 

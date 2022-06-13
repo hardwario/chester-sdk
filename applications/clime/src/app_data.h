@@ -30,6 +30,10 @@ struct data {
 	float batt_voltage_load;
 	float batt_current_load;
 	float therm_temperature;
+#if defined(CONFIG_SHIELD_CTR_S2)
+	float hygro_temperature;
+	float hygro_humidity;
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
 	float accel_x;
 	float accel_y;
 	float accel_z;

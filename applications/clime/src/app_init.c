@@ -3,6 +3,7 @@
 #include "app_handler.h"
 
 /* CHESTER includes */
+#include <ctr_ds18b20.h>
 #include <ctr_led.h>
 #include <ctr_lte.h>
 #include <ctr_wdog.h>
@@ -26,50 +27,6 @@ LOG_MODULE_REGISTER(app_init, LOG_LEVEL_DBG);
 K_SEM_DEFINE(g_app_init_sem, 0, 1);
 
 struct ctr_wdog_channel g_app_wdog_channel;
-
-const struct device *g_app_ds18b20_dev[W1_THERM_COUNT] = {
-	DEVICE_DT_GET(DT_NODELABEL(ds18b20_0)),
-};
-
-static void w1_search_callback(struct w1_rom rom, void *cb_arg)
-{
-	int ret;
-
-	struct sensor_value val;
-	w1_rom_to_sensor_value(&rom, &val);
-
-	static int idx = 0;
-	if (idx < W1_THERM_COUNT) {
-		struct w1_therm *therm = &g_app_data.w1_therm[idx];
-
-		therm->serial_number = sys_get_le48(rom.serial);
-
-		ret = sensor_attr_set(g_app_ds18b20_dev[idx++], SENSOR_CHAN_ALL,
-		                      SENSOR_ATTR_W1_ROM_ID, &val);
-		if (ret) {
-			LOG_WRN("Call `sensor_attr_set` failed: %d", ret);
-		}
-	}
-}
-
-static int init_w1(void)
-{
-	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ds2484));
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		return -ENODEV;
-	}
-
-	w1_lock_bus(dev);
-
-	size_t num_devices = w1_search_rom(dev, w1_search_callback, NULL);
-	LOG_INF("Number of 1-Wire devices: %u", num_devices);
-
-	w1_unlock_bus(dev);
-
-	return 0;
-}
 
 int app_init(void)
 {
@@ -95,11 +52,13 @@ int app_init(void)
 		return ret;
 	}
 
-	ret = init_w1();
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	ret = ctr_ds18b20_scan();
 	if (ret) {
-		LOG_ERR("Call `init_w1` failed: %d", ret);
+		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
 		return ret;
 	}
+#endif
 
 	ret = ctr_lte_set_event_cb(app_handler_lte, NULL);
 	if (ret) {

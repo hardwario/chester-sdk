@@ -13,6 +13,10 @@ struct data g_app_data = {
 	.batt_voltage_load = NAN,
 	.batt_current_load = NAN,
 	.therm_temperature = NAN,
+#if defined(CONFIG_SHIELD_CTR_S2)
+	.hygro_temperature = NAN,
+	.hygro_humidity = NAN,
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
 	.accel_x = NAN,
 	.accel_y = NAN,
 	.accel_z = NAN,

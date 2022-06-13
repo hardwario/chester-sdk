@@ -18,6 +18,10 @@
 - eest:
 - frame:
 - fw_version:
+- humidity:
+  - div: 100
+  - fpp: 2
+- hygrometer:
 - hw_revision:
 - hw_variant:
 - imei:
