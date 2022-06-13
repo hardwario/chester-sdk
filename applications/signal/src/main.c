@@ -316,16 +316,16 @@ static int measure(void)
 		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
 		m_data.therm_temperature = NAN;
 	}
-#endif
+#endif /* defined(CONFIG_CTR_THERM) */
 
-#if defined(CONFIG_CTR_HYGRO)
+#if defined(CONFIG_SHIELD_CTR_S2)
 	ret = ctr_hygro_read(&m_data.hygro_temperature, &m_data.hygro_humidity);
 	if (ret) {
 		LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);
 		m_data.hygro_temperature = NAN;
 		m_data.hygro_humidity = NAN;
 	}
-#endif
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 	return 0;
 }

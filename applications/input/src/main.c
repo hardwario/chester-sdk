@@ -31,14 +31,9 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define BATT_TEST_INTERVAL_MSEC (12 * 60 * 60 * 1000)
 #define REPORT_INTERVAL_MSEC (15 * 60 * 1000)
 
-#define HAS_CTR_S0 DT_NODE_HAS_STATUS(DT_NODELABEL(sht30_ext), okay)
-#define HAS_CTR_X0_A DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x0_a), okay)
-#define HAS_CTR_X0_B DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x0_b), okay)
-#define HAS_CTR_Z DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_z), okay)
-
-#if HAS_CTR_Z
+#if defined(CONFIG_SHIELD_CTR_Z)
 static const struct device *m_ctr_z_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
-#endif /* HAS_CTR_Z */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 static const struct device *m_ctr_batt_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_batt));
 
@@ -202,7 +197,7 @@ error:
 	return ret;
 }
 
-#if HAS_CTR_X0_A || HAS_CTR_X0_B
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 
 #define EDGE_CALLBACK(ch)                                                                          \
 	void edge_ch##ch##_callback(struct ctr_edge *edge, enum ctr_edge_event event,              \
@@ -222,19 +217,19 @@ error:
 		}                                                                                  \
 	}
 
-#if HAS_CTR_X0_A
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 EDGE_CALLBACK(1)
 EDGE_CALLBACK(2)
 EDGE_CALLBACK(3)
 EDGE_CALLBACK(4)
-#endif /* HAS_CTR_X0_A */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-#if HAS_CTR_X0_B
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 EDGE_CALLBACK(5)
 EDGE_CALLBACK(6)
 EDGE_CALLBACK(7)
 EDGE_CALLBACK(8)
-#endif /* HAS_CTR_X0_B */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #undef EDGE_CALLBACK
 
@@ -292,7 +287,7 @@ static int init_chester_x0(void)
 		}                                                                                  \
 	} while (0)
 
-#if HAS_CTR_X0_A
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 
 	static const struct device *dev_a = DEVICE_DT_GET(DT_NODELABEL(ctr_x0_a));
 
@@ -306,9 +301,9 @@ static int init_chester_x0(void)
 	SETUP(dev_a, 3, 3);
 	SETUP(dev_a, 4, 4);
 
-#endif /* HAS_CTR_X0_A */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-#if HAS_CTR_X0_B
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 
 	static const struct device *dev_b = DEVICE_DT_GET(DT_NODELABEL(ctr_x0_b));
 
@@ -322,16 +317,16 @@ static int init_chester_x0(void)
 	SETUP(dev_b, 3, 7);
 	SETUP(dev_b, 4, 8);
 
-#endif /* HAS_CTR_X0_B */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #undef SETUP
 
 	return 0;
 }
 
-#endif /* HAS_CTR_X0_A || HAS_CTR_X0_B */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
-#if HAS_CTR_X0_A || HAS_CTR_X0_B
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 
 static int task_chester_x0(void)
 {
@@ -355,27 +350,27 @@ static int task_chester_x0(void)
 		}                                                                                  \
 	} while (0)
 
-#if HAS_CTR_X0_A
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 	READ(1);
 	READ(2);
 	READ(3);
 	READ(4);
-#endif /* HAS_CTR_X0_A */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-#if HAS_CTR_X0_B
+#if defined(CONFIG_SHIELD_CTR_X0_B)
 	READ(5);
 	READ(6);
 	READ(7);
 	READ(8);
-#endif /* HAS_CTR_X0_B */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #undef READ
 
 	return error ? -EIO : 0;
 }
-#endif /* HAS_CTR_X0_A || HAS_CTR_X0_B */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
-#if HAS_CTR_Z
+#if defined(CONFIG_SHIELD_CTR_Z)
 void ctr_z_event_handler(const struct device *dev, enum ctr_z_event event, void *param)
 {
 	switch (event) {
@@ -395,9 +390,9 @@ void ctr_z_event_handler(const struct device *dev, enum ctr_z_event event, void 
 		break;
 	}
 }
-#endif /* HAS_CTR_Z */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if HAS_CTR_Z
+#if defined(CONFIG_SHIELD_CTR_Z)
 static int init_chester_z(void)
 {
 	int ret;
@@ -478,9 +473,9 @@ static int init_chester_z(void)
 
 	return 0;
 }
-#endif /* HAS_CTR_Z */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if HAS_CTR_Z
+#if defined(CONFIG_SHIELD_CTR_Z)
 static int task_chester_z(void)
 {
 	int ret;
@@ -536,7 +531,7 @@ error:
 
 	return ret;
 }
-#endif /* HAS_CTR_Z */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 static int task_sensors(void)
 {
@@ -566,7 +561,7 @@ static int task_sensors(void)
 		m_data.errors.int_temperature = false;
 	}
 
-#if HAS_CTR_S0
+#if defined(CONFIG_SHIELD_CTR_S2)
 	ret = ctr_hygro_read(&m_data.states.ext_temperature, &m_data.states.ext_humidity);
 
 	if (ret < 0) {
@@ -819,21 +814,21 @@ static void loop(bool with_send)
 		LOG_ERR("Call `task_battery` failed: %d", ret);
 	}
 
-#if HAS_CTR_X0_A || HAS_CTR_X0_B
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 	ret = task_chester_x0();
 
 	if (ret < 0) {
 		LOG_ERR("Call `task_chester_x0` failed: %d", ret);
 	}
-#endif /* HAS_CTR_X0_A || HAS_CTR_X0_B */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
-#if HAS_CTR_Z
+#if defined(CONFIG_SHIELD_CTR_Z)
 	ret = task_chester_z();
 
 	if (ret < 0) {
 		LOG_ERR("Call `task_chester_z` failed: %d", ret);
 	}
-#endif /* HAS_CTR_Z */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 	ret = task_sensors();
 
@@ -862,23 +857,23 @@ void main(void)
 	k_sleep(K_MSEC(2000));
 	ctr_led_set(CTR_LED_CHANNEL_G, false);
 
-#if HAS_CTR_X0_A || HAS_CTR_X0_B
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 	ret = init_chester_x0();
 
 	if (ret < 0) {
 		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
 		k_oops();
 	}
-#endif /* HAS_CTR_X0_A || HAS_CTR_X0_B */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
-#if HAS_CTR_Z
+#if defined(CONFIG_SHIELD_CTR_Z)
 	ret = init_chester_z();
 
 	if (ret < 0) {
 		LOG_ERR("Call `init_chester_z` failed: %d", ret);
 		k_oops();
 	}
-#endif /* HAS_CTR_Z */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 	ret = ctr_lrw_init(lrw_event_handler, NULL);
 

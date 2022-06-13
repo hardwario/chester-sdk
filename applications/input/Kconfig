@@ -1,3 +1,0 @@
-mainmenu "CHESTER Input"
-
-source "Kconfig.zephyr"

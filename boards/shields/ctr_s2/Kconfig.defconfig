@@ -1,0 +1,6 @@
+if SHIELD_CTR_S2
+
+config CTR_HYGRO
+	default y
+
+endif # SHIELD_CTR_S2
