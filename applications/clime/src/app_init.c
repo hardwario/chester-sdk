@@ -5,10 +5,9 @@
 /* CHESTER includes */
 #include <ctr_ds18b20.h>
 #include <ctr_led.h>
+#include <ctr_lrw.h>
 #include <ctr_lte.h>
 #include <ctr_wdog.h>
-#include <drivers/sensor/w1_sensor.h>
-#include <drivers/w1.h>
 
 /* Zephyr includes */
 #include <device.h>
@@ -24,7 +23,9 @@
 
 LOG_MODULE_REGISTER(app_init, LOG_LEVEL_DBG);
 
+#if defined(CONFIG_SHIELD_CTR_LTE)
 K_SEM_DEFINE(g_app_init_sem, 0, 1);
+#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 struct ctr_wdog_channel g_app_wdog_channel;
 
@@ -58,8 +59,25 @@ int app_init(void)
 		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
 		return ret;
 	}
-#endif
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
+#if defined(CONFIG_SHIELD_CTR_LRW)
+	ret = ctr_lrw_init(app_handler_lrw, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_lrw_init` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lrw_start(NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_lrw_start` failed: %d", ret);
+		return ret;
+	}
+
+	k_sleep(K_SECONDS(2));
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
+
+#if defined(CONFIG_SHIELD_CTR_LTE)
 	ret = ctr_lte_set_event_cb(app_handler_lte, NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_set_event_cb` failed: %d", ret);
@@ -89,6 +107,7 @@ int app_init(void)
 
 		break;
 	}
+#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
 

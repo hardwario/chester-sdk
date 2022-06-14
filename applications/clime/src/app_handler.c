@@ -4,6 +4,7 @@
 #include "app_measure.h"
 
 /* CHESTER includes */
+#include <ctr_lrw.h>
 #include <ctr_lte.h>
 
 /* Zephyr includes */
@@ -15,6 +16,51 @@
 #include <stddef.h>
 
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
+
+#if defined(CONFIG_SHIELD_CTR_LRW)
+
+void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param)
+{
+	int ret;
+
+	switch (event) {
+	case CTR_LRW_EVENT_FAILURE:
+		LOG_INF("Event `CTR_LRW_EVENT_FAILURE`");
+		ret = ctr_lrw_start(NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_start` failed: %d", ret);
+		}
+		break;
+	case CTR_LRW_EVENT_START_OK:
+		LOG_INF("Event `CTR_LRW_EVENT_START_OK`");
+		ret = ctr_lrw_join(NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_join` failed: %d", ret);
+		}
+		break;
+	case CTR_LRW_EVENT_START_ERR:
+		LOG_INF("Event `CTR_LRW_EVENT_START_ERR`");
+		break;
+	case CTR_LRW_EVENT_JOIN_OK:
+		LOG_INF("Event `CTR_LRW_EVENT_JOIN_OK`");
+		break;
+	case CTR_LRW_EVENT_JOIN_ERR:
+		LOG_INF("Event `CTR_LRW_EVENT_JOIN_ERR`");
+		break;
+	case CTR_LRW_EVENT_SEND_OK:
+		LOG_INF("Event `CTR_LRW_EVENT_SEND_OK`");
+		break;
+	case CTR_LRW_EVENT_SEND_ERR:
+		LOG_INF("Event `CTR_LRW_EVENT_SEND_ERR`");
+		break;
+	default:
+		LOG_WRN("Unknown event: %d", event);
+	}
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
+
+#if defined(CONFIG_SHIELD_CTR_LTE)
 
 static void start(void)
 {
@@ -120,3 +166,5 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 		return;
 	}
 }
+
+#endif /* defined(CONFIG_SHIELD_CTR_LTE) */

@@ -11,19 +11,23 @@
 /* TODO Delete */
 #include <zephyr.h>
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
 #define W1_THERM_COUNT 10
 #define W1_THERM_MAX_SAMPLES 128
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
 struct w1_therm {
 	uint64_t serial_number;
 	uint64_t timestamp;
 	int sample_count;
 	float samples[W1_THERM_MAX_SAMPLES];
 };
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 struct data {
 	float batt_voltage_rest;
@@ -38,7 +42,9 @@ struct data {
 	float accel_y;
 	float accel_z;
 	int accel_orientation;
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
 	struct w1_therm w1_therm[W1_THERM_COUNT];
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 };
 
 extern struct data g_app_data;
