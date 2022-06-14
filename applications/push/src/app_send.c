@@ -1,40 +1,26 @@
 #if defined(CONFIG_SHIELD_CTR_LRW) && defined(CONFIG_SHIELD_CTR_LTE)
 #error "Both shields ctr_lrw and ctr_lte cannot be enabled"
-#endif
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) && defined(CONFIG_SHIELD_CTR_LTE) */
 
 #include "app_send.h"
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
 #include "app_cbor.h"
-#endif
-
 #include "app_config.h"
 #include "app_data.h"
 #include "app_loop.h"
 
 /* CHESTER includes */
 #include <ctr_buf.h>
-
-#if defined(CONFIG_SHIELD_CTR_LRW)
 #include <ctr_lrw.h>
-#endif
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
 #include <ctr_info.h>
 #include <ctr_lte.h>
-#endif
 
 /* Zephyr includes */
 #include <logging/log.h>
 #include <random/rand32.h>
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
 #include <tinycbor/cbor.h>
 #include <tinycbor/cbor_buf_writer.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
-#endif
-
 #include <zephyr.h>
 
 /* Standard includes */
@@ -155,7 +141,7 @@ static int compose(struct ctr_buf *buf, struct app_data *data)
 	return 0;
 }
 
-#endif
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
 
 #if defined(CONFIG_SHIELD_CTR_LTE)
 
@@ -244,7 +230,7 @@ static int compose(struct ctr_buf *buf)
 	return 0;
 }
 
-#endif
+#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 void send_timer(struct k_timer *timer_id)
 {
@@ -260,7 +246,7 @@ int app_send(void)
 {
 #if defined(CONFIG_SHIELD_CTR_LRW) || defined(CONFIG_SHIELD_CTR_LTE)
 	int ret;
-#endif
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) || defined(CONFIG_SHIELD_CTR_LTE) */
 
 	int64_t jitter = (int32_t)sys_rand32_get() % (g_app_config.report_interval * 1000 / 5);
 	int64_t duration = g_app_config.report_interval * 1000 + jitter;
@@ -284,7 +270,7 @@ int app_send(void)
 		LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
 		return ret;
 	}
-#endif
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
 
 #if defined(CONFIG_SHIELD_CTR_LTE)
 	CTR_BUF_DEFINE_STATIC(buf, 512);
@@ -314,7 +300,7 @@ int app_send(void)
 		LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
 		return ret;
 	}
-#endif
+#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 	return 0;
 }

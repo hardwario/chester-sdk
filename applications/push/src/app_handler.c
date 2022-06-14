@@ -4,14 +4,8 @@
 #include "app_loop.h"
 
 /* CHESTER includes */
-#if defined(CONFIG_SHIELD_CTR_LRW)
 #include <ctr_lrw.h>
-#endif
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
 #include <ctr_lte.h>
-#endif
-
 #include <drivers/ctr_z.h>
 
 /* Zephyr includes */
@@ -63,7 +57,7 @@ void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, v
 	}
 }
 
-#endif
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
 
 #if defined(CONFIG_SHIELD_CTR_LTE)
 
@@ -172,7 +166,7 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 	}
 }
 
-#endif
+#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
                          enum ctr_z_led_channel led_channel, enum ctr_z_led_command led_command,
