@@ -12,6 +12,7 @@ config CTR_BLE
 	select MCUMGR
 	select MCUMGR_CMD_IMG_MGMT
 	select MCUMGR_CMD_OS_MGMT
+	select MCUMGR_CMD_SHELL_MGMT
 	select MCUMGR_SMP_BT
 
 if CTR_BLE

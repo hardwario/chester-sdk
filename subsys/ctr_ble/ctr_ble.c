@@ -3,8 +3,8 @@
 
 /* Zephyr includes */
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
 #include <bluetooth/hci_vs.h>
+#include <bluetooth/hci.h>
 #include <bluetooth/services/dfu_smp.h>
 #include <bluetooth/services/nus.h>
 #include <bluetooth/uuid.h>
@@ -13,6 +13,7 @@
 #include <logging/log.h>
 #include <mgmt/mcumgr/smp_bt.h>
 #include <os_mgmt/os_mgmt.h>
+#include <shell_mgmt/shell_mgmt.h>
 #include <shell/shell_bt_nus.h>
 #include <sys/byteorder.h>
 #include <zephyr.h>
@@ -166,6 +167,7 @@ static int init(const struct device *dev)
 
 	os_mgmt_register_group();
 	img_mgmt_register_group();
+	shell_mgmt_register_group();
 
 #ifdef CONFIG_SHELL_BT_NUS
 	ret = shell_bt_nus_init();
