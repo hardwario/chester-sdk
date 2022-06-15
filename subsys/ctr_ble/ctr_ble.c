@@ -5,6 +5,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_vs.h>
+#include <bluetooth/services/dfu_smp.h>
 #include <bluetooth/services/nus.h>
 #include <bluetooth/uuid.h>
 #include <img_mgmt/img_mgmt.h>
@@ -27,8 +28,20 @@ LOG_MODULE_REGISTER(ctr_ble, CONFIG_CTR_BLE_LOG_LEVEL);
 #define TX_POWER_DBM_ADV 8
 #define TX_POWER_DBM_CONN 8
 
+/* clang-format off */
+#define ADV_OPT                                                                                    \
+	BT_LE_ADV_OPT_CONNECTABLE |                                                                \
+	BT_LE_ADV_OPT_SCANNABLE |                                                                  \
+	BT_LE_ADV_OPT_USE_NAME |                                                                   \
+	BT_LE_ADV_OPT_FORCE_NAME_IN_AD
+/* clang-format on */
+
 static const struct bt_data m_ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+};
+
+static const struct bt_data m_sd[] = {
+	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_DFU_SMP_SERVICE_VAL),
 };
 
 static struct bt_conn *m_current_conn;
@@ -171,10 +184,9 @@ static int init(const struct device *dev)
 	LOG_INF("Bluetooth device name: %s", log_strdup(bt_get_name()));
 
 	struct bt_le_adv_param *adv_param =
-	        BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME,
-	                        BT_GAP_ADV_SLOW_INT_MIN, BT_GAP_ADV_SLOW_INT_MAX, NULL);
+	        BT_LE_ADV_PARAM(ADV_OPT, BT_GAP_ADV_SLOW_INT_MIN, BT_GAP_ADV_SLOW_INT_MAX, NULL);
 
-	ret = bt_le_adv_start(adv_param, m_ad, ARRAY_SIZE(m_ad), NULL, 0);
+	ret = bt_le_adv_start(adv_param, m_ad, ARRAY_SIZE(m_ad), m_sd, ARRAY_SIZE(m_sd));
 	if (ret) {
 		LOG_ERR("Call `bt_le_adv_start` failed: %d", ret);
 		return ret;
