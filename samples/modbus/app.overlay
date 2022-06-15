@@ -2,7 +2,7 @@
 	uart_x2: uart@50 {
 		compatible = "nxp,sc16is7xx";
 		reg = <0x50>;
-		clock-frequency = <13560000>;
+		clock-frequency = <14745600>;
 		prescaler = <1>;
 		current-speed = <9600>;
 		label = "UART_X2";
