@@ -222,19 +222,6 @@ static int init(const struct device *dev)
 
 	LOG_INF("System initialization");
 
-	static const struct device *dev_ = DEVICE_DT_GET(DT_NODELABEL(ds2484));
-
-	if (!device_is_ready(dev_)) {
-		LOG_ERR("Device not ready");
-		return -ENODEV;
-	}
-
-	ret = pm_device_action_run(dev_, PM_DEVICE_ACTION_SUSPEND);
-	if (ret) {
-		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
-		return ret;
-	}
-
 	k_sem_give(&m_lock);
 
 	return 0;
