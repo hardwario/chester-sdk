@@ -93,7 +93,7 @@ int ctr_ds18b20_scan(void)
 	w1_lock_bus(dev);
 
 	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
-	if (ret) {
+	if (ret && ret != -EALREADY) {
 		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
 		w1_unlock_bus(dev);
 		k_sem_give(&m_lock);
@@ -111,7 +111,7 @@ int ctr_ds18b20_scan(void)
 	LOG_DBG("Found %d device(s)", ret);
 
 	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
-	if (ret) {
+	if (ret && ret != -EALREADY) {
 		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
 		w1_unlock_bus(dev);
 		k_sem_give(&m_lock);
@@ -169,7 +169,7 @@ int ctr_ds18b20_read(int index, uint64_t *serial_number, float *temperature)
 	w1_lock_bus(dev);
 
 	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
-	if (ret) {
+	if (ret && ret != -EALREADY) {
 		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
 		w1_unlock_bus(dev);
 		k_sem_give(&m_lock);
@@ -203,7 +203,7 @@ int ctr_ds18b20_read(int index, uint64_t *serial_number, float *temperature)
 	}
 
 	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
-	if (ret) {
+	if (ret && ret != -EALREADY) {
 		LOG_ERR("Call `pm_device_action_run` failed: %d", ret);
 		w1_unlock_bus(dev);
 		k_sem_give(&m_lock);
@@ -218,8 +218,6 @@ int ctr_ds18b20_read(int index, uint64_t *serial_number, float *temperature)
 
 static int init(const struct device *dev)
 {
-	int ret;
-
 	LOG_INF("System initialization");
 
 	k_sem_give(&m_lock);
