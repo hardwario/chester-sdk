@@ -1,4 +1,5 @@
 #include "app_config.h"
+#include "msg_key.h"
 
 /* CHESTER includes */
 #include <ctr_accel.h>
@@ -25,6 +26,7 @@
 #include <zephyr.h>
 
 /* Standard includes */
+#include <inttypes.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -51,10 +53,10 @@ struct data {
 	float batt_voltage_load;
 	float batt_current_load;
 	float therm_temperature;
-	float accel_x;
-	float accel_y;
-	float accel_z;
-	int accel_orientation;
+	float acceleration_x;
+	float acceleration_y;
+	float acceleration_z;
+	int orientation;
 	int measurement_count;
 	int64_t measurement_timestamp;
 	struct measurement measurements[128];
@@ -63,6 +65,7 @@ struct data {
 static atomic_t m_measure = true;
 static atomic_t m_send = true;
 static bool m_lte_eval_valid;
+static K_MUTEX_DEFINE(m_measure_lock);
 static K_MUTEX_DEFINE(m_lte_eval_mut);
 static K_SEM_DEFINE(m_loop_sem, 1, 1);
 static K_SEM_DEFINE(m_run_sem, 0, 1);
@@ -72,10 +75,10 @@ static struct data m_data = {
 	.batt_voltage_load = NAN,
 	.batt_current_load = NAN,
 	.therm_temperature = NAN,
-	.accel_x = NAN,
-	.accel_y = NAN,
-	.accel_z = NAN,
-	.accel_orientation = INT_MAX,
+	.acceleration_x = NAN,
+	.acceleration_y = NAN,
+	.acceleration_z = NAN,
+	.orientation = INT_MAX,
 };
 static struct ctr_wdog_channel m_wdog_channel;
 
@@ -407,14 +410,14 @@ static int measure(void)
 	}
 #endif
 
-	ret = ctr_accel_read(&m_data.accel_x, &m_data.accel_y, &m_data.accel_z,
-	                     &m_data.accel_orientation);
+	ret = ctr_accel_read(&m_data.acceleration_x, &m_data.acceleration_y, &m_data.acceleration_z,
+	                     &m_data.orientation);
 	if (ret) {
 		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
-		m_data.accel_x = NAN;
-		m_data.accel_y = NAN;
-		m_data.accel_z = NAN;
-		m_data.accel_orientation = INT_MAX;
+		m_data.acceleration_x = NAN;
+		m_data.acceleration_y = NAN;
+		m_data.acceleration_z = NAN;
+		m_data.orientation = INT_MAX;
 	}
 
 	if (m_data.measurement_count >= ARRAY_SIZE(m_data.measurements)) {
@@ -429,12 +432,14 @@ static int measure(void)
 		return ret;
 	}
 
+	k_mutex_lock(&m_measure_lock, K_FOREVER);
+
 	int32_t a1_raw = INT32_MAX;
 	int32_t a2_raw = INT32_MAX;
 	int32_t b1_raw = INT32_MAX;
 	int32_t b2_raw = INT32_MAX;
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x3_a), okay)
+#if defined(CONFIG_SHIELD_CTR_X3_A)
 	static int32_t a1_raw_prev = INT32_MAX;
 	ret = filter_weight("A1", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_1, &a1_raw, &a1_raw_prev);
 	if (ret) {
@@ -443,7 +448,7 @@ static int measure(void)
 	}
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x3_a), okay)
+#if defined(CONFIG_SHIELD_CTR_X3_A)
 	static int32_t a2_raw_prev = INT32_MAX;
 	ret = filter_weight("A2", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_2, &a2_raw, &a2_raw_prev);
 	if (ret) {
@@ -452,7 +457,7 @@ static int measure(void)
 	}
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x3_b), okay)
+#if defined(CONFIG_SHIELD_CTR_X3_B)
 	static int32_t b1_raw_prev = INT32_MAX;
 	ret = filter_weight("B1", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_1, &b1_raw, &b1_raw_prev);
 	if (ret) {
@@ -461,7 +466,7 @@ static int measure(void)
 	}
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x3_b), okay)
+#if defined(CONFIG_SHIELD_CTR_X3_B)
 	static int32_t b2_raw_prev = INT32_MAX;
 	ret = filter_weight("B2", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_2, &b2_raw, &b2_raw_prev);
 	if (ret) {
@@ -469,6 +474,8 @@ static int measure(void)
 		b2_raw = INT32_MAX;
 	}
 #endif
+
+	k_mutex_unlock(&m_measure_lock);
 
 	m_data.measurements[m_data.measurement_count].timestamp_offset =
 	        timestamp - m_data.measurement_timestamp;
@@ -482,94 +489,45 @@ static int measure(void)
 	return 0;
 }
 
-enum {
-	MSG_KEY_FRAME = 0,
-	MSG_KEY_SEQUENCE = 1,
-	MSG_KEY_PROTOCOL = 2,
-	MSG_KEY_ATTRIBUTES = 3,
-	MSG_KEY_VENDOR_NAME = 4,
-	MSG_KEY_PRODUCT_NAME = 5,
-	MSG_KEY_HW_VARIANT = 6,
-	MSG_KEY_HW_REVISION = 7,
-	MSG_KEY_FW_VERSION = 8,
-	MSG_KEY_SERIAL_NUMBER = 9,
-	MSG_KEY_STATE = 10,
-	MSG_KEY_UPTIME = 11,
-	MSG_KEY_BATTERY = 12,
-	MSG_KEY_VOLTAGE_REST = 13,
-	MSG_KEY_VOLTAGE_LOAD = 14,
-	MSG_KEY_CURRENT_LOAD = 15,
-	MSG_KEY_NETWORK = 16,
-	MSG_KEY_IMEI = 17,
-	MSG_KEY_IMSI = 18,
-	MSG_KEY_PARAMS = 19,
-	MSG_KEY_EEST = 20,
-	MSG_KEY_ECL = 21,
-	MSG_KEY_RSRP = 22,
-	MSG_KEY_RSRQ = 23,
-	MSG_KEY_SNR = 24,
-	MSG_KEY_PLMN = 25,
-	MSG_KEY_CID = 26,
-	MSG_KEY_BAND = 27,
-	MSG_KEY_EARFCN = 28,
-	MSG_KEY_THERMOMETER = 29,
-	MSG_KEY_TEMPERATURE = 30,
-	MSG_KEY_ACCELEROMETER = 31,
-	MSG_KEY_ACCEL_X = 32,
-	MSG_KEY_ACCEL_Y = 33,
-	MSG_KEY_ACCEL_Z = 34,
-	MSG_KEY_ORIENTATION = 35,
-	MSG_KEY_MEASUREMENTS = 36,
-	MSG_KEY_TIMESTAMP = 37,
-	MSG_KEY_LOAD_CELL = 38,
-	MSG_KEY_A1_RAW = 39,
-	MSG_KEY_A2_RAW = 40,
-	MSG_KEY_B1_RAW = 41,
-	MSG_KEY_B2_RAW = 42,
-};
-
-static int compose(struct ctr_buf *buf)
+static int encode(CborEncoder *enc)
 {
 	int ret;
 
-	ctr_buf_reset(buf);
-	ret = ctr_buf_seek(buf, 8);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
-		return ret;
-	}
-
 	CborError err = 0;
 
-	struct cbor_buf_writer writer;
-	cbor_buf_writer_init(&writer, ctr_buf_get_mem(buf) + 8, ctr_buf_get_free(buf));
-
-	CborEncoder enc;
-	cbor_encoder_init(&enc, &writer.enc, 0);
-
 	CborEncoder map;
-	err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+	err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
 	err |= cbor_encode_uint(&map, MSG_KEY_FRAME);
 	{
 		CborEncoder map;
-		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
 		static uint32_t sequence;
 		err |= cbor_encode_uint(&map, MSG_KEY_SEQUENCE);
 		err |= cbor_encode_uint(&map, sequence++);
 
-		uint8_t protocol = 3;
+		uint8_t protocol = 4;
 		err |= cbor_encode_uint(&map, MSG_KEY_PROTOCOL);
 		err |= cbor_encode_uint(&map, protocol);
 
-		err |= cbor_encoder_close_container(&enc, &map);
+		uint64_t timestamp;
+		ret = ctr_rtc_get_ts(&timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			return ret;
+		}
+
+		err |= cbor_encode_uint(&map, MSG_KEY_TIMESTAMP);
+		err |= cbor_encode_uint(&map, timestamp);
+
+		err |= cbor_encoder_close_container(enc, &map);
 	}
 
-	err |= cbor_encode_uint(&map, MSG_KEY_ATTRIBUTES);
+	err |= cbor_encode_uint(&map, MSG_KEY_ATTRIBUTE);
 	{
 		CborEncoder map;
-		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
 		char *vendor_name;
 		ctr_info_get_vendor_name(&vendor_name);
@@ -598,6 +556,9 @@ static int compose(struct ctr_buf *buf)
 		char *fw_version;
 		ctr_info_get_fw_version(&fw_version);
 
+		err |= cbor_encode_uint(&map, MSG_KEY_FW_NAME);
+		err |= cbor_encode_text_stringz(&map, "CHESTER Scale");
+
 		err |= cbor_encode_uint(&map, MSG_KEY_FW_VERSION);
 		err |= cbor_encode_text_stringz(&map, fw_version);
 
@@ -607,24 +568,24 @@ static int compose(struct ctr_buf *buf)
 		err |= cbor_encode_uint(&map, MSG_KEY_SERIAL_NUMBER);
 		err |= cbor_encode_text_stringz(&map, serial_number);
 
-		err |= cbor_encoder_close_container(&enc, &map);
+		err |= cbor_encoder_close_container(enc, &map);
 	}
 
 	err |= cbor_encode_uint(&map, MSG_KEY_STATE);
 	{
 		CborEncoder map;
-		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
 		err |= cbor_encode_uint(&map, MSG_KEY_UPTIME);
 		err |= cbor_encode_uint(&map, k_uptime_get() / 1000);
 
-		err |= cbor_encoder_close_container(&enc, &map);
+		err |= cbor_encoder_close_container(enc, &map);
 	}
 
 	err |= cbor_encode_uint(&map, MSG_KEY_BATTERY);
 	{
 		CborEncoder map;
-		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
 		err |= cbor_encode_uint(&map, MSG_KEY_VOLTAGE_REST);
 		if (isnan(m_data.batt_voltage_rest)) {
@@ -647,13 +608,13 @@ static int compose(struct ctr_buf *buf)
 			err |= cbor_encode_uint(&map, m_data.batt_current_load);
 		}
 
-		err |= cbor_encoder_close_container(&enc, &map);
+		err |= cbor_encoder_close_container(enc, &map);
 	}
 
 	err |= cbor_encode_uint(&map, MSG_KEY_NETWORK);
 	{
 		CborEncoder map;
-		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
 		uint64_t imei;
 		ret = ctr_lte_get_imei(&imei);
@@ -675,10 +636,10 @@ static int compose(struct ctr_buf *buf)
 		err |= cbor_encode_uint(&map, MSG_KEY_IMSI);
 		err |= cbor_encode_uint(&map, imsi);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_PARAMS);
+		err |= cbor_encode_uint(&map, MSG_KEY_PARAMETER);
 		{
 			CborEncoder map;
-			err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+			err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
 			k_mutex_lock(&m_lte_eval_mut, K_FOREVER);
 
@@ -749,71 +710,71 @@ static int compose(struct ctr_buf *buf)
 
 			k_mutex_unlock(&m_lte_eval_mut);
 
-			err |= cbor_encoder_close_container(&enc, &map);
+			err |= cbor_encoder_close_container(enc, &map);
 		}
 
-		err |= cbor_encoder_close_container(&enc, &map);
+		err |= cbor_encoder_close_container(enc, &map);
 	}
 
 	err |= cbor_encode_uint(&map, MSG_KEY_THERMOMETER);
 	{
 		CborEncoder map;
-		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
 		err |= cbor_encode_uint(&map, MSG_KEY_TEMPERATURE);
 		if (isnan(m_data.therm_temperature)) {
 			err |= cbor_encode_null(&map);
 		} else {
-			err |= cbor_encode_int(&map, m_data.therm_temperature * 10.f);
+			err |= cbor_encode_int(&map, m_data.therm_temperature * 100.f);
 		}
 
-		err |= cbor_encoder_close_container(&enc, &map);
+		err |= cbor_encoder_close_container(enc, &map);
 	}
 
 	err |= cbor_encode_uint(&map, MSG_KEY_ACCELEROMETER);
 	{
 		CborEncoder map;
-		err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_ACCEL_X);
-		if (isnan(m_data.accel_x)) {
+		err |= cbor_encode_uint(&map, MSG_KEY_ACCELERATION_X);
+		if (isnan(m_data.acceleration_x)) {
 			err |= cbor_encode_null(&map);
 		} else {
-			err |= cbor_encode_int(&map, m_data.accel_x * 1000.f);
+			err |= cbor_encode_int(&map, m_data.acceleration_x * 1000.f);
 		}
 
-		err |= cbor_encode_uint(&map, MSG_KEY_ACCEL_Y);
-		if (isnan(m_data.accel_y)) {
+		err |= cbor_encode_uint(&map, MSG_KEY_ACCELERATION_Y);
+		if (isnan(m_data.acceleration_y)) {
 			err |= cbor_encode_null(&map);
 		} else {
-			err |= cbor_encode_int(&map, m_data.accel_y * 1000.f);
+			err |= cbor_encode_int(&map, m_data.acceleration_y * 1000.f);
 		}
 
-		err |= cbor_encode_uint(&map, MSG_KEY_ACCEL_Z);
-		if (isnan(m_data.accel_z)) {
+		err |= cbor_encode_uint(&map, MSG_KEY_ACCELERATION_Z);
+		if (isnan(m_data.acceleration_z)) {
 			err |= cbor_encode_null(&map);
 		} else {
-			err |= cbor_encode_int(&map, m_data.accel_z * 1000.f);
+			err |= cbor_encode_int(&map, m_data.acceleration_z * 1000.f);
 		}
 
 		err |= cbor_encode_uint(&map, MSG_KEY_ORIENTATION);
-		if (m_data.accel_orientation == INT_MAX) {
+		if (m_data.orientation == INT_MAX) {
 			err |= cbor_encode_null(&map);
 		} else {
-			err |= cbor_encode_uint(&map, m_data.accel_orientation);
+			err |= cbor_encode_uint(&map, m_data.orientation);
 		}
 
-		err |= cbor_encoder_close_container(&enc, &map);
+		err |= cbor_encoder_close_container(enc, &map);
 	}
 
-	err |= cbor_encode_uint(&map, MSG_KEY_MEASUREMENTS);
+	err |= cbor_encode_uint(&map, MSG_KEY_WEIGHT_MEASUREMENTS);
 	{
 		CborEncoder arr;
-		err |= cbor_encoder_create_array(&enc, &arr, CborIndefiniteLength);
+		err |= cbor_encoder_create_array(enc, &arr, CborIndefiniteLength);
 
 		for (int i = 0; i < m_data.measurement_count; i++) {
 			CborEncoder map;
-			err |= cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+			err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
 
 			uint64_t timestamp = m_data.measurement_timestamp +
 			                     m_data.measurements[i].timestamp_offset;
@@ -821,49 +782,124 @@ static int compose(struct ctr_buf *buf)
 			err |= cbor_encode_uint(&map, MSG_KEY_TIMESTAMP);
 			err |= cbor_encode_uint(&map, timestamp);
 
-			err |= cbor_encode_uint(&map, MSG_KEY_A1_RAW);
+			err |= cbor_encode_uint(&map, MSG_KEY_RAW_RESULT_A1);
 			if (m_data.measurements[i].a1_raw == INT32_MAX) {
 				err |= cbor_encode_null(&map);
 			} else {
 				err |= cbor_encode_int(&map, m_data.measurements[i].a1_raw);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_A2_RAW);
+			err |= cbor_encode_uint(&map, MSG_KEY_RAW_RESULT_A2);
 			if (m_data.measurements[i].a2_raw == INT32_MAX) {
 				err |= cbor_encode_null(&map);
 			} else {
 				err |= cbor_encode_int(&map, m_data.measurements[i].a2_raw);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_B1_RAW);
+			err |= cbor_encode_uint(&map, MSG_KEY_RAW_RESULT_B1);
 			if (m_data.measurements[i].b1_raw == INT32_MAX) {
 				err |= cbor_encode_null(&map);
 			} else {
 				err |= cbor_encode_int(&map, m_data.measurements[i].b1_raw);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_B2_RAW);
+			err |= cbor_encode_uint(&map, MSG_KEY_RAW_RESULT_B2);
 			if (m_data.measurements[i].b2_raw == INT32_MAX) {
 				err |= cbor_encode_null(&map);
 			} else {
 				err |= cbor_encode_int(&map, m_data.measurements[i].b2_raw);
 			}
 
-			err |= cbor_encoder_close_container(&enc, &map);
+			err |= cbor_encoder_close_container(enc, &map);
 		}
 
-		err |= cbor_encoder_close_container(&enc, &arr);
+		err |= cbor_encoder_close_container(enc, &arr);
 	}
 
-	err |= cbor_encoder_close_container(&enc, &map);
+	err |= cbor_encode_uint(&map, MSG_KEY_PEOPLE_MEASUREMENTS);
+	{
+		CborEncoder arr;
+		err |= cbor_encoder_create_array(enc, &arr, CborIndefiniteLength);
 
-	ret = ctr_buf_seek(buf, 8 + enc.writer->bytes_written);
+		for (int i = 0; i < 3; i++) {
+			CborEncoder map;
+			err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_TIMESTAMP);
+			err |= cbor_encode_uint(&map, 1646676261);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_MOTION_COUNTER);
+			err |= cbor_encode_uint(&map, 241);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_PASS_COUNTER_ADULT);
+			err |= cbor_encode_uint(&map, 0);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_PASS_COUNTER_CHILD);
+			err |= cbor_encode_uint(&map, 24);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_STAY_COUNTER_ADULT);
+			err |= cbor_encode_uint(&map, 18);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_STAY_COUNTER_CHILD);
+			err |= cbor_encode_uint(&map, 15);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_TOTAL_TIME_ADULT);
+			err |= cbor_encode_uint(&map, 254);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_TOTAL_TIME_CHILD);
+			err |= cbor_encode_uint(&map, 83);
+
+			err |= cbor_encode_uint(&map, MSG_KEY_CONSUMED_ENERGY);
+			err |= cbor_encode_uint(&map, 2945544);
+
+			err |= cbor_encoder_close_container(enc, &map);
+		}
+
+		err |= cbor_encoder_close_container(enc, &arr);
+	}
+
+	err |= cbor_encoder_close_container(enc, &map);
+
+	return err ? -ENOSPC : 0;
+}
+
+static int compose(struct ctr_buf *buf)
+{
+	int ret;
+
+	ctr_buf_reset(buf);
+	ret = ctr_buf_seek(buf, 8);
 	if (ret) {
 		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
 		return ret;
 	}
 
-	size_t len = ctr_buf_get_used(buf);
+	uint32_t serial_number;
+	ret = ctr_info_get_serial_number_uint32(&serial_number);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_serial_number_uint32` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_buf_append_u32(buf, serial_number);
+	if (ret) {
+		LOG_ERR("Call `ctr_buf_append_u32` failed: %d", ret);
+		return ret;
+	}
+
+	struct cbor_buf_writer writer;
+	cbor_buf_writer_init(&writer, ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf));
+
+	CborEncoder enc;
+	cbor_encoder_init(&enc, &writer.enc, 0);
+
+	ret = encode(&enc);
+	if (ret) {
+		LOG_ERR("Call `encode` failed: %d", ret);
+		return ret;
+	}
+
+	size_t len = 12 + enc.writer->bytes_written;
 
 	struct tc_sha256_state_struct s;
 	ret = tc_sha256_init(&s);
@@ -909,7 +945,7 @@ static int compose(struct ctr_buf *buf)
 		return ret;
 	}
 
-	return err ? -ENOSPC : 0;
+	return 0;
 }
 
 static void send_timer(struct k_timer *timer_id)
@@ -933,7 +969,7 @@ static int send(void)
 
 	k_timer_start(&m_send_timer, Z_TIMEOUT_MS(duration), K_FOREVER);
 
-	CTR_BUF_DEFINE_STATIC(buf, 512);
+	CTR_BUF_DEFINE_STATIC(buf, 1024);
 
 	ret = compose(&buf);
 	if (ret) {
@@ -951,7 +987,7 @@ static int send(void)
 	}
 
 	struct ctr_lte_send_opts opts = CTR_LTE_SEND_OPTS_DEFAULTS;
-	opts.port = 4103;
+	opts.port = 5000;
 	ret = ctr_lte_send(&opts, ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
@@ -976,14 +1012,12 @@ static int loop(void)
 	int ret;
 
 	ret = task_battery();
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `task_battery` failed: %d", ret);
 		return ret;
 	}
 
-	if (atomic_get(&m_measure)) {
-		atomic_set(&m_measure, false);
-
+	if (atomic_set(&m_measure, false)) {
 		ret = measure();
 		if (ret) {
 			LOG_ERR("Call `measure` failed: %d", ret);
@@ -991,9 +1025,7 @@ static int loop(void)
 		}
 	}
 
-	if (atomic_get(&m_send)) {
-		atomic_set(&m_send, false);
-
+	if (atomic_set(&m_send, false)) {
 		ret = send();
 		if (ret) {
 			LOG_ERR("Call `send` failed: %d", ret);
@@ -1008,7 +1040,11 @@ void main(void)
 {
 	int ret;
 
+	LOG_INF("Build time: " __DATE__ " " __TIME__);
+
 	ctr_led_set(CTR_LED_CHANNEL_R, true);
+	k_sleep(K_SECONDS(2));
+	ctr_led_set(CTR_LED_CHANNEL_R, false);
 
 	ret = ctr_wdog_set_timeout(120000);
 	if (ret) {
@@ -1057,8 +1093,6 @@ void main(void)
 
 		break;
 	}
-
-	ctr_led_set(CTR_LED_CHANNEL_R, false);
 
 	ret = ctr_rtc_get_ts(&m_data.measurement_timestamp);
 	if (ret) {
@@ -1120,6 +1154,92 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_CMD_REGISTER(m, NULL, "Start measurement immediately.", cmd_measure);
+static int cmd_test(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&m_measure_lock, K_FOREVER);
+
+	int32_t a1_raw = INT32_MAX;
+	int32_t a2_raw = INT32_MAX;
+	int32_t b1_raw = INT32_MAX;
+	int32_t b2_raw = INT32_MAX;
+
+#if defined(CONFIG_SHIELD_CTR_X3_A)
+	static int32_t a1_raw_prev = INT32_MAX;
+	ret = filter_weight("A1", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_1, &a1_raw, &a1_raw_prev);
+	if (ret) {
+		LOG_ERR("Call `filter_weight` failed (A1): %d", ret);
+		shell_error(shell, "channel measurement failed (a1)");
+		a1_raw = INT32_MAX;
+	}
+#endif
+
+	if (a1_raw == INT32_MAX) {
+		shell_print(shell, "raw (a1): (null)");
+	} else {
+		shell_print(shell, "raw (a1): %" PRId32, a1_raw);
+	}
+
+#if defined(CONFIG_SHIELD_CTR_X3_A)
+	static int32_t a2_raw_prev = INT32_MAX;
+	ret = filter_weight("A2", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_2, &a2_raw, &a2_raw_prev);
+	if (ret) {
+		LOG_ERR("Call `filter_weight` failed (A2): %d", ret);
+		shell_error(shell, "channel measurement failed (a2)");
+		a2_raw = INT32_MAX;
+	}
+#endif
+
+	if (a2_raw == INT32_MAX) {
+		shell_print(shell, "raw (a2): (null)");
+	} else {
+		shell_print(shell, "raw (a2): %" PRId32, a2_raw);
+	}
+
+#if defined(CONFIG_SHIELD_CTR_X3_B)
+	static int32_t b1_raw_prev = INT32_MAX;
+	ret = filter_weight("B1", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_1, &b1_raw, &b1_raw_prev);
+	if (ret) {
+		LOG_ERR("Call `filter_weight` failed (B1): %d", ret);
+		shell_error(shell, "channel measurement failed (b1)");
+		b1_raw = INT32_MAX;
+	}
+#endif
+
+	if (b1_raw == INT32_MAX) {
+		shell_print(shell, "raw (b1): (null)");
+	} else {
+		shell_print(shell, "raw (b1): %" PRId32, b1_raw);
+	}
+
+#if defined(CONFIG_SHIELD_CTR_X3_B)
+	static int32_t b2_raw_prev = INT32_MAX;
+	ret = filter_weight("B2", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_2, &b2_raw, &b2_raw_prev);
+	if (ret) {
+		LOG_ERR("Call `filter_weight` failed (B2): %d", ret);
+		shell_error(shell, "channel measurement failed (b2)");
+		b2_raw = INT32_MAX;
+	}
+#endif
+
+	if (b2_raw == INT32_MAX) {
+		shell_print(shell, "raw (b2): (null)");
+	} else {
+		shell_print(shell, "raw (b2): %" PRId32, b2_raw);
+	}
+
+	k_mutex_unlock(&m_measure_lock);
+
+	return 0;
+}
+
 SHELL_CMD_REGISTER(measure, NULL, "Start measurement immediately.", cmd_measure);
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
+SHELL_CMD_REGISTER(test, NULL, "Perform test measurement.", cmd_test);
