@@ -1,0 +1,11 @@
+config PEOPLE_COUNTER
+	bool "Adastra People Counter Module"
+	depends on I2C
+
+if PEOPLE_COUNTER
+
+module = PEOPLE_COUNTER
+module-str = people_counter
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # PEOPLE_COUNTER

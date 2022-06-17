@@ -1,0 +1,9 @@
+if SHIELD_PEOPLE_COUNTER
+
+config I2C
+	default y
+
+config PEOPLE_COUNTER
+	default y
+
+endif # SHIELD_PEOPLE_COUNTER

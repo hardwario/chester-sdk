@@ -1,0 +1,5 @@
+description: Adastra People Counter Module
+
+compatible: "adastra,people-counter"
+
+include: i2c-device.yaml
