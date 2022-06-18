@@ -23,11 +23,107 @@ static const int m_vectors[7][3] = {
 	[4] = { 0, -1, 0 }, [5] = { 0, 0, -1 }, [6] = { 1, 0, 0 },
 };
 
+static K_MUTEX_DEFINE(m_mut);
+static ctr_accel_user_cb m_user_cb;
+static void *m_user_data;
 static int m_orientation;
 
-static K_MUTEX_DEFINE(m_mut);
+int ctr_accel_set_event_handler(ctr_accel_user_cb user_cb, void *user_data)
+{
+	k_mutex_lock(&m_mut, K_FOREVER);
 
-static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(lis2dh12));
+	m_user_cb = user_cb;
+	m_user_data = user_data;
+
+	k_mutex_unlock(&m_mut);
+
+	return 0;
+}
+
+int ctr_accel_set_threshold(float threshold, int duration)
+{
+	int ret;
+
+	k_mutex_lock(&m_mut, K_FOREVER);
+
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(lis2dh12));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		k_mutex_unlock(&m_mut);
+		return -ENODEV;
+	}
+
+	struct sensor_value val = {
+		.val1 = duration,
+		.val2 = 0,
+	};
+
+	ret = sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SLOPE_DUR, &val);
+	if (ret) {
+		LOG_ERR("Call `sensor_attr_set` failed: %d", ret);
+		k_mutex_unlock(&m_mut);
+		return ret;
+	}
+
+	int64_t threshold_ = threshold * 1000000;
+
+	val.val1 = threshold_ / 1000000;
+	val.val2 = threshold_ % 1000000;
+
+	ret = sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SLOPE_TH, &val);
+	if (ret) {
+		LOG_ERR("Call `sensor_attr_set` failed: %d", ret);
+		k_mutex_unlock(&m_mut);
+		return ret;
+	}
+
+	k_mutex_unlock(&m_mut);
+
+	return ret;
+}
+
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
+{
+	k_mutex_lock(&m_mut, K_FOREVER);
+
+	if (m_user_cb) {
+		m_user_cb(CTR_ACCEL_EVENT_TILT, m_user_data);
+	}
+
+	k_mutex_unlock(&m_mut);
+}
+
+int ctr_accel_enable_trigger(void)
+{
+	int ret;
+
+	k_mutex_lock(&m_mut, K_FOREVER);
+
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(lis2dh12));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		k_mutex_unlock(&m_mut);
+		return -ENODEV;
+	}
+
+	struct sensor_trigger trig = {
+		.type = SENSOR_TRIG_DELTA,
+		.chan = SENSOR_CHAN_ACCEL_XYZ,
+	};
+
+	ret = sensor_trigger_set(dev, &trig, trigger_handler);
+	if (ret != 0) {
+		LOG_ERR("Call `sensor_trigger_set` failed: %d", ret);
+		k_mutex_unlock(&m_mut);
+		return ret;
+	}
+
+	k_mutex_unlock(&m_mut);
+
+	return 0;
+}
 
 static void update_orientation(float coeff_x, float coeff_y, float coeff_z)
 {
@@ -76,15 +172,17 @@ int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientat
 
 	k_mutex_lock(&m_mut, K_FOREVER);
 
-	if (!device_is_ready(m_dev)) {
-		LOG_ERR("Device `LIS2DH12` not ready");
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(lis2dh12));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
 		k_mutex_unlock(&m_mut);
-		return -EINVAL;
+		return -ENODEV;
 	}
 
 	/* TODO Check if this is the best aprroach */
 	for (int i = 0; i < 5; i++) {
-		ret = sensor_sample_fetch(m_dev);
+		ret = sensor_sample_fetch(dev);
 
 		if (ret != ENODATA) {
 			break;
@@ -100,7 +198,7 @@ int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientat
 	}
 
 	struct sensor_value val[3];
-	ret = sensor_channel_get(m_dev, SENSOR_CHAN_ACCEL_XYZ, val);
+	ret = sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, val);
 	if (ret) {
 		LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
 		k_mutex_unlock(&m_mut);

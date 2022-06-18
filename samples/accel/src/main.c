@@ -8,11 +8,34 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
+void ctr_accel_event_handler(enum ctr_accel_event event, void *user_data)
+{
+	LOG_INF("Event: %d", event);
+}
+
 void main(void)
 {
 	int ret;
 
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
+
+	ret = ctr_accel_set_event_handler(ctr_accel_event_handler, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_accel_set_event_handler` failed: %d", ret);
+		k_oops();
+	}
+
+	ret = ctr_accel_set_threshold(12.5, 5);
+	if (ret) {
+		LOG_ERR("Call `ctr_accel_set_threshold` failed: %d", ret);
+		k_oops();
+	}
+
+	ret = ctr_accel_enable_trigger();
+	if (ret) {
+		LOG_ERR("Call `ctr_accel_enable_trigger` failed: %d", ret);
+		k_oops();
+	}
 
 	for (;;) {
 		LOG_INF("Alive");
