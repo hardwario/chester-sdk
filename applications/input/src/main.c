@@ -1,5 +1,7 @@
 /* TODO Refactor inputs to work with arrays (this was a dirty copy/paste for time reasons :)) */
 
+#include "app_config.h"
+
 /* CHESTER includes */
 #include <ctr_accel.h>
 #include <ctr_buf.h>
@@ -270,12 +272,12 @@ static int init_chester_x0(void)
 			LOG_ERR("Call `ctr_edge_set_cooldown_time` failed: %d", ret);              \
 			return ret;                                                                \
 		}                                                                                  \
-		ret = ctr_edge_set_active_duration(&edge_ch##ch, 50);                              \
+		ret = ctr_edge_set_active_duration(&edge_ch##ch, g_app_config.active_filter);      \
 		if (ret) {                                                                         \
 			LOG_ERR("Call `ctr_edge_set_active_duration` failed: %d", ret);            \
 			return ret;                                                                \
 		}                                                                                  \
-		ret = ctr_edge_set_inactive_duration(&edge_ch##ch, 50);                            \
+		ret = ctr_edge_set_inactive_duration(&edge_ch##ch, g_app_config.inactive_filter);  \
 		if (ret) {                                                                         \
 			LOG_ERR("Call `ctr_edge_set_inactive_duration` failed: %d", ret);          \
 			return ret;                                                                \
@@ -403,8 +405,7 @@ static int init_chester_z(void)
 	}
 
 	ret = ctr_z_set_handler(m_ctr_z_dev, ctr_z_event_handler, NULL);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_z_set_handler` failed: %d", ret);
 		return ret;
 	}
@@ -416,10 +417,8 @@ static int init_chester_z(void)
 	}
 
 	uint32_t serial_number;
-
 	ret = ctr_z_get_serial_number(m_ctr_z_dev, &serial_number);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_z_get_serial_number` failed: %d", ret);
 		return ret;
 	}
@@ -483,8 +482,7 @@ static int task_chester_z(void)
 	struct ctr_z_status status;
 
 	ret = ctr_z_get_status(m_ctr_z_dev, &status);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_z_get_status` failed: %d", ret);
 		goto error;
 	}
@@ -494,8 +492,7 @@ static int task_chester_z(void)
 	uint16_t vdc;
 
 	ret = ctr_z_get_vdc_mv(m_ctr_z_dev, &vdc);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_z_get_vdc_mv` failed: %d", ret);
 		goto error;
 	}
@@ -505,8 +502,7 @@ static int task_chester_z(void)
 	uint16_t vbat;
 
 	ret = ctr_z_get_vbat_mv(m_ctr_z_dev, &vbat);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_z_get_vbat_mv` failed: %d", ret);
 		goto error;
 	}
@@ -540,8 +536,7 @@ static int task_sensors(void)
 	bool error = false;
 
 	ret = ctr_accel_read(NULL, NULL, NULL, &m_data.states.orientation);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
 		m_data.errors.orientation = true;
 		error = true;
@@ -551,8 +546,7 @@ static int task_sensors(void)
 	}
 
 	ret = ctr_therm_read(&m_data.states.int_temperature);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
 		m_data.errors.int_temperature = true;
 		error = true;
@@ -563,8 +557,7 @@ static int task_sensors(void)
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 	ret = ctr_hygro_read(&m_data.states.ext_temperature, &m_data.states.ext_humidity);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);
 		m_data.errors.ext_temperature = true;
 		m_data.errors.ext_humidity = true;
@@ -592,8 +585,7 @@ static void lrw_event_handler(enum ctr_lrw_event event, union ctr_lrw_event_data
 		LOG_INF("Event `CTR_LRW_EVENT_FAILURE`");
 
 		ret = ctr_lrw_start(NULL);
-
-		if (ret < 0) {
+		if (ret) {
 			LOG_ERR("Call `ctr_lrw_start` failed: %d", ret);
 		}
 
@@ -603,8 +595,7 @@ static void lrw_event_handler(enum ctr_lrw_event event, union ctr_lrw_event_data
 		LOG_INF("Event `CTR_LRW_EVENT_START_OK`");
 
 		ret = ctr_lrw_join(NULL);
-
-		if (ret < 0) {
+		if (ret) {
 			LOG_ERR("Call `ctr_lrw_join` failed: %d", ret);
 		}
 
@@ -752,11 +743,7 @@ static int compose(struct ctr_buf *buf, const struct data *data)
 	ret |= ctr_buf_append_u8(buf, atomic_get(&data->events.input_8_rise));
 	ret |= ctr_buf_append_u8(buf, atomic_get(&data->events.input_8_fall));
 
-	if (ret != 0) {
-		return -ENOSPC;
-	}
-
-	return 0;
+	return ret ? -ENOSPC : 0;
 }
 
 void send_timer(struct k_timer *timer_id)
@@ -773,8 +760,8 @@ static int send(void)
 {
 	int ret;
 
-	int64_t jitter = (int32_t)sys_rand32_get() % (REPORT_INTERVAL_MSEC / 5);
-	int64_t duration = REPORT_INTERVAL_MSEC + jitter;
+	int64_t jitter = (int32_t)sys_rand32_get() % (g_app_config.report_interval * 1000 / 5);
+	int64_t duration = g_app_config.report_interval * 1000 + jitter;
 
 	LOG_INF("Scheduling next report in %lld second(s)", duration / 1000);
 
@@ -783,8 +770,7 @@ static int send(void)
 	CTR_BUF_DEFINE_STATIC(buf, 51);
 
 	ret = compose(&buf, &m_data);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `compose` failed: %d", ret);
 		return ret;
 	}
@@ -795,8 +781,7 @@ static int send(void)
 	opts.port = 1;
 
 	ret = ctr_lrw_send(&opts, ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), NULL);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
 		return ret;
 	}
@@ -809,37 +794,32 @@ static void loop(bool with_send)
 	int ret;
 
 	ret = task_battery();
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `task_battery` failed: %d", ret);
 	}
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 	ret = task_chester_x0();
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `task_chester_x0` failed: %d", ret);
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 	ret = task_chester_z();
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `task_chester_z` failed: %d", ret);
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 	ret = task_sensors();
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `task_sensors` failed: %d", ret);
 	}
 
 	if (with_send) {
 		ret = send();
-
-		if (ret < 0) {
+		if (ret) {
 			LOG_ERR("Call `send` failed: %d", ret);
 		}
 	}
@@ -859,8 +839,7 @@ void main(void)
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 	ret = init_chester_x0();
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
 		k_oops();
 	}
@@ -868,23 +847,20 @@ void main(void)
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 	ret = init_chester_z();
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `init_chester_z` failed: %d", ret);
 		k_oops();
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 	ret = ctr_lrw_init(lrw_event_handler, NULL);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lrw_init` failed: %d", ret);
 		k_oops();
 	}
 
 	ret = ctr_lrw_start(NULL);
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `ctr_lrw_start` failed: %d", ret);
 		k_oops();
 	}
@@ -904,7 +880,7 @@ void main(void)
 			continue;
 		}
 
-		if (ret < 0) {
+		if (ret) {
 			LOG_ERR("Call `k_sem_take` failed: %d", ret);
 			k_sleep(K_SECONDS(1));
 			continue;
@@ -930,8 +906,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	ret = send();
-
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `send` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
