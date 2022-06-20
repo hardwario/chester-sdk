@@ -83,6 +83,12 @@ enum antenna {
 	ANTENNA_EXT = 1,
 };
 
+enum auth {
+	AUTH_NONE = 0,
+	AUTH_PAP = 1,
+	AUTH_CHAP = 2,
+};
+
 struct config {
 	bool test;
 	enum antenna antenna;
@@ -92,6 +98,9 @@ struct config {
 	char plmnid[6 + 1];
 	bool clksync;
 	char apn[63 + 1];
+	enum auth auth;
+	char username[32 + 1];
+	char password[32 + 1];
 	uint8_t addr[4];
 	int port;
 };
@@ -109,6 +118,7 @@ static struct config m_config_interim = {
 #endif
 	.plmnid = "23003",
 	.apn = "hardwario.com",
+	.auth = AUTH_NONE,
 	.addr = { 192, 168, 168, 1 },
 	.port = 10000,
 };
@@ -562,6 +572,23 @@ static int attach_once(void)
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_at_cgdcont` failed: %d", ret);
+			return ret;
+		}
+	}
+
+	if (m_config.auth == AUTH_PAP || m_config.auth == AUTH_CHAP) {
+		int protocol = m_config.auth == AUTH_PAP ? 1 : 2;
+		ret = ctr_lte_talk_at_cgauth(1, &protocol, m_config.username, m_config.password);
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_at_cgauth` failed: %d", ret);
+			return ret;
+		}
+	} else {
+		ret = ctr_lte_talk_at_cgauth(1, (int[]){ 0 }, NULL, NULL);
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_at_cgauth` failed: %d", ret);
 			return ret;
 		}
 	}
@@ -1356,6 +1383,9 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	SETTINGS_SET("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
 	SETTINGS_SET("apn", m_config_interim.apn, sizeof(m_config_interim.apn));
+	SETTINGS_SET("auth", &m_config_interim.auth, sizeof(m_config_interim.auth));
+	SETTINGS_SET("username", m_config_interim.username, sizeof(m_config_interim.username));
+	SETTINGS_SET("password", m_config_interim.password, sizeof(m_config_interim.password));
 	SETTINGS_SET("addr", m_config_interim.addr, sizeof(m_config_interim.addr));
 	SETTINGS_SET("port", &m_config_interim.port, sizeof(m_config_interim.port));
 
@@ -1386,6 +1416,9 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	EXPORT_FUNC("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
 	EXPORT_FUNC("apn", m_config_interim.apn, sizeof(m_config_interim.apn));
+	EXPORT_FUNC("auth", &m_config_interim.auth, sizeof(m_config_interim.auth));
+	EXPORT_FUNC("username", m_config_interim.username, sizeof(m_config_interim.username));
+	EXPORT_FUNC("password", m_config_interim.password, sizeof(m_config_interim.password));
 	EXPORT_FUNC("addr", m_config_interim.addr, sizeof(m_config_interim.addr));
 	EXPORT_FUNC("port", &m_config_interim.port, sizeof(m_config_interim.port));
 
@@ -1448,6 +1481,33 @@ static void print_apn(const struct shell *shell)
 	shell_print(shell, SETTINGS_PFX " config apn %s", m_config_interim.apn);
 }
 
+static void print_auth(const struct shell *shell)
+{
+	switch (m_config_interim.auth) {
+	case AUTH_NONE:
+		shell_print(shell, SETTINGS_PFX " config auth none");
+		break;
+	case AUTH_CHAP:
+		shell_print(shell, SETTINGS_PFX " config auth chap");
+		break;
+	case AUTH_PAP:
+		shell_print(shell, SETTINGS_PFX " config auth pap");
+		break;
+	default:
+		shell_print(shell, SETTINGS_PFX " config auth (unknown)");
+	}
+}
+
+static void print_username(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config username %s", m_config_interim.username);
+}
+
+static void print_password(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config password %s", m_config_interim.password);
+}
+
 static void print_addr(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config addr %u.%u.%u.%u", m_config_interim.addr[0],
@@ -1469,6 +1529,9 @@ static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 	print_plmnid(shell);
 	print_clksync(shell);
 	print_apn(shell);
+	print_auth(shell);
+	print_username(shell);
+	print_password(shell);
 	print_addr(shell);
 	print_port(shell);
 
@@ -1655,6 +1718,78 @@ static int cmd_config_apn(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		strcpy(m_config_interim.apn, argv[1]);
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_auth(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_auth(shell);
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "none") == 0) {
+		m_config_interim.auth = AUTH_NONE;
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "pap") == 0) {
+		m_config_interim.auth = AUTH_PAP;
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "chap") == 0) {
+		m_config_interim.auth = AUTH_CHAP;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_username(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_username(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len >= sizeof(m_config_interim.username)) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		strcpy(m_config_interim.username, argv[1]);
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_password(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_password(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len >= sizeof(m_config_interim.password)) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		strcpy(m_config_interim.password, argv[1]);
 		return 0;
 	}
 
@@ -2249,10 +2384,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "Get/Set network APN (format: <empty or up to 63 octets>.",
 	              cmd_config_apn, 1, 1),
 
+        SHELL_CMD_ARG(auth, NULL,
+	              "Get/Set authentication protocol (format: <none|pap|chap>).",
+	              cmd_config_auth, 1, 1),
+
+	SHELL_CMD_ARG(username, NULL,
+	              "Get/Set username (format: <empty or up to 32 characters>.",
+	              cmd_config_username, 1, 1),
+
+	SHELL_CMD_ARG(password, NULL,
+	              "Get/Set password (format: <empty or up to 32 characters>.",
+	              cmd_config_password, 1, 1),
+
 	SHELL_CMD_ARG(addr, NULL,
 	              "Get/Set default IP address (format: a.b.c.d).",
 	              cmd_config_addr, 1, 1),
-
 
 	SHELL_CMD_ARG(port, NULL,
 	              "Get/Set default UDP port (format: <1-5 digits>).",

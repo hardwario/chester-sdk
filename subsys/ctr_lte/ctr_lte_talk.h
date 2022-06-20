@@ -31,6 +31,7 @@ int ctr_lte_talk_at_ceppi(int p1);
 int ctr_lte_talk_at_cimi(char *buf, size_t size);
 int ctr_lte_talk_at_cereg(int p1);
 int ctr_lte_talk_at_cfun(int p1);
+int ctr_lte_talk_at_cgauth(int p1, int *p2, const char *p3, const char *p4);
 int ctr_lte_talk_at_cgdcont(int p1, const char *p2, const char *p3);
 int ctr_lte_talk_at_cgerep(int p1);
 int ctr_lte_talk_at_cgsn(char *buf, size_t size);

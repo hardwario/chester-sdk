@@ -657,6 +657,34 @@ int ctr_lte_talk_at_cfun(int p1)
 	return 0;
 }
 
+int ctr_lte_talk_at_cgauth(int p1, int *p2, const char *p3, const char *p4)
+{
+	int ret;
+
+	if (p2 == NULL && p3 == NULL && p4 == NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGAUTH=%d", p1);
+
+	} else if (p2 != NULL && p3 == NULL && p4 == NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGAUTH=%d,%d", p1, *p2);
+
+	} else if (p2 != NULL && p3 != NULL && p4 == NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGAUTH=%d,%d,\"%s\"", p1, *p2, p3);
+
+	} else if (p2 != NULL && p3 != NULL && p4 != NULL) {
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGAUTH=%d,%d,\"%s\",\"%s\"", p1, *p2, p3, p4);
+
+	} else {
+		return -EINVAL;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lte_talk_at_cgdcont(int p1, const char *p2, const char *p3)
 {
 	int ret;
@@ -672,6 +700,11 @@ int ctr_lte_talk_at_cgdcont(int p1, const char *p2, const char *p3)
 
 	} else {
 		return -EINVAL;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
 	}
 
 	return 0;
@@ -850,6 +883,11 @@ int ctr_lte_talk_at_cops(int p1, int *p2, const char *p3)
 
 	} else {
 		return -EINVAL;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
 	}
 
 	return 0;
