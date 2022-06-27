@@ -487,10 +487,14 @@ static int sc16is7xx_irq_rx_ready(const struct device *dev)
 {
 	uint8_t iir = get_data(dev)->reg_iir & SC16IS7XX_IIR_INTERRUPT_MASK;
 
+	if (get_data(dev)->reg_rxlvl) {
+		return 1;
+	}
+
 	switch (iir) {
 	case SC16IS7XX_IIR_RTOI_MASK:
 	case SC16IS7XX_IIR_RHRI_MASK:
-		return get_data(dev)->reg_rxlvl ? 1 : 0;
+		return 1;
 	default:
 		return 0;
 	}
