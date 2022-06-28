@@ -17,6 +17,9 @@ config CLOCK_CONTROL_NRF_SHELL
 config KERNEL_SHELL
 	default y if CTR_SHELL
 
+config SHELL_BACKEND_DUMMY_BUF_SIZE
+	default 4096 if CTR_SHELL
+
 config SHELL_CMD_BUFF_SIZE
 	default 256 if CTR_SHELL
 
@@ -31,3 +34,6 @@ config SHELL_PROMPT_RTT
 
 config SHELL_RTT_RX_POLL_PERIOD
 	default 200 if CTR_SHELL
+
+config SHELL_STACK_SIZE
+	default 4096 if CTR_SHELL

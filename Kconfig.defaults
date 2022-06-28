@@ -2,7 +2,7 @@ config CTR_DEFAULTS
 	bool "CTR_DEFAULTS"
 
 config IDLE_STACK_SIZE
-	default 1024 if CTR_DEFAULTS
+	default 2048 if CTR_DEFAULTS
 
 config ISR_STACK_SIZE
 	default 4096 if CTR_DEFAULTS
@@ -11,6 +11,9 @@ config HEAP_MEM_POOL_SIZE
 	default 8192 if CTR_DEFAULTS
 
 config MAIN_STACK_SIZE
+	default 4096 if CTR_DEFAULTS
+
+config PRIVILEGED_STACK_SIZE
 	default 4096 if CTR_DEFAULTS
 
 config SEGGER_RTT_BUFFER_SIZE_DOWN
