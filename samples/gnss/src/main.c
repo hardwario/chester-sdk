@@ -20,9 +20,21 @@ void gnss_handler(enum ctr_gnss_event event, union ctr_gnss_event_data *data, vo
 
 void main(void)
 {
+	int ret;
+
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
-	ctr_gnss_set_handler(gnss_handler, NULL);
+	ret = ctr_gnss_set_handler(gnss_handler, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_gnss_set_handler` failed: %d", ret);
+		k_oops();
+	}
+
+	ret = ctr_gnss_start(NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_gnss_start` failed: %d", ret);
+		k_oops();
+	}
 
 	for (;;) {
 		k_sleep(K_FOREVER);

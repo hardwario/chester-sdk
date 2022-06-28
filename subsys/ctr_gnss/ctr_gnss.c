@@ -201,17 +201,9 @@ static void parse_nmea(const char *line)
 
 			data.update.fix_quality = frame.fix_quality;
 			data.update.satellites_tracked = frame.satellites_tracked;
-			data.update.latitude = minmea_tofloat(&frame.latitude);
-			data.update.longitude = minmea_tofloat(&frame.longitude);
+			data.update.latitude = minmea_tocoord(&frame.latitude);
+			data.update.longitude = minmea_tocoord(&frame.longitude);
 			data.update.altitude = minmea_tofloat(&frame.altitude);
-
-			if (!isnan(data.update.latitude)) {
-				data.update.latitude /= 100.f;
-			}
-
-			if (!isnan(data.update.longitude)) {
-				data.update.longitude /= 100.f;
-			}
 
 			LOG_DBG("Fix quality: %d", data.update.fix_quality);
 			LOG_DBG("Satellites tracked: %d", data.update.satellites_tracked);
