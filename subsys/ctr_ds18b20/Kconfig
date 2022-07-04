@@ -1,12 +1,11 @@
 config CTR_DS18B20
 	bool "CTR_DS18B20"
 	select CBPRINTF_FP_SUPPORT if CTR_DS18B20_LOG_LEVEL_DBG
+	select CTR_W1
 	select DS18B20
+	select GPIO
 	select I2C
-	select PM
-	select PM_DEVICE
 	select SENSOR
-	select W1
 	select W1_DS2484
 
 if CTR_DS18B20

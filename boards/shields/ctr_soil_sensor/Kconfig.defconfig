@@ -1,0 +1,6 @@
+if SHIELD_CTR_SOIL_SENSOR
+
+config CTR_SOIL_SENSOR
+	default y
+
+endif # SHIELD_CTR_SOIL_SENSOR

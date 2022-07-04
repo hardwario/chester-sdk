@@ -1,0 +1,16 @@
+config CTR_SOIL_SENSOR
+	bool "CTR_SOIL_SENSOR"
+	select CBPRINTF_FP_SUPPORT if CTR_SOIL_SENSOR_DBG
+	select CTR_W1
+	select DS28E17
+	select GPIO
+	select I2C
+	select W1_DS2484
+
+if CTR_SOIL_SENSOR
+
+module = CTR_SOIL_SENSOR
+module-str = CHESTER Soil Sensor Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_SOIL_SENSOR

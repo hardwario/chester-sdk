@@ -1,0 +1,5 @@
+if W1
+
+rsource "Kconfig.ds28e17"
+
+endif # W1

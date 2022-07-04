@@ -1,0 +1,5 @@
+description: DS28E17 1-Wire-to-I2C Master Bridge
+
+compatible: "maxim,ds28e17"
+
+include: w1-slave.yaml

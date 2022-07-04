@@ -1,0 +1,13 @@
+config CTR_W1
+	bool "CTR_W1"
+	select PM
+	select PM_DEVICE
+	select W1
+
+if CTR_W1
+
+module = CTR_W1
+module-str = CHESTER 1-Wire Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_W1

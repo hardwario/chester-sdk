@@ -1,0 +1,4 @@
+config DS28E17
+	bool "DS28E17 1-Wire-to-I2C Master Bridge"
+	default y if $(dt_compat_enabled,$(maxim,ds28e17))
+	depends on W1_NET

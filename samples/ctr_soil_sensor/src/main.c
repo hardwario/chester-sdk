@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <ctr_ds18b20.h>
+#include <ctr_soil_sensor.h>
 #include <ctr_led.h>
 
 /* Zephyr includes */
@@ -17,9 +17,9 @@ void main(void)
 
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
-	ret = ctr_ds18b20_scan();
+	ret = ctr_soil_sensor_scan();
 	if (ret) {
-		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
+		LOG_ERR("Call `ctr_soil_sensor_scan` failed: %d", ret);
 		k_oops();
 	}
 
@@ -30,17 +30,18 @@ void main(void)
 		k_sleep(K_MSEC(10));
 		ctr_led_set(CTR_LED_CHANNEL_R, false);
 
-		int count = ctr_ds18b20_get_count();
+		int count = ctr_soil_sensor_get_count();
 
 		for (int i = 0; i < count; i++) {
 			uint64_t serial_number;
 			float temperature;
-			ret = ctr_ds18b20_read(i, &serial_number, &temperature);
+			int moisture;
+			ret = ctr_soil_sensor_read(i, &serial_number, &temperature, &moisture);
 			if (ret) {
-				LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
+				LOG_ERR("Call `ctr_soil_sensor_read` failed: %d", ret);
 			} else {
-				LOG_INF("Serial number: %llu / Temperature: %.2f C", serial_number,
-				        temperature);
+				LOG_INF("Serial number: %llu / Temperature: %.2f C / Moisture: %d",
+				        serial_number, temperature, moisture);
 			}
 		}
 

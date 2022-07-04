@@ -6,13 +6,17 @@
 #include <pm/device.h>
 #include <zephyr.h>
 
+#include <string.h>
+
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 void search_callback(struct w1_rom rom, void *cb_arg)
 {
 	char serial_buf[13] = { 0 };
+
 	size_t serial_buf_len =
 	        bin2hex(rom.serial, sizeof(rom.serial), serial_buf, sizeof(serial_buf));
+
 	LOG_INF("Device found; family: 0x%x, serial: 0x%.*s", rom.family, serial_buf_len,
 	        serial_buf);
 }

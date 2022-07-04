@@ -14,5 +14,6 @@ rsource "gnss/Kconfig"
 rsource "gpio/Kconfig"
 rsource "people_counter/Kconfig"
 rsource "serial/Kconfig"
+rsource "w1/Kconfig"
 
 endmenu

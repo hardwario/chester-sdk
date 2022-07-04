@@ -1,0 +1,2 @@
+config SHIELD_CTR_SOIL_SENSOR
+	def_bool $(shields_list_contains,ctr_soil_sensor)
