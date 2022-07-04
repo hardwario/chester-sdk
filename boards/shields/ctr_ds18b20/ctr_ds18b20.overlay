@@ -1,6 +1,4 @@
 &ds2484 {
-	active-pullup;
-
 	ds18b20_0: ds18b20_0 {
 		compatible = "maxim,ds18b20";
 		resolution = <12>;

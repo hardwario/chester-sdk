@@ -298,6 +298,7 @@
 		reg = <0x18>;
 		label = "DS2484";
 		slpz-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+		active-pullup;
 	};
 
 	lis2dh12: lis2dh12@19 {

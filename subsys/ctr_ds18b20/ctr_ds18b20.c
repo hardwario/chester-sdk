@@ -55,6 +55,10 @@ static void w1_search_callback(struct w1_rom rom, void *cb_arg)
 		LOG_ERR("Device not ready");
 
 	} else {
+		if (rom.family != 0x28) {
+			return;
+		}
+
 		uint64_t serial_number = sys_get_le48(rom.serial);
 		m_sensors[m_count].serial_number = serial_number;
 
@@ -176,13 +180,6 @@ int ctr_ds18b20_read(int index, uint64_t *serial_number, float *temperature)
 		return ret;
 	}
 
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		w1_unlock_bus(dev);
-		k_sem_give(&m_lock);
-		return -ENODEV;
-	}
-
 	ret = sensor_sample_fetch(m_sensors[index].dev);
 	if (ret) {
 		LOG_WRN("Call `sensor_sample_fetch` failed: %d", ret);
@@ -198,7 +195,7 @@ int ctr_ds18b20_read(int index, uint64_t *serial_number, float *temperature)
 
 		if (temperature) {
 			*temperature = (float)val.val1 + (float)val.val2 / 1000000.f;
-			LOG_DBG("Temperature: %.2f", *temperature);
+			LOG_DBG("Temperature: %.2f C", *temperature);
 		}
 	}
 
