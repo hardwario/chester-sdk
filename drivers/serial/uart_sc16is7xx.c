@@ -9,6 +9,7 @@
 #include <zephyr/sys/util.h>
 
 #include <math.h>
+#include <stdbool.h>
 
 #define DT_DRV_COMPAT nxp_sc16is7xx
 
@@ -96,15 +97,35 @@ static int write_register(const struct device *dev, uint8_t reg, uint8_t val)
 
 static int sc16is7xx_poll_in(const struct device *dev, unsigned char *c)
 {
-	return read_register(dev, SC16IS7XX_REG_RHR, c);
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	int reg = read_register(dev, SC16IS7XX_REG_RHR, c);
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return reg;
 }
 
 static void sc16is7xx_poll_out(const struct device *dev, unsigned char c)
 {
-	int ret = write_register(dev, SC16IS7XX_REG_THR, c);
+	int ret;
+
+	if (k_is_in_isr()) {
+		return;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	ret = write_register(dev, SC16IS7XX_REG_THR, c);
 	if (ret) {
 		LOG_ERR("Call `poll_out` failed: %d", ret);
 	}
+
+	k_mutex_unlock(&get_data(dev)->lock);
 }
 
 static int configure_line(const struct device *dev, const struct uart_config *cfg)
@@ -321,26 +342,44 @@ static int sc16is7xx_configure(const struct device *dev, const struct uart_confi
 {
 	int ret;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	ret = configure_line(dev, cfg);
 	if (ret) {
 		LOG_ERR("Line configuration failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
 
 	ret = configure_baudrate(dev, cfg);
 	if (ret) {
 		LOG_ERR("Baud rate configuration failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
 
 	get_data(dev)->uart_config = *cfg;
+
+	k_mutex_unlock(&get_data(dev)->lock);
 
 	return 0;
 }
 
 static int sc16is7xx_config_get(const struct device *dev, struct uart_config *cfg)
 {
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	*cfg = get_data(dev)->uart_config;
+
+	k_mutex_unlock(&get_data(dev)->lock);
 
 	return 0;
 }
@@ -350,6 +389,12 @@ static int sc16is7xx_config_get(const struct device *dev, struct uart_config *cf
 static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, int data_len)
 {
 	int ret;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
 	static const uint8_t reg[] = { SC16IS7XX_REG_THR << SC16IS7XX_REG_SHIFT };
 	static const uint32_t reg_len = sizeof(reg);
@@ -370,14 +415,18 @@ static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, in
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
+		k_mutex_unlock(&get_data(dev)->lock);
 		return -EINVAL;
 	}
 
 	ret = i2c_transfer_dt(&get_config(dev)->i2c_spec, msg, ARRAY_SIZE(msg));
 	if (ret) {
 		LOG_ERR("Call `i2c_transfer_dt` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
+
+	k_mutex_unlock(&get_data(dev)->lock);
 
 	return buf_len - reg_len;
 }
@@ -385,6 +434,12 @@ static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, in
 static int sc16is7xx_fifo_read(const struct device *dev, uint8_t *data, const int data_len)
 {
 	int ret;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
 	static uint8_t reg[] = { SC16IS7XX_REG_RHR << SC16IS7XX_REG_SHIFT };
 	static uint32_t reg_len = sizeof(reg);
@@ -407,14 +462,18 @@ static int sc16is7xx_fifo_read(const struct device *dev, uint8_t *data, const in
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
+		k_mutex_unlock(&get_data(dev)->lock);
 		return -EINVAL;
 	}
 
 	ret = i2c_transfer_dt(&get_config(dev)->i2c_spec, msg, ARRAY_SIZE(msg));
 	if (ret) {
 		LOG_ERR("Call `i2c_transfer_dt` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
+
+	k_mutex_unlock(&get_data(dev)->lock);
 
 	return buf_len;
 }
@@ -423,36 +482,65 @@ static void sc16is7xx_irq_tx_enable(const struct device *dev)
 {
 	int ret;
 
+	if (k_is_in_isr()) {
+		return;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	WRITE_BIT(get_data(dev)->reg_ier, SC16IS7XX_IER_THRI_BIT, 1);
 
 	ret = write_register(dev, SC16IS7XX_REG_IER, get_data(dev)->reg_ier);
 	if (ret) {
 		LOG_ERR("Call `write_register` (IER) failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return;
 	}
+
+	k_mutex_unlock(&get_data(dev)->lock);
 }
 
 static void sc16is7xx_irq_tx_disable(const struct device *dev)
 {
 	int ret;
 
+	if (k_is_in_isr()) {
+		return;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	WRITE_BIT(get_data(dev)->reg_ier, SC16IS7XX_IER_THRI_BIT, 0);
 
 	ret = write_register(dev, SC16IS7XX_REG_IER, get_data(dev)->reg_ier);
 	if (ret) {
 		LOG_ERR("Call `write_register` (IER) failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return;
 	}
+
+	k_mutex_unlock(&get_data(dev)->lock);
 }
 
 static int sc16is7xx_irq_tx_ready(const struct device *dev)
 {
+	int ret;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	uint8_t iir = get_data(dev)->reg_iir & SC16IS7XX_IIR_INTERRUPT_MASK;
 
 	switch (iir) {
 	case SC16IS7XX_IIR_THRI_MASK:
-		return get_data(dev)->reg_txlvl ? 1 : 0;
+		ret = get_data(dev)->reg_txlvl ? 1 : 0;
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
 	default:
+		k_mutex_unlock(&get_data(dev)->lock);
 		return 0;
 	}
 }
@@ -461,62 +549,105 @@ static void sc16is7xx_irq_rx_enable(const struct device *dev)
 {
 	int ret;
 
+	if (k_is_in_isr()) {
+		return;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	WRITE_BIT(get_data(dev)->reg_ier, SC16IS7XX_IER_RHRI_BIT, 1);
 
 	ret = write_register(dev, SC16IS7XX_REG_IER, get_data(dev)->reg_ier);
 	if (ret) {
 		LOG_ERR("Call `write_register` (IER) failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return;
 	}
+
+	k_mutex_unlock(&get_data(dev)->lock);
 }
 
 static void sc16is7xx_irq_rx_disable(const struct device *dev)
 {
 	int ret;
 
+	if (k_is_in_isr()) {
+		return;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	WRITE_BIT(get_data(dev)->reg_ier, SC16IS7XX_IER_RHRI_BIT, 0);
 
 	ret = write_register(dev, SC16IS7XX_REG_IER, get_data(dev)->reg_ier);
 	if (ret) {
 		LOG_ERR("Call `write_register` (IER) failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return;
 	}
+
+	k_mutex_unlock(&get_data(dev)->lock);
 }
 
 static int sc16is7xx_irq_rx_ready(const struct device *dev)
 {
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	uint8_t iir = get_data(dev)->reg_iir & SC16IS7XX_IIR_INTERRUPT_MASK;
 
 	if (get_data(dev)->reg_rxlvl) {
+		k_mutex_unlock(&get_data(dev)->lock);
 		return 1;
 	}
 
 	switch (iir) {
 	case SC16IS7XX_IIR_RTOI_MASK:
 	case SC16IS7XX_IIR_RHRI_MASK:
+		k_mutex_unlock(&get_data(dev)->lock);
 		return 1;
 	default:
+		k_mutex_unlock(&get_data(dev)->lock);
 		return 0;
 	}
 }
 
 static int sc16is7xx_irq_is_pending(const struct device *dev)
 {
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	/*
 	 * Hack: It takes at least four charaters until the interrupt is issued
 	 * again. If receive holding interrupts are disable earlier, there will
 	 * be no interrupt indicating pending data.
 	 */
 	if (get_data(dev)->reg_rxlvl > 0) {
+		k_mutex_unlock(&get_data(dev)->lock);
 		return 1;
 	}
 
-	return get_data(dev)->reg_iir & BIT(SC16IS7XX_IIR_INTERRUPT_STATUS_BIT) ? 0 : 1;
+	int is_pending = get_data(dev)->reg_iir & BIT(SC16IS7XX_IIR_INTERRUPT_STATUS_BIT) ? 0 : 1;
+
+	k_mutex_unlock(&get_data(dev)->lock);
+	return is_pending;
 }
 
 static int sc16is7xx_irq_update(const struct device *dev)
 {
 	int ret;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
 	ret = read_register(dev, SC16IS7XX_REG_IIR, &get_data(dev)->reg_iir);
 	if (ret) {
@@ -533,14 +664,24 @@ static int sc16is7xx_irq_update(const struct device *dev)
 		LOG_WRN("Call `read_register` (RXLVL) failed: %d", ret);
 	}
 
+	k_mutex_unlock(&get_data(dev)->lock);
+
 	return 1;
 }
 
 static void sc16is7xx_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
                                        void *user_data)
 {
+	if (k_is_in_isr()) {
+		return;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	get_data(dev)->user_cb = cb;
 	get_data(dev)->user_data = user_data;
+
+	k_mutex_unlock(&get_data(dev)->lock);
 }
 
 static void irq_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
@@ -680,8 +821,9 @@ static int sc16is7xx_init(const struct device *dev)
 {
 	int ret;
 
-	k_work_init(&get_data(dev)->work, work_handler);
 	k_mutex_init(&get_data(dev)->lock);
+
+	k_work_init(&get_data(dev)->work, work_handler);
 
 	ret = configure_reset(dev);
 	if (ret) {
