@@ -25,35 +25,33 @@
 - imei:
 - imsi:
 - load_cell:
-- motion_counter:
 - network:
 - orientation:
 - parameter:
-- pass_counter_adult:
-- pass_counter_child:
 - people_measurements:
+  - tso:
+    - motion_counter:
+    - pass_counter_adult:
+    - pass_counter_child:
+    - stay_counter_adult:
+    - stay_counter_child:
+    - total_time_adult:
+    - total_time_child:
+    - consumed_energy:
 - plmn:
 - product_name:
 - protocol:
-- raw_result_a1:
-- raw_result_a2:
-- raw_result_b1:
-- raw_result_b2:
 - rsrp:
 - rsrq:
 - sequence:
 - serial_number:
 - snr:
 - state:
-- stay_counter_adult:
-- stay_counter_child:
 - temperature:
   - div: 100
   - fpp: 2
 - thermometer:
 - timestamp:
-- total_time_adult:
-- total_time_child:
 - uptime:
 - vendor_name:
 - voltage_load:
@@ -63,3 +61,8 @@
   - div: 1000
   - fpp: 2
 - weight_measurements:
+  - tso:
+    - raw_result_a1:
+    - raw_result_a2:
+    - raw_result_b1:
+    - raw_result_b2:

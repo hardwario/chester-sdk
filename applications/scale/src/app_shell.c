@@ -29,13 +29,49 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "List current configuration.",
 	              app_config_cmd_config_show, 1, 0),
 
-	SHELL_CMD_ARG(measurement-interval, NULL,
-	              "Get/Set measurement interval in seconds (format: <5-3600>).",
-	              app_config_cmd_config_measurement_interval, 1, 1),
+	SHELL_CMD_ARG(channel-a1-active, NULL,
+	              "Get/Set channel A1 activation (format: <true|false>).",
+	              app_config_cmd_config_channel_a1_active, 1, 1),
+
+	SHELL_CMD_ARG(channel-a2-active, NULL,
+	              "Get/Set channel A2 activation (format: <true|false>).",
+	              app_config_cmd_config_channel_a2_active, 1, 1),
+
+	SHELL_CMD_ARG(channel-b1-active, NULL,
+	              "Get/Set channel B1 activation (format: <true|false>).",
+	              app_config_cmd_config_channel_b1_active, 1, 1),
+
+	SHELL_CMD_ARG(channel-b2-active, NULL,
+	              "Get/Set channel B2 activation (format: <true|false>).",
+	              app_config_cmd_config_channel_b2_active, 1, 1),
+
+	SHELL_CMD_ARG(weight-measurement-interval, NULL,
+	              "Get/Set weight measurement interval in seconds (format: <5-3600>).",
+	              app_config_cmd_config_weight_measurement_interval, 1, 1),
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+	SHELL_CMD_ARG(people-measurement-interval, NULL,
+	              "Get/Set people measurement interval in seconds (format: <5-3600>).",
+	              app_config_cmd_config_people_measurement_interval, 1, 1),
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	SHELL_CMD_ARG(report-interval, NULL,
 	              "Get/Set report interval in seconds (format: <30-86400>).",
 	              app_config_cmd_config_report_interval, 1, 1),
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+	SHELL_CMD_ARG(people-counter-power-off-delay, NULL,
+	              "Get/Set People Counter power off delay in seconds (format: <0-255>).",
+	              app_config_cmd_config_people_counter_power_off_delay, 1, 1),
+
+	SHELL_CMD_ARG(people-counter-stay-timeout, NULL,
+	              "Get/Set People Counter stay timeout in seconds (format: <0-255>).",
+	              app_config_cmd_config_people_counter_stay_timeout, 1, 1),
+
+	SHELL_CMD_ARG(people-counter-adult-border, NULL,
+	              "Get/Set People Counter adult border (format: <0-8>).",
+	              app_config_cmd_config_people_counter_adult_border, 1, 1),
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	SHELL_SUBCMD_SET_END
 );

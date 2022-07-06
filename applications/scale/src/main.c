@@ -12,6 +12,7 @@
 #include <ctr_wdog.h>
 #include <drivers/ctr_batt.h>
 #include <drivers/ctr_x3.h>
+#include <drivers/people_counter.h>
 
 /* Zephyr includes */
 #include <device.h>
@@ -28,6 +29,7 @@
 /* Standard includes */
 #include <inttypes.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -40,13 +42,21 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define MAX_REPETITIONS 5
 #define MAX_DIFFERENCE 100
 
-struct measurement {
+struct weight_measurement {
 	int timestamp_offset;
 	int32_t a1_raw;
 	int32_t a2_raw;
 	int32_t b1_raw;
 	int32_t b2_raw;
 };
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+struct people_measurement {
+	int timestamp_offset;
+	struct people_counter_measurement measurement;
+	bool is_valid;
+};
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 struct data {
 	float batt_voltage_rest;
@@ -57,15 +67,25 @@ struct data {
 	float acceleration_y;
 	float acceleration_z;
 	int orientation;
-	int measurement_count;
-	int64_t measurement_timestamp;
-	struct measurement measurements[128];
+	int weight_measurement_count;
+	int64_t weight_measurement_timestamp;
+	struct weight_measurement weight_measurements[128];
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+	int people_measurement_count;
+	int64_t people_measurement_timestamp;
+	struct people_measurement people_measurements[128];
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 };
 
-static atomic_t m_measure = true;
+static atomic_t m_measure_weight = true;
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+static atomic_t m_measure_people = true;
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
+
 static atomic_t m_send = true;
 static bool m_lte_eval_valid;
-static K_MUTEX_DEFINE(m_measure_lock);
+static K_MUTEX_DEFINE(m_weight_reading_lock);
 static K_MUTEX_DEFINE(m_lte_eval_mut);
 static K_SEM_DEFINE(m_loop_sem, 1, 1);
 static K_SEM_DEFINE(m_run_sem, 0, 1);
@@ -241,15 +261,15 @@ error:
 	return ret;
 }
 
-static void measurement_timer(struct k_timer *timer_id)
+static void weight_measurement_timer(struct k_timer *timer_id)
 {
-	LOG_INF("Measurement timer expired");
+	LOG_INF("Weight measurement timer expired");
 
-	atomic_set(&m_measure, true);
+	atomic_set(&m_measure_weight, true);
 	k_sem_give(&m_loop_sem);
 }
 
-static K_TIMER_DEFINE(m_measurement_timer, measurement_timer, NULL);
+static K_TIMER_DEFINE(m_weight_measurement_timer, weight_measurement_timer, NULL);
 
 static int compare(const void *a, const void *b)
 {
@@ -270,8 +290,8 @@ enum measure_weight_slot {
 	MEASURE_WEIGHT_SLOT_B,
 };
 
-static int measure_weight(const char *id, enum measure_weight_slot slot,
-                          enum ctr_x3_channel channel, int32_t *result)
+static int read_weight(const char *id, enum measure_weight_slot slot, enum ctr_x3_channel channel,
+                       int32_t *result)
 {
 	int ret;
 
@@ -366,9 +386,9 @@ static int filter_weight(const char *id, enum measure_weight_slot slot, enum ctr
 			LOG_INF("Channel %s: Repeating measurement (%d)", id, i);
 		}
 
-		ret = measure_weight(id, slot, channel, result);
+		ret = read_weight(id, slot, channel, result);
 		if (ret) {
-			LOG_ERR("Call `measure_weight` failed: %d", ret);
+			LOG_ERR("Call `read_weight` failed: %d", ret);
 			return ret;
 		}
 
@@ -395,12 +415,169 @@ static int filter_weight(const char *id, enum measure_weight_slot slot, enum ctr
 	return 0;
 }
 
-static int measure(void)
+static int measure_weight(void)
 {
 	int ret;
 
-	k_timer_start(&m_measurement_timer, Z_TIMEOUT_MS(g_app_config.measurement_interval * 1000),
-	              K_FOREVER);
+	k_timer_start(&m_weight_measurement_timer,
+	              Z_TIMEOUT_MS(g_app_config.weight_measurement_interval * 1000), K_FOREVER);
+
+	if (m_data.weight_measurement_count >= ARRAY_SIZE(m_data.weight_measurements)) {
+		LOG_WRN("Weight measurements buffer full");
+		return -ENOSPC;
+	}
+
+	int64_t timestamp;
+	ret = ctr_rtc_get_ts(&timestamp);
+	if (ret) {
+		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+		return ret;
+	}
+
+	k_mutex_lock(&m_weight_reading_lock, K_FOREVER);
+
+	int32_t a1_raw = INT32_MAX;
+	int32_t a2_raw = INT32_MAX;
+	int32_t b1_raw = INT32_MAX;
+	int32_t b2_raw = INT32_MAX;
+
+#if defined(CONFIG_SHIELD_CTR_X3_A)
+	if (g_app_config.channel_a1_active) {
+		static int32_t a1_raw_prev = INT32_MAX;
+		ret = filter_weight("A1", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_1, &a1_raw,
+		                    &a1_raw_prev);
+		if (ret) {
+			LOG_ERR("Call `filter_weight` failed (A1): %d", ret);
+			a1_raw = INT32_MAX;
+		}
+	}
+#endif
+
+#if defined(CONFIG_SHIELD_CTR_X3_A)
+	if (g_app_config.channel_a2_active) {
+		static int32_t a2_raw_prev = INT32_MAX;
+		ret = filter_weight("A2", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_2, &a2_raw,
+		                    &a2_raw_prev);
+		if (ret) {
+			LOG_ERR("Call `filter_weight` failed (A2): %d", ret);
+			a2_raw = INT32_MAX;
+		}
+	}
+#endif
+
+#if defined(CONFIG_SHIELD_CTR_X3_B)
+	if (g_app_config.channel_b1_active) {
+		static int32_t b1_raw_prev = INT32_MAX;
+		ret = filter_weight("B1", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_1, &b1_raw,
+		                    &b1_raw_prev);
+		if (ret) {
+			LOG_ERR("Call `filter_weight` failed (B1): %d", ret);
+			b1_raw = INT32_MAX;
+		}
+	}
+#endif
+
+#if defined(CONFIG_SHIELD_CTR_X3_B)
+	if (g_app_config.channel_b2_active) {
+		static int32_t b2_raw_prev = INT32_MAX;
+		ret = filter_weight("B2", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_2, &b2_raw,
+		                    &b2_raw_prev);
+		if (ret) {
+			LOG_ERR("Call `filter_weight` failed (B2): %d", ret);
+			b2_raw = INT32_MAX;
+		}
+	}
+#endif
+
+	k_mutex_unlock(&m_weight_reading_lock);
+
+	m_data.weight_measurements[m_data.weight_measurement_count].timestamp_offset =
+	        timestamp - m_data.weight_measurement_timestamp;
+
+	m_data.weight_measurements[m_data.weight_measurement_count].a1_raw = a1_raw;
+	m_data.weight_measurements[m_data.weight_measurement_count].a2_raw = a2_raw;
+	m_data.weight_measurements[m_data.weight_measurement_count].b1_raw = b1_raw;
+	m_data.weight_measurements[m_data.weight_measurement_count].b2_raw = b2_raw;
+
+	m_data.weight_measurement_count++;
+
+	return 0;
+}
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+
+static void people_measurement_timer(struct k_timer *timer_id)
+{
+	LOG_INF("People measurement timer expired");
+
+	atomic_set(&m_measure_people, true);
+	k_sem_give(&m_loop_sem);
+}
+
+static K_TIMER_DEFINE(m_people_measurement_timer, people_measurement_timer, NULL);
+
+static int measure_people(void)
+{
+	int ret;
+
+	k_timer_start(&m_people_measurement_timer,
+	              Z_TIMEOUT_MS(g_app_config.people_measurement_interval * 1000), K_FOREVER);
+
+	if (m_data.people_measurement_count >= ARRAY_SIZE(m_data.people_measurements)) {
+		LOG_WRN("People measurements buffer full");
+		return -ENOSPC;
+	}
+
+	int64_t timestamp;
+	ret = ctr_rtc_get_ts(&timestamp);
+	if (ret) {
+		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+		return ret;
+	}
+
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(people_counter));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
+	}
+
+	m_data.people_measurements[m_data.people_measurement_count].timestamp_offset =
+	        timestamp - m_data.people_measurement_timestamp;
+
+	struct people_counter_measurement measurement;
+	ret = people_counter_read_measurement(dev, &measurement);
+	if (ret) {
+		LOG_ERR("Call `people_counter_read_measurement` failed: %d", ret);
+
+		m_data.people_measurements[m_data.people_measurement_count].is_valid = false;
+
+	} else {
+		LOG_INF("Motion counter: %u", measurement.motion_counter);
+		LOG_INF("Pass counter (adult): %u", measurement.pass_counter_adult);
+		LOG_INF("Pass counter (child): %u", measurement.pass_counter_child);
+		LOG_INF("Stay counter (adult): %u", measurement.stay_counter_adult);
+		LOG_INF("Stay counter (child): %u", measurement.stay_counter_child);
+		LOG_INF("Total time (adult): %u", measurement.total_time_adult);
+		LOG_INF("Total time (child): %u", measurement.total_time_child);
+		LOG_INF("Consumed energy: %u", measurement.consumed_energy);
+
+		m_data.people_measurements[m_data.people_measurement_count].measurement =
+		        measurement;
+
+		m_data.people_measurements[m_data.people_measurement_count].is_valid = true;
+	}
+
+	m_data.people_measurement_count++;
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
+
+static int measure(void)
+{
+	int ret;
 
 #if defined(CONFIG_CTR_THERM)
 	ret = ctr_therm_read(&m_data.therm_temperature);
@@ -419,72 +596,6 @@ static int measure(void)
 		m_data.acceleration_z = NAN;
 		m_data.orientation = INT_MAX;
 	}
-
-	if (m_data.measurement_count >= ARRAY_SIZE(m_data.measurements)) {
-		LOG_WRN("Measurements buffer full");
-		return -ENOSPC;
-	}
-
-	int64_t timestamp;
-	ret = ctr_rtc_get_ts(&timestamp);
-	if (ret) {
-		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
-		return ret;
-	}
-
-	k_mutex_lock(&m_measure_lock, K_FOREVER);
-
-	int32_t a1_raw = INT32_MAX;
-	int32_t a2_raw = INT32_MAX;
-	int32_t b1_raw = INT32_MAX;
-	int32_t b2_raw = INT32_MAX;
-
-#if defined(CONFIG_SHIELD_CTR_X3_A)
-	static int32_t a1_raw_prev = INT32_MAX;
-	ret = filter_weight("A1", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_1, &a1_raw, &a1_raw_prev);
-	if (ret) {
-		LOG_ERR("Call `filter_weight` failed (A1): %d", ret);
-		a1_raw = INT32_MAX;
-	}
-#endif
-
-#if defined(CONFIG_SHIELD_CTR_X3_A)
-	static int32_t a2_raw_prev = INT32_MAX;
-	ret = filter_weight("A2", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_2, &a2_raw, &a2_raw_prev);
-	if (ret) {
-		LOG_ERR("Call `filter_weight` failed (A2): %d", ret);
-		a2_raw = INT32_MAX;
-	}
-#endif
-
-#if defined(CONFIG_SHIELD_CTR_X3_B)
-	static int32_t b1_raw_prev = INT32_MAX;
-	ret = filter_weight("B1", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_1, &b1_raw, &b1_raw_prev);
-	if (ret) {
-		LOG_ERR("Call `filter_weight` failed (B1): %d", ret);
-		b1_raw = INT32_MAX;
-	}
-#endif
-
-#if defined(CONFIG_SHIELD_CTR_X3_B)
-	static int32_t b2_raw_prev = INT32_MAX;
-	ret = filter_weight("B2", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_2, &b2_raw, &b2_raw_prev);
-	if (ret) {
-		LOG_ERR("Call `filter_weight` failed (B2): %d", ret);
-		b2_raw = INT32_MAX;
-	}
-#endif
-
-	k_mutex_unlock(&m_measure_lock);
-
-	m_data.measurements[m_data.measurement_count].timestamp_offset =
-	        timestamp - m_data.measurement_timestamp;
-	m_data.measurements[m_data.measurement_count].a1_raw = a1_raw;
-	m_data.measurements[m_data.measurement_count].a2_raw = a2_raw;
-	m_data.measurements[m_data.measurement_count].b1_raw = b1_raw;
-	m_data.measurements[m_data.measurement_count].b2_raw = b2_raw;
-
-	m_data.measurement_count++;
 
 	return 0;
 }
@@ -767,96 +878,129 @@ static int encode(CborEncoder *enc)
 		err |= cbor_encoder_close_container(enc, &map);
 	}
 
-	err |= cbor_encode_uint(&map, MSG_KEY_WEIGHT_MEASUREMENTS);
-	{
-		CborEncoder arr;
-		err |= cbor_encoder_create_array(enc, &arr, CborIndefiniteLength);
+	if (g_app_config.channel_a1_active || g_app_config.channel_a2_active ||
+	    g_app_config.channel_b1_active || g_app_config.channel_b2_active) {
+		err |= cbor_encode_uint(&map, MSG_KEY_WEIGHT_MEASUREMENTS);
+		{
+			CborEncoder arr;
+			err |= cbor_encoder_create_array(enc, &arr, CborIndefiniteLength);
 
-		for (int i = 0; i < m_data.measurement_count; i++) {
-			CborEncoder map;
-			err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+			err |= cbor_encode_uint(&map, m_data.weight_measurement_timestamp);
 
-			uint64_t timestamp = m_data.measurement_timestamp +
-			                     m_data.measurements[i].timestamp_offset;
+			for (int i = 0; i < m_data.weight_measurement_count; i++) {
+				err |= cbor_encode_uint(
+				        &map, m_data.weight_measurements[i].timestamp_offset);
 
-			err |= cbor_encode_uint(&map, MSG_KEY_TIMESTAMP);
-			err |= cbor_encode_uint(&map, timestamp);
+				if (g_app_config.channel_a1_active) {
+					if (m_data.weight_measurements[i].a1_raw == INT32_MAX) {
+						err |= cbor_encode_null(&map);
+					} else {
+						err |= cbor_encode_int(
+						        &map, m_data.weight_measurements[i].a1_raw);
+					}
+				}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_RAW_RESULT_A1);
-			if (m_data.measurements[i].a1_raw == INT32_MAX) {
-				err |= cbor_encode_null(&map);
-			} else {
-				err |= cbor_encode_int(&map, m_data.measurements[i].a1_raw);
+				if (g_app_config.channel_a2_active) {
+					if (m_data.weight_measurements[i].a2_raw == INT32_MAX) {
+						err |= cbor_encode_null(&map);
+					} else {
+						err |= cbor_encode_int(
+						        &map, m_data.weight_measurements[i].a2_raw);
+					}
+				}
+
+				if (g_app_config.channel_b1_active) {
+					if (m_data.weight_measurements[i].b1_raw == INT32_MAX) {
+						err |= cbor_encode_null(&map);
+					} else {
+						err |= cbor_encode_int(
+						        &map, m_data.weight_measurements[i].b1_raw);
+					}
+				}
+
+				if (g_app_config.channel_b2_active) {
+					if (m_data.weight_measurements[i].b2_raw == INT32_MAX) {
+						err |= cbor_encode_null(&map);
+					} else {
+						err |= cbor_encode_int(
+						        &map, m_data.weight_measurements[i].b2_raw);
+					}
+				}
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_RAW_RESULT_A2);
-			if (m_data.measurements[i].a2_raw == INT32_MAX) {
-				err |= cbor_encode_null(&map);
-			} else {
-				err |= cbor_encode_int(&map, m_data.measurements[i].a2_raw);
-			}
-
-			err |= cbor_encode_uint(&map, MSG_KEY_RAW_RESULT_B1);
-			if (m_data.measurements[i].b1_raw == INT32_MAX) {
-				err |= cbor_encode_null(&map);
-			} else {
-				err |= cbor_encode_int(&map, m_data.measurements[i].b1_raw);
-			}
-
-			err |= cbor_encode_uint(&map, MSG_KEY_RAW_RESULT_B2);
-			if (m_data.measurements[i].b2_raw == INT32_MAX) {
-				err |= cbor_encode_null(&map);
-			} else {
-				err |= cbor_encode_int(&map, m_data.measurements[i].b2_raw);
-			}
-
-			err |= cbor_encoder_close_container(enc, &map);
+			err |= cbor_encoder_close_container(enc, &arr);
 		}
-
-		err |= cbor_encoder_close_container(enc, &arr);
 	}
 
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 	err |= cbor_encode_uint(&map, MSG_KEY_PEOPLE_MEASUREMENTS);
 	{
 		CborEncoder arr;
 		err |= cbor_encoder_create_array(enc, &arr, CborIndefiniteLength);
 
-		for (int i = 0; i < 3; i++) {
-			CborEncoder map;
-			err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+		err |= cbor_encode_uint(&map, m_data.people_measurement_timestamp);
 
-			err |= cbor_encode_uint(&map, MSG_KEY_TIMESTAMP);
-			err |= cbor_encode_uint(&map, 1646676261);
+		for (int i = 0; i < m_data.people_measurement_count; i++) {
+			bool is_valid = m_data.people_measurements[i].is_valid;
 
-			err |= cbor_encode_uint(&map, MSG_KEY_MOTION_COUNTER);
-			err |= cbor_encode_uint(&map, 241);
+			struct people_counter_measurement *measurement =
+			        &m_data.people_measurements[i].measurement;
 
-			err |= cbor_encode_uint(&map, MSG_KEY_PASS_COUNTER_ADULT);
-			err |= cbor_encode_uint(&map, 0);
+			err |= cbor_encode_uint(&map,
+			                        m_data.people_measurements[i].timestamp_offset);
 
-			err |= cbor_encode_uint(&map, MSG_KEY_PASS_COUNTER_CHILD);
-			err |= cbor_encode_uint(&map, 24);
+			if (!is_valid) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_uint(&map, measurement->motion_counter);
+			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_STAY_COUNTER_ADULT);
-			err |= cbor_encode_uint(&map, 18);
+			if (!is_valid) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_uint(&map, measurement->pass_counter_adult);
+			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_STAY_COUNTER_CHILD);
-			err |= cbor_encode_uint(&map, 15);
+			if (!is_valid) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_uint(&map, measurement->pass_counter_child);
+			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_TOTAL_TIME_ADULT);
-			err |= cbor_encode_uint(&map, 254);
+			if (!is_valid) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_uint(&map, measurement->stay_counter_adult);
+			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_TOTAL_TIME_CHILD);
-			err |= cbor_encode_uint(&map, 83);
+			if (!is_valid) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_uint(&map, measurement->stay_counter_child);
+			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_CONSUMED_ENERGY);
-			err |= cbor_encode_uint(&map, 2945544);
+			if (!is_valid) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_uint(&map, measurement->total_time_adult);
+			}
 
-			err |= cbor_encoder_close_container(enc, &map);
+			if (!is_valid) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_uint(&map, measurement->total_time_child);
+			}
+
+			if (!is_valid) {
+				err |= cbor_encode_null(&map);
+			} else {
+				err |= cbor_encode_uint(&map, measurement->consumed_energy);
+			}
 		}
 
 		err |= cbor_encoder_close_container(enc, &arr);
 	}
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	err |= cbor_encoder_close_container(enc, &map);
 
@@ -967,7 +1111,13 @@ static int send(void)
 
 	LOG_INF("Scheduling next report in %lld second(s)", duration / 1000);
 
-	k_timer_start(&m_send_timer, Z_TIMEOUT_MS(duration), K_FOREVER);
+	k_timer_start(&m_send_timer, K_MSEC(duration), K_FOREVER);
+
+	ret = measure();
+	if (ret) {
+		LOG_ERR("Call `measure` failed: %d", ret);
+		return ret;
+	}
 
 	CTR_BUF_DEFINE_STATIC(buf, 1024);
 
@@ -975,7 +1125,11 @@ static int send(void)
 	if (ret) {
 		LOG_ERR("Call `compose` failed: %d", ret);
 		if (ret == -ENOSPC) {
-			m_data.measurement_count = 0;
+			m_data.weight_measurement_count = 0;
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+			m_data.people_measurement_count = 0;
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 		}
 		return ret;
 	}
@@ -994,15 +1148,19 @@ static int send(void)
 		return ret;
 	}
 
-	m_data.measurement_count = 0;
+	m_data.weight_measurement_count = 0;
 
-	ret = ctr_rtc_get_ts(&m_data.measurement_timestamp);
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+	m_data.people_measurement_count = 0;
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
+
+	ret = ctr_rtc_get_ts(&m_data.weight_measurement_timestamp);
 	if (ret) {
 		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
 		return ret;
 	}
 
-	LOG_DBG("New samples base timestamp: %llu", m_data.measurement_timestamp);
+	LOG_DBG("New samples base timestamp: %llu", m_data.weight_measurement_timestamp);
 
 	return 0;
 }
@@ -1017,13 +1175,23 @@ static int loop(void)
 		return ret;
 	}
 
-	if (atomic_set(&m_measure, false)) {
-		ret = measure();
+	if (atomic_set(&m_measure_weight, false)) {
+		ret = measure_weight();
 		if (ret) {
-			LOG_ERR("Call `measure` failed: %d", ret);
+			LOG_ERR("Call `measure_weight` failed: %d", ret);
 			return ret;
 		}
 	}
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+	if (atomic_set(&m_measure_people, false)) {
+		ret = measure_people();
+		if (ret) {
+			LOG_ERR("Call `measure_people` failed: %d", ret);
+			return ret;
+		}
+	}
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	if (atomic_set(&m_send, false)) {
 		ret = send();
@@ -1035,6 +1203,40 @@ static int loop(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+static int init_people_counter(void)
+{
+	int ret;
+
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(people_counter));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
+	}
+
+	ret = people_counter_set_power_off_delay(dev, g_app_config.people_counter_power_off_delay);
+	if (ret) {
+		LOG_ERR("Call `people_counter_set_power_off_delay` failed: %d", ret);
+		return ret;
+	}
+
+	ret = people_counter_set_stay_timeout(dev, g_app_config.people_counter_stay_timeout);
+	if (ret) {
+		LOG_ERR("Call `people_counter_set_stay_timeout` failed: %d", ret);
+		return ret;
+	}
+
+	ret = people_counter_set_adult_border(dev, g_app_config.people_counter_adult_border);
+	if (ret) {
+		LOG_ERR("Call `people_counter_set_adult_border` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 void main(void)
 {
@@ -1063,6 +1265,14 @@ void main(void)
 		LOG_ERR("Call `ctr_wdog_start` failed: %d", ret);
 		k_oops();
 	}
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+	ret = init_people_counter();
+	if (ret) {
+		LOG_ERR("Call `init_people_counter` failed: %d", ret);
+		k_oops();
+	}
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	ret = ctr_lte_set_event_cb(lte_event_handler, NULL);
 	if (ret) {
@@ -1094,7 +1304,7 @@ void main(void)
 		break;
 	}
 
-	ret = ctr_rtc_get_ts(&m_data.measurement_timestamp);
+	ret = ctr_rtc_get_ts(&m_data.weight_measurement_timestamp);
 	if (ret) {
 		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
 		k_oops();
@@ -1136,7 +1346,11 @@ static int cmd_measure(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	k_timer_start(&m_measurement_timer, K_NO_WAIT, K_FOREVER);
+	k_timer_start(&m_weight_measurement_timer, K_NO_WAIT, K_FOREVER);
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+	k_timer_start(&m_people_measurement_timer, K_NO_WAIT, K_FOREVER);
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	return 0;
 }
@@ -1164,7 +1378,7 @@ static int cmd_test(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&m_measure_lock, K_FOREVER);
+	k_mutex_lock(&m_weight_reading_lock, K_FOREVER);
 
 	int32_t a1_raw = INT32_MAX;
 	int32_t a2_raw = INT32_MAX;
@@ -1235,7 +1449,7 @@ static int cmd_test(const struct shell *shell, size_t argc, char **argv)
 		shell_print(shell, "raw (b2): %" PRId32, b2_raw);
 	}
 
-	k_mutex_unlock(&m_measure_lock);
+	k_mutex_unlock(&m_weight_reading_lock);
 
 	return 0;
 }

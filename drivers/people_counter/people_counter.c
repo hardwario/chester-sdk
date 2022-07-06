@@ -177,7 +177,7 @@ static int people_counter_set_adult_border_(const struct device *dev, int value)
 {
 	int ret;
 
-	if (value > 255) {
+	if (value > 8) {
 		return -EINVAL;
 	}
 
