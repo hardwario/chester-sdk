@@ -51,7 +51,8 @@ static struct ctr_edge m_edge_ch8;
 		if (event == CTR_EDGE_EVENT_ACTIVE) {                                              \
 			LOG_INF("Channel " STRINGIFY(ch) " detected active edge");                 \
 			k_mutex_lock(&g_app_data_lock, K_FOREVER);                                 \
-			g_app_data.counter_ch##ch++;                                               \
+			g_app_data.counter_ch##ch##_total++;                                       \
+			g_app_data.counter_ch##ch##_delta++;                                       \
 			k_mutex_unlock(&g_app_data_lock);                                          \
 		}                                                                                  \
 	}

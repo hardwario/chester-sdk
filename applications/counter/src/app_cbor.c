@@ -305,75 +305,139 @@ int app_cbor_encode(CborEncoder *enc)
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		uint64_t counter_ch1 = g_app_data.counter_ch1;
-		uint64_t counter_ch2 = g_app_data.counter_ch2;
-		uint64_t counter_ch3 = g_app_data.counter_ch3;
-		uint64_t counter_ch4 = g_app_data.counter_ch4;
+		uint64_t counter_ch1_total = g_app_data.counter_ch1_total;
+		uint64_t counter_ch1_delta = g_app_data.counter_ch1_delta;
+		uint64_t counter_ch2_total = g_app_data.counter_ch2_total;
+		uint64_t counter_ch2_delta = g_app_data.counter_ch2_delta;
+		uint64_t counter_ch3_total = g_app_data.counter_ch3_total;
+		uint64_t counter_ch3_delta = g_app_data.counter_ch3_delta;
+		uint64_t counter_ch4_total = g_app_data.counter_ch4_total;
+		uint64_t counter_ch4_delta = g_app_data.counter_ch4_delta;
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		uint64_t counter_ch5 = g_app_data.counter_ch5;
-		uint64_t counter_ch6 = g_app_data.counter_ch6;
-		uint64_t counter_ch7 = g_app_data.counter_ch7;
-		uint64_t counter_ch8 = g_app_data.counter_ch8;
+		uint64_t counter_ch5_total = g_app_data.counter_ch5_total;
+		uint64_t counter_ch5_delta = g_app_data.counter_ch5_delta;
+		uint64_t counter_ch6_total = g_app_data.counter_ch6_total;
+		uint64_t counter_ch6_delta = g_app_data.counter_ch6_delta;
+		uint64_t counter_ch7_total = g_app_data.counter_ch7_total;
+		uint64_t counter_ch7_delta = g_app_data.counter_ch7_delta;
+		uint64_t counter_ch8_total = g_app_data.counter_ch8_total;
+		uint64_t counter_ch8_delta = g_app_data.counter_ch8_delta;
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
 		k_mutex_unlock(&g_app_data_lock);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_1);
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_1_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch1);
+		err |= cbor_encode_uint(&map, counter_ch1_total);
 #else
 		err |= cbor_encode_null(&map);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_2);
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_1_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch2);
+		err |= cbor_encode_uint(&map, counter_ch1_delta);
 #else
 		err |= cbor_encode_null(&map);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_3);
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_2_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch3);
+		err |= cbor_encode_uint(&map, counter_ch2_total);
 #else
 		err |= cbor_encode_null(&map);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_4);
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_2_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch4);
+		err |= cbor_encode_uint(&map, counter_ch2_delta);
 #else
 		err |= cbor_encode_null(&map);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_5);
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_3_TOTAL);
+#if defined(CONFIG_SHIELD_CTR_X0_A)
+		err |= cbor_encode_uint(&map, counter_ch3_total);
+#else
+		err |= cbor_encode_null(&map);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_3_DELTA);
+#if defined(CONFIG_SHIELD_CTR_X0_A)
+		err |= cbor_encode_uint(&map, counter_ch3_delta);
+#else
+		err |= cbor_encode_null(&map);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_4_TOTAL);
+#if defined(CONFIG_SHIELD_CTR_X0_A)
+		err |= cbor_encode_uint(&map, counter_ch4_total);
+#else
+		err |= cbor_encode_null(&map);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_4_DELTA);
+#if defined(CONFIG_SHIELD_CTR_X0_A)
+		err |= cbor_encode_uint(&map, counter_ch4_delta);
+#else
+		err |= cbor_encode_null(&map);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_5_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch5);
+		err |= cbor_encode_uint(&map, counter_ch5_total);
 #else
 		err |= cbor_encode_null(&map);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_6);
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_5_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch6);
+		err |= cbor_encode_uint(&map, counter_ch5_delta);
 #else
 		err |= cbor_encode_null(&map);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_7);
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_6_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch7);
+		err |= cbor_encode_uint(&map, counter_ch6_total);
 #else
 		err |= cbor_encode_null(&map);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_8);
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_6_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch8);
+		err |= cbor_encode_uint(&map, counter_ch6_delta);
+#else
+		err |= cbor_encode_null(&map);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
+
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_7_TOTAL);
+#if defined(CONFIG_SHIELD_CTR_X0_B)
+		err |= cbor_encode_uint(&map, counter_ch7_total);
+#else
+		err |= cbor_encode_null(&map);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
+
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_7_DELTA);
+#if defined(CONFIG_SHIELD_CTR_X0_B)
+		err |= cbor_encode_uint(&map, counter_ch7_delta);
+#else
+		err |= cbor_encode_null(&map);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
+
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_8_TOTAL);
+#if defined(CONFIG_SHIELD_CTR_X0_B)
+		err |= cbor_encode_uint(&map, counter_ch8_total);
+#else
+		err |= cbor_encode_null(&map);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
+
+		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_8_DELTA);
+#if defined(CONFIG_SHIELD_CTR_X0_B)
+		err |= cbor_encode_uint(&map, counter_ch8_delta);
 #else
 		err |= cbor_encode_null(&map);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */

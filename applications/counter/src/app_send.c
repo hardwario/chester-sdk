@@ -1,6 +1,7 @@
 #include "app_send.h"
 #include "app_cbor.h"
 #include "app_config.h"
+#include "app_data.h"
 #include "app_loop.h"
 
 /* CHESTER includes */
@@ -146,6 +147,24 @@ int app_send(void)
 		LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
 		return ret;
 	}
+
+	k_mutex_lock(&g_app_data_lock, K_FOREVER);
+
+#if defined(CONFIG_SHIELD_CTR_X0_A)
+	g_app_data.counter_ch1_delta = 0;
+	g_app_data.counter_ch2_delta = 0;
+	g_app_data.counter_ch3_delta = 0;
+	g_app_data.counter_ch4_delta = 0;
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+
+#if defined(CONFIG_SHIELD_CTR_X0_B)
+	g_app_data.counter_ch5_delta = 0;
+	g_app_data.counter_ch6_delta = 0;
+	g_app_data.counter_ch7_delta = 0;
+	g_app_data.counter_ch8_delta = 0;
+#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
+
+	k_mutex_unlock(&g_app_data_lock);
 
 	return 0;
 }

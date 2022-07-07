@@ -26,17 +26,25 @@ struct data {
 	int accel_orientation;
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-	uint64_t counter_ch1;
-	uint64_t counter_ch2;
-	uint64_t counter_ch3;
-	uint64_t counter_ch4;
+	uint64_t counter_ch1_total;
+	uint64_t counter_ch1_delta;
+	uint64_t counter_ch2_total;
+	uint64_t counter_ch2_delta;
+	uint64_t counter_ch3_total;
+	uint64_t counter_ch3_delta;
+	uint64_t counter_ch4_total;
+	uint64_t counter_ch4_delta;
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-	uint64_t counter_ch5;
-	uint64_t counter_ch6;
-	uint64_t counter_ch7;
-	uint64_t counter_ch8;
+	uint64_t counter_ch5_total;
+	uint64_t counter_ch5_delta;
+	uint64_t counter_ch6_total;
+	uint64_t counter_ch6_delta;
+	uint64_t counter_ch7_total;
+	uint64_t counter_ch7_delta;
+	uint64_t counter_ch8_total;
+	uint64_t counter_ch8_delta;
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 };
 
