@@ -10,6 +10,7 @@
 /* Zephyr includes */
 #include <logging/log.h>
 #include <zephyr.h>
+#include <zcbor_common.h>
 #include <zcbor_encode.h>
 
 /* Standard includes */

@@ -3,7 +3,7 @@
 
 /* Zephyr includes */
 #include <zephyr.h>
-#include <zcbor_encode.h>
+#include <zcbor_common.h>
 
 #ifdef __cplusplus
 extern "C" {
