@@ -1,4 +1,6 @@
 #include "app_config.h"
+#include "app_measure.h"
+#include "app_send.h"
 
 /* Zephyr includes */
 #include <logging/log.h>
@@ -6,6 +8,36 @@
 #include <zephyr.h>
 
 LOG_MODULE_REGISTER(app_shell, LOG_LEVEL_INF);
+
+static int cmd_measure(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	k_timer_start(&g_app_measure_weight_timer, K_NO_WAIT, K_FOREVER);
+
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+	k_timer_start(&g_app_measure_people_timer, K_NO_WAIT, K_FOREVER);
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
+
+	return 0;
+}
+
+static int cmd_send(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	k_timer_start(&g_app_send_timer, K_NO_WAIT, K_FOREVER);
+
+	return 0;
+}
 
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
@@ -86,5 +118,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 
 SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
+SHELL_CMD_REGISTER(measure, NULL, "Start measurement immediately.", cmd_measure);
+SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
 
 /* clang-format on */

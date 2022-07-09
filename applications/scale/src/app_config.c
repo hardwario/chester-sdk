@@ -1,4 +1,6 @@
 #include "app_config.h"
+
+/* CHESTER includes */
 #include <ctr_config.h>
 
 /* Zephyr includes */
@@ -26,7 +28,7 @@ static struct app_config m_app_config_interim = {
 	.weight_measurement_interval = 60,
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
-	.people_measurement_interval = 60,
+	.people_measurement_interval = 600,
 #endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	.report_interval = 900,
