@@ -1,18 +1,17 @@
 #include "app_handler.h"
 #include "app_data.h"
 #include "app_init.h"
-#include "app_measure.h"
 
 /* CHESTER includes */
 #include <ctr_lrw.h>
 #include <ctr_lte.h>
 
 /* Zephyr includes */
-#include <device.h>
 #include <logging/log.h>
 #include <zephyr.h>
 
 /* Standard includes */
+#include <stdbool.h>
 #include <stddef.h>
 
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
