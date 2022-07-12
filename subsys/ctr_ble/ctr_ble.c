@@ -81,9 +81,9 @@ static int set_tx_power(uint8_t handle_type, uint16_t handle, int8_t tx_power_le
 	return 0;
 }
 
+#ifdef CONFIG_CTR_INFO
 static int set_device_name(void)
 {
-	/* The default device name is CONFIG_BT_DEVICE_NAME, so we can safely exit at any time */
 	int ret;
 
 	static char bt_dev_name[CONFIG_BT_DEVICE_NAME_MAX + 1];
@@ -110,6 +110,7 @@ static int set_device_name(void)
 
 	return 0;
 }
+#endif
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -141,18 +142,28 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = connected,
+	.disconnected = disconnected,
+};
+
 static int init(const struct device *dev)
 {
 	int ret;
 
 	LOG_INF("System initialization");
 
-	static struct bt_conn_cb conn_callbacks = {
-		.connected = connected,
-		.disconnected = disconnected,
-	};
+#ifdef CONFIG_MCUMGR_CMD_OS_MGMT
+	os_mgmt_register_group();
+#endif
 
-	bt_conn_cb_register(&conn_callbacks);
+#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
+	img_mgmt_register_group();
+#endif
+
+#ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
+	shell_mgmt_register_group();
+#endif
 
 	ret = bt_enable(NULL);
 	if (ret) {
@@ -160,14 +171,13 @@ static int init(const struct device *dev)
 		return ret;
 	}
 
-	ret = set_device_name();
+#ifdef CONFIG_MCUMGR_SMP_BT
+	ret = smp_bt_register();
 	if (ret) {
-		LOG_WRN("Call `set_device_name` failed: %d", ret);
+		LOG_ERR("Call `smp_bt_register` failed: %d", ret);
+		return ret;
 	}
-
-	os_mgmt_register_group();
-	img_mgmt_register_group();
-	shell_mgmt_register_group();
+#endif
 
 #ifdef CONFIG_SHELL_BT_NUS
 	ret = shell_bt_nus_init();
@@ -177,13 +187,12 @@ static int init(const struct device *dev)
 	}
 #endif /* CONFIG_SHELL_BT_NUS */
 
-	ret = smp_bt_register();
+#ifdef CONFIG_CTR_INFO
+	ret = set_device_name();
 	if (ret) {
-		LOG_ERR("Call `smp_bt_register` failed: %d", ret);
-		return ret;
+		LOG_WRN("Call `set_device_name` failed: %d", ret);
 	}
-
-	LOG_INF("Bluetooth device name: %s", log_strdup(bt_get_name()));
+#endif
 
 	struct bt_le_adv_param *adv_param =
 	        BT_LE_ADV_PARAM(ADV_OPT, BT_GAP_ADV_SLOW_INT_MIN, BT_GAP_ADV_SLOW_INT_MAX, NULL);
