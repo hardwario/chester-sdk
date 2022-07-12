@@ -302,44 +302,36 @@ int app_cbor_encode(zcbor_state_t *zs)
 				zcbor_uint32_put(
 				        zs, g_app_data.weight_measurements[i].timestamp_offset);
 
-				if (g_app_config.channel_a1_active) {
-					if (g_app_data.weight_measurements[i].a1_raw == INT32_MAX) {
-						zcbor_nil_put(zs, NULL);
-					} else {
-						zcbor_int32_put(
-						        zs,
-						        g_app_data.weight_measurements[i].a1_raw);
-					}
+				if (!g_app_config.channel_a1_active ||
+				    g_app_data.weight_measurements[i].a1_raw == INT32_MAX) {
+					zcbor_nil_put(zs, NULL);
+				} else {
+					zcbor_int32_put(zs,
+					                g_app_data.weight_measurements[i].a1_raw);
 				}
 
-				if (g_app_config.channel_a2_active) {
-					if (g_app_data.weight_measurements[i].a2_raw == INT32_MAX) {
-						zcbor_nil_put(zs, NULL);
-					} else {
-						zcbor_int32_put(
-						        zs,
-						        g_app_data.weight_measurements[i].a2_raw);
-					}
+				if (!g_app_config.channel_a2_active ||
+				    g_app_data.weight_measurements[i].a2_raw == INT32_MAX) {
+					zcbor_nil_put(zs, NULL);
+				} else {
+					zcbor_int32_put(zs,
+					                g_app_data.weight_measurements[i].a2_raw);
 				}
 
-				if (g_app_config.channel_b1_active) {
-					if (g_app_data.weight_measurements[i].b1_raw == INT32_MAX) {
-						zcbor_nil_put(zs, NULL);
-					} else {
-						zcbor_int32_put(
-						        zs,
-						        g_app_data.weight_measurements[i].b1_raw);
-					}
+				if (!g_app_config.channel_b1_active ||
+				    g_app_data.weight_measurements[i].b1_raw == INT32_MAX) {
+					zcbor_nil_put(zs, NULL);
+				} else {
+					zcbor_int32_put(zs,
+					                g_app_data.weight_measurements[i].b1_raw);
 				}
 
-				if (g_app_config.channel_b2_active) {
-					if (g_app_data.weight_measurements[i].b2_raw == INT32_MAX) {
-						zcbor_nil_put(zs, NULL);
-					} else {
-						zcbor_int32_put(
-						        zs,
-						        g_app_data.weight_measurements[i].b2_raw);
-					}
+				if (!g_app_config.channel_b2_active ||
+				    g_app_data.weight_measurements[i].b2_raw == INT32_MAX) {
+					zcbor_nil_put(zs, NULL);
+				} else {
+					zcbor_int32_put(zs,
+					                g_app_data.weight_measurements[i].b2_raw);
 				}
 			}
 
