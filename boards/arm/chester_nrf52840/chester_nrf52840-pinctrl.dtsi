@@ -1,16 +1,16 @@
 &pinctrl {
-
 	i2c0_default: i2c0_default {
 		group1 {
 			psels = <NRF_PSEL(TWIM_SDA, 0, 21)>,
-			        <NRF_PSEL(TWIM_SCL, 0, 20)>;
+				<NRF_PSEL(TWIM_SCL, 0, 20)>;
+			nordic,drive-mode = <NRF_DRIVE_S0D1>;
 		};
 	};
 
 	i2c0_sleep: i2c0_sleep {
 		group1 {
 			psels = <NRF_PSEL(TWIM_SDA, 0, 21)>,
-			        <NRF_PSEL(TWIM_SCL, 0, 20)>;
+				<NRF_PSEL(TWIM_SCL, 0, 20)>;
 			low-power-enable;
 		};
 	};
@@ -18,7 +18,7 @@
 	spi1_default: spi1_default {
 		group1 {
 			psels = <NRF_PSEL(SPIM_SCK, 0, 22)>,
-			        <NRF_PSEL(SPIM_MOSI, 1, 0)>;
+				<NRF_PSEL(SPIM_MOSI, 1, 0)>;
 		};
 		group2 {
 			psels = <NRF_PSEL(SPIM_MISO, 0, 24)>;
@@ -48,7 +48,7 @@
 	uart0_sleep: uart0_sleep {
 		group1 {
 			psels = <NRF_PSEL(UART_TX, 0, 13)>,
-			        <NRF_PSEL(UART_RX, 0, 14)>;
+				<NRF_PSEL(UART_RX, 0, 14)>;
 			low-power-enable;
 		};
 	};
@@ -66,7 +66,7 @@
 	uart1_sleep: uart1_sleep {
 		group1 {
 			psels = <NRF_PSEL(UART_TX, 0, 7)>,
-			        <NRF_PSEL(UART_RX, 0, 8)>;
+				<NRF_PSEL(UART_RX, 0, 8)>;
 			low-power-enable;
 		};
 	};
