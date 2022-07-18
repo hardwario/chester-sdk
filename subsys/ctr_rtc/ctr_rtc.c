@@ -152,11 +152,11 @@ static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	static const char *wday[] = {
-		"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
+		"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
 	};
 
 	shell_print(shell, "%04d/%02d/%02d %02d:%02d:%02d %s", tm.year, tm.month, tm.day, tm.hours,
-	            tm.minutes, tm.seconds, wday[tm.wday]);
+	            tm.minutes, tm.seconds, wday[tm.wday - 1]);
 
 	return 0;
 }
