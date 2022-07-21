@@ -127,6 +127,30 @@ static bool ok_handler(const char *s, void *param)
 	return true;
 }
 
+static int talk_cmd(const char *fmt, ...)
+{
+	int ret;
+
+	/* TODO Do not block long operation by mutex but return -EBUSY instead */
+	k_mutex_lock(&m_talk_mut, K_FOREVER);
+	k_sleep(SEND_GUARD_TIME);
+
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = ctr_lrw_if_send(dev, fmt, ap);
+	va_end(ap);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lrw_if_send` failed: %d", ret);
+		k_mutex_unlock(&m_talk_mut);
+		return ret;
+	}
+
+	k_mutex_unlock(&m_talk_mut);
+	return 0;
+}
+
 static int talk_cmd_ok(k_timeout_t timeout, const char *fmt, ...)
 {
 	int ret;
@@ -199,6 +223,20 @@ int ctr_lrw_talk_disable(void)
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lrw_if_disable` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lrw_talk_(const char *s)
+{
+	int ret;
+
+	ret = talk_cmd("%s", s);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd` failed: %d", ret);
 		return ret;
 	}
 

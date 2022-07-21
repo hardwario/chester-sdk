@@ -22,6 +22,7 @@ typedef void (*ctr_lrw_talk_event_cb)(enum ctr_lrw_talk_event event);
 int ctr_lrw_talk_init(ctr_lrw_talk_event_cb event_cb);
 int ctr_lrw_talk_enable(void);
 int ctr_lrw_talk_disable(void);
+int ctr_lrw_talk_(const char *s);
 int ctr_lrw_talk_at(void);
 int ctr_lrw_talk_at_dformat(uint8_t df);
 int ctr_lrw_talk_at_band(uint8_t band);

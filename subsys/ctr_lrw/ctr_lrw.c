@@ -101,6 +101,7 @@ enum nwk {
 };
 
 struct config {
+	bool test;
 	enum antenna antenna;
 	enum band band;
 	enum class class;
@@ -653,7 +654,7 @@ static int start(void)
 
 		ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
 		                                               CTR_RFMUX_ANTENNA_EXT :
-                                                               CTR_RFMUX_ANTENNA_INT);
+		                                               CTR_RFMUX_ANTENNA_INT);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
@@ -951,6 +952,11 @@ int ctr_lrw_start(int *corr_id)
 {
 	int ret;
 
+	if (m_config.test) {
+		LOG_WRN("Test mode activated - ignoring");
+		return 0;
+	}
+
 	struct cmd_msgq_item item = {
 		.corr_id = (int)atomic_inc(&m_corr_id),
 		.req = CMD_MSGQ_REQ_START,
@@ -976,6 +982,11 @@ int ctr_lrw_join(int *corr_id)
 {
 	int ret;
 
+	if (m_config.test) {
+		LOG_WRN("Test mode activated - ignoring");
+		return 0;
+	}
+
 	struct cmd_msgq_item item = {
 		.corr_id = (int)atomic_inc(&m_corr_id),
 		.req = CMD_MSGQ_REQ_JOIN,
@@ -1000,6 +1011,11 @@ int ctr_lrw_join(int *corr_id)
 int ctr_lrw_send(const struct ctr_lrw_send_opts *opts, const void *buf, size_t len, int *corr_id)
 {
 	int ret;
+
+	if (m_config.test) {
+		LOG_WRN("Test mode activated - ignoring");
+		return 0;
+	}
 
 	void *p = k_malloc(len);
 
@@ -1059,6 +1075,7 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 		}                                                                                  \
 	} while (0)
 
+	SETTINGS_SET("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
 	SETTINGS_SET("band", &m_config_interim.band, sizeof(m_config_interim.band));
 	SETTINGS_SET("class", &m_config_interim.class, sizeof(m_config_interim.class));
@@ -1093,6 +1110,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
 	} while (0)
 
+	EXPORT_FUNC("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
 	EXPORT_FUNC("band", &m_config_interim.band, sizeof(m_config_interim.band));
 	EXPORT_FUNC("class", &m_config_interim.class, sizeof(m_config_interim.class));
@@ -1111,6 +1129,12 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 #undef EXPORT_FUNC
 
 	return 0;
+}
+
+static void print_test(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config test %s",
+	            m_config_interim.test ? "true" : "false");
 }
 
 static void print_antenna(const struct shell *shell)
@@ -1273,6 +1297,7 @@ static void print_appskey(const struct shell *shell)
 
 static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
+	print_test(shell);
 	print_antenna(shell);
 	print_band(shell);
 	print_class(shell);
@@ -1289,6 +1314,27 @@ static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 	print_appskey(shell);
 
 	return 0;
+}
+
+static int cmd_config_test(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_test(shell);
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "true") == 0) {
+		m_config_interim.test = true;
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "false") == 0) {
+		m_config_interim.test = false;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
 }
 
 static int cmd_config_antenna(const struct shell *shell, size_t argc, char **argv)
@@ -1652,6 +1698,86 @@ static int cmd_join(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_test_uart(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc == 2 && strcmp(argv[1], "enable") == 0) {
+		ret = ctr_lrw_talk_enable();
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_talk_enable` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "disable") == 0) {
+		ret = ctr_lrw_talk_disable();
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_talk_disable` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_test_reset(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (!m_config.test) {
+		shell_error(shell, "test mode is not activated");
+		return -ENOEXEC;
+	}
+
+	ret = ctr_lrw_if_reset(dev_lrw_if);
+	if (ret) {
+		LOG_ERR("Call `ctr_lrw_if_reset` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int cmd_test_cmd(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 2) {
+		shell_error(shell, "only one argument is accepted (use quotes?)");
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (!m_config.test) {
+		shell_error(shell, "test mode is not activated");
+		return -ENOEXEC;
+	}
+
+	ret = ctr_lrw_talk_(argv[1]);
+	if (ret) {
+		LOG_ERR("Call `lrw_talk_` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	return 0;
+}
+
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -1668,6 +1794,7 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(
         sub_lrw_config,
         SHELL_CMD_ARG(show, NULL, "List current configuration.", cmd_config_show, 1, 0),
+        SHELL_CMD_ARG(test, NULL, "Get/Set LTE test mode.", cmd_config_test, 1, 1),
         SHELL_CMD_ARG(antenna, NULL, "Get/Set LoRaWAN antenna (format: <int|ext>).",
                       cmd_config_antenna, 1, 1),
         SHELL_CMD_ARG(band, NULL,
@@ -1699,11 +1826,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
                       cmd_config_appskey, 1, 1),
         SHELL_SUBCMD_SET_END);
 
+SHELL_STATIC_SUBCMD_SET_CREATE(
+        sub_lrw_test,
+        SHELL_CMD_ARG(uart, NULL, "Enable/Disable UART interface (format: <enable|disable>).",
+                      cmd_test_uart, 2, 0),
+        SHELL_CMD_ARG(reset, NULL, "Reset modem.", cmd_test_reset, 1, 0),
+        SHELL_CMD_ARG(cmd, NULL, "Send command to modem. (format: <command>)", cmd_test_cmd, 2, 0),
+        SHELL_SUBCMD_SET_END);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_lrw,
                                SHELL_CMD_ARG(config, &sub_lrw_config, "Configuration commands.",
                                              print_help, 1, 0),
                                SHELL_CMD_ARG(start, NULL, "Start interface.", cmd_start, 1, 0),
                                SHELL_CMD_ARG(join, NULL, "Join network.", cmd_join, 1, 0),
+                               SHELL_CMD_ARG(test, &sub_lrw_test, "Test commands.", print_help, 1,
+                                             0),
                                SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(lrw, &sub_lrw, "LoRaWAN commands.", print_help);
