@@ -312,14 +312,17 @@ static int setup_once(void)
 		}
 	}
 
-	ret = ctr_lrw_talk_at_dutycycle(m_config.dutycycle ? 1 : 0);
+	if (m_config.band == BAND_EU868) {
+		ret = ctr_lrw_talk_at_dutycycle(m_config.dutycycle ? 1 : 0);
 
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_lrw_talk_at_dutycycle` failed: %d", ret);
-		return ret;
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lrw_talk_at_dutycycle` failed: %d", ret);
+			return ret;
+		}
 	}
 
-	if (m_config.mode != MODE_ABP) {
+	if (m_config.mode != MODE_ABP && m_config.band != BAND_AU915 &&
+	    m_config.band != BAND_US915) {
 		ret = ctr_lrw_talk_at_joindc(m_config.dutycycle ? 1 : 0);
 
 		if (ret < 0) {

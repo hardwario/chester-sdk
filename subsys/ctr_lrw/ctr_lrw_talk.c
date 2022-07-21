@@ -14,6 +14,7 @@
 LOG_MODULE_REGISTER(ctr_lrw_talk, CONFIG_CTR_LRW_LOG_LEVEL);
 
 #define SEND_GUARD_TIME K_MSEC(50)
+#define BAND_CHANGE_TIME K_MSEC(5000)
 #define RESPONSE_TIMEOUT_S K_MSEC(1000)
 #define RESPONSE_TIMEOUT_L K_SECONDS(10)
 
@@ -281,6 +282,8 @@ int ctr_lrw_talk_at_band(uint8_t band)
 		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
 		return ret;
 	}
+
+	k_sleep(BAND_CHANGE_TIME);
 
 	return 0;
 }
