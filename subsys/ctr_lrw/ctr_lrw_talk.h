@@ -40,6 +40,7 @@ int ctr_lrw_talk_at_appeui(const uint8_t *appeui, size_t appeui_size);
 int ctr_lrw_talk_at_appkey(const uint8_t *appkey, size_t appkey_size);
 int ctr_lrw_talk_at_nwkskey(const uint8_t *nwkskey, size_t nwkskey_size);
 int ctr_lrw_talk_at_appskey(const uint8_t *appskey, size_t appskey_size);
+int ctr_lrw_talk_at_chmask(const char *chmask);
 int ctr_lrw_talk_at_utx(const void *payload, size_t payload_len);
 int ctr_lrw_talk_at_ctx(const void *payload, size_t payload_len);
 int ctr_lrw_talk_at_putx(uint8_t port, const void *payload, size_t payload_len);

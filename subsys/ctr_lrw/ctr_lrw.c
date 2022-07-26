@@ -104,6 +104,7 @@ struct config {
 	bool test;
 	enum antenna antenna;
 	enum band band;
+	char chmask[24 + 1];
 	enum class class;
 	enum mode mode;
 	enum nwk nwk;
@@ -273,6 +274,25 @@ static int setup_once(void)
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lrw_talk_at_band` failed: %d", ret);
 		return ret;
+	}
+
+	if (strlen(m_config.chmask)) {
+		char chmask[sizeof(m_config.chmask)];
+
+		strcpy(chmask, m_config.chmask);
+
+		size_t len = strlen(chmask);
+
+		for (size_t i = 0; i < len; i++) {
+			chmask[i] = toupper(chmask[i]);
+		}
+
+		ret = ctr_lrw_talk_at_chmask(chmask);
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lrw_talk_at_chmask` failed: %d", ret);
+			return ret;
+		}
 	}
 
 	ret = ctr_lrw_talk_at_class((uint8_t)m_config.class);
@@ -1081,6 +1101,7 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
 	SETTINGS_SET("band", &m_config_interim.band, sizeof(m_config_interim.band));
+	SETTINGS_SET("chmask", m_config_interim.chmask, sizeof(m_config_interim.chmask));
 	SETTINGS_SET("class", &m_config_interim.class, sizeof(m_config_interim.class));
 	SETTINGS_SET("mode", &m_config_interim.mode, sizeof(m_config_interim.mode));
 	SETTINGS_SET("nwk", &m_config_interim.nwk, sizeof(m_config_interim.nwk));
@@ -1116,6 +1137,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
 	EXPORT_FUNC("band", &m_config_interim.band, sizeof(m_config_interim.band));
+	EXPORT_FUNC("chmask", m_config_interim.chmask, sizeof(m_config_interim.chmask));
 	EXPORT_FUNC("class", &m_config_interim.class, sizeof(m_config_interim.class));
 	EXPORT_FUNC("mode", &m_config_interim.mode, sizeof(m_config_interim.mode));
 	EXPORT_FUNC("nwk", &m_config_interim.nwk, sizeof(m_config_interim.nwk));
@@ -1178,6 +1200,11 @@ static void print_band(const struct shell *shell)
 	default:
 		shell_print(shell, SETTINGS_PFX " config band (unknown)");
 	}
+}
+
+static void print_chmask(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config chmask %s", m_config_interim.chmask);
 }
 
 static void print_class(const struct shell *shell)
@@ -1303,6 +1330,7 @@ static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 	print_test(shell);
 	print_antenna(shell);
 	print_band(shell);
+	print_chmask(shell);
 	print_class(shell);
 	print_mode(shell);
 	print_nwk(shell);
@@ -1395,6 +1423,38 @@ static int cmd_config_band(const struct shell *shell, size_t argc, char **argv)
 
 	if (argc == 2 && strcmp(argv[1], "us915") == 0) {
 		m_config_interim.band = BAND_US915;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_chmask(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_chmask(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len >= sizeof(m_config_interim.chmask)) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			char c = argv[1][i];
+
+			if ((c < '0' || c > '9') && (c < 'a' || c > 'f')) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		strcpy(m_config_interim.chmask, argv[1]);
 		return 0;
 	}
 
@@ -1804,6 +1864,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
                       "Get/Set radio band"
                       " (format: <as923|au915|eu868|kr920|in865|us915>).",
                       cmd_config_band, 1, 1),
+        SHELL_CMD_ARG(chmask, NULL, "Get/Set channel mask (format: <N hexadecimal digits>). ",
+                      cmd_config_chmask, 1, 1),
         SHELL_CMD_ARG(class, NULL, "Get/Set device class (format: <a|c>).", cmd_config_class, 1, 1),
         SHELL_CMD_ARG(mode, NULL, "Get/Set operation mode (format: <abp|otaa>).", cmd_config_mode,
                       1, 1),

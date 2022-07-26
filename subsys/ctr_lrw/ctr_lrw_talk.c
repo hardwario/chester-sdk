@@ -592,6 +592,20 @@ int ctr_lrw_talk_at_appskey(const uint8_t *appskey, size_t appskey_size)
 	return 0;
 }
 
+int ctr_lrw_talk_at_chmask(const char *chmask)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CHMASK=%s", chmask);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lrw_talk_at_utx(const void *payload, size_t payload_len)
 {
 	int ret;
