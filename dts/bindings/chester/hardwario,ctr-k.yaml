@@ -1,0 +1,47 @@
+description: HARDWARIO CHESTER-K Driver
+
+compatible: "hardwario,ctr-k"
+
+include: base.yaml
+
+properties:
+
+  on1-gpios:
+    type: phandle-array
+    required: true
+    description: Power rail enable pin for CH1 (active high)
+
+  on2-gpios:
+    type: phandle-array
+    required: true
+    description: Power rail enable pin for CH2 (active high)
+
+  on3-gpios:
+    type: phandle-array
+    required: true
+    description: Power rail enable pin for CH3 (active high)
+
+  on4-gpios:
+    type: phandle-array
+    required: true
+    description: Power rail enable pin for CH4 (active high)
+
+  en-gpios:
+    type: phandle-array
+    required: true
+    description: Step-up enable pin (active high)
+
+  nc1-gpios:
+    type: phandle-array
+    required: true
+    description: Unconnected pin 1
+
+  nc2-gpios:
+    type: phandle-array
+    required: true
+    description: Unconnected pin 2
+
+  nc3-gpios:
+    type: phandle-array
+    required: true
+    description: Unconnected pin 3

@@ -1,5 +1,6 @@
 config CTR_SIGNAL
 	bool "CTR_SIGNAL"
+	select CBPRINTF_FP_SUPPORT if CTR_SIGNAL_LOG_LEVEL_DBG
 	select NRFX_PPI
 	select NRFX_SAADC
 	select NRFX_TIMER

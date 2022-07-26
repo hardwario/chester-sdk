@@ -1,11 +1,9 @@
 /* CHESTER includes */
-#include <ctr_led.h>
 #include <drivers/ctr_x0.h>
 
 /* Zephyr includes */
 #include <device.h>
 #include <devicetree.h>
-#include <drivers/gpio.h>
 #include <logging/log.h>
 #include <zephyr.h>
 
