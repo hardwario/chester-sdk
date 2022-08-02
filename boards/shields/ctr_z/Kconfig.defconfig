@@ -1,9 +1,9 @@
 if SHIELD_CTR_Z
 
-config I2C
+config CTR_Z
 	default y
 
-config CTR_Z
+config I2C
 	default y
 
 endif # SHIELD_CTR_Z
