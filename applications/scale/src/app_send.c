@@ -17,6 +17,7 @@
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include <zephyr.h>
+#include <zcbor_common.h>
 #include <zcbor_encode.h>
 
 /* Standard includes */
