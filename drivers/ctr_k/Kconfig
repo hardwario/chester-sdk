@@ -1,5 +1,6 @@
 config CTR_K
 	bool "HARDWARIO CHESTER-K (Differential Inputs) Driver"
+	depends on !ADC_NRFX_SAADC && !ADC_SHELL
 	select CBPRINTF_FP_SUPPORT if CTR_SIGNAL_LOG_LEVEL_DBG
 	select GPIO
 	select GPIO_PCA953X
