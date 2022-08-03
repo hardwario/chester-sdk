@@ -2,8 +2,8 @@
 #define CHESTER_INCLUDE_DRIVERS_CTR_K_H_
 
 /* Zephyr includes */
-#include <drivers/gpio.h>
 #include <device.h>
+#include <drivers/gpio.h>
 
 /* Standard includes */
 #include <stdbool.h>
@@ -12,6 +12,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* clang-format off */
+#define CTR_K_CHANNEL_SINGLE_ENDED(ch) ((ch) - 1)
+#define CTR_K_CHANNEL_DIFFERENTIAL(ch) ((ch) - 1 + CTR_K_CHANNEL_1_DIFFERENTIAL)
+#define CTR_K_CHANNEL_IDX(ch)                                                                      \
+	((ch) >= CTR_K_CHANNEL_1_DIFFERENTIAL ? (ch) - CTR_K_CHANNEL_1_DIFFERENTIAL : (ch))
+/* clang-format on */
 
 enum ctr_k_channel {
 	CTR_K_CHANNEL_1_SINGLE_ENDED = 0,
