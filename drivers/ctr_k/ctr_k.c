@@ -280,7 +280,6 @@ static void saadc_event_handler(nrfx_saadc_evt_t const *p_event)
 	switch (p_event->type) {
 	case NRFX_SAADC_EVT_DONE:
 		LOG_DBG("Event `NRFX_SAADC_EVT_DONE`");
-		k_sem_give(&m_adc_sem);
 		break;
 	case NRFX_SAADC_EVT_CALIBRATEDONE:
 		LOG_DBG("Event `NRFX_SAADC_EVT_CALIBRATEDONE`");
@@ -293,6 +292,7 @@ static void saadc_event_handler(nrfx_saadc_evt_t const *p_event)
 	case NRFX_SAADC_EVT_FINISHED:
 		LOG_DBG("Event `NRFX_SAADC_EVT_FINISHED`");
 		nrfx_timer_disable(&m_timer);
+		k_sem_give(&m_adc_sem);
 		break;
 	default:
 		break;
@@ -310,6 +310,7 @@ static int measure(const nrfx_saadc_channel_t saadc_channels[], size_t saadc_cha
 		return -EIO;
 	}
 
+#if 0
 	ret_nrfx = nrfx_saadc_offset_calibrate(saadc_event_handler);
 	if (ret_nrfx != NRFX_SUCCESS) {
 		LOG_ERR("Call `nrfx_saadc_calibrate_offset` failed: 0x%08x", ret_nrfx);
@@ -321,6 +322,7 @@ static int measure(const nrfx_saadc_channel_t saadc_channels[], size_t saadc_cha
 		LOG_ERR("Call `k_sem_take` failed: %d", ret);
 		return ret;
 	}
+#endif
 
 	ret_nrfx = nrfx_saadc_channels_config(saadc_channels, saadc_channels_count);
 	if (ret_nrfx != NRFX_SUCCESS) {
@@ -329,8 +331,10 @@ static int measure(const nrfx_saadc_channel_t saadc_channels[], size_t saadc_cha
 	}
 
 	nrfx_saadc_adv_config_t config = NRFX_SAADC_DEFAULT_ADV_CONFIG;
+#if 0
 	config.oversampling = NRF_SAADC_OVERSAMPLE_16X;
 	config.burst = NRF_SAADC_BURST_ENABLED;
+#endif
 
 	ret_nrfx = nrfx_saadc_advanced_mode_set(BIT_MASK(saadc_channels_count),
 	                                        NRF_SAADC_RESOLUTION_12BIT, &config,
@@ -374,7 +378,8 @@ static inline float convert_differential_to_millivolts(nrf_saadc_value_t value)
 }
 
 static int ctr_k_measure_(const struct device *dev, const enum ctr_k_channel channels[],
-                          size_t channels_count, struct ctr_k_result results[])
+                          size_t channels_count, const struct ctr_k_calibration calibrations[],
+                          struct ctr_k_result results[])
 {
 	int ret;
 
@@ -422,26 +427,26 @@ static int ctr_k_measure_(const struct device *dev, const enum ctr_k_channel cha
 			break;
 		case CTR_K_CHANNEL_1_DIFFERENTIAL:
 			saadc_channels[i].channel_config = m_channel_config_differential;
-			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN1;
-			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN5;
+			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN5;
+			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN1;
 			convert[i] = convert_differential_to_millivolts;
 			break;
 		case CTR_K_CHANNEL_2_DIFFERENTIAL:
 			saadc_channels[i].channel_config = m_channel_config_differential;
-			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN0;
-			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN7;
+			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN7;
+			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN0;
 			convert[i] = convert_differential_to_millivolts;
 			break;
 		case CTR_K_CHANNEL_3_DIFFERENTIAL:
 			saadc_channels[i].channel_config = m_channel_config_differential;
-			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN4;
-			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN6;
+			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN6;
+			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN4;
 			convert[i] = convert_differential_to_millivolts;
 			break;
 		case CTR_K_CHANNEL_4_DIFFERENTIAL:
 			saadc_channels[i].channel_config = m_channel_config_differential;
-			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN2;
-			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN3;
+			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN3;
+			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN2;
 			convert[i] = convert_differential_to_millivolts;
 			break;
 		default:
@@ -459,27 +464,47 @@ static int ctr_k_measure_(const struct device *dev, const enum ctr_k_channel cha
 		return ret;
 	}
 
+	float raw_avg[MAX_CHANNEL_COUNT] = { 0 };
+	float raw_rms[MAX_CHANNEL_COUNT] = { 0 };
+
 	for (size_t i = 0; i < channels_count * MAX_SAMPLE_COUNT; i += channels_count) {
 		for (size_t j = 0; j < channels_count; j++) {
-			float millivolts = convert[j](m_samples[i + j]);
+			float x = convert[j](m_samples[i + j]);
 
-			results[j].avg += millivolts;
-			results[j].rms += powf(millivolts, 2);
+			raw_avg[j] += x;
+			raw_rms[j] += powf(x, 2);
+
+			if (!isnan(calibrations[j].x0) && !isnan(calibrations[j].y0) &&
+			    !isnan(calibrations[j].x1) && !isnan(calibrations[j].y1)) {
+				float x0 = calibrations[j].x0;
+				float y0 = calibrations[j].y0;
+				float x1 = calibrations[j].x1;
+				float y1 = calibrations[j].y1;
+
+				x = (y0 * (x1 - x) + y1 * (x - x0)) / (x1 - x0);
+			}
+
+			results[j].avg += x;
+			results[j].rms += powf(x, 2);
 		}
 	}
 
 	k_mutex_unlock(&m_lock);
 
 	for (size_t i = 0; i < channels_count; i++) {
+		unsigned ch = CTR_K_CHANNEL_IDX(channels[i]) + 1;
+
+		raw_avg[i] = raw_avg[i] / MAX_SAMPLE_COUNT;
+		raw_rms[i] = sqrtf(raw_rms[i] / MAX_SAMPLE_COUNT);
+
+		LOG_DBG("Channel %u: AVG (raw): %+.1f", ch, raw_avg[i]);
+		LOG_DBG("Channel %u: RMS (raw): %+.1f", ch, raw_rms[i]);
+
 		results[i].avg = results[i].avg / MAX_SAMPLE_COUNT;
 		results[i].rms = sqrtf(results[i].rms / MAX_SAMPLE_COUNT);
 
-		static const int channel_indexes[] = {
-			1, 2, 3, 4, 1, 2, 3, 4,
-		};
-
-		LOG_DBG("Channel %d AVG: %.1f RMS: %.1f", channel_indexes[channels[i]],
-		        results[i].avg, results[i].rms);
+		LOG_DBG("Channel %u: AVG (cal): %+.1f", ch, results[i].avg);
+		LOG_DBG("Channel %u: RMS (cal): %+.1f", ch, results[i].rms);
 	}
 
 	return 0;

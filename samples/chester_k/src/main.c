@@ -7,6 +7,10 @@
 #include <logging/log.h>
 #include <zephyr.h>
 
+/* Standard includes */
+#include <math.h>
+#include <stdbool.h>
+
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 void main(void)
@@ -27,6 +31,13 @@ void main(void)
 		CTR_K_CHANNEL_2_DIFFERENTIAL,
 		CTR_K_CHANNEL_3_DIFFERENTIAL,
 		CTR_K_CHANNEL_4_DIFFERENTIAL,
+	};
+
+	static const struct ctr_k_calibration calibrations[] = {
+		{ .x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN },
+		{ .x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN },
+		{ .x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN },
+		{ .x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN },
 	};
 
 #if 0
@@ -55,7 +66,7 @@ void main(void)
 #endif
 
 		struct ctr_k_result results[ARRAY_SIZE(channels)] = { 0 };
-		ret = ctr_k_measure(dev, channels, ARRAY_SIZE(channels), results);
+		ret = ctr_k_measure(dev, channels, ARRAY_SIZE(channels), calibrations, results);
 		if (ret) {
 			LOG_ERR("Call `ctr_k_measure` failed: %d", ret);
 			k_oops();
