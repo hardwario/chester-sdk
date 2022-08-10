@@ -258,3 +258,38 @@ int ctr_lte_parse_coneval(const char *s, long *result, long *rrc_state, long *en
 
 	return 0;
 }
+
+int ctr_lte_parse_xrecvfrom(const char *s, int *size, char *ip_addr, size_t ip_addr_size)
+{
+	/* #XRECVFROM: 7,"192.168.1.100" */
+
+	char *p = (char *)s;
+
+	if ((p = ctr_lte_tok_pfx(p, "#XRECVFROM: ")) == NULL) {
+		return -EINVAL;
+	}
+
+	bool def;
+	long num;
+	if ((p = ctr_lte_tok_num(p, &def, &num)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_sep(p)) == NULL) {
+		return -EINVAL;
+	}
+
+	if ((p = ctr_lte_tok_str(p, &def, ip_addr, ip_addr_size)) == NULL || !def) {
+		return -EINVAL;
+	}
+
+	if (ctr_lte_tok_end(p) == NULL) {
+		return -EINVAL;
+	}
+
+	if (size != NULL) {
+		*size = num;
+	}
+
+	return 0;
+}

@@ -47,6 +47,10 @@ static K_MUTEX_DEFINE(m_handler_mut);
 static K_MUTEX_DEFINE(m_talk_mut);
 static struct k_poll_signal m_response_sig;
 static void *m_handler_param;
+static atomic_t m_xrecvfrom;
+static atomic_t m_xrecvfrom_started;
+static uint8_t *m_xrecvfrom_buf;
+static size_t m_xrecvfrom_size;
 
 static void process_urc(const char *s)
 {
@@ -110,6 +114,14 @@ static void recv_cb(const char *s)
 {
 	k_mutex_lock(&m_handler_mut, K_FOREVER);
 
+	/* TODO This is very hacky way but in the future, the URC messages
+	   should really have higher priority - it would simplify the logic too */
+	if (strncmp(s, "+CSCON:", 7) == 0) {
+		k_mutex_unlock(&m_handler_mut);
+		process_urc(s);
+		return;
+	}
+
 	if (m_handler_cb == NULL) {
 		k_mutex_unlock(&m_handler_mut);
 		process_urc(s);
@@ -127,6 +139,8 @@ static void recv_cb(const char *s)
 
 static bool response_handler(const char *s, void *param)
 {
+	int ret;
+
 	struct response *response = param;
 
 	size_t len = strlen(s);
@@ -205,7 +219,26 @@ static bool response_handler(const char *s, void *param)
 
 	sys_slist_append(&response->list, &item->node);
 
+	if (atomic_get(&m_xrecvfrom) && strncmp(s, "#XRECVFROM:", 11) == 0) {
+		int size;
+		char ip_addr[45 + 1];
+		ret = ctr_lte_parse_xrecvfrom(s, &size, ip_addr, sizeof(ip_addr));
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_parse_xrecvfrom` failed: %d", ret);
+		} else {
+			ret = ctr_lte_if_recv_raw_start(dev, m_xrecvfrom_buf, m_xrecvfrom_size,
+			                                size);
+			if (ret < 0) {
+				LOG_ERR("Call `ctr_lte_if_recv_raw_start` failed: %d", ret);
+			}
+
+			atomic_set(&m_xrecvfrom_started, true);
+		}
+	}
+
 	LOG_INF("RSP: %s", s);
+
 	return true;
 }
 
@@ -671,7 +704,8 @@ int ctr_lte_talk_at_cgauth(int p1, int *p2, const char *p3, const char *p4)
 		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGAUTH=%d,%d,\"%s\"", p1, *p2, p3);
 
 	} else if (p2 != NULL && p3 != NULL && p4 != NULL) {
-		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGAUTH=%d,%d,\"%s\",\"%s\"", p1, *p2, p3, p4);
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGAUTH=%d,%d,\"%s\",\"%s\"", p1, *p2, p3,
+		                  p4);
 
 	} else {
 		return -EINVAL;
@@ -1090,6 +1124,75 @@ int ctr_lte_talk_at_xpofwarn(int p1, int p2)
 		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
 		return ret;
 	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_xrecvfrom(int p1, int *p2, void *buf, size_t size, size_t *len)
+{
+	int ret;
+
+	k_mutex_lock(&m_talk_mut, K_FOREVER);
+
+	if (p2) {
+		ret = talk_cmd("AT#XRECVFROM=%d,%d", p1, *p2);
+	} else {
+		ret = talk_cmd("AT#XRECVFROM=%d", p1);
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		k_mutex_unlock(&m_talk_mut);
+		return ret;
+	}
+
+	m_xrecvfrom_buf = buf;
+	m_xrecvfrom_size = size;
+
+	atomic_set(&m_xrecvfrom_started, false);
+	atomic_set(&m_xrecvfrom, true);
+
+	struct response response;
+
+	ret = gather_response(RESPONSE_TIMEOUT_L, &response, 1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `gather_response` failed: %d", ret);
+		release_response(&response);
+		atomic_set(&m_xrecvfrom, false);
+		k_mutex_unlock(&m_talk_mut);
+		return ret;
+	}
+
+	if (!atomic_get(&m_xrecvfrom_started)) {
+		release_response(&response);
+		atomic_set(&m_xrecvfrom, false);
+		k_mutex_unlock(&m_talk_mut);
+		return -ENOMSG;
+	}
+
+	ret = ctr_lte_if_recv_raw_poll(dev, RESPONSE_TIMEOUT_S, len);
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_if_recv_raw_poll` failed: %d", ret);
+		atomic_set(&m_xrecvfrom, false);
+		k_mutex_unlock(&m_talk_mut);
+		return ret;
+	}
+
+	atomic_set(&m_xrecvfrom, false);
+
+	LOG_HEXDUMP_DBG(buf, *len, "Read data");
+
+	if (strcmp(response.result, "OK") != 0) {
+		LOG_ERR("Unexpected result: %s", response.result);
+		release_response(&response);
+		k_mutex_unlock(&m_talk_mut);
+		return -ENOMSG;
+	}
+
+	release_response(&response);
+
+	k_mutex_unlock(&m_talk_mut);
 
 	return 0;
 }

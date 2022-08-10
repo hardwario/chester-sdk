@@ -49,6 +49,7 @@ int ctr_lte_talk_at_xbandlock(int p1, const char *p2);
 int ctr_lte_talk_at_xdataprfl(int p1);
 int ctr_lte_talk_at_xnettime(int p1, int *p2);
 int ctr_lte_talk_at_xpofwarn(int p1, int p2);
+int ctr_lte_talk_at_xrecvfrom(int p1, int *p2, void *buf, size_t size, size_t *len);
 int ctr_lte_talk_at_xsendto(const char *p1, int p2, const void *buf, size_t len);
 int ctr_lte_talk_at_xsocketopt(int p1, int p2, int *p3);
 int ctr_lte_talk_at_xsim(int p1);

@@ -16,6 +16,7 @@ int ctr_lte_parse_coneval(const char *s, long *result, long *rrc_state, long *en
                           char *plmn, size_t plmn_size, long *phys_cell_id, long *earfcn,
                           long *band, long *tau_triggered, long *ce_level, long *tx_power,
                           long *tx_repetitions, long *rx_repetitions, long *dl_pathloss);
+int ctr_lte_parse_xrecvfrom(const char *s, int *size, char *ip_addr, size_t ip_addr_size);
 
 #ifdef __cplusplus
 }

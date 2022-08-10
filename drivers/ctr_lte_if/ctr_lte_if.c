@@ -56,6 +56,12 @@ struct ctr_lte_if_data {
 	struct onoff_manager *onoff_mgr;
 	struct ring_buf rx_ring_buf;
 	uint8_t rx_ring_buf_mem[RX_RING_BUF_SIZE];
+	uint8_t *recv_raw_buf;
+	size_t recv_raw_buf_size;
+	size_t recv_raw_req;
+	size_t recv_raw_len;
+	atomic_t recv_raw;
+	struct k_poll_signal recv_raw_done_sig;
 };
 
 static inline const struct ctr_lte_if_config *get_config(const struct device *dev)
@@ -87,8 +93,27 @@ static void rx_receive_work_handler(struct k_work *work)
 	}
 
 	for (char c; ring_buf_get(&data->rx_ring_buf, (uint8_t *)&c, 1) != 0;) {
+		if (atomic_get(&data->recv_raw)) {
+			if (data->recv_raw_req) {
+				if (data->recv_raw_len < data->recv_raw_buf_size) {
+					data->recv_raw_buf[data->recv_raw_len++] = c;
+				}
+
+				if (!--data->recv_raw_req) {
+					k_poll_signal_raise(&data->recv_raw_done_sig, 0);
+					atomic_set(&data->recv_raw, false);
+				}
+			}
+
+			continue;
+		}
+
+		if (c == '\r') {
+			continue;
+		}
+
 		if (!synced) {
-			if (c == '\r' || c == '\n') {
+			if (c == '\n') {
 				synced = true;
 			}
 
@@ -97,14 +122,14 @@ static void rx_receive_work_handler(struct k_work *work)
 			continue;
 		}
 
-		if (c == '\r' || c == '\n') {
+		if (c == '\n') {
 			if (len > 0) {
 				LOG_DBG("RX: %s", buf);
 				if (data->recv_cb != NULL) {
 					data->recv_cb(buf);
 				}
 
-			} else if (c == '\n') {
+			} else {
 				if (data->recv_cb != NULL) {
 					data->recv_cb("");
 				}
@@ -244,6 +269,7 @@ static int ctr_lte_if_init_(const struct device *dev, ctr_lte_recv_cb recv_cb)
 
 	k_poll_signal_init(&get_data(dev)->tx_done_sig);
 	k_poll_signal_init(&get_data(dev)->rx_disabled_sig);
+	k_poll_signal_init(&get_data(dev)->recv_raw_done_sig);
 
 	if (!device_is_ready(get_config(dev)->uart_dev)) {
 		LOG_ERR("Device not ready");
@@ -551,6 +577,65 @@ static int ctr_lte_if_send_raw_(const struct device *dev, const void *buf, size_
 	return 0;
 }
 
+static int ctr_lte_if_recv_raw_start_(const struct device *dev, void *buf, size_t buf_size,
+                                      size_t req)
+{
+	LOG_INF("Requesting %u raw byte(s)", req);
+
+	k_mutex_lock(&get_data(dev)->mut, K_FOREVER);
+
+	if (!atomic_get(&get_data(dev)->enabled)) {
+		k_mutex_unlock(&get_data(dev)->mut);
+		return -EBUSY;
+	}
+
+	k_poll_signal_reset(&get_data(dev)->recv_raw_done_sig);
+
+	get_data(dev)->recv_raw_buf = buf;
+	get_data(dev)->recv_raw_buf_size = buf_size;
+	get_data(dev)->recv_raw_req = req;
+	get_data(dev)->recv_raw_len = 0;
+
+	atomic_set(&get_data(dev)->recv_raw, true);
+
+	k_mutex_unlock(&get_data(dev)->mut);
+
+	return 0;
+}
+
+static int ctr_lte_if_recv_raw_poll_(const struct device *dev, k_timeout_t timeout, size_t *len)
+{
+	int ret;
+
+	k_mutex_lock(&get_data(dev)->mut, K_FOREVER);
+
+	if (!atomic_get(&get_data(dev)->enabled)) {
+		k_mutex_unlock(&get_data(dev)->mut);
+		return -EBUSY;
+	}
+
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+		                         &get_data(dev)->recv_raw_done_sig),
+	};
+
+	ret = k_poll(events, ARRAY_SIZE(events), timeout);
+	if (ret < 0) {
+		LOG_ERR("Call `k_poll` failed: %d", ret);
+		atomic_set(&get_data(dev)->recv_raw, false);
+		k_mutex_unlock(&get_data(dev)->mut);
+		return ret;
+	}
+
+	atomic_set(&get_data(dev)->recv_raw, false);
+
+	*len = get_data(dev)->recv_raw_len;
+
+	k_mutex_unlock(&get_data(dev)->mut);
+
+	return 0;
+}
+
 static int ctr_lte_if_drv_init(const struct device *dev)
 {
 	int ret;
@@ -594,6 +679,8 @@ static const struct ctr_lte_if_driver_api ctr_lte_if_driver_api = {
 	.disable = ctr_lte_if_disable_,
 	.send = ctr_lte_if_send_,
 	.send_raw = ctr_lte_if_send_raw_,
+	.recv_raw_start = ctr_lte_if_recv_raw_start_,
+	.recv_raw_poll = ctr_lte_if_recv_raw_poll_,
 };
 
 #define CTR_LTE_IF_INIT(n)                                                                         \

@@ -65,6 +65,8 @@ struct send_msgq_data {
 	int port;
 	void *buf;
 	size_t len;
+	void *response;
+	size_t response_size;
 };
 
 struct send_msgq_item {
@@ -900,9 +902,11 @@ static int eval(int retries, k_timeout_t delay, struct ctr_lte_eval *eval)
 	return err;
 }
 
-static int send_once(const struct send_msgq_data *data)
+static int send_once(const struct send_msgq_data *data, size_t *response_len)
 {
 	int ret;
+
+	*response_len = 0;
 
 	ret = wake_up();
 
@@ -911,7 +915,7 @@ static int send_once(const struct send_msgq_data *data)
 		return ret;
 	}
 
-	ret = ctr_lte_talk_at_xsocketopt(1, 50, NULL);
+	ret = ctr_lte_talk_at_xsocketopt(1, data->response ? 52 : 50, NULL);
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lte_talk_at_xsocketopt` failed: %d", ret);
@@ -943,6 +947,16 @@ static int send_once(const struct send_msgq_data *data)
 		return ret;
 	}
 
+	if (data->response) {
+		ret = ctr_lte_talk_at_xrecvfrom(10, NULL, data->response, data->response_size,
+		                                response_len);
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lte_talk_at_xrecvfrom` failed: %d", ret);
+			return ret;
+		}
+	}
+
 	ret = ctr_lte_talk_at_xsleep(2);
 
 	if (ret < 0) {
@@ -955,7 +969,8 @@ static int send_once(const struct send_msgq_data *data)
 	return 0;
 }
 
-static int send(int retries, k_timeout_t delay, const struct send_msgq_data *data)
+static int send(int retries, k_timeout_t delay, const struct send_msgq_data *data,
+                size_t *response_len)
 {
 	int ret;
 	int err = 0;
@@ -980,7 +995,7 @@ static int send(int retries, k_timeout_t delay, const struct send_msgq_data *dat
 			return ret;
 		}
 
-		ret = send_once(data);
+		ret = send_once(data, response_len);
 		err = ret;
 
 		if (ret == 0) {
@@ -1260,7 +1275,8 @@ static int process_req_send(const struct send_msgq_item *item)
 		}
 	}
 
-	ret = send(SEND_RETRY_COUNT, SEND_RETRY_DELAY, &item->data);
+	size_t response_len;
+	ret = send(SEND_RETRY_COUNT, SEND_RETRY_DELAY, &item->data, &response_len);
 
 	k_free(item->data.buf);
 
@@ -1277,6 +1293,8 @@ static int process_req_send(const struct send_msgq_item *item)
 	}
 
 	data.send_ok.corr_id = item->corr_id;
+	data.send_ok.response = item->data.response;
+	data.send_ok.response_len = response_len;
 
 	if (m_event_cb != NULL) {
 		m_event_cb(CTR_LTE_EVENT_SEND_OK, &data, m_event_user_data);
@@ -1377,8 +1395,10 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 	SETTINGS_SET("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
-	SETTINGS_SET("nb-iot-mode", &m_config_interim.nb_iot_mode, sizeof(m_config_interim.nb_iot_mode));
-	SETTINGS_SET("lte-m-mode", &m_config_interim.lte_m_mode, sizeof(m_config_interim.lte_m_mode));
+	SETTINGS_SET("nb-iot-mode", &m_config_interim.nb_iot_mode,
+	             sizeof(m_config_interim.nb_iot_mode));
+	SETTINGS_SET("lte-m-mode", &m_config_interim.lte_m_mode,
+	             sizeof(m_config_interim.lte_m_mode));
 	SETTINGS_SET("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
 	SETTINGS_SET("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	SETTINGS_SET("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
@@ -1410,8 +1430,10 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 	EXPORT_FUNC("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
-	EXPORT_FUNC("nb-iot-mode", &m_config_interim.nb_iot_mode, sizeof(m_config_interim.nb_iot_mode));
-	EXPORT_FUNC("lte-m-mode", &m_config_interim.lte_m_mode, sizeof(m_config_interim.lte_m_mode));
+	EXPORT_FUNC("nb-iot-mode", &m_config_interim.nb_iot_mode,
+	            sizeof(m_config_interim.nb_iot_mode));
+	EXPORT_FUNC("lte-m-mode", &m_config_interim.lte_m_mode,
+	            sizeof(m_config_interim.lte_m_mode));
 	EXPORT_FUNC("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
 	EXPORT_FUNC("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	EXPORT_FUNC("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
@@ -2067,7 +2089,9 @@ int ctr_lte_send(const struct ctr_lte_send_opts *opts, const void *buf, size_t l
 		.data = { .ttl = opts->ttl,
 		          .port = opts->port,
 		          .buf = p,
-		          .len = len, },
+		          .len = len,
+		          .response = opts->response,
+		          .response_size = opts->response_size },
 	};
 
 	memcpy(item.data.addr, opts->addr, sizeof(item.data.addr));

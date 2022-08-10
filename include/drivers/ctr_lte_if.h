@@ -1,7 +1,9 @@
 #ifndef CHESTER_INCLUDE_DRIVERS_CTR_LTE_IF_H_
 #define CHESTER_INCLUDE_DRIVERS_CTR_LTE_IF_H_
 
+/* Zephyr includes */
 #include <device.h>
+#include <zephyr.h>
 
 /* Standard includes */
 #include <stdarg.h>
@@ -21,6 +23,10 @@ typedef int (*ctr_lte_if_api_enable)(const struct device *dev);
 typedef int (*ctr_lte_if_api_disable)(const struct device *dev);
 typedef int (*ctr_lte_if_api_send)(const struct device *dev, const char *fmt, va_list ap);
 typedef int (*ctr_lte_if_api_send_raw)(const struct device *dev, const void *buf, size_t len);
+typedef int (*ctr_lte_if_api_recv_raw_start)(const struct device *dev, void *buf, size_t buf_size,
+                                             size_t req);
+typedef int (*ctr_lte_if_api_recv_raw_poll)(const struct device *dev, k_timeout_t timeout,
+                                            size_t *len);
 
 struct ctr_lte_if_driver_api {
 	ctr_lte_if_api_init init;
@@ -30,6 +36,8 @@ struct ctr_lte_if_driver_api {
 	ctr_lte_if_api_disable disable;
 	ctr_lte_if_api_send send;
 	ctr_lte_if_api_send_raw send_raw;
+	ctr_lte_if_api_recv_raw_start recv_raw_start;
+	ctr_lte_if_api_recv_raw_poll recv_raw_poll;
 };
 
 static inline int ctr_lte_if_init(const struct device *dev, ctr_lte_recv_cb recv_cb)
@@ -79,6 +87,22 @@ static inline int ctr_lte_if_send_raw(const struct device *dev, const void *buf,
 	const struct ctr_lte_if_driver_api *api = (const struct ctr_lte_if_driver_api *)dev->api;
 
 	return api->send_raw(dev, buf, len);
+}
+
+static inline int ctr_lte_if_recv_raw_start(const struct device *dev, void *buf, size_t buf_size,
+                                            size_t req)
+{
+	const struct ctr_lte_if_driver_api *api = (const struct ctr_lte_if_driver_api *)dev->api;
+
+	return api->recv_raw_start(dev, buf, buf_size, req);
+}
+
+static inline int ctr_lte_if_recv_raw_poll(const struct device *dev, k_timeout_t timeout,
+                                           size_t *len)
+{
+	const struct ctr_lte_if_driver_api *api = (const struct ctr_lte_if_driver_api *)dev->api;
+
+	return api->recv_raw_poll(dev, timeout, len);
 }
 
 #ifdef __cplusplus

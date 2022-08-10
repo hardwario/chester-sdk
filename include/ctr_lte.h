@@ -62,6 +62,8 @@ struct ctr_lte_data_detach_err {
 
 struct ctr_lte_data_send_ok {
 	int corr_id;
+	const void *response;
+	size_t response_len;
 };
 
 struct ctr_lte_data_send_err {
@@ -97,6 +99,8 @@ struct ctr_lte_send_opts {
 	int64_t ttl;
 	uint8_t addr[4];
 	int port;
+	void *response;
+	size_t response_size;
 };
 
 #define CTR_LTE_SEND_OPTS_DEFAULTS                                                                 \
