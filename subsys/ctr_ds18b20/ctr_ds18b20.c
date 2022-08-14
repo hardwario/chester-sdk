@@ -65,7 +65,7 @@ static void w1_search_callback(struct w1_rom rom, void *cb_arg)
 		LOG_DBG("Serial number: %llu", serial_number);
 
 		ret = sensor_attr_set(m_sensors[m_count].dev, SENSOR_CHAN_ALL,
-		                      SENSOR_ATTR_W1_ROM_ID, &val);
+		                      SENSOR_ATTR_W1_ROM, &val);
 		if (ret) {
 			LOG_WRN("Call `sensor_attr_set` failed: %d", ret);
 		}
