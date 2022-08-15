@@ -31,25 +31,25 @@ struct ctr_buf {
 	size_t len;
 };
 
-int ctr_buf_init(struct ctr_buf *ctx, void *mem, size_t size);
-uint8_t *ctr_buf_get_mem(struct ctr_buf *ctx);
-size_t ctr_buf_get_free(struct ctr_buf *ctx);
-size_t ctr_buf_get_used(struct ctr_buf *ctx);
-void ctr_buf_reset(struct ctr_buf *ctx);
-void ctr_buf_fill(struct ctr_buf *ctx, int val);
-int ctr_buf_seek(struct ctr_buf *ctx, size_t pos);
-int ctr_buf_append_mem(struct ctr_buf *ctx, const uint8_t *mem, size_t len);
-int ctr_buf_append_str(struct ctr_buf *ctx, const char *str);
-int ctr_buf_append_char(struct ctr_buf *ctx, char val);
-int ctr_buf_append_float(struct ctr_buf *ctx, float val);
-int ctr_buf_append_s8(struct ctr_buf *ctx, int8_t val);
-int ctr_buf_append_s16(struct ctr_buf *ctx, int16_t val);
-int ctr_buf_append_s32(struct ctr_buf *ctx, int32_t val);
-int ctr_buf_append_s64(struct ctr_buf *ctx, int64_t val);
-int ctr_buf_append_u8(struct ctr_buf *ctx, uint8_t val);
-int ctr_buf_append_u16(struct ctr_buf *ctx, uint16_t val);
-int ctr_buf_append_u32(struct ctr_buf *ctx, uint32_t val);
-int ctr_buf_append_u64(struct ctr_buf *ctx, uint64_t val);
+int ctr_buf_init(struct ctr_buf *buf, void *mem, size_t size);
+uint8_t *ctr_buf_get_mem(struct ctr_buf *buf);
+size_t ctr_buf_get_free(struct ctr_buf *buf);
+size_t ctr_buf_get_used(struct ctr_buf *buf);
+void ctr_buf_reset(struct ctr_buf *buf);
+void ctr_buf_fill(struct ctr_buf *buf, int val);
+int ctr_buf_seek(struct ctr_buf *buf, size_t pos);
+int ctr_buf_append_mem(struct ctr_buf *buf, const uint8_t *mem, size_t len);
+int ctr_buf_append_str(struct ctr_buf *buf, const char *str);
+int ctr_buf_append_char(struct ctr_buf *buf, char val);
+int ctr_buf_append_s8(struct ctr_buf *buf, int8_t val);
+int ctr_buf_append_s16(struct ctr_buf *buf, int16_t val);
+int ctr_buf_append_s32(struct ctr_buf *buf, int32_t val);
+int ctr_buf_append_s64(struct ctr_buf *buf, int64_t val);
+int ctr_buf_append_u8(struct ctr_buf *buf, uint8_t val);
+int ctr_buf_append_u16(struct ctr_buf *buf, uint16_t val);
+int ctr_buf_append_u32(struct ctr_buf *buf, uint32_t val);
+int ctr_buf_append_u64(struct ctr_buf *buf, uint64_t val);
+int ctr_buf_append_float(struct ctr_buf *buf, float val);
 
 #ifdef __cplusplus
 }
