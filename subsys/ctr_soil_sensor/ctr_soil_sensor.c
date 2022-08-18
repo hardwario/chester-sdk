@@ -278,7 +278,7 @@ int ctr_soil_sensor_read(int index, uint64_t *serial_number, float *temperature,
 
 	k_mutex_lock(&m_lock, K_FOREVER);
 
-	if (index < 0 || index >= m_count) {
+	if (index < 0 || index >= m_count || !m_count) {
 		k_mutex_unlock(&m_lock);
 		return -ERANGE;
 	}
