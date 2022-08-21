@@ -5,6 +5,7 @@ config CTR_SOIL_SENSOR
 	select DS28E17
 	select GPIO
 	select I2C
+	select REQUIRES_FULL_LIBC
 	select W1_DS2484
 
 if CTR_SOIL_SENSOR

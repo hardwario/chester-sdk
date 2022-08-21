@@ -1,0 +1,2 @@
+config SHIELD_CTR_MACHINE_PROBE
+	def_bool $(shields_list_contains,ctr_machine_probe)

@@ -1,0 +1,17 @@
+config CTR_MACHINE_PROBE
+	bool "CTR_MACHINE_PROBE"
+	select CBPRINTF_FP_SUPPORT if CTR_MACHINE_PROBE_DBG
+	select CTR_W1
+	select DS28E17
+	select GPIO
+	select I2C
+	select REQUIRES_FULL_LIBC
+	select W1_DS2484
+
+if CTR_MACHINE_PROBE
+
+module = CTR_MACHINE_PROBE
+module-str = CHESTER Machine Probe Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_MACHINE_PROBE
