@@ -630,7 +630,7 @@ int ctr_lrw_talk_at_utx(const void *payload, size_t payload_len)
 		return ret;
 	}
 
-	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+UTX %u\r%s", payload_len, hex);
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_L, "AT+UTX %u\r%s", payload_len, hex);
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
@@ -666,7 +666,7 @@ int ctr_lrw_talk_at_ctx(const void *payload, size_t payload_len)
 		return ret;
 	}
 
-	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CTX %u\r%s", payload_len, hex);
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_L, "AT+CTX %u\r%s", payload_len, hex);
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
@@ -702,7 +702,7 @@ int ctr_lrw_talk_at_putx(uint8_t port, const void *payload, size_t payload_len)
 		return ret;
 	}
 
-	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+PUTX %u,%u\r%s", port, payload_len, hex);
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_L, "AT+PUTX %u,%u\r%s", port, payload_len, hex);
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
@@ -738,7 +738,7 @@ int ctr_lrw_talk_at_pctx(uint8_t port, const void *payload, size_t payload_len)
 		return ret;
 	}
 
-	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+PCTX %u,%u\r%s", port, payload_len, hex);
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_L, "AT+PCTX %u,%u\r%s", port, payload_len, hex);
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
