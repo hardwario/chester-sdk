@@ -1010,6 +1010,11 @@ int ctr_lrw_join(int *corr_id)
 		return 0;
 	}
 
+	if (m_config.mode != MODE_OTAA) {
+		LOG_WRN("Not in OTAA mode - ignoring");
+		return 0;
+	}
+
 	struct cmd_msgq_item item = {
 		.corr_id = (int)atomic_inc(&m_corr_id),
 		.req = CMD_MSGQ_REQ_JOIN,
