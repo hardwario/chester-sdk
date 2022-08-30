@@ -72,14 +72,14 @@ enum ctr_s1_led_pattern {
 	CTR_S1_LED_PATTERN_8_HZ_1_1 = 6,
 };
 
-enum ctr_s1_pir_sensitivity {
+enum ctr_s1_motion_sensitivity {
 	CTR_S1_PIR_SENSITIVITY_LOW = 0,
 	CTR_S1_PIR_SENSITIVITY_MEDIUM = 1,
 	CTR_S1_PIR_SENSITIVITY_HIGH = 2,
 	CTR_S1_PIR_SENSITIVITY_VERY_HIGH = 3
 };
 
-enum ctr_s1_pir_blind_time {
+enum ctr_s1_motion_blind_time {
 	CTR_S1_PIR_BLIND_TIME_0_5S = 0,
 	CTR_S1_PIR_BLIND_TIME_1_0S = 1,
 	CTR_S1_PIR_BLIND_TIME_1_5S = 2,
@@ -100,15 +100,15 @@ enum ctr_s1_pir_blind_time {
 
 enum ctr_s1_event {
 	CTR_S1_EVENT_DEVICE_RESET = 15,
-	CTR_S1_EVENT_PIR_MOTION = 12,
+	CTR_S1_EVENT_MOTION_DETECTED = 12,
 	CTR_S1_EVENT_ALTITUDE_CONVERTED = 11,
 	CTR_S1_EVENT_PRESSURE_CONVERTED = 10,
 	CTR_S1_EVENT_ILLUMINANCE_CONVERTED = 9,
 	CTR_S1_EVENT_HUMIDITY_CONVERTED = 8,
 	CTR_S1_EVENT_TEMPERATURE_CONVERTED = 7,
-	CTR_S1_EVENT_CO2_CALIBRATION_ABC_DONE = 6,
-	CTR_S1_EVENT_CO2_CALIBRATION_TARGET_DONE = 5,
-	CTR_S1_EVENT_CO2_CONVERTED = 4,
+	CTR_S1_EVENT_CO2_ABC_CALIB_DONE = 6,
+	CTR_S1_EVENT_CO2_TGT_CALIB_DONE = 5,
+	CTR_S1_EVENT_CO2_CONC_CONVERTED = 4,
 	CTR_S1_EVENT_BUTTON_PRESSED = 3,
 	CTR_S1_EVENT_BUTTON_CLICKED = 2,
 	CTR_S1_EVENT_BUTTON_HOLD = 1,
@@ -146,22 +146,18 @@ typedef int (*ctr_s1_api_set_buzzer)(const struct device *dev,
                                      const struct ctr_s1_buzzer_param *param);
 typedef int (*ctr_s1_api_set_led)(const struct device *dev, enum ctr_s1_led_channel channel,
                                   const struct ctr_s1_led_param *param);
-
-typedef int (*ctr_s1_api_temperature_read)(const struct device *dev, float *temperature);
-typedef int (*ctr_s1_api_humidity_read)(const struct device *dev, float *humidity);
-typedef int (*ctr_s1_api_pir_motion_read)(const struct device *dev, int *pir_motion_count);
-typedef int (*ctr_s1_api_pressure_read)(const struct device *dev, float *pressure);
-typedef int (*ctr_s1_api_altitude_read)(const struct device *dev, float *altitude);
-typedef int (*ctr_s1_api_co2_concentration_read)(const struct device *dev,
-                                                 float *co2_concentration);
-typedef int (*ctr_s1_api_illuminance_read)(const struct device *dev, float *illuminance);
-
-typedef int (*ctr_s1_api_calibrate_target_co2_concentration)(const struct device *dev,
-                                                             float target_co2_concentration);
-typedef int (*ctr_s1_api_set_pir_sensitivity)(const struct device *dev,
-                                              enum ctr_s1_pir_sensitivity sensitivity);
-typedef int (*ctr_s1_api_set_pir_blind_time)(const struct device *dev,
-                                             enum ctr_s1_pir_blind_time blind_time);
+typedef int (*ctr_s1_api_set_motion_sensitivity)(const struct device *dev,
+                                                 enum ctr_s1_motion_sensitivity motion_sensitivity);
+typedef int (*ctr_s1_api_set_motion_blind_time)(const struct device *dev,
+                                                enum ctr_s1_motion_blind_time motion_blind_time);
+typedef int (*ctr_s1_api_read_motion_count)(const struct device *dev, int *motion_count);
+typedef int (*ctr_s1_api_read_temperature)(const struct device *dev, float *temperature);
+typedef int (*ctr_s1_api_read_humidity)(const struct device *dev, float *humidity);
+typedef int (*ctr_s1_api_read_illuminance)(const struct device *dev, float *illuminance);
+typedef int (*ctr_s1_api_read_altitude)(const struct device *dev, float *altitude);
+typedef int (*ctr_s1_api_read_pressure)(const struct device *dev, float *pressure);
+typedef int (*ctr_s1_api_read_co2_conc)(const struct device *dev, float *co2_conc);
+typedef int (*ctr_s1_api_calib_tgt_co2_conc)(const struct device *dev, float tgt_co2_conc);
 
 struct ctr_s1_driver_api {
 	ctr_s1_api_set_handler set_handler;
@@ -176,16 +172,16 @@ struct ctr_s1_driver_api {
 	ctr_s1_api_get_product_name get_product_name;
 	ctr_s1_api_set_buzzer set_buzzer;
 	ctr_s1_api_set_led set_led;
-	ctr_s1_api_temperature_read temperature_read;
-	ctr_s1_api_humidity_read humidity_read;
-	ctr_s1_api_pir_motion_read pir_motion_read;
-	ctr_s1_api_pressure_read pressure_read;
-	ctr_s1_api_altitude_read altitude_read;
-	ctr_s1_api_illuminance_read illuminance_read;
-	ctr_s1_api_co2_concentration_read co2_concentration_read;
-	ctr_s1_api_calibrate_target_co2_concentration calibrate_target_co2_concentration;
-	ctr_s1_api_set_pir_sensitivity set_pir_sensitivity;
-	ctr_s1_api_set_pir_blind_time set_pir_blind_time;
+	ctr_s1_api_set_motion_sensitivity set_motion_sensitivity;
+	ctr_s1_api_set_motion_blind_time set_motion_blind_time;
+	ctr_s1_api_read_motion_count read_motion_count;
+	ctr_s1_api_read_temperature read_temperature;
+	ctr_s1_api_read_humidity read_humidity;
+	ctr_s1_api_read_illuminance read_illuminance;
+	ctr_s1_api_read_altitude read_altitude;
+	ctr_s1_api_read_pressure read_pressure;
+	ctr_s1_api_read_co2_conc read_co2_conc;
+	ctr_s1_api_calib_tgt_co2_conc calib_tgt_co2_conc;
 };
 
 static inline int ctr_s1_set_handler(const struct device *dev, ctr_s1_user_cb user_cb,
@@ -275,77 +271,76 @@ static inline int ctr_s1_set_led(const struct device *dev, enum ctr_s1_led_chann
 	return api->set_led(dev, channel, param);
 }
 
-static inline int ctr_s1_temperature_read(const struct device *dev, float *temperature)
+static inline int ctr_s1_set_motion_sensitivity(const struct device *dev,
+                                                enum ctr_s1_motion_sensitivity motion_sensitivity)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->temperature_read(dev, temperature);
+	return api->set_motion_sensitivity(dev, motion_sensitivity);
 }
 
-static inline int ctr_s1_humidity_read(const struct device *dev, float *humidity)
+static inline int ctr_s1_set_motion_blind_time(const struct device *dev,
+                                               enum ctr_s1_motion_blind_time motion_blind_time)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->humidity_read(dev, humidity);
+	return api->set_motion_blind_time(dev, motion_blind_time);
 }
 
-static inline int ctr_s1_pir_motion_read(const struct device *dev, int *pir_motion_count)
+static inline int ctr_s1_read_motion_count(const struct device *dev, int *motion_count)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->pir_motion_read(dev, pir_motion_count);
+	return api->read_motion_count(dev, motion_count);
 }
 
-static inline int ctr_s1_co2_concentration_read(const struct device *dev, float *co2)
+static inline int ctr_s1_read_temperature(const struct device *dev, float *temperature)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->co2_concentration_read(dev, co2);
+	return api->read_temperature(dev, temperature);
 }
 
-static inline int ctr_s1_pressure_read(const struct device *dev, float *pressure)
+static inline int ctr_s1_read_humidity(const struct device *dev, float *humidity)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->pressure_read(dev, pressure);
+	return api->read_humidity(dev, humidity);
 }
 
-static inline int ctr_s1_altitude_read(const struct device *dev, float *altitude)
+static inline int ctr_s1_read_illuminance(const struct device *dev, float *illuminance)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->altitude_read(dev, altitude);
+	return api->read_illuminance(dev, illuminance);
 }
 
-static inline int ctr_s1_illuminance_read(const struct device *dev, float *illuminance)
+static inline int ctr_s1_read_altitude(const struct device *dev, float *altitude)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->illuminance_read(dev, illuminance);
+	return api->read_altitude(dev, altitude);
 }
 
-static inline int ctr_s1_calibrate_target_co2_concentration(const struct device *dev,
-                                                            float target_co2_concentration)
+static inline int ctr_s1_read_pressure(const struct device *dev, float *pressure)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->calibrate_target_co2_concentration(dev, target_co2_concentration);
+	return api->read_pressure(dev, pressure);
 }
 
-static inline int ctr_s1_set_pir_sensitivity(const struct device *dev,
-                                             enum ctr_s1_pir_sensitivity sensitivity)
+static inline int ctr_s1_read_co2_conc(const struct device *dev, float *co2_conc)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->set_pir_sensitivity(dev, sensitivity);
+	return api->read_co2_conc(dev, co2_conc);
 }
 
-static inline int ctr_s1_set_pir_blind_time(const struct device *dev,
-                                            enum ctr_s1_pir_blind_time blind_time)
+static inline int ctr_s1_calib_tgt_co2_conc(const struct device *dev, float tgt_co2_conc)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->set_pir_blind_time(dev, blind_time);
+	return api->calib_tgt_co2_conc(dev, tgt_co2_conc);
 }
 
 #ifdef __cplusplus

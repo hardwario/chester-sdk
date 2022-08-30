@@ -336,6 +336,65 @@ static int ctr_s1_set_led_(const struct device *dev, enum ctr_s1_led_channel cha
 	return 0;
 }
 
+static int ctr_s1_set_motion_sensitivity_(const struct device *dev,
+                                          enum ctr_s1_motion_sensitivity motion_sensitivity)
+{
+	int ret;
+
+	ret = write(dev, REG_PIRSENS, motion_sensitivity);
+	if (ret) {
+		LOG_ERR("Call `write` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int ctr_s1_set_motion_blind_time_(const struct device *dev,
+                                         enum ctr_s1_motion_blind_time motion_blind_time)
+{
+	int ret;
+
+	ret = write(dev, REG_PIRBLTIME, motion_blind_time);
+	if (ret) {
+		LOG_ERR("Call `write` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int ctr_s1_read_motion_count_(const struct device *dev, int *motion_count)
+{
+	int ret;
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	*motion_count = 0;
+
+	int16_t reg_pircount0;
+	ret = read(dev, REG_PIRCOUNT0, &reg_pircount0);
+	if (ret) {
+		LOG_ERR("Call `read` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	int16_t reg_pircount1;
+	ret = read(dev, REG_PIRCOUNT1, &reg_pircount1);
+	if (ret) {
+		LOG_ERR("Call `read` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	*motion_count = reg_pircount1 << 16 | reg_pircount0;
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return 0;
+}
+
 #define WAIT_FOR_SIGNAL()                                                                          \
 	do {                                                                                       \
 		struct k_poll_event events[] = {                                                   \
@@ -355,282 +414,7 @@ static int ctr_s1_set_led_(const struct device *dev, enum ctr_s1_led_channel cha
 		k_poll_signal_reset(&get_data(dev)->sig);                                          \
 	} while (0)
 
-static int ctr_s1_pir_motion_read_(const struct device *dev, int *pir_motion_count)
-{
-	int ret;
-
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
-	*pir_motion_count = 0;
-
-	int16_t reg_pircount0;
-	ret = read(dev, REG_PIRCOUNT0, &reg_pircount0);
-	if (ret) {
-		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	int16_t reg_pircount1;
-	ret = read(dev, REG_PIRCOUNT1, &reg_pircount1);
-	if (ret) {
-		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	*pir_motion_count = reg_pircount1 << 16 | reg_pircount0;
-
-	k_mutex_unlock(&get_data(dev)->lock);
-
-	return 0;
-}
-
-static int ctr_s1_calibrate_target_co2_concentration_(const struct device *dev,
-                                                      float target_co2_concentration)
-{
-	int ret;
-
-	uint16_t reg_co2caltgt = target_co2_concentration;
-
-	ret = write(dev, REG_CO2CALTGT, reg_co2caltgt);
-	if (ret) {
-		LOG_ERR("Call `write` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-static int ctr_s1_set_pir_sensitivity_(const struct device *dev,
-                                       enum ctr_s1_pir_sensitivity sensitivity)
-{
-	int ret;
-
-	ret = write(dev, REG_PIRSENS, sensitivity);
-	if (ret) {
-		LOG_ERR("Call `write` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-static int ctr_s1_set_pir_blind_time_(const struct device *dev,
-                                      enum ctr_s1_pir_blind_time blind_time)
-{
-	int ret;
-
-	ret = write(dev, REG_PIRBLTIME, blind_time);
-	if (ret) {
-		LOG_ERR("Call `write` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-static int ctr_s1_illuminance_read_(const struct device *dev, float *illuminance)
-{
-	int ret;
-
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
-	*illuminance = NAN;
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -ENODEV;
-	}
-
-	/* Start measurement */
-	ret = write(dev, REG_MEASURE, 0x0008);
-	if (ret) {
-		LOG_ERR("Call `write` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	WAIT_FOR_SIGNAL();
-
-	/* Read converted data */
-	int16_t reg_illum0;
-	int16_t reg_illum1;
-	ret = read(dev, REG_ILLUM0, &reg_illum0);
-	if (ret) {
-		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	ret = read(dev, REG_ILLUM1, &reg_illum1);
-	if (ret) {
-		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	if (reg_illum0 == UINT16_MAX && reg_illum1 == UINT16_MAX) {
-		LOG_ERR("Measurement error");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
-	}
-
-	*illuminance = reg_illum1 << 16 | reg_illum0;
-
-	k_mutex_unlock(&get_data(dev)->lock);
-
-	return 0;
-}
-
-static int ctr_s1_pressure_read_(const struct device *dev, float *pressure)
-{
-	int ret;
-
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
-	*pressure = NAN;
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -ENODEV;
-	}
-
-	/* Start measurement */
-	ret = write(dev, REG_MEASURE, 0x0010);
-	if (ret) {
-		LOG_ERR("Call `write` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	WAIT_FOR_SIGNAL();
-
-	/* Read converted data */
-	uint16_t reg_pressure0;
-	uint16_t reg_pressure1;
-	ret = read(dev, REG_PRESSURE0, &reg_pressure0);
-	if (ret) {
-		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	ret = read(dev, REG_PRESSURE1, &reg_pressure1);
-	if (ret) {
-		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	if (reg_pressure0 == INT16_MAX && reg_pressure1 == INT16_MAX) {
-		LOG_ERR("Measurement error");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
-	}
-
-	*pressure = reg_pressure1 << 16 | reg_pressure0;
-
-	k_mutex_unlock(&get_data(dev)->lock);
-
-	return 0;
-}
-
-static int ctr_s1_altitude_read_(const struct device *dev, float *altitude)
-{
-	int ret;
-
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
-	*altitude = NAN;
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -ENODEV;
-	}
-
-	/* Start measurement */
-	ret = write(dev, REG_MEASURE, 0x0020);
-	if (ret) {
-		LOG_ERR("Call `write` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	WAIT_FOR_SIGNAL();
-
-	/* Read converted data */
-	int16_t reg_altitude;
-	ret = read(dev, REG_ALTITUDE, (uint16_t *)&reg_altitude);
-	if (ret) {
-		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	if (reg_altitude == INT16_MAX) {
-		LOG_ERR("Measurement error");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
-	}
-
-	*altitude = reg_altitude;
-
-	k_mutex_unlock(&get_data(dev)->lock);
-
-	return 0;
-}
-
-static int ctr_s1_co2_concentration_read_(const struct device *dev, float *co2_concentration)
-{
-	int ret;
-
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
-	*co2_concentration = NAN;
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -ENODEV;
-	}
-
-	/* Start measurement */
-	ret = write(dev, REG_MEASURE, 0x0001);
-	if (ret) {
-		LOG_ERR("Call `write` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	WAIT_FOR_SIGNAL();
-
-	/* Read converted data */
-	uint16_t reg_co2conc;
-	ret = read(dev, REG_CO2CONC, &reg_co2conc);
-	if (ret) {
-		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	}
-
-	if (reg_co2conc == UINT16_MAX) {
-		LOG_ERR("Measurement error");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
-	}
-
-	*co2_concentration = reg_co2conc;
-
-	k_mutex_unlock(&get_data(dev)->lock);
-
-	return 0;
-}
-
-static int ctr_s1_temperature_read_(const struct device *dev, float *temperature)
+static int ctr_s1_read_temperature_(const struct device *dev, float *temperature)
 {
 	int ret;
 
@@ -676,7 +460,7 @@ static int ctr_s1_temperature_read_(const struct device *dev, float *temperature
 	return 0;
 }
 
-static int ctr_s1_humidity_read_(const struct device *dev, float *humidity)
+static int ctr_s1_read_humidity_(const struct device *dev, float *humidity)
 {
 	int ret;
 
@@ -708,7 +492,7 @@ static int ctr_s1_humidity_read_(const struct device *dev, float *humidity)
 		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
-	if (reg_humidity == INT16_MAX) {
+	if (reg_humidity == UINT16_MAX) {
 		LOG_ERR("Measurement error");
 		k_mutex_unlock(&get_data(dev)->lock);
 		return -EINVAL;
@@ -721,7 +505,222 @@ static int ctr_s1_humidity_read_(const struct device *dev, float *humidity)
 	return 0;
 }
 
+static int ctr_s1_read_illuminance_(const struct device *dev, float *illuminance)
+{
+	int ret;
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	*illuminance = NAN;
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -ENODEV;
+	}
+
+	/* Start measurement */
+	ret = write(dev, REG_MEASURE, 0x0008);
+	if (ret) {
+		LOG_ERR("Call `write` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	WAIT_FOR_SIGNAL();
+
+	/* Read converted data */
+	int16_t reg_illum0;
+	ret = read(dev, REG_ILLUM0, &reg_illum0);
+	if (ret) {
+		LOG_ERR("Call `read` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	int16_t reg_illum1;
+	ret = read(dev, REG_ILLUM1, &reg_illum1);
+	if (ret) {
+		LOG_ERR("Call `read` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	if (reg_illum0 == UINT16_MAX && reg_illum1 == UINT16_MAX) {
+		LOG_ERR("Measurement error");
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -EINVAL;
+	}
+
+	*illuminance = reg_illum1 << 16 | reg_illum0;
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return 0;
+}
+
+static int ctr_s1_read_altitude_(const struct device *dev, float *altitude)
+{
+	int ret;
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	*altitude = NAN;
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -ENODEV;
+	}
+
+	/* Start measurement */
+	ret = write(dev, REG_MEASURE, 0x0020);
+	if (ret) {
+		LOG_ERR("Call `write` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	WAIT_FOR_SIGNAL();
+
+	/* Read converted data */
+	int16_t reg_altitude;
+	ret = read(dev, REG_ALTITUDE, (uint16_t *)&reg_altitude);
+	if (ret) {
+		LOG_ERR("Call `read` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	if (reg_altitude == INT16_MAX) {
+		LOG_ERR("Measurement error");
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -EINVAL;
+	}
+
+	*altitude = reg_altitude;
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return 0;
+}
+
+static int ctr_s1_read_pressure_(const struct device *dev, float *pressure)
+{
+	int ret;
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	*pressure = NAN;
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -ENODEV;
+	}
+
+	/* Start measurement */
+	ret = write(dev, REG_MEASURE, 0x0010);
+	if (ret) {
+		LOG_ERR("Call `write` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	WAIT_FOR_SIGNAL();
+
+	/* Read converted data */
+	uint16_t reg_pressure0;
+	ret = read(dev, REG_PRESSURE0, &reg_pressure0);
+	if (ret) {
+		LOG_ERR("Call `read` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	uint16_t reg_pressure1;
+	ret = read(dev, REG_PRESSURE1, &reg_pressure1);
+	if (ret) {
+		LOG_ERR("Call `read` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	if (reg_pressure0 == UINT16_MAX && reg_pressure1 == UINT16_MAX) {
+		LOG_ERR("Measurement error");
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -EINVAL;
+	}
+
+	*pressure = reg_pressure1 << 16 | reg_pressure0;
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return 0;
+}
+
+static int ctr_s1_read_co2_conc_(const struct device *dev, float *co2_conc)
+{
+	int ret;
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	*co2_conc = NAN;
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -ENODEV;
+	}
+
+	/* Start measurement */
+	ret = write(dev, REG_MEASURE, 0x0001);
+	if (ret) {
+		LOG_ERR("Call `write` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	WAIT_FOR_SIGNAL();
+
+	/* Read converted data */
+	uint16_t reg_co2conc;
+	ret = read(dev, REG_CO2CONC, &reg_co2conc);
+	if (ret) {
+		LOG_ERR("Call `read` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
+	}
+
+	if (reg_co2conc == UINT16_MAX) {
+		LOG_ERR("Measurement error");
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -EINVAL;
+	}
+
+	*co2_conc = reg_co2conc;
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return 0;
+}
+
 #undef WAIT_FOR_SIGNAL
+
+static int ctr_s1_calib_tgt_co2_conc_(const struct device *dev, float tgt_co2_conc)
+{
+	int ret;
+
+	uint16_t reg_co2caltgt = tgt_co2_conc;
+
+	ret = write(dev, REG_CO2CALTGT, reg_co2caltgt);
+	if (ret) {
+		LOG_ERR("Call `write` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
 
 static void work_handler(struct k_work *work)
 {
@@ -752,13 +751,12 @@ static void work_handler(struct k_work *work)
 		uint32_t reg_irq = reg_irq0;
 
 		DISPATCH(CTR_S1_EVENT_DEVICE_RESET);
-
-		DISPATCH(CTR_S1_EVENT_CO2_CALIBRATION_TARGET_DONE);
-		DISPATCH(CTR_S1_EVENT_PIR_MOTION);
 		DISPATCH(CTR_S1_EVENT_BUTTON_PRESSED);
 		DISPATCH(CTR_S1_EVENT_BUTTON_CLICKED);
 		DISPATCH(CTR_S1_EVENT_BUTTON_HOLD);
 		DISPATCH(CTR_S1_EVENT_BUTTON_RELEASED);
+		DISPATCH(CTR_S1_EVENT_MOTION_DETECTED);
+		DISPATCH(CTR_S1_EVENT_CO2_TGT_CALIB_DONE);
 	}
 
 #undef DISPATCH
@@ -783,7 +781,7 @@ static void work_handler(struct k_work *work)
 		k_poll_signal_raise(&data->sig, 0);
 	}
 
-	if (reg_irq0 & BIT(CTR_S1_EVENT_CO2_CONVERTED)) {
+	if (reg_irq0 & BIT(CTR_S1_EVENT_CO2_CONC_CONVERTED)) {
 		k_poll_signal_raise(&data->sig, 0);
 	}
 
@@ -871,16 +869,16 @@ static const struct ctr_s1_driver_api ctr_s1_driver_api = {
 	.get_product_name = ctr_s1_get_product_name_,
 	.set_buzzer = ctr_s1_set_buzzer_,
 	.set_led = ctr_s1_set_led_,
-	.temperature_read = ctr_s1_temperature_read_,
-	.humidity_read = ctr_s1_humidity_read_,
-	.pir_motion_read = ctr_s1_pir_motion_read_,
-	.pressure_read = ctr_s1_pressure_read_,
-	.altitude_read = ctr_s1_altitude_read_,
-	.co2_concentration_read = ctr_s1_co2_concentration_read_,
-	.illuminance_read = ctr_s1_illuminance_read_,
-	.calibrate_target_co2_concentration = ctr_s1_calibrate_target_co2_concentration_,
-	.set_pir_sensitivity = ctr_s1_set_pir_sensitivity_,
-	.set_pir_blind_time = ctr_s1_set_pir_blind_time_,
+	.set_motion_sensitivity = ctr_s1_set_motion_sensitivity_,
+	.set_motion_blind_time = ctr_s1_set_motion_blind_time_,
+	.read_motion_count = ctr_s1_read_motion_count_,
+	.read_temperature = ctr_s1_read_temperature_,
+	.read_humidity = ctr_s1_read_humidity_,
+	.read_illuminance = ctr_s1_read_illuminance_,
+	.read_altitude = ctr_s1_read_altitude_,
+	.read_pressure = ctr_s1_read_pressure_,
+	.read_co2_conc = ctr_s1_read_co2_conc_,
+	.calib_tgt_co2_conc = ctr_s1_calib_tgt_co2_conc_,
 };
 
 #define CTR_S1_INIT(n)                                                                             \

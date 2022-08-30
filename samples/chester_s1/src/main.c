@@ -13,55 +13,85 @@
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 
+#define TGT_CO2_CONC 420
+
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data)
 {
 	int ret;
-	int pir_motion_count;
 
 	switch (event) {
 	case CTR_S1_EVENT_DEVICE_RESET:
+		LOG_INF("Event `CTR_S1_EVENT_DEVICE_RESET`");
+
 		ret = ctr_s1_apply(dev);
 		if (ret) {
 			LOG_ERR("Call `ctr_s1_apply` failed: %d", ret);
 			k_oops();
 		}
-		return;
 
-	case CTR_S1_EVENT_PIR_MOTION:
-		ret = ctr_s1_pir_motion_read(dev, &pir_motion_count);
-		LOG_INF("PIR count: %d", pir_motion_count);
-		return;
+		break;
+
+	case CTR_S1_EVENT_MOTION_DETECTED:
+		LOG_INF("Event `CTR_S1_EVENT_MOTION_DETECTED`");
+
+		int motion_count;
+		ret = ctr_s1_read_motion_count(dev, &motion_count);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_read_motion_count` failed: %d", ret);
+			k_oops();
+		}
+
+		LOG_INF("Motion count: %d", motion_count);
+		break;
 
 	case CTR_S1_EVENT_BUTTON_PRESSED:
-		LOG_INF("EVT button press");
+		LOG_INF("Event `CTR_S1_EVENT_BUTTON_PRESSED`");
+
+		struct ctr_s1_led_param param_led = {
+			.brightness = CTR_S1_LED_BRIGHTNESS_HIGH,
+			.command = CTR_S1_LED_COMMAND_1X_1_1,
+			.pattern = CTR_S1_LED_PATTERN_NONE,
+		};
+
+		ret = ctr_s1_set_led(dev, CTR_S1_LED_CHANNEL_B, &param_led);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_set_led` failed: %d", ret);
+			k_oops();
+		}
+
+		struct ctr_s1_buzzer_param param_buzzer = {
+			.command = CTR_S1_BUZZER_COMMAND_1X_1_1,
+			.pattern = CTR_S1_BUZZER_PATTERN_NONE,
+		};
+
+		ret = ctr_s1_set_buzzer(dev, &param_buzzer);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_set_buzzer` failed: %d", ret);
+			k_oops();
+		}
+
+		ret = ctr_s1_apply(dev);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_apply` failed: %d", ret);
+			k_oops();
+		}
+
 		break;
+
 	case CTR_S1_EVENT_BUTTON_HOLD:
-		LOG_INF("EVT button hold - CO2 Calibration");
-		ctr_s1_calibrate_target_co2_concentration(dev, 420);
+		LOG_INF("Event `CTR_S1_EVENT_BUTTON_HOLD`");
+
+		ret = ctr_s1_calib_tgt_co2_conc(dev, TGT_CO2_CONC);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_calib_tgt_co2_conc` failed: %d", ret);
+			k_oops();
+		}
+
 		break;
 
 	default:
-		return;
-	}
-
-	static int led;
-
-	struct ctr_s1_led_param param = {
-		.brightness = CTR_S1_LED_BRIGHTNESS_HIGH,
-		.command = CTR_S1_LED_COMMAND_1X_1_2,
-		.pattern = CTR_S1_LED_PATTERN_NONE,
-	};
-
-	ret = ctr_s1_set_led(dev, led++ % 15, &param);
-	if (ret) {
-		LOG_ERR("Call `ctr_s1_set_led` failed: %d", ret);
-		k_oops();
-	}
-
-	ret = ctr_s1_apply(dev);
-	if (ret) {
-		LOG_ERR("Call `ctr_s1_apply` failed: %d", ret);
-		k_oops();
+		LOG_DBG("Unhandled event: %d", event);
+		break;
 	}
 }
 
@@ -127,52 +157,52 @@ void main(void)
 	for (;;) {
 		LOG_INF("Alive");
 
-		float s1_temperature;
-		ret = ctr_s1_temperature_read(dev, &s1_temperature);
+		float temperature;
+		ret = ctr_s1_read_temperature(dev, &temperature);
 		if (ret) {
-			LOG_ERR("Call `ctr_s1_temperature_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_s1_read_temperature` failed: %d", ret);
 		} else {
-			LOG_INF("S1 temperature: %.1f C", s1_temperature);
+			LOG_INF("IAQ: Temperature: %.1f C", temperature);
 		}
 
-		float s1_humidity;
-		ret = ctr_s1_humidity_read(dev, &s1_humidity);
+		float humidity;
+		ret = ctr_s1_read_humidity(dev, &humidity);
 		if (ret) {
-			LOG_ERR("Call `ctr_s1_humidity_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_s1_read_humidity` failed: %d", ret);
 		} else {
-			LOG_INF("S1 humidity: %.1f RH", s1_humidity);
+			LOG_INF("IAQ: Humidity: %.1f %%", humidity);
 		}
 
-		float s1_co2_concentration;
-		ret = ctr_s1_co2_concentration_read(dev, &s1_co2_concentration);
+		float co2_conc;
+		ret = ctr_s1_read_co2_conc(dev, &co2_conc);
 		if (ret) {
-			LOG_ERR("Call `ctr_s1_co2_concentration_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_s1_read_co2_conc` failed: %d", ret);
 		} else {
-			LOG_INF("S1 co2 concentration: %.0f ppm", s1_co2_concentration);
+			LOG_INF("IAQ: CO2 conc.: %.0f ppm", co2_conc);
 		}
 
-		float s1_illuminance;
-		ret = ctr_s1_illuminance_read(dev, &s1_illuminance);
+		float illuminance;
+		ret = ctr_s1_read_illuminance(dev, &illuminance);
 		if (ret) {
-			LOG_ERR("Call `ctr_s1_illuminance_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_s1_read_illuminance` failed: %d", ret);
 		} else {
-			LOG_INF("S1 illuminance: %.0f lux", s1_illuminance);
+			LOG_INF("IAQ: Illuminance: %.0f lux", illuminance);
 		}
 
-		float s1_pressure;
-		ret = ctr_s1_pressure_read(dev, &s1_pressure);
+		float pressure;
+		ret = ctr_s1_read_pressure(dev, &pressure);
 		if (ret) {
-			LOG_ERR("Call `ctr_s1_pressure_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_s1_read_pressure` failed: %d", ret);
 		} else {
-			LOG_INF("S1 pressure: %.0f Pa", s1_pressure);
+			LOG_INF("IAQ: Pressure: %.0f Pa", pressure);
 		}
 
-		float s1_altitude;
-		ret = ctr_s1_altitude_read(dev, &s1_altitude);
+		float altitude;
+		ret = ctr_s1_read_altitude(dev, &altitude);
 		if (ret) {
-			LOG_ERR("Call `ctr_s1_altitude_read` failed: %d", ret);
+			LOG_ERR("Call `ctr_s1_read_altitude` failed: %d", ret);
 		} else {
-			LOG_INF("S1 altitude: %.0f m", s1_altitude);
+			LOG_INF("IAQ: Altitude: %.0f m", altitude);
 		}
 
 		k_sleep(K_SECONDS(10));
