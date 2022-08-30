@@ -8,6 +8,7 @@
 #include <ctr_lrw.h>
 #include <ctr_lte.h>
 #include <ctr_wdog.h>
+#include <drivers/ctr_s1.h>
 
 /* Zephyr includes */
 #include <device.h>
@@ -18,6 +19,7 @@
 #include <zephyr.h>
 
 /* Standard includes */
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -60,6 +62,34 @@ int app_init(void)
 		return ret;
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#if defined(CONFIG_SHIELD_CTR_S1)
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_s1));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
+	}
+
+	ret = ctr_s1_set_handler(dev, ctr_s1_event_handler, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_s1_set_handler` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_s1_enable_interrupts(dev);
+	if (ret) {
+		LOG_ERR("Call `ctr_s1_enable_interrupts` failed: %d", ret);
+		return ret;
+	}
+
+	g_app_data.s1_temperature = NAN;
+	g_app_data.s1_humidity = NAN;
+	g_app_data.s1_co2_concentration = NAN;
+	g_app_data.s1_altitude = NAN;
+	g_app_data.s1_pressure = NAN;
+	g_app_data.s1_illuminance = NAN;
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
 
 #if defined(CONFIG_SHIELD_CTR_LRW)
 	ret = ctr_lrw_init(app_handler_lrw, NULL);

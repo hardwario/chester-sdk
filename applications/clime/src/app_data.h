@@ -34,6 +34,16 @@ struct data {
 	float batt_voltage_load;
 	float batt_current_load;
 	float therm_temperature;
+#if defined(CONFIG_SHIELD_CTR_S1)
+	float s1_temperature;
+	float s1_humidity;
+	float s1_co2_concentration;
+	float s1_altitude;
+	float s1_pressure;
+	float s1_illuminance;
+	uint32_t s1_pir_count;
+	uint32_t s1_button_count;
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
 #if defined(CONFIG_SHIELD_CTR_S2)
 	float hygro_temperature;
 	float hygro_humidity;

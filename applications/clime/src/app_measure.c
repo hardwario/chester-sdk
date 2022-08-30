@@ -47,6 +47,52 @@ int app_measure(void)
 		g_app_data.therm_temperature = NAN;
 	}
 
+#if defined(CONFIG_SHIELD_CTR_S1)
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_s1));
+
+	ret = ctr_s1_temperature_read(dev, &g_app_data.s1_temperature);
+	if (ret) {
+		LOG_ERR("Call `ctr_s1_temperature_read` failed: %d", ret);
+	} else {
+		LOG_INF("S1 temperature: %.1f C", g_app_data.s1_temperature);
+	}
+
+	ret = ctr_s1_humidity_read(dev, &g_app_data.s1_humidity);
+	if (ret) {
+		LOG_ERR("Call `ctr_s1_humidity_read` failed: %d", ret);
+	} else {
+		LOG_INF("S1 humidity: %.1f RH", g_app_data.s1_humidity);
+	}
+
+	ret = ctr_s1_co2_concentration_read(dev, &g_app_data.s1_co2_concentration);
+	if (ret) {
+		LOG_ERR("Call `ctr_s1_co2_concentration_read` failed: %d", ret);
+	} else {
+		LOG_INF("S1 co2 concentration: %.0f ppm", g_app_data.s1_co2_concentration);
+	}
+
+	ret = ctr_s1_illuminance_read(dev, &g_app_data.s1_illuminance);
+	if (ret) {
+		LOG_ERR("Call `ctr_s1_illuminance_read` failed: %d", ret);
+	} else {
+		LOG_INF("S1 illuminance: %.0f lux", g_app_data.s1_illuminance);
+	}
+
+	ret = ctr_s1_pressure_read(dev, &g_app_data.s1_pressure);
+	if (ret) {
+		LOG_ERR("Call `ctr_s1_pressure_read` failed: %d", ret);
+	} else {
+		LOG_INF("S1 pressure: %.0f Pa", g_app_data.s1_pressure);
+	}
+
+	ret = ctr_s1_altitude_read(dev, &g_app_data.s1_altitude);
+	if (ret) {
+		LOG_ERR("Call `ctr_s1_altitude_read` failed: %d", ret);
+	} else {
+		LOG_INF("S1 altitude: %.0f m", g_app_data.s1_altitude);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+
 #if defined(CONFIG_SHIELD_CTR_S2)
 	ret = ctr_hygro_read(&g_app_data.hygro_temperature, &g_app_data.hygro_humidity);
 	if (ret) {

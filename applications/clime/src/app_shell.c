@@ -3,9 +3,13 @@
 #include "app_send.h"
 
 /* Zephyr includes */
+#include <drivers/ctr_s1.h>
 #include <logging/log.h>
 #include <shell/shell.h>
 #include <zephyr.h>
+
+/* Standard includes */
+#include <stdlib.h>
 
 LOG_MODULE_REGISTER(app_shell, LOG_LEVEL_INF);
 
@@ -31,6 +35,50 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	k_timer_start(&g_app_send_timer, K_NO_WAIT, K_FOREVER);
+
+	return 0;
+}
+
+static int cmd_calibrate(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc == 2) {
+		int co2_target_ppm = strtol(argv[1], NULL, 10);
+
+		if (co2_target_ppm < 0) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_s1));
+		if (!device_is_ready(dev)) {
+			LOG_ERR("Device not ready");
+			return -ENODEV;
+		}
+
+		ret = ctr_s1_calibrate_target_co2_concentration(dev, co2_target_ppm);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_calibrate_target_co2_concentration` failed: %d", ret);
+			return ret;
+		}
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_debug(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	k_timer_start(&g_app_measure_timer, K_NO_WAIT, K_FOREVER);
 
 	return 0;
 }
@@ -80,6 +128,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 
 SHELL_CMD_REGISTER(measure, NULL, "Start measurement immediately.", cmd_measure);
+SHELL_CMD_REGISTER(debug, NULL, "Debug command.", cmd_debug);
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
+
+#if defined(CONFIG_SHIELD_CTR_S1)
+SHELL_CMD_REGISTER(calibrate, NULL, "Calibrate CO2.", cmd_calibrate);
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
 
 /* clang-format on */

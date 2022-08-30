@@ -1,6 +1,7 @@
 #include "app_handler.h"
 #include "app_data.h"
 #include "app_init.h"
+#include "app_loop.h"
 
 /* CHESTER includes */
 #include <ctr_lrw.h>
@@ -11,6 +12,7 @@
 #include <zephyr.h>
 
 /* Standard includes */
+#include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -167,3 +169,45 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 }
 
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
+
+#if defined(CONFIG_SHIELD_CTR_S1)
+void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data)
+{
+	int ret;
+	int pir_count;
+
+	switch (event) {
+	case CTR_S1_EVENT_DEVICE_RESET:
+		ret = ctr_s1_apply(dev);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_apply` failed: %d", ret);
+			k_oops();
+		}
+		ret = ctr_s1_set_pir_sensitivity(dev, CTR_S1_PIR_SENSITIVITY_MEDIUM);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_set_pir_sensitivity` failed: %d", ret);
+			k_oops();
+		}
+		return;
+
+	case CTR_S1_EVENT_PIR:
+		ret = ctr_s1_pir_motion_read(dev, &pir_count);
+		LOG_INF("PIR count: %d", pir_count);
+		g_app_data.s1_pir_count++;
+		return;
+
+	case CTR_S1_EVENT_BUTTON_PRESSED:
+		LOG_INF("Button press");
+		g_app_data.s1_button_count++;
+		atomic_set(&g_app_loop_send, true);
+		k_sem_give(&g_app_loop_sem);
+		break;
+	case CTR_S1_EVENT_BUTTON_HOLD:
+		LOG_INF("Button hold");
+		break;
+
+	default:
+		return;
+	}
+}
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */

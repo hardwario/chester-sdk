@@ -3,6 +3,7 @@
 
 /* Zephyr includes */
 #include <zephyr.h>
+#include <drivers/ctr_s1.h>
 
 #ifdef __cplusplus
 extern "C" {

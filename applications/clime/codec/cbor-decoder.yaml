@@ -65,3 +65,10 @@
   - div: 1000
   - fpp: 2
 - w1_thermometers:
+- s1:
+- co2_concentration:
+- pressure:
+- altitude:
+- illuminance:
+- pir_count:
+- button_count:
