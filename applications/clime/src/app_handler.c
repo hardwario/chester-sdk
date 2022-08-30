@@ -174,7 +174,7 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data)
 {
 	int ret;
-	int pir_count;
+	int pir_motion_count;
 
 	switch (event) {
 	case CTR_S1_EVENT_DEVICE_RESET:
@@ -190,10 +190,10 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 		}
 		return;
 
-	case CTR_S1_EVENT_PIR:
-		ret = ctr_s1_pir_motion_read(dev, &pir_count);
-		LOG_INF("PIR count: %d", pir_count);
-		g_app_data.s1_pir_count++;
+	case CTR_S1_EVENT_PIR_MOTION:
+		ret = ctr_s1_pir_motion_read(dev, &pir_motion_count);
+		LOG_INF("PIR count: %d", pir_motion_count);
+		g_app_data.s1_pir_motion_count++;
 		return;
 
 	case CTR_S1_EVENT_BUTTON_PRESSED:

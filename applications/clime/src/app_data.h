@@ -41,7 +41,7 @@ struct data {
 	float s1_altitude;
 	float s1_pressure;
 	float s1_illuminance;
-	uint32_t s1_pir_count;
+	uint32_t s1_pir_motion_count;
 	uint32_t s1_button_count;
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
 #if defined(CONFIG_SHIELD_CTR_S2)

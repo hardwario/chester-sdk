@@ -100,7 +100,7 @@ enum ctr_s1_pir_blind_time {
 
 enum ctr_s1_event {
 	CTR_S1_EVENT_DEVICE_RESET = 15,
-	CTR_S1_EVENT_PIR = 12,
+	CTR_S1_EVENT_PIR_MOTION = 12,
 	CTR_S1_EVENT_ALTITUDE_CONVERTED = 11,
 	CTR_S1_EVENT_PRESSURE_CONVERTED = 10,
 	CTR_S1_EVENT_ILLUMINANCE_CONVERTED = 9,
@@ -149,7 +149,7 @@ typedef int (*ctr_s1_api_set_led)(const struct device *dev, enum ctr_s1_led_chan
 
 typedef int (*ctr_s1_api_temperature_read)(const struct device *dev, float *temperature);
 typedef int (*ctr_s1_api_humidity_read)(const struct device *dev, float *humidity);
-typedef int (*ctr_s1_api_pir_motion_read)(const struct device *dev, int *pir_count);
+typedef int (*ctr_s1_api_pir_motion_read)(const struct device *dev, int *pir_motion_count);
 typedef int (*ctr_s1_api_pressure_read)(const struct device *dev, float *pressure);
 typedef int (*ctr_s1_api_altitude_read)(const struct device *dev, float *altitude);
 typedef int (*ctr_s1_api_co2_concentration_read)(const struct device *dev,
@@ -289,11 +289,11 @@ static inline int ctr_s1_humidity_read(const struct device *dev, float *humidity
 	return api->humidity_read(dev, humidity);
 }
 
-static inline int ctr_s1_pir_motion_read(const struct device *dev, int *pir_count)
+static inline int ctr_s1_pir_motion_read(const struct device *dev, int *pir_motion_count)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
-	return api->pir_motion_read(dev, pir_count);
+	return api->pir_motion_read(dev, pir_motion_count);
 }
 
 static inline int ctr_s1_co2_concentration_read(const struct device *dev, float *co2)

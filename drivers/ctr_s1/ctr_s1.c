@@ -355,13 +355,13 @@ static int ctr_s1_set_led_(const struct device *dev, enum ctr_s1_led_channel cha
 		k_poll_signal_reset(&get_data(dev)->sig);                                          \
 	} while (0)
 
-static int ctr_s1_pir_motion_read_(const struct device *dev, int *pir_count)
+static int ctr_s1_pir_motion_read_(const struct device *dev, int *pir_motion_count)
 {
 	int ret;
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	*pir_count = 0;
+	*pir_motion_count = 0;
 
 	int16_t reg_pircount0;
 	ret = read(dev, REG_PIRCOUNT0, &reg_pircount0);
@@ -379,7 +379,7 @@ static int ctr_s1_pir_motion_read_(const struct device *dev, int *pir_count)
 		return ret;
 	}
 
-	*pir_count = reg_pircount1 << 16 | reg_pircount0;
+	*pir_motion_count = reg_pircount1 << 16 | reg_pircount0;
 
 	k_mutex_unlock(&get_data(dev)->lock);
 
@@ -754,7 +754,7 @@ static void work_handler(struct k_work *work)
 		DISPATCH(CTR_S1_EVENT_DEVICE_RESET);
 
 		DISPATCH(CTR_S1_EVENT_CO2_CALIBRATION_TARGET_DONE);
-		DISPATCH(CTR_S1_EVENT_PIR);
+		DISPATCH(CTR_S1_EVENT_PIR_MOTION);
 		DISPATCH(CTR_S1_EVENT_BUTTON_PRESSED);
 		DISPATCH(CTR_S1_EVENT_BUTTON_CLICKED);
 		DISPATCH(CTR_S1_EVENT_BUTTON_HOLD);

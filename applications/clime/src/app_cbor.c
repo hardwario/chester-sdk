@@ -311,35 +311,35 @@ int app_cbor_encode(zcbor_state_t *zs)
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_CO2_CONCENTRATION);
-		if (g_app_data.s1_co2_concentration == 0xffff) {
+		if (isnan(g_app_data.s1_co2_concentration)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
 			zcbor_uint32_put(zs, g_app_data.s1_co2_concentration);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_ALTITUDE);
-		if (g_app_data.s1_altitude == 0xffff) {
+		if (isnan(g_app_data.s1_altitude)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
 			zcbor_int32_put(zs, g_app_data.s1_altitude);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_PRESSURE);
-		if (g_app_data.s1_pressure == 0xffffffff) {
+		if (isnan(g_app_data.s1_pressure)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
 			zcbor_uint32_put(zs, g_app_data.s1_pressure);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_ILLUMINANCE);
-		if (g_app_data.s1_illuminance == 0xffffffff) {
+		if (isnan(g_app_data.s1_illuminance)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
 			zcbor_uint32_put(zs, g_app_data.s1_illuminance);
 		}
 
-		zcbor_uint32_put(zs, MSG_KEY_PIR_COUNT);
-		zcbor_uint32_put(zs, g_app_data.s1_pir_count);
+		zcbor_uint32_put(zs, MSG_KEY_PIR_MOTION_COUNT);
+		zcbor_uint32_put(zs, g_app_data.s1_pir_motion_count);
 
 		zcbor_uint32_put(zs, MSG_KEY_BUTTON_COUNT);
 		zcbor_uint32_put(zs, g_app_data.s1_button_count);

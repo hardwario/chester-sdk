@@ -70,5 +70,5 @@
 - pressure:
 - altitude:
 - illuminance:
-- pir_count:
+- pir_motion_count:
 - button_count:
