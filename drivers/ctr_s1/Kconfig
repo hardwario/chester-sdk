@@ -1,0 +1,14 @@
+config CTR_S1
+	bool "HARDWARIO CHESTER-S1 Cover Module"
+	depends on GPIO
+	depends on I2C
+	select POLL
+	select REQUIRES_FULL_LIBC
+
+if CTR_S1
+
+module = CTR_S1
+module-str = ctr_s1
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_S1

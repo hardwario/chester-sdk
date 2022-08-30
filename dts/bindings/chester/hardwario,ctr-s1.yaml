@@ -1,0 +1,17 @@
+description: HARDWARIO CHESTER-S1 Cover Module
+
+compatible: "hardwario,ctr-s1"
+
+include: i2c-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Alert line (active low); Needs external pull-up resistor.
+
+  auto-beep:
+    type: boolean
+    description: |
+      Enables the panel to automatically beep on a button press.

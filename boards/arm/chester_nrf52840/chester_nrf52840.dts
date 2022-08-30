@@ -219,6 +219,14 @@
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
 
+	ctr_s1: ctr_s1@11 {
+		compatible = "hardwario,ctr-s1";
+		label = "CTR_S1";
+		status = "disabled";
+		reg = <0x11>;
+		irq-gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+
 	ctr_x0_pcal6416a_a: ctr_x0_pcal6416a_a@20 {
 		compatible = "nxp,pcal6416a";
 		label = "CTR_X0_PCAL6416A_A";
