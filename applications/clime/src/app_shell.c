@@ -57,9 +57,9 @@ static int cmd_calibrate(const struct shell *shell, size_t argc, char **argv)
 			return -ENODEV;
 		}
 
-		ret = ctr_s1_calibrate_target_co2_concentration(dev, co2_target_ppm);
+		ret = ctr_s1_calib_tgt_co2_conc(dev, co2_target_ppm);
 		if (ret) {
-			LOG_ERR("Call `ctr_s1_calibrate_target_co2_concentration` failed: %d", ret);
+			LOG_ERR("Call `ctr_s1_calib_tgt_co2_conc` failed: %d", ret);
 			return ret;
 		}
 

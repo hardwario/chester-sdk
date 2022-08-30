@@ -291,86 +291,6 @@ int app_cbor_encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-#if defined(CONFIG_SHIELD_CTR_S1)
-	zcbor_uint32_put(zs, MSG_KEY_S1);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
-		if (isnan(g_app_data.s1_temperature)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_int32_put(zs, g_app_data.s1_temperature * 100.f);
-		}
-
-		zcbor_uint32_put(zs, MSG_KEY_HUMIDITY);
-		if (isnan(g_app_data.s1_humidity)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.s1_humidity * 100.f);
-		}
-
-		zcbor_uint32_put(zs, MSG_KEY_CO2_CONCENTRATION);
-		if (isnan(g_app_data.s1_co2_concentration)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.s1_co2_concentration);
-		}
-
-		zcbor_uint32_put(zs, MSG_KEY_ALTITUDE);
-		if (isnan(g_app_data.s1_altitude)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_int32_put(zs, g_app_data.s1_altitude);
-		}
-
-		zcbor_uint32_put(zs, MSG_KEY_PRESSURE);
-		if (isnan(g_app_data.s1_pressure)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.s1_pressure);
-		}
-
-		zcbor_uint32_put(zs, MSG_KEY_ILLUMINANCE);
-		if (isnan(g_app_data.s1_illuminance)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.s1_illuminance);
-		}
-
-		zcbor_uint32_put(zs, MSG_KEY_PIR_MOTION_COUNT);
-		zcbor_uint32_put(zs, g_app_data.s1_pir_motion_count);
-
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_COUNT);
-		zcbor_uint32_put(zs, g_app_data.s1_button_count);
-
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
-
-#if defined(CONFIG_SHIELD_CTR_S2)
-	zcbor_uint32_put(zs, MSG_KEY_HYGROMETER);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
-		if (isnan(g_app_data.hygro_temperature)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_int32_put(zs, g_app_data.hygro_temperature * 100.f);
-		}
-
-		zcbor_uint32_put(zs, MSG_KEY_HUMIDITY);
-		if (isnan(g_app_data.hygro_humidity)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.hygro_humidity * 100.f);
-		}
-
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
-
 	zcbor_uint32_put(zs, MSG_KEY_ACCELEROMETER);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -405,6 +325,86 @@ int app_cbor_encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
+
+#if defined(CONFIG_SHIELD_CTR_S1)
+	zcbor_uint32_put(zs, MSG_KEY_IAQ_SENSOR);
+	{
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, MSG_KEY_PRESS_COUNT);
+		zcbor_uint32_put(zs, atomic_get(&g_app_data.iaq_press_count));
+
+		zcbor_uint32_put(zs, MSG_KEY_MOTION_COUNT);
+		zcbor_uint32_put(zs, atomic_get(&g_app_data.iaq_motion_count));
+
+		zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
+		if (isnan(g_app_data.iaq_temperature)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_int32_put(zs, g_app_data.iaq_temperature * 100.f);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_HUMIDITY);
+		if (isnan(g_app_data.iaq_humidity)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_uint32_put(zs, g_app_data.iaq_humidity * 100.f);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_ILLUMINANCE);
+		if (isnan(g_app_data.iaq_illuminance)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_uint32_put(zs, g_app_data.iaq_illuminance);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_ALTITUDE);
+		if (isnan(g_app_data.iaq_altitude)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_int32_put(zs, g_app_data.iaq_altitude);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_PRESSURE);
+		if (isnan(g_app_data.iaq_pressure)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_uint32_put(zs, g_app_data.iaq_pressure);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_CO2_CONC);
+		if (isnan(g_app_data.iaq_co2_conc)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_uint32_put(zs, g_app_data.iaq_co2_conc);
+		}
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+
+#if defined(CONFIG_SHIELD_CTR_S2)
+	zcbor_uint32_put(zs, MSG_KEY_HYGROMETER);
+	{
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
+		if (isnan(g_app_data.hygro_temperature)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_int32_put(zs, g_app_data.hygro_temperature * 100.f);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_HUMIDITY);
+		if (isnan(g_app_data.hygro_humidity)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_uint32_put(zs, g_app_data.hygro_humidity * 100.f);
+		}
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	zcbor_uint32_put(zs, MSG_KEY_W1_THERMOMETERS);

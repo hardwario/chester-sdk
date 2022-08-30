@@ -174,40 +174,94 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data)
 {
 	int ret;
-	int pir_motion_count;
 
 	switch (event) {
 	case CTR_S1_EVENT_DEVICE_RESET:
+		LOG_INF("Event `CTR_S1_EVENT_DEVICE_RESET`");
+
 		ret = ctr_s1_apply(dev);
 		if (ret) {
 			LOG_ERR("Call `ctr_s1_apply` failed: %d", ret);
 			k_oops();
 		}
-		ret = ctr_s1_set_pir_sensitivity(dev, CTR_S1_PIR_SENSITIVITY_MEDIUM);
+
+		ret = ctr_s1_set_motion_sensitivity(dev, CTR_S1_PIR_SENSITIVITY_MEDIUM);
 		if (ret) {
-			LOG_ERR("Call `ctr_s1_set_pir_sensitivity` failed: %d", ret);
+			LOG_ERR("Call `ctr_s1_set_motion_sensitivity` failed: %d", ret);
 			k_oops();
 		}
-		return;
 
-	case CTR_S1_EVENT_PIR_MOTION:
-		ret = ctr_s1_pir_motion_read(dev, &pir_motion_count);
-		LOG_INF("PIR count: %d", pir_motion_count);
-		g_app_data.s1_pir_motion_count++;
-		return;
+		break;
 
 	case CTR_S1_EVENT_BUTTON_PRESSED:
-		LOG_INF("Button press");
-		g_app_data.s1_button_count++;
+		LOG_INF("Event `CTR_S1_EVENT_BUTTON_PRESSED`");
+
+		atomic_inc(&g_app_data.iaq_press_count);
+
+		struct ctr_s1_led_param param_led = {
+			.brightness = CTR_S1_LED_BRIGHTNESS_HIGH,
+			.command = CTR_S1_LED_COMMAND_1X_1_1,
+			.pattern = CTR_S1_LED_PATTERN_NONE,
+		};
+
+		ret = ctr_s1_set_led(dev, CTR_S1_LED_CHANNEL_B, &param_led);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_set_led` failed: %d", ret);
+			k_oops();
+		}
+
+		struct ctr_s1_buzzer_param param_buzzer = {
+			.command = CTR_S1_BUZZER_COMMAND_1X_1_1,
+			.pattern = CTR_S1_BUZZER_PATTERN_NONE,
+		};
+
+		ret = ctr_s1_set_buzzer(dev, &param_buzzer);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_set_buzzer` failed: %d", ret);
+			k_oops();
+		}
+
+		ret = ctr_s1_apply(dev);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_apply` failed: %d", ret);
+			k_oops();
+		}
+
 		atomic_set(&g_app_loop_send, true);
 		k_sem_give(&g_app_loop_sem);
+
 		break;
+
+	case CTR_S1_EVENT_BUTTON_CLICKED:
+		LOG_INF("Event `CTR_S1_EVENT_BUTTON_CLICKED`");
+		break;
+
 	case CTR_S1_EVENT_BUTTON_HOLD:
-		LOG_INF("Button hold");
+		LOG_INF("Event `CTR_S1_EVENT_BUTTON_HOLD`");
+		break;
+
+	case CTR_S1_EVENT_BUTTON_RELEASED:
+		LOG_INF("Event `CTR_S1_EVENT_BUTTON_RELEASED`");
+		break;
+
+	case CTR_S1_EVENT_MOTION_DETECTED:
+		LOG_INF("Event `CTR_S1_EVENT_MOTION_DETECTED`");
+
+		atomic_inc(&g_app_data.iaq_motion_count);
+
+		int motion_count;
+		ret = ctr_s1_read_motion_count(dev, &motion_count);
+		if (ret) {
+			LOG_ERR("Call `ctr_s1_read_motion_count` failed: %d", ret);
+			k_oops();
+		}
+
+		LOG_INF("Motion count: %d", motion_count);
+
 		break;
 
 	default:
-		return;
+		break;
 	}
 }
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */

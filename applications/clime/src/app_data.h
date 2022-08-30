@@ -34,24 +34,27 @@ struct data {
 	float batt_voltage_load;
 	float batt_current_load;
 	float therm_temperature;
-#if defined(CONFIG_SHIELD_CTR_S1)
-	float s1_temperature;
-	float s1_humidity;
-	float s1_co2_concentration;
-	float s1_altitude;
-	float s1_pressure;
-	float s1_illuminance;
-	uint32_t s1_pir_motion_count;
-	uint32_t s1_button_count;
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
-#if defined(CONFIG_SHIELD_CTR_S2)
-	float hygro_temperature;
-	float hygro_humidity;
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
 	float accel_x;
 	float accel_y;
 	float accel_z;
 	int accel_orientation;
+
+#if defined(CONFIG_SHIELD_CTR_S1)
+	atomic_t iaq_press_count;
+	atomic_t iaq_motion_count;
+	float iaq_temperature;
+	float iaq_humidity;
+	float iaq_illuminance;
+	float iaq_altitude;
+	float iaq_pressure;
+	float iaq_co2_conc;
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+
+#if defined(CONFIG_SHIELD_CTR_S2)
+	float hygro_temperature;
+	float hygro_humidity;
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	struct w1_therm w1_therm[W1_THERM_COUNT];
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */

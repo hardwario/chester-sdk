@@ -8,10 +8,12 @@
   - div: 1000
   - fpp: 2
 - accelerometer:
+- altitude:
 - attribute:
 - band:
 - battery:
 - cid:
+- co2_conc:
 - current_load:
 - earfcn:
 - ecl:
@@ -20,16 +22,21 @@
 - fw_version:
 - humidity:
   - div: 100
-  - fpp: 2
+  - fpp: 1
 - hygrometer:
 - hw_revision:
 - hw_variant:
+- iaq_sensor:
+- illuminance:
 - imei:
 - imsi:
+- motion_count:
 - network:
 - orientation:
 - parameter:
 - plmn:
+- press_count:
+- pressure:
 - product_name:
 - protocol:
 - rsrp:
@@ -65,10 +72,3 @@
   - div: 1000
   - fpp: 2
 - w1_thermometers:
-- s1:
-- co2_concentration:
-- pressure:
-- altitude:
-- illuminance:
-- pir_motion_count:
-- button_count:

@@ -83,12 +83,12 @@ int app_init(void)
 		return ret;
 	}
 
-	g_app_data.s1_temperature = NAN;
-	g_app_data.s1_humidity = NAN;
-	g_app_data.s1_co2_concentration = NAN;
-	g_app_data.s1_altitude = NAN;
-	g_app_data.s1_pressure = NAN;
-	g_app_data.s1_illuminance = NAN;
+	g_app_data.iaq_temperature = NAN;
+	g_app_data.iaq_humidity = NAN;
+	g_app_data.iaq_co2_conc = NAN;
+	g_app_data.iaq_altitude = NAN;
+	g_app_data.iaq_pressure = NAN;
+	g_app_data.iaq_illuminance = NAN;
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
 
 #if defined(CONFIG_SHIELD_CTR_LRW)
