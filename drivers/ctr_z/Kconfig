@@ -1,5 +1,6 @@
 config CTR_Z
 	bool "HARDWARIO CHESTER-Z Cover Module"
+	depends on GPIO
 	depends on I2C
 
 if CTR_Z
