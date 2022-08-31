@@ -40,7 +40,12 @@ struct ctr_s1_data {
 	ctr_s1_user_cb user_cb;
 	void *user_data;
 	struct k_mutex lock;
-	struct k_poll_signal sig;
+	struct k_poll_signal temperature_sig;
+	struct k_poll_signal humidity_sig;
+	struct k_poll_signal illuminance_sig;
+	struct k_poll_signal altitude_sig;
+	struct k_poll_signal pressure_sig;
+	struct k_poll_signal co2_conc_sig;
 };
 
 static inline const struct ctr_s1_config *get_config(const struct device *dev)
@@ -395,11 +400,11 @@ static int ctr_s1_read_motion_count_(const struct device *dev, int *motion_count
 	return 0;
 }
 
-#define WAIT_FOR_SIGNAL()                                                                          \
+#define WAIT_FOR_SIGNAL(sig)                                                                       \
 	do {                                                                                       \
 		struct k_poll_event events[] = {                                                   \
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,      \
-			                         &get_data(dev)->sig),                             \
+			                         sig),                                             \
 		};                                                                                 \
 		ret = k_poll(events, ARRAY_SIZE(events), MAX_POLL_TIME);                           \
 		if (ret == -EAGAIN) {                                                              \
@@ -411,7 +416,6 @@ static int ctr_s1_read_motion_count_(const struct device *dev, int *motion_count
 			k_mutex_unlock(&get_data(dev)->lock);                                      \
 			return ret;                                                                \
 		}                                                                                  \
-		k_poll_signal_reset(&get_data(dev)->sig);                                          \
 	} while (0)
 
 static int ctr_s1_read_temperature_(const struct device *dev, float *temperature)
@@ -428,6 +432,8 @@ static int ctr_s1_read_temperature_(const struct device *dev, float *temperature
 		return -ENODEV;
 	}
 
+	k_poll_signal_reset(&get_data(dev)->temperature_sig);
+
 	/* Start measurement */
 	ret = write(dev, REG_MEASURE, 0x0002);
 	if (ret) {
@@ -436,7 +442,7 @@ static int ctr_s1_read_temperature_(const struct device *dev, float *temperature
 		return ret;
 	}
 
-	WAIT_FOR_SIGNAL();
+	WAIT_FOR_SIGNAL(&get_data(dev)->temperature_sig);
 
 	/* Read converted data */
 	int16_t reg_temperature;
@@ -474,6 +480,8 @@ static int ctr_s1_read_humidity_(const struct device *dev, float *humidity)
 		return -ENODEV;
 	}
 
+	k_poll_signal_reset(&get_data(dev)->humidity_sig);
+
 	/* Start measurement */
 	ret = write(dev, REG_MEASURE, 0x0004);
 	if (ret) {
@@ -482,7 +490,7 @@ static int ctr_s1_read_humidity_(const struct device *dev, float *humidity)
 		return ret;
 	}
 
-	WAIT_FOR_SIGNAL();
+	WAIT_FOR_SIGNAL(&get_data(dev)->humidity_sig);
 
 	/* Read converted data */
 	int16_t reg_humidity;
@@ -519,6 +527,8 @@ static int ctr_s1_read_illuminance_(const struct device *dev, float *illuminance
 		return -ENODEV;
 	}
 
+	k_poll_signal_reset(&get_data(dev)->illuminance_sig);
+
 	/* Start measurement */
 	ret = write(dev, REG_MEASURE, 0x0008);
 	if (ret) {
@@ -527,7 +537,7 @@ static int ctr_s1_read_illuminance_(const struct device *dev, float *illuminance
 		return ret;
 	}
 
-	WAIT_FOR_SIGNAL();
+	WAIT_FOR_SIGNAL(&get_data(dev)->illuminance_sig);
 
 	/* Read converted data */
 	int16_t reg_illum0;
@@ -573,6 +583,8 @@ static int ctr_s1_read_altitude_(const struct device *dev, float *altitude)
 		return -ENODEV;
 	}
 
+	k_poll_signal_reset(&get_data(dev)->altitude_sig);
+
 	/* Start measurement */
 	ret = write(dev, REG_MEASURE, 0x0020);
 	if (ret) {
@@ -581,7 +593,7 @@ static int ctr_s1_read_altitude_(const struct device *dev, float *altitude)
 		return ret;
 	}
 
-	WAIT_FOR_SIGNAL();
+	WAIT_FOR_SIGNAL(&get_data(dev)->altitude_sig);
 
 	/* Read converted data */
 	int16_t reg_altitude;
@@ -619,6 +631,8 @@ static int ctr_s1_read_pressure_(const struct device *dev, float *pressure)
 		return -ENODEV;
 	}
 
+	k_poll_signal_reset(&get_data(dev)->pressure_sig);
+
 	/* Start measurement */
 	ret = write(dev, REG_MEASURE, 0x0010);
 	if (ret) {
@@ -627,7 +641,7 @@ static int ctr_s1_read_pressure_(const struct device *dev, float *pressure)
 		return ret;
 	}
 
-	WAIT_FOR_SIGNAL();
+	WAIT_FOR_SIGNAL(&get_data(dev)->pressure_sig);
 
 	/* Read converted data */
 	uint16_t reg_pressure0;
@@ -673,6 +687,8 @@ static int ctr_s1_read_co2_conc_(const struct device *dev, float *co2_conc)
 		return -ENODEV;
 	}
 
+	k_poll_signal_reset(&get_data(dev)->co2_conc_sig);
+
 	/* Start measurement */
 	ret = write(dev, REG_MEASURE, 0x0001);
 	if (ret) {
@@ -681,7 +697,7 @@ static int ctr_s1_read_co2_conc_(const struct device *dev, float *co2_conc)
 		return ret;
 	}
 
-	WAIT_FOR_SIGNAL();
+	WAIT_FOR_SIGNAL(&get_data(dev)->co2_conc_sig);
 
 	/* Read converted data */
 	uint16_t reg_co2conc;
@@ -762,27 +778,27 @@ static void work_handler(struct k_work *work)
 #undef DISPATCH
 
 	if (reg_irq0 & BIT(CTR_S1_EVENT_TEMPERATURE_CONVERTED)) {
-		k_poll_signal_raise(&data->sig, 0);
+		k_poll_signal_raise(&data->temperature_sig, 0);
 	}
 
 	if (reg_irq0 & BIT(CTR_S1_EVENT_HUMIDITY_CONVERTED)) {
-		k_poll_signal_raise(&data->sig, 0);
+		k_poll_signal_raise(&data->humidity_sig, 0);
 	}
 
 	if (reg_irq0 & BIT(CTR_S1_EVENT_ILLUMINANCE_CONVERTED)) {
-		k_poll_signal_raise(&data->sig, 0);
+		k_poll_signal_raise(&data->illuminance_sig, 0);
 	}
 
 	if (reg_irq0 & BIT(CTR_S1_EVENT_ALTITUDE_CONVERTED)) {
-		k_poll_signal_raise(&data->sig, 0);
+		k_poll_signal_raise(&data->altitude_sig, 0);
 	}
 
 	if (reg_irq0 & BIT(CTR_S1_EVENT_PRESSURE_CONVERTED)) {
-		k_poll_signal_raise(&data->sig, 0);
+		k_poll_signal_raise(&data->pressure_sig, 0);
 	}
 
 	if (reg_irq0 & BIT(CTR_S1_EVENT_CO2_CONC_CONVERTED)) {
-		k_poll_signal_raise(&data->sig, 0);
+		k_poll_signal_raise(&data->co2_conc_sig, 0);
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->irq_spec, GPIO_INT_LEVEL_ACTIVE);
@@ -797,7 +813,12 @@ static int ctr_s1_init(const struct device *dev)
 
 	k_work_init(&get_data(dev)->work, work_handler);
 
-	k_poll_signal_init(&get_data(dev)->sig);
+	k_poll_signal_init(&get_data(dev)->temperature_sig);
+	k_poll_signal_init(&get_data(dev)->humidity_sig);
+	k_poll_signal_init(&get_data(dev)->illuminance_sig);
+	k_poll_signal_init(&get_data(dev)->altitude_sig);
+	k_poll_signal_init(&get_data(dev)->pressure_sig);
+	k_poll_signal_init(&get_data(dev)->co2_conc_sig);
 
 	k_mutex_init(&get_data(dev)->lock);
 
