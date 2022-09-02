@@ -40,6 +40,7 @@ struct ctr_s1_data {
 	ctr_s1_user_cb user_cb;
 	void *user_data;
 	struct k_mutex lock;
+	struct k_mutex read_lock;
 	struct k_poll_signal temperature_sig;
 	struct k_poll_signal humidity_sig;
 	struct k_poll_signal illuminance_sig;
@@ -101,8 +102,16 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 
 static int ctr_s1_set_handler_(const struct device *dev, ctr_s1_user_cb user_cb, void *user_data)
 {
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	get_data(dev)->user_cb = user_cb;
 	get_data(dev)->user_data = user_data;
+
+	k_mutex_unlock(&get_data(dev)->lock);
 
 	return 0;
 }
@@ -112,9 +121,8 @@ static void irq_handler(const struct device *dev, struct gpio_callback *gpio_cb,
 	int ret;
 
 	struct ctr_s1_data *data = CONTAINER_OF(gpio_cb, struct ctr_s1_data, gpio_cb);
-	const struct ctr_s1_config *config = get_config(data->dev);
 
-	ret = gpio_pin_interrupt_configure_dt(&config->irq_spec, GPIO_INT_DISABLE);
+	ret = gpio_pin_interrupt_configure_dt(&get_config(data->dev)->irq_spec, GPIO_INT_DISABLE);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 		return;
@@ -127,14 +135,22 @@ static int ctr_s1_enable_interrupts_(const struct device *dev)
 {
 	int ret;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
 	if (!device_is_ready(get_config(dev)->irq_spec.port)) {
 		LOG_ERR("Device not ready");
+		k_mutex_unlock(&get_data(dev)->lock);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->irq_spec, GPIO_INPUT);
 	if (ret) {
 		LOG_ERR("Pin `IRQ` configuration failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
 
@@ -144,14 +160,18 @@ static int ctr_s1_enable_interrupts_(const struct device *dev)
 	ret = gpio_add_callback(get_config(dev)->irq_spec.port, &get_data(dev)->gpio_cb);
 	if (ret) {
 		LOG_ERR("Call `gpio_add_callback` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&get_config(dev)->irq_spec, GPIO_INT_LEVEL_ACTIVE);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
+
+	k_mutex_unlock(&get_data(dev)->lock);
 
 	return 0;
 }
@@ -373,11 +393,15 @@ static int ctr_s1_read_motion_count_(const struct device *dev, int *motion_count
 {
 	int ret;
 
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
 	*motion_count = 0;
 
-	int16_t reg_pircount0;
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	uint16_t reg_pircount0;
 	ret = read(dev, REG_PIRCOUNT0, &reg_pircount0);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -385,7 +409,7 @@ static int ctr_s1_read_motion_count_(const struct device *dev, int *motion_count
 		return ret;
 	}
 
-	int16_t reg_pircount1;
+	uint16_t reg_pircount1;
 	ret = read(dev, REG_PIRCOUNT1, &reg_pircount1);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -393,9 +417,9 @@ static int ctr_s1_read_motion_count_(const struct device *dev, int *motion_count
 		return ret;
 	}
 
-	*motion_count = reg_pircount1 << 16 | reg_pircount0;
-
 	k_mutex_unlock(&get_data(dev)->lock);
+
+	*motion_count = reg_pircount1 << 16 | reg_pircount0;
 
 	return 0;
 }
@@ -409,11 +433,11 @@ static int ctr_s1_read_motion_count_(const struct device *dev, int *motion_count
 		ret = k_poll(events, ARRAY_SIZE(events), MAX_POLL_TIME);                           \
 		if (ret == -EAGAIN) {                                                              \
 			LOG_INF("Measurement timed out");                                          \
-			k_mutex_unlock(&get_data(dev)->lock);                                      \
+			k_mutex_unlock(&get_data(dev)->read_lock);                                 \
 			return ret;                                                                \
 		} else if (ret) {                                                                  \
 			LOG_ERR("Call `k_poll` failed: %d", ret);                                  \
-			k_mutex_unlock(&get_data(dev)->lock);                                      \
+			k_mutex_unlock(&get_data(dev)->read_lock);                                 \
 			return ret;                                                                \
 		}                                                                                  \
 	} while (0)
@@ -422,13 +446,17 @@ static int ctr_s1_read_temperature_(const struct device *dev, float *temperature
 {
 	int ret;
 
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
 	*temperature = NAN;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->read_lock, K_FOREVER);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -ENODEV;
 	}
 
@@ -438,7 +466,7 @@ static int ctr_s1_read_temperature_(const struct device *dev, float *temperature
 	ret = write(dev, REG_MEASURE, 0x0002);
 	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
@@ -449,19 +477,19 @@ static int ctr_s1_read_temperature_(const struct device *dev, float *temperature
 	ret = read(dev, REG_TEMPERATURE, &reg_temperature);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
 	if (reg_temperature == INT16_MAX) {
 		LOG_ERR("Measurement error");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -EINVAL;
 	}
 
-	*temperature = reg_temperature / 100.f;
+	k_mutex_unlock(&get_data(dev)->read_lock);
 
-	k_mutex_unlock(&get_data(dev)->lock);
+	*temperature = reg_temperature / 100.f;
 
 	return 0;
 }
@@ -470,13 +498,17 @@ static int ctr_s1_read_humidity_(const struct device *dev, float *humidity)
 {
 	int ret;
 
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
 	*humidity = NAN;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->read_lock, K_FOREVER);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -ENODEV;
 	}
 
@@ -486,7 +518,7 @@ static int ctr_s1_read_humidity_(const struct device *dev, float *humidity)
 	ret = write(dev, REG_MEASURE, 0x0004);
 	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
@@ -497,18 +529,18 @@ static int ctr_s1_read_humidity_(const struct device *dev, float *humidity)
 	ret = read(dev, REG_HUMIDITY, &reg_humidity);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 	if (reg_humidity == UINT16_MAX) {
 		LOG_ERR("Measurement error");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -EINVAL;
 	}
 
-	*humidity = reg_humidity / 100.f;
+	k_mutex_unlock(&get_data(dev)->read_lock);
 
-	k_mutex_unlock(&get_data(dev)->lock);
+	*humidity = reg_humidity / 100.f;
 
 	return 0;
 }
@@ -517,13 +549,17 @@ static int ctr_s1_read_illuminance_(const struct device *dev, float *illuminance
 {
 	int ret;
 
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
 	*illuminance = NAN;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->read_lock, K_FOREVER);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -ENODEV;
 	}
 
@@ -533,38 +569,38 @@ static int ctr_s1_read_illuminance_(const struct device *dev, float *illuminance
 	ret = write(dev, REG_MEASURE, 0x0008);
 	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
 	WAIT_FOR_SIGNAL(&get_data(dev)->illuminance_sig);
 
 	/* Read converted data */
-	int16_t reg_illum0;
+	uint16_t reg_illum0;
 	ret = read(dev, REG_ILLUM0, &reg_illum0);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
-	int16_t reg_illum1;
+	uint16_t reg_illum1;
 	ret = read(dev, REG_ILLUM1, &reg_illum1);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
 	if (reg_illum0 == UINT16_MAX && reg_illum1 == UINT16_MAX) {
 		LOG_ERR("Measurement error");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -EINVAL;
 	}
 
-	*illuminance = reg_illum1 << 16 | reg_illum0;
+	k_mutex_unlock(&get_data(dev)->read_lock);
 
-	k_mutex_unlock(&get_data(dev)->lock);
+	*illuminance = reg_illum1 << 16 | reg_illum0;
 
 	return 0;
 }
@@ -573,13 +609,17 @@ static int ctr_s1_read_altitude_(const struct device *dev, float *altitude)
 {
 	int ret;
 
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
 	*altitude = NAN;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->read_lock, K_FOREVER);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -ENODEV;
 	}
 
@@ -589,7 +629,7 @@ static int ctr_s1_read_altitude_(const struct device *dev, float *altitude)
 	ret = write(dev, REG_MEASURE, 0x0020);
 	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
@@ -597,22 +637,22 @@ static int ctr_s1_read_altitude_(const struct device *dev, float *altitude)
 
 	/* Read converted data */
 	int16_t reg_altitude;
-	ret = read(dev, REG_ALTITUDE, (uint16_t *)&reg_altitude);
+	ret = read(dev, REG_ALTITUDE, &reg_altitude);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
 	if (reg_altitude == INT16_MAX) {
 		LOG_ERR("Measurement error");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -EINVAL;
 	}
 
-	*altitude = reg_altitude;
+	k_mutex_unlock(&get_data(dev)->read_lock);
 
-	k_mutex_unlock(&get_data(dev)->lock);
+	*altitude = reg_altitude;
 
 	return 0;
 }
@@ -621,13 +661,17 @@ static int ctr_s1_read_pressure_(const struct device *dev, float *pressure)
 {
 	int ret;
 
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
 	*pressure = NAN;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->read_lock, K_FOREVER);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -ENODEV;
 	}
 
@@ -637,7 +681,7 @@ static int ctr_s1_read_pressure_(const struct device *dev, float *pressure)
 	ret = write(dev, REG_MEASURE, 0x0010);
 	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
@@ -648,7 +692,7 @@ static int ctr_s1_read_pressure_(const struct device *dev, float *pressure)
 	ret = read(dev, REG_PRESSURE0, &reg_pressure0);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
@@ -656,19 +700,19 @@ static int ctr_s1_read_pressure_(const struct device *dev, float *pressure)
 	ret = read(dev, REG_PRESSURE1, &reg_pressure1);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
 	if (reg_pressure0 == UINT16_MAX && reg_pressure1 == UINT16_MAX) {
 		LOG_ERR("Measurement error");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -EINVAL;
 	}
 
-	*pressure = reg_pressure1 << 16 | reg_pressure0;
+	k_mutex_unlock(&get_data(dev)->read_lock);
 
-	k_mutex_unlock(&get_data(dev)->lock);
+	*pressure = reg_pressure1 << 16 | reg_pressure0;
 
 	return 0;
 }
@@ -677,13 +721,17 @@ static int ctr_s1_read_co2_conc_(const struct device *dev, float *co2_conc)
 {
 	int ret;
 
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-
 	*co2_conc = NAN;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&get_data(dev)->read_lock, K_FOREVER);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -ENODEV;
 	}
 
@@ -693,7 +741,7 @@ static int ctr_s1_read_co2_conc_(const struct device *dev, float *co2_conc)
 	ret = write(dev, REG_MEASURE, 0x0001);
 	if (ret) {
 		LOG_ERR("Call `write` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
@@ -704,19 +752,19 @@ static int ctr_s1_read_co2_conc_(const struct device *dev, float *co2_conc)
 	ret = read(dev, REG_CO2CONC, &reg_co2conc);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
 	if (reg_co2conc == UINT16_MAX) {
 		LOG_ERR("Measurement error");
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return -EINVAL;
 	}
 
-	*co2_conc = reg_co2conc;
+	k_mutex_unlock(&get_data(dev)->read_lock);
 
-	k_mutex_unlock(&get_data(dev)->lock);
+	*co2_conc = reg_co2conc;
 
 	return 0;
 }
@@ -743,16 +791,19 @@ static void work_handler(struct k_work *work)
 	int ret;
 
 	struct ctr_s1_data *data = CONTAINER_OF(work, struct ctr_s1_data, work);
-	const struct ctr_s1_config *config = get_config(data->dev);
+
+	k_mutex_lock(&data->lock, K_FOREVER);
 
 	uint16_t reg_irq0;
 	ret = read(data->dev, REG_IRQ0, &reg_irq0);
 	if (ret) {
+		k_mutex_unlock(&data->lock);
 		LOG_ERR("Call `read` failed: %d", ret);
 	}
 
 	ret = write(data->dev, REG_IRQ0, reg_irq0);
 	if (ret) {
+		k_mutex_unlock(&data->lock);
 		LOG_ERR("Call `write` failed: %d", ret);
 	}
 
@@ -776,6 +827,8 @@ static void work_handler(struct k_work *work)
 	}
 
 #undef DISPATCH
+
+	k_mutex_unlock(&data->lock);
 
 	if (reg_irq0 & BIT(CTR_S1_EVENT_TEMPERATURE_CONVERTED)) {
 		k_poll_signal_raise(&data->temperature_sig, 0);
@@ -801,7 +854,8 @@ static void work_handler(struct k_work *work)
 		k_poll_signal_raise(&data->co2_conc_sig, 0);
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&config->irq_spec, GPIO_INT_LEVEL_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&get_config(data->dev)->irq_spec,
+	                                      GPIO_INT_LEVEL_ACTIVE);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 	}
@@ -821,6 +875,7 @@ static int ctr_s1_init(const struct device *dev)
 	k_poll_signal_init(&get_data(dev)->co2_conc_sig);
 
 	k_mutex_init(&get_data(dev)->lock);
+	k_mutex_init(&get_data(dev)->read_lock);
 
 	if (!device_is_ready(get_config(dev)->i2c_dev)) {
 		LOG_ERR("Device not ready");
