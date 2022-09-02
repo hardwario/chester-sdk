@@ -59,6 +59,8 @@ static const struct bt_data m_sd[] = {
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_DFU_SMP_SERVICE_VAL),
 };
 
+static struct bt_conn *m_current_conn;
+
 static int set_device_name(void)
 {
 	int ret;
@@ -159,12 +161,21 @@ static int set_tx_power(uint8_t handle_type, uint16_t handle, int8_t tx_power_le
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
+	int ret;
+
 	if (err) {
 		LOG_ERR("Connection failed (reason: %u)", err);
 		return;
 	}
 
 	LOG_INF("Connected");
+
+	m_current_conn = bt_conn_ref(conn);
+
+	ret = bt_conn_set_security(conn, BT_SECURITY_L4);
+	if (ret) {
+		LOG_ERR("Call `bt_conn_set_security` failed: %d", ret);
+	}
 
 #if defined(CONFIG_SHELL_BT_NUS)
 	shell_bt_nus_enable(conn);
@@ -178,6 +189,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 #if defined(CONFIG_SHELL_BT_NUS)
 	shell_bt_nus_disable();
 #endif /* defined(CONFIG_SHELL_BT_NUS) */
+
+	if (m_current_conn) {
+		bt_conn_unref(m_current_conn);
+		m_current_conn = NULL;
+	}
 }
 
 BT_CONN_CB_DEFINE(conn_cb) = {
@@ -395,6 +411,12 @@ static int init(const struct device *dev)
 	ret = bt_enable(NULL);
 	if (ret) {
 		LOG_ERR("Call `bt_enable` failed: %d", ret);
+		return ret;
+	}
+
+	ret = settings_load();
+	if (ret) {
+		LOG_ERR("Call `settings_load` failed: %d", ret);
 		return ret;
 	}
 
