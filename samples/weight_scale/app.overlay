@@ -1,0 +1,25 @@
+/ {
+	chosen {
+		zephyr,console = &uart_x2;
+	};
+};
+
+&ctr_x3_ads122c04_a1 {
+	gain = <7>;
+	vref = <1>;
+};
+
+&ctr_x3_ads122c04_a2 {
+	gain = <7>;
+	vref = <1>;
+};
+
+&ctr_x3_ads122c04_b1 {
+	gain = <7>;
+	vref = <1>;
+};
+
+&ctr_x3_ads122c04_b2 {
+	gain = <7>;
+	vref = <1>;
+};
