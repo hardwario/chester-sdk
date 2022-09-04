@@ -105,8 +105,6 @@ int ctr_w1_release(struct ctr_w1 *w1, const struct device *dev)
 		goto error;
 	}
 
-	return 0;
-
 error:
 	ret = w1_unlock_bus(dev);
 	if (ret) {
