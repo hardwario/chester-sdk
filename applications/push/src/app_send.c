@@ -17,11 +17,10 @@
 /* Zephyr includes */
 #include <logging/log.h>
 #include <random/rand32.h>
-#include <tinycbor/cbor.h>
-#include <tinycbor/cbor_buf_writer.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include <zephyr.h>
+#include <zcbor_encode.h>
 
 /* Standard includes */
 #include <stddef.h>
@@ -169,19 +168,16 @@ static int compose(struct ctr_buf *buf)
 		return ret;
 	}
 
-	struct cbor_buf_writer writer;
-	cbor_buf_writer_init(&writer, ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf));
+	zcbor_state_t zs[8];
+	zcbor_new_state(zs, ARRAY_SIZE(zs), ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf), 0);
 
-	CborEncoder enc;
-	cbor_encoder_init(&enc, &writer.enc, 0);
-
-	ret = app_cbor_encode(&enc);
+	ret = app_cbor_encode(zs);
 	if (ret) {
 		LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
 		return ret;
 	}
 
-	size_t len = 12 + enc.writer->bytes_written;
+	size_t len = zs[0].payload_mut - ctr_buf_get_mem(buf);
 
 	struct tc_sha256_state_struct s;
 	ret = tc_sha256_init(&s);
