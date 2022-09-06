@@ -45,26 +45,18 @@ static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 {
 	int ret;
 
-	struct i2c_msg msgs[2];
+	if (!device_is_ready(get_config(dev)->i2c_dev)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
+	}
 
-	msgs[0].buf = &reg;
-	msgs[0].len = 1;
-	msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_RESTART;
-
-	uint16_t buf;
-
-	msgs[1].buf = (uint8_t *)&buf;
-	msgs[1].len = 2;
-	msgs[1].flags = I2C_MSG_READ | I2C_MSG_STOP;
-
-	ret = i2c_transfer(get_config(dev)->i2c_dev, msgs, ARRAY_SIZE(msgs),
-	                   get_config(dev)->i2c_addr);
+	ret = i2c_write_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, &reg, 1, data, 2);
 	if (ret) {
-		LOG_WRN("Call `i2c_transfer` failed: %d", ret);
+		LOG_ERR("Call `i2c_write_read` failed: %d", ret);
 		return ret;
 	}
 
-	*data = sys_be16_to_cpu(buf);
+	*data = sys_be16_to_cpu(*data);
 
 	return 0;
 }
@@ -73,20 +65,17 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 {
 	int ret;
 
-	uint8_t buf[3] = { reg };
+	if (!device_is_ready(get_config(dev)->i2c_dev)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
+	}
 
+	uint8_t buf[3] = { reg };
 	sys_put_be16(data, &buf[1]);
 
-	struct i2c_msg msgs[1];
-
-	msgs[0].buf = buf;
-	msgs[0].len = 3;
-	msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
-
-	ret = i2c_transfer(get_config(dev)->i2c_dev, msgs, ARRAY_SIZE(msgs),
-	                   get_config(dev)->i2c_addr);
+	ret = i2c_write(get_config(dev)->i2c_dev, buf, sizeof(buf), get_config(dev)->i2c_addr);
 	if (ret) {
-		LOG_WRN("Call `i2c_transfer` failed: %d", ret);
+		LOG_ERR("Call `i2c_write` failed: %d", ret);
 		return ret;
 	}
 

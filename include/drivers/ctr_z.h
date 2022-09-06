@@ -27,13 +27,14 @@ enum ctr_z_buzzer_command {
 };
 
 enum ctr_z_buzzer_pattern {
-	CTR_Z_BUZZER_PATTERN_NONE = 0,
+	CTR_Z_BUZZER_PATTERN_OFF = 0,
 	CTR_Z_BUZZER_PATTERN_1_HZ_1_1 = 1,
 	CTR_Z_BUZZER_PATTERN_1_HZ_1_7 = 2,
 	CTR_Z_BUZZER_PATTERN_2_HZ_1_1 = 3,
 	CTR_Z_BUZZER_PATTERN_2_HZ_1_3 = 4,
 	CTR_Z_BUZZER_PATTERN_4_HZ_1_1 = 5,
 	CTR_Z_BUZZER_PATTERN_8_HZ_1_1 = 6,
+	CTR_Z_BUZZER_PATTERN_ON = 15,
 };
 
 enum ctr_z_led_channel {
@@ -55,7 +56,7 @@ enum ctr_z_led_channel {
 };
 
 enum ctr_z_led_brightness {
-	CTR_Z_LED_BRIGHTNESS_NONE = 0x00,
+	CTR_Z_LED_BRIGHTNESS_OFF = 0x00,
 	CTR_Z_LED_BRIGHTNESS_LOW = 0x1f,
 	CTR_Z_LED_BRIGHTNESS_MEDIUM = 0x7f,
 	CTR_Z_LED_BRIGHTNESS_HIGH = 0xff,
@@ -75,13 +76,14 @@ enum ctr_z_led_command {
 };
 
 enum ctr_z_led_pattern {
-	CTR_Z_LED_PATTERN_NONE = 0,
+	CTR_Z_LED_PATTERN_OFF = 0,
 	CTR_Z_LED_PATTERN_1_HZ_1_1 = 1,
 	CTR_Z_LED_PATTERN_1_HZ_1_7 = 2,
 	CTR_Z_LED_PATTERN_2_HZ_1_1 = 3,
 	CTR_Z_LED_PATTERN_2_HZ_1_3 = 4,
 	CTR_Z_LED_PATTERN_4_HZ_1_1 = 5,
 	CTR_Z_LED_PATTERN_8_HZ_1_1 = 6,
+	CTR_Z_LED_PATTERN_ON = 15,
 };
 
 enum ctr_z_event {

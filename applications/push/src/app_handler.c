@@ -189,7 +189,7 @@ static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
 	struct ctr_z_led_param led_param = {
 		.brightness = CTR_Z_LED_BRIGHTNESS_HIGH,
 		.command = led_command,
-		.pattern = CTR_Z_LED_PATTERN_NONE,
+		.pattern = CTR_Z_LED_PATTERN_OFF,
 	};
 
 	ret = ctr_z_set_led(dev, led_channel, &led_param);
@@ -200,7 +200,7 @@ static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
 
 	struct ctr_z_buzzer_param buzzer_param = {
 		.command = buzzer_command,
-		.pattern = CTR_Z_BUZZER_PATTERN_NONE,
+		.pattern = CTR_Z_BUZZER_PATTERN_OFF,
 	};
 
 	ret = ctr_z_set_buzzer(dev, &buzzer_param);

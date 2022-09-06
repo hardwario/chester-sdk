@@ -41,7 +41,7 @@ void ctr_z_event_handler(const struct device *dev, enum ctr_z_event event, void 
 	struct ctr_z_led_param param = {
 		.brightness = CTR_Z_LED_BRIGHTNESS_HIGH,
 		.command = CTR_Z_LED_COMMAND_1X_1_2,
-		.pattern = CTR_Z_LED_PATTERN_NONE,
+		.pattern = CTR_Z_LED_PATTERN_OFF,
 	};
 
 	ret = ctr_z_set_led(dev, led++ % 15, &param);
