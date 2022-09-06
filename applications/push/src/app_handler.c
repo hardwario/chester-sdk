@@ -168,10 +168,17 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
+#if defined(CONFIG_APP_FLIP_MODE)
+static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
+                         enum ctr_z_led_channel led_channel,
+                         enum ctr_z_buzzer_command buzzer_command, atomic_t *counter,
+                         atomic_t *source)
+#else
 static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
                          enum ctr_z_led_channel led_channel, enum ctr_z_led_command led_command,
                          enum ctr_z_buzzer_command buzzer_command, atomic_t *counter,
                          atomic_t *source)
+#endif /* defined(CONFIG_APP_FLIP_MODE) */
 {
 	int ret;
 
@@ -188,8 +195,13 @@ static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
 
 	struct ctr_z_led_param led_param = {
 		.brightness = CTR_Z_LED_BRIGHTNESS_HIGH,
+#if defined(CONFIG_APP_FLIP_MODE)
+		.command = CTR_Z_LED_COMMAND_NONE,
+		.pattern = CTR_Z_LED_PATTERN_ON,
+#else
 		.command = led_command,
 		.pattern = CTR_Z_LED_PATTERN_OFF,
+#endif /* defined(CONFIG_APP_FLIP_MODE) */
 	};
 
 	ret = ctr_z_set_led(dev, led_channel, &led_param);
@@ -223,6 +235,55 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 	int ret;
 
 	LOG_INF("Event: %d", event);
+
+#if defined(CONFIG_APP_FLIP_MODE)
+
+#define CLEAR_LED(button)                                                                          \
+	do {                                                                                       \
+		struct ctr_z_led_param led_param = {                                               \
+			.brightness = CTR_Z_LED_BRIGHTNESS_OFF,                                    \
+			.command = CTR_Z_LED_COMMAND_NONE,                                         \
+			.pattern = CTR_Z_LED_PATTERN_OFF,                                          \
+		};                                                                                 \
+		ret = ctr_z_set_led(dev, CTR_Z_LED_CHANNEL_##button##_R, &led_param);              \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `ctr_z_set_led` failed: %d", ret);                           \
+		}                                                                                  \
+	} while (0)
+
+	if (event == CTR_Z_EVENT_BUTTON_0_PRESS || event == CTR_Z_EVENT_BUTTON_1_PRESS ||
+	    event == CTR_Z_EVENT_BUTTON_2_PRESS || event == CTR_Z_EVENT_BUTTON_3_PRESS ||
+	    event == CTR_Z_EVENT_BUTTON_4_PRESS) {
+		CLEAR_LED(0);
+		CLEAR_LED(1);
+		CLEAR_LED(2);
+		CLEAR_LED(3);
+		CLEAR_LED(4);
+	}
+
+#undef CLEAR_LED
+
+#define HANDLE_PRESS(button, counter, source)                                                      \
+	do {                                                                                       \
+		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button##_PRESS,                    \
+		                    CTR_Z_LED_CHANNEL_##button##_R, CTR_Z_BUZZER_COMMAND_1X_1_2,   \
+		                    counter, source);                                              \
+		if (ret < 0) {                                                                     \
+			LOG_ERR("Call `handle_button` failed: %d", ret);                           \
+		} else if (ret) {                                                                  \
+			goto apply;                                                                \
+		}                                                                                  \
+	} while (0)
+
+	HANDLE_PRESS(0, &g_app_data.events.button_x_click, &g_app_data.sources.button_x_click);
+	HANDLE_PRESS(1, &g_app_data.events.button_1_click, &g_app_data.sources.button_1_click);
+	HANDLE_PRESS(2, &g_app_data.events.button_2_click, &g_app_data.sources.button_2_click);
+	HANDLE_PRESS(3, &g_app_data.events.button_3_click, &g_app_data.sources.button_3_click);
+	HANDLE_PRESS(4, &g_app_data.events.button_4_click, &g_app_data.sources.button_4_click);
+
+#undef HANDLE_PRESS
+
+#else
 
 #define HANDLE_CLICK(button, counter, source)                                                      \
 	do {                                                                                       \
@@ -263,6 +324,8 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 	HANDLE_HOLD(4, &g_app_data.events.button_4_hold, &g_app_data.sources.button_4_hold);
 
 #undef HANDLE_HOLD
+
+#endif /* defined(CONFIG_APP_FLIP_MODE) */
 
 	switch (event) {
 	case CTR_Z_EVENT_DEVICE_RESET:
