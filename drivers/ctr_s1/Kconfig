@@ -7,6 +7,11 @@ config CTR_S1
 
 if CTR_S1
 
+config CTR_S1_SHELL
+	depends on SHELL
+	bool "CTR_S1_SHELL"
+	default y
+
 module = CTR_S1
 module-str = ctr_s1
 source "subsys/logging/Kconfig.template.log_config"
