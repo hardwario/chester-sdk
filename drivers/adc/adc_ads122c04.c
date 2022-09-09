@@ -106,6 +106,8 @@ static int send_cmd(const struct device *dev, uint8_t cmd)
 		return ret;
 	}
 
+	LOG_DBG("Command: 0x%02x", cmd);
+
 	return 0;
 }
 
@@ -125,6 +127,8 @@ static int read_data(const struct device *dev, uint8_t data[3])
 		LOG_ERR("Call `i2c_write_read_dt` failed: %d", ret);
 		return ret;
 	}
+
+	LOG_DBG("Data: 0x%02x%02x%02x", data[0], data[1], data[2]);
 
 	return 0;
 }
@@ -146,12 +150,16 @@ static int read_reg(const struct device *dev, uint8_t reg, uint8_t *val)
 		return ret;
 	}
 
+	LOG_DBG("Register: 0x%02x Value: 0x%02x", reg, *val);
+
 	return 0;
 }
 
 static int write_reg(const struct device *dev, uint8_t reg, uint8_t val)
 {
 	int ret;
+
+	LOG_DBG("Register: 0x%02x Value: 0x%02x", reg, val);
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
