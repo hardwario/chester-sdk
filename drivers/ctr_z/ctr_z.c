@@ -58,12 +58,16 @@ static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 
 	*data = sys_be16_to_cpu(*data);
 
+	LOG_DBG("Register: 0x%02x Data: 0x%04x", reg, *data);
+
 	return 0;
 }
 
 static int write(const struct device *dev, uint8_t reg, uint16_t data)
 {
 	int ret;
+
+	LOG_DBG("Register: 0x%02x Data: 0x%04x", reg, data);
 
 	if (!device_is_ready(get_config(dev)->i2c_dev)) {
 		LOG_ERR("Device not ready");
