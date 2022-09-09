@@ -166,8 +166,6 @@ static int write_reg(const struct device *dev, uint8_t reg, uint8_t val)
 		return -EINVAL;
 	}
 
-	LOG_DBG("reg: 0x%02x val: 0x%02x", reg, val);
-
 	reg = CMD_WREG | (reg & 0x03) << 2;
 
 	ret = i2c_reg_write_byte_dt(&get_config(dev)->i2c_spec, reg, val);
