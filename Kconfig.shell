@@ -4,7 +4,6 @@ config CTR_SHELL
 	select SHELL
 	select SHELL_BACKEND_RTT
 	select SHELL_BT_NUS if CTR_BLE
-	select SHELL_CMDS
 	select SHELL_HELP
 	select SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
 	select SHELL_MINIMAL
@@ -37,3 +36,6 @@ config SHELL_RTT_RX_POLL_PERIOD
 
 config SHELL_STACK_SIZE
 	default 4096 if CTR_SHELL
+
+config SHELL_VT100_COMMANDS
+	default n if CTR_SHELL
