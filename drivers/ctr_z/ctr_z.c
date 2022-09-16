@@ -4,13 +4,13 @@
 #include <drivers/ctr_z.h>
 
 /* Zephyr includes */
-#include <devicetree.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
 #define DT_DRV_COMPAT hardwario_ctr_z
 

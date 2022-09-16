@@ -2,7 +2,7 @@
 #define CHESTER_INCLUDE_DRIVERS_PEOPLE_COUNTER_H_
 
 /* Zephyr includes */
-#include <device.h>
+#include <zephyr/device.h>
 
 /* Standard include */
 #include <stdint.h>

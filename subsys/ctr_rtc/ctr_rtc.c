@@ -2,15 +2,15 @@
 #include <ctr_rtc.h>
 
 /* Zephyr includes */
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <init.h>
-#include <irq.h>
-#include <logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/init.h>
+#include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/timeutil.h>
+#include <zephyr/zephyr.h>
 #include <nrfx_rtc.h>
-#include <shell/shell.h>
-#include <sys/timeutil.h>
-#include <zephyr.h>
 
 /* Standard includes */
 #include <ctype.h>

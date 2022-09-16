@@ -2,12 +2,12 @@
 #include <ctr_led.h>
 
 /* Zephyr includes */
-#include <device.h>
-#include <devicetree.h>
-#include <irq.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 #include <nrfx_twis.h>
-#include <zephyr.h>
 
 /* Standard includes */
 #include <stdbool.h>

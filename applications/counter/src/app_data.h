@@ -4,12 +4,12 @@
 /* CHESTER includes */
 #include <ctr_lte.h>
 
+/* Zephyr includes */
+#include <zephyr/zephyr.h>
+
 /* Standard includes */
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Zephyr includes */
-#include <zephyr.h>
 
 #ifdef __cplusplus
 extern "C" {

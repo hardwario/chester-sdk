@@ -1,10 +1,10 @@
-#include <devicetree.h>
-#include <drivers/adc.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <sys/util_macro.h>
-#include <zephyr.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/zephyr.h>
 
 #define DT_DRV_COMPAT ti_tla2021
 

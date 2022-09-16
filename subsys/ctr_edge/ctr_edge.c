@@ -2,11 +2,11 @@
 #include <ctr_edge.h>
 
 /* Zephyr includes */
-#include <devicetree.h>
-#include <drivers/gpio.h>
-#include <irq.h>
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdbool.h>

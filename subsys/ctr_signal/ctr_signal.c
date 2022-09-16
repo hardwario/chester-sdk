@@ -9,9 +9,9 @@
 #include <nrfx.h>
 
 /* Zephyr includes */
-#include <logging/log.h>
-#include <init.h>
-#include <zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <math.h>

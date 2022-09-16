@@ -2,7 +2,7 @@
 #define CHESTER_INCLUDE_DRIVERS_CTR_BATT_H_
 
 /* Zephyr includes */
-#include <device.h>
+#include <zephyr/device.h>
 
 #define CTR_BATT_REST_TIMEOUT_DEFAULT_MS 1000
 #define CTR_BATT_LOAD_TIMEOUT_DEFAULT_MS 9000

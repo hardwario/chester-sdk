@@ -7,9 +7,9 @@
 #include <ctr_rtc.h>
 
 /* Zephyr includes */
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 #include <tinycbor/cbor.h>
-#include <zephyr.h>
 
 /* Standard includes */
 #include <errno.h>

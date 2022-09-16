@@ -2,8 +2,8 @@
 #define CHESTER_INCLUDE_CTR_EDGE_H_
 
 /* Zephyr includes */
-#include <drivers/gpio.h>
-#include <zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdbool.h>

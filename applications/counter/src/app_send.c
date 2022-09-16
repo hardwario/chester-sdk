@@ -10,13 +10,13 @@
 #include <ctr_lte.h>
 
 /* Zephyr includes */
-#include <logging/log.h>
-#include <random/rand32.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/zephyr.h>
 #include <tinycbor/cbor.h>
 #include <tinycbor/cbor_buf_writer.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
-#include <zephyr.h>
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
 

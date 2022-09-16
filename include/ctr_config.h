@@ -2,7 +2,7 @@
 #define CHESTER_INCLUDE_CTR_CONFIG_H_
 
 /* Zephyr includes */
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 /* Standard include */
 #include <stddef.h>

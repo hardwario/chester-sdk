@@ -2,8 +2,8 @@
 #define CHESTER_INCLUDE_DRIVERS_CTR_X0_H_
 
 /* Zephyr includes */
-#include <drivers/gpio.h>
-#include <device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {

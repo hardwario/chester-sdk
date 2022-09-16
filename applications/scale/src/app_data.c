@@ -4,7 +4,7 @@
 #include <ctr_lte.h>
 
 /* Zephyr includes */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <limits.h>

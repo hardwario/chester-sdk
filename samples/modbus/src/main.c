@@ -1,10 +1,10 @@
 /* Zephyr includes */
-#include <device.h>
-#include <devicetree.h>
-#include <logging/log.h>
-#include <modbus/modbus.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/modbus/modbus.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdint.h>

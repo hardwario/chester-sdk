@@ -3,9 +3,9 @@
 #include "app_send.h"
 
 /* Zephyr includes */
-#include <logging/log.h>
-#include <shell/shell.h>
-#include <zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(app_shell, LOG_LEVEL_INF);
 

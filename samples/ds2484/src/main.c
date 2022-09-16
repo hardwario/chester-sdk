@@ -1,10 +1,10 @@
 /* Zephyr includes */
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/w1.h>
-#include <logging/log.h>
-#include <pm/device.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/w1.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/zephyr.h>
 
 #include <string.h>
 

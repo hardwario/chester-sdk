@@ -2,7 +2,7 @@
 #define APP_CBOR_H_
 
 /* Zephyr includes */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zcbor_common.h>
 
 #ifdef __cplusplus

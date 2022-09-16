@@ -5,9 +5,9 @@
 #include <drivers/ctr_lte_if.h>
 
 /* Zephyr includes */
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <ctype.h>

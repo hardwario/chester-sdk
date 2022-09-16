@@ -2,7 +2,7 @@
 #define CHESTER_INCLUDE_DRIVERS_CTR_S1_H_
 
 /* Zephyr includes */
-#include <device.h>
+#include <zephyr/device.h>
 
 /* Standard include */
 #include <stdbool.h>

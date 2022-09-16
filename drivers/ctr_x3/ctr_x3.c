@@ -2,11 +2,11 @@
 #include <drivers/ctr_x3.h>
 
 /* Zephyr includes */
-#include <devicetree.h>
-#include <drivers/adc.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdbool.h>

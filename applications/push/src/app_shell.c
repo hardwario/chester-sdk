@@ -2,9 +2,9 @@
 #include "app_loop.h"
 
 /* Zephyr includes */
-#include <logging/log.h>
-#include <shell/shell.h>
-#include <zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stddef.h>

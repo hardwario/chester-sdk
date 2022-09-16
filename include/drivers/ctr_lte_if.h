@@ -1,7 +1,7 @@
 #ifndef CHESTER_INCLUDE_DRIVERS_CTR_LTE_IF_H_
 #define CHESTER_INCLUDE_DRIVERS_CTR_LTE_IF_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 /* Standard includes */
 #include <stdarg.h>

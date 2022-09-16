@@ -9,11 +9,11 @@
 #include <ctr_wdog.h>
 
 /* Zephyr includes */
-#include <logging/log.h>
-#include <random/rand32.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/zephyr.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
-#include <zephyr.h>
 
 /* Standard includes */
 #include <math.h>

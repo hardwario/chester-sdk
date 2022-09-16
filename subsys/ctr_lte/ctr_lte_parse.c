@@ -2,7 +2,7 @@
 #include "ctr_lte_tok.h"
 
 /* Zephyr includes */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <ctype.h>

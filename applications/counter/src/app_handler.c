@@ -7,9 +7,9 @@
 #include <ctr_lte.h>
 
 /* Zephyr includes */
-#include <device.h>
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stddef.h>

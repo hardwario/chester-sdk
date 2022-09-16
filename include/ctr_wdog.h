@@ -2,7 +2,7 @@
 #define CHESTER_INCLUDE_CTR_WDOG_H_
 
 /* Zephyr includes */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #ifdef __cplusplus
 extern "C" {

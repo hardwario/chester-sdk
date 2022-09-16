@@ -9,9 +9,9 @@
 #include <ctr_therm.h>
 
 /* Zephyr includes */
-#include <drivers/sensor.h>
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <limits.h>

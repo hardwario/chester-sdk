@@ -5,11 +5,11 @@
 #include <nrf52840.h>
 
 /* Zephyr includes */
-#include <init.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
-#include <zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdbool.h>

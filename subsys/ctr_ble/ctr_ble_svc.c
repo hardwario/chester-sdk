@@ -2,14 +2,14 @@
 #include <ctr_info.h>
 
 /* Zephyr includes */
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/uuid.h>
-#include <init.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <sys/reboot.h>
-#include <zephyr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdint.h>

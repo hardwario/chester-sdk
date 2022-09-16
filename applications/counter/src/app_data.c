@@ -1,12 +1,12 @@
 #include "app_data.h"
 #include "msg_key.h"
 
+/* Zephyr includes */
+#include <zephyr/zephyr.h>
+
 /* Standard includes */
 #include <limits.h>
 #include <math.h>
-
-/* Zephyr includes */
-#include <zephyr.h>
 
 struct data g_app_data = {
 	.batt_voltage_rest = NAN,

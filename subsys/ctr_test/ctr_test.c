@@ -1,8 +1,8 @@
 /* Zephyr includes */
-#include <init.h>
-#include <logging/log.h>
-#include <shell/shell.h>
-#include <zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stddef.h>

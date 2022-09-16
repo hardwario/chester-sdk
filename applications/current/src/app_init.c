@@ -9,12 +9,12 @@
 #include <ctr_wdog.h>
 
 /* Zephyr includes */
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stddef.h>

@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 /* TODO Delete */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 #define W1_THERM_COUNT 10

@@ -9,10 +9,10 @@
 #include <drivers/ctr_z.h>
 
 /* Zephyr includes */
-#include <device.h>
-#include <devicetree.h>
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
 

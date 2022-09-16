@@ -10,10 +10,10 @@
 #include <drivers/people_counter.h>
 
 /* Zephyr includes */
-#include <device.h>
-#include <devicetree.h>
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdbool.h>

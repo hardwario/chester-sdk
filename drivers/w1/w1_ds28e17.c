@@ -2,12 +2,12 @@
 #include <drivers/w1/ds28e17.h>
 
 /* Zephyr includes */
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/w1.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/w1.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stddef.h>

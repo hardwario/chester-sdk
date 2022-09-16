@@ -3,23 +3,23 @@
 #include <ctr_info.h>
 
 /* Zephyr includes */
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci_vs.h>
-#include <bluetooth/hci.h>
 #include <bluetooth/services/dfu_smp.h>
 #include <bluetooth/services/nus.h>
-#include <bluetooth/uuid.h>
 #include <img_mgmt/img_mgmt.h>
-#include <init.h>
-#include <logging/log.h>
-#include <mgmt/mcumgr/smp_bt.h>
 #include <os_mgmt/os_mgmt.h>
-#include <settings/settings.h>
 #include <shell_mgmt/shell_mgmt.h>
 #include <shell/shell_bt_nus.h>
-#include <shell/shell.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/mgmt/mcumgr/smp_bt.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <ctype.h>

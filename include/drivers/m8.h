@@ -2,7 +2,7 @@
 #define CHESTER_INCLUDE_DRIVERS_M8_H_
 
 /* Zephyr includes */
-#include <device.h>
+#include <zephyr/device.h>
 
 /* Standard includes */
 #include <stdbool.h>

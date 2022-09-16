@@ -8,12 +8,12 @@
 #include <ctr_therm.h>
 
 /* Zephyr includes */
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 #include <tinycbor/cbor.h>
 #include <tinycbor/cbor_buf_writer.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
-#include <zephyr.h>
 
 /* Standard includes */
 #include <math.h>

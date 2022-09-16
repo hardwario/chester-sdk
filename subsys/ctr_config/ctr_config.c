@@ -2,14 +2,14 @@
 #include <ctr_config.h>
 
 /* Zephyr includes */
-#include <init.h>
-#include <fs/nvs.h>
-#include <logging/log.h>
-#include <settings/settings.h>
-#include <shell/shell.h>
-#include <storage/flash_map.h>
-#include <sys/reboot.h>
-#include <zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/fs/nvs.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stddef.h>

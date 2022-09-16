@@ -2,8 +2,8 @@
 #include <ctr_buf.h>
 
 /* Zephyr includes */
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdint.h>

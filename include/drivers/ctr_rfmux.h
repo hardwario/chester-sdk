@@ -2,7 +2,7 @@
 #define CHESTER_INCLUDE_DRIVERS_CTR_RFMUX_H_
 
 /* Zephyr includes */
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {

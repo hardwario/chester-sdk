@@ -7,8 +7,8 @@
 #include <ctr_rtc.h>
 
 /* Zephyr includes */
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 

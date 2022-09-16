@@ -2,11 +2,11 @@
 #include <ctr_config.h>
 
 /* Zephyr includes */
-#include <init.h>
-#include <logging/log.h>
-#include <settings/settings.h>
-#include <shell/shell.h>
-#include <zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <ctype.h>

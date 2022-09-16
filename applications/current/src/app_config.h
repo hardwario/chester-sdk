@@ -2,7 +2,7 @@
 #define APP_CONFIG_H_
 
 /* Zephyr includes */
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 /* Standard includes */
 #include <stdbool.h>

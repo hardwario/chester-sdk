@@ -2,7 +2,7 @@
 #include <ctr_buf.h>
 
 /* Zephyr includes */
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 /* Standard includes */
 #include <errno.h>

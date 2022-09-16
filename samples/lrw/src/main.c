@@ -1,7 +1,7 @@
 #include <ctr_lrw.h>
 
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 

@@ -7,7 +7,7 @@
 #include <drivers/ctr_z.h>
 
 /* Zephyr includes */
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -2,8 +2,8 @@
 #define CHESTER_INCLUDE_DRIVERS_W1_DS28E17_H_
 
 /* Zephyr includes */
-#include <device.h>
-#include <drivers/w1.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/w1.h>
 
 /* Standard includes */
 #include <stddef.h>

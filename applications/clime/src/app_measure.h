@@ -1,9 +1,11 @@
 #ifndef APP_MEASURE_H_
 #define APP_MEASURE_H_
 
-/* Zephyr includes */
-#include <zephyr.h>
+/* CHESTER includes */
 #include <drivers/ctr_s1.h>
+
+/* Zephyr includes */
+#include <zephyr/zephyr.h>
 
 #ifdef __cplusplus
 extern "C" {

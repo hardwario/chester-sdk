@@ -2,8 +2,8 @@
 #include <ctr_led.h>
 
 /* Zephyr includes */
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 

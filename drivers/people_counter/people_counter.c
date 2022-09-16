@@ -4,11 +4,11 @@
 #include <drivers/people_counter.h>
 
 /* Zephyr includes */
-#include <devicetree.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stddef.h>
