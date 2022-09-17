@@ -354,11 +354,11 @@ static int configure_baudrate(const struct device *dev, const struct uart_config
 {
 	int ret;
 
-	float clock_frequency = get_config(dev)->clock_frequency;
-	float prescaler = get_config(dev)->prescaler;
-	float baudrate = cfg->baudrate;
+	double clock_frequency = get_config(dev)->clock_frequency;
+	double prescaler = get_config(dev)->prescaler;
+	double baudrate = cfg->baudrate;
 
-	uint16_t divisor = roundf((clock_frequency / prescaler) / (baudrate * 16));
+	uint16_t divisor = lround((clock_frequency / prescaler) / (baudrate * 16));
 	get_data(dev)->reg_dll = (uint8_t)(divisor);
 	get_data(dev)->reg_dlh = (uint8_t)(divisor >> 8);
 
