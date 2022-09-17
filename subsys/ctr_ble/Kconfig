@@ -52,7 +52,7 @@ config BT_CTLR_RX_BUFFERS
 config BT_DEVICE_NAME
 	default "CHESTER"
 
-config BT_HCI_ECC_STACK_SIZE
+config BT_LONG_WQ_STACK_SIZE
 	default 2048
 
 config BT_HCI_TX_STACK_SIZE
