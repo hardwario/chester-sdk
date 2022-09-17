@@ -1,7 +1,7 @@
 #include "app_config.h"
 
 /* CHESTER includes */
-#include <ctr_config.h>
+#include <chester/ctr_config.h>
 
 /* Zephyr includes */
 #include <zephyr/init.h>

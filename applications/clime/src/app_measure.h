@@ -2,7 +2,7 @@
 #define APP_MEASURE_H_
 
 /* CHESTER includes */
-#include <drivers/ctr_s1.h>
+#include <chester/drivers/ctr_s1.h>
 
 /* Zephyr includes */
 #include <zephyr/zephyr.h>

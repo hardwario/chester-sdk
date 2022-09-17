@@ -3,11 +3,11 @@
 #include "app_handler.h"
 
 /* CHESTER includes */
-#include <ctr_led.h>
-#include <ctr_lte.h>
-#include <ctr_rtc.h>
-#include <ctr_wdog.h>
-#include <drivers/people_counter.h>
+#include <chester/ctr_led.h>
+#include <chester/ctr_lte.h>
+#include <chester/ctr_rtc.h>
+#include <chester/ctr_wdog.h>
+#include <chester/drivers/people_counter.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

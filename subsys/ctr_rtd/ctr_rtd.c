@@ -1,6 +1,6 @@
 /* CHESTER includes */
-#include <ctr_rtd.h>
-#include <drivers/ctr_x3.h>
+#include <chester/ctr_rtd.h>
+#include <chester/drivers/ctr_x3.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

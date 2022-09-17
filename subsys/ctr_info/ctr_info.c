@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <ctr_info.h>
+#include <chester/ctr_info.h>
 
 /* Nordic includes */
 #include <nrf52840.h>

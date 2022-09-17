@@ -4,11 +4,11 @@
 #include "app_loop.h"
 
 /* CHESTER includes */
-#include <ctr_accel.h>
-#include <ctr_rtc.h>
-#include <ctr_therm.h>
-#include <drivers/ctr_x3.h>
-#include <drivers/people_counter.h>
+#include <chester/ctr_accel.h>
+#include <chester/ctr_rtc.h>
+#include <chester/ctr_therm.h>
+#include <chester/drivers/ctr_x3.h>
+#include <chester/drivers/people_counter.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

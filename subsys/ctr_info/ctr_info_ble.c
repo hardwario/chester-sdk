@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <ctr_info.h>
+#include <chester/ctr_info.h>
 
 /* Zephyr includes */
 #include <zephyr/bluetooth/bluetooth.h>

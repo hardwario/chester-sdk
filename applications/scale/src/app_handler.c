@@ -3,7 +3,7 @@
 #include "app_init.h"
 
 /* CHESTER includes */
-#include <ctr_lte.h>
+#include <chester/ctr_lte.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

@@ -4,9 +4,9 @@
 #include "app_send.h"
 
 /* CHESTER includes */
-#include <ctr_led.h>
-#include <ctr_wdog.h>
-#include <drivers/ctr_batt.h>
+#include <chester/ctr_led.h>
+#include <chester/ctr_wdog.h>
+#include <chester/drivers/ctr_batt.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

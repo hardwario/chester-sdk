@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <ctr_gnss.h>
+#include <chester/ctr_gnss.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

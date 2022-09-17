@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <ctr_gpio.h>
+#include <chester/ctr_gpio.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

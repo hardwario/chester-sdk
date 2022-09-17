@@ -2,7 +2,7 @@
 #define APP_DATA_H_
 
 /* CHESTER includes */
-#include <ctr_lte.h>
+#include <chester/ctr_lte.h>
 
 /* Standard includes */
 #include <stdbool.h>

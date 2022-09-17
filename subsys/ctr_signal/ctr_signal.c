@@ -1,4 +1,4 @@
-#include <ctr_signal.h>
+#include <chester/ctr_signal.h>
 
 /* Nordic includes */
 #include <hal/nrf_saadc.h>

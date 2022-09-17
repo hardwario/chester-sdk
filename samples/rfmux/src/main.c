@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <drivers/ctr_rfmux.h>
+#include <chester/drivers/ctr_rfmux.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

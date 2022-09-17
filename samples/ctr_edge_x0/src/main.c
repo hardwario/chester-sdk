@@ -1,6 +1,6 @@
 /* CHESTER includes */
-#include <ctr_edge.h>
-#include <drivers/ctr_x0.h>
+#include <chester/ctr_edge.h>
+#include <chester/drivers/ctr_x0.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

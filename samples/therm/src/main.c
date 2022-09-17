@@ -1,6 +1,6 @@
 /* CHESTER includes */
-#include <ctr_led.h>
-#include <ctr_therm.h>
+#include <chester/ctr_led.h>
+#include <chester/ctr_therm.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

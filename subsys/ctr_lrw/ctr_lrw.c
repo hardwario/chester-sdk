@@ -2,11 +2,11 @@
 
 #include "ctr_lrw_talk.h"
 
-#include <ctr_lrw.h>
-#include <ctr_config.h>
-#include <ctr_util.h>
-#include <drivers/ctr_lrw_if.h>
-#include <drivers/ctr_rfmux.h>
+#include <chester/ctr_lrw.h>
+#include <chester/ctr_config.h>
+#include <chester/ctr_util.h>
+#include <chester/drivers/ctr_lrw_if.h>
+#include <chester/drivers/ctr_rfmux.h>
 
 /* Zephyr includes */
 #include <zephyr/init.h>

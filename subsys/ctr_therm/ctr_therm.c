@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <ctr_therm.h>
+#include <chester/ctr_therm.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

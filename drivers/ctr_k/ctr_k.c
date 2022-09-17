@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <drivers/ctr_k.h>
+#include <chester/drivers/ctr_k.h>
 
 /* Nordic includes */
 #include <hal/nrf_saadc.h>

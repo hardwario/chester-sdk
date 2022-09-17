@@ -1,12 +1,12 @@
 #include "app_config.h"
 
 /* CHESTER includes */
-#include <ctr_buf.h>
-#include <ctr_hygro.h>
-#include <ctr_led.h>
-#include <ctr_lte.h>
-#include <ctr_therm.h>
-#include <ctr_wdog.h>
+#include <chester/ctr_buf.h>
+#include <chester/ctr_hygro.h>
+#include <chester/ctr_led.h>
+#include <chester/ctr_lte.h>
+#include <chester/ctr_therm.h>
+#include <chester/ctr_wdog.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

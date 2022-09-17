@@ -1,7 +1,7 @@
 #include "app_data.h"
 
 /* CHESTER includes */
-#include <ctr_lte.h>
+#include <chester/ctr_lte.h>
 
 /* Zephyr includes */
 #include <zephyr/zephyr.h>

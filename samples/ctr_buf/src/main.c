@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <ctr_buf.h>
+#include <chester/ctr_buf.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

@@ -1,8 +1,8 @@
 #include "minmea.h"
 
 /* CHESTER includes */
-#include <ctr_gnss.h>
-#include <drivers/m8.h>
+#include <chester/ctr_gnss.h>
+#include <chester/drivers/m8.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

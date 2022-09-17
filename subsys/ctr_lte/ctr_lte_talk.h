@@ -1,7 +1,7 @@
 #ifndef CHESTER_SUBSYS_CTR_LTE_TALK_H_
 #define CHESTER_SUBSYS_CTR_LTE_TALK_H_
 
-#include <ctr_lte.h>
+#include <chester/ctr_lte.h>
 
 /* Standard includes */
 #include <stddef.h>

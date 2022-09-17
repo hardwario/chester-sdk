@@ -1,6 +1,6 @@
 /* CHESTER includes */
-#include <ctr_soil_sensor.h>
-#include <ctr_led.h>
+#include <chester/ctr_soil_sensor.h>
+#include <chester/ctr_led.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

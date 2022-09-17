@@ -4,7 +4,7 @@
 #include "app_measure.h"
 
 /* CHESTER includes */
-#include <ctr_lte.h>
+#include <chester/ctr_lte.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

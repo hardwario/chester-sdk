@@ -1,6 +1,6 @@
 /* CHESTER includes */
-#include <ctr_buf.h>
-#include <ctr_lte.h>
+#include <chester/ctr_buf.h>
+#include <chester/ctr_lte.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

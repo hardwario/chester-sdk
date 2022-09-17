@@ -3,9 +3,9 @@
 #include "msg_key.h"
 
 /* CHESTER includes */
-#include <ctr_info.h>
-#include <ctr_lte.h>
-#include <ctr_rtc.h>
+#include <chester/ctr_info.h>
+#include <chester/ctr_lte.h>
+#include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

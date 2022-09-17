@@ -1,4 +1,4 @@
-#include <drivers/ctr_lte_if.h>
+#include <chester/drivers/ctr_lte_if.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

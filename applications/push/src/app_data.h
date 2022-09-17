@@ -6,7 +6,7 @@
 
 /* CHESTER includes */
 #if defined(CONFIG_SHIELD_CTR_LTE)
-#include <ctr_lte.h>
+#include <chester/ctr_lte.h>
 #endif
 
 /* Zephyr includes */

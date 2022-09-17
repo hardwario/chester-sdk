@@ -1,7 +1,7 @@
 #include "people_counter_reg.h"
 
 /* CHESTER includes */
-#include <drivers/people_counter.h>
+#include <chester/drivers/people_counter.h>
 
 /* Zephyr includes */
 #include <zephyr/devicetree.h>

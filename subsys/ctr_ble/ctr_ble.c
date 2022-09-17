@@ -1,6 +1,6 @@
 /* CHESTER includes */
-#include <ctr_config.h>
-#include <ctr_info.h>
+#include <chester/ctr_config.h>
+#include <chester/ctr_info.h>
 
 /* Zephyr includes */
 #include <bluetooth/services/dfu_smp.h>

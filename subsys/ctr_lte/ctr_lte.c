@@ -1,11 +1,11 @@
 #include "ctr_lte_parse.h"
 #include "ctr_lte_talk.h"
 
-#include <ctr_lte.h>
-#include <ctr_config.h>
-#include <ctr_rtc.h>
-#include <drivers/ctr_lte_if.h>
-#include <drivers/ctr_rfmux.h>
+#include <chester/ctr_lte.h>
+#include <chester/ctr_config.h>
+#include <chester/ctr_rtc.h>
+#include <chester/drivers/ctr_lte_if.h>
+#include <chester/drivers/ctr_rfmux.h>
 
 /* Zephyr includes */
 #include <zephyr/init.h>

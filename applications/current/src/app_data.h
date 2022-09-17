@@ -4,7 +4,7 @@
 #include "app_config.h"
 
 /* CHESTER includes */
-#include <ctr_lte.h>
+#include <chester/ctr_lte.h>
 
 /* Standard includes */
 #include <stdbool.h>

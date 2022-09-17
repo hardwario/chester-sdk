@@ -1,4 +1,4 @@
-#include <drivers/ctr_batt.h>
+#include <chester/drivers/ctr_batt.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>

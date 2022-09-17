@@ -1,7 +1,7 @@
 /* CHESTER includes */
-#include <ctr_soil_sensor.h>
-#include <ctr_w1.h>
-#include <drivers/w1/ds28e17.h>
+#include <chester/ctr_soil_sensor.h>
+#include <chester/ctr_w1.h>
+#include <chester/drivers/w1/ds28e17.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

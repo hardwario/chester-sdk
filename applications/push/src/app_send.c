@@ -9,10 +9,10 @@
 #include "app_loop.h"
 
 /* CHESTER includes */
-#include <ctr_buf.h>
-#include <ctr_lrw.h>
-#include <ctr_info.h>
-#include <ctr_lte.h>
+#include <chester/ctr_buf.h>
+#include <chester/ctr_lrw.h>
+#include <chester/ctr_info.h>
+#include <chester/ctr_lte.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

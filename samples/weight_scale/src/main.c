@@ -1,7 +1,7 @@
 /* CHESTER includes */
-#include <ctr_led.h>
-#include <ctr_therm.h>
-#include <drivers/ctr_x3.h>
+#include <chester/ctr_led.h>
+#include <chester/ctr_therm.h>
+#include <chester/drivers/ctr_x3.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

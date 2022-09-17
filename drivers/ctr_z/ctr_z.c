@@ -1,7 +1,7 @@
 #include "ctr_z_reg.h"
 
 /* CHESTER includes */
-#include <drivers/ctr_z.h>
+#include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
 #include <zephyr/devicetree.h>

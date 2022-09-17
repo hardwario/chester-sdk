@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <ctr_button.h>
+#include <chester/ctr_button.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

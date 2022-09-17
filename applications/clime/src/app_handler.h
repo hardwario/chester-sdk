@@ -2,9 +2,9 @@
 #define APP_HANDLER_H_
 
 /* CHESTER includes */
-#include <ctr_lrw.h>
-#include <ctr_lte.h>
-#include <drivers/ctr_s1.h>
+#include <chester/ctr_lrw.h>
+#include <chester/ctr_lte.h>
+#include <chester/drivers/ctr_s1.h>
 
 #ifdef __cplusplus
 extern "C" {

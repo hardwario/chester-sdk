@@ -1,8 +1,8 @@
 #include "ctr_lte_talk.h"
 #include "ctr_lte_parse.h"
 
-#include <ctr_util.h>
-#include <drivers/ctr_lte_if.h>
+#include <chester/ctr_util.h>
+#include <chester/drivers/ctr_lte_if.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

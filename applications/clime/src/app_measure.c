@@ -5,11 +5,11 @@
 #include "app_send.h"
 
 /* CHESTER includes */
-#include <ctr_accel.h>
-#include <ctr_ds18b20.h>
-#include <ctr_hygro.h>
-#include <ctr_rtc.h>
-#include <ctr_therm.h>
+#include <chester/ctr_accel.h>
+#include <chester/ctr_ds18b20.h>
+#include <chester/ctr_hygro.h>
+#include <chester/ctr_rtc.h>
+#include <chester/ctr_therm.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>

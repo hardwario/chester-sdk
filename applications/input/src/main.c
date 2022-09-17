@@ -3,16 +3,16 @@
 #include "app_config.h"
 
 /* CHESTER includes */
-#include <ctr_accel.h>
-#include <ctr_buf.h>
-#include <ctr_edge.h>
-#include <ctr_hygro.h>
-#include <ctr_led.h>
-#include <ctr_lrw.h>
-#include <ctr_therm.h>
-#include <drivers/ctr_batt.h>
-#include <drivers/ctr_x0.h>
-#include <drivers/ctr_z.h>
+#include <chester/ctr_accel.h>
+#include <chester/ctr_buf.h>
+#include <chester/ctr_edge.h>
+#include <chester/ctr_hygro.h>
+#include <chester/ctr_led.h>
+#include <chester/ctr_lrw.h>
+#include <chester/ctr_therm.h>
+#include <chester/drivers/ctr_batt.h>
+#include <chester/drivers/ctr_x0.h>
+#include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

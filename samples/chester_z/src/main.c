@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <drivers/ctr_z.h>
+#include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

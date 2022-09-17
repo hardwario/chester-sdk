@@ -2,8 +2,8 @@
 #define APP_DATA_H_
 
 /* CHESTER includes */
-#include <ctr_lte.h>
-#include <drivers/people_counter.h>
+#include <chester/ctr_lte.h>
+#include <chester/drivers/people_counter.h>
 
 /* Standard includes */
 #include <stdbool.h>

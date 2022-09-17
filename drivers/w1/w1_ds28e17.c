@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <drivers/w1/ds28e17.h>
+#include <chester/drivers/w1/ds28e17.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

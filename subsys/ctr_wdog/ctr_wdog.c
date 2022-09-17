@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <ctr_wdog.h>
+#include <chester/ctr_wdog.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

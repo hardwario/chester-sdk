@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <drivers/m8.h>
+#include <chester/drivers/m8.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

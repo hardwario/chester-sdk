@@ -4,9 +4,9 @@
 #include "app_loop.h"
 
 /* CHESTER includes */
-#include <ctr_accel.h>
-#include <ctr_hygro.h>
-#include <ctr_therm.h>
+#include <chester/ctr_accel.h>
+#include <chester/ctr_hygro.h>
+#include <chester/ctr_therm.h>
 
 /* Zephyr includes */
 #include <zephyr/drivers/sensor.h>

@@ -1,6 +1,6 @@
 /* CHESTER includes */
-#include <ctr_ds18b20.h>
-#include <ctr_w1.h>
+#include <chester/ctr_ds18b20.h>
+#include <chester/ctr_w1.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

@@ -3,10 +3,10 @@
 #include "app_handler.h"
 
 /* CHESTER includes */
-#include <ctr_led.h>
-#include <ctr_lrw.h>
-#include <ctr_lte.h>
-#include <ctr_wdog.h>
+#include <chester/ctr_led.h>
+#include <chester/ctr_lrw.h>
+#include <chester/ctr_lte.h>
+#include <chester/ctr_wdog.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>

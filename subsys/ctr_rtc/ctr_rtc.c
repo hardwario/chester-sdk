@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <ctr_rtc.h>
+#include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
 #include <zephyr/drivers/clock_control.h>
