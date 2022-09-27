@@ -125,6 +125,12 @@ static int ctr_x0_set_mode_(const struct device *dev, enum ctr_x0_channel channe
 					LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);   \
 					return ret;                                                \
 				}                                                                  \
+				ret = gpio_pin_configure_dt(&get_config(dev)->pd##ch##_spec,       \
+				                            GPIO_OUTPUT_ACTIVE);                   \
+				if (ret) {                                                         \
+					LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);   \
+					return ret;                                                \
+				}                                                                  \
 				break;                                                             \
 			case CTR_X0_MODE_PWR_SOURCE:                                               \
 				ret = gpio_pin_configure_dt(&get_config(dev)->on##ch##_spec,       \

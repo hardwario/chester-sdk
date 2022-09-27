@@ -9,6 +9,8 @@ extern "C" {
 #endif
 
 #define CTR_ADC_MILLIVOLTS(_sample) (((uint32_t)(_sample)) * 600 * 6 / 4095)
+#define CTR_ADC_X0_CL_MILLIAMPS(_sample)                                                           \
+	((float)CTR_ADC_MILLIVOLTS(_sample) * ((100.f + 10.f) / 10.f) / 249.f)
 
 enum ctr_adc_channel {
 	CTR_ADC_CHANNEL_A0 = 1,
