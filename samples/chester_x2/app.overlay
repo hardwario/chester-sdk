@@ -1,5 +1,5 @@
 / {
 	chosen {
-		zephyr,console = &uart_x2;
+		zephyr,console = &ctr_x2_sc16is740_a;
 	};
 };

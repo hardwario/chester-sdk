@@ -1,0 +1,3 @@
+&ctr_x2_sc16is740_b {
+	status = "okay";
+};

@@ -1,22 +1,12 @@
-&i2c0 {
-	uart_x2: uart@50 {
-		compatible = "nxp,sc16is7xx";
-		reg = <0x50>;
-		clock-frequency = <14745600>;
-		prescaler = <1>;
-		current-speed = <9600>;
-		label = "UART_X2";
-		irq-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
-		rts-control;
-	};
-};
+&ctr_x2_sc16is740_a {
+	current-speed = <9600>;
+	rts-control;
 
-&uart_x2 {
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
 		label = "MODBUS0";
 		status = "okay";
-		de-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
-		re-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		de-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		re-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
 	};
 };

@@ -1,4 +1,4 @@
-if SHIELD_CTR_X2
+if SHIELD_CTR_X2_A
 
 config GPIO
 	default y
@@ -12,4 +12,4 @@ config SERIAL
 config UART_SC16IS7XX
 	default y
 
-endif # SHIELD_CTR_X2
+endif # SHIELD_CTR_X2_A
