@@ -250,6 +250,7 @@
 	ctr_x2_sc16is740_a: uart@50 {
 		compatible = "nxp,sc16is7xx";
 		label = "CTR_X2_SC16IS740_A";
+		status = "disabled";
 		reg = <0x50>;
 		clock-frequency = <14745600>;
 		prescaler = <1>;
@@ -259,6 +260,7 @@
 	ctr_x2_sc16is740_b: uart@51 {
 		compatible = "nxp,sc16is7xx";
 		label = "CTR_X2_SC16IS740_B";
+		status = "disabled";
 		reg = <0x51>;
 		clock-frequency = <14745600>;
 		prescaler = <1>;

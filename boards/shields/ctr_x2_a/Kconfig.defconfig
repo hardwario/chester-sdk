@@ -6,6 +6,12 @@ config GPIO
 config I2C
 	default y
 
+config PM
+	default y
+
+config PM_DEVICE
+	default y
+
 config SERIAL
 	default y
 
