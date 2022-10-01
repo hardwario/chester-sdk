@@ -1,4 +1,4 @@
-if (msg.payload.data.applicationName !== 'ember-application-chester-clime') {
+if (msg.payload.applicationName !== 'ember-application-chester-clime') {
     return null;
 }
 
