@@ -3,15 +3,9 @@
 #include <chester/ctr_info.h>
 
 /* Zephyr includes */
-#include <bluetooth/services/dfu_smp.h>
-#include <bluetooth/services/nus.h>
-#include <img_mgmt/img_mgmt.h>
-#include <os_mgmt/os_mgmt.h>
-#include <shell_mgmt/shell_mgmt.h>
-#include <shell/shell_bt_nus.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
@@ -20,6 +14,13 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/zephyr.h>
+
+#include <bluetooth/services/dfu_smp.h>
+#include <bluetooth/services/nus.h>
+#include <img_mgmt/img_mgmt.h>
+#include <os_mgmt/os_mgmt.h>
+#include <shell/shell_bt_nus.h>
+#include <shell_mgmt/shell_mgmt.h>
 
 /* Standard includes */
 #include <ctype.h>
@@ -32,9 +33,6 @@
 LOG_MODULE_REGISTER(ctr_ble, CONFIG_CTR_BLE_LOG_LEVEL);
 
 #define SETTINGS_PFX "ble"
-
-#define TX_POWER_DBM_ADV 8
-#define TX_POWER_DBM_CONN 8
 
 struct config {
 	char passkey[6 + 1];
@@ -52,11 +50,11 @@ static struct config m_config;
 /* clang-format on */
 
 static const struct bt_data m_ad[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+        BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
 
 static const struct bt_data m_sd[] = {
-	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_DFU_SMP_SERVICE_VAL),
+        BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_DFU_SMP_SERVICE_VAL),
 };
 
 static struct bt_conn *m_current_conn;
@@ -126,39 +124,6 @@ static int load_passkey(void)
 	return 0;
 }
 
-static int set_tx_power(uint8_t handle_type, uint16_t handle, int8_t tx_power_level)
-{
-	int ret;
-
-	struct bt_hci_cp_vs_write_tx_power_level *cp;
-	struct net_buf *buf;
-	buf = bt_hci_cmd_create(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL, sizeof(*cp));
-	if (!buf) {
-		LOG_ERR("Call `bt_hci_cmd_create` failed");
-		return -EIO;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	cp->handle_type = handle_type;
-	cp->handle = sys_cpu_to_le16(handle);
-	cp->tx_power_level = tx_power_level;
-
-	struct net_buf *rsp;
-	ret = bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL, buf, &rsp);
-	if (ret) {
-		LOG_ERR("Call `bt_hci_cmd_send_sync` failed: %d", ret);
-		return ret;
-	}
-
-	struct bt_hci_rp_vs_write_tx_power_level *rp = (void *)rsp->data;
-	LOG_INF("Handle type: %u; Handle: %u; Requested: %d dBm; Selected: %d dBm\n", handle_type,
-	        handle, tx_power_level, rp->selected_tx_power);
-
-	net_buf_unref(rsp);
-
-	return 0;
-}
-
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	int ret;
@@ -197,8 +162,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 }
 
 BT_CONN_CB_DEFINE(conn_cb) = {
-	.connected = connected,
-	.disconnected = disconnected,
+        .connected = connected,
+        .disconnected = disconnected,
 };
 
 static void auth_cancel(struct bt_conn *conn)
@@ -210,7 +175,7 @@ static void auth_cancel(struct bt_conn *conn)
 }
 
 static struct bt_conn_auth_cb auth_cb = {
-	.cancel = auth_cancel,
+        .cancel = auth_cancel,
 };
 
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
@@ -232,8 +197,8 @@ static void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reaso
 }
 
 static struct bt_conn_auth_info_cb auth_info_cb = {
-	.pairing_complete = auth_pairing_complete,
-	.pairing_failed = auth_pairing_failed,
+        .pairing_complete = auth_pairing_complete,
+        .pairing_failed = auth_pairing_failed,
 };
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
@@ -376,10 +341,10 @@ static int init(const struct device *dev)
 	LOG_INF("System initialization");
 
 	static struct settings_handler sh = {
-		.name = SETTINGS_PFX,
-		.h_set = h_set,
-		.h_commit = h_commit,
-		.h_export = h_export,
+	        .name = SETTINGS_PFX,
+	        .h_set = h_set,
+	        .h_commit = h_commit,
+	        .h_export = h_export,
 	};
 
 	ret = settings_register(&sh);
@@ -464,18 +429,6 @@ static int init(const struct device *dev)
 	ret = bt_le_adv_start(adv_param, m_ad, ARRAY_SIZE(m_ad), m_sd, ARRAY_SIZE(m_sd));
 	if (ret) {
 		LOG_ERR("Call `bt_le_adv_start` failed: %d", ret);
-		return ret;
-	}
-
-	ret = set_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_ADV, 0, TX_POWER_DBM_ADV);
-	if (ret) {
-		LOG_ERR("Call `set_tx_power` (BT_HCI_VS_LL_HANDLE_TYPE_ADV) failed: %d", ret);
-		return ret;
-	}
-
-	ret = set_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_CONN, 0, TX_POWER_DBM_CONN);
-	if (ret) {
-		LOG_ERR("Call `set_tx_power` (BT_HCI_VS_LL_HANDLE_TYPE_CONN) failed: %d", ret);
 		return ret;
 	}
 
