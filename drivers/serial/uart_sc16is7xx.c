@@ -1,5 +1,6 @@
 #include "uart_sc16is7xx_reg.h"
 
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
@@ -10,10 +11,17 @@
 
 #include <math.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
 #define DT_DRV_COMPAT nxp_sc16is7xx
 
 LOG_MODULE_REGISTER(sc16is7xx, CONFIG_UART_SC16IS7XX_LOG_LEVEL);
+
+#define TX_FIFO_SIZE 64
+#define RX_FIFO_SIZE 64
+#define POLL_OUT_PAUSE K_MSEC(10)
 
 struct sc16is7xx_config {
 	const struct i2c_dt_spec i2c_spec;
@@ -71,43 +79,82 @@ static inline struct sc16is7xx_data *get_data(const struct device *dev)
 
 static int read_register(const struct device *dev, uint8_t reg, uint8_t *val)
 {
+	int ret;
+
 	reg <<= SC16IS7XX_REG_SHIFT;
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
-		LOG_ERR("Bus not ready");
-		return -EINVAL;
+		LOG_ERR("Device not ready");
+		return -ENODEV;
 	}
 
-	return i2c_write_read_dt(&get_config(dev)->i2c_spec, &reg, 1, val, 1);
+	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, &reg, 1, val, 1);
+	if (ret) {
+		LOG_ERR("Call `i2c_write_read_dt` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_DBG("R: 0x%02x V: 0x%02x", reg, *val);
+
+	return ret;
 }
 
 static int write_register(const struct device *dev, uint8_t reg, uint8_t val)
 {
+	int ret;
+
 	reg <<= SC16IS7XX_REG_SHIFT;
 
 	uint8_t buf[] = { reg, val };
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
-		LOG_ERR("Bus not ready");
-		return -EINVAL;
+		LOG_ERR("Device not ready");
+		return -ENODEV;
 	}
 
-	return i2c_write_dt(&get_config(dev)->i2c_spec, buf, ARRAY_SIZE(buf));
+	LOG_DBG("R: 0x%02x V: 0x%02x", reg, val);
+
+	ret = i2c_write_dt(&get_config(dev)->i2c_spec, buf, ARRAY_SIZE(buf));
+	if (ret) {
+		LOG_ERR("Call `i2c_write_dt` failed: %d", ret);
+		return ret;
+	}
+
+	return ret;
 }
 
 static int sc16is7xx_poll_in(const struct device *dev, unsigned char *c)
 {
+	int ret;
+
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	int reg = read_register(dev, SC16IS7XX_REG_RHR, c);
+	uint8_t reg_rxlvl;
+	ret = read_register(dev, SC16IS7XX_REG_RXLVL, &reg_rxlvl);
+	if (ret) {
+		LOG_ERR("Call `read_register` (RXLVL) failed: %d", ret);
+		return -1;
+	}
+
+	if (!reg_rxlvl) {
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -1;
+	}
+
+	ret = read_register(dev, SC16IS7XX_REG_RHR, c);
+	if (ret) {
+		LOG_ERR("Call `read_register` (RHR) failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -1;
+	}
 
 	k_mutex_unlock(&get_data(dev)->lock);
 
-	return reg;
+	return 0;
 }
 
 static void sc16is7xx_poll_out(const struct device *dev, unsigned char c)
@@ -120,9 +167,28 @@ static void sc16is7xx_poll_out(const struct device *dev, unsigned char c)
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	ret = write_register(dev, SC16IS7XX_REG_THR, c);
-	if (ret) {
-		LOG_ERR("Call `poll_out` failed: %d", ret);
+	for (;;) {
+		uint8_t reg_txlvl;
+		ret = read_register(dev, SC16IS7XX_REG_TXLVL, &reg_txlvl);
+		if (ret) {
+			LOG_ERR("Call `read_register` (TXLVL) failed: %d", ret);
+			k_mutex_unlock(&get_data(dev)->lock);
+			return;
+		}
+
+		if (!reg_txlvl) {
+			k_sleep(POLL_OUT_PAUSE);
+			continue;
+		}
+
+		ret = write_register(dev, SC16IS7XX_REG_THR, c);
+		if (ret) {
+			LOG_ERR("Call `write_register` failed: %d", ret);
+			k_mutex_unlock(&get_data(dev)->lock);
+			return;
+		}
+
+		break;
 	}
 
 	k_mutex_unlock(&get_data(dev)->lock);
@@ -390,88 +456,85 @@ static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, in
 {
 	int ret;
 
+	if (data_len > TX_FIFO_SIZE) {
+		LOG_ERR("Data length exceeds FIFO size");
+		return -EINVAL;
+	}
+
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	static const uint8_t reg[] = { SC16IS7XX_REG_THR << SC16IS7XX_REG_SHIFT };
-	static const uint32_t reg_len = sizeof(reg);
-
-	uint32_t buf_len = MIN(get_data(dev)->reg_txlvl, reg_len + data_len);
-	uint8_t buf[buf_len];
-
-	memcpy(buf, reg, reg_len);
-	memcpy(buf + reg_len, data, buf_len - reg_len);
-
-	struct i2c_msg msg[] = {
-		{
-		        .buf = buf,
-		        .len = buf_len,
-		        .flags = I2C_MSG_WRITE | I2C_MSG_STOP,
-		},
-	};
-
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
 		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
+		return -ENODEV;
 	}
 
-	ret = i2c_transfer_dt(&get_config(dev)->i2c_spec, msg, ARRAY_SIZE(msg));
+	size_t buf_len = MIN(get_data(dev)->reg_txlvl, data_len);
+
+	uint8_t *buf = k_malloc(1 + buf_len);
+	if (!buf) {
+		LOG_ERR("Call `k_malloc` failed");
+		k_mutex_unlock(&get_data(dev)->lock);
+		return -ENOMEM;
+	}
+
+	buf[0] = SC16IS7XX_REG_THR << SC16IS7XX_REG_SHIFT;
+	memcpy(&buf[1], data, buf_len);
+
+	ret = i2c_write_dt(&get_config(dev)->i2c_spec, buf, 1 + buf_len);
 	if (ret) {
-		LOG_ERR("Call `i2c_transfer_dt` failed: %d", ret);
+		LOG_ERR("Call `i2c_write_dt` failed: %d", ret);
+		k_free(buf);
 		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
 
+	get_data(dev)->reg_txlvl -= buf_len;
+
+	k_free(buf);
+
 	k_mutex_unlock(&get_data(dev)->lock);
 
-	return buf_len - reg_len;
+	return buf_len;
 }
 
 static int sc16is7xx_fifo_read(const struct device *dev, uint8_t *data, const int data_len)
 {
 	int ret;
 
+	if (data_len > RX_FIFO_SIZE) {
+		LOG_ERR("Data length exceeds FIFO size");
+		return -EINVAL;
+	}
+
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	static uint8_t reg[] = { SC16IS7XX_REG_RHR << SC16IS7XX_REG_SHIFT };
-	static uint32_t reg_len = sizeof(reg);
-
-	uint32_t buf_len = MIN(get_data(dev)->reg_rxlvl, data_len);
-	uint8_t *buf = (uint8_t *)data;
-
-	struct i2c_msg msg[] = {
-		{
-		        .buf = reg,
-		        .len = reg_len,
-		        .flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-		        .buf = buf,
-		        .len = buf_len,
-		        .flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
-
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
 		k_mutex_unlock(&get_data(dev)->lock);
-		return -EINVAL;
+		return -ENODEV;
 	}
 
-	ret = i2c_transfer_dt(&get_config(dev)->i2c_spec, msg, ARRAY_SIZE(msg));
+	size_t buf_len = MIN(get_data(dev)->reg_rxlvl, data_len);
+
+	uint8_t reg = SC16IS7XX_REG_RHR << SC16IS7XX_REG_SHIFT;
+
+	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, &reg, 1, data, buf_len);
 	if (ret) {
-		LOG_ERR("Call `i2c_transfer_dt` failed: %d", ret);
+		LOG_ERR("Call `i2c_write_read_dt` failed: %d", ret);
 		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
+
+	get_data(dev)->reg_rxlvl -= buf_len;
 
 	k_mutex_unlock(&get_data(dev)->lock);
 
@@ -686,7 +749,15 @@ static void sc16is7xx_irq_callback_set(const struct device *dev, uart_irq_callba
 
 static void irq_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
+	int ret;
+
 	struct sc16is7xx_data *data = CONTAINER_OF(cb, struct sc16is7xx_data, cb);
+
+	ret = gpio_pin_interrupt_configure_dt(&get_config(data->dev)->irq_spec, GPIO_INT_DISABLE);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
+	}
+
 
 	k_work_submit(&data->work);
 }
@@ -700,7 +771,7 @@ static int configure_reset(const struct device *dev)
 	if (get_config(dev)->reset_spec.port) {
 		if (!device_is_ready(get_config(dev)->reset_spec.port)) {
 			LOG_ERR("nRESET port not ready");
-			return -EINVAL;
+			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&get_config(dev)->reset_spec, GPIO_OUTPUT_INACTIVE);
@@ -720,7 +791,7 @@ static int trigger_reset(const struct device *dev)
 	if (get_config(dev)->reset_spec.port) {
 		if (!device_is_ready(get_config(dev)->reset_spec.port)) {
 			LOG_ERR("nRESET port not ready");
-			return -EINVAL;
+			return -ENODEV;
 		}
 
 		ret = gpio_pin_set_dt(&get_config(dev)->reset_spec, 1);
@@ -753,7 +824,7 @@ static int configure_interrupt_pin(const struct device *dev)
 
 	if (!device_is_ready(get_config(dev)->irq_spec.port)) {
 		LOG_ERR("nIRQ port not ready");
-		return -EINVAL;
+		return -ENODEV;
 	}
 
 	ret = gpio_add_callback(get_config(dev)->irq_spec.port, &get_data(dev)->cb);
@@ -762,7 +833,7 @@ static int configure_interrupt_pin(const struct device *dev)
 		return ret;
 	}
 
-	ret = gpio_pin_configure_dt(&get_config(dev)->irq_spec, GPIO_INPUT | GPIO_INT_DEBOUNCE);
+	ret = gpio_pin_configure_dt(&get_config(dev)->irq_spec, GPIO_INPUT);
 	if (ret) {
 		LOG_ERR("Unable to configure IRQ pin: %d", ret);
 		return ret;
@@ -779,10 +850,10 @@ static int enable_interrupt_pin(const struct device *dev)
 
 	if (!device_is_ready(get_config(dev)->irq_spec.port)) {
 		LOG_ERR("nIRQ port not ready");
-		return -EINVAL;
+		return -ENODEV;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&get_config(dev)->irq_spec, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&get_config(dev)->irq_spec, GPIO_INT_LEVEL_ACTIVE);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 		return ret;
@@ -808,12 +879,40 @@ static int enable_fifo(const struct device *dev)
 	return 0;
 }
 
+static int flush_fifo(const struct device *dev)
+{
+	int ret;
+
+	WRITE_BIT(get_data(dev)->reg_fcr, SC16IS7XX_FCR_RESET_RX_FIFO_BIT, 1);
+	WRITE_BIT(get_data(dev)->reg_fcr, SC16IS7XX_FCR_RESET_TX_FIFO_BIT, 1);
+
+	ret = write_register(dev, SC16IS7XX_REG_FCR, get_data(dev)->reg_fcr);
+	if (ret) {
+		LOG_ERR("Call `write_register` (FCR) failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static void work_handler(struct k_work *work)
 {
+	int ret;
+
 	struct sc16is7xx_data *data = CONTAINER_OF(work, struct sc16is7xx_data, work);
 
 	if (data->user_cb) {
 		data->user_cb(data->dev, data->user_data);
+	} else {
+		ret = flush_fifo(data->dev);
+		if (ret) {
+			LOG_ERR("Call `flush_fifo` failed: %d", ret);
+		}
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&get_config(data->dev)->irq_spec, GPIO_INT_LEVEL_ACTIVE);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 	}
 }
 
@@ -987,6 +1086,13 @@ static int pm_control_resume(const struct device *dev)
 	ret = write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
 	if (ret) {
 		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
+		return ret;
+	}
+
+	uint8_t reg_rxlvl;
+	ret = read_register(dev, SC16IS7XX_REG_RXLVL, &reg_rxlvl);
+	if (ret) {
+		LOG_ERR("Call `read_register` (RXLVL) failed: %d", ret);
 		return ret;
 	}
 
