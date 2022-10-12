@@ -9,14 +9,22 @@ if (typeof msg.payload.data === 'string') {
 return msg;
 
 function decode(buffer) {
-    var data = {};
+    let data = {};
 
-    if (buffer.length >= 8) {
-        data.voltage_rest = buffer.readUInt16LE(0);
-        data.voltage_load = buffer.readUInt16LE(2);
-        data.current_load = buffer.readUInt8(4);
-        data.orientation = buffer.readUInt8(5);
-        data.therm_temperature = buffer.readInt16LE(6);
+    let offset = 0;
+
+    let header = buffer.readUInt8(0);
+    offset += 1;
+
+    if ((header & 0x01) !== 0) {
+        data.voltage_rest = buffer.readUInt16LE(offset);
+        offset += 2;
+
+        data.voltage_load = buffer.readUInt16LE(offset);
+        offset += 2;
+
+        data.current_load = buffer.readUInt8(offset);
+        offset += 1;
 
         if (data.voltage_rest === 0xffff) {
             data.voltage_rest = null;
@@ -33,10 +41,20 @@ function decode(buffer) {
         if (data.current_load === 0xff) {
             data.current_load = null;
         }
+    }
+
+    if ((header & 0x02) !== 0) {
+        data.orientation = buffer.readUInt8(offset);
+        offset += 1;
 
         if (data.orientation === 0xff) {
             data.orientation = null;
         }
+    }
+
+    if ((header & 0x04) !== 0) {
+        data.therm_temperature = buffer.readInt16LE(offset);
+        offset += 2;
 
         if (data.therm_temperature === 0x7fff) {
             data.therm_temperature = null;
@@ -45,9 +63,16 @@ function decode(buffer) {
         }
     }
 
-    if (buffer.length >= 11) {
-        data.hygro_temperature = buffer.readInt16LE(8);
-        data.hygro_humidity = buffer.readUInt8(10);
+    if ((header & 0x08) !== 0) {
+        /* TODO */
+    }
+
+    if ((header & 0x10) !== 0) {
+        data.hygro_temperature = buffer.readInt16LE(offset);
+        offset += 2;
+
+        data.hygro_humidity = buffer.readUInt8(offset);
+        offset += 1;
 
         if (data.hygro_temperature === 0x7fff) {
             data.hygro_temperature = null;
@@ -59,6 +84,26 @@ function decode(buffer) {
             data.hygro_humidity = null;
         } else {
             data.hygro_humidity = data.hygro_humidity / 2;
+        }
+    }
+
+    if ((header & 0x20) !== 0) {
+        data.w1_thermometers = [];
+
+        let count = buffer.readUInt8(offset);
+        offset += 1;
+
+        for (let i = 0; i < count; i++) {
+            let t = buffer.readInt16LE(offset);
+            offset += 2;
+
+            if (t === 0x7fff) {
+                t = null;
+            } else {
+                t = t / 100;
+            }
+
+            data.w1_thermometers.push(t);
         }
     }
 

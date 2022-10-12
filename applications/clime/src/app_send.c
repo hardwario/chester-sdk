@@ -39,56 +39,146 @@ static int compose(struct ctr_buf *buf)
 
 	ctr_buf_reset(buf);
 
-	if (isnan(g_app_data.batt_voltage_rest)) {
-		ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
-	} else {
-		uint16_t val = g_app_data.batt_voltage_rest * 1000.f;
-		ret |= ctr_buf_append_u16(buf, val);
+	uint8_t header = 0;
+
+	/* Flag BATT */
+	if (IS_ENABLED(CONFIG_CTR_BATT)) {
+		header |= BIT(0);
 	}
 
-	if (isnan(g_app_data.batt_voltage_load)) {
-		ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
-	} else {
-		uint16_t val = g_app_data.batt_voltage_load * 1000.f;
-		ret |= ctr_buf_append_u16(buf, val);
+	/* Flag ACCEL */
+	if (IS_ENABLED(CONFIG_CTR_ACCEL) && 0) {
+		header |= BIT(1);
 	}
 
-	if (isnan(g_app_data.batt_current_load)) {
-		ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
-	} else {
-		uint8_t val = g_app_data.batt_current_load;
-		ret |= ctr_buf_append_u8(buf, val);
+	/* Flag THERM */
+	if (IS_ENABLED(CONFIG_CTR_THERM)) {
+		header |= BIT(2);
 	}
 
-	if (g_app_data.accel_orientation == INT_MAX) {
-		ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
-	} else {
-		uint8_t val = g_app_data.accel_orientation;
-		ret |= ctr_buf_append_u8(buf, val);
+	/* Flag IAQ */
+	if (IS_ENABLED(CONFIG_SHIELD_CTR_S1)) {
+		header |= BIT(3);
 	}
 
-	if (isnan(g_app_data.therm_temperature)) {
-		ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
-	} else {
-		int16_t val = g_app_data.therm_temperature * 100.f;
-		ret |= ctr_buf_append_s16(buf, val);
+	/* Flag HYGRO */
+	if (IS_ENABLED(CONFIG_SHIELD_CTR_S2)) {
+		header |= BIT(4);
 	}
+
+	/* Flag W1_THERM */
+	if (IS_ENABLED(CONFIG_SHIELD_CTR_DS18B20)) {
+		header |= BIT(5);
+	}
+
+	ret |= ctr_buf_append_u8(buf, header);
+
+	/* Field BATT */
+	if (header & BIT(0)) {
+		if (isnan(g_app_data.batt_voltage_rest)) {
+			ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
+		} else {
+			uint16_t val = g_app_data.batt_voltage_rest * 1000.f;
+			ret |= ctr_buf_append_u16(buf, val);
+		}
+
+		if (isnan(g_app_data.batt_voltage_load)) {
+			ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
+		} else {
+			uint16_t val = g_app_data.batt_voltage_load * 1000.f;
+			ret |= ctr_buf_append_u16(buf, val);
+		}
+
+		if (isnan(g_app_data.batt_current_load)) {
+			ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
+		} else {
+			uint8_t val = g_app_data.batt_current_load;
+			ret |= ctr_buf_append_u8(buf, val);
+		}
+	}
+
+	/* Field ACCEL */
+	if (header & BIT(1)) {
+		if (g_app_data.accel_orientation == INT_MAX) {
+			ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
+		} else {
+			uint8_t val = g_app_data.accel_orientation;
+			ret |= ctr_buf_append_u8(buf, val);
+		}
+	}
+
+	/* Field THERM */
+	if (header & BIT(2)) {
+		if (isnan(g_app_data.therm_temperature)) {
+			ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
+		} else {
+			int16_t val = g_app_data.therm_temperature * 100.f;
+			ret |= ctr_buf_append_s16(buf, val);
+		}
+	}
+
+#if defined(CONFIG_SHIELD_CTR_S1)
+	/* Field IAQ */
+	if (header & BIT(3)) {
+		/* TODO Implement */
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
-	if (isnan(g_app_data.hygro_temperature)) {
-		ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
-	} else {
-		int16_t val = g_app_data.hygro_temperature * 100.f;
-		ret |= ctr_buf_append_s16(buf, val);
-	}
+	/* Field HYGRO */
+	if (header & BIT(4)) {
+		if (isnan(g_app_data.hygro_temperature)) {
+			ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
+		} else {
+			int16_t val = g_app_data.hygro_temperature * 100.f;
+			ret |= ctr_buf_append_s16(buf, val);
+		}
 
-	if (isnan(g_app_data.hygro_humidity)) {
-		ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
-	} else {
-		uint8_t val = g_app_data.hygro_humidity * 2.f;
-		ret |= ctr_buf_append_u8(buf, val);
+		if (isnan(g_app_data.hygro_humidity)) {
+			ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
+		} else {
+			uint8_t val = g_app_data.hygro_humidity * 2.f;
+			ret |= ctr_buf_append_u8(buf, val);
+		}
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	/* Field W1_THERM */
+	if (header & BIT(5)) {
+		float t[W1_THERM_COUNT];
+
+		int count = 0;
+
+		for (size_t i = 0; i < W1_THERM_COUNT; i++) {
+			struct w1_therm *therm = &g_app_data.w1_therm[i];
+
+			if (!therm->serial_number) {
+				continue;
+			}
+
+			float *samples = therm->samples;
+
+			if (therm->sample_count) {
+				t[count++] = samples[therm->sample_count - 1];
+			} else {
+				t[count++] = NAN;
+			}
+
+			therm->sample_count = 0;
+		}
+
+		ret |= ctr_buf_append_u8(buf, count);
+
+		for (size_t i = 0; i < count; i++) {
+			if (isnan(t[i])) {
+				ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
+			} else {
+				ret |= ctr_buf_append_s16(buf, t[i] * 100.f);
+			}
+		}
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 	if (ret) {
 		return -ENOSPC;
