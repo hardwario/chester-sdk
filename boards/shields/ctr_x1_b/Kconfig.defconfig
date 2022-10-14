@@ -1,0 +1,21 @@
+if SHIELD_CTR_X1_B
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config PM
+	default y
+
+config PM_DEVICE
+	default y
+
+config W1
+	default y
+
+config W1_DS2484
+	default y
+
+endif # SHIELD_CTR_X1_B

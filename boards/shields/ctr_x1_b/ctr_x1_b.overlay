@@ -1,0 +1,3 @@
+&ctr_x1_ds2482_b {
+	status = "okay";
+};

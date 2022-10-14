@@ -214,6 +214,7 @@
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
+	label = "I2C_0";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
@@ -245,6 +246,26 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <16>;
+	};
+
+	ctr_x1_ds2482_a: ds2484@1e {
+		compatible = "maxim,ds2484";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x1e>;
+		label = "DS2482";
+		slpz-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		active-pullup;
+	};
+
+	ctr_x1_ds2482_b: ds2484@1f {
+		compatible = "maxim,ds2484";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x1f>;
+		label = "DS2482";
+		slpz-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		active-pullup;
 	};
 
 	ctr_x2_sc16is740_a: uart@50 {
