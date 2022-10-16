@@ -2,6 +2,7 @@
 #define CHESTER_INCLUDE_CTR_RTC_H_
 
 /* Standard includes */
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -31,6 +32,7 @@ struct ctr_rtc_tm {
 	int seconds;
 };
 
+bool ctr_rtc_is_set(void);
 int ctr_rtc_get_tm(struct ctr_rtc_tm *tm);
 int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm);
 int ctr_rtc_get_ts(int64_t *ts);

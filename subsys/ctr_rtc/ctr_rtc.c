@@ -10,10 +10,12 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/timeutil.h>
 #include <zephyr/zephyr.h>
+
 #include <nrfx_rtc.h>
 
 /* Standard includes */
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,7 +24,7 @@ LOG_MODULE_REGISTER(ctr_rtc, CONFIG_CTR_RTC_LOG_LEVEL);
 
 static const nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(2);
 static struct onoff_client m_lfclk_cli;
-
+static atomic_t m_set;
 static int m_year = 1970;
 static int m_month = 1;
 static int m_day = 1;
@@ -59,6 +61,11 @@ static int get_day_of_week(int year, int month, int day)
 	int y = year - adjustment;
 
 	return 1 + (day + (13 * m - 1) / 5 + y + y / 4 - y / 100 + y / 400) % 7;
+}
+
+bool ctr_rtc_is_set(void)
+{
+	return atomic_get(&m_set);
 }
 
 int ctr_rtc_get_tm(struct ctr_rtc_tm *tm)
@@ -116,12 +123,14 @@ int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm)
 
 	irq_enable(RTC2_IRQn);
 
+	atomic_set(&m_set, true);
+
 	return 0;
 }
 
 int ctr_rtc_get_ts(int64_t *ts)
 {
-	struct tm tm = { 0 };
+	struct tm tm = {0};
 
 	irq_disable(RTC2_IRQn);
 
@@ -152,7 +161,7 @@ static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	static const char *wday[] = {
-		"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
+	        "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
 	};
 
 	shell_print(shell, "%04d/%02d/%02d %02d:%02d:%02d %s", tm.year, tm.month, tm.day, tm.hours,
@@ -305,7 +314,7 @@ static int request_lfclk(void)
 	}
 
 	struct k_poll_event events[] = {
-		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sig),
+	        K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sig),
 	};
 	ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
 	if (ret) {
