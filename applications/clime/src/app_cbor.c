@@ -1,4 +1,5 @@
 #include "app_cbor.h"
+#include "app_config.h"
 #include "app_data.h"
 #include "msg_key.h"
 
@@ -9,6 +10,7 @@
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
+
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 
@@ -16,8 +18,8 @@
 #include <errno.h>
 #include <math.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
@@ -31,8 +33,8 @@ static int compare(const void *a, const void *b)
 	return (fa > fb) - (fa < fb);
 }
 
-static void aggregate(float *samples, size_t count, float *minimum, float *maximum, float *average,
-                      float *median)
+__unused static void aggregate(float *samples, size_t count, float *minimum, float *maximum,
+                               float *average, float *median)
 {
 	if (count < 1) {
 		*minimum = NAN;
@@ -60,7 +62,23 @@ static void aggregate(float *samples, size_t count, float *minimum, float *maxim
 
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
-int app_cbor_encode(zcbor_state_t *zs)
+__unused static void put_sample(zcbor_state_t *zs, struct app_data_aggreg *sample)
+{
+	zcbor_int32_put(zs, sample->min);
+	zcbor_int32_put(zs, sample->max);
+	zcbor_int32_put(zs, sample->avg);
+	zcbor_int32_put(zs, sample->mdn);
+}
+
+__unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *sample, float mul)
+{
+	zcbor_int32_put(zs, sample->min * mul);
+	zcbor_int32_put(zs, sample->max * mul);
+	zcbor_int32_put(zs, sample->avg * mul);
+	zcbor_int32_put(zs, sample->mdn * mul);
+}
+
+static int encode(zcbor_state_t *zs)
 {
 	int ret;
 
@@ -331,52 +349,168 @@ int app_cbor_encode(zcbor_state_t *zs)
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		zcbor_uint32_put(zs, MSG_KEY_PRESS_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.iaq_press_count));
-
-		zcbor_uint32_put(zs, MSG_KEY_MOTION_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.iaq_motion_count));
-
 		zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
-		if (isnan(g_app_data.iaq_temperature)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_int32_put(zs, g_app_data.iaq_temperature * 100.f);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+
+				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
+					put_sample_mul(zs,
+					               &g_app_data.iaq.measurements[i].temperature,
+					               100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_HUMIDITY);
-		if (isnan(g_app_data.iaq_humidity)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.iaq_humidity * 100.f);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
+					put_sample_mul(zs, &g_app_data.iaq.measurements[i].humidity,
+					               100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_ILLUMINANCE);
-		if (isnan(g_app_data.iaq_illuminance)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.iaq_illuminance);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+
+				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
+					put_sample(zs, &g_app_data.iaq.measurements[i].illuminance);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_ALTITUDE);
-		if (isnan(g_app_data.iaq_altitude)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_int32_put(zs, g_app_data.iaq_altitude);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+
+				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
+					put_sample(zs, &g_app_data.iaq.measurements[i].altitude);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_PRESSURE);
-		if (isnan(g_app_data.iaq_pressure)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.iaq_pressure);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+
+				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
+					put_sample(zs, &g_app_data.iaq.measurements[i].pressure);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_CO2_CONC);
-		if (isnan(g_app_data.iaq_co2_conc)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.iaq_co2_conc);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+
+				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
+					put_sample(zs, &g_app_data.iaq.measurements[i].co2_conc);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_MOTION_COUNT);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_VAL);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+
+				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
+					zcbor_int32_put(
+					        zs, g_app_data.iaq.measurements[i].motion_count);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_PRESS_COUNT);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_VAL);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+
+				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
+					zcbor_int32_put(zs,
+					                g_app_data.iaq.measurements[i].press_count);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -389,17 +523,47 @@ int app_cbor_encode(zcbor_state_t *zs)
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
-		if (isnan(g_app_data.hygro_temperature)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_int32_put(zs, g_app_data.hygro_temperature * 100.f);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.hygro.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+
+				for (int i = 0; i < g_app_data.hygro.measurement_count; i++) {
+					put_sample_mul(
+					        zs, &g_app_data.hygro.measurements[i].temperature,
+					        100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_HUMIDITY);
-		if (isnan(g_app_data.hygro_humidity)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.hygro_humidity * 100.f);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.hygro.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+
+				for (int i = 0; i < g_app_data.hygro.measurement_count; i++) {
+					put_sample_mul(zs,
+					               &g_app_data.hygro.measurements[i].humidity,
+					               100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -410,75 +574,35 @@ int app_cbor_encode(zcbor_state_t *zs)
 	zcbor_uint32_put(zs, MSG_KEY_W1_THERMOMETERS);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		for (int i = 0; i < APP_DATA_W1_THERM_COUNT; i++) {
+			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];
 
-		for (size_t i = 0; i < W1_THERM_COUNT; i++) {
-			struct w1_therm *therm = &g_app_data.w1_therm[i];
-
-			if (!therm->serial_number) {
+			if (!sensor->serial_number) {
 				continue;
 			}
 
 			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 			zcbor_uint32_put(zs, MSG_KEY_SERIAL_NUMBER);
-			zcbor_uint64_put(zs, therm->serial_number);
+			zcbor_uint64_put(zs, sensor->serial_number);
 
-			zcbor_uint32_put(zs, MSG_KEY_TIMESTAMP);
-			if (therm->sample_count) {
-				zcbor_uint64_put(zs, therm->timestamp);
-			} else {
-				zcbor_nil_put(zs, NULL);
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.w1_therm.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
+
+				for (int j = 0; j < sensor->measurement_count; j++) {
+					put_sample_mul(zs, &sensor->measurements[j].temperature,
+					               100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 			}
-
-			float *samples = therm->samples;
-
-			zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
-			if (therm->sample_count) {
-				float sample = samples[therm->sample_count - 1];
-				zcbor_int32_put(zs, sample * 100.f);
-			} else {
-				zcbor_nil_put(zs, NULL);
-			}
-
-			float min, max, avg, mdn;
-			aggregate(therm->samples, therm->sample_count, &min, &max, &avg, &mdn);
-
-			zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE_MIN);
-			if (therm->sample_count) {
-				zcbor_int32_put(zs, min * 100.f);
-			} else {
-				zcbor_nil_put(zs, NULL);
-			}
-
-			zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE_MAX);
-			if (therm->sample_count) {
-				zcbor_int32_put(zs, max * 100.f);
-			} else {
-				zcbor_nil_put(zs, NULL);
-			}
-
-			zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE_AVG);
-			if (therm->sample_count) {
-				zcbor_int32_put(zs, avg * 100.f);
-			} else {
-				zcbor_nil_put(zs, NULL);
-			}
-
-			zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE_MDN);
-			if (therm->sample_count) {
-				zcbor_int32_put(zs, mdn * 100.f);
-			} else {
-				zcbor_nil_put(zs, NULL);
-			}
-
-			zcbor_uint32_put(zs, MSG_KEY_SAMPLE_COUNT);
-			zcbor_uint32_put(zs, therm->sample_count);
-
-			therm->sample_count = 0;
 
 			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
-
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
@@ -489,6 +613,24 @@ int app_cbor_encode(zcbor_state_t *zs)
 		LOG_ERR("Encoding failed: %d", zcbor_pop_error(zs));
 		return -EFAULT;
 	}
+
+	return 0;
+}
+
+int app_cbor_encode(zcbor_state_t *zs)
+{
+	int ret;
+
+	app_data_lock();
+
+	ret = encode(zs);
+	if (ret) {
+		LOG_ERR("Call `encode` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	app_data_unlock();
 
 	return 0;
 }

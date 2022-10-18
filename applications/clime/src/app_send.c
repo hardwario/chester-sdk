@@ -2,32 +2,32 @@
 #error "Both shields ctr_lrw and ctr_lte cannot be enabled"
 #endif /* defined(CONFIG_SHIELD_CTR_LRW) && defined(CONFIG_SHIELD_CTR_LTE) */
 
-#include "app_send.h"
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
-#include "app_loop.h"
+#include "app_send.h"
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
 #include <chester/ctr_info.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
+#include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
-#include <zephyr/random/rand32.h>
 #include <zephyr/zephyr.h>
+
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 
 /* Standard includes */
-#include <stddef.h>
-#include <stdint.h>
 #include <limits.h>
 #include <math.h>
+#include <stddef.h>
+#include <stdint.h>
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
 
@@ -275,28 +275,11 @@ static int compose(struct ctr_buf *buf)
 
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
-static void send_timer(struct k_timer *timer_id)
-{
-	LOG_INF("Send timer expired");
-
-	atomic_set(&g_app_loop_send, true);
-	k_sem_give(&g_app_loop_sem);
-}
-
-K_TIMER_DEFINE(g_app_send_timer, send_timer, NULL);
-
 int app_send(void)
 {
 #if defined(CONFIG_SHIELD_CTR_LRW) || defined(CONFIG_SHIELD_CTR_LTE)
 	int ret;
 #endif /* defined(CONFIG_SHIELD_CTR_LRW) || defined(CONFIG_SHIELD_CTR_LTE) */
-
-	int64_t jitter = (int32_t)sys_rand32_get() % (g_app_config.report_interval * 1000 / 5);
-	int64_t duration = g_app_config.report_interval * 1000 + jitter;
-
-	LOG_INF("Scheduling next report in %lld second(s)", duration / 1000);
-
-	k_timer_start(&g_app_send_timer, K_MSEC(duration), K_FOREVER);
 
 #if defined(CONFIG_SHIELD_CTR_LRW)
 	CTR_BUF_DEFINE_STATIC(buf, 51);
@@ -316,7 +299,7 @@ int app_send(void)
 #endif /* defined(CONFIG_SHIELD_CTR_LRW) */
 
 #if defined(CONFIG_SHIELD_CTR_LTE)
-	CTR_BUF_DEFINE_STATIC(buf, 512);
+	CTR_BUF_DEFINE_STATIC(buf, 1024);
 
 	ret = compose(&buf);
 	if (ret) {

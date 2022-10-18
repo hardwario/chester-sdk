@@ -1,4 +1,5 @@
 #include "app_config.h"
+
 #include <chester/ctr_config.h>
 
 /* Zephyr includes */
@@ -19,34 +20,42 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
 struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
-	.measurement_interval = 60,
-	.report_interval = 1800,
+        .interval_sample = 60,
+        .interval_aggregate = 300,
+        .interval_report = 1800,
 };
 
-static void print_measurement_interval(const struct shell *shell)
+static void print_interval_sample(const struct shell *shell)
 {
-	shell_print(shell, SETTINGS_PFX " config measurement-interval %d",
-	            m_app_config_interim.measurement_interval);
+	shell_print(shell, SETTINGS_PFX " config interval-sample %d",
+	            m_app_config_interim.interval_sample);
 }
 
-static void print_report_interval(const struct shell *shell)
+static void print_interval_aggregate(const struct shell *shell)
 {
-	shell_print(shell, SETTINGS_PFX " config report-interval %d",
-	            m_app_config_interim.report_interval);
+	shell_print(shell, SETTINGS_PFX " config interval-aggregate %d",
+	            m_app_config_interim.interval_aggregate);
+}
+
+static void print_interval_report(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config interval-report %d",
+	            m_app_config_interim.interval_report);
 }
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
-	print_measurement_interval(shell);
-	print_report_interval(shell);
+	print_interval_sample(shell);
+	print_interval_aggregate(shell);
+	print_interval_report(shell);
 
 	return 0;
 }
 
-int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t argc, char **argv)
+int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		print_measurement_interval(shell);
+		print_interval_sample(shell);
 		return 0;
 	}
 
@@ -65,14 +74,14 @@ int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t
 			}
 		}
 
-		int measurement_interval = atoi(argv[1]);
+		int interval_sample = strtol(argv[1], NULL, 10);
 
-		if (measurement_interval < 5 || measurement_interval > 3600) {
+		if (interval_sample < 1 || interval_sample > 86400) {
 			shell_error(shell, "invalid range");
 			return -EINVAL;
 		}
 
-		m_app_config_interim.measurement_interval = measurement_interval;
+		m_app_config_interim.interval_sample = interval_sample;
 
 		return 0;
 	}
@@ -81,10 +90,10 @@ int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t
 	return -EINVAL;
 }
 
-int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc, char **argv)
+int app_config_cmd_config_interval_aggregate(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		print_report_interval(shell);
+		print_interval_aggregate(shell);
 		return 0;
 	}
 
@@ -103,14 +112,52 @@ int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc
 			}
 		}
 
-		int report_interval = atoi(argv[1]);
+		int interval_aggregate = strtol(argv[1], NULL, 10);
 
-		if (report_interval < 30 || report_interval > 86400) {
+		if (interval_aggregate < 1 || interval_aggregate > 86400) {
 			shell_error(shell, "invalid range");
 			return -EINVAL;
 		}
 
-		m_app_config_interim.report_interval = report_interval;
+		m_app_config_interim.interval_aggregate = interval_aggregate;
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_interval_report(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len < 1 || len > 4) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		int interval_report = strtol(argv[1], NULL, 10);
+
+		if (interval_report < 30 || interval_report > 86400) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.interval_report = interval_report;
 
 		return 0;
 	}
@@ -142,10 +189,12 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 		}                                                                                  \
 	} while (0)
 
-	SETTINGS_SET("measurement-interval", &m_app_config_interim.measurement_interval,
-	             sizeof(m_app_config_interim.measurement_interval));
-	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
-	             sizeof(m_app_config_interim.report_interval));
+	SETTINGS_SET("interval-sample", &m_app_config_interim.interval_sample,
+	             sizeof(m_app_config_interim.interval_sample));
+	SETTINGS_SET("interval-aggregate", &m_app_config_interim.interval_aggregate,
+	             sizeof(m_app_config_interim.interval_aggregate));
+	SETTINGS_SET("interval-report", &m_app_config_interim.interval_report,
+	             sizeof(m_app_config_interim.interval_report));
 
 #undef SETTINGS_SET
 
@@ -166,10 +215,12 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
 	} while (0)
 
-	EXPORT_FUNC("measurement-interval", &m_app_config_interim.measurement_interval,
-	            sizeof(m_app_config_interim.measurement_interval));
-	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
-	            sizeof(m_app_config_interim.report_interval));
+	EXPORT_FUNC("interval-sample", &m_app_config_interim.interval_sample,
+	            sizeof(m_app_config_interim.interval_sample));
+	EXPORT_FUNC("interval-aggregate", &m_app_config_interim.interval_aggregate,
+	            sizeof(m_app_config_interim.interval_aggregate));
+	EXPORT_FUNC("interval-report", &m_app_config_interim.interval_report,
+	            sizeof(m_app_config_interim.interval_report));
 
 #undef EXPORT_FUNC
 
@@ -183,10 +234,10 @@ static int init(const struct device *dev)
 	LOG_INF("System initialization");
 
 	static struct settings_handler sh = {
-		.name = SETTINGS_PFX,
-		.h_set = h_set,
-		.h_commit = h_commit,
-		.h_export = h_export,
+	        .name = SETTINGS_PFX,
+	        .h_set = h_set,
+	        .h_commit = h_commit,
+	        .h_export = h_export,
 	};
 
 	ret = settings_register(&sh);

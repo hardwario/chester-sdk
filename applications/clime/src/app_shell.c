@@ -1,6 +1,5 @@
 #include "app_config.h"
-#include "app_measure.h"
-#include "app_send.h"
+#include "app_work.h"
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
@@ -13,7 +12,7 @@
 
 LOG_MODULE_REGISTER(app_shell, LOG_LEVEL_INF);
 
-static int cmd_measure(const struct shell *shell, size_t argc, char **argv)
+static int cmd_sample(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
 		shell_error(shell, "unknown parameter: %s", argv[1]);
@@ -21,7 +20,7 @@ static int cmd_measure(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	k_timer_start(&g_app_measure_timer, K_NO_WAIT, K_FOREVER);
+	app_work_sample();
 
 	return 0;
 }
@@ -34,20 +33,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	k_timer_start(&g_app_send_timer, K_NO_WAIT, K_FOREVER);
-
-	return 0;
-}
-
-static int cmd_debug(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc > 1) {
-		shell_error(shell, "unknown parameter: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	k_timer_start(&g_app_measure_timer, K_NO_WAIT, K_FOREVER);
+	app_work_send();
 
 	return 0;
 }
@@ -74,13 +60,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "List current configuration.",
 	              app_config_cmd_config_show, 1, 0),
 
-	SHELL_CMD_ARG(measurement-interval, NULL,
-	              "Get/Set measurement interval in seconds (format: <5-3600>).",
-	              app_config_cmd_config_measurement_interval, 1, 1),
+	SHELL_CMD_ARG(interval-sample, NULL,
+	              "Get/Set sample interval in seconds (format: <1-86400>).",
+	              app_config_cmd_config_interval_sample, 1, 1),
 
-	SHELL_CMD_ARG(report-interval, NULL,
+	SHELL_CMD_ARG(interval-aggregate, NULL,
+	              "Get/Set aggregate interval in seconds (format: <1-86400>).",
+	              app_config_cmd_config_interval_aggregate, 1, 1),
+
+	SHELL_CMD_ARG(interval-report, NULL,
 	              "Get/Set report interval in seconds (format: <30-86400>).",
-	              app_config_cmd_config_report_interval, 1, 1),
+	              app_config_cmd_config_interval_report, 1, 1),
 
 	SHELL_SUBCMD_SET_END
 );
@@ -96,8 +86,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 
-SHELL_CMD_REGISTER(measure, NULL, "Start measurement immediately.", cmd_measure);
-SHELL_CMD_REGISTER(debug, NULL, "Debug command.", cmd_debug);
+SHELL_CMD_REGISTER(sample, NULL, "Sample immediately.", cmd_sample);
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
 
 /* clang-format on */

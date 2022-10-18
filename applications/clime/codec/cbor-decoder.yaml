@@ -72,3 +72,28 @@
   - div: 1000
   - fpp: 2
 - w1_thermometers:
+- measurements_div:
+  - key: "measurements"
+  - tsp:
+    - min:
+      - div: 100
+      - fpp: 2
+    - max:
+      - div: 100
+      - fpp: 2
+    - avg:
+      - div: 100
+      - fpp: 2
+    - mdn:
+      - div: 100
+      - fpp: 2
+- measurements:
+  - tsp:
+    - min:
+    - max:
+    - avg:
+    - mdn:
+- measurements_val:
+  - key: "measurements"
+  - tsp:
+    - value:

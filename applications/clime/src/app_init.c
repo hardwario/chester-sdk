@@ -1,6 +1,7 @@
 #include "app_init.h"
 #include "app_data.h"
 #include "app_handler.h"
+#include "app_work.h"
 
 /* CHESTER includes */
 #include <chester/ctr_ds18b20.h>
@@ -83,12 +84,6 @@ int app_init(void)
 		return ret;
 	}
 
-	g_app_data.iaq_temperature = NAN;
-	g_app_data.iaq_humidity = NAN;
-	g_app_data.iaq_co2_conc = NAN;
-	g_app_data.iaq_altitude = NAN;
-	g_app_data.iaq_pressure = NAN;
-	g_app_data.iaq_illuminance = NAN;
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
 
 #if defined(CONFIG_SHIELD_CTR_LRW)
@@ -138,6 +133,12 @@ int app_init(void)
 		break;
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
+
+	ret = app_work_init();
+	if (ret) {
+		LOG_ERR("Call `app_work_init` failed: %d", ret);
+		return ret;
+	}
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
 

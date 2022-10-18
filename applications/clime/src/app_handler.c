@@ -1,7 +1,7 @@
 #include "app_handler.h"
 #include "app_data.h"
 #include "app_init.h"
-#include "app_loop.h"
+#include "app_work.h"
 
 /* CHESTER includes */
 #include <chester/ctr_lrw.h>
@@ -196,7 +196,7 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 	case CTR_S1_EVENT_BUTTON_PRESSED:
 		LOG_INF("Event `CTR_S1_EVENT_BUTTON_PRESSED`");
 
-		atomic_inc(&g_app_data.iaq_press_count);
+		atomic_inc(&g_app_data.iaq.press_count);
 
 		struct ctr_s1_led_param param_led = {
 			.brightness = CTR_S1_LED_BRIGHTNESS_HIGH,
@@ -227,8 +227,7 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 			k_oops();
 		}
 
-		atomic_set(&g_app_loop_send, true);
-		k_sem_give(&g_app_loop_sem);
+		app_work_send();
 
 		break;
 
@@ -247,7 +246,7 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 	case CTR_S1_EVENT_MOTION_DETECTED:
 		LOG_INF("Event `CTR_S1_EVENT_MOTION_DETECTED`");
 
-		atomic_inc(&g_app_data.iaq_motion_count);
+		atomic_inc(&g_app_data.iaq.motion_count);
 
 		int motion_count;
 		ret = ctr_s1_read_motion_count(dev, &motion_count);

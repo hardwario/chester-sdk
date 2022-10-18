@@ -1,11 +1,16 @@
 #include "app_init.h"
-#include "app_loop.h"
+
+/* CHESTER includes */
+#include <chester/ctr_led.h>
+#include <chester/ctr_wdog.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
+
+extern struct ctr_wdog_channel g_app_wdog_channel;
 
 void main(void)
 {
@@ -22,10 +27,16 @@ void main(void)
 	for (;;) {
 		LOG_INF("Alive");
 
-		ret = app_loop();
+		ret = ctr_wdog_feed(&g_app_wdog_channel);
 		if (ret) {
-			LOG_ERR("Call `app_loop` failed: %d", ret);
+			LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
 			k_oops();
 		}
+
+		ctr_led_set(CTR_LED_CHANNEL_G, true);
+		k_sleep(K_MSEC(30));
+		ctr_led_set(CTR_LED_CHANNEL_G, false);
+
+		k_sleep(K_SECONDS(30));
 	}
 }
