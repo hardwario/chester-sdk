@@ -12,6 +12,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/random/rand32.h>
 #include <zephyr/zephyr.h>
+
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 
@@ -37,9 +38,9 @@ static K_SEM_DEFINE(m_loop_sem, 1, 1);
 static K_SEM_DEFINE(m_run_sem, 0, 1);
 static struct ctr_lte_eval m_lte_eval;
 static struct data m_data = {
-	.therm_temperature = NAN,
-	.hygro_temperature = NAN,
-	.hygro_humidity = NAN,
+        .therm_temperature = NAN,
+        .hygro_temperature = NAN,
+        .hygro_humidity = NAN,
 };
 static struct ctr_wdog_channel m_wdog_channel;
 
@@ -244,7 +245,7 @@ static int compose(struct ctr_buf *buf)
 	err |= ctr_buf_append_mem(buf, digest, 6);
 	err |= ctr_buf_seek(buf, len);
 
-	return err ? -ENOSPC : 0;
+	return err ? -EFAULT : 0;
 }
 
 static void send_timer(struct k_timer *timer_id)

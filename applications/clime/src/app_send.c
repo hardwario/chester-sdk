@@ -181,7 +181,7 @@ static int compose(struct ctr_buf *buf)
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 	if (ret) {
-		return -ENOSPC;
+		return -EFAULT;
 	}
 
 	return 0;

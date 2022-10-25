@@ -2,22 +2,23 @@
 #error "Both shields ctr_lrw and ctr_lte cannot be enabled"
 #endif /* defined(CONFIG_SHIELD_CTR_LRW) && defined(CONFIG_SHIELD_CTR_LTE) */
 
-#include "app_send.h"
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_loop.h"
+#include "app_send.h"
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
-#include <chester/ctr_lrw.h>
 #include <chester/ctr_info.h>
+#include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
 #include <zephyr/random/rand32.h>
 #include <zephyr/zephyr.h>
+
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include <zcbor_encode.h>
@@ -134,7 +135,7 @@ static int compose(struct ctr_buf *buf, struct app_data *data)
 	ret |= ctr_buf_append_u16(buf, atomic_get(&data->events.button_4_hold));
 
 	if (ret) {
-		return -ENOSPC;
+		return -EFAULT;
 	}
 
 	return 0;

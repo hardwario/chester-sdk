@@ -1,7 +1,7 @@
-#include "app_measure.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_loop.h"
+#include "app_measure.h"
 
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
@@ -27,7 +27,7 @@
 LOG_MODULE_REGISTER(app_measure, LOG_LEVEL_DBG);
 
 #define MAX_REPETITIONS 5
-#define MAX_DIFFERENCE 100
+#define MAX_DIFFERENCE  100
 
 K_MUTEX_DEFINE(g_app_measure_weight_lock);
 

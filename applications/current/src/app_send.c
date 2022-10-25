@@ -2,33 +2,34 @@
 #error "Both shields ctr_lrw and ctr_lte cannot be enabled"
 #endif /* defined(CONFIG_SHIELD_CTR_LRW) && defined(CONFIG_SHIELD_CTR_LTE) */
 
-#include "app_send.h"
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_loop.h"
+#include "app_send.h"
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
 #include <chester/ctr_info.h>
-#include <chester/ctr_rtc.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
+#include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
 #include <zephyr/random/rand32.h>
 #include <zephyr/zephyr.h>
+
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 
 /* Standard includes */
-#include <stddef.h>
-#include <stdint.h>
 #include <limits.h>
 #include <math.h>
+#include <stddef.h>
+#include <stdint.h>
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
 
@@ -75,7 +76,7 @@ static int compose(struct ctr_buf *buf)
 	}
 
 	if (ret) {
-		return -ENOSPC;
+		return -EFAULT;
 	}
 
 	return 0;
@@ -195,7 +196,7 @@ int app_send(void)
 	ret = compose(&buf);
 	if (ret) {
 		LOG_ERR("Call `compose` failed: %d", ret);
-		if (ret == -ENOSPC) {
+		if (ret == -EFAULT) {
 			g_app_data.channel_measurement_count = 0;
 		}
 		return ret;
@@ -215,7 +216,7 @@ int app_send(void)
 	ret = compose(&buf);
 	if (ret) {
 		LOG_ERR("Call `compose` failed: %d", ret);
-		if (ret == -ENOSPC) {
+		if (ret == -EFAULT) {
 			g_app_data.channel_measurement_count = 0;
 		}
 		return ret;

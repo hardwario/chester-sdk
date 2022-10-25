@@ -9,14 +9,15 @@
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
+
 #include <tinycbor/cbor.h>
 
 /* Standard includes */
 #include <errno.h>
 #include <math.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
@@ -447,5 +448,5 @@ int app_cbor_encode(CborEncoder *enc)
 
 	err |= cbor_encoder_close_container(enc, &map);
 
-	return err ? -ENOSPC : 0;
+	return err ? -EFAULT : 0;
 }

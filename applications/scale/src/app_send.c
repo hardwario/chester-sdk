@@ -1,9 +1,9 @@
-#include "app_send.h"
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_loop.h"
 #include "app_measure.h"
+#include "app_send.h"
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/random/rand32.h>
 #include <zephyr/zephyr.h>
+
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include <zcbor_common.h>
@@ -141,7 +142,7 @@ int app_send(void)
 	ret = compose(&buf);
 	if (ret) {
 		LOG_ERR("Call `compose` failed: %d", ret);
-		if (ret == -ENOSPC) {
+		if (ret == -EFAULT) {
 			g_app_data.weight_measurement_count = 0;
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 			g_app_data.people_measurement_count = 0;
