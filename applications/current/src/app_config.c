@@ -1,4 +1,5 @@
 #include "app_config.h"
+
 #include <chester/ctr_config.h>
 
 /* Zephyr includes */
@@ -20,8 +21,8 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
 struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
-	.measurement_interval = 60,
-	.report_interval = 1800,
+        .measurement_interval = 60,
+        .report_interval = 900,
 };
 
 static void print_channel_active(const struct shell *shell, int channel)
@@ -626,10 +627,10 @@ static int init(const struct device *dev)
 	LOG_INF("System initialization");
 
 	static struct settings_handler sh = {
-		.name = SETTINGS_PFX,
-		.h_set = h_set,
-		.h_commit = h_commit,
-		.h_export = h_export,
+	        .name = SETTINGS_PFX,
+	        .h_set = h_set,
+	        .h_commit = h_commit,
+	        .h_export = h_export,
 	};
 
 	ret = settings_register(&sh);
