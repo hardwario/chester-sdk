@@ -1,0 +1,8 @@
+/ {
+	ctr_x7_a: ctr_x7_a {
+		compatible = "hardwario,ctr-x7";
+		label = "CTR_X7_A";
+		status = "okay";
+		en-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+	};
+};

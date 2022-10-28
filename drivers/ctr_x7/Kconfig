@@ -1,0 +1,24 @@
+config CTR_X7
+	bool "HARDWARIO CHESTER-X7 (Differential Input) Driver"
+	depends on !ADC_NRFX_SAADC && !ADC_SHELL
+	select CBPRINTF_FP_SUPPORT if CTR_SIGNAL_LOG_LEVEL_DBG
+	select GPIO
+	select NRFX_PPI
+	select NRFX_SAADC
+	select NRFX_TIMER
+	select NRFX_TIMER4
+	select REQUIRES_FULL_LIBC
+
+if CTR_X7
+
+module = CTR_X7
+module-str = ctr_x7
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_X7_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+endif # CTR_X7

@@ -1,0 +1,12 @@
+description: HARDWARIO CHESTER-X7 Driver
+
+compatible: "hardwario,ctr-x7"
+
+include: base.yaml
+
+properties:
+
+  en-gpios:
+    type: phandle-array
+    required: true
+    description: Step-up enable pin (active high)

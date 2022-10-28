@@ -1,0 +1,6 @@
+if SHIELD_CTR_X7_B
+
+config CTR_X7
+	default y
+
+endif # SHIELD_CTR_X7_B

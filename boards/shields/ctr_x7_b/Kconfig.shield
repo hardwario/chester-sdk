@@ -1,0 +1,2 @@
+config SHIELD_CTR_X7_B
+	def_bool $(shields_list_contains,ctr_x7_b)
