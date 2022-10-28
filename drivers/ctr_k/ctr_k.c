@@ -4,10 +4,10 @@
 /* Nordic includes */
 #include <hal/nrf_saadc.h>
 #include <nrf52840.h>
+#include <nrfx.h>
 #include <nrfx_ppi.h>
 #include <nrfx_saadc.h>
 #include <nrfx_timer.h>
-#include <nrfx.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>
@@ -26,10 +26,10 @@
 LOG_MODULE_REGISTER(ctr_k, CONFIG_CTR_K_LOG_LEVEL);
 
 #define STEP_UP_START_DELAY K_MSEC(30)
-#define STEP_UP_STOP_DELAY K_MSEC(30)
-#define MAX_CHANNEL_COUNT 4
-#define MAX_SAMPLE_COUNT 500
-#define SAMPLE_INTERVAL_US 1000
+#define STEP_UP_STOP_DELAY  K_MSEC(30)
+#define MAX_CHANNEL_COUNT   4
+#define MAX_SAMPLE_COUNT    500
+#define SAMPLE_INTERVAL_US  1000
 
 struct ctr_k_config {
 	const struct gpio_dt_spec on1_spec;
@@ -56,23 +56,23 @@ static K_MUTEX_DEFINE(m_lock);
 static K_SEM_DEFINE(m_adc_sem, 0, 1);
 
 static const nrf_saadc_channel_config_t m_channel_config_single_ended = {
-	.resistor_p = NRF_SAADC_RESISTOR_DISABLED,
-	.resistor_n = NRF_SAADC_RESISTOR_DISABLED,
-	.gain = NRF_SAADC_GAIN1_6,
-	.reference = NRF_SAADC_REFERENCE_INTERNAL,
-	.acq_time = NRF_SAADC_ACQTIME_10US,
-	.mode = NRF_SAADC_MODE_SINGLE_ENDED,
-	.burst = NRF_SAADC_BURST_ENABLED,
+        .resistor_p = NRF_SAADC_RESISTOR_DISABLED,
+        .resistor_n = NRF_SAADC_RESISTOR_DISABLED,
+        .gain = NRF_SAADC_GAIN1_6,
+        .reference = NRF_SAADC_REFERENCE_INTERNAL,
+        .acq_time = NRF_SAADC_ACQTIME_10US,
+        .mode = NRF_SAADC_MODE_SINGLE_ENDED,
+        .burst = NRF_SAADC_BURST_ENABLED,
 };
 
 static const nrf_saadc_channel_config_t m_channel_config_differential = {
-	.resistor_p = NRF_SAADC_RESISTOR_DISABLED,
-	.resistor_n = NRF_SAADC_RESISTOR_DISABLED,
-	.gain = NRF_SAADC_GAIN1_6,
-	.reference = NRF_SAADC_REFERENCE_INTERNAL,
-	.acq_time = NRF_SAADC_ACQTIME_10US,
-	.mode = NRF_SAADC_MODE_DIFFERENTIAL,
-	.burst = NRF_SAADC_BURST_ENABLED,
+        .resistor_p = NRF_SAADC_RESISTOR_DISABLED,
+        .resistor_n = NRF_SAADC_RESISTOR_DISABLED,
+        .gain = NRF_SAADC_GAIN1_6,
+        .reference = NRF_SAADC_REFERENCE_INTERNAL,
+        .acq_time = NRF_SAADC_ACQTIME_10US,
+        .mode = NRF_SAADC_MODE_DIFFERENTIAL,
+        .burst = NRF_SAADC_BURST_ENABLED,
 };
 
 static inline const struct ctr_k_config *get_config(const struct device *dev)
@@ -391,8 +391,8 @@ static int ctr_k_measure_(const struct device *dev, const enum ctr_k_channel cha
 		return -EWOULDBLOCK;
 	}
 
-	nrfx_saadc_channel_t saadc_channels[MAX_CHANNEL_COUNT] = { 0 };
-	float (*convert[MAX_CHANNEL_COUNT])(nrf_saadc_value_t) = { 0 };
+	nrfx_saadc_channel_t saadc_channels[MAX_CHANNEL_COUNT] = {0};
+	float (*convert[MAX_CHANNEL_COUNT])(nrf_saadc_value_t) = {0};
 
 	for (size_t i = 0; i < channels_count; i++) {
 		results[i].avg = 0.f;
@@ -464,8 +464,8 @@ static int ctr_k_measure_(const struct device *dev, const enum ctr_k_channel cha
 		return ret;
 	}
 
-	float raw_avg[MAX_CHANNEL_COUNT] = { 0 };
-	float raw_rms[MAX_CHANNEL_COUNT] = { 0 };
+	float raw_avg[MAX_CHANNEL_COUNT] = {0};
+	float raw_rms[MAX_CHANNEL_COUNT] = {0};
 
 	for (size_t i = 0; i < channels_count * MAX_SAMPLE_COUNT; i += channels_count) {
 		for (size_t j = 0; j < channels_count; j++) {
@@ -557,7 +557,7 @@ static int ctr_k_init(const struct device *dev)
 	do {                                                                                       \
 		ret = gpio_pin_set_dt(&get_config(dev)->name##_spec, 0);                           \
 		if (ret) {                                                                         \
-			LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);                   \
+			LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);                         \
 			return ret;                                                                \
 		}                                                                                  \
 		ret = gpio_pin_configure_dt(&get_config(dev)->name##_spec, GPIO_OUTPUT);           \
@@ -582,23 +582,23 @@ static int ctr_k_init(const struct device *dev)
 }
 
 static const struct ctr_k_driver_api ctr_k_driver_api = {
-	.set_power = ctr_k_set_power_,
-	.measure = ctr_k_measure_,
+        .set_power = ctr_k_set_power_,
+        .measure = ctr_k_measure_,
 };
 
 #define CTR_K_INIT(n)                                                                              \
 	static const struct ctr_k_config inst_##n##_config = {                                     \
-		.on1_spec = GPIO_DT_SPEC_INST_GET(n, on1_gpios),                                   \
-		.on2_spec = GPIO_DT_SPEC_INST_GET(n, on2_gpios),                                   \
-		.on3_spec = GPIO_DT_SPEC_INST_GET(n, on3_gpios),                                   \
-		.on4_spec = GPIO_DT_SPEC_INST_GET(n, on4_gpios),                                   \
-		.en_spec = GPIO_DT_SPEC_INST_GET(n, en_gpios),                                     \
-		.nc1_spec = GPIO_DT_SPEC_INST_GET(n, nc1_gpios),                                   \
-		.nc2_spec = GPIO_DT_SPEC_INST_GET(n, nc2_gpios),                                   \
-		.nc3_spec = GPIO_DT_SPEC_INST_GET(n, nc3_gpios),                                   \
+	        .on1_spec = GPIO_DT_SPEC_INST_GET(n, on1_gpios),                                   \
+	        .on2_spec = GPIO_DT_SPEC_INST_GET(n, on2_gpios),                                   \
+	        .on3_spec = GPIO_DT_SPEC_INST_GET(n, on3_gpios),                                   \
+	        .on4_spec = GPIO_DT_SPEC_INST_GET(n, on4_gpios),                                   \
+	        .en_spec = GPIO_DT_SPEC_INST_GET(n, en_gpios),                                     \
+	        .nc1_spec = GPIO_DT_SPEC_INST_GET(n, nc1_gpios),                                   \
+	        .nc2_spec = GPIO_DT_SPEC_INST_GET(n, nc2_gpios),                                   \
+	        .nc3_spec = GPIO_DT_SPEC_INST_GET(n, nc3_gpios),                                   \
 	};                                                                                         \
 	static struct ctr_k_data inst_##n##_data = {                                               \
-		.dev = DEVICE_DT_INST_GET(n),                                                      \
+	        .dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ctr_k_init, NULL, &inst_##n##_data, &inst_##n##_config,           \
 	                      POST_KERNEL, CONFIG_CTR_K_INIT_PRIORITY, &ctr_k_driver_api);
