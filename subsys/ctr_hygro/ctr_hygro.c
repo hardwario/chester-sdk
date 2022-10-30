@@ -9,7 +9,11 @@
 #include <zephyr/zephyr.h>
 
 /* Standard includes */
+#include <float.h>
 #include <stddef.h>
+
+BUILD_ASSERT(DT_HAS_CHOSEN(ctr_hygro), "ctr,hygro not set");
+BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay), "ctr,hygro not enabled");
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SHT3XD_SINGLE_SHOT_MODE),
              "Option SHT3XD_SINGLE_SHOT_MODE has to be chosen");
@@ -18,7 +22,7 @@ LOG_MODULE_REGISTER(ctr_hygro, CONFIG_CTR_HYGRO_LOG_LEVEL);
 
 static K_MUTEX_DEFINE(m_mut);
 
-static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(sht30_ext));
+static const struct device *m_dev = DEVICE_DT_GET(DT_CHOSEN(ctr_hygro));
 
 int ctr_hygro_read(float *temperature, float *humidity)
 {
@@ -47,7 +51,7 @@ int ctr_hygro_read(float *temperature, float *humidity)
 		return ret;
 	}
 
-	float temperature_ = sensor_value_to_double(&val_temperature);
+	float temperature_ = CLAMP(sensor_value_to_double(&val_temperature), FLT_MIN, FLT_MAX);
 
 	LOG_DBG("Temperature: %.2f C", temperature_);
 
@@ -63,7 +67,7 @@ int ctr_hygro_read(float *temperature, float *humidity)
 		return ret;
 	}
 
-	float humidity_ = sensor_value_to_double(&val_humidity);
+	float humidity_ = CLAMP(sensor_value_to_double(&val_humidity), FLT_MIN, FLT_MAX);
 
 	LOG_DBG("Humidity: %.1f %%", humidity_);
 

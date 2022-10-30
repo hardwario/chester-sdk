@@ -9,6 +9,7 @@
 
 	chosen {
 		ctr,batt_adc = &tla2021;
+		ctr,hygro = &sht30_int;
 		ctr,lte_if = &ctr_lte_if;
 		ctr,lrw_if = &ctr_lrw_if;
 		zephyr,sram = &sram0;
