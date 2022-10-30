@@ -161,7 +161,7 @@ int app_sensor_sample(void)
 	return 0;
 }
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 
 int app_sensor_iaq_sample(void)
 {
@@ -290,9 +290,9 @@ int app_sensor_iaq_clear(void)
 
 	return 0;
 }
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay)
 
 int app_sensor_hygro_sample(void)
 {
@@ -380,9 +380,9 @@ int app_sensor_hygro_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)
 
 int app_sensor_w1_therm_sample(void)
 {
@@ -478,4 +478,4 @@ int app_sensor_w1_therm_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20) */

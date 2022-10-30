@@ -170,7 +170,7 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data)
 {
 	int ret;
@@ -263,4 +263,4 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 		break;
 	}
 }
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */

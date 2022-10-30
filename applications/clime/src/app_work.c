@@ -39,17 +39,17 @@ static void send_work_handler(struct k_work *work)
 		LOG_ERR("Call `app_send` failed: %d", ret);
 	}
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 	app_sensor_iaq_clear();
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sht30_ext), okay)
 	app_sensor_hygro_clear();
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(sht30_ext), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)
 	app_sensor_w1_therm_clear();
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20) */
 }
 
 static K_WORK_DEFINE(m_send_work, send_work_handler);
@@ -90,7 +90,7 @@ static void sample_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_sample_timer, sample_timer_handler, NULL);
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 
 static void iaq_sample_work_handler(struct k_work *work)
 {
@@ -140,9 +140,9 @@ static void iaq_aggreg_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_iaq_aggreg_timer, iaq_aggreg_timer_handler, NULL);
 
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sht30_ext), okay)
 
 static void hygro_sample_work_handler(struct k_work *work)
 {
@@ -192,9 +192,9 @@ static void hygro_aggreg_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_hygro_aggreg_timer, hygro_aggreg_timer_handler, NULL);
 
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(sht30_ext), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)
 
 static void w1_therm_sample_work_handler(struct k_work *work)
 {
@@ -244,7 +244,7 @@ static void w1_therm_aggreg_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_w1_therm_aggreg_timer, w1_therm_aggreg_timer_handler, NULL);
 
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20) */
 
 int app_work_init(void)
 {
@@ -259,26 +259,26 @@ int app_work_init(void)
 	k_timer_start(&m_sample_timer, K_SECONDS(g_app_config.interval_sample),
 	              K_SECONDS(g_app_config.interval_sample));
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 	k_timer_start(&m_iaq_sample_timer, K_SECONDS(g_app_config.interval_sample),
 	              K_SECONDS(g_app_config.interval_sample));
 	k_timer_start(&m_iaq_aggreg_timer, K_SECONDS(g_app_config.interval_aggregate),
 	              K_SECONDS(g_app_config.interval_aggregate));
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay)
 	k_timer_start(&m_hygro_sample_timer, K_SECONDS(g_app_config.interval_sample),
 	              K_SECONDS(g_app_config.interval_sample));
 	k_timer_start(&m_hygro_aggreg_timer, K_SECONDS(g_app_config.interval_aggregate),
 	              K_SECONDS(g_app_config.interval_aggregate));
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)
 	k_timer_start(&m_w1_therm_sample_timer, K_SECONDS(g_app_config.interval_sample),
 	              K_SECONDS(g_app_config.interval_sample));
 	k_timer_start(&m_w1_therm_aggreg_timer, K_SECONDS(g_app_config.interval_aggregate),
 	              K_SECONDS(g_app_config.interval_aggregate));
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20) */
 
 	return 0;
 }
@@ -287,17 +287,17 @@ void app_work_sample(void)
 {
 	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 	k_timer_start(&m_iaq_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay)
 	k_timer_start(&m_hygro_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)
 	k_timer_start(&m_w1_therm_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20) */
 }
 
 void app_work_send(void)

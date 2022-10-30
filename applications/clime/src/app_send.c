@@ -57,17 +57,17 @@ static int compose(struct ctr_buf *buf)
 	}
 
 	/* Flag IAQ */
-	if (IS_ENABLED(CONFIG_SHIELD_CTR_S1)) {
+	if (DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)) {
 		header |= BIT(3);
 	}
 
 	/* Flag HYGRO */
-	if (IS_ENABLED(CONFIG_SHIELD_CTR_S2)) {
+	if (DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay)) {
 		header |= BIT(4);
 	}
 
 	/* Flag W1_THERM */
-	if (IS_ENABLED(CONFIG_SHIELD_CTR_DS18B20)) {
+	if (DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)) {
 		header |= BIT(5);
 	}
 
@@ -117,14 +117,14 @@ static int compose(struct ctr_buf *buf)
 		}
 	}
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 	/* Field IAQ */
 	if (header & BIT(3)) {
 		/* TODO Implement */
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 	/* Field HYGRO */
 	if (header & BIT(4)) {
 		if (isnan(g_app_data.hygro_temperature)) {
@@ -141,9 +141,9 @@ static int compose(struct ctr_buf *buf)
 			ret |= ctr_buf_append_u8(buf, val);
 		}
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)
 	/* Field W1_THERM */
 	if (header & BIT(5)) {
 		float t[W1_THERM_COUNT];
@@ -178,7 +178,7 @@ static int compose(struct ctr_buf *buf)
 			}
 		}
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20) */
 
 	if (ret) {
 		return -EFAULT;

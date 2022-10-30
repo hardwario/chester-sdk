@@ -56,15 +56,15 @@ int app_init(void)
 		return ret;
 	}
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)
 	ret = ctr_ds18b20_scan();
 	if (ret) {
 		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20) */
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_s1));
 
 	if (!device_is_ready(dev)) {
@@ -84,7 +84,7 @@ int app_init(void)
 		return ret;
 	}
 
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */
 
 #if defined(CONFIG_SHIELD_CTR_LRW)
 	ret = ctr_lrw_init(app_handler_lrw, NULL);

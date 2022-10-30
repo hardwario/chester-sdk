@@ -324,7 +324,7 @@ static int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 	zcbor_uint32_put(zs, MSG_KEY_IAQ_SENSOR);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -495,9 +495,9 @@ static int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay)
 	zcbor_uint32_put(zs, MSG_KEY_HYGROMETER);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -548,9 +548,9 @@ static int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)
 	zcbor_uint32_put(zs, MSG_KEY_W1_THERMOMETERS);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -585,7 +585,7 @@ static int encode(zcbor_state_t *zs)
 		}
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20) */
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 

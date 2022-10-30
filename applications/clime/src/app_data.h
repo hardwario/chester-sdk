@@ -1,6 +1,8 @@
 #ifndef APP_DATA_H_
 #define APP_DATA_H_
 
+#include <zephyr/kernel.h>
+
 /* CHESTER includes */
 #include <chester/ctr_lte.h>
 
@@ -8,16 +10,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* TODO Delete */
-#include <zephyr/zephyr.h>
-
-#define APP_DATA_MAX_MEASUREMENTS 32
-#define APP_DATA_MAX_SAMPLES      32
-
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
-#define APP_DATA_W1_THERM_COUNT       10
+#define APP_DATA_MAX_MEASUREMENTS     32
+#define APP_DATA_MAX_SAMPLES          32
+#define APP_DATA_W1_THERM_COUNT       DT_NUM_INST_STATUS_OKAY(maxim_ds18b20)
 #define APP_DATA_W1_THERM_MAX_SAMPLES 128
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,7 +76,7 @@ struct app_data_hygro {
 	atomic_t aggregate;
 };
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)
 struct app_data_w1_therm_measurement {
 	struct app_data_aggreg temperature;
 };
@@ -101,7 +97,7 @@ struct app_data_w1_therm {
 	atomic_t sample;
 	atomic_t aggregate;
 };
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20) */
 
 struct app_data {
 	float batt_voltage_rest;
@@ -113,17 +109,17 @@ struct app_data {
 	float accel_z;
 	int accel_orientation;
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay)
 	struct app_data_iaq iaq;
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_s1), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay)
 	struct app_data_hygro hygro;
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* DT_NODE_HAS_STATUS(DT_CHOSEN(ctr_hygro), okay) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20)
 	struct app_data_w1_therm w1_therm;
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(maxim_ds18b20) */
 };
 
 extern struct app_data g_app_data;

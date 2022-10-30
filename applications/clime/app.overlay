@@ -1,0 +1,17 @@
+/ {
+	chosen {
+		ctr,hygro = &sht30_ext;
+	};
+};
+
+&sht30_ext {
+	status = "okay";
+};
+
+&ds2484 {
+	ds18b20_0 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+};
