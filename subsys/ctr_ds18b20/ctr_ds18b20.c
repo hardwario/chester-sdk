@@ -16,6 +16,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(maxim_ds18b20) > 0, "At least one DS18B20 has to be enabled");
+
 LOG_MODULE_REGISTER(ctr_ds18b20, CONFIG_CTR_DS18B20_LOG_LEVEL);
 
 struct sensor {
@@ -27,18 +29,8 @@ static K_MUTEX_DEFINE(m_lock);
 
 static struct ctr_w1 m_w1;
 
-static struct sensor m_sensors[] = {
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_0)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_1)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_2)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_3)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_4)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_5)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_6)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_7)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_8)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_9)) },
-};
+#define SENSOR_INTERNAL(id) {.dev = DEVICE_DT_GET(id)},
+static struct sensor m_sensors[] = {DT_FOREACH_STATUS_OKAY(maxim_ds18b20, SENSOR_INTERNAL)};
 
 static int m_count;
 
