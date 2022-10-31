@@ -23,51 +23,31 @@
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
-
-static int compare(const void *a, const void *b)
-{
-	float fa = *(const float *)a;
-	float fb = *(const float *)b;
-
-	return (fa > fb) - (fa < fb);
-}
-
-__unused static void aggregate(float *samples, size_t count, float *minimum, float *maximum,
-                               float *average, float *median)
-{
-	if (count < 1) {
-		*minimum = NAN;
-		*maximum = NAN;
-		*average = NAN;
-		*median = NAN;
-
-		return;
-	}
-
-	qsort(samples, count, sizeof(float), compare);
-
-	*minimum = samples[0];
-	*maximum = samples[count - 1];
-
-	double average_ = 0;
-	for (size_t i = 0; i < count; i++) {
-		average_ += samples[i];
-	}
-	average_ /= count;
-
-	*average = average_;
-	*median = samples[count / 2];
-}
-
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
-
 __unused static void put_sample(zcbor_state_t *zs, struct app_data_aggreg *sample)
 {
-	zcbor_int32_put(zs, sample->min);
-	zcbor_int32_put(zs, sample->max);
-	zcbor_int32_put(zs, sample->avg);
-	zcbor_int32_put(zs, sample->mdn);
+	if (isnan(sample->min)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->min);
+	}
+
+	if (isnan(sample->max)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->max);
+	}
+
+	if (isnan(sample->avg)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->avg);
+	}
+
+	if (isnan(sample->mdn)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->mdn);
+	}
 }
 
 __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *sample, float mul)

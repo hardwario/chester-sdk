@@ -1,12 +1,6 @@
 #ifndef APP_SENSOR_H_
 #define APP_SENSOR_H_
 
-/* CHESTER includes */
-#include <chester/drivers/ctr_s1.h>
-
-/* Zephyr includes */
-#include <zephyr/zephyr.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,5 +1,6 @@
 #include "app_config.h"
 
+/* CHESTER includes */
 #include <chester/ctr_config.h>
 
 /* Zephyr includes */
@@ -19,6 +20,7 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 #define SETTINGS_PFX "app"
 
 struct app_config g_app_config;
+
 static struct app_config m_app_config_interim = {
         .interval_sample = 60,
         .interval_aggregate = 300,
@@ -74,14 +76,14 @@ int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc
 			}
 		}
 
-		int interval_sample = strtol(argv[1], NULL, 10);
+		long interval_sample = strtol(argv[1], NULL, 10);
 
 		if (interval_sample < 1 || interval_sample > 86400) {
 			shell_error(shell, "invalid range");
 			return -EINVAL;
 		}
 
-		m_app_config_interim.interval_sample = interval_sample;
+		m_app_config_interim.interval_sample = (int)interval_sample;
 
 		return 0;
 	}
@@ -112,14 +114,14 @@ int app_config_cmd_config_interval_aggregate(const struct shell *shell, size_t a
 			}
 		}
 
-		int interval_aggregate = strtol(argv[1], NULL, 10);
+		long interval_aggregate = strtol(argv[1], NULL, 10);
 
 		if (interval_aggregate < 1 || interval_aggregate > 86400) {
 			shell_error(shell, "invalid range");
 			return -EINVAL;
 		}
 
-		m_app_config_interim.interval_aggregate = interval_aggregate;
+		m_app_config_interim.interval_aggregate = (int)interval_aggregate;
 
 		return 0;
 	}
@@ -150,14 +152,14 @@ int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc
 			}
 		}
 
-		int interval_report = strtol(argv[1], NULL, 10);
+		long interval_report = strtol(argv[1], NULL, 10);
 
 		if (interval_report < 30 || interval_report > 86400) {
 			shell_error(shell, "invalid range");
 			return -EINVAL;
 		}
 
-		m_app_config_interim.interval_report = interval_report;
+		m_app_config_interim.interval_report = (int)interval_report;
 
 		return 0;
 	}

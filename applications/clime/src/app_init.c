@@ -1,6 +1,6 @@
-#include "app_init.h"
 #include "app_data.h"
 #include "app_handler.h"
+#include "app_init.h"
 #include "app_work.h"
 
 /* CHESTER includes */
@@ -134,13 +134,13 @@ int app_init(void)
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
+	ctr_led_set(CTR_LED_CHANNEL_R, false);
+
 	ret = app_work_init();
 	if (ret) {
 		LOG_ERR("Call `app_work_init` failed: %d", ret);
 		return ret;
 	}
-
-	ctr_led_set(CTR_LED_CHANNEL_R, false);
 
 	return 0;
 }

@@ -1,5 +1,4 @@
 #include "app_config.h"
-#include "app_data.h"
 #include "app_init.h"
 #include "app_send.h"
 #include "app_sensor.h"
@@ -73,7 +72,7 @@ static void sample_work_handler(struct k_work *work)
 
 	ret = app_sensor_sample();
 	if (ret < 0) {
-		LOG_ERR("Call `app_sensor_iaq_sample` failed: %d", ret);
+		LOG_ERR("Call `app_sensor_sample` failed: %d", ret);
 	}
 }
 
