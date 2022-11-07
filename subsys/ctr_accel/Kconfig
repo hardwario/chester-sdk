@@ -21,6 +21,9 @@ choice LIS2DH_ACCEL_RANGE
 	default LIS2DH_ACCEL_RANGE_4G
 endchoice
 
+config LIS2DH_BLOCK_DATA_UPDATE
+	default y
+
 choice LIS2DH_ODR
 	default LIS2DH_ODR_2
 endchoice
