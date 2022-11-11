@@ -133,30 +133,38 @@ error:
 int app_sensor_sample(void)
 {
 	int ret;
-
-	app_data_lock();
+	float therm_temperature;
+	float accel_x;
+	float accel_y;
+	float accel_z;
+	int accel_orientation;
 
 	ret = update_battery();
 	if (ret) {
 		LOG_ERR("Call `update_battery` failed: %d", ret);
 	}
 
-	ret = ctr_therm_read(&g_app_data.therm_temperature);
+	ret = ctr_therm_read(&therm_temperature);
 	if (ret) {
 		LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
 		g_app_data.therm_temperature = NAN;
 	}
 
-	ret = ctr_accel_read(&g_app_data.accel_x, &g_app_data.accel_y, &g_app_data.accel_z,
-	                     &g_app_data.accel_orientation);
+	ret = ctr_accel_read(&accel_x, &accel_y, &accel_z, &accel_orientation);
 	if (ret) {
 		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
-		g_app_data.accel_x = NAN;
-		g_app_data.accel_y = NAN;
-		g_app_data.accel_z = NAN;
-		g_app_data.accel_orientation = INT_MAX;
+		accel_x = NAN;
+		accel_y = NAN;
+		accel_z = NAN;
+		accel_orientation = INT_MAX;
 	}
 
+	app_data_lock();
+	g_app_data.therm_temperature = therm_temperature;
+	g_app_data.accel_x = accel_x;
+	g_app_data.accel_y = accel_y;
+	g_app_data.accel_z = accel_z;
+	g_app_data.accel_orientation = accel_orientation;
 	app_data_unlock();
 
 	return 0;
@@ -169,68 +177,78 @@ int app_sensor_iaq_sample(void)
 	int ret;
 	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_s1));
 
-	app_data_lock();
+	float temperature;
+	float humidity;
+	float illuminance;
+	float altitude;
+	float pressure;
+	float co2_conc;
 
 	if (g_app_data.iaq.sample_count < APP_DATA_MAX_SAMPLES) {
 		int i = g_app_data.iaq.sample_count;
-		ret = ctr_s1_read_temperature(dev, &g_app_data.iaq.samples_temperature[i]);
+		ret = ctr_s1_read_temperature(dev, &temperature);
 		if (ret) {
-			g_app_data.iaq.samples_temperature[i] = NAN;
+			temperature = NAN;
 			LOG_ERR("Call `ctr_s1_read_temperature` failed: %d", ret);
 		} else {
-			LOG_INF("Temperature: %.1f C", g_app_data.iaq.samples_temperature[i]);
+			LOG_INF("Temperature: %.1f C", temperature);
 		}
 
-		ret = ctr_s1_read_humidity(dev, &g_app_data.iaq.samples_humidity[i]);
+		ret = ctr_s1_read_humidity(dev, &humidity);
 		if (ret) {
-			g_app_data.iaq.samples_humidity[i] = NAN;
+			humidity = NAN;
 			LOG_ERR("Call `ctr_s1_read_humidity` failed: %d", ret);
 		} else {
-			LOG_INF("Humidity: %.1f %%", g_app_data.iaq.samples_humidity[i]);
+			LOG_INF("Humidity: %.1f %%", humidity);
 		}
 
-		ret = ctr_s1_read_illuminance(dev, &g_app_data.iaq.samples_illuminance[i]);
+		ret = ctr_s1_read_illuminance(dev, &illuminance);
 		if (ret) {
-			g_app_data.iaq.samples_illuminance[i] = NAN;
+			illuminance = NAN;
 			LOG_ERR("Call `ctr_s1_read_illuminance` failed: %d", ret);
 		} else {
-			LOG_INF("Illuminance: %.0f lux", g_app_data.iaq.samples_illuminance[i]);
+			LOG_INF("Illuminance: %.0f lux", illuminance);
 		}
 
-		ret = ctr_s1_read_altitude(dev, &g_app_data.iaq.samples_altitude[i]);
+		ret = ctr_s1_read_altitude(dev, &altitude);
 		if (ret) {
-			g_app_data.iaq.samples_altitude[i] = NAN;
+			altitude = NAN;
 			LOG_ERR("Call `ctr_s1_read_altitude` failed: %d", ret);
 		} else {
-			LOG_INF("Altitude: %.0f m", g_app_data.iaq.samples_altitude[i]);
+			LOG_INF("Altitude: %.0f m", altitude);
 		}
 
-		ret = ctr_s1_read_pressure(dev, &g_app_data.iaq.samples_pressure[i]);
+		ret = ctr_s1_read_pressure(dev, &pressure);
 		if (ret) {
-			g_app_data.iaq.samples_pressure[i] = NAN;
+			pressure = NAN;
 			LOG_ERR("Call `ctr_s1_read_pressure` failed: %d", ret);
 		} else {
-			LOG_INF("Pressure: %.0f Pa", g_app_data.iaq.samples_pressure[i]);
+			LOG_INF("Pressure: %.0f Pa", pressure);
 		}
 
-		ret = ctr_s1_read_co2_conc(dev, &g_app_data.iaq.samples_co2_conc[i]);
+		ret = ctr_s1_read_co2_conc(dev, &co2_conc);
 		if (ret) {
-			g_app_data.iaq.samples_co2_conc[i] = NAN;
+			co2_conc = NAN;
 			LOG_ERR("Call `ctr_s1_read_co2_conc` failed: %d", ret);
 		} else {
-			LOG_INF("CO2 conc.: %.0f ppm", g_app_data.iaq.samples_co2_conc[i]);
+			LOG_INF("CO2 conc.: %.0f ppm", co2_conc);
 		}
 
+		app_data_lock();
+		g_app_data.iaq.samples_temperature[i] = temperature;
+		g_app_data.iaq.samples_humidity[i] = humidity;
+		g_app_data.iaq.samples_illuminance[i] = illuminance;
+		g_app_data.iaq.samples_altitude[i] = altitude;
+		g_app_data.iaq.samples_pressure[i] = pressure;
+		g_app_data.iaq.samples_co2_conc[i] = co2_conc;
 		g_app_data.iaq.sample_count++;
+		app_data_unlock();
 
 		LOG_INF("Sample count: %d", g_app_data.iaq.sample_count);
 	} else {
 		LOG_WRN("Sample buffer full");
-		app_data_unlock();
 		return -ENOSPC;
 	}
-
-	app_data_unlock();
 
 	return 0;
 }
@@ -299,34 +317,31 @@ int app_sensor_hygro_sample(void)
 {
 	int ret;
 
-	app_data_lock();
+	float temperature;
+	float humidity;
 
 	if (g_app_data.hygro.sample_count < APP_DATA_MAX_SAMPLES) {
-		ret = ctr_hygro_read(
-		        &g_app_data.hygro.samples_temperature[g_app_data.hygro.sample_count],
-		        &g_app_data.hygro.samples_humidity[g_app_data.hygro.sample_count]);
+		ret = ctr_hygro_read(&temperature, &humidity);
 		if (ret) {
 			LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);
-			g_app_data.hygro.samples_temperature[g_app_data.hygro.sample_count] = NAN;
-			g_app_data.hygro.samples_humidity[g_app_data.hygro.sample_count] = NAN;
+			temperature = NAN;
+			humidity = NAN;
 		} else {
-			LOG_INF("Temperature: %.2f °C",
-			        g_app_data.hygro
-			                .samples_temperature[g_app_data.hygro.sample_count]);
-			LOG_INF("Humidity: %.2f %% RH",
-			        g_app_data.hygro.samples_humidity[g_app_data.hygro.sample_count]);
+			LOG_INF("Hygro: Temperature: %.2f °C", temperature);
+			LOG_INF("Hygro: Humidity: %.2f %% RH", humidity);
 		}
 
+		app_data_lock();
+		g_app_data.hygro.samples_temperature[g_app_data.hygro.sample_count] = temperature;
+		g_app_data.hygro.samples_humidity[g_app_data.hygro.sample_count] = humidity;
 		g_app_data.hygro.sample_count++;
+		app_data_unlock();
 
 		LOG_INF("Sample count: %d", g_app_data.hygro.sample_count);
 	} else {
 		LOG_WRN("Sample buffer full");
-		app_data_unlock();
 		return -ENOSPC;
 	}
-
-	app_data_unlock();
 
 	return 0;
 }
@@ -388,37 +403,35 @@ int app_sensor_hygro_clear(void)
 int app_sensor_w1_therm_sample(void)
 {
 	int ret;
-
-	app_data_lock();
+	float temperature;
+	uint64_t serial_number;
 
 	for (int j = 0; j < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); j++) {
 		if (g_app_data.w1_therm.sensor[j].sample_count < APP_DATA_MAX_SAMPLES) {
 			int i = g_app_data.w1_therm.sensor[j].sample_count;
 
-			ret = ctr_ds18b20_read(
-			        j, &g_app_data.w1_therm.sensor[j].serial_number,
-			        &g_app_data.w1_therm.sensor[j].samples_temperature[i]);
+			ret = ctr_ds18b20_read(j, &serial_number, &temperature);
 
 			if (ret) {
-				g_app_data.w1_therm.sensor[j].samples_temperature[i] = NAN;
+				temperature = NAN;
 				LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
 				continue;
 			} else {
-				LOG_INF("Temperature: %.1f C",
-				        g_app_data.w1_therm.sensor[j].samples_temperature[i]);
+				LOG_INF("Temperature: %.1f C", temperature);
 			}
 
+			app_data_lock();
+			g_app_data.w1_therm.sensor[j].samples_temperature[i] = temperature;
+			g_app_data.w1_therm.sensor[j].serial_number = serial_number;
 			g_app_data.w1_therm.sensor[j].sample_count++;
+			app_data_unlock();
 
 			LOG_INF("Sample count: %d", g_app_data.w1_therm.sensor[j].sample_count);
 		} else {
 			LOG_WRN("Sample buffer full");
-			app_data_unlock();
 			return -ENOSPC;
 		}
 	}
-
-	app_data_unlock();
 
 	return 0;
 }
