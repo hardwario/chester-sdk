@@ -44,6 +44,8 @@ void uart_callback(const struct device *dev, void *user_data)
 	}
 
 	if (uart_irq_rx_ready(dev)) {
+		LOG_DBG("RX interrupt");
+
 		for (;;) {
 			uint8_t buf[16];
 			int bytes_read = uart_fifo_read(dev, buf, sizeof(buf));
@@ -70,11 +72,13 @@ void uart_callback(const struct device *dev, void *user_data)
 	}
 
 	if (uart_irq_tx_ready(dev)) {
+		LOG_DBG("TX interrupt");
+
 		for (;;) {
 			uint8_t *buf;
 			uint32_t claimed = ring_buf_get_claim(&m_tx_ring_buf, &buf, 16);
 			if (!claimed) {
-				uart_irq_rx_disable(dev);
+				uart_irq_tx_disable(dev);
 				break;
 			}
 
@@ -139,6 +143,6 @@ void main(void)
 
 		uart_irq_tx_enable(dev);
 
-		k_sleep(K_MSEC(100));
+		k_sleep(K_MSEC(50));
 	}
 }
