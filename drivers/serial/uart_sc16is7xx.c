@@ -48,6 +48,7 @@ struct sc16is7xx_data {
 	void *user_data;
 	bool irq_tx_enabled;
 	bool irq_rx_enabled;
+	uint8_t tx_buffer[1 + TX_FIFO_SIZE];
 
 	/* General register set */
 	uint8_t reg_ier;
@@ -471,27 +472,17 @@ static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, in
 
 	size_t buf_len = MIN(get_data(dev)->reg_txlvl, data_len);
 
-	uint8_t *buf = k_malloc(1 + buf_len);
-	if (!buf) {
-		LOG_ERR("Call `k_malloc` failed");
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -ENOMEM;
-	}
+	get_data(dev)->tx_buffer[0] = SC16IS7XX_REG_THR << SC16IS7XX_REG_SHIFT;
+	memcpy(&get_data(dev)->tx_buffer[1], data, buf_len);
 
-	buf[0] = SC16IS7XX_REG_THR << SC16IS7XX_REG_SHIFT;
-	memcpy(&buf[1], data, buf_len);
-
-	ret = i2c_write_dt(&get_config(dev)->i2c_spec, buf, 1 + buf_len);
+	ret = i2c_write_dt(&get_config(dev)->i2c_spec, get_data(dev)->tx_buffer, 1 + buf_len);
 	if (ret) {
 		LOG_ERR("Call `i2c_write_dt` failed: %d", ret);
-		k_free(buf);
 		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
 
 	get_data(dev)->reg_txlvl -= buf_len;
-
-	k_free(buf);
 
 	k_mutex_unlock(&get_data(dev)->lock);
 
