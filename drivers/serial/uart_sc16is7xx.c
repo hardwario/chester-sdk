@@ -1,5 +1,6 @@
 #include "uart_sc16is7xx_reg.h"
 
+/* Zephyr includes */
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
@@ -9,6 +10,8 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 
+/* Standard includes */
+#include <errno.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -19,9 +22,10 @@
 
 LOG_MODULE_REGISTER(sc16is7xx, CONFIG_UART_SC16IS7XX_LOG_LEVEL);
 
-#define TX_FIFO_SIZE 64
-#define RX_FIFO_SIZE 64
+#define TX_FIFO_SIZE   64
+#define RX_FIFO_SIZE   64
 #define POLL_OUT_PAUSE K_MSEC(10)
+#define RESET_PAUSE    K_MSEC(30)
 
 struct sc16is7xx_config {
 	const struct i2c_dt_spec i2c_spec;
@@ -42,10 +46,10 @@ struct sc16is7xx_data {
 	struct gpio_callback cb;
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
+	bool irq_tx_enabled;
+	bool irq_rx_enabled;
 
-	/*
-	 * General register set
-	 */
+	/* General register set */
 	uint8_t reg_ier;
 	uint8_t reg_iir;
 	uint8_t reg_fcr;
@@ -55,15 +59,11 @@ struct sc16is7xx_data {
 	uint8_t reg_rxlvl;
 	uint8_t reg_efcr;
 
-	/*
-	 * Special register set
-	 */
+	/* Special register set */
 	uint8_t reg_dll;
 	uint8_t reg_dlh;
 
-	/*
-	 * Enhanced register set
-	 */
+	/* Enhanced register set */
 	uint8_t reg_efr;
 };
 
@@ -105,7 +105,7 @@ static int write_register(const struct device *dev, uint8_t reg, uint8_t val)
 
 	reg <<= SC16IS7XX_REG_SHIFT;
 
-	uint8_t buf[] = { reg, val };
+	uint8_t buf[] = {reg, val};
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Device not ready");
@@ -216,7 +216,7 @@ static int configure_line(const struct device *dev, const struct uart_config *cf
 		WRITE_BIT(get_data(dev)->reg_lcr, SC16IS7XX_LCR_WORDLEN_MSB_BIT, 1);
 		break;
 	case UART_CFG_DATA_BITS_9:
-		LOG_ERR("data_bits not supported: %d", cfg->data_bits);
+		LOG_ERR("Data bits not supported: %u", cfg->data_bits);
 		return -ENOTSUP;
 	default:
 		return -EINVAL;
@@ -254,21 +254,21 @@ static int configure_line(const struct device *dev, const struct uart_config *cf
 
 	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_0_5:
-		LOG_ERR("stop_bits not supported: %d", cfg->stop_bits);
+		LOG_ERR("Stop bits not supported: %u", cfg->stop_bits);
 		return -ENOTSUP;
 	case UART_CFG_STOP_BITS_1:
 		WRITE_BIT(get_data(dev)->reg_lcr, SC16IS7XX_LCR_STOPLEN_BIT, 0);
 		break;
 	case UART_CFG_STOP_BITS_1_5:
 		if (cfg->data_bits != UART_CFG_DATA_BITS_5) {
-			LOG_ERR("stop_bits not supported: %d", cfg->stop_bits);
+			LOG_ERR("Stop bits not supported: %u", cfg->stop_bits);
 			return -ENOTSUP;
 		}
 		WRITE_BIT(get_data(dev)->reg_lcr, SC16IS7XX_LCR_STOPLEN_BIT, 1);
 		break;
 	case UART_CFG_STOP_BITS_2:
 		if (cfg->data_bits == UART_CFG_DATA_BITS_5) {
-			LOG_ERR("stop_bits not supported: %d", cfg->stop_bits);
+			LOG_ERR("Stop bits not supported: %u", cfg->stop_bits);
 			return -ENOTSUP;
 		}
 		WRITE_BIT(get_data(dev)->reg_lcr, SC16IS7XX_LCR_STOPLEN_BIT, 1);
@@ -300,9 +300,7 @@ static int enable_enhanced_features(const struct device *dev)
 {
 	int ret;
 
-	/*
-	 * Write special value to LCR
-	 */
+	/* Write special value to LCR */
 	ret = write_register(dev, SC16IS7XX_REG_LCR, SC16IS7XX_LCR_MAGIC);
 	if (ret) {
 		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
@@ -311,15 +309,13 @@ static int enable_enhanced_features(const struct device *dev)
 
 	WRITE_BIT(get_data(dev)->reg_efr, SC16IS7XX_EFR_EFE_BIT, 1);
 
-	ret = write_register(dev, SC16IS7XX_REG_FCR, get_data(dev)->reg_efr);
+	ret = write_register(dev, SC16IS7XX_REG_EFR, get_data(dev)->reg_efr);
 	if (ret) {
 		LOG_ERR("Call `write_register` (EFR) failed: %d", ret);
 		return ret;
 	}
 
-	/*
-	 * restore LCR
-	 */
+	/* Restore original LCR value */
 	ret = write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
 	if (ret) {
 		LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
@@ -359,10 +355,10 @@ static int configure_baudrate(const struct device *dev, const struct uart_config
 	double baudrate = cfg->baudrate;
 
 	uint16_t divisor = lround((clock_frequency / prescaler) / (baudrate * 16));
-	get_data(dev)->reg_dll = (uint8_t)(divisor);
-	get_data(dev)->reg_dlh = (uint8_t)(divisor >> 8);
+	get_data(dev)->reg_dll = divisor;
+	get_data(dev)->reg_dlh = divisor >> 8;
 
-	LOG_DBG("divisor: %d", divisor);
+	LOG_DBG("Computed divisor: %u", divisor);
 
 	WRITE_BIT(get_data(dev)->reg_mcr, SC16IS7XX_MCR_CLOCK_DIVISOR_BIT,
 	          get_config(dev)->prescaler == 4 ? 1 : 0);
@@ -416,14 +412,14 @@ static int sc16is7xx_configure(const struct device *dev, const struct uart_confi
 
 	ret = configure_line(dev, cfg);
 	if (ret) {
-		LOG_ERR("Line configuration failed: %d", ret);
+		LOG_ERR("Call `configure_line` failed: %d", ret);
 		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
 
 	ret = configure_baudrate(dev, cfg);
 	if (ret) {
-		LOG_ERR("Baud rate configuration failed: %d", ret);
+		LOG_ERR("Call `configure_baudrate` failed: %d", ret);
 		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
@@ -468,7 +464,7 @@ static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, in
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
-		LOG_ERR("Bus not ready");
+		LOG_ERR("Device not ready");
 		k_mutex_unlock(&get_data(dev)->lock);
 		return -ENODEV;
 	}
@@ -518,7 +514,7 @@ static int sc16is7xx_fifo_read(const struct device *dev, uint8_t *data, const in
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
-		LOG_ERR("Bus not ready");
+		LOG_ERR("Device not ready");
 		k_mutex_unlock(&get_data(dev)->lock);
 		return -ENODEV;
 	}
@@ -560,6 +556,8 @@ static void sc16is7xx_irq_tx_enable(const struct device *dev)
 		return;
 	}
 
+	get_data(dev)->irq_tx_enabled = true;
+
 	k_mutex_unlock(&get_data(dev)->lock);
 }
 
@@ -582,30 +580,27 @@ static void sc16is7xx_irq_tx_disable(const struct device *dev)
 		return;
 	}
 
+	get_data(dev)->irq_tx_enabled = false;
+
 	k_mutex_unlock(&get_data(dev)->lock);
 }
 
 static int sc16is7xx_irq_tx_ready(const struct device *dev)
 {
-	int ret;
-
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	uint8_t iir = get_data(dev)->reg_iir & SC16IS7XX_IIR_INTERRUPT_MASK;
-
-	switch (iir) {
-	case SC16IS7XX_IIR_THRI_MASK:
-		ret = get_data(dev)->reg_txlvl ? 1 : 0;
+	if (get_data(dev)->irq_tx_enabled && get_data(dev)->reg_txlvl) {
 		k_mutex_unlock(&get_data(dev)->lock);
-		return ret;
-	default:
-		k_mutex_unlock(&get_data(dev)->lock);
-		return 0;
+		return 1;
 	}
+
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return 0;
 }
 
 static void sc16is7xx_irq_rx_enable(const struct device *dev)
@@ -626,6 +621,8 @@ static void sc16is7xx_irq_rx_enable(const struct device *dev)
 		k_mutex_unlock(&get_data(dev)->lock);
 		return;
 	}
+
+	get_data(dev)->irq_rx_enabled = true;
 
 	k_mutex_unlock(&get_data(dev)->lock);
 }
@@ -649,6 +646,8 @@ static void sc16is7xx_irq_rx_disable(const struct device *dev)
 		return;
 	}
 
+	get_data(dev)->irq_rx_enabled = false;
+
 	k_mutex_unlock(&get_data(dev)->lock);
 }
 
@@ -660,22 +659,14 @@ static int sc16is7xx_irq_rx_ready(const struct device *dev)
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	uint8_t iir = get_data(dev)->reg_iir & SC16IS7XX_IIR_INTERRUPT_MASK;
-
-	if (get_data(dev)->reg_rxlvl) {
+	if (get_data(dev)->irq_rx_enabled && get_data(dev)->reg_rxlvl) {
 		k_mutex_unlock(&get_data(dev)->lock);
 		return 1;
 	}
 
-	switch (iir) {
-	case SC16IS7XX_IIR_RTOI_MASK:
-	case SC16IS7XX_IIR_RHRI_MASK:
-		k_mutex_unlock(&get_data(dev)->lock);
-		return 1;
-	default:
-		k_mutex_unlock(&get_data(dev)->lock);
-		return 0;
-	}
+	k_mutex_unlock(&get_data(dev)->lock);
+
+	return 0;
 }
 
 static int sc16is7xx_irq_is_pending(const struct device *dev)
@@ -686,20 +677,19 @@ static int sc16is7xx_irq_is_pending(const struct device *dev)
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	/*
-	 * Hack: It takes at least four charaters until the interrupt is issued
-	 * again. If receive holding interrupts are disable earlier, there will
-	 * be no interrupt indicating pending data.
-	 */
-	if (get_data(dev)->reg_rxlvl > 0) {
+	if (get_data(dev)->irq_tx_enabled && get_data(dev)->reg_txlvl) {
 		k_mutex_unlock(&get_data(dev)->lock);
 		return 1;
 	}
 
-	int is_pending = get_data(dev)->reg_iir & BIT(SC16IS7XX_IIR_INTERRUPT_STATUS_BIT) ? 0 : 1;
+	if (get_data(dev)->irq_rx_enabled && get_data(dev)->reg_rxlvl) {
+		k_mutex_unlock(&get_data(dev)->lock);
+		return 1;
+	}
 
 	k_mutex_unlock(&get_data(dev)->lock);
-	return is_pending;
+
+	return 0;
 }
 
 static int sc16is7xx_irq_update(const struct device *dev)
@@ -758,7 +748,6 @@ static void irq_handler(const struct device *dev, struct gpio_callback *cb, uint
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 	}
 
-
 	k_work_submit(&data->work);
 }
 
@@ -770,13 +759,13 @@ static int configure_reset(const struct device *dev)
 
 	if (get_config(dev)->reset_spec.port) {
 		if (!device_is_ready(get_config(dev)->reset_spec.port)) {
-			LOG_ERR("nRESET port not ready");
+			LOG_ERR("Device not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&get_config(dev)->reset_spec, GPIO_OUTPUT_INACTIVE);
 		if (ret) {
-			LOG_ERR("Unable to configure IRQ pin: %d", ret);
+			LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);
 			return ret;
 		}
 	}
@@ -790,7 +779,7 @@ static int trigger_reset(const struct device *dev)
 
 	if (get_config(dev)->reset_spec.port) {
 		if (!device_is_ready(get_config(dev)->reset_spec.port)) {
-			LOG_ERR("nRESET port not ready");
+			LOG_ERR("Device not ready");
 			return -ENODEV;
 		}
 
@@ -807,9 +796,29 @@ static int trigger_reset(const struct device *dev)
 			LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
 			return ret;
 		}
+
+	} else {
+		uint8_t val;
+
+		ret = read_register(dev, SC16IS7XX_REG_LCR, &val);
+		if (ret) {
+			LOG_ERR("Call `read_register` (LCR) failed: %d", ret);
+			return ret;
+		}
+
+		WRITE_BIT(val, SC16IS7XX_LCR_DIVISOR_LATCH_ENABLE_BIT, 0);
+
+		ret = write_register(dev, SC16IS7XX_REG_LCR, val);
+		if (ret) {
+			LOG_ERR("Call `write_register` (LCR) failed: %d", ret);
+			return ret;
+		}
+
+		ret = write_register(dev, SC16IS7XX_REG_IOCONTROL,
+		                     BIT(SC16IS7XX_IOCONTROL_SRESET_BIT));
 	}
 
-	k_sleep(K_USEC(get_config(dev)->reset_delay));
+	k_sleep(RESET_PAUSE);
 
 	return 0;
 }
@@ -823,7 +832,7 @@ static int configure_interrupt_pin(const struct device *dev)
 	gpio_init_callback(&get_data(dev)->cb, irq_handler, BIT(get_config(dev)->irq_spec.pin));
 
 	if (!device_is_ready(get_config(dev)->irq_spec.port)) {
-		LOG_ERR("nIRQ port not ready");
+		LOG_ERR("Device not ready");
 		return -ENODEV;
 	}
 
@@ -835,7 +844,7 @@ static int configure_interrupt_pin(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->irq_spec, GPIO_INPUT);
 	if (ret) {
-		LOG_ERR("Unable to configure IRQ pin: %d", ret);
+		LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);
 		return ret;
 	}
 
@@ -849,7 +858,7 @@ static int enable_interrupt_pin(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(get_config(dev)->irq_spec.port)) {
-		LOG_ERR("nIRQ port not ready");
+		LOG_ERR("Device not ready");
 		return -ENODEV;
 	}
 
@@ -867,10 +876,13 @@ static int enable_fifo(const struct device *dev)
 	int ret;
 
 	WRITE_BIT(get_data(dev)->reg_fcr, SC16IS7XX_FCR_FIFO_ENABLE_BIT, 1);
-	WRITE_BIT(get_data(dev)->reg_fcr, SC16IS7XX_FCR_RESET_RX_FIFO_BIT, 1);
-	WRITE_BIT(get_data(dev)->reg_fcr, SC16IS7XX_FCR_RESET_TX_FIFO_BIT, 1);
 
-	ret = write_register(dev, SC16IS7XX_REG_FCR, get_data(dev)->reg_fcr);
+	uint8_t val = get_data(dev)->reg_fcr;
+
+	WRITE_BIT(val, SC16IS7XX_FCR_RESET_RX_FIFO_BIT, 1);
+	WRITE_BIT(val, SC16IS7XX_FCR_RESET_TX_FIFO_BIT, 1);
+
+	ret = write_register(dev, SC16IS7XX_REG_FCR, val);
 	if (ret) {
 		LOG_ERR("Call `write_register` (FCR) failed: %d", ret);
 		return ret;
@@ -883,10 +895,12 @@ static int flush_fifo(const struct device *dev)
 {
 	int ret;
 
-	WRITE_BIT(get_data(dev)->reg_fcr, SC16IS7XX_FCR_RESET_RX_FIFO_BIT, 1);
-	WRITE_BIT(get_data(dev)->reg_fcr, SC16IS7XX_FCR_RESET_TX_FIFO_BIT, 1);
+	uint8_t val = get_data(dev)->reg_fcr;
 
-	ret = write_register(dev, SC16IS7XX_REG_FCR, get_data(dev)->reg_fcr);
+	WRITE_BIT(val, SC16IS7XX_FCR_RESET_RX_FIFO_BIT, 1);
+	WRITE_BIT(val, SC16IS7XX_FCR_RESET_TX_FIFO_BIT, 1);
+
+	ret = write_register(dev, SC16IS7XX_REG_FCR, val);
 	if (ret) {
 		LOG_ERR("Call `write_register` (FCR) failed: %d", ret);
 		return ret;
@@ -910,7 +924,8 @@ static void work_handler(struct k_work *work)
 		}
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&get_config(data->dev)->irq_spec, GPIO_INT_LEVEL_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&get_config(data->dev)->irq_spec,
+	                                      GPIO_INT_LEVEL_ACTIVE);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 	}
@@ -931,13 +946,11 @@ static int sc16is7xx_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-
 	ret = configure_interrupt_pin(dev);
 	if (ret) {
 		LOG_ERR("Call `configure_interrupt_pin` failed: %d", ret);
 		return ret;
 	}
-
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 	ret = trigger_reset(dev);
@@ -972,7 +985,7 @@ static int sc16is7xx_init(const struct device *dev)
 
 	ret = sc16is7xx_configure(dev, &get_data(dev)->uart_config);
 	if (ret) {
-		LOG_ERR("Call `configure` failed: %d", ret);
+		LOG_ERR("Call `sc16is7xx_configure` failed: %d", ret);
 		return ret;
 	}
 
@@ -980,6 +993,7 @@ static int sc16is7xx_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
+
 static int enable_sleep_mode(const struct device *dev)
 {
 	int ret;
@@ -1112,47 +1126,48 @@ static int sc16is7xx_pm_control(const struct device *dev, enum pm_device_action 
 
 	return 0;
 }
+
 #endif /* CONFIG_PM_DEVICE */
 
 static const struct uart_driver_api sc16is7xx_driver_api = {
-	.poll_in = sc16is7xx_poll_in,
-	.poll_out = sc16is7xx_poll_out,
-	.configure = sc16is7xx_configure,
-	.config_get = sc16is7xx_config_get,
+        .poll_in = sc16is7xx_poll_in,
+        .poll_out = sc16is7xx_poll_out,
+        .configure = sc16is7xx_configure,
+        .config_get = sc16is7xx_config_get,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill = sc16is7xx_fifo_fill,
-	.fifo_read = sc16is7xx_fifo_read,
-	.irq_tx_enable = sc16is7xx_irq_tx_enable,
-	.irq_tx_disable = sc16is7xx_irq_tx_disable,
-	.irq_tx_ready = sc16is7xx_irq_tx_ready,
-	.irq_rx_enable = sc16is7xx_irq_rx_enable,
-	.irq_rx_disable = sc16is7xx_irq_rx_disable,
-	.irq_rx_ready = sc16is7xx_irq_rx_ready,
-	.irq_is_pending = sc16is7xx_irq_is_pending,
-	.irq_update = sc16is7xx_irq_update,
-	.irq_callback_set = sc16is7xx_irq_callback_set,
+        .fifo_fill = sc16is7xx_fifo_fill,
+        .fifo_read = sc16is7xx_fifo_read,
+        .irq_tx_enable = sc16is7xx_irq_tx_enable,
+        .irq_tx_disable = sc16is7xx_irq_tx_disable,
+        .irq_tx_ready = sc16is7xx_irq_tx_ready,
+        .irq_rx_enable = sc16is7xx_irq_rx_enable,
+        .irq_rx_disable = sc16is7xx_irq_rx_disable,
+        .irq_rx_ready = sc16is7xx_irq_rx_ready,
+        .irq_is_pending = sc16is7xx_irq_is_pending,
+        .irq_update = sc16is7xx_irq_update,
+        .irq_callback_set = sc16is7xx_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 #define SC16IS7XX_INIT(n)                                                                          \
 	static const struct sc16is7xx_config inst_##n##_config = {                                 \
-		.i2c_spec = I2C_DT_SPEC_INST_GET(n),                                               \
-		.clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
-		.prescaler = DT_INST_PROP(n, prescaler),                                           \
-		.irq_spec = GPIO_DT_SPEC_INST_GET(n, irq_gpios),                                   \
-		.reset_spec = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, { 0 }),                     \
-		.reset_delay = DT_INST_PROP(n, reset_delay),                                       \
-		.rts_control = DT_INST_PROP(n, rts_control),                                       \
-		.rts_invert = DT_INST_PROP(n, rts_invert),                                         \
+	        .i2c_spec = I2C_DT_SPEC_INST_GET(n),                                               \
+	        .clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
+	        .prescaler = DT_INST_PROP(n, prescaler),                                           \
+	        .irq_spec = GPIO_DT_SPEC_INST_GET(n, irq_gpios),                                   \
+	        .reset_spec = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
+	        .reset_delay = DT_INST_PROP(n, reset_delay),                                       \
+	        .rts_control = DT_INST_PROP(n, rts_control),                                       \
+	        .rts_invert = DT_INST_PROP(n, rts_invert),                                         \
 	};                                                                                         \
 	static struct sc16is7xx_data inst_##n##_data = {                                           \
-		.dev = DEVICE_DT_INST_GET(n),                                                      \
-		.uart_config = { .baudrate = DT_INST_PROP_OR(n, current_speed, 115200),            \
-		                 .data_bits = UART_CFG_DATA_BITS_8,                                \
-		                 .parity = UART_CFG_PARITY_NONE,                                   \
-		                 .stop_bits = UART_CFG_STOP_BITS_1,                                \
-		                 .flow_ctrl = UART_CFG_FLOW_CTRL_NONE },                           \
+	        .dev = DEVICE_DT_INST_GET(n),                                                      \
+	        .uart_config = {.baudrate = DT_INST_PROP_OR(n, current_speed, 115200),             \
+	                        .data_bits = UART_CFG_DATA_BITS_8,                                 \
+	                        .parity = UART_CFG_PARITY_NONE,                                    \
+	                        .stop_bits = UART_CFG_STOP_BITS_1,                                 \
+	                        .flow_ctrl = UART_CFG_FLOW_CTRL_NONE},                             \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(n, sc16is7xx_pm_control);                                         \
 	DEVICE_DT_INST_DEFINE(n, sc16is7xx_init, PM_DEVICE_DT_INST_GET(n), &inst_##n##_data,       \
