@@ -1,4 +1,5 @@
 /* CHESTER includes */
+#include <chester/ctr_config.h>
 #include <chester/ctr_info.h>
 
 /* Zephyr includes */
@@ -18,6 +19,8 @@ LOG_MODULE_REGISTER(ctr_ble_svc, CONFIG_CTR_BLE_LOG_LEVEL);
 
 enum {
 	COMMAND_REBOOT = 0,
+	COMMAND_CONFIG_SAVE = 1,
+	COMMAND_CONFIG_RESET = 2,
 };
 
 static struct bt_uuid_128 m_generic_svc_uuid =
@@ -41,7 +44,20 @@ static ssize_t write_command(struct bt_conn *conn, const struct bt_gatt_attr *at
 	type = *(const uint8_t *)buf;
 
 	if (type == COMMAND_REBOOT && len == 1) {
+		LOG_INF("Command `REBOOT`");
 		sys_reboot(SYS_REBOOT_COLD);
+		return len;
+	}
+
+	if (type == COMMAND_CONFIG_SAVE && len == 1) {
+		LOG_INF("Command `CONFIG SAVE`");
+		ctr_config_save();
+		return len;
+	}
+
+	if (type == COMMAND_CONFIG_RESET && len == 1) {
+		LOG_INF("Command `CONFIG RESET`");
+		ctr_config_reset();
 		return len;
 	}
 
