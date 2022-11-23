@@ -10,6 +10,7 @@
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_therm.h>
 #include <chester/drivers/ctr_batt.h>
+#include <chester/drivers/ctr_s1.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>
