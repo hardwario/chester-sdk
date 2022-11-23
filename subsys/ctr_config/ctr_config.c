@@ -2,8 +2,8 @@
 #include <chester/ctr_config.h>
 
 /* Zephyr includes */
-#include <zephyr/init.h>
 #include <zephyr/fs/nvs.h>
+#include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/shell/shell.h>
@@ -24,6 +24,71 @@ struct show_item {
 };
 
 static sys_slist_t m_show_list = SYS_SLIST_STATIC_INIT(&m_show_list);
+
+static int save(void)
+{
+	int ret;
+
+	ret = settings_save();
+	if (ret) {
+		LOG_ERR("Call `settings_save` failed: %d", ret);
+		return ret;
+	}
+
+	sys_reboot(SYS_REBOOT_COLD);
+
+	return 0;
+}
+
+static int reset(void)
+{
+	int ret;
+
+	const struct flash_area *fa;
+	ret = flash_area_open(FLASH_AREA_ID(storage), &fa);
+	if (ret) {
+		LOG_ERR("Call `flash_area_open` failed: %d", ret);
+		return ret;
+	}
+
+	ret = flash_area_erase(fa, 0, FLASH_AREA_SIZE(storage));
+	if (ret < 0) {
+		LOG_ERR("Call `flash_area_erase` failed: %d", ret);
+		return ret;
+	}
+
+	flash_area_close(fa);
+
+	sys_reboot(SYS_REBOOT_COLD);
+
+	return 0;
+}
+
+int ctr_config_save(void)
+{
+	int ret;
+
+	ret = save();
+	if (ret) {
+		LOG_ERR("Call `save` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_config_reset(void)
+{
+	int ret;
+
+	ret = reset();
+	if (ret) {
+		LOG_ERR("Call `reset` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
 
 void ctr_config_append_show(const char *name, ctr_config_show_cb cb)
 {
@@ -72,14 +137,12 @@ static int cmd_save(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	ret = settings_save();
+	ret = save();
 	if (ret) {
-		LOG_ERR("Call `settings_save` failed: %d", ret);
+		LOG_ERR("Call `save` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
-
-	sys_reboot(SYS_REBOOT_COLD);
 
 	return 0;
 }
@@ -88,24 +151,12 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	const struct flash_area *fa;
-	ret = flash_area_open(FLASH_AREA_ID(storage), &fa);
+	ret = reset();
 	if (ret) {
-		LOG_ERR("Call `flash_area_open` failed: %d", ret);
+		LOG_ERR("Call `reset` failed: %d", ret);
 		shell_error(shell, "command failed");
 		return ret;
 	}
-
-	ret = flash_area_erase(fa, 0, FLASH_AREA_SIZE(storage));
-	if (ret < 0) {
-		LOG_ERR("Call `flash_area_erase` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	flash_area_close(fa);
-
-	sys_reboot(SYS_REBOOT_COLD);
 
 	return 0;
 }

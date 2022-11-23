@@ -13,6 +13,8 @@ extern "C" {
 
 typedef int (*ctr_config_show_cb)(const struct shell *shell, size_t argc, char **argv);
 
+int ctr_config_save(void);
+int ctr_config_reset(void);
 void ctr_config_append_show(const char *name, ctr_config_show_cb cb);
 
 #ifdef __cplusplus
