@@ -1,7 +1,7 @@
-#include "app_measure.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_loop.h"
+#include "app_measure.h"
 #include "app_send.h"
 
 /* CHESTER includes */
@@ -50,8 +50,8 @@ static int measure_channels(void)
 		return ret;
 	}
 
-	enum ctr_k_channel channels[APP_CONFIG_CHANNEL_COUNT] = { 0 };
-	struct ctr_k_calibration calibrations[APP_CONFIG_CHANNEL_COUNT] = { 0 };
+	enum ctr_k_channel channels[APP_CONFIG_CHANNEL_COUNT] = {0};
+	struct ctr_k_calibration calibrations[APP_CONFIG_CHANNEL_COUNT] = {0};
 
 	size_t channels_count = 0;
 
@@ -109,11 +109,15 @@ static int measure_channels(void)
 			err = ret;
 			goto error;
 		}
+
+		if (i != channels_count - 1) {
+			k_sleep(K_MSEC(10));
+		}
 	}
 
 	k_sleep(K_MSEC(100));
 
-	struct ctr_k_result results[ARRAY_SIZE(channels)] = { 0 };
+	struct ctr_k_result results[ARRAY_SIZE(channels)] = {0};
 	ret = ctr_k_measure(dev, channels, channels_count, calibrations, results);
 	if (ret) {
 		LOG_ERR("Call `ctr_k_measure` failed: %d", ret);
@@ -143,6 +147,10 @@ error:
 		if (ret) {
 			LOG_ERR("Call `ctr_k_set_power` (%u) failed: %d", i, ret);
 			err = err ? err : ret;
+		}
+
+		if (i != channels_count - 1) {
+			k_sleep(K_MSEC(10));
 		}
 	}
 
