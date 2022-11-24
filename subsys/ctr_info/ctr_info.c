@@ -14,23 +14,23 @@
 /* Standard includes */
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(ctr_info, CONFIG_CTR_INFO_LOG_LEVEL);
 
 #define SIGNATURE_OFFSET 0x00
 #define SIGNATURE_LENGTH 4
-#define SIGNATURE_VALUE 0xbabecafe
+#define SIGNATURE_VALUE  0xbabecafe
 
 #define VERSION_OFFSET 0x04
 #define VERSION_LENGTH 1
-#define VERSION_VALUE 2
+#define VERSION_VALUE  2
 
 #define SIZE_OFFSET 0x05
 #define SIZE_LENGTH 1
-#define SIZE_VALUE 123
+#define SIZE_VALUE  123
 
 #define VENDOR_NAME_OFFSET 0x06
 #define VENDOR_NAME_LENGTH 17
@@ -43,6 +43,8 @@ LOG_MODULE_REGISTER(ctr_info, CONFIG_CTR_INFO_LOG_LEVEL);
 
 #define HW_REVISION_OFFSET 0x33
 #define HW_REVISION_LENGTH 7
+
+#define FW_NAME_LENGTH 65
 
 #define FW_VERSION_LENGTH 17
 
@@ -187,6 +189,24 @@ int ctr_info_get_hw_revision(char **hw_revision)
 	return 0;
 }
 
+int ctr_info_get_fw_name(char **fw_name)
+{
+#if defined(FW_NAME)
+	int ret;
+	static char buf[FW_NAME_LENGTH];
+	ret = snprintf(buf, sizeof(buf), "%s", STRINGIFY(FW_NAME));
+	if (ret != strlen(buf)) {
+		return -ENOSPC;
+	}
+
+	*fw_name = buf;
+#else
+	*fw_name = "(unset)";
+#endif
+
+	return 0;
+}
+
 int ctr_info_get_fw_version(char **fw_version)
 {
 #if defined(FW_VERSION)
@@ -253,7 +273,7 @@ int ctr_info_get_ble_devaddr(char **ble_devaddr)
 	devaddr |= NRF_FICR->DEVICEADDR[0];
 
 	uint8_t a[6] = {
-		devaddr, devaddr >> 8, devaddr >> 16, devaddr >> 24, devaddr >> 32, devaddr >> 40,
+	        devaddr, devaddr >> 8, devaddr >> 16, devaddr >> 24, devaddr >> 32, devaddr >> 40,
 	};
 
 	static char buf[18];

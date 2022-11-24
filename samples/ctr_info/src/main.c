@@ -49,6 +49,14 @@ void main(void)
 		LOG_INF("Hardware revision: %s", hw_revision);
 	}
 
+	char *fw_name;
+	ret = ctr_info_get_fw_name(&fw_name);
+	if (ret) {
+		LOG_ERR("Call `ctr_info_get_fw_name` failed: %d", ret);
+	} else {
+		LOG_INF("Firmware name: %s", fw_name);
+	}
+
 	char *fw_version;
 	ret = ctr_info_get_fw_version(&fw_version);
 	if (ret) {

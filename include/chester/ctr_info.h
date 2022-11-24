@@ -12,6 +12,7 @@ int ctr_info_get_vendor_name(char **vendor_name);
 int ctr_info_get_product_name(char **product_name);
 int ctr_info_get_hw_variant(char **hw_variant);
 int ctr_info_get_hw_revision(char **hw_revision);
+int ctr_info_get_fw_name(char **fw_name);
 int ctr_info_get_fw_version(char **fw_version);
 int ctr_info_get_serial_number(char **serial_number);
 int ctr_info_get_serial_number_uint32(uint32_t *serial_number);

@@ -48,6 +48,15 @@ static int cmd_hw_revision(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_fw_name(const struct shell *shell, size_t argc, char **argv)
+{
+	char *fw_name;
+	ctr_info_get_fw_name(&fw_name);
+	shell_print(shell, "firmware name: %s", fw_name);
+
+	return 0;
+}
+
 static int cmd_fw_version(const struct shell *shell, size_t argc, char **argv)
 {
 	char *fw_version;
@@ -99,6 +108,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 	cmd_product_name(shell, argc, argv);
 	cmd_hw_variant(shell, argc, argv);
 	cmd_hw_revision(shell, argc, argv);
+	cmd_fw_name(shell, argc, argv);
 	cmd_fw_version(shell, argc, argv);
 	cmd_serial_number(shell, argc, argv);
 	cmd_claim_token(shell, argc, argv);
@@ -132,6 +142,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(hw-revision, NULL,
 	              "Get hardware revision.",
 	              cmd_hw_revision, 1, 0),
+
+	SHELL_CMD_ARG(fw-name, NULL,
+	              "Get firmware name.",
+	              cmd_fw_name, 1, 0),
 
 	SHELL_CMD_ARG(fw-version, NULL,
 	              "Get firmware version.",

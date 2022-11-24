@@ -25,6 +25,9 @@ static struct bt_uuid_128 m_hw_variant_chrc_uuid =
 static struct bt_uuid_128 m_hw_revision_chrc_uuid =
         BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x12e740c2, 0x5bf4, 0x48f6, 0xa781, 0x8b064b21622c));
 
+static struct bt_uuid_128 m_fw_name_chrc_uuid =
+        BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x0e5f5dfe, 0xafef, 0x4725, 0xb19f, 0x92e47801c721));
+
 static struct bt_uuid_128 m_fw_version_chrc_uuid =
         BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x56917801, 0xe1a0, 0x476a, 0xab86, 0x07e61076d6d9));
 
@@ -87,6 +90,13 @@ BT_GATT_SERVICE_DEFINE(
 		BT_GATT_CHRC_READ,
 		BT_GATT_PERM_READ_AUTHEN,
 		pass_str, NULL, ctr_info_get_hw_revision
+	),
+
+	BT_GATT_CHARACTERISTIC(
+		&m_fw_name_chrc_uuid.uuid,
+		BT_GATT_CHRC_READ,
+		BT_GATT_PERM_READ_AUTHEN,
+		pass_str, NULL, ctr_info_get_fw_name
 	),
 
 	BT_GATT_CHARACTERISTIC(
