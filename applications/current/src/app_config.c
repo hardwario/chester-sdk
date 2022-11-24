@@ -11,6 +11,7 @@
 
 /* Standard includes */
 #include <ctype.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -95,6 +96,22 @@ static void print_report_interval(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config report-interval %d",
 	            m_app_config_interim.report_interval);
+}
+
+int app_config_get_report_interval(void)
+{
+	return m_app_config_interim.report_interval;
+}
+
+int app_config_set_report_interval(int value)
+{
+	if (value < APP_CONFIG_REPORT_INTERVAL_MIN || value > APP_CONFIG_REPORT_INTERVAL_MAX) {
+		return -ERANGE;
+	}
+
+	m_app_config_interim.report_interval = value;
+
+	return 0;
 }
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
@@ -407,6 +424,8 @@ int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t
 
 int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc, char **argv)
 {
+	int ret;
+
 	if (argc == 1) {
 		print_report_interval(shell);
 		return 0;
@@ -429,12 +448,11 @@ int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc
 
 		int report_interval = atoi(argv[1]);
 
-		if (report_interval < 30 || report_interval > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
+		ret = app_config_set_report_interval(report_interval);
+		if (ret) {
+			shell_error(shell, "command failed");
+			return ret;
 		}
-
-		m_app_config_interim.report_interval = report_interval;
 
 		return 0;
 	}
