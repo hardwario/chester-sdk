@@ -453,6 +453,10 @@ static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, in
 {
 	int ret;
 
+	if (!data_len) {
+		return 0;
+	}
+
 	if (data_len > TX_FIFO_SIZE) {
 		LOG_ERR("Data length exceeds FIFO size");
 		return -EINVAL;
@@ -463,6 +467,11 @@ static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, in
 	}
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	if (!get_data(dev)->reg_txlvl) {
+		k_mutex_unlock(&get_data(dev)->lock);
+		return 0;
+	}
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Device not ready");
@@ -493,6 +502,10 @@ static int sc16is7xx_fifo_read(const struct device *dev, uint8_t *data, const in
 {
 	int ret;
 
+	if (!data_len) {
+		return 0;
+	}
+
 	if (data_len > RX_FIFO_SIZE) {
 		LOG_ERR("Data length exceeds FIFO size");
 		return -EINVAL;
@@ -503,6 +516,11 @@ static int sc16is7xx_fifo_read(const struct device *dev, uint8_t *data, const in
 	}
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+
+	if (!get_data(dev)->reg_rxlvl) {
+		k_mutex_unlock(&get_data(dev)->lock);
+		return 0;
+	}
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Device not ready");
