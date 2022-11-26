@@ -129,11 +129,13 @@ int app_init(void)
 		return ret;
 	}
 
+#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 	ret = ctr_rtc_get_ts(&g_app_data.people_measurement_timestamp);
 	if (ret) {
 		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
 		return ret;
 	}
+#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	return 0;
 }
