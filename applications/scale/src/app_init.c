@@ -7,6 +7,7 @@
 #include <chester/ctr_lte.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_wdog.h>
+#include <chester/drivers/ctr_z.h>
 #include <chester/drivers/people_counter.h>
 
 /* Zephyr includes */
@@ -24,6 +25,28 @@ LOG_MODULE_REGISTER(app_init, LOG_LEVEL_DBG);
 K_SEM_DEFINE(g_app_init_sem, 0, 1);
 
 struct ctr_wdog_channel g_app_wdog_channel;
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+static int init_ctr_z(void)
+{
+	int ret;
+
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
+	}
+
+	ret = ctr_z_enable_interrupts(dev);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_enable_interrupts` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 static int init_people_counter(void)
@@ -84,6 +107,14 @@ int app_init(void)
 		LOG_ERR("Call `ctr_wdog_start` failed: %d", ret);
 		return ret;
 	}
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	ret = init_ctr_z();
+	if (ret) {
+		LOG_ERR("Call `init_ctr_z` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 	ret = init_people_counter();

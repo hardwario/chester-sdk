@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 
-# Supported shields: ctr_lte ctr_x3_a ctr_x3_b people_counter
-set(SHIELD ctr_lte ctr_x3_a)
+# Supported shields: ctr_lte ctr_x3_a ctr_x3_b ctr_z people_counter
+set(SHIELD ctr_lte ctr_x3_a ctr_z)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(scale)
