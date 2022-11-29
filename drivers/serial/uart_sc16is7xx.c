@@ -1180,7 +1180,7 @@ static const struct uart_driver_api sc16is7xx_driver_api = {
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(n, sc16is7xx_pm_control);                                         \
 	DEVICE_DT_INST_DEFINE(n, sc16is7xx_init, PM_DEVICE_DT_INST_GET(n), &inst_##n##_data,       \
-	                      &inst_##n##_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,           \
-	                      &sc16is7xx_driver_api);
+	                      &inst_##n##_config, POST_KERNEL,                                     \
+	                      CONFIG_UART_SC16IS7XX_INIT_PRIORITY, &sc16is7xx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SC16IS7XX_INIT)

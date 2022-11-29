@@ -1,5 +1,8 @@
 if SHIELD_CTR_B1
 
+config CTR_B1
+	default y
+
 config GPIO
 	default y
 

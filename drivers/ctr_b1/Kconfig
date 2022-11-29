@@ -1,0 +1,17 @@
+config CTR_B1
+	bool "HARDWARIO CHESTER-B1 Driver"
+	select GPIO
+
+if CTR_B1
+
+module = CTR_B1
+module-str = ctr_b1
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_B1_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+endif # CTR_B1

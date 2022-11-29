@@ -1,0 +1,27 @@
+description: HARDWARIO CHESTER-B1 Driver
+
+compatible: "hardwario,ctr-b1"
+
+include: base.yaml
+
+properties:
+
+  wm-reset-gpios:
+    type: phandle-array
+    required: true
+    description: wM-Bus module reset signal
+
+  wm-on-gpios:
+    type: phandle-array
+    required: true
+    description: wM-Bus module power-switch signal
+
+  nc1-gpios:
+    type: phandle-array
+    required: true
+    description: Unconnected pin 1
+
+  nc2-gpios:
+    type: phandle-array
+    required: true
+    description: Unconnected pin 2

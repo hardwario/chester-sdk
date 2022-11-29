@@ -11,4 +11,10 @@ module = UART_SC16IS7XX
 module-str = uart_sc16is7xx
 source "subsys/logging/Kconfig.template.log_config"
 
+config UART_SC16IS7XX_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Device driver initialization priority.
+
 endif # UART_SC16IS7XX
