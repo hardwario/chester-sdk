@@ -39,6 +39,8 @@ static int compose(struct ctr_buf *buf)
 
 	ctr_buf_reset(buf);
 
+	app_data_lock();
+
 	uint8_t header = 0;
 
 	/* Flag BATT */
@@ -127,18 +129,26 @@ static int compose(struct ctr_buf *buf)
 #if defined(CONFIG_SHIELD_CTR_S2)
 	/* Field HYGRO */
 	if (header & BIT(4)) {
-		if (isnan(g_app_data.hygro_temperature)) {
-			ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
-		} else {
-			int16_t val = g_app_data.hygro_temperature * 100.f;
-			ret |= ctr_buf_append_s16(buf, val);
+		struct app_data_hygro *hygro = &g_app_data.hygro;
+
+		float t = NAN;
+		float h = NAN;
+
+		if (hygro->sample_count) {
+			t = hygro->samples_temperature[hygro->sample_count - 1];
+			h = hygro->samples_humidity[hygro->sample_count - 1];
 		}
 
-		if (isnan(g_app_data.hygro_humidity)) {
+		if (isnan(t)) {
+			ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
+		} else {
+			ret |= ctr_buf_append_s16(buf, t * 100.f);
+		}
+
+		if (isnan(h)) {
 			ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
 		} else {
-			uint8_t val = g_app_data.hygro_humidity * 2.f;
-			ret |= ctr_buf_append_u8(buf, val);
+			ret |= ctr_buf_append_u8(buf, h * 2.f);
 		}
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
@@ -146,26 +156,26 @@ static int compose(struct ctr_buf *buf)
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	/* Field W1_THERM */
 	if (header & BIT(5)) {
-		float t[W1_THERM_COUNT];
+		float t[APP_DATA_W1_THERM_COUNT];
 
 		int count = 0;
 
-		for (size_t i = 0; i < W1_THERM_COUNT; i++) {
-			struct w1_therm *therm = &g_app_data.w1_therm[i];
+		for (size_t i = 0; i < APP_DATA_W1_THERM_COUNT; i++) {
+			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];
 
-			if (!therm->serial_number) {
+			if (!sensor->serial_number) {
 				continue;
 			}
 
-			float *samples = therm->samples;
+			float *samples = sensor->samples_temperature;
 
-			if (therm->sample_count) {
-				t[count++] = samples[therm->sample_count - 1];
+			if (sensor->sample_count) {
+				t[count++] = samples[sensor->sample_count - 1];
 			} else {
 				t[count++] = NAN;
 			}
 
-			therm->sample_count = 0;
+			sensor->sample_count = 0;
 		}
 
 		ret |= ctr_buf_append_u8(buf, count);
@@ -179,6 +189,8 @@ static int compose(struct ctr_buf *buf)
 		}
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+	app_data_unlock();
 
 	if (ret) {
 		return -EFAULT;
