@@ -228,7 +228,7 @@ void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_even
 		app_data_lock();
 
 		g_app_data.counter.value++;
-		LOG_INF("Counter: %d", (int)g_app_data.counter.value);
+		LOG_INF("Counter: %llu", g_app_data.counter.value);
 
 		app_data_unlock();
 	}
