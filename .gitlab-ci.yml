@@ -18,6 +18,9 @@ build:
     - |
       for sample in chester/samples/*/
       do
+        if [[ $sample == *legacy* ]]; then
+          continue
+        fi
         printf '\n\033[1;36m'
         printf '*%.0s' {1..50}
         printf '\033[0m'
@@ -27,6 +30,9 @@ build:
     - |
       for application in chester/applications/*/
       do
+        if [[ $application == *legacy* ]]; then
+          continue
+        fi
         printf '\n\033[1;36m'
         printf '*%.0s' {1..50}
         printf '\033[0m'
