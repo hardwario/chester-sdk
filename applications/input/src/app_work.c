@@ -44,20 +44,20 @@ static void send_work_handler(struct k_work *work)
 		LOG_ERR("Call `app_send` failed: %d", ret);
 	}
 
+#if defined(CONFIG_SHIELD_CTR_Z)
+	app_backup_clear();
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_X0_A)
+	app_sensor_trigger_clear();
+	app_sensor_counter_clear();
 	app_sensor_voltage_clear();
 	app_sensor_current_clear();
-	app_sensor_counter_clear();
-	app_sensor_trigger_clear();
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 	app_sensor_hygro_clear();
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
-
-#if defined(CONFIG_SHIELD_CTR_Z)
-	app_backup_clear();
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 }
 
 static K_WORK_DEFINE(m_send_work, send_work_handler);
@@ -105,9 +105,57 @@ static void sample_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_sample_timer, sample_timer_handler, NULL);
 
+static void power_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_power_sample();
+	if (ret < 0) {
+		LOG_ERR("Call `app_power_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_power_work, power_work_handler);
+
+static void power_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_power_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_power_timer, power_timer_handler, NULL);
+
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 
-static void input_sample_work_handler(struct k_work *work)
+static void counter_aggreg_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_counter_aggreg();
+	if (ret < 0) {
+		LOG_ERR("Call `app_sensor_counter_aggreg` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_counter_aggreg_work, counter_aggreg_work_handler);
+
+static void counter_aggreg_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_counter_aggreg_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_counter_aggreg_timer, counter_aggreg_timer_handler, NULL);
+
+static void analog_sample_work_handler(struct k_work *work)
 {
 	int ret;
 
@@ -122,21 +170,21 @@ static void input_sample_work_handler(struct k_work *work)
 	}
 }
 
-static K_WORK_DEFINE(m_input_sample_work, input_sample_work_handler);
+static K_WORK_DEFINE(m_analog_sample_work, analog_sample_work_handler);
 
-static void input_sample_timer_handler(struct k_timer *timer)
+static void analog_sample_timer_handler(struct k_timer *timer)
 {
 	int ret;
 
-	ret = k_work_submit_to_queue(&m_work_q, &m_input_sample_work);
+	ret = k_work_submit_to_queue(&m_work_q, &m_analog_sample_work);
 	if (ret < 0) {
 		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
 	}
 }
 
-static K_TIMER_DEFINE(m_input_sample_timer, input_sample_timer_handler, NULL);
+static K_TIMER_DEFINE(m_analog_sample_timer, analog_sample_timer_handler, NULL);
 
-static void input_aggreg_analog_work_handler(struct k_work *work)
+static void analog_aggreg_work_handler(struct k_work *work)
 {
 	int ret;
 
@@ -151,43 +199,19 @@ static void input_aggreg_analog_work_handler(struct k_work *work)
 	}
 }
 
-static K_WORK_DEFINE(m_input_aggreg_analog_work, input_aggreg_analog_work_handler);
+static K_WORK_DEFINE(m_analog_aggreg_work, analog_aggreg_work_handler);
 
-static void input_aggreg_analog_timer_handler(struct k_timer *timer)
+static void analog_aggreg_timer_handler(struct k_timer *timer)
 {
 	int ret;
 
-	ret = k_work_submit_to_queue(&m_work_q, &m_input_aggreg_analog_work);
+	ret = k_work_submit_to_queue(&m_work_q, &m_analog_aggreg_work);
 	if (ret < 0) {
 		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
 	}
 }
 
-static K_TIMER_DEFINE(m_input_aggreg_analog_timer, input_aggreg_analog_timer_handler, NULL);
-
-static void input_aggreg_counter_work_handler(struct k_work *work)
-{
-	int ret;
-
-	ret = app_sensor_counter_aggreg();
-	if (ret < 0) {
-		LOG_ERR("Call `app_sensor_counter_aggreg` failed: %d", ret);
-	}
-}
-
-static K_WORK_DEFINE(m_input_aggreg_counter_work, input_aggreg_counter_work_handler);
-
-static void input_aggreg_counter_timer_handler(struct k_timer *timer)
-{
-	int ret;
-
-	ret = k_work_submit_to_queue(&m_work_q, &m_input_aggreg_counter_work);
-	if (ret < 0) {
-		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
-	}
-}
-
-static K_TIMER_DEFINE(m_input_aggreg_counter_timer, input_aggreg_counter_timer_handler, NULL);
+static K_TIMER_DEFINE(m_analog_aggreg_timer, analog_aggreg_timer_handler, NULL);
 
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
@@ -244,6 +268,7 @@ static K_TIMER_DEFINE(m_hygro_aggreg_timer, hygro_aggreg_timer_handler, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 #if defined(CONFIG_SHIELD_CTR_Z)
+
 static void backup_work_handler(struct k_work *work)
 {
 	int ret;
@@ -265,31 +290,8 @@ void app_work_backup_update(void)
 		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
 	}
 }
+
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
-
-static void power_work_handler(struct k_work *work)
-{
-	int ret;
-
-	ret = app_power_sample();
-	if (ret < 0) {
-		LOG_ERR("Call `app_power_sample` failed: %d", ret);
-	}
-}
-
-static K_WORK_DEFINE(m_power_work, power_work_handler);
-
-static void power_timer_handler(struct k_timer *timer)
-{
-	int ret;
-
-	ret = k_work_submit_to_queue(&m_work_q, &m_power_work);
-	if (ret < 0) {
-		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
-	}
-}
-
-static K_TIMER_DEFINE(m_power_timer, power_timer_handler, NULL);
 
 int app_work_init(void)
 {
@@ -300,19 +302,16 @@ int app_work_init(void)
 
 	/* Delay first report so ctr_z updates line_present */
 	k_timer_start(&m_send_timer, K_SECONDS(2), K_FOREVER);
-
-	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.analog_interval_sample));
-
+	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(60));
 	k_timer_start(&m_power_timer, K_SECONDS(60), K_HOURS(12));
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-	k_timer_start(&m_input_sample_timer, K_SECONDS(g_app_config.analog_interval_sample),
-	              K_SECONDS(g_app_config.analog_interval_sample));
-	k_timer_start(&m_input_aggreg_analog_timer, K_SECONDS(g_app_config.analog_interval_aggreg),
-	              K_SECONDS(g_app_config.analog_interval_aggreg));
-	k_timer_start(&m_input_aggreg_counter_timer,
-	              K_SECONDS(g_app_config.counter_interval_aggreg),
+	k_timer_start(&m_counter_aggreg_timer, K_SECONDS(g_app_config.counter_interval_aggreg),
 	              K_SECONDS(g_app_config.counter_interval_aggreg));
+	k_timer_start(&m_analog_sample_timer, K_SECONDS(g_app_config.analog_interval_sample),
+	              K_SECONDS(g_app_config.analog_interval_sample));
+	k_timer_start(&m_analog_aggreg_timer, K_SECONDS(g_app_config.analog_interval_aggreg),
+	              K_SECONDS(g_app_config.analog_interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
@@ -327,10 +326,10 @@ int app_work_init(void)
 
 void app_work_sample(void)
 {
-	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.analog_interval_sample));
+	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(60));
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-	k_timer_start(&m_input_sample_timer, K_NO_WAIT,
+	k_timer_start(&m_analog_sample_timer, K_NO_WAIT,
 	              K_SECONDS(g_app_config.analog_interval_sample));
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 

@@ -24,6 +24,8 @@
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
+#if defined(CONFIG_SHIELD_CTR_X0_A)
+
 __unused static void put_sample(zcbor_state_t *zs, struct app_data_analog_aggreg *sample)
 {
 	if (isnan(sample->min)) {
@@ -59,6 +61,8 @@ __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_analog_ag
 	zcbor_int32_put(zs, sample->avg * mul);
 	zcbor_int32_put(zs, sample->mdn * mul);
 }
+
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 static int encode(zcbor_state_t *zs)
 {
@@ -379,7 +383,6 @@ static int encode(zcbor_state_t *zs)
 	}
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-
 	zcbor_uint32_put(zs, MSG_KEY_TRIGGER);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -480,7 +483,6 @@ static int encode(zcbor_state_t *zs)
 		}
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)

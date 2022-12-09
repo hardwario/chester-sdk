@@ -13,6 +13,7 @@
 /* Standard includes */
 #include <ctype.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -25,22 +26,25 @@ struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
         .interval_report = 1800,
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
-        .analog_interval_sample = 60,
-        .analog_interval_aggreg = 300,
+#if defined(CONFIG_SHIELD_CTR_Z)
+        .backup_report_connected = true,
+        .backup_report_disconnected = true,
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
+#if defined(CONFIG_SHIELD_CTR_X0_A)
         .trigger_input_type = APP_CONFIG_INPUT_TYPE_NPN,
         .trigger_duration_active = 100,
         .trigger_duration_inactive = 100,
         .trigger_cooldown_time = 10,
         .trigger_report_rate = 30,
         .trigger_report_delay = 5,
-
         .counter_interval_aggreg = 300,
         .counter_input_type = APP_CONFIG_INPUT_TYPE_NPN,
         .counter_duration_active = 2,
         .counter_duration_inactive = 2,
         .counter_cooldown_time = 10,
+        .analog_interval_sample = 60,
+        .analog_interval_aggreg = 300,
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
@@ -54,18 +58,23 @@ static void print_interval_report(const struct shell *shell)
 	shell_print(shell, "app config interval-report %d", m_app_config_interim.interval_report);
 }
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
-static void print_analog_interval_sample(const struct shell *shell)
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+static void print_backup_report_connected(const struct shell *shell)
 {
-	shell_print(shell, "app config analog-interval-sample %d",
-	            m_app_config_interim.analog_interval_sample);
+	shell_print(shell, "app config backup-report-connected %s",
+	            m_app_config_interim.backup_report_connected ? "true" : "false");
 }
 
-static void print_analog_interval_aggreg(const struct shell *shell)
+static void print_backup_report_disconnected(const struct shell *shell)
 {
-	shell_print(shell, "app config analog-interval-aggreg %d",
-	            m_app_config_interim.analog_interval_aggreg);
+	shell_print(shell, "app config backup-report-disconnected %s",
+	            m_app_config_interim.backup_report_disconnected ? "true" : "false");
 }
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 
 static void print_trigger_input_type(const struct shell *shell)
 {
@@ -170,23 +179,23 @@ static void print_counter_cooldown_time(const struct shell *shell)
 	shell_print(shell, "app config counter-cooldown-time %d",
 	            m_app_config_interim.counter_cooldown_time);
 }
+
+static void print_analog_interval_sample(const struct shell *shell)
+{
+	shell_print(shell, "app config analog-interval-sample %d",
+	            m_app_config_interim.analog_interval_sample);
+}
+
+static void print_analog_interval_aggreg(const struct shell *shell)
+{
+	shell_print(shell, "app config analog-interval-aggreg %d",
+	            m_app_config_interim.analog_interval_aggreg);
+}
+
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
-static void print_backup_report_connected(const struct shell *shell)
-{
-	shell_print(shell, "app config backup-report-connected %s",
-	            m_app_config_interim.backup_report_connected ? "true" : "false");
-}
-
-static void print_backup_report_disconnected(const struct shell *shell)
-{
-	shell_print(shell, "app config backup-report-disconnected %s",
-	            m_app_config_interim.backup_report_disconnected ? "true" : "false");
-}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
-
 #if defined(CONFIG_SHIELD_CTR_S2)
+
 static void print_hygro_interval_sample(const struct shell *shell)
 {
 	shell_print(shell, "app config hygro-interval-sample %d",
@@ -198,16 +207,19 @@ static void print_hygro_interval_aggreg(const struct shell *shell)
 	shell_print(shell, "app config hygro-interval-aggreg %d",
 	            m_app_config_interim.hygro_interval_aggreg);
 }
+
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
 	print_interval_report(shell);
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
-	print_analog_interval_sample(shell);
-	print_analog_interval_aggreg(shell);
+#if defined(CONFIG_SHIELD_CTR_Z)
+	print_backup_report_connected(shell);
+	print_backup_report_disconnected(shell);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 	print_trigger_input_type(shell);
 	print_trigger_duration_active(shell);
 	print_trigger_duration_inactive(shell);
@@ -216,18 +228,14 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 	print_trigger_report_inactive(shell);
 	print_trigger_report_rate(shell);
 	print_trigger_report_delay(shell);
-
 	print_counter_interval_aggreg(shell);
 	print_counter_input_type(shell);
 	print_counter_duration_active(shell);
 	print_counter_duration_inactive(shell);
 	print_counter_cooldown_time(shell);
+	print_analog_interval_sample(shell);
+	print_analog_interval_aggreg(shell);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
-
-#if defined(CONFIG_SHIELD_CTR_Z)
-	print_backup_report_connected(shell);
-	print_backup_report_disconnected(shell);
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 	print_hygro_interval_sample(shell);
@@ -275,37 +283,28 @@ int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc
 	return -EINVAL;
 }
 
-int app_config_cmd_config_analog_interval_sample(const struct shell *shell, size_t argc,
-                                                 char **argv)
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+int app_config_cmd_config_backup_report_connected(const struct shell *shell, size_t argc,
+                                                  char **argv)
 {
 	if (argc == 1) {
-		print_analog_interval_sample(shell);
+		print_backup_report_connected(shell);
 		return 0;
 	}
 
 	if (argc == 2) {
-		size_t len = strlen(argv[1]);
+		bool is_false = !strcmp(argv[1], "false");
+		bool is_true = !strcmp(argv[1], "true");
 
-		if (len < 1 || len > 4) {
+		if (is_false) {
+			m_app_config_interim.backup_report_connected = false;
+		} else if (is_true) {
+			m_app_config_interim.backup_report_connected = true;
+		} else {
 			shell_error(shell, "invalid format");
 			return -EINVAL;
 		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long value = strtol(argv[1], NULL, 10);
-
-		if (value < 1 || value > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.analog_interval_sample = (int)value;
 
 		return 0;
 	}
@@ -314,37 +313,26 @@ int app_config_cmd_config_analog_interval_sample(const struct shell *shell, size
 	return -EINVAL;
 }
 
-int app_config_cmd_config_analog_interval_aggreg(const struct shell *shell, size_t argc,
-                                                 char **argv)
+int app_config_cmd_config_backup_report_disconnected(const struct shell *shell, size_t argc,
+                                                     char **argv)
 {
 	if (argc == 1) {
-		print_analog_interval_aggreg(shell);
+		print_backup_report_disconnected(shell);
 		return 0;
 	}
 
 	if (argc == 2) {
-		size_t len = strlen(argv[1]);
+		bool is_false = !strcmp(argv[1], "false");
+		bool is_true = !strcmp(argv[1], "true");
 
-		if (len < 1 || len > 4) {
+		if (is_false) {
+			m_app_config_interim.backup_report_disconnected = false;
+		} else if (is_true) {
+			m_app_config_interim.backup_report_disconnected = true;
+		} else {
 			shell_error(shell, "invalid format");
 			return -EINVAL;
 		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long value = strtol(argv[1], NULL, 10);
-
-		if (value < 1 || value > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.analog_interval_aggreg = (int)value;
 
 		return 0;
 	}
@@ -352,6 +340,10 @@ int app_config_cmd_config_analog_interval_aggreg(const struct shell *shell, size
 	shell_help(shell);
 	return -EINVAL;
 }
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 
 int app_config_cmd_config_trigger_input_type(const struct shell *shell, size_t argc, char **argv)
 {
@@ -809,27 +801,37 @@ int app_config_cmd_config_counter_cooldown_time(const struct shell *shell, size_
 	return -EINVAL;
 }
 
-#if defined(CONFIG_SHIELD_CTR_Z)
-int app_config_cmd_config_backup_report_connected(const struct shell *shell, size_t argc,
-                                                  char **argv)
+int app_config_cmd_config_analog_interval_sample(const struct shell *shell, size_t argc,
+                                                 char **argv)
 {
 	if (argc == 1) {
-		print_backup_report_connected(shell);
+		print_analog_interval_sample(shell);
 		return 0;
 	}
 
 	if (argc == 2) {
-		bool is_false = !strcmp(argv[1], "false");
-		bool is_true = !strcmp(argv[1], "true");
+		size_t len = strlen(argv[1]);
 
-		if (is_false) {
-			m_app_config_interim.backup_report_connected = false;
-		} else if (is_true) {
-			m_app_config_interim.backup_report_connected = true;
-		} else {
+		if (len < 1 || len > 4) {
 			shell_error(shell, "invalid format");
 			return -EINVAL;
 		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		long value = strtol(argv[1], NULL, 10);
+
+		if (value < 1 || value > 86400) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.analog_interval_sample = (int)value;
 
 		return 0;
 	}
@@ -838,26 +840,37 @@ int app_config_cmd_config_backup_report_connected(const struct shell *shell, siz
 	return -EINVAL;
 }
 
-int app_config_cmd_config_backup_report_disconnected(const struct shell *shell, size_t argc,
-                                                     char **argv)
+int app_config_cmd_config_analog_interval_aggreg(const struct shell *shell, size_t argc,
+                                                 char **argv)
 {
 	if (argc == 1) {
-		print_backup_report_disconnected(shell);
+		print_analog_interval_aggreg(shell);
 		return 0;
 	}
 
 	if (argc == 2) {
-		bool is_false = !strcmp(argv[1], "false");
-		bool is_true = !strcmp(argv[1], "true");
+		size_t len = strlen(argv[1]);
 
-		if (is_false) {
-			m_app_config_interim.backup_report_disconnected = false;
-		} else if (is_true) {
-			m_app_config_interim.backup_report_disconnected = true;
-		} else {
+		if (len < 1 || len > 4) {
 			shell_error(shell, "invalid format");
 			return -EINVAL;
 		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		long value = strtol(argv[1], NULL, 10);
+
+		if (value < 1 || value > 86400) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.analog_interval_aggreg = (int)value;
 
 		return 0;
 	}
@@ -865,9 +878,11 @@ int app_config_cmd_config_backup_report_disconnected(const struct shell *shell, 
 	shell_help(shell);
 	return -EINVAL;
 }
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
+
 int app_config_cmd_config_hygro_interval_sample(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -943,6 +958,7 @@ int app_config_cmd_config_hygro_interval_aggreg(const struct shell *shell, size_
 	shell_help(shell);
 	return -EINVAL;
 }
+
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
@@ -988,10 +1004,12 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 	SETTINGS_SET_SCALAR("interval-report", interval_report);
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
-	SETTINGS_SET_SCALAR("analog-interval-sample", analog_interval_sample);
-	SETTINGS_SET_SCALAR("analog-interval-aggreg", analog_interval_aggreg);
+#if defined(CONFIG_SHIELD_CTR_Z)
+	SETTINGS_SET_SCALAR("backup-report-connected", backup_report_connected);
+	SETTINGS_SET_SCALAR("backup-report-disconnected", backup_report_disconnected);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 	SETTINGS_SET_SCALAR("trigger-input-type", trigger_input_type);
 	SETTINGS_SET_SCALAR("trigger-duration-active", trigger_duration_active);
 	SETTINGS_SET_SCALAR("trigger-duration-inactive", trigger_duration_inactive);
@@ -1000,18 +1018,14 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET_SCALAR("trigger-report-inactive", trigger_report_inactive);
 	SETTINGS_SET_SCALAR("trigger-report-rate", trigger_report_rate);
 	SETTINGS_SET_SCALAR("trigger-report-delay", trigger_report_delay);
-
 	SETTINGS_SET_SCALAR("counter-interval-aggreg", counter_interval_aggreg);
 	SETTINGS_SET_SCALAR("counter-input-type", counter_input_type);
 	SETTINGS_SET_SCALAR("counter-duration-active", counter_duration_active);
 	SETTINGS_SET_SCALAR("counter-duration-inactive", counter_duration_inactive);
 	SETTINGS_SET_SCALAR("counter-cooldown-time", counter_cooldown_time);
+	SETTINGS_SET_SCALAR("analog-interval-sample", analog_interval_sample);
+	SETTINGS_SET_SCALAR("analog-interval-aggreg", analog_interval_aggreg);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
-
-#if defined(CONFIG_SHIELD_CTR_Z)
-	SETTINGS_SET_SCALAR("backup-report-connected", backup_report_connected);
-	SETTINGS_SET_SCALAR("backup-report-disconnected", backup_report_disconnected);
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 	SETTINGS_SET_SCALAR("hygro-interval-sample", hygro_interval_sample);
@@ -1045,10 +1059,12 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 	EXPORT_FUNC_SCALAR("interval-report", interval_report);
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
-	EXPORT_FUNC_SCALAR("analog-interval-sample", analog_interval_sample);
-	EXPORT_FUNC_SCALAR("analog-interval-aggreg", analog_interval_aggreg);
+#if defined(CONFIG_SHIELD_CTR_Z)
+	EXPORT_FUNC_SCALAR("backup-report-connected", backup_report_connected);
+	EXPORT_FUNC_SCALAR("backup-report-disconnected", backup_report_disconnected);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
+#if defined(CONFIG_SHIELD_CTR_X0_A)
 	EXPORT_FUNC_SCALAR("trigger-input-type", trigger_input_type);
 	EXPORT_FUNC_SCALAR("trigger-duration-active", trigger_duration_active);
 	EXPORT_FUNC_SCALAR("trigger-duration-inactive", trigger_duration_inactive);
@@ -1057,18 +1073,14 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC_SCALAR("trigger-report-inactive", trigger_report_inactive);
 	EXPORT_FUNC_SCALAR("trigger-report-rate", trigger_report_rate);
 	EXPORT_FUNC_SCALAR("trigger-report-delay", trigger_report_delay);
-
 	EXPORT_FUNC_SCALAR("counter-interval-aggreg", counter_interval_aggreg);
 	EXPORT_FUNC_SCALAR("counter-input-type", counter_input_type);
 	EXPORT_FUNC_SCALAR("counter-duration-active", counter_duration_active);
 	EXPORT_FUNC_SCALAR("counter-duration-inactive", counter_duration_inactive);
 	EXPORT_FUNC_SCALAR("counter-cooldown-time", counter_cooldown_time);
+	EXPORT_FUNC_SCALAR("analog-interval-sample", analog_interval_sample);
+	EXPORT_FUNC_SCALAR("analog-interval-aggreg", analog_interval_aggreg);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
-
-#if defined(CONFIG_SHIELD_CTR_Z)
-	EXPORT_FUNC_SCALAR("backup-report-connected", backup_report_connected);
-	EXPORT_FUNC_SCALAR("backup-report-disconnected", backup_report_disconnected);
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 	EXPORT_FUNC_SCALAR("hygro-interval-sample", hygro_interval_sample);

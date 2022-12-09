@@ -35,6 +35,92 @@ K_SEM_DEFINE(g_app_init_sem, 0, 1);
 
 struct ctr_wdog_channel g_app_wdog_channel;
 
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+static int init_chester_z(void)
+{
+	int ret;
+
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
+	}
+
+	ret = ctr_z_set_handler(dev, app_handler_ctr_z, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_set_handler` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_z_enable_interrupts(dev);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_enable_interrupts` failed: %d", ret);
+		return ret;
+	}
+
+	uint32_t serial_number;
+	ret = ctr_z_get_serial_number(dev, &serial_number);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_serial_number` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("Serial number: %08x", serial_number);
+
+	uint16_t hw_revision;
+	ret = ctr_z_get_hw_revision(dev, &hw_revision);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_hw_revision` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("HW revision: %04x", hw_revision);
+
+	uint32_t hw_variant;
+	ret = ctr_z_get_hw_variant(dev, &hw_variant);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_hw_variant` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("HW variant: %08x", hw_variant);
+
+	uint32_t fw_version;
+	ret = ctr_z_get_fw_version(dev, &fw_version);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_fw_version` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("FW version: %08x", fw_version);
+
+	char vendor_name[32];
+	ret = ctr_z_get_vendor_name(dev, vendor_name, sizeof(vendor_name));
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_vendor_name` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("Vendor name: %s", vendor_name);
+
+	char product_name[32];
+	ret = ctr_z_get_product_name(dev, product_name, sizeof(product_name));
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_product_name` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("Product name: %s", product_name);
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_X0_A)
+
 static int init_edge(struct ctr_edge *edge, ctr_edge_cb_t cb, const struct device *dev,
                      enum ctr_x0_channel channel, enum ctr_x0_mode mode, int active_duration,
                      int inactive_duration, int cooldown_time)
@@ -193,87 +279,7 @@ static int init_chester_x0(void)
 	return 0;
 }
 
-#if defined(CONFIG_SHIELD_CTR_Z)
-static int init_chester_z(void)
-{
-	int ret;
-
-	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		return -ENODEV;
-	}
-
-	ret = ctr_z_set_handler(dev, app_handler_ctr_z, NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_set_handler` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_z_enable_interrupts(dev);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_enable_interrupts` failed: %d", ret);
-		return ret;
-	}
-
-	uint32_t serial_number;
-	ret = ctr_z_get_serial_number(dev, &serial_number);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_serial_number` failed: %d", ret);
-		return ret;
-	}
-
-	LOG_INF("Serial number: %08x", serial_number);
-
-	uint16_t hw_revision;
-	ret = ctr_z_get_hw_revision(dev, &hw_revision);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_hw_revision` failed: %d", ret);
-		return ret;
-	}
-
-	LOG_INF("HW revision: %04x", hw_revision);
-
-	uint32_t hw_variant;
-	ret = ctr_z_get_hw_variant(dev, &hw_variant);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_hw_variant` failed: %d", ret);
-		return ret;
-	}
-
-	LOG_INF("HW variant: %08x", hw_variant);
-
-	uint32_t fw_version;
-	ret = ctr_z_get_fw_version(dev, &fw_version);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_fw_version` failed: %d", ret);
-		return ret;
-	}
-
-	LOG_INF("FW version: %08x", fw_version);
-
-	char vendor_name[32];
-	ret = ctr_z_get_vendor_name(dev, vendor_name, sizeof(vendor_name));
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_vendor_name` failed: %d", ret);
-		return ret;
-	}
-
-	LOG_INF("Vendor name: %s", vendor_name);
-
-	char product_name[32];
-	ret = ctr_z_get_product_name(dev, product_name, sizeof(product_name));
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_product_name` failed: %d", ret);
-		return ret;
-	}
-
-	LOG_INF("Product name: %s", product_name);
-
-	return 0;
-}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 int app_init(void)
 {
@@ -339,14 +345,6 @@ int app_init(void)
 		return ret;
 	}
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
-	ret = init_chester_x0();
-	if (ret) {
-		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
-		k_oops();
-	}
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
-
 #if defined(CONFIG_SHIELD_CTR_Z)
 	ret = init_chester_z();
 	if (ret) {
@@ -354,6 +352,14 @@ int app_init(void)
 		return ret;
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_X0_A)
+	ret = init_chester_x0();
+	if (ret) {
+		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
+		k_oops();
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 	return 0;
 }

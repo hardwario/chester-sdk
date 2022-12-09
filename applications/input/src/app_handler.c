@@ -151,6 +151,8 @@ static void report_rate_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_report_rate_timer, report_rate_timer_handler, NULL);
 
+#if defined(CONFIG_SHIELD_CTR_X0_A)
+
 static void send_with_rate_limit(void)
 {
 	if (!atomic_get(&m_report_rate_timer_is_active)) {
@@ -171,11 +173,9 @@ static void send_with_rate_limit(void)
 			LOG_INF("Delay timer already running");
 		}
 	} else {
-		LOG_WRN("Hourly counter exceeded.");
+		LOG_WRN("Hourly counter exceeded");
 	}
 }
-
-#if defined(CONFIG_SHIELD_CTR_X0_A)
 
 void app_handler_edge_trigger_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
                                        void *user_data)
@@ -278,12 +278,12 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, 
 	LOG_INF("Backup: %d", (int)backup->line_present);
 
 	if (g_app_config.backup_report_connected && backup_event == CTR_Z_EVENT_DC_CONNECTED) {
-		send_with_rate_limit();
+		app_work_send();
 	}
 
 	if (g_app_config.backup_report_disconnected &&
 	    backup_event == CTR_Z_EVENT_DC_DISCONNECTED) {
-		send_with_rate_limit();
+		app_work_send();
 	}
 
 	app_data_unlock();

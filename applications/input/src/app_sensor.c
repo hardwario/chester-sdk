@@ -37,8 +37,8 @@ static int compare(const void *a, const void *b)
 	return (fa > fb) - (fa < fb);
 }
 
-static void aggreg(float *samples, size_t count, float *minimum, float *maximum, float *average,
-                   float *median)
+__unused static void aggreg(float *samples, size_t count, float *minimum, float *maximum,
+                            float *average, float *median)
 {
 	if (count < 1) {
 		*minimum = NAN;
@@ -64,11 +64,15 @@ static void aggreg(float *samples, size_t count, float *minimum, float *maximum,
 	*median = samples[count / 2];
 }
 
+#if defined(CONFIG_SHIELD_CTR_X0_A)
+
 __unused static void aggreg_sample(float *samples, size_t count,
                                    struct app_data_analog_aggreg *sample)
 {
 	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
 }
+
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 int app_sensor_sample(void)
 {
@@ -108,6 +112,59 @@ int app_sensor_sample(void)
 }
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
+
+void app_sensor_trigger_clear(void)
+{
+	app_data_lock();
+
+	g_app_data.trigger.event_count = 0;
+
+	app_data_unlock();
+}
+
+int app_sensor_counter_aggreg(void)
+{
+	int ret;
+	struct app_data_counter *counter = &g_app_data.counter;
+
+	app_data_lock();
+
+	if (!counter->measurement_count) {
+		ret = ctr_rtc_get_ts(&counter->timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			app_data_unlock();
+			return ret;
+		}
+	}
+
+	if (counter->measurement_count < APP_DATA_COUNTER_MAX_MEASUREMENTS) {
+		struct app_data_counter_measurement *measurement =
+		        &counter->measurements[counter->measurement_count];
+
+		measurement->value = counter->value;
+		counter->measurement_count++;
+
+		LOG_INF("Measurement count: %d", counter->measurement_count);
+	} else {
+		LOG_WRN("Measurement full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+void app_sensor_counter_clear(void)
+{
+	app_data_lock();
+
+	g_app_data.counter.measurement_count = 0;
+
+	app_data_unlock();
+}
 
 int static aggreg_analog(struct app_data_analog *analog)
 {
@@ -265,59 +322,6 @@ void app_sensor_current_clear(void)
 	app_data_lock();
 
 	g_app_data.current.measurement_count = 0;
-
-	app_data_unlock();
-}
-
-int app_sensor_counter_aggreg(void)
-{
-	int ret;
-	struct app_data_counter *counter = &g_app_data.counter;
-
-	app_data_lock();
-
-	if (!counter->measurement_count) {
-		ret = ctr_rtc_get_ts(&counter->timestamp);
-		if (ret) {
-			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
-			app_data_unlock();
-			return ret;
-		}
-	}
-
-	if (counter->measurement_count < APP_DATA_COUNTER_MAX_MEASUREMENTS) {
-		struct app_data_counter_measurement *measurement =
-		        &counter->measurements[counter->measurement_count];
-
-		measurement->value = counter->value;
-		counter->measurement_count++;
-
-		LOG_INF("Measurement count: %d", counter->measurement_count);
-	} else {
-		LOG_WRN("Measurement full");
-		app_data_unlock();
-		return -ENOSPC;
-	}
-
-	app_data_unlock();
-
-	return 0;
-}
-
-void app_sensor_counter_clear(void)
-{
-	app_data_lock();
-
-	g_app_data.counter.measurement_count = 0;
-
-	app_data_unlock();
-}
-
-void app_sensor_trigger_clear(void)
-{
-	app_data_lock();
-
-	g_app_data.trigger.event_count = 0;
 
 	app_data_unlock();
 }

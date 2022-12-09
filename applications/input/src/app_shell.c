@@ -64,15 +64,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "Get/Set report interval in seconds (format: <30-86400>).",
 	              app_config_cmd_config_interval_report, 1, 1),
 
+#if defined(CONFIG_SHIELD_CTR_Z)
+	SHELL_CMD_ARG(backup-report-connected, NULL,
+		      "Get/Set report when backup is active (format: true, false).",
+		      app_config_cmd_config_backup_report_connected, 1, 1),
+
+	SHELL_CMD_ARG(backup-report-disconnected, NULL,
+		      "Get/Set report when backup is inactive (format: true, false).",
+		      app_config_cmd_config_backup_report_disconnected, 1, 1),
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-	SHELL_CMD_ARG(analog-interval-sample, NULL,
-	              "Get/Set analog sample interval in seconds (format: <1-86400>).",
-	              app_config_cmd_config_analog_interval_sample, 1, 1),
-
-	SHELL_CMD_ARG(analog-interval-aggreg, NULL,
-	              "Get/Set analog aggregation interval in seconds (format: <1-86400>).",
-	              app_config_cmd_config_analog_interval_aggreg, 1, 1),
-
 	SHELL_CMD_ARG(trigger-input-type, NULL,
 		      "Get/Set event input type (format: npn, pnp).",
 		      app_config_cmd_config_trigger_input_type, 1, 1),
@@ -124,17 +126,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(counter-cooldown-time, NULL,
 		      "Get/Set counter cooldown time in milliseconds (format: <0-60000>).",
 		      app_config_cmd_config_counter_cooldown_time, 1, 1),
+
+	SHELL_CMD_ARG(analog-interval-sample, NULL,
+	              "Get/Set analog sample interval in seconds (format: <1-86400>).",
+	              app_config_cmd_config_analog_interval_sample, 1, 1),
+
+	SHELL_CMD_ARG(analog-interval-aggreg, NULL,
+	              "Get/Set analog aggregation interval in seconds (format: <1-86400>).",
+	              app_config_cmd_config_analog_interval_aggreg, 1, 1),
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
-
-#if defined(CONFIG_SHIELD_CTR_Z)
-	SHELL_CMD_ARG(backup-report-connected, NULL,
-		      "Get/Set report when backup is active (format: true, false).",
-		      app_config_cmd_config_backup_report_connected, 1, 1),
-
-	SHELL_CMD_ARG(backup-report-disconnected, NULL,
-		      "Get/Set report when backup is inactive (format: true, false).",
-		      app_config_cmd_config_backup_report_disconnected, 1, 1),
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 	SHELL_CMD_ARG(hygro-interval-sample, NULL,
