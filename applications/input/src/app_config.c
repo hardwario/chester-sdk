@@ -26,6 +26,11 @@ struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
         .interval_report = 1800,
 
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
+        .event_report_delay = 5,
+        .event_report_rate = 30,
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
         .backup_report_connected = true,
         .backup_report_disconnected = true,
@@ -36,8 +41,7 @@ static struct app_config m_app_config_interim = {
         .trigger_duration_active = 100,
         .trigger_duration_inactive = 100,
         .trigger_cooldown_time = 10,
-        .trigger_report_rate = 30,
-        .trigger_report_delay = 5,
+
         .counter_interval_aggreg = 300,
         .counter_input_type = APP_CONFIG_INPUT_TYPE_NPN,
         .counter_duration_active = 2,
@@ -57,6 +61,22 @@ static void print_interval_report(const struct shell *shell)
 {
 	shell_print(shell, "app config interval-report %d", m_app_config_interim.interval_report);
 }
+
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
+
+static void print_event_report_delay(const struct shell *shell)
+{
+	shell_print(shell, "app config event-report-delay %d",
+	            m_app_config_interim.event_report_delay);
+}
+
+static void print_event_report_rate(const struct shell *shell)
+{
+	shell_print(shell, "app config event-report-rate %d",
+	            m_app_config_interim.event_report_rate);
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 
@@ -123,18 +143,6 @@ static void print_trigger_report_inactive(const struct shell *shell)
 {
 	shell_print(shell, "app config trigger-report-inactive %s",
 	            m_app_config_interim.trigger_report_inactive ? "true" : "false");
-}
-
-static void print_trigger_report_rate(const struct shell *shell)
-{
-	shell_print(shell, "app config trigger-report-rate %d",
-	            m_app_config_interim.trigger_report_rate);
-}
-
-static void print_trigger_report_delay(const struct shell *shell)
-{
-	shell_print(shell, "app config trigger-report-delay %d",
-	            m_app_config_interim.trigger_report_delay);
 }
 
 static void print_counter_interval_aggreg(const struct shell *shell)
@@ -214,6 +222,11 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 {
 	print_interval_report(shell);
 
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
+	print_event_report_delay(shell);
+	print_event_report_rate(shell);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 	print_backup_report_connected(shell);
 	print_backup_report_disconnected(shell);
@@ -226,8 +239,7 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 	print_trigger_cooldown_time(shell);
 	print_trigger_report_active(shell);
 	print_trigger_report_inactive(shell);
-	print_trigger_report_rate(shell);
-	print_trigger_report_delay(shell);
+
 	print_counter_interval_aggreg(shell);
 	print_counter_input_type(shell);
 	print_counter_duration_active(shell);
@@ -282,6 +294,86 @@ int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc
 	shell_help(shell);
 	return -EINVAL;
 }
+
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
+
+int app_config_cmd_config_event_report_delay(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_event_report_delay(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len < 1 || len > 4) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		long value = strtol(argv[1], NULL, 10);
+
+		if (value < 1 || value > 86400) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.event_report_delay = (int)value;
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+int app_config_cmd_config_event_report_rate(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_event_report_rate(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len < 1 || len > 4) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		long value = strtol(argv[1], NULL, 10);
+
+		if (value < 1 || value > 3600) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.event_report_rate = (int)value;
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 
@@ -535,82 +627,6 @@ int app_config_cmd_config_trigger_report_inactive(const struct shell *shell, siz
 			shell_error(shell, "invalid format");
 			return -EINVAL;
 		}
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int app_config_cmd_config_trigger_report_rate(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_trigger_report_rate(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long value = strtol(argv[1], NULL, 10);
-
-		if (value < 1 || value > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.trigger_report_rate = (int)value;
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int app_config_cmd_config_trigger_report_delay(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_trigger_report_delay(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long value = strtol(argv[1], NULL, 10);
-
-		if (value < 1 || value > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.trigger_report_delay = (int)value;
 
 		return 0;
 	}
@@ -1004,6 +1020,11 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 	SETTINGS_SET_SCALAR("interval-report", interval_report);
 
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
+	SETTINGS_SET_SCALAR("event-report-delay", event_report_delay);
+	SETTINGS_SET_SCALAR("event-report-rate", event_report_rate);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 	SETTINGS_SET_SCALAR("backup-report-connected", backup_report_connected);
 	SETTINGS_SET_SCALAR("backup-report-disconnected", backup_report_disconnected);
@@ -1016,8 +1037,7 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET_SCALAR("trigger-cooldown-time", trigger_cooldown_time);
 	SETTINGS_SET_SCALAR("trigger-report-active", trigger_report_active);
 	SETTINGS_SET_SCALAR("trigger-report-inactive", trigger_report_inactive);
-	SETTINGS_SET_SCALAR("trigger-report-rate", trigger_report_rate);
-	SETTINGS_SET_SCALAR("trigger-report-delay", trigger_report_delay);
+
 	SETTINGS_SET_SCALAR("counter-interval-aggreg", counter_interval_aggreg);
 	SETTINGS_SET_SCALAR("counter-input-type", counter_input_type);
 	SETTINGS_SET_SCALAR("counter-duration-active", counter_duration_active);
@@ -1059,6 +1079,11 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 	EXPORT_FUNC_SCALAR("interval-report", interval_report);
 
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
+	EXPORT_FUNC_SCALAR("event-report-delay", event_report_delay);
+	EXPORT_FUNC_SCALAR("event-report-rate", event_report_rate);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 	EXPORT_FUNC_SCALAR("backup-report-connected", backup_report_connected);
 	EXPORT_FUNC_SCALAR("backup-report-disconnected", backup_report_disconnected);
@@ -1071,8 +1096,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC_SCALAR("trigger-cooldown-time", trigger_cooldown_time);
 	EXPORT_FUNC_SCALAR("trigger-report-active", trigger_report_active);
 	EXPORT_FUNC_SCALAR("trigger-report-inactive", trigger_report_inactive);
-	EXPORT_FUNC_SCALAR("trigger-report-rate", trigger_report_rate);
-	EXPORT_FUNC_SCALAR("trigger-report-delay", trigger_report_delay);
+
 	EXPORT_FUNC_SCALAR("counter-interval-aggreg", counter_interval_aggreg);
 	EXPORT_FUNC_SCALAR("counter-input-type", counter_input_type);
 	EXPORT_FUNC_SCALAR("counter-duration-active", counter_duration_active);

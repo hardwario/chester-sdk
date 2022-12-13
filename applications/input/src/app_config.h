@@ -21,6 +21,11 @@ enum app_config_input_type {
 struct app_config {
 	int interval_report;
 
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
+	int event_report_delay;
+	int event_report_rate;
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 	bool backup_report_connected;
 	bool backup_report_disconnected;
@@ -33,8 +38,7 @@ struct app_config {
 	int trigger_cooldown_time;
 	bool trigger_report_active;
 	bool trigger_report_inactive;
-	int trigger_report_rate;
-	int trigger_report_delay;
+
 	int counter_interval_aggreg;
 	enum app_config_input_type counter_input_type;
 	int counter_duration_active;
@@ -55,6 +59,11 @@ extern struct app_config g_app_config;
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv);
 int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv);
 
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
+int app_config_cmd_config_event_report_delay(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_event_report_rate(const struct shell *shell, size_t argc, char **argv);
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 int app_config_cmd_config_backup_report_connected(const struct shell *shell, size_t argc,
                                                   char **argv);
@@ -74,8 +83,7 @@ int app_config_cmd_config_trigger_report_active(const struct shell *shell, size_
                                                 char **argv);
 int app_config_cmd_config_trigger_report_inactive(const struct shell *shell, size_t argc,
                                                   char **argv);
-int app_config_cmd_config_trigger_report_rate(const struct shell *shell, size_t argc, char **argv);
-int app_config_cmd_config_trigger_report_delay(const struct shell *shell, size_t argc, char **argv);
+
 int app_config_cmd_config_counter_interval_aggreg(const struct shell *shell, size_t argc,
                                                   char **argv);
 int app_config_cmd_config_counter_input_type(const struct shell *shell, size_t argc, char **argv);

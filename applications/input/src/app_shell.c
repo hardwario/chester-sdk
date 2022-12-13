@@ -64,6 +64,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "Get/Set report interval in seconds (format: <30-86400>).",
 	              app_config_cmd_config_interval_report, 1, 1),
 
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
+	SHELL_CMD_ARG(event-report-delay, NULL,
+		      "Get/Set event report delay in seconds (format: <1-86400>).",
+		      app_config_cmd_config_event_report_delay, 1, 1),
+
+	SHELL_CMD_ARG(event-report-rate, NULL,
+		      "Get/Set event report rate in reports per hour (format: <1-3600>).",
+		      app_config_cmd_config_event_report_rate, 1, 1),
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 	SHELL_CMD_ARG(backup-report-connected, NULL,
 		      "Get/Set report when backup is active (format: true, false).",
@@ -98,14 +108,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(trigger-report-inactive, NULL,
 		      "Get/Set report when trigger is inactive (format: true, false).",
 		      app_config_cmd_config_trigger_report_inactive, 1, 1),
-
-	SHELL_CMD_ARG(trigger-report-rate, NULL,
-		      "Get/Set report rate in seconds (format: <1-86400>).",
-		      app_config_cmd_config_trigger_report_rate, 1, 1),
-
-	SHELL_CMD_ARG(trigger-report-delay, NULL,
-		      "Get/Set report delay in seconds (format: <1-86400>).",
-		      app_config_cmd_config_trigger_report_delay, 1, 1),
 
 	SHELL_CMD_ARG(counter-interval-aggreg, NULL,
 	              "Get/Set counter aggregation interval in seconds (format: <1-86400>).",
