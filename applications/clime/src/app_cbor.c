@@ -52,10 +52,29 @@ __unused static void put_sample(zcbor_state_t *zs, struct app_data_aggreg *sampl
 
 __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *sample, float mul)
 {
-	zcbor_int32_put(zs, sample->min * mul);
-	zcbor_int32_put(zs, sample->max * mul);
-	zcbor_int32_put(zs, sample->avg * mul);
-	zcbor_int32_put(zs, sample->mdn * mul);
+	if (isnan(sample->min)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->min * mul);
+	}
+
+	if (isnan(sample->max)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->max * mul);
+	}
+
+	if (isnan(sample->avg)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->avg * mul);
+	}
+
+	if (isnan(sample->mdn)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->mdn * mul);
+	}
 }
 
 static int encode(zcbor_state_t *zs)

@@ -38,31 +38,36 @@ static int compare(const void *a, const void *b)
 	return (fa > fb) - (fa < fb);
 }
 
-static void aggregate(float *samples, size_t count, float *minimum, float *maximum, float *average,
-                      float *median)
+static void aggregate(float *samples, size_t count, float *min, float *max, float *avg, float *mdn)
 {
-	if (count < 1) {
-		*minimum = NAN;
-		*maximum = NAN;
-		*average = NAN;
-		*median = NAN;
+	*min = NAN;
+	*max = NAN;
+	*avg = NAN;
+	*mdn = NAN;
 
+	if (!count) {
 		return;
+	}
+
+	for (size_t i = 0; i < count; i++) {
+		if (isnan(samples[i])) {
+			return;
+		}
 	}
 
 	qsort(samples, count, sizeof(float), compare);
 
-	*minimum = samples[0];
-	*maximum = samples[count - 1];
+	*min = samples[0];
+	*max = samples[count - 1];
 
-	double average_ = 0;
+	double avg_ = 0;
 	for (size_t i = 0; i < count; i++) {
-		average_ += samples[i];
+		avg_ += samples[i];
 	}
-	average_ /= count;
+	avg_ /= count;
 
-	*average = average_;
-	*median = samples[count / 2];
+	*avg = avg_;
+	*mdn = samples[count / 2];
 }
 
 /* TODO check if linked */
