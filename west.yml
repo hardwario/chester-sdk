@@ -11,3 +11,4 @@ manifest:
       import: true
   self:
     path: chester
+    west-commands: scripts/west-commands.yml

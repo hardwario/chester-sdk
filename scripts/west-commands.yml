@@ -1,0 +1,6 @@
+west-commands:
+  - file: scripts/west_commands/chester.py
+    commands:
+      - name: chester-gen-bt-uuid
+        class: ChesterGenerateBluetoothUuid
+        help: generate Bluetooth UUID
