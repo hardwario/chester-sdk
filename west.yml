@@ -7,7 +7,7 @@ manifest:
     - name: nrf
       remote: hardwario
       repo-path: ncs.git
-      revision: v2.1-chester-branch
+      revision: v2.2-chester-branch
       import: true
   self:
     path: chester
