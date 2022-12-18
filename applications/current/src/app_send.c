@@ -239,14 +239,5 @@ int app_send(void)
 
 	g_app_data.channel_measurement_count = 0;
 
-	ret = ctr_rtc_get_ts(&g_app_data.channel_measurement_timestamp);
-	if (ret) {
-		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
-		return ret;
-	}
-
-	LOG_DBG("Set base timestamp for channel measurement: %llu",
-		g_app_data.channel_measurement_timestamp);
-
 	return 0;
 }

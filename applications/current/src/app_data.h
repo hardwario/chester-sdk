@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 struct app_data_channel_measurement {
-	int timestamp_offset;
+	int64_t timestamp;
 	int avg[APP_CONFIG_CHANNEL_COUNT];
 	int rms[APP_CONFIG_CHANNEL_COUNT];
 };
@@ -33,7 +33,6 @@ struct app_data {
 	float acceleration_z;
 	int orientation;
 	int channel_measurement_count;
-	int64_t channel_measurement_timestamp;
 	struct app_data_channel_measurement channel_measurements[128];
 };
 

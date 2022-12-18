@@ -293,10 +293,16 @@ int app_cbor_encode(zcbor_state_t *zs)
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		zcbor_uint64_put(zs, g_app_data.channel_measurement_timestamp);
+		int64_t timestamp;
 
 		for (int i = 0; i < g_app_data.channel_measurement_count; i++) {
-			zcbor_uint32_put(zs, g_app_data.channel_measurements[i].timestamp_offset);
+			if (!i) {
+				timestamp = g_app_data.channel_measurements[0].timestamp;
+				zcbor_int64_put(zs, timestamp);
+			}
+
+			int64_t offset = g_app_data.channel_measurements[i].timestamp - timestamp;
+			zcbor_int64_put(zs, offset);
 
 			for (size_t j = 0; j < APP_CONFIG_CHANNEL_COUNT; j++) {
 				if (!g_app_config.channel_active[j] ||

@@ -128,7 +128,7 @@ static int measure_channels(void)
 	struct app_data_channel_measurement *m =
 		&g_app_data.channel_measurements[g_app_data.channel_measurement_count++];
 
-	m->timestamp_offset = timestamp - g_app_data.channel_measurement_timestamp;
+	m->timestamp = timestamp;
 
 	for (size_t i = 0; i < APP_CONFIG_CHANNEL_COUNT; i++) {
 		m->avg[i] = INT_MAX;
