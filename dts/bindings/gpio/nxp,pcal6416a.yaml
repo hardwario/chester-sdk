@@ -5,9 +5,6 @@ compatible: "nxp,pcal6416a"
 include: [i2c-device.yaml, gpio-controller.yaml]
 
 properties:
-    label:
-      required: true
-
     ngpios:
       required: true
       const: 16
