@@ -1,7 +1,7 @@
 #include <chester/ctr_util.h>
 
 /* Zephyr includes */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 /* Standard includes */
 #include <stdint.h>

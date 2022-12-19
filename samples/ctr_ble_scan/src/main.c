@@ -1,8 +1,8 @@
 /* Zephyr includes */
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 

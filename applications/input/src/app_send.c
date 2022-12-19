@@ -10,8 +10,8 @@
 #include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>

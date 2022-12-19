@@ -7,8 +7,8 @@
 #include <chester/ctr_lte.h>
 
 /* Zephyr includes */
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdbool.h>

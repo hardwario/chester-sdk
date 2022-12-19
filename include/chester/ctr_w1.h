@@ -4,7 +4,7 @@
 /* Zephyr includes */
 #include <zephyr/device.h>
 #include <zephyr/drivers/w1.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 /* Standard includes */
 #include <stdbool.h>

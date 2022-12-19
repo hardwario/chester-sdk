@@ -8,8 +8,8 @@
 #include <chester/ctr_therm.h>
 
 /* Zephyr includes */
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
 
 #include <tinycbor/cbor.h>
 #include <tinycbor/cbor_buf_writer.h>

@@ -4,9 +4,9 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/w1.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 

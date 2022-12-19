@@ -4,12 +4,12 @@
 /* Zephyr includes */
 #include <zephyr/fs/nvs.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/reboot.h>
-#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stddef.h>

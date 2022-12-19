@@ -2,7 +2,7 @@
 #define DRIVERS_SERIAL_SC16IS7XX_REG_H_
 
 /* Zephyr includes */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define SC16IS7XX_REG_SHIFT 3
 #define SC16IS7XX_LCR_MAGIC 0xbf

@@ -5,8 +5,8 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(ctr_gpio, CONFIG_CTR_GPIO_LOG_LEVEL);
 

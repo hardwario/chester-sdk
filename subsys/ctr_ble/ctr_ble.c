@@ -8,12 +8,12 @@
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/mgmt/mcumgr/smp_bt.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/zephyr.h>
 
 #include <bluetooth/services/dfu_smp.h>
 #include <bluetooth/services/nus.h>

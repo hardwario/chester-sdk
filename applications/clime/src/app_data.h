@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 /* TODO Delete */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define APP_DATA_MAX_MEASUREMENTS 32
 #define APP_DATA_MAX_SAMPLES	  32

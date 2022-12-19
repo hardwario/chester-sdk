@@ -2,8 +2,8 @@
 #include <chester/ctr_edge.h>
 
 /* Zephyr includes */
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 

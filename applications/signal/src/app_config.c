@@ -4,10 +4,10 @@
 
 /* Zephyr includes */
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/shell/shell.h>
-#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <ctype.h>

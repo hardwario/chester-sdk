@@ -7,9 +7,9 @@
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/ring_buffer.h>
-#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdbool.h>

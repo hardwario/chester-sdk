@@ -2,9 +2,9 @@
 #include "app_work.h"
 
 /* Zephyr includes */
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
-#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <errno.h>

@@ -6,10 +6,10 @@
 
 /* Zephyr includes */
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
-#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <stdbool.h>

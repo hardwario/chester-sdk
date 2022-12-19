@@ -15,9 +15,9 @@
 #include <chester/ctr_lte.h>
 
 /* Zephyr includes */
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/random/rand32.h>
-#include <zephyr/zephyr.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>

@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 /* TODO Delete */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

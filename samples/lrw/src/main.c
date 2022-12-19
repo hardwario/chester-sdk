@@ -1,5 +1,5 @@
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
 
 #include <chester/ctr_lrw.h>
 

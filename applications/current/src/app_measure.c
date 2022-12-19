@@ -11,8 +11,8 @@
 #include <chester/drivers/ctr_k.h>
 
 /* Zephyr includes */
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
 
 /* Standard includes */
 #include <limits.h>

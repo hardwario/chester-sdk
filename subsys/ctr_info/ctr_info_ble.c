@@ -5,8 +5,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
 
 LOG_MODULE_REGISTER(ctr_info_ble, CONFIG_CTR_INFO_LOG_LEVEL);
 

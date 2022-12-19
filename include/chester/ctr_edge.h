@@ -3,7 +3,7 @@
 
 /* Zephyr includes */
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 /* Standard includes */
 #include <stdbool.h>
