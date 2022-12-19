@@ -18,7 +18,7 @@
 #define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)                              \
 	static char __noinit __aligned(q_align) _k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)]; \
 	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =                                           \
-	        Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name, q_msg_size, q_max_msgs)
+		Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name, q_msg_size, q_max_msgs)
 
 LOG_MODULE_REGISTER(ctr_gnss, CONFIG_CTR_GNSS_LOG_LEVEL);
 
@@ -136,7 +136,7 @@ static void process_cmd_msgq(void)
 		} else {
 			ret = process_req_start(&item);
 
-			union ctr_gnss_event_data data = { 0 };
+			union ctr_gnss_event_data data = {0};
 
 			if (ret) {
 				LOG_ERR("Call `process_req_start` failed: %d", ret);
@@ -165,7 +165,7 @@ static void process_cmd_msgq(void)
 		} else {
 			ret = process_req_stop(&item);
 
-			union ctr_gnss_event_data data = { 0 };
+			union ctr_gnss_event_data data = {0};
 
 			if (ret) {
 				LOG_ERR("Call `process_req_stop` failed: %d", ret);
@@ -197,7 +197,7 @@ static void parse_nmea(const char *line)
 		struct minmea_sentence_gga frame;
 
 		if (minmea_parse_gga(&frame, line)) {
-			union ctr_gnss_event_data data = { 0 };
+			union ctr_gnss_event_data data = {0};
 
 			data.update.fix_quality = frame.fix_quality;
 			data.update.satellites_tracked = frame.satellites_tracked;
@@ -265,7 +265,7 @@ static void dispatcher_thread(void)
 
 					if (m_user_cb) {
 						m_user_cb(CTR_GNSS_EVENT_FAILURE, NULL,
-						          m_user_data);
+							  m_user_data);
 					}
 				}
 
@@ -284,7 +284,7 @@ static void dispatcher_thread(void)
 }
 
 K_THREAD_DEFINE(ctr_gnss, CONFIG_CTR_GNSS_THREAD_STACK_SIZE, dispatcher_thread, NULL, NULL, NULL,
-                CONFIG_CTR_GNSS_THREAD_PRIORITY, 0, 0);
+		CONFIG_CTR_GNSS_THREAD_PRIORITY, 0, 0);
 
 int ctr_gnss_set_handler(ctr_gnss_user_cb user_cb, void *user_data)
 {

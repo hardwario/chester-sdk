@@ -18,14 +18,14 @@
 
 LOG_MODULE_REGISTER(ds28e17, CONFIG_W1_LOG_LEVEL);
 
-#define DEV_CMD_WRITE_DATA_STOP 0x4b
-#define DEV_CMD_READ_DATA_STOP 0x87
+#define DEV_CMD_WRITE_DATA_STOP	     0x4b
+#define DEV_CMD_READ_DATA_STOP	     0x87
 #define DEV_CMD_WRITE_READ_DATA_STOP 0x2d
-#define DEV_CMD_WRITE_CONFIG 0xd2
-#define DEV_CMD_ENABLE_SLEEP 0x1e
+#define DEV_CMD_WRITE_CONFIG	     0xd2
+#define DEV_CMD_ENABLE_SLEEP	     0x1e
 
 #define POLL_BUSY_MAX_ATTEMPTS 100
-#define POLL_BUSY_DELAY K_MSEC(10)
+#define POLL_BUSY_DELAY	       K_MSEC(10)
 
 struct ds28e17_config {
 	const struct device *bus;
@@ -78,7 +78,7 @@ static int poll_busy(const struct device *dev)
 }
 
 static int ds28e17_i2c_write_(const struct device *dev, uint8_t dev_addr, const uint8_t *write_buf,
-                              size_t write_len)
+			      size_t write_len)
 {
 	int ret;
 
@@ -170,7 +170,7 @@ static int ds28e17_i2c_write_(const struct device *dev, uint8_t dev_addr, const 
 }
 
 static int ds28e17_i2c_read_(const struct device *dev, uint8_t dev_addr, uint8_t *read_buf,
-                             size_t read_len)
+			     size_t read_len)
 {
 	int ret;
 
@@ -253,8 +253,8 @@ static int ds28e17_i2c_read_(const struct device *dev, uint8_t dev_addr, uint8_t
 }
 
 static int ds28e17_i2c_write_read_(const struct device *dev, uint8_t dev_addr,
-                                   const uint8_t *write_buf, size_t write_len, uint8_t *read_buf,
-                                   size_t read_len)
+				   const uint8_t *write_buf, size_t write_len, uint8_t *read_buf,
+				   size_t read_len)
 {
 	int ret;
 
@@ -462,6 +462,6 @@ static int ds28e17_init(const struct device *dev)
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ds28e17_init, NULL, &inst_##n##_data, &inst_##n##_config,         \
-	                      POST_KERNEL, CONFIG_W1_INIT_PRIORITY, &ds28e17_driver_api);
+			      POST_KERNEL, CONFIG_W1_INIT_PRIORITY, &ds28e17_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DS28E17_INIT)

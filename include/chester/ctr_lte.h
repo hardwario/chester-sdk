@@ -91,7 +91,7 @@ union ctr_lte_event_data {
 };
 
 typedef void (*ctr_lte_event_cb)(enum ctr_lte_event event, union ctr_lte_event_data *data,
-                                 void *param);
+				 void *param);
 
 struct ctr_lte_send_opts {
 	int64_t ttl;
@@ -101,7 +101,7 @@ struct ctr_lte_send_opts {
 
 #define CTR_LTE_SEND_OPTS_DEFAULTS                                                                 \
 	{                                                                                          \
-		.ttl = 0, .addr = { 0, 0, 0, 0 }, .port = -1,                                      \
+		.ttl = 0, .addr = {0, 0, 0, 0}, .port = -1,                                        \
 	}
 
 int ctr_lte_get_imsi(uint64_t *imsi);

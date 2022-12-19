@@ -174,7 +174,7 @@ int app_send(void)
 	}
 
 	LOG_DBG("Set base timestamp for weight measurement: %llu",
-	        g_app_data.weight_measurement_timestamp);
+		g_app_data.weight_measurement_timestamp);
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 	g_app_data.people_measurement_count = 0;
@@ -186,7 +186,7 @@ int app_send(void)
 	}
 
 	LOG_DBG("Set base timestamp for people measurement: %llu",
-	        g_app_data.people_measurement_timestamp);
+		g_app_data.people_measurement_timestamp);
 #endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	return 0;

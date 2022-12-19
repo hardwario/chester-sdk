@@ -84,8 +84,8 @@ static int m8_read_buffer_(const struct device *dev, void *buf, size_t buf_size,
 	}
 
 	uint8_t available_buf[2];
-	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, (uint8_t[]){ 0xfd }, 1, available_buf,
-	                        sizeof(available_buf));
+	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, (uint8_t[]){0xfd}, 1, available_buf,
+				sizeof(available_buf));
 	if (ret) {
 		LOG_ERR("Length reading failed: %d", ret);
 		return ret;
@@ -100,8 +100,7 @@ static int m8_read_buffer_(const struct device *dev, void *buf, size_t buf_size,
 
 	LOG_DBG("Available %" PRIu16 " byte(s), reading %zu byte(s)", available, *bytes_read);
 
-	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, (uint8_t[]){ 0xff }, 1, buf,
-	                        *bytes_read);
+	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, (uint8_t[]){0xff}, 1, buf, *bytes_read);
 	if (ret) {
 		LOG_ERR("Buffer reading failed: %d", ret);
 		return ret;
@@ -155,6 +154,6 @@ static const struct m8_driver_api m8_driver_api = {
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, m8_init, NULL, &inst_##n##_data, &inst_##n##_config, POST_KERNEL, \
-	                      CONFIG_I2C_INIT_PRIORITY, &m8_driver_api);
+			      CONFIG_I2C_INIT_PRIORITY, &m8_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(M8_INIT)

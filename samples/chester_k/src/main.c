@@ -34,10 +34,10 @@ void main(void)
 	};
 
 	static const struct ctr_k_calibration calibrations[] = {
-		{ .x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN },
-		{ .x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN },
-		{ .x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN },
-		{ .x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN },
+		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
+		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
+		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
+		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
 	};
 
 #if 0
@@ -65,7 +65,7 @@ void main(void)
 		k_sleep(K_MSEC(100));
 #endif
 
-		struct ctr_k_result results[ARRAY_SIZE(channels)] = { 0 };
+		struct ctr_k_result results[ARRAY_SIZE(channels)] = {0};
 		ret = ctr_k_measure(dev, channels, ARRAY_SIZE(channels), calibrations, results);
 		if (ret) {
 			LOG_ERR("Call `ctr_k_measure` failed: %d", ret);

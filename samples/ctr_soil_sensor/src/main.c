@@ -1,6 +1,6 @@
 /* CHESTER includes */
-#include <chester/ctr_soil_sensor.h>
 #include <chester/ctr_led.h>
+#include <chester/ctr_soil_sensor.h>
 
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
@@ -41,7 +41,7 @@ void main(void)
 				LOG_ERR("Call `ctr_soil_sensor_read` failed: %d", ret);
 			} else {
 				LOG_INF("Serial number: %llu / Temperature: %.2f C / Moisture: %d",
-				        serial_number, temperature, moisture);
+					serial_number, temperature, moisture);
 			}
 		}
 

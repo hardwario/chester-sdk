@@ -21,7 +21,7 @@
 LOG_MODULE_REGISTER(app_work, LOG_LEVEL_DBG);
 
 #define WORK_Q_STACK_SIZE 4096
-#define WORK_Q_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
+#define WORK_Q_PRIORITY	  K_LOWEST_APPLICATION_THREAD_PRIO
 
 static struct k_work_q m_work_q;
 static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);
@@ -296,7 +296,7 @@ void app_work_backup_update(void)
 int app_work_init(void)
 {
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
-	                   WORK_Q_PRIORITY, NULL);
+			   WORK_Q_PRIORITY, NULL);
 
 	k_thread_name_set(&m_work_q.thread, "app_work");
 
@@ -307,18 +307,18 @@ int app_work_init(void)
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 	k_timer_start(&m_counter_aggreg_timer, K_SECONDS(g_app_config.counter_interval_aggreg),
-	              K_SECONDS(g_app_config.counter_interval_aggreg));
+		      K_SECONDS(g_app_config.counter_interval_aggreg));
 	k_timer_start(&m_analog_sample_timer, K_SECONDS(g_app_config.analog_interval_sample),
-	              K_SECONDS(g_app_config.analog_interval_sample));
+		      K_SECONDS(g_app_config.analog_interval_sample));
 	k_timer_start(&m_analog_aggreg_timer, K_SECONDS(g_app_config.analog_interval_aggreg),
-	              K_SECONDS(g_app_config.analog_interval_aggreg));
+		      K_SECONDS(g_app_config.analog_interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 	k_timer_start(&m_hygro_sample_timer, K_SECONDS(g_app_config.analog_interval_sample),
-	              K_SECONDS(g_app_config.analog_interval_sample));
+		      K_SECONDS(g_app_config.analog_interval_sample));
 	k_timer_start(&m_hygro_aggreg_timer, K_SECONDS(g_app_config.analog_interval_aggreg),
-	              K_SECONDS(g_app_config.analog_interval_aggreg));
+		      K_SECONDS(g_app_config.analog_interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 	return 0;
@@ -330,12 +330,12 @@ void app_work_sample(void)
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 	k_timer_start(&m_analog_sample_timer, K_NO_WAIT,
-	              K_SECONDS(g_app_config.analog_interval_sample));
+		      K_SECONDS(g_app_config.analog_interval_sample));
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 	k_timer_start(&m_hygro_sample_timer, K_NO_WAIT,
-	              K_SECONDS(g_app_config.analog_interval_sample));
+		      K_SECONDS(g_app_config.analog_interval_sample));
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 }
 

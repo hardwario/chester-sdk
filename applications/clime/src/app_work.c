@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(app_work, LOG_LEVEL_DBG);
 
 #define WORK_Q_STACK_SIZE 4096
-#define WORK_Q_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
+#define WORK_Q_PRIORITY	  K_LOWEST_APPLICATION_THREAD_PRIO
 
 static struct k_work_q m_work_q;
 static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);
@@ -249,7 +249,7 @@ static K_TIMER_DEFINE(m_w1_therm_aggreg_timer, w1_therm_aggreg_timer_handler, NU
 int app_work_init(void)
 {
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
-	                   WORK_Q_PRIORITY, NULL);
+			   WORK_Q_PRIORITY, NULL);
 
 	/* TODO Fix name */
 	k_thread_name_set(&m_work_q.thread, "APP_WORK Thread");
@@ -257,27 +257,27 @@ int app_work_init(void)
 	k_timer_start(&m_send_timer, K_NO_WAIT, K_FOREVER);
 
 	k_timer_start(&m_sample_timer, K_SECONDS(g_app_config.interval_sample),
-	              K_SECONDS(g_app_config.interval_sample));
+		      K_SECONDS(g_app_config.interval_sample));
 
 #if defined(CONFIG_SHIELD_CTR_S1)
 	k_timer_start(&m_iaq_sample_timer, K_SECONDS(g_app_config.interval_sample),
-	              K_SECONDS(g_app_config.interval_sample));
+		      K_SECONDS(g_app_config.interval_sample));
 	k_timer_start(&m_iaq_aggreg_timer, K_SECONDS(g_app_config.interval_aggregate),
-	              K_SECONDS(g_app_config.interval_aggregate));
+		      K_SECONDS(g_app_config.interval_aggregate));
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 	k_timer_start(&m_hygro_sample_timer, K_SECONDS(g_app_config.interval_sample),
-	              K_SECONDS(g_app_config.interval_sample));
+		      K_SECONDS(g_app_config.interval_sample));
 	k_timer_start(&m_hygro_aggreg_timer, K_SECONDS(g_app_config.interval_aggregate),
-	              K_SECONDS(g_app_config.interval_aggregate));
+		      K_SECONDS(g_app_config.interval_aggregate));
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	k_timer_start(&m_w1_therm_sample_timer, K_SECONDS(g_app_config.interval_sample),
-	              K_SECONDS(g_app_config.interval_sample));
+		      K_SECONDS(g_app_config.interval_sample));
 	k_timer_start(&m_w1_therm_aggreg_timer, K_SECONDS(g_app_config.interval_aggregate),
-	              K_SECONDS(g_app_config.interval_aggregate));
+		      K_SECONDS(g_app_config.interval_aggregate));
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 	return 0;

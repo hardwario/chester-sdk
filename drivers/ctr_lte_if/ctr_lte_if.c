@@ -19,17 +19,17 @@
 
 #define DT_DRV_COMPAT hardwario_ctr_lte_if
 
-#define RX_BLOCK_SIZE 64
-#define RX_BLOCK_COUNT 2
-#define RX_BLOCK_ALIGN 4
+#define RX_BLOCK_SIZE	 64
+#define RX_BLOCK_COUNT	 2
+#define RX_BLOCK_ALIGN	 4
 #define RX_LINE_MAX_SIZE 1024
 #define RX_RING_BUF_SIZE 512
-#define RX_TIMEOUT 100
+#define RX_TIMEOUT	 100
 #define TX_LINE_MAX_SIZE 1024
-#define TX_PREFIX ""
-#define TX_PREFIX_LEN 0
-#define TX_SUFFIX "\r\n"
-#define TX_SUFFIX_LEN 2
+#define TX_PREFIX	 ""
+#define TX_PREFIX_LEN	 0
+#define TX_SUFFIX	 "\r\n"
+#define TX_SUFFIX_LEN	 2
 
 LOG_MODULE_REGISTER(ctr_lte_if, CONFIG_CTR_LTE_IF_LOG_LEVEL);
 
@@ -176,7 +176,7 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 			struct uart_event_rx *rx = &evt->data.rx;
 
 			if (ring_buf_put(&get_data(ctr_lte_if_dev)->rx_ring_buf,
-			                 rx->buf + rx->offset, rx->len) != rx->len) {
+					 rx->buf + rx->offset, rx->len) != rx->len) {
 				atomic_set(&get_data(ctr_lte_if_dev)->reset, true);
 			}
 
@@ -192,7 +192,7 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		LOG_DBG("Event `UART_RX_BUF_REQUEST`");
 
 		ret = k_mem_slab_alloc(&get_data(ctr_lte_if_dev)->rx_slab, (void **)&buf,
-		                       K_NO_WAIT);
+				       K_NO_WAIT);
 		if (ret < 0) {
 			LOG_ERR("Call `k_mem_slab_alloc` failed: %d", ret);
 			break;
@@ -240,7 +240,7 @@ static int ctr_lte_if_init_(const struct device *dev, ctr_lte_recv_cb recv_cb)
 	get_data(dev)->recv_cb = recv_cb;
 
 	ring_buf_init(&get_data(dev)->rx_ring_buf, RX_RING_BUF_SIZE,
-	              get_data(dev)->rx_ring_buf_mem);
+		      get_data(dev)->rx_ring_buf_mem);
 
 	k_poll_signal_init(&get_data(dev)->tx_done_sig);
 	k_poll_signal_init(&get_data(dev)->rx_disabled_sig);
@@ -428,7 +428,7 @@ static int ctr_lte_if_disable_(const struct device *dev)
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-		                         &get_data(dev)->rx_disabled_sig),
+					 &get_data(dev)->rx_disabled_sig),
 	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
@@ -497,7 +497,7 @@ static int ctr_lte_if_send_(const struct device *dev, const char *fmt, va_list a
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-		                         &get_data(dev)->tx_done_sig),
+					 &get_data(dev)->tx_done_sig),
 	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
@@ -536,7 +536,7 @@ static int ctr_lte_if_send_raw_(const struct device *dev, const void *buf, size_
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-		                         &get_data(dev)->tx_done_sig),
+					 &get_data(dev)->tx_done_sig),
 	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
@@ -559,7 +559,7 @@ static int ctr_lte_if_drv_init(const struct device *dev)
 	k_work_init(&get_data(dev)->rx_restart_work, rx_restart_work_handler);
 	k_mutex_init(&get_data(dev)->mut);
 	k_mem_slab_init(&get_data(dev)->rx_slab, get_data(dev)->rx_slab_mem, RX_BLOCK_SIZE,
-	                RX_BLOCK_COUNT);
+			RX_BLOCK_COUNT);
 
 	if (!device_is_ready(get_config(dev)->reset_spec.port)) {
 		LOG_ERR("Device not ready: Reset");
@@ -606,6 +606,6 @@ static const struct ctr_lte_if_driver_api ctr_lte_if_driver_api = {
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ctr_lte_if_drv_init, NULL, &inst_##n##_data, &inst_##n##_config,  \
-	                      POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY, &ctr_lte_if_driver_api);
+			      POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY, &ctr_lte_if_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_LTE_IF_INIT)

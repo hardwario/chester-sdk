@@ -1,6 +1,6 @@
+#include "app_data.h"
 #include "app_init.h"
 #include "app_loop.h"
-#include "app_data.h"
 #include "app_measure.h"
 #include "app_send.h"
 

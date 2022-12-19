@@ -88,9 +88,9 @@ void main(void)
 		LOG_INF("Alive");
 
 		const enum ctr_led_channel channels[] = {
-		        CTR_LED_CHANNEL_R,
-		        CTR_LED_CHANNEL_G,
-		        CTR_LED_CHANNEL_Y,
+			CTR_LED_CHANNEL_R,
+			CTR_LED_CHANNEL_G,
+			CTR_LED_CHANNEL_Y,
 		};
 
 		for (size_t i = 0; i < 2 * ARRAY_SIZE(channels); i++) {

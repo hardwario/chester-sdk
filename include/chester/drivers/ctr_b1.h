@@ -15,7 +15,7 @@ enum ctr_b1_output {
 };
 
 typedef int (*ctr_b1_api_set_output)(const struct device *dev, enum ctr_b1_output output,
-                                     int value);
+				     int value);
 
 struct ctr_b1_driver_api {
 	ctr_b1_api_set_output set_output;

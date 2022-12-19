@@ -20,10 +20,10 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-#define MAX_REPETITIONS 5
-#define MAX_DIFFERENCE 100
+#define MAX_REPETITIONS	    5
+#define MAX_DIFFERENCE	    100
 #define STABILIZATION_DELAY K_MSEC(300)
-#define MEASUREMENT_PAUSE K_SECONDS(2)
+#define MEASUREMENT_PAUSE   K_SECONDS(2)
 
 static int compare(const void *a, const void *b)
 {
@@ -45,7 +45,7 @@ enum measure_weight_slot {
 };
 
 static int read_weight(const char *id, enum measure_weight_slot slot, enum ctr_x3_channel channel,
-                       int32_t *result)
+		       int32_t *result)
 {
 	int ret;
 
@@ -134,7 +134,7 @@ error:
 }
 
 static int filter_weight(const char *id, enum measure_weight_slot slot, enum ctr_x3_channel channel,
-                         int32_t *result, int32_t *prev)
+			 int32_t *result, int32_t *prev)
 {
 	int ret;
 

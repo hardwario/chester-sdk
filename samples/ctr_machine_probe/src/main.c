@@ -12,8 +12,8 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #define READ_THERMOMETER   0
-#define READ_HYGROMETER    1
-#define READ_LUX_METER     1
+#define READ_HYGROMETER	   1
+#define READ_LUX_METER	   1
 #define READ_MAGNETOMETER  1
 #define READ_ACCELEROMETER 1
 
@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define TILT_DURATION  2
 
 #define WORK_Q_STACK_SIZE 4096
-#define WORK_Q_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
+#define WORK_Q_PRIORITY	  K_LOWEST_APPLICATION_THREAD_PRIO
 
 static struct k_work_q m_work_q;
 static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);
@@ -85,17 +85,17 @@ void main(void)
 	for (int i = 0; i < count; i++) {
 		uint64_t serial_number;
 		ret = ctr_machine_probe_enable_tilt_alert(i, &serial_number, TILT_THRESHOLD,
-		                                          TILT_DURATION);
+							  TILT_DURATION);
 
 		if (ret) {
 			LOG_ERR("Call `ctr_machine_probe_enable_tilt_alert` (%d) failed: %d", ret,
-			        i);
+				i);
 			continue;
 		}
 	}
 
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
-	                   WORK_Q_PRIORITY, NULL);
+			   WORK_Q_PRIORITY, NULL);
 
 	k_thread_name_set(&m_work_q.thread, "appworkq");
 
@@ -118,12 +118,12 @@ void main(void)
 			ret = ctr_machine_probe_read_thermometer(i, &serial_number, &temperature);
 			if (ret) {
 				LOG_ERR("Call `ctr_machine_probe_read_thermometer` failed: "
-				        "%d",
-				        ret);
+					"%d",
+					ret);
 			} else {
 				LOG_INF("Serial number: %llu / Thermometer / Temperature: "
-				        "%.2f C",
-				        serial_number, temperature);
+					"%.2f C",
+					serial_number, temperature);
 			}
 #endif /* READ_THERMOMETER */
 
@@ -131,49 +131,49 @@ void main(void)
 			float hygrometer_temperature;
 			float hygrometer_humidity;
 			ret = ctr_machine_probe_read_hygrometer(
-			        i, &serial_number, &hygrometer_temperature, &hygrometer_humidity);
+				i, &serial_number, &hygrometer_temperature, &hygrometer_humidity);
 			if (ret) {
 				LOG_ERR("Call `ctr_machine_probe_read_hygrometer` failed: "
-				        "%d",
-				        ret);
+					"%d",
+					ret);
 			} else {
 				LOG_INF("Serial number: %llu / Hygrometer / Temperature: "
-				        "%.2f C",
-				        serial_number, hygrometer_temperature);
+					"%.2f C",
+					serial_number, hygrometer_temperature);
 				LOG_INF("Serial number: %llu / Hygrometer / Humidity: %.1f "
-				        "%%",
-				        serial_number, hygrometer_humidity);
+					"%%",
+					serial_number, hygrometer_humidity);
 			}
 #endif /* READ_HYGROMETER */
 
 #if READ_LUX_METER
 			float lux_meter_illuminance;
 			ret = ctr_machine_probe_read_lux_meter(i, &serial_number,
-			                                       &lux_meter_illuminance);
+							       &lux_meter_illuminance);
 			if (ret) {
 				LOG_ERR("Call `ctr_machine_probe_read_lux_meter` failed: "
-				        "%d",
-				        ret);
+					"%d",
+					ret);
 			} else {
 				LOG_INF("Serial number: %llu / Lux meter / Illuminance: "
-				        "%.0f lux",
-				        serial_number, lux_meter_illuminance);
+					"%.0f lux",
+					serial_number, lux_meter_illuminance);
 			}
 #endif /* READ_LUX_METER */
 
 #if READ_MAGNETOMETER
 			float megnetometer_magnetic_field;
 			ret = ctr_machine_probe_read_magnetometer(i, &serial_number,
-			                                          &megnetometer_magnetic_field);
+								  &megnetometer_magnetic_field);
 			if (ret) {
 				LOG_ERR("Call `ctr_machine_probe_read_magnetometer` "
-				        "failed: %d",
-				        ret);
+					"failed: %d",
+					ret);
 			} else {
 				LOG_INF("Serial number: %llu / Magnetometer / Magnetic "
-				        "field: %.2f "
-				        "mT",
-				        serial_number, megnetometer_magnetic_field);
+					"field: %.2f "
+					"mT",
+					serial_number, megnetometer_magnetic_field);
 			}
 #endif /* READ_MAGNETOMETER */
 
@@ -182,25 +182,25 @@ void main(void)
 			float accelerometer_accel_y;
 			float accelerometer_accel_z;
 			ret = ctr_machine_probe_read_accelerometer(
-			        i, &serial_number, &accelerometer_accel_x, &accelerometer_accel_y,
-			        &accelerometer_accel_z, NULL);
+				i, &serial_number, &accelerometer_accel_x, &accelerometer_accel_y,
+				&accelerometer_accel_z, NULL);
 			if (ret) {
 				LOG_ERR("Call `ctr_machine_probe_read_accelerometer` "
-				        "failed: %d",
-				        ret);
+					"failed: %d",
+					ret);
 			} else {
 				LOG_INF("Serial number: %llu / Accelerometer / "
-				        "Acceleration X: "
-				        "%.3f m/s^2",
-				        serial_number, accelerometer_accel_x);
+					"Acceleration X: "
+					"%.3f m/s^2",
+					serial_number, accelerometer_accel_x);
 				LOG_INF("Serial number: %llu / Accelerometer / "
-				        "Acceleration Y: "
-				        "%.3f m/s^2",
-				        serial_number, accelerometer_accel_y);
+					"Acceleration Y: "
+					"%.3f m/s^2",
+					serial_number, accelerometer_accel_y);
 				LOG_INF("Serial number: %llu / Accelerometer / "
-				        "Acceleration Z: "
-				        "%.3f m/s^2",
-				        serial_number, accelerometer_accel_z);
+					"Acceleration Z: "
+					"%.3f m/s^2",
+					serial_number, accelerometer_accel_z);
 			}
 #endif /* READ_ACCELEROMETER */
 		}

@@ -18,9 +18,9 @@ enum ctr_x3_channel {
 };
 
 typedef int (*ctr_x3_api_set_power)(const struct device *dev, enum ctr_x3_channel channel,
-                                    bool enabled);
+				    bool enabled);
 typedef int (*ctr_x3_api_measure)(const struct device *dev, enum ctr_x3_channel channel,
-                                  int32_t *result);
+				  int32_t *result);
 
 struct ctr_x3_driver_api {
 	ctr_x3_api_set_power set_power;
@@ -28,7 +28,7 @@ struct ctr_x3_driver_api {
 };
 
 static inline int ctr_x3_set_power(const struct device *dev, enum ctr_x3_channel channel,
-                                   bool enabled)
+				   bool enabled)
 {
 	const struct ctr_x3_driver_api *api = (const struct ctr_x3_driver_api *)dev->api;
 
@@ -36,7 +36,7 @@ static inline int ctr_x3_set_power(const struct device *dev, enum ctr_x3_channel
 }
 
 static inline int ctr_x3_measure(const struct device *dev, enum ctr_x3_channel channel,
-                                 int32_t *result)
+				 int32_t *result)
 {
 	const struct ctr_x3_driver_api *api = (const struct ctr_x3_driver_api *)dev->api;
 

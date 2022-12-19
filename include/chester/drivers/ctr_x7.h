@@ -27,8 +27,8 @@ struct ctr_x7_result {
 
 typedef int (*ctr_x7_api_set_power)(const struct device *dev, bool is_enabled);
 typedef int (*ctr_x7_api_measure)(const struct device *dev,
-                                  const struct ctr_x7_calibration calibrations[2],
-                                  struct ctr_x7_result results[2]);
+				  const struct ctr_x7_calibration calibrations[2],
+				  struct ctr_x7_result results[2]);
 
 struct ctr_x7_driver_api {
 	ctr_x7_api_set_power set_power;
@@ -43,8 +43,8 @@ static inline int ctr_x7_set_power(const struct device *dev, bool is_enabled)
 }
 
 static inline int ctr_x7_measure(const struct device *dev,
-                                 const struct ctr_x7_calibration calibrations[2],
-                                 struct ctr_x7_result results[2])
+				 const struct ctr_x7_calibration calibrations[2],
+				 struct ctr_x7_result results[2])
 {
 	const struct ctr_x7_driver_api *api = (const struct ctr_x7_driver_api *)dev->api;
 

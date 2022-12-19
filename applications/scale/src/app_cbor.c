@@ -10,6 +10,7 @@
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
+
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 
@@ -300,14 +301,14 @@ int app_cbor_encode(zcbor_state_t *zs)
 
 			for (int i = 0; i < g_app_data.weight_measurement_count; i++) {
 				zcbor_uint32_put(
-				        zs, g_app_data.weight_measurements[i].timestamp_offset);
+					zs, g_app_data.weight_measurements[i].timestamp_offset);
 
 				if (!g_app_config.channel_a1_active ||
 				    g_app_data.weight_measurements[i].a1_raw == INT32_MAX) {
 					zcbor_nil_put(zs, NULL);
 				} else {
 					zcbor_int32_put(zs,
-					                g_app_data.weight_measurements[i].a1_raw);
+							g_app_data.weight_measurements[i].a1_raw);
 				}
 
 				if (!g_app_config.channel_a2_active ||
@@ -315,7 +316,7 @@ int app_cbor_encode(zcbor_state_t *zs)
 					zcbor_nil_put(zs, NULL);
 				} else {
 					zcbor_int32_put(zs,
-					                g_app_data.weight_measurements[i].a2_raw);
+							g_app_data.weight_measurements[i].a2_raw);
 				}
 
 				if (!g_app_config.channel_b1_active ||
@@ -323,7 +324,7 @@ int app_cbor_encode(zcbor_state_t *zs)
 					zcbor_nil_put(zs, NULL);
 				} else {
 					zcbor_int32_put(zs,
-					                g_app_data.weight_measurements[i].b1_raw);
+							g_app_data.weight_measurements[i].b1_raw);
 				}
 
 				if (!g_app_config.channel_b2_active ||
@@ -331,7 +332,7 @@ int app_cbor_encode(zcbor_state_t *zs)
 					zcbor_nil_put(zs, NULL);
 				} else {
 					zcbor_int32_put(zs,
-					                g_app_data.weight_measurements[i].b2_raw);
+							g_app_data.weight_measurements[i].b2_raw);
 				}
 			}
 
@@ -350,7 +351,7 @@ int app_cbor_encode(zcbor_state_t *zs)
 			bool is_valid = g_app_data.people_measurements[i].is_valid;
 
 			struct people_counter_measurement *measurement =
-			        &g_app_data.people_measurements[i].measurement;
+				&g_app_data.people_measurements[i].measurement;
 
 			zcbor_uint32_put(zs, g_app_data.people_measurements[i].timestamp_offset);
 

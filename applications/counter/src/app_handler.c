@@ -1,5 +1,5 @@
-#include "app_handler.h"
 #include "app_data.h"
+#include "app_handler.h"
 #include "app_init.h"
 #include "app_measure.h"
 

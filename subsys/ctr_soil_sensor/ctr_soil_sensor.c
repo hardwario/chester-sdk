@@ -17,10 +17,10 @@
 
 LOG_MODULE_REGISTER(ctr_soil_sensor, CONFIG_CTR_SOIL_SENSOR_LOG_LEVEL);
 
-#define TMP112_I2C_ADDR 0x48
+#define TMP112_I2C_ADDR	 0x48
 #define TMP112_CONV_TIME K_MSEC(40)
 
-#define ZSSC3123_I2C_ADDR 0x28
+#define ZSSC3123_I2C_ADDR  0x28
 #define ZSSC3123_CONV_TIME K_MSEC(5)
 
 struct sensor {
@@ -33,16 +33,16 @@ static K_MUTEX_DEFINE(m_lock);
 static struct ctr_w1 m_w1;
 
 static struct sensor m_sensors[] = {
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_0)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_1)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_2)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_3)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_4)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_5)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_6)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_7)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_8)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_9)) },
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_0))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_1))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_2))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_3))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_4))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_5))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_6))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_7))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_8))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_soil_sensor_9))},
 };
 
 static int m_count;
@@ -182,7 +182,7 @@ static int scan_callback(struct w1_rom rom, void *user_data)
 		return -ENODEV;
 	}
 
-	struct w1_slave_config config = { .rom = rom };
+	struct w1_slave_config config = {.rom = rom};
 	ret = ds28e17_set_w1_config(m_sensors[m_count].dev, config);
 	if (ret) {
 		LOG_ERR("Call `ds28e17_set_w1_config` failed: %d", ret);

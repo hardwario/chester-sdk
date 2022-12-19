@@ -132,7 +132,7 @@ struct ctr_s1_status {
 
 typedef void (*ctr_s1_user_cb)(const struct device *dev, enum ctr_s1_event event, void *user_data);
 typedef int (*ctr_s1_api_set_handler)(const struct device *dev, ctr_s1_user_cb callback,
-                                      void *user_data);
+				      void *user_data);
 typedef int (*ctr_s1_api_enable_interrupts)(const struct device *dev);
 typedef int (*ctr_s1_api_apply)(const struct device *dev);
 typedef int (*ctr_s1_api_get_status)(const struct device *dev, struct ctr_s1_status *status);
@@ -143,13 +143,13 @@ typedef int (*ctr_s1_api_get_fw_version)(const struct device *dev, uint32_t *fw_
 typedef int (*ctr_s1_api_get_vendor_name)(const struct device *dev, char *buf, size_t buf_size);
 typedef int (*ctr_s1_api_get_product_name)(const struct device *dev, char *buf, size_t buf_size);
 typedef int (*ctr_s1_api_set_buzzer)(const struct device *dev,
-                                     const struct ctr_s1_buzzer_param *param);
+				     const struct ctr_s1_buzzer_param *param);
 typedef int (*ctr_s1_api_set_led)(const struct device *dev, enum ctr_s1_led_channel channel,
-                                  const struct ctr_s1_led_param *param);
+				  const struct ctr_s1_led_param *param);
 typedef int (*ctr_s1_api_set_motion_sensitivity)(const struct device *dev,
-                                                 enum ctr_s1_motion_sensitivity motion_sensitivity);
+						 enum ctr_s1_motion_sensitivity motion_sensitivity);
 typedef int (*ctr_s1_api_set_motion_blind_time)(const struct device *dev,
-                                                enum ctr_s1_motion_blind_time motion_blind_time);
+						enum ctr_s1_motion_blind_time motion_blind_time);
 typedef int (*ctr_s1_api_read_motion_count)(const struct device *dev, int *motion_count);
 typedef int (*ctr_s1_api_read_temperature)(const struct device *dev, float *temperature);
 typedef int (*ctr_s1_api_read_humidity)(const struct device *dev, float *humidity);
@@ -185,7 +185,7 @@ struct ctr_s1_driver_api {
 };
 
 static inline int ctr_s1_set_handler(const struct device *dev, ctr_s1_user_cb user_cb,
-                                     void *user_data)
+				     void *user_data)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
@@ -256,7 +256,7 @@ static inline int ctr_s1_get_product_name(const struct device *dev, char *buf, s
 }
 
 static inline int ctr_s1_set_buzzer(const struct device *dev,
-                                    const struct ctr_s1_buzzer_param *param)
+				    const struct ctr_s1_buzzer_param *param)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
@@ -264,7 +264,7 @@ static inline int ctr_s1_set_buzzer(const struct device *dev,
 }
 
 static inline int ctr_s1_set_led(const struct device *dev, enum ctr_s1_led_channel channel,
-                                 const struct ctr_s1_led_param *param)
+				 const struct ctr_s1_led_param *param)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
@@ -272,7 +272,7 @@ static inline int ctr_s1_set_led(const struct device *dev, enum ctr_s1_led_chann
 }
 
 static inline int ctr_s1_set_motion_sensitivity(const struct device *dev,
-                                                enum ctr_s1_motion_sensitivity motion_sensitivity)
+						enum ctr_s1_motion_sensitivity motion_sensitivity)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 
@@ -280,7 +280,7 @@ static inline int ctr_s1_set_motion_sensitivity(const struct device *dev,
 }
 
 static inline int ctr_s1_set_motion_blind_time(const struct device *dev,
-                                               enum ctr_s1_motion_blind_time motion_blind_time)
+					       enum ctr_s1_motion_blind_time motion_blind_time)
 {
 	const struct ctr_s1_driver_api *api = (const struct ctr_s1_driver_api *)dev->api;
 

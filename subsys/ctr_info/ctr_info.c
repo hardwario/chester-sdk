@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(ctr_info, CONFIG_CTR_INFO_LOG_LEVEL);
 
 #define SIGNATURE_OFFSET 0x00
 #define SIGNATURE_LENGTH 4
-#define SIGNATURE_VALUE  0xbabecafe
+#define SIGNATURE_VALUE	 0xbabecafe
 
 #define VERSION_OFFSET 0x04
 #define VERSION_LENGTH 1
@@ -273,12 +273,12 @@ int ctr_info_get_ble_devaddr(char **ble_devaddr)
 	devaddr |= NRF_FICR->DEVICEADDR[0];
 
 	uint8_t a[6] = {
-	        devaddr, devaddr >> 8, devaddr >> 16, devaddr >> 24, devaddr >> 32, devaddr >> 40,
+		devaddr, devaddr >> 8, devaddr >> 16, devaddr >> 24, devaddr >> 32, devaddr >> 40,
 	};
 
 	static char buf[18];
 	ret = snprintf(buf, sizeof(buf), "%02x:%02x:%02x:%02x:%02x:%02x", a[5], a[4], a[3], a[2],
-	               a[1], a[0]);
+		       a[1], a[0]);
 	if (ret != strlen(buf)) {
 		return -ENOSPC;
 	}

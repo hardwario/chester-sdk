@@ -78,7 +78,7 @@ static void cooldown_timer(struct k_timer *timer_id)
 	atomic_set(&edge->is_debouncing, true);
 
 	gpio_flags_t level =
-	        atomic_get(&edge->is_active) ? GPIO_INT_LEVEL_ACTIVE : GPIO_INT_LEVEL_INACTIVE;
+		atomic_get(&edge->is_active) ? GPIO_INT_LEVEL_ACTIVE : GPIO_INT_LEVEL_INACTIVE;
 
 	ret = gpio_pin_interrupt_configure_dt(edge->spec, level);
 	if (ret) {
@@ -96,8 +96,8 @@ static void gpio_handler(const struct device *port, struct gpio_callback *cb, gp
 	if (atomic_set(&edge->is_debouncing, false)) {
 		k_timer_stop(&edge->event_timer);
 
-		gpio_flags_t level = atomic_get(&edge->is_active) ? GPIO_INT_LEVEL_INACTIVE :
-                                                                    GPIO_INT_LEVEL_ACTIVE;
+		gpio_flags_t level = atomic_get(&edge->is_active) ? GPIO_INT_LEVEL_INACTIVE
+								  : GPIO_INT_LEVEL_ACTIVE;
 
 		ret = gpio_pin_interrupt_configure_dt(edge->spec, level);
 		if (ret) {
@@ -215,7 +215,7 @@ int ctr_edge_watch(struct ctr_edge *edge)
 	atomic_set(&edge->is_active, edge->start_active);
 
 	gpio_flags_t level =
-	        atomic_get(&edge->is_active) ? GPIO_INT_LEVEL_INACTIVE : GPIO_INT_LEVEL_ACTIVE;
+		atomic_get(&edge->is_active) ? GPIO_INT_LEVEL_INACTIVE : GPIO_INT_LEVEL_ACTIVE;
 
 	ret = gpio_pin_interrupt_configure_dt(edge->spec, level);
 	if (ret) {

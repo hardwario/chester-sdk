@@ -88,7 +88,7 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 		return -ENODEV;
 	}
 
-	uint8_t buf[3] = { reg };
+	uint8_t buf[3] = {reg};
 	sys_put_be16(data, &buf[1]);
 
 	ret = i2c_write(get_config(dev)->i2c_dev, buf, sizeof(buf), get_config(dev)->i2c_addr);
@@ -155,7 +155,7 @@ static int ctr_s1_enable_interrupts_(const struct device *dev)
 	}
 
 	gpio_init_callback(&get_data(dev)->gpio_cb, irq_handler,
-	                   BIT(get_config(dev)->irq_spec.pin));
+			   BIT(get_config(dev)->irq_spec.pin));
 
 	ret = gpio_add_callback(get_config(dev)->irq_spec.port, &get_data(dev)->gpio_cb);
 	if (ret) {
@@ -345,12 +345,12 @@ static int ctr_s1_set_buzzer_(const struct device *dev, const struct ctr_s1_buzz
 }
 
 static int ctr_s1_set_led_(const struct device *dev, enum ctr_s1_led_channel channel,
-                           const struct ctr_s1_led_param *param)
+			   const struct ctr_s1_led_param *param)
 {
 	int ret;
 
 	uint16_t reg_led = (uint16_t)param->brightness << 8 | (uint16_t)param->command << 4 |
-	                   (uint16_t)param->pattern;
+			   (uint16_t)param->pattern;
 
 	ret = write(dev, REG_LEDR + (uint8_t)channel, reg_led);
 	if (ret) {
@@ -362,7 +362,7 @@ static int ctr_s1_set_led_(const struct device *dev, enum ctr_s1_led_channel cha
 }
 
 static int ctr_s1_set_motion_sensitivity_(const struct device *dev,
-                                          enum ctr_s1_motion_sensitivity motion_sensitivity)
+					  enum ctr_s1_motion_sensitivity motion_sensitivity)
 {
 	int ret;
 
@@ -376,7 +376,7 @@ static int ctr_s1_set_motion_sensitivity_(const struct device *dev,
 }
 
 static int ctr_s1_set_motion_blind_time_(const struct device *dev,
-                                         enum ctr_s1_motion_blind_time motion_blind_time)
+					 enum ctr_s1_motion_blind_time motion_blind_time)
 {
 	int ret;
 
@@ -428,7 +428,7 @@ static int ctr_s1_read_motion_count_(const struct device *dev, int *motion_count
 	do {                                                                                       \
 		struct k_poll_event events[] = {                                                   \
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,      \
-			                         sig),                                             \
+						 sig),                                             \
 		};                                                                                 \
 		ret = k_poll(events, ARRAY_SIZE(events), MAX_POLL_TIME);                           \
 		if (ret == -EAGAIN) {                                                              \
@@ -855,7 +855,7 @@ static void work_handler(struct k_work *work)
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&get_config(data->dev)->irq_spec,
-	                                      GPIO_INT_LEVEL_ACTIVE);
+					      GPIO_INT_LEVEL_ACTIVE);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 	}
@@ -910,7 +910,7 @@ static int ctr_s1_init(const struct device *dev)
 
 		/* Apply indicator reset, enable alert pin and enable auto-beep (if configured) */
 		ret = write(dev, REG_CONTROL,
-		            BIT(0) | (get_config(dev)->auto_beep ? BIT(1) : 0) | BIT(15));
+			    BIT(0) | (get_config(dev)->auto_beep ? BIT(1) : 0) | BIT(15));
 		if (ret) {
 			LOG_ERR("Call `write` failed: %d", ret);
 			return ret;
@@ -968,6 +968,6 @@ static const struct ctr_s1_driver_api ctr_s1_driver_api = {
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ctr_s1_init, NULL, &inst_##n##_data, &inst_##n##_config,          \
-	                      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &ctr_s1_driver_api);
+			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &ctr_s1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_S1_INIT)

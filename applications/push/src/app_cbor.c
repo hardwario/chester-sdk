@@ -10,14 +10,15 @@
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
+
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 
 /* Standard includes */
 #include <errno.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 

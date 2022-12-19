@@ -27,10 +27,10 @@ void main(void)
 	}
 
 	static const struct ctr_x7_calibration calibrations[] = {
-	        {.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
-	        {.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
-	        {.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
-	        {.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
+		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
+		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
+		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
+		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
 	};
 
 #if 0

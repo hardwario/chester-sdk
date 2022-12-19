@@ -1,7 +1,7 @@
-#include <chester/ctr_lrw.h>
-
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
+
+#include <chester/ctr_lrw.h>
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 

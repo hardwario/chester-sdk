@@ -7,6 +7,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
+
 #include <nrfx_twis.h>
 
 /* Standard includes */
@@ -18,8 +19,8 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #define I2C_SLAVE_ADDR 0x08
-#define I2C_SCL_PIN 5
-#define I2C_SDA_PIN 4
+#define I2C_SCL_PIN    5
+#define I2C_SDA_PIN    4
 
 static const nrfx_twis_t m_twis = NRFX_TWIS_INSTANCE(1);
 
@@ -90,7 +91,7 @@ void main(void)
 	irq_enable(NRFX_IRQ_NUMBER_GET(NRF_TWIS1));
 
 	nrfx_twis_config_t config =
-	        NRFX_TWIS_DEFAULT_CONFIG(I2C_SCL_PIN, I2C_SDA_PIN, I2C_SLAVE_ADDR);
+		NRFX_TWIS_DEFAULT_CONFIG(I2C_SCL_PIN, I2C_SDA_PIN, I2C_SLAVE_ADDR);
 
 	ret_nrfx = nrfx_twis_init(&m_twis, &config, twis_event_handler);
 	if (ret_nrfx != NRFX_SUCCESS) {

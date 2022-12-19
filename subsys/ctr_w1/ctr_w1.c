@@ -84,12 +84,12 @@ int ctr_w1_release(struct ctr_w1 *w1, const struct device *dev)
 	if (w1->is_ds28e17_present) {
 		ret = w1_reset_bus(dev);
 		if (ret == 1) {
-			const struct w1_slave_config config = { .overdrive = 0 };
+			const struct w1_slave_config config = {.overdrive = 0};
 			ret = w1_skip_rom(dev, &config);
 			if (ret) {
 				LOG_WRN("Call `w1_skip_rom` failed: %d", ret);
 			} else {
-				const uint8_t buf[] = { 0x1e };
+				const uint8_t buf[] = {0x1e};
 				ret = w1_write_block(dev, buf, sizeof(buf));
 				if (ret) {
 					LOG_WRN("Call `w1_write_block` failed: %d", ret);
@@ -135,7 +135,7 @@ static void w1_search_callback(struct w1_rom rom, void *cb_arg)
 }
 
 int ctr_w1_scan(struct ctr_w1 *w1, const struct device *dev,
-                int (*user_cb)(struct w1_rom rom, void *user_data), void *user_data)
+		int (*user_cb)(struct w1_rom rom, void *user_data), void *user_data)
 {
 	int ret;
 	int res = 0;

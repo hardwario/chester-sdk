@@ -1,7 +1,7 @@
-#include "app_measure.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_loop.h"
+#include "app_measure.h"
 #include "app_send.h"
 
 /* CHESTER includes */
@@ -37,7 +37,7 @@ int app_measure(void)
 	int ret;
 
 	k_timer_start(&g_app_measure_timer, K_MSEC(g_app_config.measurement_interval * 1000),
-	              K_FOREVER);
+		      K_FOREVER);
 
 	ret = ctr_therm_read(&g_app_data.therm_temperature);
 	if (ret) {
@@ -46,7 +46,7 @@ int app_measure(void)
 	}
 
 	ret = ctr_accel_read(&g_app_data.accel_x, &g_app_data.accel_y, &g_app_data.accel_z,
-	                     &g_app_data.accel_orientation);
+			     &g_app_data.accel_orientation);
 	if (ret) {
 		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
 		g_app_data.accel_x = NAN;

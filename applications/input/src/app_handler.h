@@ -16,9 +16,9 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 void app_handler_edge_trigger_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
-                                       void *user_data);
+				       void *user_data);
 void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
-                                       void *user_data);
+				       void *user_data);
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
 
 #if defined(CONFIG_SHIELD_CTR_Z)

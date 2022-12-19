@@ -10,6 +10,7 @@
 /* Zephyr includes */
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
+
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 
@@ -17,8 +18,8 @@
 #include <errno.h>
 #include <math.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
@@ -303,7 +304,7 @@ int app_cbor_encode(zcbor_state_t *zs)
 					zcbor_nil_put(zs, NULL);
 				} else {
 					zcbor_int32_put(zs,
-					                g_app_data.channel_measurements[i].avg[j]);
+							g_app_data.channel_measurements[i].avg[j]);
 				}
 
 				if (!g_app_config.channel_active[j] ||
@@ -311,7 +312,7 @@ int app_cbor_encode(zcbor_state_t *zs)
 					zcbor_nil_put(zs, NULL);
 				} else {
 					zcbor_int32_put(zs,
-					                g_app_data.channel_measurements[i].rms[j]);
+							g_app_data.channel_measurements[i].rms[j]);
 				}
 			}
 		}

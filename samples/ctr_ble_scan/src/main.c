@@ -7,7 +7,7 @@
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 
 static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
-                    struct net_buf_simple *buf)
+		    struct net_buf_simple *buf)
 {
 	int ret;
 

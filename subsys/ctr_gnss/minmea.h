@@ -13,12 +13,12 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include <errno.h>
-#include <time.h>
 #include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <time.h>
 #ifdef MINMEA_INCLUDE_COMPAT
 #include <minmea_compat.h>
 #endif
@@ -214,7 +214,7 @@ bool minmea_parse_zda(struct minmea_sentence_zda *frame, const char *sentence);
  * Convert GPS UTC date/time representation to a UNIX timestamp.
  */
 int minmea_gettime(struct timespec *ts, const struct minmea_date *date,
-                   const struct minmea_time *time_);
+		   const struct minmea_time *time_);
 
 /**
  * Rescale a fixed-point value to a different scale. Rounds towards zero.

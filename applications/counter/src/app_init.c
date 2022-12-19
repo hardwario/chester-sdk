@@ -69,7 +69,7 @@ static struct ctr_edge m_edge_ch8;
 
 #define EDGE_CALLBACK(ch)                                                                          \
 	void edge_ch##ch##_callback(struct ctr_edge *edge, enum ctr_edge_event event,              \
-	                            void *user_data)                                               \
+				    void *user_data)                                               \
 	{                                                                                          \
 		if (event == CTR_EDGE_EVENT_ACTIVE) {                                              \
 			LOG_INF("Channel " STRINGIFY(ch) " detected active edge");                 \

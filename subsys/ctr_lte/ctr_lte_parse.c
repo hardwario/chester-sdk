@@ -11,7 +11,7 @@
 #include <string.h>
 
 int ctr_lte_parse_cclk(const char *s, int *year, int *month, int *day, int *hours, int *minutes,
-                       int *seconds)
+		       int *seconds)
 {
 	/* +CCLK: "21/11/08,16:01:13+04" */
 
@@ -101,10 +101,10 @@ int ctr_lte_parse_cereg(const char *s, int *stat)
 }
 
 int ctr_lte_parse_coneval(const char *s, long *result, long *rrc_state, long *energy_estimate,
-                          long *rsrp, long *rsrq, long *snr, char *cell_id, size_t cell_id_size,
-                          char *plmn, size_t plmn_size, long *phys_cell_id, long *earfcn,
-                          long *band, long *tau_triggered, long *ce_level, long *tx_power,
-                          long *tx_repetitions, long *rx_repetitions, long *dl_pathloss)
+			  long *rsrp, long *rsrq, long *snr, char *cell_id, size_t cell_id_size,
+			  char *plmn, size_t plmn_size, long *phys_cell_id, long *earfcn,
+			  long *band, long *tau_triggered, long *ce_level, long *tx_power,
+			  long *tx_repetitions, long *rx_repetitions, long *dl_pathloss)
 {
 	/* %CONEVAL: 0,1,5,8,2,14,"011B0780”,"26295",7,1575,3,1,1,23,16,32,130 */
 

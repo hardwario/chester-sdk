@@ -54,7 +54,7 @@ union ctr_lrw_event_data {
 };
 
 typedef void (*ctr_lrw_event_cb)(enum ctr_lrw_event event, union ctr_lrw_event_data *data,
-                                 void *param);
+				 void *param);
 
 struct ctr_lrw_send_opts {
 	int64_t ttl;

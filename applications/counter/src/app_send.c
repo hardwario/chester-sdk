@@ -1,8 +1,8 @@
-#include "app_send.h"
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_loop.h"
+#include "app_send.h"
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
@@ -13,6 +13,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/random/rand32.h>
 #include <zephyr/zephyr.h>
+
 #include <tinycbor/cbor.h>
 #include <tinycbor/cbor_buf_writer.h>
 #include <tinycrypt/constants.h>

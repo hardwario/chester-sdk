@@ -44,11 +44,11 @@ struct ctr_k_result {
 };
 
 typedef int (*ctr_k_api_set_power)(const struct device *dev, enum ctr_k_channel channel,
-                                   bool is_enabled);
+				   bool is_enabled);
 typedef int (*ctr_k_api_measure)(const struct device *dev, const enum ctr_k_channel channels[],
-                                 size_t channels_count,
-                                 const struct ctr_k_calibration calibrations[],
-                                 struct ctr_k_result results[]);
+				 size_t channels_count,
+				 const struct ctr_k_calibration calibrations[],
+				 struct ctr_k_result results[]);
 
 struct ctr_k_driver_api {
 	ctr_k_api_set_power set_power;
@@ -56,7 +56,7 @@ struct ctr_k_driver_api {
 };
 
 static inline int ctr_k_set_power(const struct device *dev, enum ctr_k_channel channel,
-                                  bool is_enabled)
+				  bool is_enabled)
 {
 	const struct ctr_k_driver_api *api = (const struct ctr_k_driver_api *)dev->api;
 
@@ -64,9 +64,9 @@ static inline int ctr_k_set_power(const struct device *dev, enum ctr_k_channel c
 }
 
 static inline int ctr_k_measure(const struct device *dev, const enum ctr_k_channel channels[],
-                                size_t channels_count,
-                                const struct ctr_k_calibration calibrations[],
-                                struct ctr_k_result results[])
+				size_t channels_count,
+				const struct ctr_k_calibration calibrations[],
+				struct ctr_k_result results[])
 {
 	const struct ctr_k_driver_api *api = (const struct ctr_k_driver_api *)dev->api;
 

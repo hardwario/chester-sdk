@@ -74,7 +74,7 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 		return -ENODEV;
 	}
 
-	uint8_t buf[3] = { reg };
+	uint8_t buf[3] = {reg};
 	sys_put_be16(data, &buf[1]);
 
 	ret = i2c_write(get_config(dev)->i2c_dev, buf, sizeof(buf), get_config(dev)->i2c_addr);
@@ -126,7 +126,7 @@ static int ctr_z_enable_interrupts_(const struct device *dev)
 	}
 
 	gpio_init_callback(&get_data(dev)->gpio_cb, irq_handler,
-	                   BIT(get_config(dev)->irq_spec.pin));
+			   BIT(get_config(dev)->irq_spec.pin));
 
 	ret = gpio_add_callback(get_config(dev)->irq_spec.port, &get_data(dev)->gpio_cb);
 	if (ret) {
@@ -350,12 +350,12 @@ static int ctr_z_set_buzzer_(const struct device *dev, const struct ctr_z_buzzer
 }
 
 static int ctr_z_set_led_(const struct device *dev, enum ctr_z_led_channel channel,
-                          const struct ctr_z_led_param *param)
+			  const struct ctr_z_led_param *param)
 {
 	int ret;
 
 	uint16_t reg_led = (uint16_t)param->brightness << 8 | (uint16_t)param->command << 4 |
-	                   (uint16_t)param->pattern;
+			   (uint16_t)param->pattern;
 
 	ret = write(dev, REG_LED0R + (uint8_t)channel, reg_led);
 	if (ret) {
@@ -489,7 +489,7 @@ static int ctr_z_init(const struct device *dev)
 
 		/* Apply indicator reset, enable alert pin and enable auto-beep (if configured) */
 		ret = write(dev, REG_CONTROL,
-		            BIT(0) | (get_config(dev)->auto_beep ? BIT(1) : 0) | BIT(15));
+			    BIT(0) | (get_config(dev)->auto_beep ? BIT(1) : 0) | BIT(15));
 		if (ret) {
 			LOG_ERR("Call `write` failed: %d", ret);
 			return ret;
@@ -539,6 +539,6 @@ static const struct ctr_z_driver_api ctr_z_driver_api = {
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ctr_z_init, NULL, &inst_##n##_data, &inst_##n##_config,           \
-	                      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &ctr_z_driver_api);
+			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &ctr_z_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_Z_INIT)

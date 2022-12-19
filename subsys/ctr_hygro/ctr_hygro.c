@@ -12,7 +12,7 @@
 #include <stddef.h>
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SHT3XD_SINGLE_SHOT_MODE),
-             "Option SHT3XD_SINGLE_SHOT_MODE has to be chosen");
+	     "Option SHT3XD_SINGLE_SHOT_MODE has to be chosen");
 
 LOG_MODULE_REGISTER(ctr_hygro, CONFIG_CTR_HYGRO_LOG_LEVEL);
 

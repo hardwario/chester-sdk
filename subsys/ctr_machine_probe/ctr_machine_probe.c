@@ -21,11 +21,11 @@
 
 LOG_MODULE_REGISTER(ctr_machine_probe, CONFIG_CTR_MACHINE_PROBE_LOG_LEVEL);
 
-#define TMP112_I2C_ADDR  0x48
+#define TMP112_I2C_ADDR	 0x48
 #define TMP112_INIT_TIME K_MSEC(10)
 #define TMP112_CONV_TIME K_MSEC(50)
 
-#define SHT30_I2C_ADDR  0x45
+#define SHT30_I2C_ADDR	0x45
 #define SHT30_INIT_TIME K_MSEC(100)
 #define SHT30_CONV_TIME K_MSEC(100)
 
@@ -47,16 +47,16 @@ static K_MUTEX_DEFINE(m_lock);
 static struct ctr_w1 m_w1;
 
 static struct sensor m_sensors[] = {
-        {.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_0))},
-        {.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_1))},
-        {.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_2))},
-        {.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_3))},
-        {.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_4))},
-        {.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_5))},
-        {.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_6))},
-        {.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_7))},
-        {.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_8))},
-        {.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_9))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_0))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_1))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_2))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_3))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_4))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_5))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_6))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_7))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_8))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ctr_machine_probe_9))},
 };
 
 static int m_count;
@@ -686,7 +686,7 @@ int ctr_machine_probe_read_thermometer(int index, uint64_t *serial_number, float
 }
 
 int ctr_machine_probe_read_hygrometer(int index, uint64_t *serial_number, float *temperature,
-                                      float *humidity)
+				      float *humidity)
 {
 	if (serial_number) {
 		*serial_number = UINT64_MAX;
@@ -823,7 +823,7 @@ int ctr_machine_probe_read_magnetometer(int index, uint64_t *serial_number, floa
 }
 
 int ctr_machine_probe_read_accelerometer(int index, uint64_t *serial_number, float *accel_x,
-                                         float *accel_y, float *accel_z, int *orientation)
+					 float *accel_y, float *accel_z, int *orientation)
 {
 	if (serial_number) {
 		*serial_number = UINT64_MAX;
@@ -874,7 +874,7 @@ int ctr_machine_probe_read_accelerometer(int index, uint64_t *serial_number, flo
 }
 
 int ctr_machine_probe_enable_tilt_alert(int index, uint64_t *serial_number, int threshold,
-                                        int duration)
+					int duration)
 {
 	if (serial_number) {
 		*serial_number = UINT64_MAX;

@@ -3,6 +3,7 @@
 
 /* Zephyr includes */
 #include <zephyr/zephyr.h>
+
 #include <zcbor_common.h>
 
 #ifdef __cplusplus

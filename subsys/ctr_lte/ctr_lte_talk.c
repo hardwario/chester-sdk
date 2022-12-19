@@ -1,5 +1,5 @@
-#include "ctr_lte_talk.h"
 #include "ctr_lte_parse.h"
+#include "ctr_lte_talk.h"
 
 #include <chester/ctr_util.h>
 #include <chester/drivers/ctr_lte_if.h>
@@ -18,7 +18,7 @@
 
 LOG_MODULE_REGISTER(ctr_lte_talk, CONFIG_CTR_LTE_LOG_LEVEL);
 
-#define SEND_GUARD_TIME K_MSEC(50)
+#define SEND_GUARD_TIME	   K_MSEC(50)
 #define RESPONSE_TIMEOUT_S K_SECONDS(3)
 #define RESPONSE_TIMEOUT_L K_SECONDS(30)
 
@@ -228,7 +228,7 @@ static int gather_response(k_timeout_t timeout, struct response *response, int m
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-		                         &m_response_sig),
+					 &m_response_sig),
 	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), timeout);
@@ -336,7 +336,7 @@ static int talk_cmd_ok(k_timeout_t timeout, const char *fmt, ...)
 }
 
 static int talk_cmd_response_ok(k_timeout_t timeout, response_cb cb, void *p1, void *p2, void *p3,
-                                const char *fmt, ...)
+				const char *fmt, ...)
 {
 	int ret;
 
@@ -536,7 +536,7 @@ int ctr_lte_talk_at(void)
 }
 
 static int at_cclk_q_response_handler(int idx, int count, const char *s, void *p1, void *p2,
-                                      void *p3)
+				      void *p3)
 {
 	char *buf = p1;
 	size_t *size = p2;
@@ -559,7 +559,7 @@ int ctr_lte_talk_at_cclk_q(char *buf, size_t size)
 	int ret;
 
 	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_cclk_q_response_handler, buf, &size, NULL,
-	                           "AT+CCLK?");
+				   "AT+CCLK?");
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
@@ -605,7 +605,7 @@ int ctr_lte_talk_at_cimi(char *buf, size_t size)
 	int ret;
 
 	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_cimi_response_handler, buf, &size, NULL,
-	                           "AT+CIMI");
+				   "AT+CIMI");
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
@@ -671,7 +671,8 @@ int ctr_lte_talk_at_cgauth(int p1, int *p2, const char *p3, const char *p4)
 		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGAUTH=%d,%d,\"%s\"", p1, *p2, p3);
 
 	} else if (p2 != NULL && p3 != NULL && p4 != NULL) {
-		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGAUTH=%d,%d,\"%s\",\"%s\"", p1, *p2, p3, p4);
+		ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT+CGAUTH=%d,%d,\"%s\",\"%s\"", p1, *p2, p3,
+				  p4);
 
 	} else {
 		return -EINVAL;
@@ -760,7 +761,7 @@ int ctr_lte_talk_at_cgsn(char *buf, size_t size)
 	int ret;
 
 	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_cgsn_response_handler, buf, &size, NULL,
-	                           "AT+CGSN");
+				   "AT+CGSN");
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
@@ -799,7 +800,7 @@ int ctr_lte_talk_at_cnec(int p1)
 }
 
 static int at_coneval_response_handler(int idx, int count, const char *s, void *p1, void *p2,
-                                       void *p3)
+				       void *p3)
 {
 	int ret;
 
@@ -818,9 +819,9 @@ static int at_coneval_response_handler(int idx, int count, const char *s, void *
 		long ce_level;
 
 		ret = ctr_lte_parse_coneval(s, &result, NULL, &energy_estimate, &rsrp, &rsrq, &snr,
-		                            cell_id, sizeof(cell_id), plmn, sizeof(plmn), NULL,
-		                            &earfcn, &band, NULL, &ce_level, NULL, NULL, NULL,
-		                            NULL);
+					    cell_id, sizeof(cell_id), plmn, sizeof(plmn), NULL,
+					    &earfcn, &band, NULL, &ce_level, NULL, NULL, NULL,
+					    NULL);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_parse_coneval` failed: %d", ret);
@@ -828,7 +829,7 @@ static int at_coneval_response_handler(int idx, int count, const char *s, void *
 		}
 
 		if (result == 0) {
-			uint8_t cell_id_buf[4] = { 0 };
+			uint8_t cell_id_buf[4] = {0};
 			ret = ctr_hex2buf(cell_id, cell_id_buf, sizeof(cell_id_buf), false);
 			if (ret < 0) {
 				LOG_ERR("Call `ctr_hex2buf` (cell_id) failed: %d", ret);
@@ -858,7 +859,7 @@ int ctr_lte_talk_at_coneval(struct ctr_lte_eval *eval)
 
 	/* TODO Clarify response timeout requirements */
 	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_L, at_coneval_response_handler, eval, NULL,
-	                           NULL, "AT%%CONEVAL");
+				   NULL, "AT%%CONEVAL");
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
@@ -933,7 +934,7 @@ int ctr_lte_talk_at_cscon(int p1)
 }
 
 static int at_hwversion_response_handler(int idx, int count, const char *s, void *p1, void *p2,
-                                         void *p3)
+					 void *p3)
 {
 	char *buf = p1;
 	size_t *size = p2;
@@ -956,7 +957,7 @@ int ctr_lte_talk_at_hwversion(char *buf, size_t size)
 	int ret;
 
 	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_hwversion_response_handler, buf, &size,
-	                           NULL, "AT%%HWVERSION");
+				   NULL, "AT%%HWVERSION");
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
@@ -995,7 +996,7 @@ int ctr_lte_talk_at_rel14feat(int p1, int p2, int p3, int p4, int p5)
 }
 
 static int at_shortswver_response_handler(int idx, int count, const char *s, void *p1, void *p2,
-                                          void *p3)
+					  void *p3)
 {
 	char *p = p1;
 	size_t *size = p2;
@@ -1018,7 +1019,7 @@ int ctr_lte_talk_at_shortswver(char *buf, size_t size)
 	int ret;
 
 	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_shortswver_response_handler, buf, &size,
-	                           NULL, "AT%%SHORTSWVER");
+				   NULL, "AT%%SHORTSWVER");
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
@@ -1156,7 +1157,7 @@ int ctr_lte_talk_at_xsleep(int p1)
 }
 
 static int at_xsocket_response_handler(int idx, int count, const char *s, void *p1, void *p2,
-                                       void *p3)
+				       void *p3)
 {
 	char *p = p1;
 	size_t *size = p2;
@@ -1180,11 +1181,11 @@ int ctr_lte_talk_at_xsocket(int p1, int *p2, int *p3, char *buf, size_t size)
 
 	if (p2 == NULL && p3 == NULL) {
 		ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_xsocket_response_handler, buf,
-		                           &size, NULL, "AT#XSOCKET=%d", p1);
+					   &size, NULL, "AT#XSOCKET=%d", p1);
 
 	} else if (p2 != NULL && p3 != NULL) {
 		ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_xsocket_response_handler, buf,
-		                           &size, NULL, "AT#XSOCKET=%d,%d,%d", p1, *p2, *p3);
+					   &size, NULL, "AT#XSOCKET=%d,%d,%d", p1, *p2, *p3);
 
 	} else {
 		return -EINVAL;

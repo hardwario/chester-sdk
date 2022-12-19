@@ -122,8 +122,8 @@ static int init_chester_z(void)
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 
 static int init_edge(struct ctr_edge *edge, ctr_edge_cb_t cb, const struct device *dev,
-                     enum ctr_x0_channel channel, enum ctr_x0_mode mode, int active_duration,
-                     int inactive_duration, int cooldown_time)
+		     enum ctr_x0_channel channel, enum ctr_x0_mode mode, int active_duration,
+		     int inactive_duration, int cooldown_time)
 {
 	int ret;
 
@@ -217,14 +217,14 @@ static int init_chester_x0(void)
 	}
 
 	enum ctr_x0_mode trigger_mode = g_app_config.trigger_input_type == APP_CONFIG_INPUT_TYPE_NPN
-	                                        ? CTR_X0_MODE_NPN_INPUT
-	                                        : CTR_X0_MODE_PNP_INPUT;
+						? CTR_X0_MODE_NPN_INPUT
+						: CTR_X0_MODE_PNP_INPUT;
 
 	/* Channel 1: Trigger input */
 	static struct ctr_edge edge_trigger;
 	ret = init_edge(&edge_trigger, app_handler_edge_trigger_callback, dev, CTR_X0_CHANNEL_1,
-	                trigger_mode, g_app_config.trigger_duration_active,
-	                g_app_config.trigger_duration_inactive, g_app_config.trigger_cooldown_time);
+			trigger_mode, g_app_config.trigger_duration_active,
+			g_app_config.trigger_duration_inactive, g_app_config.trigger_cooldown_time);
 	if (ret) {
 		LOG_ERR("Call `init_edge` failed: %d", ret);
 		return ret;
@@ -237,14 +237,14 @@ static int init_chester_x0(void)
 	}
 
 	enum ctr_x0_mode counter_mode = g_app_config.counter_input_type == APP_CONFIG_INPUT_TYPE_NPN
-	                                        ? CTR_X0_MODE_NPN_INPUT
-	                                        : CTR_X0_MODE_PNP_INPUT;
+						? CTR_X0_MODE_NPN_INPUT
+						: CTR_X0_MODE_PNP_INPUT;
 
 	/* Channel 2: Counter input */
 	static struct ctr_edge edge_counter;
 	ret = init_edge(&edge_counter, app_handler_edge_counter_callback, dev, CTR_X0_CHANNEL_2,
-	                counter_mode, g_app_config.counter_duration_active,
-	                g_app_config.counter_duration_inactive, g_app_config.counter_cooldown_time);
+			counter_mode, g_app_config.counter_duration_active,
+			g_app_config.counter_duration_inactive, g_app_config.counter_cooldown_time);
 	if (ret) {
 		LOG_ERR("Call `init_edge` failed: %d", ret);
 		return ret;

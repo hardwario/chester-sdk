@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
 struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
-        .measurement_interval = 60,
-        .report_interval = 900,
+	.measurement_interval = 60,
+	.report_interval = 900,
 };
 
 static void print_channel_active(const struct shell *shell, int channel)
@@ -32,7 +32,7 @@ static void print_channel_active(const struct shell *shell, int channel)
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
 		shell_print(shell, SETTINGS_PFX " config channel-active %d %s", i + 1,
-		            m_app_config_interim.channel_active[i] ? "true" : "false");
+			    m_app_config_interim.channel_active[i] ? "true" : "false");
 	}
 }
 
@@ -42,7 +42,7 @@ static void print_channel_differential(const struct shell *shell, int channel)
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
 		shell_print(shell, SETTINGS_PFX " config channel-differential %d %s", i + 1,
-		            m_app_config_interim.channel_differential[i] ? "true" : "false");
+			    m_app_config_interim.channel_differential[i] ? "true" : "false");
 	}
 }
 
@@ -52,7 +52,7 @@ static void print_channel_calib_x0(const struct shell *shell, int channel)
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
 		shell_print(shell, SETTINGS_PFX " config channel-calib-x0 %d %d", i + 1,
-		            m_app_config_interim.channel_calib_x0[i]);
+			    m_app_config_interim.channel_calib_x0[i]);
 	}
 }
 
@@ -62,7 +62,7 @@ static void print_channel_calib_y0(const struct shell *shell, int channel)
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
 		shell_print(shell, SETTINGS_PFX " config channel-calib-y0 %d %d", i + 1,
-		            m_app_config_interim.channel_calib_y0[i]);
+			    m_app_config_interim.channel_calib_y0[i]);
 	}
 }
 
@@ -72,7 +72,7 @@ static void print_channel_calib_x1(const struct shell *shell, int channel)
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
 		shell_print(shell, SETTINGS_PFX " config channel-calib-x1 %d %d", i + 1,
-		            m_app_config_interim.channel_calib_x1[i]);
+			    m_app_config_interim.channel_calib_x1[i]);
 	}
 }
 
@@ -82,20 +82,20 @@ static void print_channel_calib_y1(const struct shell *shell, int channel)
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
 		shell_print(shell, SETTINGS_PFX " config channel-calib-y1 %d %d", i + 1,
-		            m_app_config_interim.channel_calib_y1[i]);
+			    m_app_config_interim.channel_calib_y1[i]);
 	}
 }
 
 static void print_measurement_interval(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config measurement-interval %d",
-	            m_app_config_interim.measurement_interval);
+		    m_app_config_interim.measurement_interval);
 }
 
 static void print_report_interval(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config report-interval %d",
-	            m_app_config_interim.report_interval);
+		    m_app_config_interim.report_interval);
 }
 
 int app_config_get_report_interval(void)
@@ -486,68 +486,68 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 	/* TODO Replace with for-each pre-processor macro */
 	SETTINGS_SET("channel-1-active", &m_app_config_interim.channel_active[0],
-	             sizeof(m_app_config_interim.channel_active[0]));
+		     sizeof(m_app_config_interim.channel_active[0]));
 	SETTINGS_SET("channel-2-active", &m_app_config_interim.channel_active[1],
-	             sizeof(m_app_config_interim.channel_active[1]));
+		     sizeof(m_app_config_interim.channel_active[1]));
 	SETTINGS_SET("channel-3-active", &m_app_config_interim.channel_active[2],
-	             sizeof(m_app_config_interim.channel_active[2]));
+		     sizeof(m_app_config_interim.channel_active[2]));
 	SETTINGS_SET("channel-4-active", &m_app_config_interim.channel_active[3],
-	             sizeof(m_app_config_interim.channel_active[3]));
+		     sizeof(m_app_config_interim.channel_active[3]));
 
 	/* TODO Replace with for-each pre-processor macro */
 	SETTINGS_SET("channel-1-differential", &m_app_config_interim.channel_differential[0],
-	             sizeof(m_app_config_interim.channel_differential[0]));
+		     sizeof(m_app_config_interim.channel_differential[0]));
 	SETTINGS_SET("channel-2-differential", &m_app_config_interim.channel_differential[1],
-	             sizeof(m_app_config_interim.channel_differential[1]));
+		     sizeof(m_app_config_interim.channel_differential[1]));
 	SETTINGS_SET("channel-3-differential", &m_app_config_interim.channel_differential[2],
-	             sizeof(m_app_config_interim.channel_differential[2]));
+		     sizeof(m_app_config_interim.channel_differential[2]));
 	SETTINGS_SET("channel-4-differential", &m_app_config_interim.channel_differential[3],
-	             sizeof(m_app_config_interim.channel_differential[3]));
+		     sizeof(m_app_config_interim.channel_differential[3]));
 
 	/* TODO Replace with for-each pre-processor macro */
 	SETTINGS_SET("channel-1-calib-x0", &m_app_config_interim.channel_calib_x0[0],
-	             sizeof(m_app_config_interim.channel_calib_x0[0]));
+		     sizeof(m_app_config_interim.channel_calib_x0[0]));
 	SETTINGS_SET("channel-2-calib-x0", &m_app_config_interim.channel_calib_x0[1],
-	             sizeof(m_app_config_interim.channel_calib_x0[1]));
+		     sizeof(m_app_config_interim.channel_calib_x0[1]));
 	SETTINGS_SET("channel-3-calib-x0", &m_app_config_interim.channel_calib_x0[2],
-	             sizeof(m_app_config_interim.channel_calib_x0[2]));
+		     sizeof(m_app_config_interim.channel_calib_x0[2]));
 	SETTINGS_SET("channel-4-calib-x0", &m_app_config_interim.channel_calib_x0[3],
-	             sizeof(m_app_config_interim.channel_calib_x0[3]));
+		     sizeof(m_app_config_interim.channel_calib_x0[3]));
 
 	/* TODO Replace with for-each pre-processor macro */
 	SETTINGS_SET("channel-1-calib-y0", &m_app_config_interim.channel_calib_y0[0],
-	             sizeof(m_app_config_interim.channel_calib_y0[0]));
+		     sizeof(m_app_config_interim.channel_calib_y0[0]));
 	SETTINGS_SET("channel-2-calib-y0", &m_app_config_interim.channel_calib_y0[1],
-	             sizeof(m_app_config_interim.channel_calib_y0[1]));
+		     sizeof(m_app_config_interim.channel_calib_y0[1]));
 	SETTINGS_SET("channel-3-calib-y0", &m_app_config_interim.channel_calib_y0[2],
-	             sizeof(m_app_config_interim.channel_calib_y0[2]));
+		     sizeof(m_app_config_interim.channel_calib_y0[2]));
 	SETTINGS_SET("channel-4-calib-y0", &m_app_config_interim.channel_calib_y0[3],
-	             sizeof(m_app_config_interim.channel_calib_y0[3]));
+		     sizeof(m_app_config_interim.channel_calib_y0[3]));
 
 	/* TODO Replace with for-each pre-processor macro */
 	SETTINGS_SET("channel-1-calib-x1", &m_app_config_interim.channel_calib_x1[0],
-	             sizeof(m_app_config_interim.channel_calib_x1[0]));
+		     sizeof(m_app_config_interim.channel_calib_x1[0]));
 	SETTINGS_SET("channel-2-calib-x1", &m_app_config_interim.channel_calib_x1[1],
-	             sizeof(m_app_config_interim.channel_calib_x1[1]));
+		     sizeof(m_app_config_interim.channel_calib_x1[1]));
 	SETTINGS_SET("channel-3-calib-x1", &m_app_config_interim.channel_calib_x1[2],
-	             sizeof(m_app_config_interim.channel_calib_x1[2]));
+		     sizeof(m_app_config_interim.channel_calib_x1[2]));
 	SETTINGS_SET("channel-4-calib-x1", &m_app_config_interim.channel_calib_x1[3],
-	             sizeof(m_app_config_interim.channel_calib_x1[3]));
+		     sizeof(m_app_config_interim.channel_calib_x1[3]));
 
 	/* TODO Replace with for-each pre-processor macro */
 	SETTINGS_SET("channel-1-calib-y1", &m_app_config_interim.channel_calib_y1[0],
-	             sizeof(m_app_config_interim.channel_calib_y1[0]));
+		     sizeof(m_app_config_interim.channel_calib_y1[0]));
 	SETTINGS_SET("channel-2-calib-y1", &m_app_config_interim.channel_calib_y1[1],
-	             sizeof(m_app_config_interim.channel_calib_y1[1]));
+		     sizeof(m_app_config_interim.channel_calib_y1[1]));
 	SETTINGS_SET("channel-3-calib-y1", &m_app_config_interim.channel_calib_y1[2],
-	             sizeof(m_app_config_interim.channel_calib_y1[2]));
+		     sizeof(m_app_config_interim.channel_calib_y1[2]));
 	SETTINGS_SET("channel-4-calib-y1", &m_app_config_interim.channel_calib_y1[3],
-	             sizeof(m_app_config_interim.channel_calib_y1[3]));
+		     sizeof(m_app_config_interim.channel_calib_y1[3]));
 
 	SETTINGS_SET("measurement-interval", &m_app_config_interim.measurement_interval,
-	             sizeof(m_app_config_interim.measurement_interval));
+		     sizeof(m_app_config_interim.measurement_interval));
 	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
-	             sizeof(m_app_config_interim.report_interval));
+		     sizeof(m_app_config_interim.report_interval));
 
 #undef SETTINGS_SET
 
@@ -570,68 +570,68 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 	/* TODO Replace with for-each pre-processor macro */
 	EXPORT_FUNC("channel-1-active", &m_app_config_interim.channel_active[0],
-	            sizeof(m_app_config_interim.channel_active[0]));
+		    sizeof(m_app_config_interim.channel_active[0]));
 	EXPORT_FUNC("channel-2-active", &m_app_config_interim.channel_active[1],
-	            sizeof(m_app_config_interim.channel_active[1]));
+		    sizeof(m_app_config_interim.channel_active[1]));
 	EXPORT_FUNC("channel-3-active", &m_app_config_interim.channel_active[2],
-	            sizeof(m_app_config_interim.channel_active[2]));
+		    sizeof(m_app_config_interim.channel_active[2]));
 	EXPORT_FUNC("channel-4-active", &m_app_config_interim.channel_active[3],
-	            sizeof(m_app_config_interim.channel_active[3]));
+		    sizeof(m_app_config_interim.channel_active[3]));
 
 	/* TODO Replace with for-each pre-processor macro */
 	EXPORT_FUNC("channel-1-differential", &m_app_config_interim.channel_differential[0],
-	            sizeof(m_app_config_interim.channel_differential[0]));
+		    sizeof(m_app_config_interim.channel_differential[0]));
 	EXPORT_FUNC("channel-2-differential", &m_app_config_interim.channel_differential[1],
-	            sizeof(m_app_config_interim.channel_differential[1]));
+		    sizeof(m_app_config_interim.channel_differential[1]));
 	EXPORT_FUNC("channel-3-differential", &m_app_config_interim.channel_differential[2],
-	            sizeof(m_app_config_interim.channel_differential[2]));
+		    sizeof(m_app_config_interim.channel_differential[2]));
 	EXPORT_FUNC("channel-4-differential", &m_app_config_interim.channel_differential[3],
-	            sizeof(m_app_config_interim.channel_differential[3]));
+		    sizeof(m_app_config_interim.channel_differential[3]));
 
 	/* TODO Replace with for-each pre-processor macro */
 	EXPORT_FUNC("channel-1-calib-x0", &m_app_config_interim.channel_calib_x0[0],
-	            sizeof(m_app_config_interim.channel_calib_x0[0]));
+		    sizeof(m_app_config_interim.channel_calib_x0[0]));
 	EXPORT_FUNC("channel-2-calib-x0", &m_app_config_interim.channel_calib_x0[1],
-	            sizeof(m_app_config_interim.channel_calib_x0[1]));
+		    sizeof(m_app_config_interim.channel_calib_x0[1]));
 	EXPORT_FUNC("channel-3-calib-x0", &m_app_config_interim.channel_calib_x0[2],
-	            sizeof(m_app_config_interim.channel_calib_x0[2]));
+		    sizeof(m_app_config_interim.channel_calib_x0[2]));
 	EXPORT_FUNC("channel-4-calib-x0", &m_app_config_interim.channel_calib_x0[3],
-	            sizeof(m_app_config_interim.channel_calib_x0[3]));
+		    sizeof(m_app_config_interim.channel_calib_x0[3]));
 
 	/* TODO Replace with for-each pre-processor macro */
 	EXPORT_FUNC("channel-1-calib-y0", &m_app_config_interim.channel_calib_y0[0],
-	            sizeof(m_app_config_interim.channel_calib_y0[0]));
+		    sizeof(m_app_config_interim.channel_calib_y0[0]));
 	EXPORT_FUNC("channel-2-calib-y0", &m_app_config_interim.channel_calib_y0[1],
-	            sizeof(m_app_config_interim.channel_calib_y0[1]));
+		    sizeof(m_app_config_interim.channel_calib_y0[1]));
 	EXPORT_FUNC("channel-3-calib-y0", &m_app_config_interim.channel_calib_y0[2],
-	            sizeof(m_app_config_interim.channel_calib_y0[2]));
+		    sizeof(m_app_config_interim.channel_calib_y0[2]));
 	EXPORT_FUNC("channel-4-calib-y0", &m_app_config_interim.channel_calib_y0[3],
-	            sizeof(m_app_config_interim.channel_calib_y0[3]));
+		    sizeof(m_app_config_interim.channel_calib_y0[3]));
 
 	/* TODO Replace with for-each pre-processor macro */
 	EXPORT_FUNC("channel-1-calib-x1", &m_app_config_interim.channel_calib_x1[0],
-	            sizeof(m_app_config_interim.channel_calib_x1[0]));
+		    sizeof(m_app_config_interim.channel_calib_x1[0]));
 	EXPORT_FUNC("channel-2-calib-x1", &m_app_config_interim.channel_calib_x1[1],
-	            sizeof(m_app_config_interim.channel_calib_x1[1]));
+		    sizeof(m_app_config_interim.channel_calib_x1[1]));
 	EXPORT_FUNC("channel-3-calib-x1", &m_app_config_interim.channel_calib_x1[2],
-	            sizeof(m_app_config_interim.channel_calib_x1[2]));
+		    sizeof(m_app_config_interim.channel_calib_x1[2]));
 	EXPORT_FUNC("channel-4-calib-x1", &m_app_config_interim.channel_calib_x1[3],
-	            sizeof(m_app_config_interim.channel_calib_x1[3]));
+		    sizeof(m_app_config_interim.channel_calib_x1[3]));
 
 	/* TODO Replace with for-each pre-processor macro */
 	EXPORT_FUNC("channel-1-calib-y1", &m_app_config_interim.channel_calib_y1[0],
-	            sizeof(m_app_config_interim.channel_calib_y1[0]));
+		    sizeof(m_app_config_interim.channel_calib_y1[0]));
 	EXPORT_FUNC("channel-2-calib-y1", &m_app_config_interim.channel_calib_y1[1],
-	            sizeof(m_app_config_interim.channel_calib_y1[1]));
+		    sizeof(m_app_config_interim.channel_calib_y1[1]));
 	EXPORT_FUNC("channel-3-calib-y1", &m_app_config_interim.channel_calib_y1[2],
-	            sizeof(m_app_config_interim.channel_calib_y1[2]));
+		    sizeof(m_app_config_interim.channel_calib_y1[2]));
 	EXPORT_FUNC("channel-4-calib-y1", &m_app_config_interim.channel_calib_y1[3],
-	            sizeof(m_app_config_interim.channel_calib_y1[3]));
+		    sizeof(m_app_config_interim.channel_calib_y1[3]));
 
 	EXPORT_FUNC("measurement-interval", &m_app_config_interim.measurement_interval,
-	            sizeof(m_app_config_interim.measurement_interval));
+		    sizeof(m_app_config_interim.measurement_interval));
 	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
-	            sizeof(m_app_config_interim.report_interval));
+		    sizeof(m_app_config_interim.report_interval));
 
 #undef EXPORT_FUNC
 
@@ -645,10 +645,10 @@ static int init(const struct device *dev)
 	LOG_INF("System initialization");
 
 	static struct settings_handler sh = {
-	        .name = SETTINGS_PFX,
-	        .h_set = h_set,
-	        .h_commit = h_commit,
-	        .h_export = h_export,
+		.name = SETTINGS_PFX,
+		.h_set = h_set,
+		.h_commit = h_commit,
+		.h_export = h_export,
 	};
 
 	ret = settings_register(&sh);

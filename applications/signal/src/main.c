@@ -38,9 +38,9 @@ static K_SEM_DEFINE(m_loop_sem, 1, 1);
 static K_SEM_DEFINE(m_run_sem, 0, 1);
 static struct ctr_lte_eval m_lte_eval;
 static struct data m_data = {
-        .therm_temperature = NAN,
-        .hygro_temperature = NAN,
-        .hygro_humidity = NAN,
+	.therm_temperature = NAN,
+	.hygro_temperature = NAN,
+	.hygro_humidity = NAN,
 };
 static struct ctr_wdog_channel m_wdog_channel;
 
@@ -309,7 +309,7 @@ static int measure(void)
 	int ret;
 
 	k_timer_start(&m_measure_timer, Z_TIMEOUT_MS(g_app_config.measurement_interval * 1000),
-	              K_FOREVER);
+		      K_FOREVER);
 
 #if defined(CONFIG_CTR_THERM)
 	ret = ctr_therm_read(&m_data.therm_temperature);

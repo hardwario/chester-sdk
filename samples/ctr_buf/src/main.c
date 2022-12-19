@@ -16,7 +16,7 @@ void main(void)
 
 	CTR_BUF_DEFINE_STATIC(buf, 16);
 
-	const uint8_t mem[] = { 0x01, 0x02, 0x03, 0x04 };
+	const uint8_t mem[] = {0x01, 0x02, 0x03, 0x04};
 	ctr_buf_reset(&buf);
 	ctr_buf_append_mem(&buf, mem, sizeof(mem));
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: mem");

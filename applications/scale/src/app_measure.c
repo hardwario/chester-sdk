@@ -27,7 +27,7 @@
 LOG_MODULE_REGISTER(app_measure, LOG_LEVEL_DBG);
 
 #define MAX_REPETITIONS 5
-#define MAX_DIFFERENCE  100
+#define MAX_DIFFERENCE	100
 
 K_MUTEX_DEFINE(g_app_measure_weight_lock);
 
@@ -63,7 +63,7 @@ enum measure_weight_slot {
 };
 
 static int read_weight(const char *id, enum measure_weight_slot slot, enum ctr_x3_channel channel,
-                       int32_t *result)
+		       int32_t *result)
 {
 	int ret;
 
@@ -157,7 +157,7 @@ error:
 }
 
 static int filter_weight(const char *id, enum measure_weight_slot slot, enum ctr_x3_channel channel,
-                         int32_t *result, int32_t *prev)
+			 int32_t *result, int32_t *prev)
 {
 	int ret;
 
@@ -203,7 +203,7 @@ int app_measure_weight(void)
 	int ret;
 
 	k_timer_start(&g_app_measure_weight_timer,
-	              K_MSEC(g_app_config.weight_measurement_interval * 1000), K_FOREVER);
+		      K_MSEC(g_app_config.weight_measurement_interval * 1000), K_FOREVER);
 
 	if (g_app_data.weight_measurement_count >= ARRAY_SIZE(g_app_data.weight_measurements)) {
 		LOG_WRN("Weight measurements buffer full");
@@ -228,7 +228,7 @@ int app_measure_weight(void)
 	if (g_app_config.channel_a1_active) {
 		static int32_t a1_raw_prev = INT32_MAX;
 		ret = filter_weight("A1", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_1, &a1_raw,
-		                    &a1_raw_prev);
+				    &a1_raw_prev);
 		if (ret) {
 			LOG_ERR("Call `filter_weight` failed (A1): %d", ret);
 			a1_raw = INT32_MAX;
@@ -240,7 +240,7 @@ int app_measure_weight(void)
 	if (g_app_config.channel_a2_active) {
 		static int32_t a2_raw_prev = INT32_MAX;
 		ret = filter_weight("A2", MEASURE_WEIGHT_SLOT_A, CTR_X3_CHANNEL_2, &a2_raw,
-		                    &a2_raw_prev);
+				    &a2_raw_prev);
 		if (ret) {
 			LOG_ERR("Call `filter_weight` failed (A2): %d", ret);
 			a2_raw = INT32_MAX;
@@ -252,7 +252,7 @@ int app_measure_weight(void)
 	if (g_app_config.channel_b1_active) {
 		static int32_t b1_raw_prev = INT32_MAX;
 		ret = filter_weight("B1", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_1, &b1_raw,
-		                    &b1_raw_prev);
+				    &b1_raw_prev);
 		if (ret) {
 			LOG_ERR("Call `filter_weight` failed (B1): %d", ret);
 			b1_raw = INT32_MAX;
@@ -264,7 +264,7 @@ int app_measure_weight(void)
 	if (g_app_config.channel_b2_active) {
 		static int32_t b2_raw_prev = INT32_MAX;
 		ret = filter_weight("B2", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_2, &b2_raw,
-		                    &b2_raw_prev);
+				    &b2_raw_prev);
 		if (ret) {
 			LOG_ERR("Call `filter_weight` failed (B2): %d", ret);
 			b2_raw = INT32_MAX;
@@ -275,7 +275,7 @@ int app_measure_weight(void)
 	k_mutex_unlock(&g_app_measure_weight_lock);
 
 	g_app_data.weight_measurements[g_app_data.weight_measurement_count].timestamp_offset =
-	        timestamp - g_app_data.weight_measurement_timestamp;
+		timestamp - g_app_data.weight_measurement_timestamp;
 
 	g_app_data.weight_measurements[g_app_data.weight_measurement_count].a1_raw = a1_raw;
 	g_app_data.weight_measurements[g_app_data.weight_measurement_count].a2_raw = a2_raw;
@@ -304,7 +304,7 @@ int app_measure_people(void)
 	int ret;
 
 	k_timer_start(&g_app_measure_people_timer,
-	              K_MSEC(g_app_config.people_measurement_interval * 1000), K_FOREVER);
+		      K_MSEC(g_app_config.people_measurement_interval * 1000), K_FOREVER);
 
 	if (g_app_data.people_measurement_count >= ARRAY_SIZE(g_app_data.people_measurements)) {
 		LOG_WRN("People measurements buffer full");
@@ -326,7 +326,7 @@ int app_measure_people(void)
 	}
 
 	g_app_data.people_measurements[g_app_data.people_measurement_count].timestamp_offset =
-	        timestamp - g_app_data.people_measurement_timestamp;
+		timestamp - g_app_data.people_measurement_timestamp;
 
 	struct people_counter_measurement measurement;
 	ret = people_counter_read_measurement(dev, &measurement);
@@ -334,7 +334,7 @@ int app_measure_people(void)
 		LOG_ERR("Call `people_counter_read_measurement` failed: %d", ret);
 
 		g_app_data.people_measurements[g_app_data.people_measurement_count].is_valid =
-		        false;
+			false;
 
 	} else {
 		LOG_INF("Motion counter: %u", measurement.motion_counter);
@@ -347,7 +347,7 @@ int app_measure_people(void)
 		LOG_INF("Consumed energy: %u", measurement.consumed_energy);
 
 		g_app_data.people_measurements[g_app_data.people_measurement_count].measurement =
-		        measurement;
+			measurement;
 
 		g_app_data.people_measurements[g_app_data.people_measurement_count].is_valid = true;
 	}
@@ -372,7 +372,7 @@ int app_measure(void)
 #endif
 
 	ret = ctr_accel_read(&g_app_data.acceleration_x, &g_app_data.acceleration_y,
-	                     &g_app_data.acceleration_z, &g_app_data.orientation);
+			     &g_app_data.acceleration_z, &g_app_data.orientation);
 	if (ret) {
 		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
 		g_app_data.acceleration_x = NAN;

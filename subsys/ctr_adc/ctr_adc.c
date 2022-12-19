@@ -92,7 +92,7 @@ int ctr_adc_read(enum ctr_adc_channel channel, uint16_t *sample)
 	*sample = (int16_t)*sample < 0 ? 0 : *sample;
 
 	LOG_DBG("Channel %s: %" PRIu16 " (0x%04" PRIx16 ")", get_channel_name(channel), *sample,
-	        *sample);
+		*sample);
 
 	return 0;
 }

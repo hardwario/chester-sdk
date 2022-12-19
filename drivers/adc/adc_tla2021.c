@@ -11,23 +11,23 @@
 LOG_MODULE_REGISTER(tla2021, CONFIG_ADC_LOG_LEVEL);
 
 #define CONVERSION_TIMEOUT_US(data_rate) (USEC_PER_SEC / data_rate)
-#define CONVERSION_START_DELAY_US 25
+#define CONVERSION_START_DELAY_US	 25
 
-#define REG_DATA 0x00
+#define REG_DATA     0x00
 #define REG_DATA_pos 4
 
-#define REG_CONFIG 0x01
-#define REG_CONFIG_DEFAULT 0x0003
-#define REG_CONFIG_DR_pos 5
+#define REG_CONFIG	    0x01
+#define REG_CONFIG_DEFAULT  0x0003
+#define REG_CONFIG_DR_pos   5
 #define REG_CONFIG_MODE_pos 8
-#define REG_CONFIG_PGA_pos 9
-#define REG_CONFIG_MUX_pos 12
-#define REG_CONFIG_OS_pos 15
-#define REG_CONFIG_OS_msk BIT(15)
+#define REG_CONFIG_PGA_pos  9
+#define REG_CONFIG_MUX_pos  12
+#define REG_CONFIG_OS_pos   15
+#define REG_CONFIG_OS_msk   BIT(15)
 
 #define REG_CONFIG_MODE_DEFAULT 1
-#define REG_CONFIG_PGA_DEFAULT 2
-#define REG_CONFIG_MUX_DEFAULT 0
+#define REG_CONFIG_PGA_DEFAULT	2
+#define REG_CONFIG_MUX_DEFAULT	0
 
 struct tla2021_config {
 	const struct i2c_dt_spec i2c_spec;
@@ -38,7 +38,7 @@ struct tla2021_data {
 	uint16_t reg_config;
 };
 
-static const int data_rate_value[] = { 128, 250, 490, 920, 1600, 2400, 3300, 3300 };
+static const int data_rate_value[] = {128, 250, 490, 920, 1600, 2400, 3300, 3300};
 
 static inline const struct tla2021_config *get_config(const struct device *dev)
 {
@@ -61,7 +61,7 @@ static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 	}
 
 	ret = i2c_write_read_dt(&get_config(dev)->i2c_spec, &reg, sizeof(reg), data_,
-	                        sizeof(data_));
+				sizeof(data_));
 	if (ret) {
 		return ret;
 	}
@@ -74,7 +74,7 @@ static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 static int write(const struct device *dev, uint8_t reg, uint16_t data)
 {
 	int ret;
-	uint8_t data_[3] = { reg };
+	uint8_t data_[3] = {reg};
 
 	if (!device_is_ready(get_config(dev)->i2c_spec.bus)) {
 		LOG_ERR("Bus not ready");
@@ -156,7 +156,7 @@ int tla2021_read(const struct device *dev, const struct adc_sequence *sequence)
 	}
 
 	const int conversion_timeout_us =
-	        USEC_PER_SEC / data_rate_value[get_config(dev)->data_rate];
+		USEC_PER_SEC / data_rate_value[get_config(dev)->data_rate];
 
 	LOG_DBG("Conversion timeout: %d us", conversion_timeout_us);
 
@@ -238,6 +238,6 @@ static const struct adc_driver_api tla2021_driver_api = {
 	};                                                                                         \
 	static struct tla2021_data inst_##n##_data = {};                                           \
 	DEVICE_DT_INST_DEFINE(n, &tla2021_init, NULL, &inst_##n##_data, &inst_##n##_config,        \
-	                      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &tla2021_driver_api);
+			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &tla2021_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TLA2021_INIT)

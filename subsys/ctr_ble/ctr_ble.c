@@ -50,11 +50,11 @@ static struct config m_config;
 /* clang-format on */
 
 static const struct bt_data m_ad[] = {
-        BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
 
 static const struct bt_data m_sd[] = {
-        BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_DFU_SMP_SERVICE_VAL),
+	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_DFU_SMP_SERVICE_VAL),
 };
 
 static struct bt_conn *m_current_conn;
@@ -162,8 +162,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 }
 
 BT_CONN_CB_DEFINE(conn_cb) = {
-        .connected = connected,
-        .disconnected = disconnected,
+	.connected = connected,
+	.disconnected = disconnected,
 };
 
 static void auth_cancel(struct bt_conn *conn)
@@ -175,7 +175,7 @@ static void auth_cancel(struct bt_conn *conn)
 }
 
 static struct bt_conn_auth_cb auth_cb = {
-        .cancel = auth_cancel,
+	.cancel = auth_cancel,
 };
 
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
@@ -197,8 +197,8 @@ static void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reaso
 }
 
 static struct bt_conn_auth_info_cb auth_info_cb = {
-        .pairing_complete = auth_pairing_complete,
-        .pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
+	.pairing_failed = auth_pairing_failed,
 };
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
@@ -341,10 +341,10 @@ static int init(const struct device *dev)
 	LOG_INF("System initialization");
 
 	static struct settings_handler sh = {
-	        .name = SETTINGS_PFX,
-	        .h_set = h_set,
-	        .h_commit = h_commit,
-	        .h_export = h_export,
+		.name = SETTINGS_PFX,
+		.h_set = h_set,
+		.h_commit = h_commit,
+		.h_export = h_export,
 	};
 
 	ret = settings_register(&sh);
@@ -424,7 +424,7 @@ static int init(const struct device *dev)
 #endif /* defined(CONFIG_SHELL_BT_NUS) */
 
 	struct bt_le_adv_param *adv_param =
-	        BT_LE_ADV_PARAM(ADV_OPT, BT_GAP_ADV_SLOW_INT_MIN, BT_GAP_ADV_SLOW_INT_MAX, NULL);
+		BT_LE_ADV_PARAM(ADV_OPT, BT_GAP_ADV_SLOW_INT_MIN, BT_GAP_ADV_SLOW_INT_MAX, NULL);
 
 	ret = bt_le_adv_start(adv_param, m_ad, ARRAY_SIZE(m_ad), m_sd, ARRAY_SIZE(m_sd));
 	if (ret) {

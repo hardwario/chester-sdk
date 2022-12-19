@@ -38,7 +38,7 @@ static int compare(const void *a, const void *b)
 }
 
 __unused static void aggreg(float *samples, size_t count, float *minimum, float *maximum,
-                            float *average, float *median)
+			    float *average, float *median)
 {
 	if (count < 1) {
 		*minimum = NAN;
@@ -67,7 +67,7 @@ __unused static void aggreg(float *samples, size_t count, float *minimum, float 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 
 __unused static void aggreg_sample(float *samples, size_t count,
-                                   struct app_data_analog_aggreg *sample)
+				   struct app_data_analog_aggreg *sample)
 {
 	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
 }
@@ -91,7 +91,7 @@ int app_sensor_sample(void)
 	}
 
 	ret = ctr_accel_read(&accel_acceleration_x, &accel_acceleration_y, &accel_acceleration_z,
-	                     &accel_orientation);
+			     &accel_orientation);
 	if (ret) {
 		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
 		accel_acceleration_x = NAN;
@@ -140,7 +140,7 @@ int app_sensor_counter_aggreg(void)
 
 	if (counter->measurement_count < APP_DATA_COUNTER_MAX_MEASUREMENTS) {
 		struct app_data_counter_measurement *measurement =
-		        &counter->measurements[counter->measurement_count];
+			&counter->measurements[counter->measurement_count];
 
 		measurement->value = counter->value;
 		counter->measurement_count++;
@@ -183,7 +183,7 @@ int static aggreg_analog(struct app_data_analog *analog)
 
 	if (analog->measurement_count < APP_DATA_ANALOG_MAX_MEASUREMENTS) {
 		struct app_data_analog_aggreg *measurement =
-		        &analog->measurements[analog->measurement_count];
+			&analog->measurements[analog->measurement_count];
 
 		aggreg_sample(analog->samples, analog->sample_count, measurement);
 
@@ -382,13 +382,13 @@ int app_sensor_hygro_aggreg(void)
 
 	if (g_app_data.hygro.measurement_count < APP_DATA_HYGRO_MAX_MEASUREMENTS) {
 		struct app_data_hygro_measurement *hygro_measurement =
-		        &g_app_data.hygro.measurements[g_app_data.hygro.measurement_count];
+			&g_app_data.hygro.measurements[g_app_data.hygro.measurement_count];
 
 		aggreg_sample(g_app_data.hygro.samples_temperature, g_app_data.hygro.sample_count,
-		              &hygro_measurement->temperature);
+			      &hygro_measurement->temperature);
 
 		aggreg_sample(g_app_data.hygro.samples_humidity, g_app_data.hygro.sample_count,
-		              &hygro_measurement->humidity);
+			      &hygro_measurement->humidity);
 
 		g_app_data.hygro.measurement_count++;
 

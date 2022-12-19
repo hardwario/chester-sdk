@@ -86,7 +86,7 @@ static int init(const struct device *dev)
 		.val2 = 250000,
 	};
 	ret = sensor_attr_set(m_dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_SAMPLING_FREQUENCY,
-	                      &val_freq);
+			      &val_freq);
 	if (ret) {
 		LOG_ERR("Call `sensor_attr_set` failed (SENSOR_ATTR_SAMPLING_FREQUENCY): %d", ret);
 		m_dev->state->initialized = false;

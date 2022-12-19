@@ -23,7 +23,7 @@ enum ctr_rfmux_antenna {
 typedef int (*ctr_rfmux_api_acquire)(const struct device *dev);
 typedef int (*ctr_rfmux_api_release)(const struct device *dev);
 typedef int (*ctr_rfmux_api_set_interface)(const struct device *dev,
-                                           enum ctr_rfmux_interface interface);
+					   enum ctr_rfmux_interface interface);
 typedef int (*ctr_rfmux_api_set_antenna)(const struct device *dev, enum ctr_rfmux_antenna antenna);
 
 struct ctr_rfmux_driver_api {
@@ -48,7 +48,7 @@ static inline int ctr_rfmux_release(const struct device *dev)
 }
 
 static inline int ctr_rfmux_set_interface(const struct device *dev,
-                                          enum ctr_rfmux_interface interface)
+					  enum ctr_rfmux_interface interface)
 {
 	const struct ctr_rfmux_driver_api *api = (const struct ctr_rfmux_driver_api *)dev->api;
 

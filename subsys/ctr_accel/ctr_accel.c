@@ -15,12 +15,12 @@
 
 LOG_MODULE_REGISTER(ctr_accel, CONFIG_CTR_ACCEL_LOG_LEVEL);
 
-#define GRAVITY 9.80665f
+#define GRAVITY		9.80665f
 #define ORIENTATION_THR 0.4f
 
 static const int m_vectors[7][3] = {
-	[0] = { 0, 0, 0 },  [1] = { -1, 0, 0 }, [2] = { 0, 0, 1 }, [3] = { 0, 1, 0 },
-	[4] = { 0, -1, 0 }, [5] = { 0, 0, -1 }, [6] = { 1, 0, 0 },
+	[0] = {0, 0, 0},  [1] = {-1, 0, 0}, [2] = {0, 0, 1}, [3] = {0, 1, 0},
+	[4] = {0, -1, 0}, [5] = {0, 0, -1}, [6] = {1, 0, 0},
 };
 
 static int m_orientation;

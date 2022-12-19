@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 		ret = ctr_gpio_write(CTR_GPIO_CHANNEL_##channel, 1);                               \
 		if (ret) {                                                                         \
 			LOG_ERR("Failed writing log. 1 to channel " STRINGIFY(channel) ": %d",     \
-			        ret);                                                              \
+									      ret);                \
 			k_oops();                                                                  \
 		}                                                                                  \
 		k_sleep(K_MSEC(500));                                                              \
@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 		ret = ctr_gpio_write(CTR_GPIO_CHANNEL_##channel, 0);                               \
 		if (ret) {                                                                         \
 			LOG_ERR("Failed writing log. 0 to channel " Z_STRINGIFY(channel) ": %d",   \
-			        ret);                                                              \
+										ret);              \
 			k_oops();                                                                  \
 		}                                                                                  \
 	} while (0)

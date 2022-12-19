@@ -362,7 +362,7 @@ static int configure_baudrate(const struct device *dev, const struct uart_config
 	LOG_DBG("Computed divisor: %u", divisor);
 
 	WRITE_BIT(get_data(dev)->reg_mcr, SC16IS7XX_MCR_CLOCK_DIVISOR_BIT,
-	          get_config(dev)->prescaler == 4 ? 1 : 0);
+		  get_config(dev)->prescaler == 4 ? 1 : 0);
 
 	ret = write_register(dev, SC16IS7XX_REG_MCR, get_data(dev)->reg_mcr);
 	if (ret) {
@@ -732,7 +732,7 @@ static int sc16is7xx_irq_update(const struct device *dev)
 }
 
 static void sc16is7xx_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
-                                       void *user_data)
+				       void *user_data)
 {
 	if (k_is_in_isr()) {
 		return;
@@ -824,7 +824,7 @@ static int trigger_reset(const struct device *dev)
 		}
 
 		ret = write_register(dev, SC16IS7XX_REG_IOCONTROL,
-		                     BIT(SC16IS7XX_IOCONTROL_SRESET_BIT));
+				     BIT(SC16IS7XX_IOCONTROL_SRESET_BIT));
 	}
 
 	k_sleep(RESET_PAUSE);
@@ -934,7 +934,7 @@ static void work_handler(struct k_work *work)
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&get_config(data->dev)->irq_spec,
-	                                      GPIO_INT_LEVEL_ACTIVE);
+					      GPIO_INT_LEVEL_ACTIVE);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 	}
@@ -1139,48 +1139,48 @@ static int sc16is7xx_pm_control(const struct device *dev, enum pm_device_action 
 #endif /* CONFIG_PM_DEVICE */
 
 static const struct uart_driver_api sc16is7xx_driver_api = {
-        .poll_in = sc16is7xx_poll_in,
-        .poll_out = sc16is7xx_poll_out,
-        .configure = sc16is7xx_configure,
-        .config_get = sc16is7xx_config_get,
+	.poll_in = sc16is7xx_poll_in,
+	.poll_out = sc16is7xx_poll_out,
+	.configure = sc16is7xx_configure,
+	.config_get = sc16is7xx_config_get,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-        .fifo_fill = sc16is7xx_fifo_fill,
-        .fifo_read = sc16is7xx_fifo_read,
-        .irq_tx_enable = sc16is7xx_irq_tx_enable,
-        .irq_tx_disable = sc16is7xx_irq_tx_disable,
-        .irq_tx_ready = sc16is7xx_irq_tx_ready,
-        .irq_rx_enable = sc16is7xx_irq_rx_enable,
-        .irq_rx_disable = sc16is7xx_irq_rx_disable,
-        .irq_rx_ready = sc16is7xx_irq_rx_ready,
-        .irq_is_pending = sc16is7xx_irq_is_pending,
-        .irq_update = sc16is7xx_irq_update,
-        .irq_callback_set = sc16is7xx_irq_callback_set,
+	.fifo_fill = sc16is7xx_fifo_fill,
+	.fifo_read = sc16is7xx_fifo_read,
+	.irq_tx_enable = sc16is7xx_irq_tx_enable,
+	.irq_tx_disable = sc16is7xx_irq_tx_disable,
+	.irq_tx_ready = sc16is7xx_irq_tx_ready,
+	.irq_rx_enable = sc16is7xx_irq_rx_enable,
+	.irq_rx_disable = sc16is7xx_irq_rx_disable,
+	.irq_rx_ready = sc16is7xx_irq_rx_ready,
+	.irq_is_pending = sc16is7xx_irq_is_pending,
+	.irq_update = sc16is7xx_irq_update,
+	.irq_callback_set = sc16is7xx_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 #define SC16IS7XX_INIT(n)                                                                          \
 	static const struct sc16is7xx_config inst_##n##_config = {                                 \
-	        .i2c_spec = I2C_DT_SPEC_INST_GET(n),                                               \
-	        .clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
-	        .prescaler = DT_INST_PROP(n, prescaler),                                           \
-	        .irq_spec = GPIO_DT_SPEC_INST_GET(n, irq_gpios),                                   \
-	        .reset_spec = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
-	        .reset_delay = DT_INST_PROP(n, reset_delay),                                       \
-	        .rts_control = DT_INST_PROP(n, rts_control),                                       \
-	        .rts_invert = DT_INST_PROP(n, rts_invert),                                         \
+		.i2c_spec = I2C_DT_SPEC_INST_GET(n),                                               \
+		.clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
+		.prescaler = DT_INST_PROP(n, prescaler),                                           \
+		.irq_spec = GPIO_DT_SPEC_INST_GET(n, irq_gpios),                                   \
+		.reset_spec = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
+		.reset_delay = DT_INST_PROP(n, reset_delay),                                       \
+		.rts_control = DT_INST_PROP(n, rts_control),                                       \
+		.rts_invert = DT_INST_PROP(n, rts_invert),                                         \
 	};                                                                                         \
 	static struct sc16is7xx_data inst_##n##_data = {                                           \
-	        .dev = DEVICE_DT_INST_GET(n),                                                      \
-	        .uart_config = {.baudrate = DT_INST_PROP_OR(n, current_speed, 115200),             \
-	                        .data_bits = UART_CFG_DATA_BITS_8,                                 \
-	                        .parity = UART_CFG_PARITY_NONE,                                    \
-	                        .stop_bits = UART_CFG_STOP_BITS_1,                                 \
-	                        .flow_ctrl = UART_CFG_FLOW_CTRL_NONE},                             \
+		.dev = DEVICE_DT_INST_GET(n),                                                      \
+		.uart_config = {.baudrate = DT_INST_PROP_OR(n, current_speed, 115200),             \
+				.data_bits = UART_CFG_DATA_BITS_8,                                 \
+				.parity = UART_CFG_PARITY_NONE,                                    \
+				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
+				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE},                             \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(n, sc16is7xx_pm_control);                                         \
 	DEVICE_DT_INST_DEFINE(n, sc16is7xx_init, PM_DEVICE_DT_INST_GET(n), &inst_##n##_data,       \
-	                      &inst_##n##_config, POST_KERNEL,                                     \
-	                      CONFIG_UART_SC16IS7XX_INIT_PRIORITY, &sc16is7xx_driver_api);
+			      &inst_##n##_config, POST_KERNEL,                                     \
+			      CONFIG_UART_SC16IS7XX_INIT_PRIORITY, &sc16is7xx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SC16IS7XX_INIT)

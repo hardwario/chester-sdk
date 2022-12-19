@@ -12,11 +12,11 @@ extern "C" {
 #endif
 
 typedef int (*ctr_batt_api_get_rest_voltage_mv)(const struct device *dev, int *rest_mv,
-                                                int delay_ms);
+						int delay_ms);
 typedef int (*ctr_batt_api_get_load_voltage_mv)(const struct device *dev, int *load_mv,
-                                                int delay_ms);
+						int delay_ms);
 typedef void (*ctr_batt_api_get_load_current_ma)(const struct device *dev, int *current_ma,
-                                                 int load_mv);
+						 int load_mv);
 typedef int (*ctr_batt_api_load)(const struct device *dev);
 typedef int (*ctr_batt_api_unload)(const struct device *dev);
 
@@ -43,7 +43,7 @@ static inline int ctr_batt_get_load_voltage_mv(const struct device *dev, int *lo
 }
 
 static inline void ctr_batt_get_load_current_ma(const struct device *dev, int *current_ma,
-                                                int load_mv)
+						int load_mv)
 {
 	const struct ctr_batt_driver_api *api = (const struct ctr_batt_driver_api *)dev->api;
 

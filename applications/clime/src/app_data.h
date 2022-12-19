@@ -12,10 +12,10 @@
 #include <zephyr/zephyr.h>
 
 #define APP_DATA_MAX_MEASUREMENTS 32
-#define APP_DATA_MAX_SAMPLES      32
+#define APP_DATA_MAX_SAMPLES	  32
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
-#define APP_DATA_W1_THERM_COUNT       10
+#define APP_DATA_W1_THERM_COUNT	      10
 #define APP_DATA_W1_THERM_MAX_SAMPLES 128
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 

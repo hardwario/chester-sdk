@@ -361,8 +361,8 @@ static int encode(zcbor_state_t *zs)
 
 				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
 					put_sample_mul(zs,
-					               &g_app_data.iaq.measurements[i].temperature,
-					               100.f);
+						       &g_app_data.iaq.measurements[i].temperature,
+						       100.f);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -382,7 +382,7 @@ static int encode(zcbor_state_t *zs)
 				zcbor_uint32_put(zs, g_app_config.interval_aggregate);
 				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
 					put_sample_mul(zs, &g_app_data.iaq.measurements[i].humidity,
-					               100.f);
+						       100.f);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -483,7 +483,7 @@ static int encode(zcbor_state_t *zs)
 
 				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
 					zcbor_int32_put(
-					        zs, g_app_data.iaq.measurements[i].motion_count);
+						zs, g_app_data.iaq.measurements[i].motion_count);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -504,7 +504,7 @@ static int encode(zcbor_state_t *zs)
 
 				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
 					zcbor_int32_put(zs,
-					                g_app_data.iaq.measurements[i].press_count);
+							g_app_data.iaq.measurements[i].press_count);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -534,8 +534,8 @@ static int encode(zcbor_state_t *zs)
 
 				for (int i = 0; i < g_app_data.hygro.measurement_count; i++) {
 					put_sample_mul(
-					        zs, &g_app_data.hygro.measurements[i].temperature,
-					        100.f);
+						zs, &g_app_data.hygro.measurements[i].temperature,
+						100.f);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -556,8 +556,8 @@ static int encode(zcbor_state_t *zs)
 
 				for (int i = 0; i < g_app_data.hygro.measurement_count; i++) {
 					put_sample_mul(zs,
-					               &g_app_data.hygro.measurements[i].humidity,
-					               100.f);
+						       &g_app_data.hygro.measurements[i].humidity,
+						       100.f);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -594,7 +594,7 @@ static int encode(zcbor_state_t *zs)
 
 				for (int j = 0; j < sensor->measurement_count; j++) {
 					put_sample_mul(zs, &sensor->measurements[j].temperature,
-					               100.f);
+						       100.f);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);

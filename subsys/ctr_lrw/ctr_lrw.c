@@ -2,8 +2,8 @@
 
 #include "ctr_lrw_talk.h"
 
-#include <chester/ctr_lrw.h>
 #include <chester/ctr_config.h>
+#include <chester/ctr_lrw.h>
 #include <chester/ctr_util.h>
 #include <chester/drivers/ctr_lrw_if.h>
 #include <chester/drivers/ctr_rfmux.h>
@@ -18,8 +18,8 @@
 /* Standard includes */
 #include <ctype.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -27,19 +27,19 @@ LOG_MODULE_REGISTER(ctr_lrw, CONFIG_CTR_LRW_LOG_LEVEL);
 
 #define SETTINGS_PFX "lrw"
 
-#define BOOT_RETRY_COUNT 3
-#define BOOT_RETRY_DELAY K_SECONDS(10)
-#define SETUP_RETRY_COUNT 3
-#define SETUP_RETRY_DELAY K_SECONDS(10)
-#define JOIN_TIMEOUT K_SECONDS(120)
-#define JOIN_RETRY_COUNT 3
-#define JOIN_RETRY_DELAY K_SECONDS(30)
-#define SEND_TIMEOUT K_SECONDS(120)
-#define SEND_RETRY_COUNT 3
-#define SEND_RETRY_DELAY K_SECONDS(30)
+#define BOOT_RETRY_COUNT     3
+#define BOOT_RETRY_DELAY     K_SECONDS(10)
+#define SETUP_RETRY_COUNT    3
+#define SETUP_RETRY_DELAY    K_SECONDS(10)
+#define JOIN_TIMEOUT	     K_SECONDS(120)
+#define JOIN_RETRY_COUNT     3
+#define JOIN_RETRY_DELAY     K_SECONDS(30)
+#define SEND_TIMEOUT	     K_SECONDS(120)
+#define SEND_RETRY_COUNT     3
+#define SEND_RETRY_DELAY     K_SECONDS(30)
 #define REQ_INTRA_DELAY_MSEC 8000
 
-#define CMD_MSGQ_MAX_ITEMS 16
+#define CMD_MSGQ_MAX_ITEMS  16
 #define SEND_MSGQ_MAX_ITEMS 16
 
 enum cmd_msgq_req {
@@ -675,9 +675,9 @@ static int start(void)
 			return ret;
 		}
 
-		ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
-		                                               CTR_RFMUX_ANTENNA_EXT :
-		                                               CTR_RFMUX_ANTENNA_INT);
+		ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT
+							       ? CTR_RFMUX_ANTENNA_EXT
+							       : CTR_RFMUX_ANTENNA_INT);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
@@ -715,7 +715,7 @@ static int process_req_start(const struct cmd_msgq_item *item)
 {
 	int ret;
 
-	union ctr_lrw_event_data data = { 0 };
+	union ctr_lrw_event_data data = {0};
 
 	ret = start();
 
@@ -746,7 +746,7 @@ static int process_req_join(const struct cmd_msgq_item *item)
 {
 	int ret;
 
-	union ctr_lrw_event_data data = { 0 };
+	union ctr_lrw_event_data data = {0};
 
 	ret = join(JOIN_RETRY_COUNT, JOIN_RETRY_DELAY);
 
@@ -775,7 +775,7 @@ static int process_req_send(const struct send_msgq_item *item)
 {
 	int ret;
 
-	union ctr_lrw_event_data data = { 0 };
+	union ctr_lrw_event_data data = {0};
 
 	if (item->data.ttl != 0) {
 		if (k_uptime_get() > item->data.ttl) {
@@ -935,9 +935,9 @@ static void dispatcher_thread(void)
 	for (;;) {
 		struct k_poll_event events[] = {
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-			                         K_POLL_MODE_NOTIFY_ONLY, &m_cmd_msgq),
+						 K_POLL_MODE_NOTIFY_ONLY, &m_cmd_msgq),
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-			                         K_POLL_MODE_NOTIFY_ONLY, &m_send_msgq),
+						 K_POLL_MODE_NOTIFY_ONLY, &m_send_msgq),
 		};
 
 		ret = k_poll(events, m_state != STATE_READY ? 1 : 2, K_FOREVER);
@@ -961,7 +961,7 @@ static void dispatcher_thread(void)
 }
 
 K_THREAD_DEFINE(ctr_lrw, CONFIG_CTR_LRW_THREAD_STACK_SIZE, dispatcher_thread, NULL, NULL, NULL,
-                CONFIG_CTR_LRW_THREAD_PRIORITY, 0, 0);
+		CONFIG_CTR_LRW_THREAD_PRIORITY, 0, 0);
 
 int ctr_lrw_init(ctr_lrw_event_cb callback, void *param)
 {
@@ -1056,11 +1056,11 @@ int ctr_lrw_send(const struct ctr_lrw_send_opts *opts, const void *buf, size_t l
 
 	struct send_msgq_item item = {
 		.corr_id = (int)atomic_inc(&m_corr_id),
-		.data = { .ttl = opts->ttl,
-		          .confirmed = opts->confirmed,
-		          .port = opts->port,
-		          .buf = p,
-		          .len = len },
+		.data = {.ttl = opts->ttl,
+			 .confirmed = opts->confirmed,
+			 .port = opts->port,
+			 .buf = p,
+			 .len = len},
 	};
 
 	LOG_INF("Enqueing SEND command (correlation id: %d)", item.corr_id);
@@ -1164,7 +1164,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 static void print_test(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config test %s",
-	            m_config_interim.test ? "true" : "false");
+		    m_config_interim.test ? "true" : "false");
 }
 
 static void print_antenna(const struct shell *shell)
@@ -1267,7 +1267,7 @@ static void print_datarate(const struct shell *shell)
 static void print_dutycycle(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config dutycycle %s",
-	            m_config_interim.dutycycle ? "true" : "false");
+		    m_config_interim.dutycycle ? "true" : "false");
 }
 
 static void print_devaddr(const struct shell *shell)
@@ -1275,7 +1275,7 @@ static void print_devaddr(const struct shell *shell)
 	char buf[sizeof(m_config_interim.devaddr) * 2 + 1];
 
 	if (ctr_buf2hex(m_config_interim.devaddr, sizeof(m_config_interim.devaddr), buf,
-	                sizeof(buf), false) >= 0) {
+			sizeof(buf), false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config devaddr %s", buf);
 	}
 }
@@ -1285,7 +1285,7 @@ static void print_deveui(const struct shell *shell)
 	char buf[sizeof(m_config_interim.deveui) * 2 + 1];
 
 	if (ctr_buf2hex(m_config_interim.deveui, sizeof(m_config_interim.deveui), buf, sizeof(buf),
-	                false) >= 0) {
+			false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config deveui %s", buf);
 	}
 }
@@ -1295,7 +1295,7 @@ static void print_joineui(const struct shell *shell)
 	char buf[sizeof(m_config_interim.joineui) * 2 + 1];
 
 	if (ctr_buf2hex(m_config_interim.joineui, sizeof(m_config_interim.joineui), buf,
-	                sizeof(buf), false) >= 0) {
+			sizeof(buf), false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config joineui %s", buf);
 	}
 }
@@ -1305,7 +1305,7 @@ static void print_appkey(const struct shell *shell)
 	char buf[sizeof(m_config_interim.appkey) * 2 + 1];
 
 	if (ctr_buf2hex(m_config_interim.appkey, sizeof(m_config_interim.appkey), buf, sizeof(buf),
-	                false) >= 0) {
+			false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config appkey %s", buf);
 	}
 }
@@ -1315,7 +1315,7 @@ static void print_nwkskey(const struct shell *shell)
 	char buf[sizeof(m_config_interim.nwkskey) * 2 + 1];
 
 	if (ctr_buf2hex(m_config_interim.nwkskey, sizeof(m_config_interim.nwkskey), buf,
-	                sizeof(buf), false) >= 0) {
+			sizeof(buf), false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config nwkskey %s", buf);
 	}
 }
@@ -1325,7 +1325,7 @@ static void print_appskey(const struct shell *shell)
 	char buf[sizeof(m_config_interim.appskey) * 2 + 1];
 
 	if (ctr_buf2hex(m_config_interim.appskey, sizeof(m_config_interim.appskey), buf,
-	                sizeof(buf), false) >= 0) {
+			sizeof(buf), false) >= 0) {
 		shell_print(shell, SETTINGS_PFX " config appskey %s", buf);
 	}
 }
@@ -1605,7 +1605,7 @@ static int cmd_config_devaddr(const struct shell *shell, size_t argc, char **arg
 
 	if (argc == 2) {
 		int ret = ctr_hex2buf(argv[1], m_config_interim.devaddr,
-		                      sizeof(m_config_interim.devaddr), true);
+				      sizeof(m_config_interim.devaddr), true);
 
 		if (ret == sizeof(m_config_interim.devaddr)) {
 			return 0;
@@ -1625,7 +1625,7 @@ static int cmd_config_deveui(const struct shell *shell, size_t argc, char **argv
 
 	if (argc == 2) {
 		int ret = ctr_hex2buf(argv[1], m_config_interim.deveui,
-		                      sizeof(m_config_interim.deveui), true);
+				      sizeof(m_config_interim.deveui), true);
 
 		if (ret == sizeof(m_config_interim.deveui)) {
 			return 0;
@@ -1645,7 +1645,7 @@ static int cmd_config_joineui(const struct shell *shell, size_t argc, char **arg
 
 	if (argc == 2) {
 		int ret = ctr_hex2buf(argv[1], m_config_interim.joineui,
-		                      sizeof(m_config_interim.joineui), true);
+				      sizeof(m_config_interim.joineui), true);
 
 		if (ret >= 0) {
 			return 0;
@@ -1665,7 +1665,7 @@ static int cmd_config_appkey(const struct shell *shell, size_t argc, char **argv
 
 	if (argc == 2) {
 		int ret = ctr_hex2buf(argv[1], m_config_interim.appkey,
-		                      sizeof(m_config_interim.appkey), true);
+				      sizeof(m_config_interim.appkey), true);
 
 		if (ret >= 0) {
 			return 0;
@@ -1685,7 +1685,7 @@ static int cmd_config_nwkskey(const struct shell *shell, size_t argc, char **arg
 
 	if (argc == 2) {
 		int ret = ctr_hex2buf(argv[1], m_config_interim.nwkskey,
-		                      sizeof(m_config_interim.nwkskey), true);
+				      sizeof(m_config_interim.nwkskey), true);
 
 		if (ret >= 0) {
 			return 0;
@@ -1705,7 +1705,7 @@ static int cmd_config_appskey(const struct shell *shell, size_t argc, char **arg
 
 	if (argc == 2) {
 		int ret = ctr_hex2buf(argv[1], m_config_interim.appskey,
-		                      sizeof(m_config_interim.appskey), true);
+				      sizeof(m_config_interim.appskey), true);
 
 		if (ret >= 0) {
 			return 0;
@@ -1860,58 +1860,58 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-        sub_lrw_config,
-        SHELL_CMD_ARG(show, NULL, "List current configuration.", cmd_config_show, 1, 0),
-        SHELL_CMD_ARG(test, NULL, "Get/Set LTE test mode.", cmd_config_test, 1, 1),
-        SHELL_CMD_ARG(antenna, NULL, "Get/Set LoRaWAN antenna (format: <int|ext>).",
-                      cmd_config_antenna, 1, 1),
-        SHELL_CMD_ARG(band, NULL,
-                      "Get/Set radio band"
-                      " (format: <as923|au915|eu868|kr920|in865|us915>).",
-                      cmd_config_band, 1, 1),
-        SHELL_CMD_ARG(chmask, NULL, "Get/Set channel mask (format: <N hexadecimal digits>). ",
-                      cmd_config_chmask, 1, 1),
-        SHELL_CMD_ARG(class, NULL, "Get/Set device class (format: <a|c>).", cmd_config_class, 1, 1),
-        SHELL_CMD_ARG(mode, NULL, "Get/Set operation mode (format: <abp|otaa>).", cmd_config_mode,
-                      1, 1),
-        SHELL_CMD_ARG(nwk, NULL, "Get/Set network type (format: <private|public>).", cmd_config_nwk,
-                      1, 1),
-        SHELL_CMD_ARG(adr, NULL, "Get/Set adaptive data rate (format: <true|false>).",
-                      cmd_config_adr, 1, 1),
-        SHELL_CMD_ARG(datarate, NULL, "Get/Set data rate (format: <number 1-15>).",
-                      cmd_config_datarate, 1, 1),
-        SHELL_CMD_ARG(dutycycle, NULL, "Get/Set duty cycle (format: <true|false>).",
-                      cmd_config_dutycycle, 1, 1),
-        SHELL_CMD_ARG(devaddr, NULL, "Get/Set DevAddr (format: <8 hexadecimal digits>).",
-                      cmd_config_devaddr, 1, 1),
-        SHELL_CMD_ARG(deveui, NULL, "Get/Set DevEUI (format: <16 hexadecimal digits>).",
-                      cmd_config_deveui, 1, 1),
-        SHELL_CMD_ARG(joineui, NULL, "Get/Set JoinEUI (format: <16 hexadecimal digits>).",
-                      cmd_config_joineui, 1, 1),
-        SHELL_CMD_ARG(appkey, NULL, "Get/Set AppKey (format: <32 hexadecimal digits>).",
-                      cmd_config_appkey, 1, 1),
-        SHELL_CMD_ARG(nwkskey, NULL, "Get/Set NwkSKey (format: <32 hexadecimal digits>).",
-                      cmd_config_nwkskey, 1, 1),
-        SHELL_CMD_ARG(appskey, NULL, "Get/Set AppSKey (format: <32 hexadecimal digits>).",
-                      cmd_config_appskey, 1, 1),
-        SHELL_SUBCMD_SET_END);
+	sub_lrw_config,
+	SHELL_CMD_ARG(show, NULL, "List current configuration.", cmd_config_show, 1, 0),
+	SHELL_CMD_ARG(test, NULL, "Get/Set LTE test mode.", cmd_config_test, 1, 1),
+	SHELL_CMD_ARG(antenna, NULL, "Get/Set LoRaWAN antenna (format: <int|ext>).",
+		      cmd_config_antenna, 1, 1),
+	SHELL_CMD_ARG(band, NULL,
+		      "Get/Set radio band"
+		      " (format: <as923|au915|eu868|kr920|in865|us915>).",
+		      cmd_config_band, 1, 1),
+	SHELL_CMD_ARG(chmask, NULL, "Get/Set channel mask (format: <N hexadecimal digits>). ",
+		      cmd_config_chmask, 1, 1),
+	SHELL_CMD_ARG(class, NULL, "Get/Set device class (format: <a|c>).", cmd_config_class, 1, 1),
+	SHELL_CMD_ARG(mode, NULL, "Get/Set operation mode (format: <abp|otaa>).", cmd_config_mode,
+		      1, 1),
+	SHELL_CMD_ARG(nwk, NULL, "Get/Set network type (format: <private|public>).", cmd_config_nwk,
+		      1, 1),
+	SHELL_CMD_ARG(adr, NULL, "Get/Set adaptive data rate (format: <true|false>).",
+		      cmd_config_adr, 1, 1),
+	SHELL_CMD_ARG(datarate, NULL, "Get/Set data rate (format: <number 1-15>).",
+		      cmd_config_datarate, 1, 1),
+	SHELL_CMD_ARG(dutycycle, NULL, "Get/Set duty cycle (format: <true|false>).",
+		      cmd_config_dutycycle, 1, 1),
+	SHELL_CMD_ARG(devaddr, NULL, "Get/Set DevAddr (format: <8 hexadecimal digits>).",
+		      cmd_config_devaddr, 1, 1),
+	SHELL_CMD_ARG(deveui, NULL, "Get/Set DevEUI (format: <16 hexadecimal digits>).",
+		      cmd_config_deveui, 1, 1),
+	SHELL_CMD_ARG(joineui, NULL, "Get/Set JoinEUI (format: <16 hexadecimal digits>).",
+		      cmd_config_joineui, 1, 1),
+	SHELL_CMD_ARG(appkey, NULL, "Get/Set AppKey (format: <32 hexadecimal digits>).",
+		      cmd_config_appkey, 1, 1),
+	SHELL_CMD_ARG(nwkskey, NULL, "Get/Set NwkSKey (format: <32 hexadecimal digits>).",
+		      cmd_config_nwkskey, 1, 1),
+	SHELL_CMD_ARG(appskey, NULL, "Get/Set AppSKey (format: <32 hexadecimal digits>).",
+		      cmd_config_appskey, 1, 1),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-        sub_lrw_test,
-        SHELL_CMD_ARG(uart, NULL, "Enable/Disable UART interface (format: <enable|disable>).",
-                      cmd_test_uart, 2, 0),
-        SHELL_CMD_ARG(reset, NULL, "Reset modem.", cmd_test_reset, 1, 0),
-        SHELL_CMD_ARG(cmd, NULL, "Send command to modem. (format: <command>)", cmd_test_cmd, 2, 0),
-        SHELL_SUBCMD_SET_END);
+	sub_lrw_test,
+	SHELL_CMD_ARG(uart, NULL, "Enable/Disable UART interface (format: <enable|disable>).",
+		      cmd_test_uart, 2, 0),
+	SHELL_CMD_ARG(reset, NULL, "Reset modem.", cmd_test_reset, 1, 0),
+	SHELL_CMD_ARG(cmd, NULL, "Send command to modem. (format: <command>)", cmd_test_cmd, 2, 0),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_lrw,
-                               SHELL_CMD_ARG(config, &sub_lrw_config, "Configuration commands.",
-                                             print_help, 1, 0),
-                               SHELL_CMD_ARG(start, NULL, "Start interface.", cmd_start, 1, 0),
-                               SHELL_CMD_ARG(join, NULL, "Join network.", cmd_join, 1, 0),
-                               SHELL_CMD_ARG(test, &sub_lrw_test, "Test commands.", print_help, 1,
-                                             0),
-                               SHELL_SUBCMD_SET_END);
+			       SHELL_CMD_ARG(config, &sub_lrw_config, "Configuration commands.",
+					     print_help, 1, 0),
+			       SHELL_CMD_ARG(start, NULL, "Start interface.", cmd_start, 1, 0),
+			       SHELL_CMD_ARG(join, NULL, "Join network.", cmd_join, 1, 0),
+			       SHELL_CMD_ARG(test, &sub_lrw_test, "Test commands.", print_help, 1,
+					     0),
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(lrw, &sub_lrw, "LoRaWAN commands.", print_help);
 

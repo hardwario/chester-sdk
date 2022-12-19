@@ -26,11 +26,12 @@ static void init_modbus(void)
 	const struct modbus_iface_param client_param = {
 		.mode = MODBUS_MODE_RTU,
 		.rx_timeout = 500000,
-		.serial = {
-			.baud = 9600,
-			.parity = UART_CFG_PARITY_NONE,
-			.stop_bits_client = UART_CFG_STOP_BITS_1,
-		},
+		.serial =
+			{
+				.baud = 9600,
+				.parity = UART_CFG_PARITY_NONE,
+				.stop_bits_client = UART_CFG_STOP_BITS_1,
+			},
 	};
 
 	ret = modbus_init_client(iface, client_param);

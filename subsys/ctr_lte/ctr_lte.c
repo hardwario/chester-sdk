@@ -1,8 +1,8 @@
 #include "ctr_lte_parse.h"
 #include "ctr_lte_talk.h"
 
-#include <chester/ctr_lte.h>
 #include <chester/ctr_config.h>
+#include <chester/ctr_lte.h>
 #include <chester/ctr_rtc.h>
 #include <chester/drivers/ctr_lte_if.h>
 #include <chester/drivers/ctr_rfmux.h>
@@ -25,26 +25,26 @@
 #define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)                              \
 	static char __noinit __aligned(q_align) _k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)]; \
 	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =                                           \
-	        Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name, q_msg_size, q_max_msgs)
+		Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name, q_msg_size, q_max_msgs)
 
 LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 
 #define SETTINGS_PFX "lte"
 
-#define XSLEEP_PAUSE K_MSEC(100)
-#define BOOT_TIMEOUT K_SECONDS(5)
-#define BOOT_RETRY_COUNT 3
-#define BOOT_RETRY_DELAY K_SECONDS(10)
-#define SETUP_RETRY_COUNT 1
-#define SETUP_RETRY_DELAY K_SECONDS(10)
+#define XSLEEP_PAUSE	   K_MSEC(100)
+#define BOOT_TIMEOUT	   K_SECONDS(5)
+#define BOOT_RETRY_COUNT   3
+#define BOOT_RETRY_DELAY   K_SECONDS(10)
+#define SETUP_RETRY_COUNT  1
+#define SETUP_RETRY_DELAY  K_SECONDS(10)
 #define ATTACH_RETRY_COUNT 3
 #define ATTACH_RETRY_DELAY K_SECONDS(60)
-#define EVAL_RETRY_COUNT 3
-#define EVAL_RETRY_DELAY K_SECONDS(3)
-#define SEND_RETRY_COUNT 3
-#define SEND_RETRY_DELAY K_SECONDS(10)
+#define EVAL_RETRY_COUNT   3
+#define EVAL_RETRY_DELAY   K_SECONDS(3)
+#define SEND_RETRY_COUNT   3
+#define SEND_RETRY_DELAY   K_SECONDS(10)
 
-#define CMD_MSGQ_MAX_ITEMS 16
+#define CMD_MSGQ_MAX_ITEMS  16
 #define SEND_MSGQ_MAX_ITEMS 16
 
 enum cmd_msgq_req {
@@ -119,7 +119,7 @@ static struct config m_config_interim = {
 	.plmnid = "23003",
 	.apn = "hardwario.com",
 	.auth = AUTH_NONE,
-	.addr = { 192, 168, 168, 1 },
+	.addr = {192, 168, 168, 1},
 	.port = 10000,
 };
 
@@ -323,7 +323,7 @@ static int setup_once(void)
 	}
 
 	ret = ctr_lte_talk_at_xsystemmode(m_config.lte_m_mode ? 1 : 0, m_config.nb_iot_mode ? 1 : 0,
-	                                  0, 0);
+					  0, 0);
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lte_talk_at_xsystemmode` failed: %d", ret);
@@ -395,7 +395,7 @@ static int setup_once(void)
 		return ret;
 	}
 
-	ret = ctr_lte_talk_at_cpsms((int[]){ 1 }, "00111000", "00000000");
+	ret = ctr_lte_talk_at_cpsms((int[]){1}, "00111000", "00000000");
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lte_talk_at_cpsms` failed: %d", ret);
@@ -511,44 +511,44 @@ static int attach_once(void)
 	/* Enabled bands: B2, B4, B5, B8, B12, B20, B28 */
 #if 1
 	const char *bands =
-	        /* B88 - B81 */
-	        "00000000"
-	        /* B80 - B71 */
-	        "0000000000"
-	        /* B70 - B61 */
-	        "0000000000"
-	        /* B60 - B51 */
-	        "0000000000"
-	        /* B50 - B41 */
-	        "0000000000"
-	        /* B40 - B31 */
-	        "0000000000"
-	        /* B30 - B21 */
-	        "0010000000"
-	        /* B20 - B11 */
-	        "1000000010"
-	        /* B10 -  B1 */
-	        "0010011010";
+		/* B88 - B81 */
+		"00000000"
+		/* B80 - B71 */
+		"0000000000"
+		/* B70 - B61 */
+		"0000000000"
+		/* B60 - B51 */
+		"0000000000"
+		/* B50 - B41 */
+		"0000000000"
+		/* B40 - B31 */
+		"0000000000"
+		/* B30 - B21 */
+		"0010000000"
+		/* B20 - B11 */
+		"1000000010"
+		/* B10 -  B1 */
+		"0010011010";
 #else
 	const char *bands =
-	        /* B88 - B81 */
-	        "111111"
-	        /* B80 - B71 */
-	        "1111111111"
-	        /* B70 - B61 */
-	        "1111111111"
-	        /* B60 - B51 */
-	        "1111111111"
-	        /* B50 - B41 */
-	        "1111111111"
-	        /* B40 - B31 */
-	        "1111111111"
-	        /* B30 - B21 */
-	        "1111111111"
-	        /* B20 - B11 */
-	        "1111111111"
-	        /* B10 - B01 */
-	        "1111111111";
+		/* B88 - B81 */
+		"111111"
+		/* B80 - B71 */
+		"1111111111"
+		/* B70 - B61 */
+		"1111111111"
+		/* B60 - B51 */
+		"1111111111"
+		/* B50 - B41 */
+		"1111111111"
+		/* B40 - B31 */
+		"1111111111"
+		/* B30 - B21 */
+		"1111111111"
+		/* B20 - B11 */
+		"1111111111"
+		/* B10 - B01 */
+		"1111111111";
 #endif
 
 	ret = ctr_lte_talk_at_xbandlock(1, bands);
@@ -559,7 +559,7 @@ static int attach_once(void)
 	}
 
 	if (!m_config.autoconn) {
-		ret = ctr_lte_talk_at_cops(1, (int[]){ 2 }, m_config.plmnid);
+		ret = ctr_lte_talk_at_cops(1, (int[]){2}, m_config.plmnid);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_at_cops` failed: %d", ret);
@@ -585,7 +585,7 @@ static int attach_once(void)
 			return ret;
 		}
 	} else {
-		ret = ctr_lte_talk_at_cgauth(1, (int[]){ 0 }, NULL, NULL);
+		ret = ctr_lte_talk_at_cgauth(1, (int[]){0}, NULL, NULL);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_at_cgauth` failed: %d", ret);
@@ -602,7 +602,7 @@ static int attach_once(void)
 
 	struct k_poll_event events_1[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-		                         &m_sim_card_sig),
+					 &m_sim_card_sig),
 	};
 
 	ret = k_poll(events_1, ARRAY_SIZE(events_1), K_SECONDS(10));
@@ -649,7 +649,7 @@ static int attach_once(void)
 
 	struct k_poll_event events_2[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-		                         &m_attach_sig),
+					 &m_attach_sig),
 	};
 
 	ret = k_poll(events_2, ARRAY_SIZE(events_2), K_MINUTES(5));
@@ -662,7 +662,7 @@ static int attach_once(void)
 	if (m_config.clksync) {
 		struct k_poll_event events_3[] = {
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-			                         &m_time_sig),
+						 &m_time_sig),
 		};
 
 		ret = k_poll(events_3, ARRAY_SIZE(events_3), K_MINUTES(10));
@@ -690,7 +690,7 @@ static int attach_once(void)
 		struct ctr_rtc_tm tm;
 
 		ret = ctr_lte_parse_cclk(cclk, &tm.year, &tm.month, &tm.day, &tm.hours, &tm.minutes,
-		                         &tm.seconds);
+					 &tm.seconds);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_parse_cclk` failed: %d", ret);
@@ -717,7 +717,7 @@ static int attach_once(void)
 
 	char xsocket[32];
 
-	ret = ctr_lte_talk_at_xsocket(1, (int[]){ 2 }, (int[]){ 0 }, xsocket, sizeof(xsocket));
+	ret = ctr_lte_talk_at_xsocket(1, (int[]){2}, (int[]){0}, xsocket, sizeof(xsocket));
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lte_talk_at_xsocket` failed: %d", ret);
@@ -922,10 +922,10 @@ static int send_once(const struct send_msgq_data *data)
 
 	if (data->addr[0] == 0 && data->addr[1] == 0 && data->addr[2] == 0 && data->addr[3] == 0) {
 		snprintf(addr, sizeof(addr), "%u.%u.%u.%u", m_config.addr[0], m_config.addr[1],
-		         m_config.addr[2], m_config.addr[3]);
+			 m_config.addr[2], m_config.addr[3]);
 	} else {
 		snprintf(addr, sizeof(addr), "%u.%u.%u.%u", data->addr[0], data->addr[1],
-		         data->addr[2], data->addr[3]);
+			 data->addr[2], data->addr[3]);
 	}
 
 	int port;
@@ -1033,9 +1033,9 @@ static int start(void)
 			return ret;
 		}
 
-		ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT ?
-		                                               CTR_RFMUX_ANTENNA_EXT :
-		                                               CTR_RFMUX_ANTENNA_INT);
+		ret = ctr_rfmux_set_antenna(dev_rfmux, m_config.antenna == ANTENNA_EXT
+							       ? CTR_RFMUX_ANTENNA_EXT
+							       : CTR_RFMUX_ANTENNA_INT);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
@@ -1066,7 +1066,7 @@ static int process_req_start(const struct cmd_msgq_item *item)
 {
 	int ret;
 
-	union ctr_lte_event_data data = { 0 };
+	union ctr_lte_event_data data = {0};
 
 	ret = start();
 
@@ -1097,7 +1097,7 @@ static int process_req_attach(const struct cmd_msgq_item *item)
 {
 	int ret;
 
-	union ctr_lte_event_data data = { 0 };
+	union ctr_lte_event_data data = {0};
 
 	ret = attach(ATTACH_RETRY_COUNT, ATTACH_RETRY_DELAY);
 
@@ -1128,7 +1128,7 @@ static int process_req_eval(const struct cmd_msgq_item *item)
 {
 	int ret;
 
-	union ctr_lte_event_data data = { 0 };
+	union ctr_lte_event_data data = {0};
 
 	ret = eval(EVAL_RETRY_COUNT, EVAL_RETRY_DELAY, &data.eval_ok.eval);
 
@@ -1247,7 +1247,7 @@ static int process_req_send(const struct send_msgq_item *item)
 {
 	int ret;
 
-	union ctr_lte_event_data data = { 0 };
+	union ctr_lte_event_data data = {0};
 
 	if (item->data.ttl != 0) {
 		if (k_uptime_get() > item->data.ttl) {
@@ -1324,9 +1324,9 @@ static void dispatcher_thread(void)
 	for (;;) {
 		struct k_poll_event events[] = {
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-			                         K_POLL_MODE_NOTIFY_ONLY, &m_cmd_msgq),
+						 K_POLL_MODE_NOTIFY_ONLY, &m_cmd_msgq),
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-			                         K_POLL_MODE_NOTIFY_ONLY, &m_send_msgq),
+						 K_POLL_MODE_NOTIFY_ONLY, &m_send_msgq),
 		};
 
 		ret = k_poll(events, m_state != STATE_READY ? 1 : 2, K_FOREVER);
@@ -1350,7 +1350,7 @@ static void dispatcher_thread(void)
 }
 
 K_THREAD_DEFINE(ctr_lte, CONFIG_CTR_LTE_THREAD_STACK_SIZE, dispatcher_thread, NULL, NULL, NULL,
-                CONFIG_CTR_LTE_THREAD_PRIORITY, 0, 0);
+		CONFIG_CTR_LTE_THREAD_PRIORITY, 0, 0);
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
@@ -1377,8 +1377,10 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 	SETTINGS_SET("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
-	SETTINGS_SET("nb-iot-mode", &m_config_interim.nb_iot_mode, sizeof(m_config_interim.nb_iot_mode));
-	SETTINGS_SET("lte-m-mode", &m_config_interim.lte_m_mode, sizeof(m_config_interim.lte_m_mode));
+	SETTINGS_SET("nb-iot-mode", &m_config_interim.nb_iot_mode,
+		     sizeof(m_config_interim.nb_iot_mode));
+	SETTINGS_SET("lte-m-mode", &m_config_interim.lte_m_mode,
+		     sizeof(m_config_interim.lte_m_mode));
 	SETTINGS_SET("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
 	SETTINGS_SET("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	SETTINGS_SET("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
@@ -1410,8 +1412,10 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 	EXPORT_FUNC("test", &m_config_interim.test, sizeof(m_config_interim.test));
 	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
-	EXPORT_FUNC("nb-iot-mode", &m_config_interim.nb_iot_mode, sizeof(m_config_interim.nb_iot_mode));
-	EXPORT_FUNC("lte-m-mode", &m_config_interim.lte_m_mode, sizeof(m_config_interim.lte_m_mode));
+	EXPORT_FUNC("nb-iot-mode", &m_config_interim.nb_iot_mode,
+		    sizeof(m_config_interim.nb_iot_mode));
+	EXPORT_FUNC("lte-m-mode", &m_config_interim.lte_m_mode,
+		    sizeof(m_config_interim.lte_m_mode));
 	EXPORT_FUNC("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
 	EXPORT_FUNC("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
 	EXPORT_FUNC("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
@@ -1430,7 +1434,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 static void print_test(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config test %s",
-	            m_config_interim.test ? "true" : "false");
+		    m_config_interim.test ? "true" : "false");
 }
 
 static void print_antenna(const struct shell *shell)
@@ -1450,19 +1454,19 @@ static void print_antenna(const struct shell *shell)
 static void print_nb_iot_mode(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config nb-iot-mode %s",
-	            m_config_interim.nb_iot_mode ? "true" : "false");
+		    m_config_interim.nb_iot_mode ? "true" : "false");
 }
 
 static void print_lte_m_mode(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config lte-m-mode %s",
-	            m_config_interim.lte_m_mode ? "true" : "false");
+		    m_config_interim.lte_m_mode ? "true" : "false");
 }
 
 static void print_autoconn(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config autoconn %s",
-	            m_config_interim.autoconn ? "true" : "false");
+		    m_config_interim.autoconn ? "true" : "false");
 }
 
 static void print_plmnid(const struct shell *shell)
@@ -1473,7 +1477,7 @@ static void print_plmnid(const struct shell *shell)
 static void print_clksync(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config clksync %s",
-	            m_config_interim.clksync ? "true" : "false");
+		    m_config_interim.clksync ? "true" : "false");
 }
 
 static void print_apn(const struct shell *shell)
@@ -1511,7 +1515,7 @@ static void print_password(const struct shell *shell)
 static void print_addr(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config addr %u.%u.%u.%u", m_config_interim.addr[0],
-	            m_config_interim.addr[1], m_config_interim.addr[2], m_config_interim.addr[3]);
+		    m_config_interim.addr[1], m_config_interim.addr[2], m_config_interim.addr[3]);
 }
 
 static void print_port(const struct shell *shell)
@@ -2064,10 +2068,13 @@ int ctr_lte_send(const struct ctr_lte_send_opts *opts, const void *buf, size_t l
 
 	struct send_msgq_item item = {
 		.corr_id = (int)atomic_inc(&m_corr_id),
-		.data = { .ttl = opts->ttl,
-		          .port = opts->port,
-		          .buf = p,
-		          .len = len, },
+		.data =
+			{
+				.ttl = opts->ttl,
+				.port = opts->port,
+				.buf = p,
+				.len = len,
+			},
 	};
 
 	memcpy(item.data.addr, opts->addr, sizeof(item.data.addr));

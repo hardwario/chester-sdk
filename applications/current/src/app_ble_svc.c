@@ -16,13 +16,13 @@
 LOG_MODULE_REGISTER(app_ble_svc, LOG_LEVEL_DBG);
 
 static struct bt_uuid_128 m_svc_uuid =
-        BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x450dad4c, 0xd8b4, 0x4dc4, 0xbdba, 0x498075184b3a));
+	BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x450dad4c, 0xd8b4, 0x4dc4, 0xbdba, 0x498075184b3a));
 
 static struct bt_uuid_128 m_report_interval_chrc_uuid =
-        BT_UUID_INIT_128(BT_UUID_128_ENCODE(0xf6af9271, 0x67a9, 0x4bf8, 0xa618, 0x158af711b1b6));
+	BT_UUID_INIT_128(BT_UUID_128_ENCODE(0xf6af9271, 0x67a9, 0x4bf8, 0xa618, 0x158af711b1b6));
 
 static ssize_t write_report_interval(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-                                     const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+				     const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	int ret;
 
@@ -47,7 +47,7 @@ static ssize_t write_report_interval(struct bt_conn *conn, const struct bt_gatt_
 }
 
 static ssize_t read_report_interval(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-                                    void *buf, uint16_t len, uint16_t offset)
+				    void *buf, uint16_t len, uint16_t offset)
 {
 	uint32_t value;
 	sys_put_le32(app_config_get_report_interval(), (uint8_t *)&value);

@@ -1,5 +1,5 @@
-#include "app_handler.h"
 #include "app_data.h"
+#include "app_handler.h"
 #include "app_init.h"
 #include "app_loop.h"
 
@@ -170,14 +170,14 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 
 #if defined(CONFIG_APP_FLIP_MODE)
 static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
-                         enum ctr_z_led_channel led_channel,
-                         enum ctr_z_buzzer_command buzzer_command, atomic_t *counter,
-                         atomic_t *source)
+			 enum ctr_z_led_channel led_channel,
+			 enum ctr_z_buzzer_command buzzer_command, atomic_t *counter,
+			 atomic_t *source)
 #else
 static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
-                         enum ctr_z_led_channel led_channel, enum ctr_z_led_command led_command,
-                         enum ctr_z_buzzer_command buzzer_command, atomic_t *counter,
-                         atomic_t *source)
+			 enum ctr_z_led_channel led_channel, enum ctr_z_led_command led_command,
+			 enum ctr_z_buzzer_command buzzer_command, atomic_t *counter,
+			 atomic_t *source)
 #endif /* defined(CONFIG_APP_FLIP_MODE) */
 {
 	int ret;
@@ -266,8 +266,8 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 #define HANDLE_PRESS(button, counter, source)                                                      \
 	do {                                                                                       \
 		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button##_PRESS,                    \
-		                    CTR_Z_LED_CHANNEL_##button##_R, CTR_Z_BUZZER_COMMAND_1X_1_2,   \
-		                    counter, source);                                              \
+				    CTR_Z_LED_CHANNEL_##button##_R, CTR_Z_BUZZER_COMMAND_1X_1_2,   \
+				    counter, source);                                              \
 		if (ret < 0) {                                                                     \
 			LOG_ERR("Call `handle_button` failed: %d", ret);                           \
 		} else if (ret) {                                                                  \
@@ -288,8 +288,8 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 #define HANDLE_CLICK(button, counter, source)                                                      \
 	do {                                                                                       \
 		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button##_CLICK,                    \
-		                    CTR_Z_LED_CHANNEL_##button##_G, CTR_Z_LED_COMMAND_1X_1_2,      \
-		                    CTR_Z_BUZZER_COMMAND_1X_1_2, counter, source);                 \
+				    CTR_Z_LED_CHANNEL_##button##_G, CTR_Z_LED_COMMAND_1X_1_2,      \
+				    CTR_Z_BUZZER_COMMAND_1X_1_2, counter, source);                 \
 		if (ret < 0) {                                                                     \
 			LOG_ERR("Call `handle_button` failed: %d", ret);                           \
 		} else if (ret) {                                                                  \
@@ -308,8 +308,8 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 #define HANDLE_HOLD(button, counter, source)                                                       \
 	do {                                                                                       \
 		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button##_HOLD,                     \
-		                    CTR_Z_LED_CHANNEL_##button##_R, CTR_Z_LED_COMMAND_2X_1_2,      \
-		                    CTR_Z_BUZZER_COMMAND_2X_1_2, counter, source);                 \
+				    CTR_Z_LED_CHANNEL_##button##_R, CTR_Z_LED_COMMAND_2X_1_2,      \
+				    CTR_Z_BUZZER_COMMAND_2X_1_2, counter, source);                 \
 		if (ret < 0) {                                                                     \
 			LOG_ERR("Call `handle_button` failed: %d", ret);                           \
 		} else if (ret) {                                                                  \

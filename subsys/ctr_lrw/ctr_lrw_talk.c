@@ -13,8 +13,8 @@
 
 LOG_MODULE_REGISTER(ctr_lrw_talk, CONFIG_CTR_LRW_LOG_LEVEL);
 
-#define SEND_GUARD_TIME K_MSEC(50)
-#define BAND_CHANGE_TIME K_MSEC(5000)
+#define SEND_GUARD_TIME	   K_MSEC(50)
+#define BAND_CHANGE_TIME   K_MSEC(5000)
 #define RESPONSE_TIMEOUT_S K_MSEC(1000)
 #define RESPONSE_TIMEOUT_L K_SECONDS(10)
 
@@ -101,7 +101,7 @@ static int wait_response(k_timeout_t timeout, handler_cb cb, void *param)
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-		                         &m_response_sig),
+					 &m_response_sig),
 	};
 
 	ret = k_poll(events, ARRAY_SIZE(events), timeout);

@@ -117,8 +117,8 @@ static int ctr_x4_get_line_voltage_(const struct device *dev, int *line_voltage_
 
 	int32_t valp = get_data(dev)->adc_buf[0] * (R1_KOHM + R2_KOHM) / R2_KOHM;
 	ret = adc_raw_to_millivolts(adc_ref_internal(get_config(dev)->adc_dev),
-	                            get_config(dev)->adc_channel_cfg.gain,
-	                            get_data(dev)->adc_sequence.resolution, &valp);
+				    get_config(dev)->adc_channel_cfg.gain,
+				    get_data(dev)->adc_sequence.resolution, &valp);
 	if (ret) {
 		LOG_ERR("Call `adc_raw_to_millivolts` failed: %d", ret);
 		k_sem_give(&get_data(dev)->lock);
@@ -169,7 +169,7 @@ static void work_handler(struct k_work *work)
 
 			if (get_data(dev)->user_cb) {
 				get_data(dev)->user_cb(dev, CTR_X4_EVENT_LINE_DISCONNECTED,
-				                       get_data(dev)->user_data);
+						       get_data(dev)->user_data);
 			}
 		}
 	} else {
@@ -178,7 +178,7 @@ static void work_handler(struct k_work *work)
 
 			if (get_data(dev)->user_cb) {
 				get_data(dev)->user_cb(dev, CTR_X4_EVENT_LINE_CONNECTED,
-				                       get_data(dev)->user_data);
+						       get_data(dev)->user_data);
 			}
 		}
 	}
@@ -238,7 +238,7 @@ static int ctr_x4_init(const struct device *dev)
 	}
 
 	k_timer_start(&get_data(dev)->timer, K_MSEC(get_config(dev)->line_measurement_interval),
-	              K_MSEC(get_config(dev)->line_measurement_interval));
+		      K_MSEC(get_config(dev)->line_measurement_interval));
 
 	k_sem_give(&get_data(dev)->lock);
 
@@ -259,11 +259,11 @@ static const struct ctr_x4_driver_api ctr_x4_driver_api = {
 		.pwr3_spec = GPIO_DT_SPEC_INST_GET(n, pwr3_gpios),                                 \
 		.pwr4_spec = GPIO_DT_SPEC_INST_GET(n, pwr4_gpios),                                 \
 		.adc_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x4_tla2021)),                            \
-		.adc_channel_cfg = { .gain = ADC_GAIN_1,                                           \
-		                     .reference = ADC_REF_INTERNAL,                                \
-		                     .acquisition_time = ADC_ACQ_TIME_DEFAULT,                     \
-		                     .channel_id = BIT(0),                                         \
-		                     .differential = 1 },                                          \
+		.adc_channel_cfg = {.gain = ADC_GAIN_1,                                            \
+				    .reference = ADC_REF_INTERNAL,                                 \
+				    .acquisition_time = ADC_ACQ_TIME_DEFAULT,                      \
+				    .channel_id = BIT(0),                                          \
+				    .differential = 1},                                            \
 		.line_measurement_interval = DT_INST_PROP(n, line_measurement_interval),           \
 		.line_threshold_min = DT_INST_PROP(n, line_threshold_min),                         \
 		.line_threshold_max = DT_INST_PROP(n, line_threshold_max),                         \
@@ -273,10 +273,10 @@ static const struct ctr_x4_driver_api ctr_x4_driver_api = {
 		.timer = Z_TIMER_INITIALIZER(inst_##n##_data.timer, timer_handler, NULL),          \
 		.work = Z_WORK_INITIALIZER(work_handler),                                          \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
-		.adc_sequence = { .channels = BIT(0), .resolution = 12 },                          \
+		.adc_sequence = {.channels = BIT(0), .resolution = 12},                            \
 		.is_line_present = true,                                                           \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ctr_x4_init, NULL, &inst_##n##_data, &inst_##n##_config,          \
-	                      POST_KERNEL, CONFIG_CTR_X4_INIT_PRIORITY, &ctr_x4_driver_api);
+			      POST_KERNEL, CONFIG_CTR_X4_INIT_PRIORITY, &ctr_x4_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_X4_INIT)

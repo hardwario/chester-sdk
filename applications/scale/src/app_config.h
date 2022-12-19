@@ -40,22 +40,22 @@ int app_config_cmd_config_channel_a2_active(const struct shell *shell, size_t ar
 int app_config_cmd_config_channel_b1_active(const struct shell *shell, size_t argc, char **argv);
 int app_config_cmd_config_channel_b2_active(const struct shell *shell, size_t argc, char **argv);
 int app_config_cmd_config_weight_measurement_interval(const struct shell *shell, size_t argc,
-                                                      char **argv);
+						      char **argv);
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 int app_config_cmd_config_people_measurement_interval(const struct shell *shell, size_t argc,
-                                                      char **argv);
+						      char **argv);
 #endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc, char **argv);
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 int app_config_cmd_config_people_counter_power_off_delay(const struct shell *shell, size_t argc,
-                                                         char **argv);
+							 char **argv);
 int app_config_cmd_config_people_counter_stay_timeout(const struct shell *shell, size_t argc,
-                                                      char **argv);
+						      char **argv);
 int app_config_cmd_config_people_counter_adult_border(const struct shell *shell, size_t argc,
-                                                      char **argv);
+						      char **argv);
 #endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 #ifdef __cplusplus

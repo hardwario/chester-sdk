@@ -22,27 +22,27 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 struct app_config g_app_config;
 
 static struct app_config m_app_config_interim = {
-        .interval_sample = 60,
-        .interval_aggregate = 300,
-        .interval_report = 1800,
+	.interval_sample = 60,
+	.interval_aggregate = 300,
+	.interval_report = 1800,
 };
 
 static void print_interval_sample(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config interval-sample %d",
-	            m_app_config_interim.interval_sample);
+		    m_app_config_interim.interval_sample);
 }
 
 static void print_interval_aggregate(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config interval-aggregate %d",
-	            m_app_config_interim.interval_aggregate);
+		    m_app_config_interim.interval_aggregate);
 }
 
 static void print_interval_report(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config interval-report %d",
-	            m_app_config_interim.interval_report);
+		    m_app_config_interim.interval_report);
 }
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
@@ -192,11 +192,11 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	} while (0)
 
 	SETTINGS_SET("interval-sample", &m_app_config_interim.interval_sample,
-	             sizeof(m_app_config_interim.interval_sample));
+		     sizeof(m_app_config_interim.interval_sample));
 	SETTINGS_SET("interval-aggregate", &m_app_config_interim.interval_aggregate,
-	             sizeof(m_app_config_interim.interval_aggregate));
+		     sizeof(m_app_config_interim.interval_aggregate));
 	SETTINGS_SET("interval-report", &m_app_config_interim.interval_report,
-	             sizeof(m_app_config_interim.interval_report));
+		     sizeof(m_app_config_interim.interval_report));
 
 #undef SETTINGS_SET
 
@@ -218,11 +218,11 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	} while (0)
 
 	EXPORT_FUNC("interval-sample", &m_app_config_interim.interval_sample,
-	            sizeof(m_app_config_interim.interval_sample));
+		    sizeof(m_app_config_interim.interval_sample));
 	EXPORT_FUNC("interval-aggregate", &m_app_config_interim.interval_aggregate,
-	            sizeof(m_app_config_interim.interval_aggregate));
+		    sizeof(m_app_config_interim.interval_aggregate));
 	EXPORT_FUNC("interval-report", &m_app_config_interim.interval_report,
-	            sizeof(m_app_config_interim.interval_report));
+		    sizeof(m_app_config_interim.interval_report));
 
 #undef EXPORT_FUNC
 
@@ -236,10 +236,10 @@ static int init(const struct device *dev)
 	LOG_INF("System initialization");
 
 	static struct settings_handler sh = {
-	        .name = SETTINGS_PFX,
-	        .h_set = h_set,
-	        .h_commit = h_commit,
-	        .h_export = h_export,
+		.name = SETTINGS_PFX,
+		.h_set = h_set,
+		.h_commit = h_commit,
+		.h_export = h_export,
 	};
 
 	ret = settings_register(&sh);

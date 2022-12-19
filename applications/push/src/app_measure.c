@@ -1,7 +1,7 @@
-#include "app_measure.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_loop.h"
+#include "app_measure.h"
 
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
@@ -37,12 +37,12 @@ int app_measure(void)
 	int ret;
 
 	k_timer_start(&g_app_measure_timer, K_MSEC(g_app_config.measurement_interval * 1000),
-	              K_FOREVER);
+		      K_FOREVER);
 
 	bool error = false;
 
 	ret = ctr_accel_read(&g_app_data.states.acceleration_x, &g_app_data.states.acceleration_y,
-	                     &g_app_data.states.acceleration_z, &g_app_data.states.orientation);
+			     &g_app_data.states.acceleration_z, &g_app_data.states.orientation);
 	if (ret) {
 		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
 		g_app_data.errors.orientation = true;

@@ -161,11 +161,11 @@ static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	static const char *wday[] = {
-	        "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
+		"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
 	};
 
 	shell_print(shell, "%04d/%02d/%02d %02d:%02d:%02d %s", tm.year, tm.month, tm.day, tm.hours,
-	            tm.minutes, tm.seconds, wday[tm.wday - 1]);
+		    tm.minutes, tm.seconds, wday[tm.wday - 1]);
 
 	return 0;
 }
@@ -314,7 +314,7 @@ static int request_lfclk(void)
 	}
 
 	struct k_poll_event events[] = {
-	        K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sig),
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sig),
 	};
 	ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
 	if (ret) {

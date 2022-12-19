@@ -8,10 +8,10 @@
 
 #include "minmea.h"
 
-#include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #define boolstr(s) ((s) ? "true" : "false")
@@ -189,7 +189,7 @@ bool minmea_scan(const char *sentence, const char *format, ...)
 						scale = 1;
 					} else if (*field == ' ') {
 						/* Allow spaces at the start of the field. Not NMEA
-                             * conformant, but some modules do this. */
+						 * conformant, but some modules do this. */
 						if (sign != 0 || value != -1 || scale != 0)
 							goto parse_error;
 					} else {
@@ -213,7 +213,7 @@ bool minmea_scan(const char *sentence, const char *format, ...)
 			if (sign)
 				value *= sign;
 
-			*va_arg(ap, struct minmea_float *) = (struct minmea_float){ value, scale };
+			*va_arg(ap, struct minmea_float *) = (struct minmea_float){value, scale};
 		} break;
 
 		case 'i': { // Integer value, default 0 (int).
@@ -267,9 +267,9 @@ bool minmea_scan(const char *sentence, const char *format, ...)
 					if (!isdigit((unsigned char)field[f]))
 						goto parse_error;
 
-				char dArr[] = { field[0], field[1], '\0' };
-				char mArr[] = { field[2], field[3], '\0' };
-				char yArr[] = { field[4], field[5], '\0' };
+				char dArr[] = {field[0], field[1], '\0'};
+				char mArr[] = {field[2], field[3], '\0'};
+				char yArr[] = {field[4], field[5], '\0'};
 				d = strtol(dArr, NULL, 10);
 				m = strtol(mArr, NULL, 10);
 				y = strtol(yArr, NULL, 10);
@@ -291,9 +291,9 @@ bool minmea_scan(const char *sentence, const char *format, ...)
 					if (!isdigit((unsigned char)field[f]))
 						goto parse_error;
 
-				char hArr[] = { field[0], field[1], '\0' };
-				char iArr[] = { field[2], field[3], '\0' };
-				char sArr[] = { field[4], field[5], '\0' };
+				char hArr[] = {field[0], field[1], '\0'};
+				char iArr[] = {field[2], field[3], '\0'};
+				char sArr[] = {field[4], field[5], '\0'};
 				h = strtol(hArr, NULL, 10);
 				i = strtol(iArr, NULL, 10);
 				s = strtol(sArr, NULL, 10);
@@ -388,9 +388,9 @@ bool minmea_parse_rmc(struct minmea_sentence_rmc *frame, const char *sentence)
 	int longitude_direction;
 	int variation_direction;
 	if (!minmea_scan(sentence, "tTcfdfdffDfd", type, &frame->time, &validity, &frame->latitude,
-	                 &latitude_direction, &frame->longitude, &longitude_direction,
-	                 &frame->speed, &frame->course, &frame->date, &frame->variation,
-	                 &variation_direction))
+			 &latitude_direction, &frame->longitude, &longitude_direction,
+			 &frame->speed, &frame->course, &frame->date, &frame->variation,
+			 &variation_direction))
 		return false;
 	if (strcmp(type + 2, "RMC"))
 		return false;
@@ -411,10 +411,10 @@ bool minmea_parse_gga(struct minmea_sentence_gga *frame, const char *sentence)
 	int longitude_direction;
 
 	if (!minmea_scan(sentence, "tTfdfdiiffcfcf_", type, &frame->time, &frame->latitude,
-	                 &latitude_direction, &frame->longitude, &longitude_direction,
-	                 &frame->fix_quality, &frame->satellites_tracked, &frame->hdop,
-	                 &frame->altitude, &frame->altitude_units, &frame->height,
-	                 &frame->height_units, &frame->dgps_age))
+			 &latitude_direction, &frame->longitude, &longitude_direction,
+			 &frame->fix_quality, &frame->satellites_tracked, &frame->hdop,
+			 &frame->altitude, &frame->altitude_units, &frame->height,
+			 &frame->height_units, &frame->dgps_age))
 		return false;
 	if (strcmp(type + 2, "GGA"))
 		return false;
@@ -431,10 +431,10 @@ bool minmea_parse_gsa(struct minmea_sentence_gsa *frame, const char *sentence)
 	char type[6];
 
 	if (!minmea_scan(sentence, "tciiiiiiiiiiiiifff", type, &frame->mode, &frame->fix_type,
-	                 &frame->sats[0], &frame->sats[1], &frame->sats[2], &frame->sats[3],
-	                 &frame->sats[4], &frame->sats[5], &frame->sats[6], &frame->sats[7],
-	                 &frame->sats[8], &frame->sats[9], &frame->sats[10], &frame->sats[11],
-	                 &frame->pdop, &frame->hdop, &frame->vdop))
+			 &frame->sats[0], &frame->sats[1], &frame->sats[2], &frame->sats[3],
+			 &frame->sats[4], &frame->sats[5], &frame->sats[6], &frame->sats[7],
+			 &frame->sats[8], &frame->sats[9], &frame->sats[10], &frame->sats[11],
+			 &frame->pdop, &frame->hdop, &frame->vdop))
 		return false;
 	if (strcmp(type + 2, "GSA"))
 		return false;
@@ -450,8 +450,8 @@ bool minmea_parse_gll(struct minmea_sentence_gll *frame, const char *sentence)
 	int longitude_direction;
 
 	if (!minmea_scan(sentence, "tfdfdTc;c", type, &frame->latitude, &latitude_direction,
-	                 &frame->longitude, &longitude_direction, &frame->time, &frame->status,
-	                 &frame->mode))
+			 &frame->longitude, &longitude_direction, &frame->time, &frame->status,
+			 &frame->mode))
 		return false;
 	if (strcmp(type + 2, "GLL"))
 		return false;
@@ -468,9 +468,9 @@ bool minmea_parse_gst(struct minmea_sentence_gst *frame, const char *sentence)
 	char type[6];
 
 	if (!minmea_scan(sentence, "tTfffffff", type, &frame->time, &frame->rms_deviation,
-	                 &frame->semi_major_deviation, &frame->semi_minor_deviation,
-	                 &frame->semi_major_orientation, &frame->latitude_error_deviation,
-	                 &frame->longitude_error_deviation, &frame->altitude_error_deviation))
+			 &frame->semi_major_deviation, &frame->semi_minor_deviation,
+			 &frame->semi_major_orientation, &frame->latitude_error_deviation,
+			 &frame->longitude_error_deviation, &frame->altitude_error_deviation))
 		return false;
 	if (strcmp(type + 2, "GST"))
 		return false;
@@ -488,12 +488,12 @@ bool minmea_parse_gsv(struct minmea_sentence_gsv *frame, const char *sentence)
 	char type[6];
 
 	if (!minmea_scan(sentence, "tiii;iiiiiiiiiiiiiiii", type, &frame->total_msgs,
-	                 &frame->msg_nr, &frame->total_sats, &frame->sats[0].nr,
-	                 &frame->sats[0].elevation, &frame->sats[0].azimuth, &frame->sats[0].snr,
-	                 &frame->sats[1].nr, &frame->sats[1].elevation, &frame->sats[1].azimuth,
-	                 &frame->sats[1].snr, &frame->sats[2].nr, &frame->sats[2].elevation,
-	                 &frame->sats[2].azimuth, &frame->sats[2].snr, &frame->sats[3].nr,
-	                 &frame->sats[3].elevation, &frame->sats[3].azimuth, &frame->sats[3].snr)) {
+			 &frame->msg_nr, &frame->total_sats, &frame->sats[0].nr,
+			 &frame->sats[0].elevation, &frame->sats[0].azimuth, &frame->sats[0].snr,
+			 &frame->sats[1].nr, &frame->sats[1].elevation, &frame->sats[1].azimuth,
+			 &frame->sats[1].snr, &frame->sats[2].nr, &frame->sats[2].elevation,
+			 &frame->sats[2].azimuth, &frame->sats[2].snr, &frame->sats[3].nr,
+			 &frame->sats[3].elevation, &frame->sats[3].azimuth, &frame->sats[3].snr)) {
 		return false;
 	}
 	if (strcmp(type + 2, "GSV"))
@@ -512,8 +512,8 @@ bool minmea_parse_vtg(struct minmea_sentence_vtg *frame, const char *sentence)
 	char c_true, c_magnetic, c_knots, c_kph, c_faa_mode;
 
 	if (!minmea_scan(sentence, "tfcfcfcfc;c", type, &frame->true_track_degrees, &c_true,
-	                 &frame->magnetic_track_degrees, &c_magnetic, &frame->speed_knots, &c_knots,
-	                 &frame->speed_kph, &c_kph, &c_faa_mode))
+			 &frame->magnetic_track_degrees, &c_magnetic, &frame->speed_knots, &c_knots,
+			 &frame->speed_kph, &c_kph, &c_faa_mode))
 		return false;
 	if (strcmp(type + 2, "VTG"))
 		return false;
@@ -531,8 +531,8 @@ bool minmea_parse_zda(struct minmea_sentence_zda *frame, const char *sentence)
 	char type[6];
 
 	if (!minmea_scan(sentence, "tTiiiii", type, &frame->time, &frame->date.day,
-	                 &frame->date.month, &frame->date.year, &frame->hour_offset,
-	                 &frame->minute_offset))
+			 &frame->date.month, &frame->date.year, &frame->hour_offset,
+			 &frame->minute_offset))
 		return false;
 	if (strcmp(type + 2, "ZDA"))
 		return false;
@@ -545,7 +545,7 @@ bool minmea_parse_zda(struct minmea_sentence_zda *frame, const char *sentence)
 }
 
 int minmea_gettime(struct timespec *ts, const struct minmea_date *date,
-                   const struct minmea_time *time_)
+		   const struct minmea_time *time_)
 {
 	if (date->year == -1 || time_->hours == -1)
 		return -1;

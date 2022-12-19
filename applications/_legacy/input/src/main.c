@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 /* TODO Would be nice to define using K_SECONDS, etc. Proper macros? */
 #define BATT_TEST_INTERVAL_MSEC (12 * 60 * 60 * 1000)
-#define REPORT_INTERVAL_MSEC    (15 * 60 * 1000)
+#define REPORT_INTERVAL_MSEC	(15 * 60 * 1000)
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 static const struct device *m_ctr_z_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
@@ -109,25 +109,25 @@ struct data {
 };
 
 static struct data m_data = {.errors = {
-                                     .orientation = true,
-                                     .int_temperature = true,
-                                     .ext_temperature = true,
-                                     .ext_humidity = true,
-                                     .input_1 = true,
-                                     .input_2 = true,
-                                     .input_3 = true,
-                                     .input_4 = true,
-                                     .input_5 = true,
-                                     .input_6 = true,
-                                     .input_7 = true,
-                                     .input_8 = true,
-                                     .line_present = true,
-                                     .line_voltage = true,
-                                     .bckp_voltage = true,
-                                     .batt_voltage_rest = true,
-                                     .batt_voltage_load = true,
-                                     .batt_current_load = true,
-                             }};
+				     .orientation = true,
+				     .int_temperature = true,
+				     .ext_temperature = true,
+				     .ext_humidity = true,
+				     .input_1 = true,
+				     .input_2 = true,
+				     .input_3 = true,
+				     .input_4 = true,
+				     .input_5 = true,
+				     .input_6 = true,
+				     .input_7 = true,
+				     .input_8 = true,
+				     .line_present = true,
+				     .line_voltage = true,
+				     .bckp_voltage = true,
+				     .batt_voltage_rest = true,
+				     .batt_voltage_load = true,
+				     .batt_current_load = true,
+			     }};
 
 static K_SEM_DEFINE(m_loop_sem, 1, 1);
 
@@ -156,7 +156,7 @@ static int task_battery(void)
 
 		int rest_mv;
 		ret = ctr_batt_get_rest_voltage_mv(m_ctr_batt_dev, &rest_mv,
-		                                   CTR_BATT_REST_TIMEOUT_DEFAULT_MS);
+						   CTR_BATT_REST_TIMEOUT_DEFAULT_MS);
 		if (ret) {
 			LOG_ERR("Call `ctr_batt_get_rest_voltage_mv` failed: %d", ret);
 			goto error;
@@ -164,7 +164,7 @@ static int task_battery(void)
 
 		int load_mv;
 		ret = ctr_batt_get_load_voltage_mv(m_ctr_batt_dev, &load_mv,
-		                                   CTR_BATT_LOAD_TIMEOUT_DEFAULT_MS);
+						   CTR_BATT_LOAD_TIMEOUT_DEFAULT_MS);
 		if (ret) {
 			LOG_ERR("Call `ctr_batt_get_load_voltage_mv` failed: %d", ret);
 			goto error;
@@ -203,7 +203,7 @@ error:
 
 #define EDGE_CALLBACK(ch)                                                                          \
 	void edge_ch##ch##_callback(struct ctr_edge *edge, enum ctr_edge_event event,              \
-	                            void *user_data)                                               \
+				    void *user_data)                                               \
 	{                                                                                          \
 		if (event == CTR_EDGE_EVENT_ACTIVE) {                                              \
 			LOG_INF("Channel " STRINGIFY(ch) " detected active edge");                 \
@@ -348,7 +348,7 @@ static int task_chester_x0(void)
 			m_data.errors.input_##ch = false;                                          \
 			m_data.states.input_##ch##_level = is_active ? 0 : 1;                      \
 			LOG_INF("Channel " STRINGIFY(ch) " level: %d",                             \
-			                             m_data.states.input_##ch##_level);            \
+						     m_data.states.input_##ch##_level);            \
 		}                                                                                  \
 	} while (0)
 

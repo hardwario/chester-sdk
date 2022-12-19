@@ -97,8 +97,8 @@ static int ctr_batt_get_rest_voltage_mv_(const struct device *dev, int *rest_mv,
 	int32_t u = batt_measure_to_sys(dev, get_data(dev)->adc_buf[0]);
 
 	ret = adc_raw_to_millivolts(adc_ref_internal(get_config(dev)->adc_dev),
-	                            get_config(dev)->adc_channel_cfg.gain,
-	                            get_data(dev)->adc_sequence.resolution, &u);
+				    get_config(dev)->adc_channel_cfg.gain,
+				    get_data(dev)->adc_sequence.resolution, &u);
 	if (ret) {
 		LOG_ERR("Call `adc_raw_to_millivolts` failed: %d", ret);
 		return ret;
@@ -182,8 +182,8 @@ static int ctr_batt_get_load_voltage_mv_(const struct device *dev, int *load_mv,
 	int32_t u = batt_measure_to_sys(dev, get_data(dev)->adc_buf[0]);
 
 	ret = adc_raw_to_millivolts(adc_ref_internal(get_config(dev)->adc_dev),
-	                            get_config(dev)->adc_channel_cfg.gain,
-	                            get_data(dev)->adc_sequence.resolution, &u);
+				    get_config(dev)->adc_channel_cfg.gain,
+				    get_data(dev)->adc_sequence.resolution, &u);
 	if (ret) {
 		LOG_ERR("Call `adc_raw_to_millivolts` failed: %d", ret);
 		return ret;
@@ -303,11 +303,11 @@ static const struct ctr_batt_driver_api ctr_batt_driver_api = {
 #define CTR_BATT_INIT(n)                                                                           \
 	static const struct ctr_batt_config inst_##n##_config = {                                  \
 		.adc_dev = DEVICE_DT_GET(DT_CHOSEN(ctr_batt_adc)),                                 \
-		.adc_channel_cfg = { .gain = ADC_GAIN_1,                                           \
-		                     .reference = ADC_REF_INTERNAL,                                \
-		                     .acquisition_time = ADC_ACQ_TIME_DEFAULT,                     \
-		                     .channel_id = BIT(0),                                         \
-		                     .differential = 1 },                                          \
+		.adc_channel_cfg = {.gain = ADC_GAIN_1,                                            \
+				    .reference = ADC_REF_INTERNAL,                                 \
+				    .acquisition_time = ADC_ACQ_TIME_DEFAULT,                      \
+				    .channel_id = BIT(0),                                          \
+				    .differential = 1},                                            \
 		.load_spec = GPIO_DT_SPEC_INST_GET(n, load_gpios),                                 \
 		.test_spec = GPIO_DT_SPEC_INST_GET(n, test_gpios),                                 \
 		.r_load = DT_INST_PROP(n, load_resistor),                                          \
@@ -315,10 +315,10 @@ static const struct ctr_batt_driver_api ctr_batt_driver_api = {
 		.r2 = DT_INST_PROP(n, divider_r2),                                                 \
 	};                                                                                         \
 	static struct ctr_batt_data inst_##n##_data = {                                            \
-		.adc_sequence = { .channels = BIT(0), .resolution = 12 },                          \
+		.adc_sequence = {.channels = BIT(0), .resolution = 12},                            \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, &ctr_batt_init, NULL, &inst_##n##_data, &inst_##n##_config,       \
-	                      APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY,                       \
-	                      &ctr_batt_driver_api);
+			      APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY,                       \
+			      &ctr_batt_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_BATT_INIT)

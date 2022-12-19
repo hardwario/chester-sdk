@@ -21,12 +21,12 @@ enum ds28e17_i2c_speed {
 
 typedef int (*ds28e17_api_set_w1_config)(const struct device *dev, struct w1_slave_config config);
 typedef int (*ds28e17_api_i2c_write)(const struct device *dev, uint8_t dev_addr,
-                                     const uint8_t *write_buf, size_t write_len);
+				     const uint8_t *write_buf, size_t write_len);
 typedef int (*ds28e17_api_i2c_read)(const struct device *dev, uint8_t dev_addr, uint8_t *read_buf,
-                                    size_t read_len);
+				    size_t read_len);
 typedef int (*ds28e17_api_i2c_write_read)(const struct device *dev, uint8_t dev_addr,
-                                          const uint8_t *write_buf, size_t write_len,
-                                          uint8_t *read_buf, size_t read_len);
+					  const uint8_t *write_buf, size_t write_len,
+					  uint8_t *read_buf, size_t read_len);
 typedef int (*ds28e17_api_write_config)(const struct device *dev, enum ds28e17_i2c_speed i2c_speed);
 typedef int (*ds28e17_api_enable_sleep)(const struct device *dev);
 
@@ -47,7 +47,7 @@ static inline int ds28e17_set_w1_config(const struct device *dev, struct w1_slav
 }
 
 static inline int ds28e17_i2c_write(const struct device *dev, uint8_t dev_addr,
-                                    const uint8_t *write_buf, size_t write_len)
+				    const uint8_t *write_buf, size_t write_len)
 {
 	const struct ds28e17_driver_api *api = (const struct ds28e17_driver_api *)dev->api;
 
@@ -55,7 +55,7 @@ static inline int ds28e17_i2c_write(const struct device *dev, uint8_t dev_addr,
 }
 
 static inline int ds28e17_i2c_read(const struct device *dev, uint8_t dev_addr, uint8_t *read_buf,
-                                   size_t read_len)
+				   size_t read_len)
 {
 	const struct ds28e17_driver_api *api = (const struct ds28e17_driver_api *)dev->api;
 
@@ -63,8 +63,8 @@ static inline int ds28e17_i2c_read(const struct device *dev, uint8_t dev_addr, u
 }
 
 static inline int ds28e17_i2c_write_read(const struct device *dev, uint8_t dev_addr,
-                                         const uint8_t *write_buf, size_t write_len,
-                                         uint8_t *read_buf, size_t read_len)
+					 const uint8_t *write_buf, size_t write_len,
+					 uint8_t *read_buf, size_t read_len)
 {
 	const struct ds28e17_driver_api *api = (const struct ds28e17_driver_api *)dev->api;
 

@@ -276,13 +276,13 @@ int app_sensor_iaq_aggregate(void)
 
 	if (iaq->measurement_count < APP_DATA_MAX_MEASUREMENTS) {
 		struct app_data_iaq_measurement *measurement =
-		        &iaq->measurements[iaq->measurement_count];
+			&iaq->measurements[iaq->measurement_count];
 
 		aggregate_sample(iaq->samples_temperature, iaq->sample_count,
-		                 &measurement->temperature);
+				 &measurement->temperature);
 		aggregate_sample(iaq->samples_humidity, iaq->sample_count, &measurement->humidity);
 		aggregate_sample(iaq->samples_illuminance, iaq->sample_count,
-		                 &measurement->illuminance);
+				 &measurement->illuminance);
 		aggregate_sample(iaq->samples_altitude, iaq->sample_count, &measurement->altitude);
 		aggregate_sample(iaq->samples_pressure, iaq->sample_count, &measurement->pressure);
 		aggregate_sample(iaq->samples_co2_conc, iaq->sample_count, &measurement->co2_conc);
@@ -368,13 +368,13 @@ int app_sensor_hygro_aggregate(void)
 
 	if (g_app_data.hygro.measurement_count < APP_DATA_MAX_MEASUREMENTS) {
 		struct app_data_hygro_measurement *hygro_measurement =
-		        &g_app_data.hygro.measurements[g_app_data.hygro.measurement_count];
+			&g_app_data.hygro.measurements[g_app_data.hygro.measurement_count];
 
 		aggregate_sample(g_app_data.hygro.samples_temperature,
-		                 g_app_data.hygro.sample_count, &hygro_measurement->temperature);
+				 g_app_data.hygro.sample_count, &hygro_measurement->temperature);
 
 		aggregate_sample(g_app_data.hygro.samples_humidity, g_app_data.hygro.sample_count,
-		                 &hygro_measurement->humidity);
+				 &hygro_measurement->humidity);
 
 		g_app_data.hygro.measurement_count++;
 
@@ -460,12 +460,12 @@ int app_sensor_w1_therm_aggregate(void)
 		}
 		if (w1_therm->sensor[j].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
 			struct app_data_w1_therm_measurement *measurement =
-			        &w1_therm->sensor[j]
-			                 .measurements[w1_therm->sensor[j].measurement_count];
+				&w1_therm->sensor[j]
+					 .measurements[w1_therm->sensor[j].measurement_count];
 
 			aggregate_sample(w1_therm->sensor[j].samples_temperature,
-			                 w1_therm->sensor[j].sample_count,
-			                 &measurement->temperature);
+					 w1_therm->sensor[j].sample_count,
+					 &measurement->temperature);
 
 			w1_therm->sensor[j].measurement_count++;
 

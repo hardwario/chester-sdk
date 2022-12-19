@@ -15,18 +15,18 @@
 
 LOG_MODULE_REGISTER(ctr_rtd, CONFIG_CTR_RTD_LOG_LEVEL);
 
-#define R0_PT100 100.0
-#define R_MIN_PT100 4.0
-#define R_MAX_PT100 400.0
+#define R0_PT100     100.0
+#define R_MIN_PT100  4.0
+#define R_MAX_PT100  400.0
 #define R_MIN_PT1000 40.0
 #define R_MAX_PT1000 4000.0
-#define R0_PT1000 1000.0
-#define R_REF 1800.0
-#define ADC_GAIN 1
-#define A_ITS_90 3.9083e-3
-#define B_ITS_90 -5.775e-7
-#define A_IPTS_68 3.90802e-3
-#define B_IPTS_68 -5.80195e-7
+#define R0_PT1000    1000.0
+#define R_REF	     1800.0
+#define ADC_GAIN     1
+#define A_ITS_90     3.9083e-3
+#define B_ITS_90     -5.775e-7
+#define A_IPTS_68    3.90802e-3
+#define B_IPTS_68    -5.80195e-7
 
 static double convert_r_to_t(double r, double r0, double a, double b)
 {

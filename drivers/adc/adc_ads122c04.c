@@ -1,22 +1,23 @@
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
-#include <stddef.h>
-#include <stdint.h>
 
 #define DT_DRV_COMPAT ti_ads122c04
 
 LOG_MODULE_REGISTER(ads122c04, CONFIG_ADC_LOG_LEVEL);
 
-#define CMD_RESET 0x06
+#define CMD_RESET      0x06
 #define CMD_START_SYNC 0x08
-#define CMD_POWERDOWN 0x02
-#define CMD_RDATA 0x10
-#define CMD_RREG 0x20
-#define CMD_WREG 0x40
+#define CMD_POWERDOWN  0x02
+#define CMD_RDATA      0x10
+#define CMD_RREG       0x20
+#define CMD_WREG       0x40
 
 #define REG_CONFIG_0 0x00
 #define REG_CONFIG_1 0x01
@@ -29,38 +30,38 @@ LOG_MODULE_REGISTER(ads122c04, CONFIG_ADC_LOG_LEVEL);
 #define DEF_CONFIG_3 0x00
 
 #define POS_CONFIG_0_PGA_BYPASS 0
-#define POS_CONFIG_0_GAIN 1
-#define POS_CONFIG_0_MUX 4
-#define POS_CONFIG_1_TS 0
-#define POS_CONFIG_1_VREF 1
-#define POS_CONFIG_1_CM 3
-#define POS_CONFIG_1_MODE 4
-#define POS_CONFIG_1_DR 5
-#define POS_CONFIG_2_IDAC 0
-#define POS_CONFIG_2_BCS 3
-#define POS_CONFIG_2_CRC 4
-#define POS_CONFIG_2_DCNT 6
-#define POS_CONFIG_2_DRDY 7
-#define POS_CONFIG_3_I2MUX 2
-#define POS_CONFIG_3_I1MUX 5
+#define POS_CONFIG_0_GAIN	1
+#define POS_CONFIG_0_MUX	4
+#define POS_CONFIG_1_TS		0
+#define POS_CONFIG_1_VREF	1
+#define POS_CONFIG_1_CM		3
+#define POS_CONFIG_1_MODE	4
+#define POS_CONFIG_1_DR		5
+#define POS_CONFIG_2_IDAC	0
+#define POS_CONFIG_2_BCS	3
+#define POS_CONFIG_2_CRC	4
+#define POS_CONFIG_2_DCNT	6
+#define POS_CONFIG_2_DRDY	7
+#define POS_CONFIG_3_I2MUX	2
+#define POS_CONFIG_3_I1MUX	5
 
-#define MSK_CONFIG_0_MUX (BIT(4) | BIT(5) | BIT(6) | BIT(7))
+#define MSK_CONFIG_0_MUX	(BIT(4) | BIT(5) | BIT(6) | BIT(7))
 #define MSK_CONFIG_0_PGA_BYPASS BIT(0)
-#define MSK_CONFIG_0_GAIN (BIT(1) | BIT(2) | BIT(3))
-#define MSK_CONFIG_1_TS BIT(0)
-#define MSK_CONFIG_1_VREF (BIT(1) | BIT(2))
-#define MSK_CONFIG_1_CM BIT(3)
-#define MSK_CONFIG_1_MODE BIT(4)
-#define MSK_CONFIG_1_DR (BIT(5) | BIT(6) | BIT(7))
-#define MSK_CONFIG_2_IDAC (BIT(0) | BIT(1) | BIT(2))
-#define MSK_CONFIG_2_BCS BIT(3)
-#define MSK_CONFIG_2_CRC (BIT(4) | BIT(5))
-#define MSK_CONFIG_2_DCNT BIT(6)
-#define MSK_CONFIG_2_DRDY BIT(7)
-#define MSK_CONFIG_3_I2MUX (BIT(2) | BIT(3) | BIT(4))
-#define MSK_CONFIG_3_I1MUX (BIT(5) | BIT(6) | BIT(7))
+#define MSK_CONFIG_0_GAIN	(BIT(1) | BIT(2) | BIT(3))
+#define MSK_CONFIG_1_TS		BIT(0)
+#define MSK_CONFIG_1_VREF	(BIT(1) | BIT(2))
+#define MSK_CONFIG_1_CM		BIT(3)
+#define MSK_CONFIG_1_MODE	BIT(4)
+#define MSK_CONFIG_1_DR		(BIT(5) | BIT(6) | BIT(7))
+#define MSK_CONFIG_2_IDAC	(BIT(0) | BIT(1) | BIT(2))
+#define MSK_CONFIG_2_BCS	BIT(3)
+#define MSK_CONFIG_2_CRC	(BIT(4) | BIT(5))
+#define MSK_CONFIG_2_DCNT	BIT(6)
+#define MSK_CONFIG_2_DRDY	BIT(7)
+#define MSK_CONFIG_3_I2MUX	(BIT(2) | BIT(3) | BIT(4))
+#define MSK_CONFIG_3_I1MUX	(BIT(5) | BIT(6) | BIT(7))
 
-#define READ_MAX_RETRIES 100
+#define READ_MAX_RETRIES    100
 #define READ_RETRY_DELAY_MS 10
 
 struct ads122c04_config {
@@ -178,7 +179,7 @@ static int write_reg(const struct device *dev, uint8_t reg, uint8_t val)
 }
 
 static int ads122c04_channel_setup(const struct device *dev,
-                                   const struct adc_channel_cfg *channel_cfg)
+				   const struct adc_channel_cfg *channel_cfg)
 {
 	return 0;
 }
@@ -329,6 +330,6 @@ static const struct adc_driver_api ads122c04_driver_api = {
 		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 0, 1),                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ads122c04_init, NULL, &inst_##n##_data, &inst_##n##_config,       \
-	                      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &ads122c04_driver_api);
+			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &ads122c04_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADS122C04_INIT)

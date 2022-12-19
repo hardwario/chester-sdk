@@ -342,7 +342,7 @@ static const struct ctr_rfmux_driver_api ctr_rfmux_driver_api = {
 		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 0, 1),                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ctr_rfmux_init, NULL, &inst_##n##_data, &inst_##n##_config,       \
-	                      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                     \
-	                      &ctr_rfmux_driver_api);
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                     \
+			      &ctr_rfmux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_RFMUX_INIT)

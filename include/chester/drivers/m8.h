@@ -14,7 +14,7 @@ extern "C" {
 typedef int (*m8_api_set_main_power)(const struct device *dev, bool on);
 typedef int (*m8_api_set_bckp_power)(const struct device *dev, bool on);
 typedef int (*m8_api_read_buffer)(const struct device *dev, void *buf, size_t buf_size,
-                                  size_t *bytes_read);
+				  size_t *bytes_read);
 
 struct m8_driver_api {
 	m8_api_set_main_power set_main_power;
@@ -37,7 +37,7 @@ static inline int m8_set_bckp_power(const struct device *dev, bool on)
 }
 
 static inline int m8_read_buffer(const struct device *dev, void *buf, size_t buf_size,
-                                 size_t *bytes_read)
+				 size_t *bytes_read)
 {
 	const struct m8_driver_api *api = (const struct m8_driver_api *)dev->api;
 

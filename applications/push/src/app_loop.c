@@ -1,5 +1,5 @@
-#include "app_loop.h"
 #include "app_data.h"
+#include "app_loop.h"
 #include "app_measure.h"
 #include "app_send.h"
 
@@ -49,7 +49,7 @@ static int task_battery(void)
 	if (k_uptime_get() >= next) {
 		int voltage_rest_mv;
 		ret = ctr_batt_get_rest_voltage_mv(dev, &voltage_rest_mv,
-		                                   CTR_BATT_REST_TIMEOUT_DEFAULT_MS);
+						   CTR_BATT_REST_TIMEOUT_DEFAULT_MS);
 		if (ret) {
 			LOG_ERR("Call `ctr_batt_get_rest_voltage_mv` failed: %d", ret);
 			goto error;
@@ -57,7 +57,7 @@ static int task_battery(void)
 
 		int voltage_load_mv;
 		ret = ctr_batt_get_load_voltage_mv(dev, &voltage_load_mv,
-		                                   CTR_BATT_LOAD_TIMEOUT_DEFAULT_MS);
+						   CTR_BATT_LOAD_TIMEOUT_DEFAULT_MS);
 		if (ret) {
 			LOG_ERR("Call `ctr_batt_get_load_voltage_mv` failed: %d", ret);
 			goto error;

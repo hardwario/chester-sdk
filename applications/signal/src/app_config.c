@@ -1,4 +1,5 @@
 #include "app_config.h"
+
 #include <chester/ctr_config.h>
 
 /* Zephyr includes */
@@ -25,13 +26,13 @@ static struct app_config m_app_config_interim = {
 static void print_measurement_interval(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config measurement-interval %d",
-	            m_app_config_interim.measurement_interval);
+		    m_app_config_interim.measurement_interval);
 }
 
 static void print_report_interval(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config report-interval %d",
-	            m_app_config_interim.report_interval);
+		    m_app_config_interim.report_interval);
 }
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
@@ -142,9 +143,9 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	} while (0)
 
 	SETTINGS_SET("measurement-interval", &m_app_config_interim.measurement_interval,
-	             sizeof(m_app_config_interim.measurement_interval));
+		     sizeof(m_app_config_interim.measurement_interval));
 	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
-	             sizeof(m_app_config_interim.report_interval));
+		     sizeof(m_app_config_interim.report_interval));
 
 #undef SETTINGS_SET
 
@@ -166,9 +167,9 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	} while (0)
 
 	EXPORT_FUNC("measurement-interval", &m_app_config_interim.measurement_interval,
-	            sizeof(m_app_config_interim.measurement_interval));
+		    sizeof(m_app_config_interim.measurement_interval));
 	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
-	            sizeof(m_app_config_interim.report_interval));
+		    sizeof(m_app_config_interim.report_interval));
 
 #undef EXPORT_FUNC
 

@@ -176,16 +176,16 @@ static const struct ctr_x3_driver_api ctr_x3_driver_api = {
 #define CTR_X3_INIT(n)                                                                             \
 	static const struct ctr_x3_config inst_##n##_config = {                                    \
 		.adc0_dev = COND_CODE_0(DT_INST_ENUM_IDX(n, slot),                                 \
-		                        DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_ads122c04_a1)),  \
-		                        DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_ads122c04_b1))), \
+					DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_ads122c04_a1)),  \
+					DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_ads122c04_b1))), \
 		.adc1_dev = COND_CODE_0(DT_INST_ENUM_IDX(n, slot),                                 \
-		                        DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_ads122c04_a2)),  \
-		                        DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_ads122c04_b2))), \
+					DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_ads122c04_a2)),  \
+					DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_ads122c04_b2))), \
 		.pwr0_spec = GPIO_DT_SPEC_INST_GET(n, pwr0_gpios),                                 \
 		.pwr1_spec = GPIO_DT_SPEC_INST_GET(n, pwr1_gpios),                                 \
 	};                                                                                         \
 	static struct ctr_x3_data inst_##n##_data = {};                                            \
 	DEVICE_DT_INST_DEFINE(n, ctr_x3_init, NULL, &inst_##n##_data, &inst_##n##_config,          \
-	                      APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY, &ctr_x3_driver_api);
+			      APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY, &ctr_x3_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_X3_INIT)

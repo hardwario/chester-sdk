@@ -4,6 +4,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 
+/* Do not re-order this include */
 #include "gpio_utils.h"
 
 LOG_MODULE_REGISTER(pcal6416a, CONFIG_GPIO_LOG_LEVEL);
@@ -89,58 +90,58 @@ static int pcal6416a_pins_cfg_apply(const struct device *dev, struct pcal6416a_p
 	int rc;
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-	                        PCAL6416A_REG_PULL_UP_DOWN_SELECT_P0,
-	                        pins_cfg.pull_ups_selected_p0);
+				PCAL6416A_REG_PULL_UP_DOWN_SELECT_P0,
+				pins_cfg.pull_ups_selected_p0);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to select pull-up/pull-down resistors: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-	                        PCAL6416A_REG_PULL_UP_DOWN_SELECT_P1,
-	                        pins_cfg.pull_ups_selected_p1);
+				PCAL6416A_REG_PULL_UP_DOWN_SELECT_P1,
+				pins_cfg.pull_ups_selected_p1);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to select pull-up/pull-down resistors: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-	                        PCAL6416A_REG_PULL_UP_DOWN_ENABLE_P0, pins_cfg.pulls_enabled_p0);
+				PCAL6416A_REG_PULL_UP_DOWN_ENABLE_P0, pins_cfg.pulls_enabled_p0);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to enable pull-up/pull-down resistors: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-	                        PCAL6416A_REG_PULL_UP_DOWN_ENABLE_P1, pins_cfg.pulls_enabled_p1);
+				PCAL6416A_REG_PULL_UP_DOWN_ENABLE_P1, pins_cfg.pulls_enabled_p1);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to enable pull-up/pull-down resistors: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_OUTPUT_PORT_P0,
-	                        pins_cfg.outputs_high_p0);
+				pins_cfg.outputs_high_p0);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to set outputs: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_OUTPUT_PORT_P1,
-	                        pins_cfg.outputs_high_p1);
+				pins_cfg.outputs_high_p1);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to set outputs: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_CONFIGURATION_P0,
-	                        pins_cfg.configured_as_inputs_p0);
+				pins_cfg.configured_as_inputs_p0);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure pins: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_CONFIGURATION_P1,
-	                        pins_cfg.configured_as_inputs_p1);
+				pins_cfg.configured_as_inputs_p1);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure pins: %d", dev->name, rc);
 		return -EIO;
@@ -256,14 +257,14 @@ static int pcal6416a_process_input(const struct device *dev, gpio_port_value_t *
 	uint8_t input_port_p1;
 
 	rc = i2c_reg_read_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_INTERRUPT_STATUS_P0,
-	                       &int_sources_p0);
+			       &int_sources_p0);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to read interrupt sources: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_read_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_INTERRUPT_STATUS_P1,
-	                       &int_sources_p1);
+			       &int_sources_p1);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to read interrupt sources: %d", dev->name, rc);
 		return -EIO;
@@ -271,7 +272,7 @@ static int pcal6416a_process_input(const struct device *dev, gpio_port_value_t *
 
 	/* This read also clears the generated interrupt if any. */
 	rc = i2c_reg_read_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_INPUT_PORT_P0,
-	                       &input_port_p0);
+			       &input_port_p0);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to read input port: %d", dev->name, rc);
 		return -EIO;
@@ -279,7 +280,7 @@ static int pcal6416a_process_input(const struct device *dev, gpio_port_value_t *
 
 	/* This read also clears the generated interrupt if any. */
 	rc = i2c_reg_read_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_INPUT_PORT_P1,
-	                       &input_port_p1);
+			       &input_port_p1);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to read input port: %d", dev->name, rc);
 		return -EIO;
@@ -297,9 +298,9 @@ static int pcal6416a_process_input(const struct device *dev, gpio_port_value_t *
 	 * `int_sources`.
 	 */
 	int_sources_p0 |=
-	        ((input_port_p0 ^ drv_data->input_port_last_p0) & ~drv_data->triggers.masked_p0);
+		((input_port_p0 ^ drv_data->input_port_last_p0) & ~drv_data->triggers.masked_p0);
 	int_sources_p1 |=
-	        ((input_port_p1 ^ drv_data->input_port_last_p1) & ~drv_data->triggers.masked_p1);
+		((input_port_p1 ^ drv_data->input_port_last_p1) & ~drv_data->triggers.masked_p1);
 
 	drv_data->input_port_last_p0 = input_port_p0;
 	drv_data->input_port_last_p1 = input_port_p1;
@@ -308,9 +309,9 @@ static int pcal6416a_process_input(const struct device *dev, gpio_port_value_t *
 		uint8_t dual_edge_triggers_p0 = drv_data->triggers.dual_edge_p0;
 		uint8_t dual_edge_triggers_p1 = drv_data->triggers.dual_edge_p1;
 		uint8_t falling_edge_triggers_p0 =
-		        (~dual_edge_triggers_p0 & drv_data->triggers.on_low_p0);
+			(~dual_edge_triggers_p0 & drv_data->triggers.on_low_p0);
 		uint8_t falling_edge_triggers_p1 =
-		        (~dual_edge_triggers_p1 & drv_data->triggers.on_low_p1);
+			(~dual_edge_triggers_p1 & drv_data->triggers.on_low_p1);
 		uint8_t fired_triggers_p0 = 0;
 		uint8_t fired_triggers_p1 = 0;
 
@@ -325,7 +326,7 @@ static int pcal6416a_process_input(const struct device *dev, gpio_port_value_t *
 		fired_triggers_p1 |= ((input_port_p1 & int_sources_p1) ^ falling_edge_triggers_p1);
 
 		gpio_fire_callbacks(&drv_data->callbacks, dev,
-		                    fired_triggers_p0 | fired_triggers_p1 << 8);
+				    fired_triggers_p0 | fired_triggers_p1 << 8);
 	}
 
 	return 0;
@@ -343,13 +344,13 @@ static void pcal6416a_work_handler(struct k_work *work)
 }
 
 static void pcal6416a_int_gpio_handler(const struct device *dev, struct gpio_callback *gpio_cb,
-                                       uint32_t pins)
+				       uint32_t pins)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pins);
 
 	struct pcal6416a_drv_data *drv_data =
-	        CONTAINER_OF(gpio_cb, struct pcal6416a_drv_data, int_gpio_cb);
+		CONTAINER_OF(gpio_cb, struct pcal6416a_drv_data, int_gpio_cb);
 
 	k_work_submit(&drv_data->work);
 }
@@ -376,7 +377,7 @@ static int pcal6416a_port_get_raw(const struct device *dev, gpio_port_value_t *v
 }
 
 static int pcal6416a_port_set_raw(const struct device *dev, uint16_t mask, uint16_t value,
-                                  uint16_t toggle)
+				  uint16_t toggle)
 {
 	const struct pcal6416a_drv_cfg *drv_cfg = dev->config;
 	struct pcal6416a_drv_data *drv_data = dev->data;
@@ -409,7 +410,7 @@ static int pcal6416a_port_set_raw(const struct device *dev, uint16_t mask, uint1
 	 */
 	do {
 		rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-		                        PCAL6416A_REG_OUTPUT_PORT_P0, output_p0);
+					PCAL6416A_REG_OUTPUT_PORT_P0, output_p0);
 		if (rc == 0) {
 			drv_data->pins_cfg.outputs_high_p0 = output_p0;
 		} else {
@@ -417,7 +418,7 @@ static int pcal6416a_port_set_raw(const struct device *dev, uint16_t mask, uint1
 		}
 
 		rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr,
-		                        PCAL6416A_REG_OUTPUT_PORT_P1, output_p1);
+					PCAL6416A_REG_OUTPUT_PORT_P1, output_p1);
 		if (rc == 0) {
 			drv_data->pins_cfg.outputs_high_p1 = output_p1;
 		} else {
@@ -436,7 +437,7 @@ static int pcal6416a_port_set_raw(const struct device *dev, uint16_t mask, uint1
 }
 
 static int pcal6416a_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
-                                         gpio_port_value_t value)
+					 gpio_port_value_t value)
 {
 	return pcal6416a_port_set_raw(dev, (uint16_t)mask, (uint16_t)value, 0);
 }
@@ -462,28 +463,28 @@ static int pcal6416a_triggers_apply(const struct device *dev, struct pcal6416a_t
 	int rc;
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_INPUT_LATCH_P0,
-	                        ~(triggers.masked_p0));
+				~(triggers.masked_p0));
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure input latch: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_INPUT_LATCH_P1,
-	                        ~(triggers.masked_p1));
+				~(triggers.masked_p1));
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure input latch: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_INTERRUPT_MASK_P0,
-	                        triggers.masked_p0);
+				triggers.masked_p0);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure interrupt mask: %d", dev->name, rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_INTERRUPT_MASK_P1,
-	                        triggers.masked_p1);
+				triggers.masked_p1);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure interrupt mask: %d", dev->name, rc);
 		return -EIO;
@@ -493,7 +494,7 @@ static int pcal6416a_triggers_apply(const struct device *dev, struct pcal6416a_t
 }
 
 static int pcal6416a_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
-                                             enum gpio_int_mode mode, enum gpio_int_trig trig)
+					     enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct pcal6416a_drv_cfg *drv_cfg = dev->config;
 	struct pcal6416a_drv_data *drv_data = dev->data;
@@ -571,7 +572,7 @@ static int pcal6416a_pin_interrupt_configure(const struct device *dev, gpio_pin_
 }
 
 static int pcal6416a_manage_callback(const struct device *dev, struct gpio_callback *callback,
-                                     bool set)
+				     bool set)
 {
 	struct pcal6416a_drv_data *drv_data = dev->data;
 
@@ -614,7 +615,7 @@ static int pcal6416a_init(const struct device *dev)
 		}
 
 		rc = gpio_pin_configure(drv_cfg->reset_gpio_dev, drv_cfg->reset_gpio_pin,
-		                        drv_cfg->reset_gpio_flags | GPIO_OUTPUT_ACTIVE);
+					drv_cfg->reset_gpio_flags | GPIO_OUTPUT_ACTIVE);
 		if (rc != 0) {
 			LOG_ERR("%s: failed to configure RESET line: %d", dev->name, rc);
 			return -EIO;
@@ -633,21 +634,21 @@ static int pcal6416a_init(const struct device *dev)
 		k_busy_wait(1);
 	} else {
 		static const uint8_t reset_state[][2] = {
-			{ PCAL6416A_REG_POLARITY_INVERSION_P0, 0 },
-			{ PCAL6416A_REG_POLARITY_INVERSION_P1, 0 },
-			{ PCAL6416A_REG_OUTPUT_DRIVE_STRENGTH_P0_0, 0xff },
-			{ PCAL6416A_REG_OUTPUT_DRIVE_STRENGTH_P0_1, 0xff },
-			{ PCAL6416A_REG_OUTPUT_DRIVE_STRENGTH_P1_0, 0xff },
-			{ PCAL6416A_REG_OUTPUT_DRIVE_STRENGTH_P1_1, 0xff },
-			{ PCAL6416A_REG_OUTPUT_PORT_CONFIGURATION, 0 },
+			{PCAL6416A_REG_POLARITY_INVERSION_P0, 0},
+			{PCAL6416A_REG_POLARITY_INVERSION_P1, 0},
+			{PCAL6416A_REG_OUTPUT_DRIVE_STRENGTH_P0_0, 0xff},
+			{PCAL6416A_REG_OUTPUT_DRIVE_STRENGTH_P0_1, 0xff},
+			{PCAL6416A_REG_OUTPUT_DRIVE_STRENGTH_P1_0, 0xff},
+			{PCAL6416A_REG_OUTPUT_DRIVE_STRENGTH_P1_1, 0xff},
+			{PCAL6416A_REG_OUTPUT_PORT_CONFIGURATION, 0},
 		};
 
 		for (int i = 0; i < ARRAY_SIZE(reset_state); ++i) {
 			rc = i2c_reg_write_byte(drv_cfg->i2c, drv_cfg->i2c_addr, reset_state[i][0],
-			                        reset_state[i][1]);
+						reset_state[i][1]);
 			if (rc != 0) {
 				LOG_ERR("%s: failed to reset register %02x: %d", dev->name,
-				        reset_state[i][0], rc);
+					reset_state[i][0], rc);
 				return -EIO;
 			}
 		}
@@ -663,7 +664,7 @@ static int pcal6416a_init(const struct device *dev)
 
 	/* Read initial state of the input port register. */
 	rc = i2c_reg_read_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_INPUT_PORT_P0,
-	                       &drv_data->input_port_last_p0);
+			       &drv_data->input_port_last_p0);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to initially read input port: %d", dev->name, rc);
 		return -EIO;
@@ -671,7 +672,7 @@ static int pcal6416a_init(const struct device *dev)
 
 	/* Read initial state of the input port register. */
 	rc = i2c_reg_read_byte(drv_cfg->i2c, drv_cfg->i2c_addr, PCAL6416A_REG_INPUT_PORT_P1,
-	                       &drv_data->input_port_last_p1);
+			       &drv_data->input_port_last_p1);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to initially read input port: %d", dev->name, rc);
 		return -EIO;
@@ -693,21 +694,21 @@ static int pcal6416a_init(const struct device *dev)
 		}
 
 		rc = gpio_pin_configure(drv_cfg->int_gpio_dev, drv_cfg->int_gpio_pin,
-		                        drv_cfg->int_gpio_flags | GPIO_INPUT);
+					drv_cfg->int_gpio_flags | GPIO_INPUT);
 		if (rc != 0) {
 			LOG_ERR("%s: failed to configure INT line: %d", dev->name, rc);
 			return -EIO;
 		}
 
 		rc = gpio_pin_interrupt_configure(drv_cfg->int_gpio_dev, drv_cfg->int_gpio_pin,
-		                                  GPIO_INT_EDGE_TO_ACTIVE);
+						  GPIO_INT_EDGE_TO_ACTIVE);
 		if (rc != 0) {
 			LOG_ERR("%s: failed to configure INT interrupt: %d", dev->name, rc);
 			return -EIO;
 		}
 
 		gpio_init_callback(&drv_data->int_gpio_cb, pcal6416a_int_gpio_handler,
-		                   BIT(drv_cfg->int_gpio_pin));
+				   BIT(drv_cfg->int_gpio_pin));
 		rc = gpio_add_callback(drv_cfg->int_gpio_dev, &drv_data->int_gpio_cb);
 		if (rc != 0) {
 			LOG_ERR("%s: failed to add INT callback: %d", dev->name, rc);
@@ -734,36 +735,34 @@ static const struct gpio_driver_api pcal6416a_drv_api = {
 
 #define INIT_INT_GPIO_FIELDS(idx)                                                                  \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, int_gpios),                                         \
-	            (.int_gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(idx), int_gpios)),     \
-	             .int_gpio_pin = DT_INST_GPIO_PIN(idx, int_gpios),                             \
-	             .int_gpio_flags = DT_INST_GPIO_FLAGS(idx, int_gpios), ),                      \
-	            ())
+		    (.int_gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(idx), int_gpios)),     \
+		     .int_gpio_pin = DT_INST_GPIO_PIN(idx, int_gpios),                             \
+		     .int_gpio_flags = DT_INST_GPIO_FLAGS(idx, int_gpios), ),                      \
+		    ())
 
 #define INIT_RESET_GPIO_FIELDS(idx)                                                                \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, reset_gpios),                                       \
-	            (.reset_gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(idx), reset_gpios)), \
-	             .reset_gpio_pin = DT_INST_GPIO_PIN(idx, reset_gpios),                         \
-	             .reset_gpio_flags = DT_INST_GPIO_FLAGS(idx, reset_gpios), ),                  \
-	            ())
+		    (.reset_gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(idx), reset_gpios)), \
+		     .reset_gpio_pin = DT_INST_GPIO_PIN(idx, reset_gpios),                         \
+		     .reset_gpio_flags = DT_INST_GPIO_FLAGS(idx, reset_gpios), ),                  \
+		    ())
 
 #define GPIO_PCAL6416A_INST(idx)                                                                   \
-	static const struct pcal6416a_drv_cfg pcal6416a_cfg##idx = {	   \
-		.common = {						   \
-			.port_pin_mask =				   \
-				GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),	   \
-		},							   \
-		.i2c = DEVICE_DT_GET(DT_INST_BUS(idx)),			   \
-		.i2c_addr = DT_INST_REG_ADDR(idx),			   \
-		INIT_INT_GPIO_FIELDS(idx)				   \
-		INIT_RESET_GPIO_FIELDS(idx)				   \
-	};                          \
+	static const struct pcal6416a_drv_cfg pcal6416a_cfg##idx = {                               \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
+			},                                                                         \
+		.i2c = DEVICE_DT_GET(DT_INST_BUS(idx)),                                            \
+		.i2c_addr = DT_INST_REG_ADDR(idx),                                                 \
+		INIT_INT_GPIO_FIELDS(idx) INIT_RESET_GPIO_FIELDS(idx)};                            \
 	static struct pcal6416a_drv_data pcal6416a_data##idx = {                                   \
 		.lock = Z_SEM_INITIALIZER(pcal6416a_data##idx.lock, 0, 1),                         \
 		.work = Z_WORK_INITIALIZER(pcal6416a_work_handler),                                \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, pcal6416a_init, NULL, &pcal6416a_data##idx,                     \
-	                      &pcal6416a_cfg##idx, POST_KERNEL,                                    \
-	                      CONFIG_GPIO_PCAL6416A_INIT_PRIORITY, &pcal6416a_drv_api);
+			      &pcal6416a_cfg##idx, POST_KERNEL,                                    \
+			      CONFIG_GPIO_PCAL6416A_INIT_PRIORITY, &pcal6416a_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCAL6416A_INST)

@@ -43,31 +43,31 @@ static struct app_config m_app_config_interim = {
 static void print_channel_a1_active(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config channel-a1-active %s",
-	            m_app_config_interim.channel_a1_active ? "true" : "false");
+		    m_app_config_interim.channel_a1_active ? "true" : "false");
 }
 
 static void print_channel_a2_active(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config channel-a2-active %s",
-	            m_app_config_interim.channel_a2_active ? "true" : "false");
+		    m_app_config_interim.channel_a2_active ? "true" : "false");
 }
 
 static void print_channel_b1_active(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config channel-b1-active %s",
-	            m_app_config_interim.channel_b1_active ? "true" : "false");
+		    m_app_config_interim.channel_b1_active ? "true" : "false");
 }
 
 static void print_channel_b2_active(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config channel-b2-active %s",
-	            m_app_config_interim.channel_b2_active ? "true" : "false");
+		    m_app_config_interim.channel_b2_active ? "true" : "false");
 }
 
 static void print_weight_measurement_interval(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config weight-measurement-interval %d",
-	            m_app_config_interim.weight_measurement_interval);
+		    m_app_config_interim.weight_measurement_interval);
 }
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
@@ -75,7 +75,7 @@ static void print_weight_measurement_interval(const struct shell *shell)
 static void print_people_measurement_interval(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config people-measurement-interval %d",
-	            m_app_config_interim.people_measurement_interval);
+		    m_app_config_interim.people_measurement_interval);
 }
 
 #endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
@@ -83,7 +83,7 @@ static void print_people_measurement_interval(const struct shell *shell)
 static void print_report_interval(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config report-interval %d",
-	            m_app_config_interim.report_interval);
+		    m_app_config_interim.report_interval);
 }
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
@@ -91,19 +91,19 @@ static void print_report_interval(const struct shell *shell)
 static void print_people_counter_power_off_delay(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config people-counter-power-off-delay %d",
-	            m_app_config_interim.people_counter_power_off_delay);
+		    m_app_config_interim.people_counter_power_off_delay);
 }
 
 static void print_people_counter_stay_timeout(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config people-counter-stay-timeout %d",
-	            m_app_config_interim.people_counter_stay_timeout);
+		    m_app_config_interim.people_counter_stay_timeout);
 }
 
 static void print_people_counter_adult_border(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config people-counter-adult-border %d",
-	            m_app_config_interim.people_counter_adult_border);
+		    m_app_config_interim.people_counter_adult_border);
 }
 
 #endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
@@ -216,7 +216,7 @@ int app_config_cmd_config_channel_b2_active(const struct shell *shell, size_t ar
 }
 
 int app_config_cmd_config_weight_measurement_interval(const struct shell *shell, size_t argc,
-                                                      char **argv)
+						      char **argv)
 {
 	if (argc == 1) {
 		print_weight_measurement_interval(shell);
@@ -257,7 +257,7 @@ int app_config_cmd_config_weight_measurement_interval(const struct shell *shell,
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 
 int app_config_cmd_config_people_measurement_interval(const struct shell *shell, size_t argc,
-                                                      char **argv)
+						      char **argv)
 {
 	if (argc == 1) {
 		print_people_measurement_interval(shell);
@@ -338,7 +338,7 @@ int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 
 int app_config_cmd_config_people_counter_power_off_delay(const struct shell *shell, size_t argc,
-                                                         char **argv)
+							 char **argv)
 {
 	if (argc == 1) {
 		print_people_counter_power_off_delay(shell);
@@ -368,7 +368,7 @@ int app_config_cmd_config_people_counter_power_off_delay(const struct shell *she
 		}
 
 		m_app_config_interim.people_counter_power_off_delay =
-		        people_counter_power_off_delay;
+			people_counter_power_off_delay;
 
 		return 0;
 	}
@@ -378,7 +378,7 @@ int app_config_cmd_config_people_counter_power_off_delay(const struct shell *she
 }
 
 int app_config_cmd_config_people_counter_stay_timeout(const struct shell *shell, size_t argc,
-                                                      char **argv)
+						      char **argv)
 {
 	if (argc == 1) {
 		print_people_counter_stay_timeout(shell);
@@ -417,7 +417,7 @@ int app_config_cmd_config_people_counter_stay_timeout(const struct shell *shell,
 }
 
 int app_config_cmd_config_people_counter_adult_border(const struct shell *shell, size_t argc,
-                                                      char **argv)
+						      char **argv)
 {
 	if (argc == 1) {
 		print_people_counter_adult_border(shell);
@@ -481,36 +481,36 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	} while (0)
 
 	SETTINGS_SET("channel-a1-active", &m_app_config_interim.channel_a1_active,
-	             sizeof(m_app_config_interim.channel_a1_active));
+		     sizeof(m_app_config_interim.channel_a1_active));
 	SETTINGS_SET("channel-a2-active", &m_app_config_interim.channel_a2_active,
-	             sizeof(m_app_config_interim.channel_a2_active));
+		     sizeof(m_app_config_interim.channel_a2_active));
 	SETTINGS_SET("channel-b1-active", &m_app_config_interim.channel_b1_active,
-	             sizeof(m_app_config_interim.channel_b1_active));
+		     sizeof(m_app_config_interim.channel_b1_active));
 	SETTINGS_SET("channel-b2-active", &m_app_config_interim.channel_b2_active,
-	             sizeof(m_app_config_interim.channel_b2_active));
+		     sizeof(m_app_config_interim.channel_b2_active));
 	SETTINGS_SET("weight-measurement-interval",
-	             &m_app_config_interim.weight_measurement_interval,
-	             sizeof(m_app_config_interim.weight_measurement_interval));
+		     &m_app_config_interim.weight_measurement_interval,
+		     sizeof(m_app_config_interim.weight_measurement_interval));
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 	SETTINGS_SET("people-measurement-interval",
-	             &m_app_config_interim.people_measurement_interval,
-	             sizeof(m_app_config_interim.people_measurement_interval));
+		     &m_app_config_interim.people_measurement_interval,
+		     sizeof(m_app_config_interim.people_measurement_interval));
 #endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
-	             sizeof(m_app_config_interim.report_interval));
+		     sizeof(m_app_config_interim.report_interval));
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 	SETTINGS_SET("people-counter-power-off-delay",
-	             &m_app_config_interim.people_counter_power_off_delay,
-	             sizeof(m_app_config_interim.people_counter_power_off_delay));
+		     &m_app_config_interim.people_counter_power_off_delay,
+		     sizeof(m_app_config_interim.people_counter_power_off_delay));
 	SETTINGS_SET("people-counter-stay-timeout",
-	             &m_app_config_interim.people_counter_stay_timeout,
-	             sizeof(m_app_config_interim.people_counter_stay_timeout));
+		     &m_app_config_interim.people_counter_stay_timeout,
+		     sizeof(m_app_config_interim.people_counter_stay_timeout));
 	SETTINGS_SET("people-counter-adult-border",
-	             &m_app_config_interim.people_counter_adult_border,
-	             sizeof(m_app_config_interim.people_counter_adult_border));
+		     &m_app_config_interim.people_counter_adult_border,
+		     sizeof(m_app_config_interim.people_counter_adult_border));
 #endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 #undef SETTINGS_SET
@@ -533,36 +533,36 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	} while (0)
 
 	EXPORT_FUNC("channel-a1-active", &m_app_config_interim.channel_a1_active,
-	            sizeof(m_app_config_interim.channel_a1_active));
+		    sizeof(m_app_config_interim.channel_a1_active));
 	EXPORT_FUNC("channel-a2-active", &m_app_config_interim.channel_a2_active,
-	            sizeof(m_app_config_interim.channel_a2_active));
+		    sizeof(m_app_config_interim.channel_a2_active));
 	EXPORT_FUNC("channel-b1-active", &m_app_config_interim.channel_b1_active,
-	            sizeof(m_app_config_interim.channel_b1_active));
+		    sizeof(m_app_config_interim.channel_b1_active));
 	EXPORT_FUNC("channel-b2-active", &m_app_config_interim.channel_b2_active,
-	            sizeof(m_app_config_interim.channel_b2_active));
+		    sizeof(m_app_config_interim.channel_b2_active));
 	EXPORT_FUNC("weight-measurement-interval",
-	            &m_app_config_interim.weight_measurement_interval,
-	            sizeof(m_app_config_interim.weight_measurement_interval));
+		    &m_app_config_interim.weight_measurement_interval,
+		    sizeof(m_app_config_interim.weight_measurement_interval));
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 	EXPORT_FUNC("people-measurement-interval",
-	            &m_app_config_interim.people_measurement_interval,
-	            sizeof(m_app_config_interim.people_measurement_interval));
+		    &m_app_config_interim.people_measurement_interval,
+		    sizeof(m_app_config_interim.people_measurement_interval));
 #endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
-	            sizeof(m_app_config_interim.report_interval));
+		    sizeof(m_app_config_interim.report_interval));
 
 #if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 	EXPORT_FUNC("people-counter-power-off-delay",
-	            &m_app_config_interim.people_counter_power_off_delay,
-	            sizeof(m_app_config_interim.people_counter_power_off_delay));
+		    &m_app_config_interim.people_counter_power_off_delay,
+		    sizeof(m_app_config_interim.people_counter_power_off_delay));
 	EXPORT_FUNC("people-counter-stay-timeout",
-	            &m_app_config_interim.people_counter_stay_timeout,
-	            sizeof(m_app_config_interim.people_counter_stay_timeout));
+		    &m_app_config_interim.people_counter_stay_timeout,
+		    sizeof(m_app_config_interim.people_counter_stay_timeout));
 	EXPORT_FUNC("people-counter-adult-border",
-	            &m_app_config_interim.people_counter_adult_border,
-	            sizeof(m_app_config_interim.people_counter_adult_border));
+		    &m_app_config_interim.people_counter_adult_border,
+		    sizeof(m_app_config_interim.people_counter_adult_border));
 #endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
 
 #undef EXPORT_FUNC

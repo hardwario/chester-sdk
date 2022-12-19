@@ -1,4 +1,5 @@
 #include "app_config.h"
+
 #include <chester/ctr_config.h>
 
 /* Zephyr includes */
@@ -26,19 +27,19 @@ static struct app_config m_app_config_interim = {
 static void print_active_filter(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config active-filter %d",
-	            m_app_config_interim.active_filter);
+		    m_app_config_interim.active_filter);
 }
 
 static void print_inactive_filter(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config inactive-filter %d",
-	            m_app_config_interim.inactive_filter);
+		    m_app_config_interim.inactive_filter);
 }
 
 static void print_report_interval(const struct shell *shell)
 {
 	shell_print(shell, SETTINGS_PFX " config report-interval %d",
-	            m_app_config_interim.report_interval);
+		    m_app_config_interim.report_interval);
 }
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
@@ -188,11 +189,11 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	} while (0)
 
 	SETTINGS_SET("active-filter", &m_app_config_interim.active_filter,
-	             sizeof(m_app_config_interim.active_filter));
+		     sizeof(m_app_config_interim.active_filter));
 	SETTINGS_SET("inactive-filter", &m_app_config_interim.inactive_filter,
-	             sizeof(m_app_config_interim.inactive_filter));
+		     sizeof(m_app_config_interim.inactive_filter));
 	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
-	             sizeof(m_app_config_interim.report_interval));
+		     sizeof(m_app_config_interim.report_interval));
 
 #undef SETTINGS_SET
 
@@ -214,11 +215,11 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	} while (0)
 
 	EXPORT_FUNC("active-filter", &m_app_config_interim.active_filter,
-	            sizeof(m_app_config_interim.active_filter));
+		    sizeof(m_app_config_interim.active_filter));
 	EXPORT_FUNC("inactive-filter", &m_app_config_interim.inactive_filter,
-	            sizeof(m_app_config_interim.inactive_filter));
+		    sizeof(m_app_config_interim.inactive_filter));
 	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
-	            sizeof(m_app_config_interim.report_interval));
+		    sizeof(m_app_config_interim.report_interval));
 
 #undef EXPORT_FUNC
 

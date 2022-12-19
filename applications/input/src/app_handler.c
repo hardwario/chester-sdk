@@ -161,13 +161,13 @@ static void send_with_rate_limit(void)
 	}
 
 	LOG_INF("Hourly counter state: %d/%d", (int)atomic_get(&m_report_rate_hourly_counter),
-	        g_app_config.event_report_rate);
+		g_app_config.event_report_rate);
 
 	if (atomic_get(&m_report_rate_hourly_counter) <= g_app_config.event_report_rate) {
 		if (!atomic_get(&m_report_delay_timer_is_active)) {
 			LOG_INF("Starting delay timer");
 			k_timer_start(&m_report_delay_timer,
-			              K_SECONDS(g_app_config.event_report_delay), K_NO_WAIT);
+				      K_SECONDS(g_app_config.event_report_delay), K_NO_WAIT);
 			atomic_set(&m_report_delay_timer_is_active, true);
 		} else {
 			LOG_INF("Delay timer already running");
@@ -182,7 +182,7 @@ static void send_with_rate_limit(void)
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 
 void app_handler_edge_trigger_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
-                                       void *user_data)
+				       void *user_data)
 {
 	int ret;
 
@@ -226,7 +226,7 @@ void app_handler_edge_trigger_callback(struct ctr_edge *edge, enum ctr_edge_even
 }
 
 void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
-                                       void *user_data)
+				       void *user_data)
 {
 	if (edge_event == CTR_EDGE_EVENT_ACTIVE) {
 		app_data_lock();

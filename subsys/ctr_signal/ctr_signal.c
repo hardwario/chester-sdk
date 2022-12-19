@@ -3,14 +3,14 @@
 /* Nordic includes */
 #include <hal/nrf_saadc.h>
 #include <nrf52840.h>
+#include <nrfx.h>
 #include <nrfx_ppi.h>
 #include <nrfx_saadc.h>
 #include <nrfx_timer.h>
-#include <nrfx.h>
 
 /* Zephyr includes */
-#include <zephyr/logging/log.h>
 #include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
 
 /* Standard includes */
@@ -18,8 +18,8 @@
 
 LOG_MODULE_REGISTER(ctr_signal, CONFIG_CTR_SIGNAL_LOG_LEVEL);
 
-#define SAMPLE_INTERVAL_US 1000
-#define SAMPLE_COUNT 500
+#define SAMPLE_INTERVAL_US	     1000
+#define SAMPLE_COUNT		     500
 #define SAMPLE_TO_MILLIVOLTS(sample) (sample * 6 * 600 / 2048)
 
 static const nrfx_timer_t m_timer = NRFX_TIMER_INSTANCE(4);
@@ -74,8 +74,8 @@ static int setup_timer(void)
 	}
 
 	nrfx_timer_extended_compare(&m_timer, NRF_TIMER_CC_CHANNEL0,
-	                            nrfx_timer_us_to_ticks(&m_timer, SAMPLE_INTERVAL_US),
-	                            NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, false);
+				    nrfx_timer_us_to_ticks(&m_timer, SAMPLE_INTERVAL_US),
+				    NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, false);
 
 	return 0;
 }
@@ -101,8 +101,8 @@ static int setup_ppi(void)
 	}
 
 	ret_nrfx = nrfx_ppi_channel_assign(
-	        ppi_channel, nrfx_timer_event_address_get(&m_timer, NRF_TIMER_EVENT_COMPARE0),
-	        nrf_saadc_task_address_get(NRF_SAADC, NRF_SAADC_TASK_SAMPLE));
+		ppi_channel, nrfx_timer_event_address_get(&m_timer, NRF_TIMER_EVENT_COMPARE0),
+		nrf_saadc_task_address_get(NRF_SAADC, NRF_SAADC_TASK_SAMPLE));
 	if (ret_nrfx != NRFX_SUCCESS) {
 		LOG_ERR("Call `nrfx_ppi_channel_assign` failed: 0x%08x", ret_nrfx);
 		return -EIO;
@@ -142,15 +142,16 @@ static int measure(void)
 
 	static const nrfx_saadc_channel_t channels[] = {
 		{
-			.channel_config = {
-				.resistor_p = NRF_SAADC_RESISTOR_DISABLED,
-				.resistor_n = NRF_SAADC_RESISTOR_DISABLED,
-				.gain = NRF_SAADC_GAIN1_6,
-				.reference = NRF_SAADC_REFERENCE_INTERNAL,
-				.acq_time = NRF_SAADC_ACQTIME_40US,
-				.mode = NRF_SAADC_MODE_DIFFERENTIAL,
-				.burst = NRF_SAADC_BURST_ENABLED,
-			},
+			.channel_config =
+				{
+					.resistor_p = NRF_SAADC_RESISTOR_DISABLED,
+					.resistor_n = NRF_SAADC_RESISTOR_DISABLED,
+					.gain = NRF_SAADC_GAIN1_6,
+					.reference = NRF_SAADC_REFERENCE_INTERNAL,
+					.acq_time = NRF_SAADC_ACQTIME_40US,
+					.mode = NRF_SAADC_MODE_DIFFERENTIAL,
+					.burst = NRF_SAADC_BURST_ENABLED,
+				},
 			.pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN1,
 			.pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN5,
 			.channel_index = 0,
@@ -168,7 +169,7 @@ static int measure(void)
 	config.burst = NRF_SAADC_BURST_ENABLED;
 
 	ret_nrfx = nrfx_saadc_advanced_mode_set(BIT(0), NRF_SAADC_RESOLUTION_12BIT, &config,
-	                                        saadc_event_handler);
+						saadc_event_handler);
 	if (ret_nrfx != NRFX_SUCCESS) {
 		LOG_ERR("Call `nrfx_saadc_advanced_mode_set` failed: 0x%08x", ret_nrfx);
 		return -EIO;

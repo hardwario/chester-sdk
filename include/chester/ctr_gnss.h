@@ -50,7 +50,7 @@ union ctr_gnss_event_data {
 };
 
 typedef void (*ctr_gnss_user_cb)(enum ctr_gnss_event event, union ctr_gnss_event_data *data,
-                                 void *user_data);
+				 void *user_data);
 
 int ctr_gnss_set_handler(ctr_gnss_user_cb user_cb, void *user_data);
 int ctr_gnss_start(int *corr_id);

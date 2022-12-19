@@ -1,5 +1,5 @@
-#include "app_init.h"
 #include "app_handler.h"
+#include "app_init.h"
 
 /* CHESTER includes */
 #include <chester/ctr_led.h>

@@ -121,29 +121,29 @@ static int ctr_b1_init(const struct device *dev)
 }
 
 static const struct ctr_b1_driver_api ctr_b1_driver_api = {
-        .set_output = ctr_b1_set_output_,
+	.set_output = ctr_b1_set_output_,
 };
 
 #define CTR_B1_INIT(n)                                                                             \
 	static const struct ctr_b1_config inst_##n##_config = {                                    \
-	        .wm_reset_spec = GPIO_DT_SPEC_INST_GET(n, wm_reset_gpios),                         \
-	        .wm_on_spec = GPIO_DT_SPEC_INST_GET(n, wm_on_gpios),                               \
-	        .nc1_spec = GPIO_DT_SPEC_INST_GET(n, nc1_gpios),                                   \
-	        .nc2_spec = GPIO_DT_SPEC_INST_GET(n, nc2_gpios),                                   \
+		.wm_reset_spec = GPIO_DT_SPEC_INST_GET(n, wm_reset_gpios),                         \
+		.wm_on_spec = GPIO_DT_SPEC_INST_GET(n, wm_on_gpios),                               \
+		.nc1_spec = GPIO_DT_SPEC_INST_GET(n, nc1_gpios),                                   \
+		.nc2_spec = GPIO_DT_SPEC_INST_GET(n, nc2_gpios),                                   \
 	};                                                                                         \
 	static struct ctr_b1_data inst_##n##_data = {                                              \
-	        .lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 0, 1),                             \
-	        .dev = DEVICE_DT_INST_GET(n),                                                      \
+		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 0, 1),                             \
+		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ctr_b1_init, NULL, &inst_##n##_data, &inst_##n##_config,          \
-	                      POST_KERNEL, CONFIG_CTR_B1_INIT_PRIORITY, &ctr_b1_driver_api);
+			      POST_KERNEL, CONFIG_CTR_B1_INIT_PRIORITY, &ctr_b1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_B1_INIT)
 
 BUILD_ASSERT(CONFIG_UART_SC16IS7XX_INIT_PRIORITY > CONFIG_GPIO_PCA953X_INIT_PRIORITY,
-             "CONFIG_UART_SC16IS7XX_INIT_PRIORITY must be higher than "
-             "CONFIG_GPIO_PCA953X_INIT_PRIORITY");
+	     "CONFIG_UART_SC16IS7XX_INIT_PRIORITY must be higher than "
+	     "CONFIG_GPIO_PCA953X_INIT_PRIORITY");
 
 BUILD_ASSERT(CONFIG_CTR_B1_INIT_PRIORITY > CONFIG_UART_SC16IS7XX_INIT_PRIORITY,
-             "CONFIG_CTR_B1_INIT_PRIORITY must be higher than "
-             "CONFIG_UART_SC16IS7XX_INIT_PRIORITY");
+	     "CONFIG_CTR_B1_INIT_PRIORITY must be higher than "
+	     "CONFIG_UART_SC16IS7XX_INIT_PRIORITY");

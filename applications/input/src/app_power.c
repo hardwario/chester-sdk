@@ -1,5 +1,5 @@
-#include "app_power.h"
 #include "app_data.h"
+#include "app_power.h"
 
 /* CHESTER includes */
 #include <chester/drivers/ctr_batt.h>

@@ -21,7 +21,7 @@ struct ctr_w1 {
 int ctr_w1_acquire(struct ctr_w1 *w1, const struct device *dev);
 int ctr_w1_release(struct ctr_w1 *w1, const struct device *dev);
 int ctr_w1_scan(struct ctr_w1 *w1, const struct device *dev,
-                int (*user_cb)(struct w1_rom rom, void *user_data), void *user_data);
+		int (*user_cb)(struct w1_rom rom, void *user_data), void *user_data);
 
 #ifdef __cplusplus
 }

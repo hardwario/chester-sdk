@@ -23,7 +23,7 @@ struct people_counter_measurement {
 };
 
 typedef int (*people_counter_api_read_measurement)(const struct device *dev,
-                                                   struct people_counter_measurement *measurement);
+						   struct people_counter_measurement *measurement);
 typedef int (*people_counter_api_get_power_off_delay)(const struct device *dev, int *value);
 typedef int (*people_counter_api_get_stay_timeout)(const struct device *dev, int *value);
 typedef int (*people_counter_api_get_adult_border)(const struct device *dev, int *value);
@@ -42,10 +42,10 @@ struct people_counter_driver_api {
 };
 
 static inline int people_counter_read_measurement(const struct device *dev,
-                                                  struct people_counter_measurement *measurement)
+						  struct people_counter_measurement *measurement)
 {
 	const struct people_counter_driver_api *api =
-	        (const struct people_counter_driver_api *)dev->api;
+		(const struct people_counter_driver_api *)dev->api;
 
 	return api->read_measurement(dev, measurement);
 }
@@ -53,7 +53,7 @@ static inline int people_counter_read_measurement(const struct device *dev,
 static inline int people_counter_get_power_off_delay(const struct device *dev, int *value)
 {
 	const struct people_counter_driver_api *api =
-	        (const struct people_counter_driver_api *)dev->api;
+		(const struct people_counter_driver_api *)dev->api;
 
 	return api->get_power_off_delay(dev, value);
 }
@@ -61,7 +61,7 @@ static inline int people_counter_get_power_off_delay(const struct device *dev, i
 static inline int people_counter_get_stay_timeout(const struct device *dev, int *value)
 {
 	const struct people_counter_driver_api *api =
-	        (const struct people_counter_driver_api *)dev->api;
+		(const struct people_counter_driver_api *)dev->api;
 
 	return api->get_stay_timeout(dev, value);
 }
@@ -69,7 +69,7 @@ static inline int people_counter_get_stay_timeout(const struct device *dev, int 
 static inline int people_counter_get_adult_border(const struct device *dev, int *value)
 {
 	const struct people_counter_driver_api *api =
-	        (const struct people_counter_driver_api *)dev->api;
+		(const struct people_counter_driver_api *)dev->api;
 
 	return api->get_adult_border(dev, value);
 }
@@ -77,7 +77,7 @@ static inline int people_counter_get_adult_border(const struct device *dev, int 
 static inline int people_counter_set_power_off_delay(const struct device *dev, int value)
 {
 	const struct people_counter_driver_api *api =
-	        (const struct people_counter_driver_api *)dev->api;
+		(const struct people_counter_driver_api *)dev->api;
 
 	return api->set_power_off_delay(dev, value);
 }
@@ -85,7 +85,7 @@ static inline int people_counter_set_power_off_delay(const struct device *dev, i
 static inline int people_counter_set_stay_timeout(const struct device *dev, int value)
 {
 	const struct people_counter_driver_api *api =
-	        (const struct people_counter_driver_api *)dev->api;
+		(const struct people_counter_driver_api *)dev->api;
 
 	return api->set_stay_timeout(dev, value);
 }
@@ -93,7 +93,7 @@ static inline int people_counter_set_stay_timeout(const struct device *dev, int 
 static inline int people_counter_set_adult_border(const struct device *dev, int value)
 {
 	const struct people_counter_driver_api *api =
-	        (const struct people_counter_driver_api *)dev->api;
+		(const struct people_counter_driver_api *)dev->api;
 
 	return api->set_adult_border(dev, value);
 }

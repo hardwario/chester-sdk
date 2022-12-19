@@ -116,7 +116,7 @@ char *ctr_lte_tok_num(const char *s, bool *def, long *num)
 	}
 
 	if (*s == '-') {
-		char buf[11 + 1] = { 0 };
+		char buf[11 + 1] = {0};
 
 		size_t len = p - s;
 
@@ -131,7 +131,7 @@ char *ctr_lte_tok_num(const char *s, bool *def, long *num)
 		}
 
 	} else {
-		char buf[10 + 1] = { 0 };
+		char buf[10 + 1] = {0};
 
 		size_t len = p - s;
 

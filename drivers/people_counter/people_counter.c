@@ -54,7 +54,7 @@ static int write(const struct device *dev, uint8_t reg, uint8_t data)
 {
 	int ret;
 
-	uint8_t buf[2] = { reg, data };
+	uint8_t buf[2] = {reg, data};
 
 	ret = i2c_write(get_config(dev)->i2c_dev, buf, 2, get_config(dev)->i2c_addr);
 	if (ret) {
@@ -66,14 +66,14 @@ static int write(const struct device *dev, uint8_t reg, uint8_t data)
 }
 
 static int people_counter_read_measurement_(const struct device *dev,
-                                            struct people_counter_measurement *measurement)
+					    struct people_counter_measurement *measurement)
 {
 	int ret;
 
 	uint8_t reg = 0;
 	uint8_t buf[18];
 	ret = i2c_write_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, &reg, 1, buf,
-	                     sizeof(buf));
+			     sizeof(buf));
 	if (ret) {
 		LOG_ERR("Call `i2c_write_read` failed: %d", ret);
 		return ret;
@@ -219,6 +219,6 @@ static const struct people_counter_driver_api people_counter_driver_api = {
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, people_counter_init, NULL, &inst_##n##_data, &inst_##n##_config,  \
-	                      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &people_counter_driver_api);
+			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &people_counter_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PEOPLE_COUNTER_INIT)

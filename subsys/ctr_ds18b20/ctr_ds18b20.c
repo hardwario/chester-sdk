@@ -28,16 +28,16 @@ static K_MUTEX_DEFINE(m_lock);
 static struct ctr_w1 m_w1;
 
 static struct sensor m_sensors[] = {
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_0)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_1)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_2)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_3)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_4)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_5)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_6)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_7)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_8)) },
-	{ .dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_9)) },
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_0))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_1))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_2))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_3))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_4))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_5))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_6))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_7))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_8))},
+	{.dev = DEVICE_DT_GET(DT_NODELABEL(ds18b20_9))},
 };
 
 static int m_count;

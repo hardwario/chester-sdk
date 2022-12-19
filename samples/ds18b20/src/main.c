@@ -40,7 +40,7 @@ void main(void)
 				LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
 			} else {
 				LOG_INF("Serial number: %llu / Temperature: %.2f C", serial_number,
-				        temperature);
+					temperature);
 			}
 		}
 

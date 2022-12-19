@@ -126,7 +126,7 @@ static int measure_channels(void)
 	}
 
 	struct app_data_channel_measurement *m =
-	        &g_app_data.channel_measurements[g_app_data.channel_measurement_count++];
+		&g_app_data.channel_measurements[g_app_data.channel_measurement_count++];
 
 	m->timestamp_offset = timestamp - g_app_data.channel_measurement_timestamp;
 
@@ -162,7 +162,7 @@ int app_measure(void)
 	int ret;
 
 	k_timer_start(&g_app_measure_timer, K_MSEC(g_app_config.measurement_interval * 1000),
-	              K_FOREVER);
+		      K_FOREVER);
 
 	ret = ctr_therm_read(&g_app_data.therm_temperature);
 	if (ret) {
@@ -171,7 +171,7 @@ int app_measure(void)
 	}
 
 	ret = ctr_accel_read(&g_app_data.acceleration_x, &g_app_data.acceleration_y,
-	                     &g_app_data.acceleration_z, &g_app_data.orientation);
+			     &g_app_data.acceleration_z, &g_app_data.orientation);
 	if (ret) {
 		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
 		g_app_data.acceleration_x = NAN;

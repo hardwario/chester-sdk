@@ -246,7 +246,7 @@ int app_send(void)
 	}
 
 	LOG_DBG("Set base timestamp for channel measurement: %llu",
-	        g_app_data.channel_measurement_timestamp);
+		g_app_data.channel_measurement_timestamp);
 
 	return 0;
 }
