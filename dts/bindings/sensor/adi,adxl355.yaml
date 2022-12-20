@@ -1,0 +1,63 @@
+description: Analog Devices 3-axis accelerometer
+
+compatible: "adi,adxl355"
+
+include: i2c-device.yaml
+
+properties:
+
+  range:
+    type: int
+    description: measurement range
+    default: 1
+    enum:
+      - 1 # +-2g
+      - 2 # +-4g
+      - 3 # +-8g
+
+  odr_lpf:
+    type: int
+    description: data rate and low pass filter
+    default: 5
+    enum: 
+      - 0 # Data rate 4000     Hz | low pass filter 1000      Hz
+      - 1 # Data rate 2000     Hz | low pass filter  500      Hz
+      - 2 # Data rate 1000     Hz | low pass filter  250      Hz
+      - 3 # Data rate  500     Hz | low pass filter  125      Hz
+      - 4 # Data rate  250     Hz | low pass filter   62.5    Hz
+      - 5 # Data rate  125     Hz | low pass filter   31.25   Hz
+      - 6 # Data rate   62.5   Hz | low pass filter   15.625  Hz
+      - 7 # Data rate   32.25  Hz | low pass filter    7.812  Hz
+      - 8 # Data rate   15.625 Hz | low pass filter    3.906  Hz
+      - 9 # Data rate    7.813 Hz | low pass filter    1.953  Hz
+      - 10 # Data rate   3.306 Hz | low pass filter    0.977  Hz
+
+  hpf:
+    type: int
+    description: high pass filter
+    default: 0
+    enum: 
+      - 0 # off
+      - 1 # 247     x 10^3 data rate
+      - 2 #  62.084 x 10^3 data rate
+      - 3 #  15.545 x 10^3 data rate
+      - 4 #   3.862 x 10^3 data rate
+      - 5 #   0.954 x 10^3 data rate
+      - 6 #   0.238 x 10^3 data rate
+
+
+  i2c_speed:
+    type: int
+    description: i2c speed
+    default: 1
+    enum: 
+      - 0 # fast speed
+      - 1 # high speed
+
+  op_mode:
+    type: int
+    description: operation mode
+    default: 1
+    enum: 
+      - 0 # wakeup
+      - 1 # standby

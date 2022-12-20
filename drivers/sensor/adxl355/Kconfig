@@ -1,0 +1,15 @@
+# ADXL355, 3-Axis, +/-16g Digital Accelerometer
+
+config ADXL355
+	bool "ADXL355 Three Axis I2C accelerometer"
+	depends on I2C
+	help
+	  Enable driver for ADXL355 Three-Axis Digital Accelerometer.
+
+if ADXL355
+
+module = ADXL355
+module-str = adi_adxl355
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ADXL355

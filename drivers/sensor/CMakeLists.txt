@@ -1,0 +1,2 @@
+zephyr_include_directories(adxl355)
+add_subdirectory_ifdef(CONFIG_ADXL355		adxl355)
