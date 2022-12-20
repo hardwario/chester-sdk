@@ -1,6 +1,5 @@
-// #include <kernel.h>
-// #include <device.h>
-#include "adxl355.h"
+/* Chester includes */
+#include <chester/drivers/adxl355.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>
@@ -158,14 +157,20 @@ int adxl355_write_mask(const struct device *dev, uint8_t reg, uint32_t mask, uin
 
 	ret = adxl355_read_byte(dev, reg, &tmp);
 	if (ret) {
-		LOG_ERR("Call `ret` failed: %d", ret);
+		LOG_ERR("Call `adxl355_read_byte` failed: %d", ret);
 		return ret;
 	}
 
 	tmp &= ~mask;
 	tmp |= data;
 
-	return adxl355_write_byte(dev, reg, tmp);
+	ret = adxl355_write_byte(dev, reg, tmp);
+	if (ret) {
+		LOG_ERR("Call `adxl355_write_byte` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 static int adxl355_check_device(const struct device *dev)
@@ -177,33 +182,27 @@ static int adxl355_check_device(const struct device *dev)
 	if (ret) {
 		LOG_ERR("Call 'adxl355_read' failed: %d", ret);
 		return -EINVAL;
-	} else {
-		if (buf != VAL_DEVID_AD) {
-			LOG_ERR("Device is not ADXL355");
-			return -ENODEV;
-		}
+	} else if (buf != VAL_DEVID_AD) {
+		LOG_ERR("Device is not ADXL355");
+		return -ENODEV;
 	}
 
 	ret = adxl355_read(dev, REG_DEVID_MST, &buf, sizeof(buf));
 	if (ret) {
 		LOG_ERR("Call 'adxl355_read' failed: %d", ret);
 		return -EINVAL;
-	} else {
-		if (buf != VAL_DEVID_MST) {
-			LOG_ERR("Device is not ADXL355");
-			return -ENODEV;
-		}
+	} else if (buf != VAL_DEVID_MST) {
+		LOG_ERR("Device is not ADXL355");
+		return -ENODEV;
 	}
 
 	ret = adxl355_read(dev, REG_PARTID, &buf, sizeof(buf));
 	if (ret) {
 		LOG_ERR("Call 'adxl355_read' failed: %d", ret);
 		return -EINVAL;
-	} else {
-		if (buf != VAL_PARTID) {
-			LOG_ERR("Device is not ADXL355");
-			return -ENODEV;
-		}
+	} else if (buf != VAL_PARTID) {
+		LOG_ERR("Device is not ADXL355");
+		return -ENODEV;
 	}
 
 	return 0;
@@ -225,8 +224,10 @@ static int adxl355_get_revision(const struct device *dev, uint8_t *rev)
 static int adxl355_reset(const struct device *dev)
 {
 	int ret;
+
 	ret = adxl355_write_byte(dev, REG_RESET, CMD_RESET);
 	if (ret) {
+		LOG_ERR("Call 'adxl355_reset' failed: %d", ret);
 		return ret;
 	}
 
@@ -237,11 +238,11 @@ static int adxl355_reset(const struct device *dev)
 
 static int adxl355_set_range(const struct device *dev, enum adxl355_range val)
 {
-
 	int ret;
 
 	ret = adxl355_write_mask(dev, RANGE_REG, RANGE_RANGE_MSK, RANGE_RANGE_MODE(val));
 	if (ret) {
+		LOG_ERR("Call 'adxl355_write_mask' failed: %d", ret);
 		return ret;
 	}
 
@@ -252,11 +253,11 @@ static int adxl355_set_range(const struct device *dev, enum adxl355_range val)
 
 static int adxl355_set_odr_lpf(const struct device *dev, enum adxl355_odr_lpf val)
 {
-
 	int ret;
 
 	ret = adxl355_write_mask(dev, FILTER_REG, FILTER_ODR_LPF_MSK, FILTER_ODR_LPF_MODE(val));
 	if (ret) {
+		LOG_ERR("Call 'adxl355_write_mask' failed: %d", ret);
 		return ret;
 	}
 
@@ -267,11 +268,11 @@ static int adxl355_set_odr_lpf(const struct device *dev, enum adxl355_odr_lpf va
 
 static int adxl355_set_hpf(const struct device *dev, enum adxl355_hpf val)
 {
-
 	int ret;
 
 	ret = adxl355_write_mask(dev, FILTER_REG, FILTER_HPF_MSK, FILTER_HPF_MODE(val));
 	if (ret) {
+		LOG_ERR("Call 'adxl355_write_mask' failed: %d", ret);
 		return ret;
 	}
 
@@ -282,12 +283,11 @@ static int adxl355_set_hpf(const struct device *dev, enum adxl355_hpf val)
 
 static int adxl355_set_i2c_speed(const struct device *dev, enum adxl355_i2c_speed val)
 {
-
 	int ret;
 
 	ret = adxl355_write_mask(dev, RANGE_REG, RANGE_I2C_HS_MSK, RANGE_I2C_HS_MODE(val));
-
 	if (ret) {
+		LOG_ERR("Call 'adxl355_write_mask' failed: %d", ret);
 		return ret;
 	}
 
@@ -302,9 +302,15 @@ static int adxl355_set_op_mode(const struct device *dev, enum adxl355_op_mode mo
 
 	ret = adxl355_write_mask(dev, POWER_CTL_REG, POWER_CTL_STANDBY_MSK,
 				 POWER_CTL_STANDBY_MODE(mode));
+	if (ret) {
+		LOG_ERR("Call 'adxl355_write_mask' failed: %d", ret);
+	}
 
 	ret = adxl355_write_mask(dev, POWER_CTL_REG, POWER_CTL_TEMP_OFF_MSK,
 				 POWER_CTL_TEMP_OFF_MODE(mode));
+	if (ret) {
+		LOG_ERR("Call 'adxl355_write_mask' failed: %d", ret);
+	}
 
 	return 0;
 }
@@ -315,12 +321,16 @@ static int adxl355_set_attr_range(const struct device *dev, const struct sensor_
 {
 	int ret;
 
-	if (val.val1 < 1 && val.val1 > 3)
+	if (val.val1 < 1 && val.val1 > 3) {
+		LOG_ERR("attribute is out off range <1-3>");
 		return -EINVAL;
+	}
 
 	ret = adxl355_set_range(dev, val.val1);
-	if (ret)
+	if (ret) {
+		LOG_ERR("Call 'adxl355_set_range' failed: %d", ret);
 		return ret;
+	}
 
 	return 0;
 }
@@ -332,35 +342,41 @@ static int adxl355_set_config(const struct device *dev, const struct sensor_valu
 	switch (val->val1) {
 	case 1:
 		ret = adxl355_set_range(dev, (enum adxl355_range)val->val2);
-		if (ret)
+		if (ret) {
+			LOG_ERR("Call 'adxl355_set_range' failed: %d", ret);
 			return ret;
+		}
 		break;
-
 	case 2:
 		ret = adxl355_set_odr_lpf(dev, (enum adxl355_odr_lpf)val->val2);
-		if (ret)
+		if (ret) {
+			LOG_ERR("Call 'adxl355_set_odr_lpf' failed: %d", ret);
 			return ret;
+		}
 		break;
-
 	case 3:
 		ret = adxl355_set_hpf(dev, (enum adxl355_hpf)val->val2);
-		if (ret)
+		if (ret) {
+			LOG_ERR("Call 'adxl355_set_hpf' failed: %d", ret);
 			return ret;
+		}
 		break;
-
 	case 4:
 		ret = adxl355_set_i2c_speed(dev, (enum adxl355_i2c_speed)val->val2);
-		if (ret)
+		if (ret) {
+			LOG_ERR("Call 'adxl355_set_i2c_speed' failed: %d", ret);
 			return ret;
+		}
 		break;
-
 	case 5:
 		ret = adxl355_set_op_mode(dev, (enum adxl355_op_mode)val->val2);
-		if (ret)
+		if (ret) {
+			LOG_ERR("Call 'adxl355_set_op_mode' failed: %d", ret);
 			return ret;
+		}
 		break;
-
 	default:
+		LOG_ERR("Attribute is out off range <1-5>");
 		return -ENOTSUP;
 	}
 
@@ -373,28 +389,34 @@ static int adxl355_set_attr(const struct device *dev, enum sensor_channel chan,
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL) {
+		LOG_ERR("Channel is not supported");
 		return -ENOTSUP;
 	}
 
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
 		ret = adxl355_set_attr_range(dev, *val);
-		if (ret)
+		if (ret) {
+			LOG_ERR("Call 'adxl355_set_attr_range' failed: %d", ret);
 			return ret;
+		}
 		break;
-
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		ret = adxl355_set_odr_lpf(dev, val->val1);
-		if (ret)
+		if (ret) {
+			LOG_ERR("Call 'adxl355_set_attr_range' failed: %d", ret);
 			return ret;
+		}
 		break;
-
 	case SENSOR_ATTR_CONFIGURATION:
 		ret = adxl355_set_config(dev, val);
-		if (ret)
+		if (ret) {
+			LOG_ERR("Call 'adxl355_set_attr_range' failed: %d", ret);
 			return ret;
-
+		}
+		break;
 	default:
+		LOG_ERR("Attribute is not supported");
 		return -ENOTSUP;
 	}
 
@@ -403,14 +425,23 @@ static int adxl355_set_attr(const struct device *dev, enum sensor_channel chan,
 
 static int adxl355_normalize_axis(const uint8_t *input, int32_t *result)
 {
+	int32_t data = ((input[2] >> 4) + (input[1] << 4) + (input[0] << 12));
+
 	int lenght = 1048576;
 	int half_lenght = lenght / 2;
 
 	if (data < half_lenght) {
-		return data;
+		*result = data;
+	} else {
+		*result = data - lenght;
 	}
 
-	return data - lenght;
+	return 0;
+}
+
+static int adxl355_normalize_temperature(const uint8_t *input, int16_t *result)
+{
+	*result = (input[0] << 8) | (input[1]);
 
 	return 0;
 }
@@ -419,6 +450,7 @@ static int adxl355_sample_fetch(const struct device *dev, enum sensor_channel ch
 {
 
 	if (chan != SENSOR_CHAN_ALL) {
+		LOG_ERR("Channel is not supported");
 		return -EEXIST;
 	}
 
@@ -427,17 +459,15 @@ static int adxl355_sample_fetch(const struct device *dev, enum sensor_channel ch
 	uint8_t buf[11];
 
 	ret = adxl355_read(dev, TEMP_DATA_REG, (uint8_t *)buf, sizeof(buf));
-	if (ret)
+	if (ret) {
+		LOG_ERR("Call `adxl355_read` failed: %d", ret);
 		return ret;
+	}
 
-	data->data.axis_x =
-		adxl355_convert_uint20_to_int32_t(((buf[4] >> 4) + (buf[3] << 4) + (buf[2] << 12)));
-	data->data.axis_y =
-		adxl355_convert_uint20_to_int32_t(((buf[7] >> 4) + (buf[6] << 4) + (buf[5] << 12)));
-	data->data.axis_z = adxl355_convert_uint20_to_int32_t(
-		((buf[10] >> 4) + (buf[9] << 4) + (buf[8] << 12)));
-
-	data->data.temp = buf[0] << 8 | buf[1];
+	ret = adxl355_normalize_temperature(&buf[0], &data->data.temp);
+	ret = adxl355_normalize_axis(&buf[2], &data->data.axis_x);
+	ret = adxl355_normalize_axis(&buf[5], &data->data.axis_y);
+	ret = adxl355_normalize_axis(&buf[8], &data->data.axis_z);
 
 	return 0;
 }
@@ -452,17 +482,20 @@ static int adxl355_range_to_scale(enum adxl355_range range)
 	case ADXL355_RANGE_8G:
 		return 64000;
 	default:
+		LOG_ERR("Range is not supported");
 		return -EINVAL;
 	}
 }
 
-static int adxl355_accel_convert(struct sensor_value *val, int accel, enum adxl355_range range)
+static int adxl355_convert_acceleration(int *input, enum adxl355_range range,
+					struct sensor_value *val)
 {
 	int ret;
 
 	int scale = adxl355_range_to_scale(range);
 
-	double g = (1.0L * accel) / scale;
+	double g = (double)*input;
+	g /= scale;
 
 	__ASSERT_NO_MSG(scale != -EINVAL);
 
@@ -475,11 +508,11 @@ static int adxl355_accel_convert(struct sensor_value *val, int accel, enum adxl3
 	return 0;
 }
 
-static int adxl355_convert_temperature(int temperature, struct sensor_value *val)
+static int adxl355_convert_temperature(int16_t *input, struct sensor_value *val)
 {
 	int ret;
 
-	double celsius = 25 + (temperature - 1852) / -9.05f;
+	float celsius = ((*input - 1852) + 25.0f) / -9.05f;
 
 	ret = sensor_value_from_double(val, celsius);
 	if (ret) {
@@ -499,27 +532,27 @@ static int adxl355_channel_get(const struct device *dev, enum sensor_channel cha
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		ret = adxl355_accel_convert(val, data->data.axis_x, data->range);
+		ret = adxl355_convert_acceleration(&data->data.axis_x, data->range, val);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl355_accel_convert(val, data->data.axis_y, data->range);
+		ret = adxl355_convert_acceleration(&data->data.axis_y, data->range, val);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl355_accel_convert(val, data->data.axis_z, data->range);
+		ret = adxl355_convert_acceleration(&data->data.axis_z, data->range, val);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl355_accel_convert(&val[0], data->data.axis_x, data->range);
-		adxl355_accel_convert(&val[1], data->data.axis_y, data->range);
-		adxl355_accel_convert(&val[2], data->data.axis_z, data->range);
+		ret = adxl355_convert_acceleration(&data->data.axis_x, data->range, &val[0]);
+		ret = adxl355_convert_acceleration(&data->data.axis_y, data->range, &val[1]);
+		ret = adxl355_convert_acceleration(&data->data.axis_z, data->range, &val[2]);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
-		adxl355_temp_convert(val, data->data.temp);
+		adxl355_convert_temperature(&data->data.temp, val);
 		break;
 	case SENSOR_CHAN_ALL:
-		adxl355_accel_convert(&val[0], data->data.axis_x, data->range);
-		adxl355_accel_convert(&val[1], data->data.axis_y, data->range);
-		adxl355_accel_convert(&val[2], data->data.axis_z, data->range);
-		adxl355_temp_convert(&val[3], data->data.temp);
+		ret = adxl355_convert_acceleration(&data->data.axis_x, data->range, &val[0]);
+		ret = adxl355_convert_acceleration(&data->data.axis_y, data->range, &val[1]);
+		ret = adxl355_convert_acceleration(&data->data.axis_z, data->range, &val[2]);
+		adxl355_convert_temperature(&data->data.temp, &val[3]);
 		break;
 	default:
 		return -ENOTSUP;
@@ -560,13 +593,11 @@ static int adxl355_init(const struct device *dev)
 
 	LOG_INF("Device found with revision 0x%02x", rev);
 
-	/*
 	ret = adxl355_reset(dev);
-	if(ret){
-	    LOG_ERR("Call 'adxl355_reset' failed: %d", ret);
-	    return ret;
+	if (ret) {
+		LOG_ERR("Call 'adxl355_reset' failed: %d", ret);
+		return ret;
 	}
-	*/
 
 	ret = adxl355_config_to_data(dev);
 	if (ret) {
