@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define STABILIZATION_DELAY K_MSEC(300)
 #define MEASUREMENT_PAUSE   K_SECONDS(2)
 
+#if defined(CONFIG_SHIELD_CTR_X3_A) || defined(CONFIG_SHIELD_CTR_X3_B)
+
 static int compare(const void *a, const void *b)
 {
 	int32_t sample_a = *(int32_t *)a;
@@ -49,18 +51,27 @@ static int read_weight(const char *id, enum measure_weight_slot slot, enum ctr_x
 {
 	int ret;
 
+#if defined(CONFIG_SHIELD_CTR_X3_A)
 	static const struct device *ctr_x3_a_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_a));
+#endif /* defined(CONFIG_SHIELD_CTR_X3_A) */
+
+#if defined(CONFIG_SHIELD_CTR_X3_B)
 	static const struct device *ctr_x3_b_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_b));
+#endif /* defined(CONFIG_SHIELD_CTR_X3_B) */
 
 	const struct device *dev;
 
 	switch (slot) {
+#if defined(CONFIG_SHIELD_CTR_X3_A)
 	case MEASURE_WEIGHT_SLOT_A:
 		dev = ctr_x3_a_dev;
 		break;
+#endif /* defined(CONFIG_SHIELD_CTR_X3_A) */
+#if defined(CONFIG_SHIELD_CTR_X3_B)
 	case MEASURE_WEIGHT_SLOT_B:
 		dev = ctr_x3_b_dev;
 		break;
+#endif /* defined(CONFIG_SHIELD_CTR_X3_B) */
 	default:
 		LOG_ERR("Unknown slot: %d", slot);
 		return -EINVAL;
@@ -171,6 +182,8 @@ static int filter_weight(const char *id, enum measure_weight_slot slot, enum ctr
 
 	return 0;
 }
+
+#endif /* defined(CONFIG_SHIELD_CTR_X3_A) || defined(CONFIG_SHIELD_CTR_X3_B) */
 
 static int measure(void)
 {
