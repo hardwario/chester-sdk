@@ -45,8 +45,8 @@ K_TIMER_DEFINE(g_app_measure_weight_timer, weight_timer, NULL);
 
 static int compare(const void *a, const void *b)
 {
-	int32_t sample_a = *((int32_t *)a);
-	int32_t sample_b = *((int32_t *)b);
+	int32_t sample_a = *(int32_t *)a;
+	int32_t sample_b = *(int32_t *)b;
 
 	if (sample_a == sample_b) {
 		return 0;
@@ -95,7 +95,7 @@ static int read_weight(const char *id, enum measure_weight_slot slot, enum ctr_x
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
-		return -EINVAL;
+		return -ENODEV;
 	}
 
 	ret = ctr_x3_set_power(dev, channel, true);
