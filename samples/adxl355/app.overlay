@@ -1,0 +1,10 @@
+&i2c0{
+    adxl355: adxl355@1d{
+        compatible = "adi,adxl355";
+        label = "ADXL355";
+        status = "okay";
+        reg = <0x1d>;
+        range = <1>;
+    };
+
+};
