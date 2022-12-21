@@ -1,9 +1,6 @@
 #ifndef APP_DATA_H_
 #define APP_DATA_H_
 
-/* Standard includes */
-#include <stdbool.h>
-
 /* CHESTER includes */
 #if defined(CONFIG_SHIELD_CTR_LTE)
 #include <chester/ctr_lte.h>
@@ -12,75 +9,75 @@
 /* Zephyr includes */
 #include <zephyr/kernel.h>
 
+/* Standard includes */
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct app_data_errors {
-	bool orientation;
-	bool acceleration_x;
-	bool acceleration_y;
-	bool acceleration_z;
-	bool int_temperature;
-	bool ext_temperature;
-	bool ext_humidity;
-	bool line_present;
-	bool line_voltage;
-	bool bckp_voltage;
-	bool batt_voltage_rest;
-	bool batt_voltage_load;
-	bool batt_current_load;
+#define APP_DATA_MAX_BACKUP_EVENTS 32
+#define APP_DATA_MAX_BUTTON_EVENTS 8
+
+#define APP_DATA_BUTTON_COUNT 5
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+struct app_data_backup_event {
+	int64_t timestamp;
+	bool connected;
 };
 
-struct app_data_states {
-	int orientation;
-	float acceleration_x;
-	float acceleration_y;
-	float acceleration_z;
-	float int_temperature;
-	float ext_temperature;
-	float ext_humidity;
-	bool line_present;
+struct app_data_backup {
 	float line_voltage;
-	float bckp_voltage;
-	float batt_voltage_rest;
-	float batt_voltage_load;
-	float batt_current_load;
+	float battery_voltage;
+	bool line_present;
+	int event_count;
+	struct app_data_backup_event events[APP_DATA_MAX_BACKUP_EVENTS];
 };
 
-struct app_data_events {
-	atomic_t device_tilt;
-	atomic_t button_x_click;
-	atomic_t button_x_hold;
-	atomic_t button_1_click;
-	atomic_t button_1_hold;
-	atomic_t button_2_click;
-	atomic_t button_2_hold;
-	atomic_t button_3_click;
-	atomic_t button_3_hold;
-	atomic_t button_4_click;
-	atomic_t button_4_hold;
+enum app_data_button_event_type {
+	APP_DATA_BUTTON_EVENT_X_CLICK = 0,
+	APP_DATA_BUTTON_EVENT_X_HOLD = 1,
+	APP_DATA_BUTTON_EVENT_1_CLICK = 2,
+	APP_DATA_BUTTON_EVENT_1_HOLD = 3,
+	APP_DATA_BUTTON_EVENT_2_CLICK = 4,
+	APP_DATA_BUTTON_EVENT_2_HOLD = 5,
+	APP_DATA_BUTTON_EVENT_3_CLICK = 6,
+	APP_DATA_BUTTON_EVENT_3_HOLD = 7,
+	APP_DATA_BUTTON_EVENT_4_CLICK = 8,
+	APP_DATA_BUTTON_EVENT_4_HOLD = 9,
 };
 
-struct app_data_sources {
-	atomic_t device_boot;
-	atomic_t button_x_click;
-	atomic_t button_x_hold;
-	atomic_t button_1_click;
-	atomic_t button_1_hold;
-	atomic_t button_2_click;
-	atomic_t button_2_hold;
-	atomic_t button_3_click;
-	atomic_t button_3_hold;
-	atomic_t button_4_click;
-	atomic_t button_4_hold;
+struct app_data_button_event {
+	int64_t timestamp;
+	enum app_data_button_event_type type;
 };
+
+struct app_data_button {
+	atomic_t click_count;
+	atomic_t hold_count;
+	int event_count;
+	struct app_data_button_event events[APP_DATA_MAX_BUTTON_EVENTS];
+};
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 struct app_data {
-	struct app_data_errors errors;
-	struct app_data_states states;
-	struct app_data_events events;
-	struct app_data_sources sources;
+
+	float system_voltage_rest;
+	float system_voltage_load;
+	float system_current_load;
+	float therm_temperature;
+	float accel_acceleration_x;
+	float accel_acceleration_y;
+	float accel_acceleration_z;
+	int accel_orientation;
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	struct app_data_backup backup;
+	struct app_data_button button[APP_DATA_BUTTON_COUNT];
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 };
 
 extern struct app_data g_app_data;
@@ -91,6 +88,9 @@ extern struct k_mutex g_app_data_lte_eval_mut;
 extern bool g_app_data_lte_eval_valid;
 extern struct ctr_lte_eval g_app_data_lte_eval;
 #endif
+
+void app_data_lock(void);
+void app_data_unlock(void);
 
 #ifdef __cplusplus
 }

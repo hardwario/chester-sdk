@@ -16,13 +16,15 @@
 
 /* Standard includes */
 #include <errno.h>
+#include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
-int app_cbor_encode(zcbor_state_t *zs)
+int encode(zcbor_state_t *zs)
 {
 	int ret;
 
@@ -30,13 +32,12 @@ int app_cbor_encode(zcbor_state_t *zs)
 
 	zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	zcbor_uint32_put(zs, MSG_KEY_FRAME);
+	zcbor_uint32_put(zs, MSG_KEY_MESSAGE);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		uint8_t protocol = 1;
-		zcbor_uint32_put(zs, MSG_KEY_PROTOCOL);
-		zcbor_uint32_put(zs, protocol);
+		zcbor_uint32_put(zs, MSG_KEY_VERSION);
+		zcbor_uint32_put(zs, 1);
 
 		static uint32_t sequence;
 		zcbor_uint32_put(zs, MSG_KEY_SEQUENCE);
@@ -83,6 +84,12 @@ int app_cbor_encode(zcbor_state_t *zs)
 		zcbor_uint32_put(zs, MSG_KEY_HW_REVISION);
 		zcbor_tstr_put_term(zs, hw_revision);
 
+		char *fw_name;
+		ctr_info_get_fw_name(&fw_name);
+
+		zcbor_uint32_put(zs, MSG_KEY_FW_NAME);
+		zcbor_tstr_put_term(zs, fw_name);
+
 		char *fw_version;
 		ctr_info_get_fw_version(&fw_version);
 
@@ -98,78 +105,84 @@ int app_cbor_encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	zcbor_uint32_put(zs, MSG_KEY_STATE);
+	zcbor_uint32_put(zs, MSG_KEY_SYSTEM);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, MSG_KEY_UPTIME);
 		zcbor_uint64_put(zs, k_uptime_get() / 1000);
 
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}
-
-	zcbor_uint32_put(zs, MSG_KEY_BATTERY);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
 		zcbor_uint32_put(zs, MSG_KEY_VOLTAGE_REST);
-		if (g_app_data.errors.batt_voltage_rest) {
+		if (isnan(g_app_data.system_voltage_rest)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_uint32_put(zs, g_app_data.states.batt_voltage_rest * 1000.f);
+			zcbor_uint32_put(zs, g_app_data.system_voltage_rest);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_VOLTAGE_LOAD);
-		if (g_app_data.errors.batt_voltage_load) {
+		if (isnan(g_app_data.system_voltage_load)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_uint32_put(zs, g_app_data.states.batt_voltage_load * 1000.f);
+			zcbor_uint32_put(zs, g_app_data.system_voltage_load);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_CURRENT_LOAD);
-		if (g_app_data.errors.batt_current_load) {
+		if (isnan(g_app_data.system_current_load)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_uint32_put(zs, g_app_data.states.batt_current_load);
+			zcbor_uint32_put(zs, g_app_data.system_current_load);
 		}
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
+#if defined(CONFIG_SHIELD_CTR_Z)
 	zcbor_uint32_put(zs, MSG_KEY_BACKUP);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		zcbor_uint32_put(zs, MSG_KEY_VOLTAGE);
-		if (g_app_data.errors.bckp_voltage) {
+		struct app_data_backup *backup = &g_app_data.backup;
+
+		zcbor_uint32_put(zs, MSG_KEY_LINE_VOLTAGE);
+		if (isnan(backup->line_voltage)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_uint32_put(zs, g_app_data.states.bckp_voltage * 1000.f);
+			zcbor_int32_put(zs, backup->line_voltage * 1000.f);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_BATT_VOLTAGE);
+		if (isnan(backup->battery_voltage)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_int32_put(zs, backup->battery_voltage * 1000.f);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_BACKUP_STATE);
+		zcbor_uint32_put(zs, backup->line_present ? 1 : 0);
+
+		zcbor_uint32_put(zs, MSG_KEY_BACKUP_EVENTS);
+		{
+			zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			if (backup->event_count) {
+				int64_t timestamp_abs = backup->events[0].timestamp;
+
+				/* TSO absolute timestamp */
+				zcbor_int64_put(zs, timestamp_abs);
+
+				for (int i = 0; i < backup->event_count; i++) {
+					/* TSO offset timestamp */
+					zcbor_int64_put(zs, backup->events[i].timestamp -
+								    timestamp_abs);
+					zcbor_uint32_put(zs, backup->events[i].connected ? 1 : 0);
+				}
+			}
+			zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-
-	zcbor_uint32_put(zs, MSG_KEY_LINE);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		zcbor_uint32_put(zs, MSG_KEY_PRESENT);
-		if (g_app_data.errors.line_present) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_bool_put(zs, g_app_data.states.line_present);
-		}
-
-		zcbor_uint32_put(zs, MSG_KEY_VOLTAGE);
-		if (g_app_data.errors.line_voltage) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.states.line_voltage * 1000.f);
-		}
-
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 	zcbor_uint32_put(zs, MSG_KEY_NETWORK);
 	{
@@ -279,10 +292,10 @@ int app_cbor_encode(zcbor_state_t *zs)
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
-		if (g_app_data.errors.int_temperature) {
+		if (isnan(g_app_data.therm_temperature)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_int32_put(zs, g_app_data.states.int_temperature * 100.f);
+			zcbor_int32_put(zs, g_app_data.therm_temperature * 100.f);
 		}
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -293,120 +306,106 @@ int app_cbor_encode(zcbor_state_t *zs)
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, MSG_KEY_ACCELERATION_X);
-		if (g_app_data.errors.acceleration_x) {
+		if (isnan(g_app_data.accel_acceleration_x)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_int32_put(zs, g_app_data.states.acceleration_x * 1000.f);
+			zcbor_int32_put(zs, g_app_data.accel_acceleration_x * 1000.f);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_ACCELERATION_Y);
-		if (g_app_data.errors.acceleration_y) {
+		if (isnan(g_app_data.accel_acceleration_y)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_int32_put(zs, g_app_data.states.acceleration_y * 1000.f);
+			zcbor_int32_put(zs, g_app_data.accel_acceleration_y * 1000.f);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_ACCELERATION_Z);
-		if (g_app_data.errors.acceleration_z) {
+		if (isnan(g_app_data.accel_acceleration_z)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_int32_put(zs, g_app_data.states.acceleration_z * 1000.f);
+			zcbor_int32_put(zs, g_app_data.accel_acceleration_z * 1000.f);
 		}
 
 		zcbor_uint32_put(zs, MSG_KEY_ORIENTATION);
-		if (g_app_data.errors.orientation) {
+		if (g_app_data.accel_orientation == INT_MAX) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_uint32_put(zs, g_app_data.states.orientation);
+			zcbor_uint32_put(zs, g_app_data.accel_orientation);
 		}
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	zcbor_uint32_put(zs, MSG_KEY_BUTTON);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+#if defined(CONFIG_SHIELD_CTR_Z)
+	for (int i = 0; i < APP_DATA_BUTTON_COUNT; i++) {
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_X_CLICK_EVENT);
-		zcbor_bool_put(zs, atomic_get(&g_app_data.sources.button_x_click));
+		static const int zcbor_key_lookup[] = {
+			MSG_KEY_BUTTON_X, MSG_KEY_BUTTON_1, MSG_KEY_BUTTON_2,
+			MSG_KEY_BUTTON_3, MSG_KEY_BUTTON_4,
+		};
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_1_CLICK_EVENT);
-		zcbor_bool_put(zs, atomic_get(&g_app_data.sources.button_1_click));
+		zcbor_uint32_put(zs, zcbor_key_lookup[i]);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_2_CLICK_EVENT);
-		zcbor_bool_put(zs, atomic_get(&g_app_data.sources.button_2_click));
+			struct app_data_button *button = &g_app_data.button[i];
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_3_CLICK_EVENT);
-		zcbor_bool_put(zs, atomic_get(&g_app_data.sources.button_3_click));
+			zcbor_uint32_put(zs, MSG_KEY_COUNT_CLICK);
+			zcbor_int32_put(zs, button->click_count);
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_4_CLICK_EVENT);
-		zcbor_bool_put(zs, atomic_get(&g_app_data.sources.button_4_click));
+			zcbor_uint32_put(zs, MSG_KEY_COUNT_HOLD);
+			zcbor_int32_put(zs, button->hold_count);
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_X_HOLD_EVENT);
-		zcbor_bool_put(zs, atomic_get(&g_app_data.sources.button_x_hold));
+			zcbor_uint32_put(zs, MSG_KEY_BUTTON_EVENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_1_HOLD_EVENT);
-		zcbor_bool_put(zs, atomic_get(&g_app_data.sources.button_1_hold));
+				if (button->event_count) {
+					int64_t timestamp_abs = button->events[0].timestamp;
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_2_HOLD_EVENT);
-		zcbor_bool_put(zs, atomic_get(&g_app_data.sources.button_2_hold));
+					/* TSO absolute timestamp */
+					zcbor_int64_put(zs, timestamp_abs);
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_3_HOLD_EVENT);
-		zcbor_bool_put(zs, atomic_get(&g_app_data.sources.button_3_hold));
+					for (int i = 0; i < button->event_count; i++) {
+						/* TSO offset timestamp */
+						zcbor_int64_put(zs, button->events[i].timestamp -
+									    timestamp_abs);
+						zcbor_uint32_put(zs, button->events[i].type);
+					}
+				}
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_4_HOLD_EVENT);
-		zcbor_bool_put(zs, atomic_get(&g_app_data.sources.button_4_hold));
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
 
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_X_CLICK_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.events.button_x_click));
-
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_1_CLICK_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.events.button_1_click));
-
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_2_CLICK_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.events.button_2_click));
-
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_3_CLICK_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.events.button_3_click));
-
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_4_CLICK_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.events.button_4_click));
-
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_X_HOLD_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.events.button_x_hold));
-
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_1_HOLD_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.events.button_1_hold));
-
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_2_HOLD_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.events.button_2_hold));
-
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_3_HOLD_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.events.button_3_hold));
-
-		zcbor_uint32_put(zs, MSG_KEY_BUTTON_4_HOLD_COUNT);
-		zcbor_uint32_put(zs, atomic_get(&g_app_data.events.button_4_hold));
-
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
 	}
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-	atomic_set(&g_app_data.sources.button_x_click, false);
-	atomic_set(&g_app_data.sources.button_x_hold, false);
-	atomic_set(&g_app_data.sources.button_1_click, false);
-	atomic_set(&g_app_data.sources.button_1_hold, false);
-	atomic_set(&g_app_data.sources.button_2_click, false);
-	atomic_set(&g_app_data.sources.button_2_hold, false);
-	atomic_set(&g_app_data.sources.button_3_click, false);
-	atomic_set(&g_app_data.sources.button_3_hold, false);
-	atomic_set(&g_app_data.sources.button_4_click, false);
-	atomic_set(&g_app_data.sources.button_4_hold, false);
 
 	if (!zcbor_check_error(zs)) {
 		LOG_ERR("Encoding failed: %d", zcbor_pop_error(zs));
 		return -EFAULT;
 	}
+
+	return 0;
+}
+
+int app_cbor_encode(zcbor_state_t *zs)
+{
+	int ret;
+
+	app_data_lock();
+
+	ret = encode(zs);
+	if (ret) {
+		LOG_ERR("Call `encode` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	app_data_unlock();
 
 	return 0;
 }

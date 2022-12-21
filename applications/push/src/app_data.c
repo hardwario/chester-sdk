@@ -5,27 +5,36 @@
 #include <chester/ctr_lte.h>
 #endif
 
+/* Zephyr includes */
+#include <zephyr/kernel.h>
+
 /* Standard includes */
+#include <limits.h>
+#include <math.h>
 #include <stdbool.h>
 
 struct app_data g_app_data = {
-	.errors =
-		{
-			.orientation = true,
-			.acceleration_x = true,
-			.acceleration_y = true,
-			.acceleration_z = true,
-			.int_temperature = true,
-			.ext_temperature = true,
-			.ext_humidity = true,
-			.line_present = true,
-			.line_voltage = true,
-			.bckp_voltage = true,
-			.batt_voltage_rest = true,
-			.batt_voltage_load = true,
-			.batt_current_load = true,
-		},
+	.system_voltage_rest = NAN,
+	.system_voltage_load = NAN,
+	.system_current_load = NAN,
+	.accel_acceleration_x = NAN,
+	.accel_acceleration_y = NAN,
+	.accel_acceleration_z = NAN,
+	.accel_orientation = INT_MAX,
+	.therm_temperature = NAN,
 };
+
+static K_MUTEX_DEFINE(m_lock);
+
+void app_data_lock(void)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+}
+
+void app_data_unlock(void)
+{
+	k_mutex_unlock(&m_lock);
+}
 
 #if defined(CONFIG_SHIELD_CTR_LTE)
 K_MUTEX_DEFINE(g_app_data_lte_eval_mut);

@@ -5,6 +5,7 @@
 #include <zephyr/shell/shell.h>
 
 /* Standard includes */
+#include <stdbool.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -12,15 +13,31 @@ extern "C" {
 #endif
 
 struct app_config {
-	int measurement_interval;
-	int report_interval;
+	int interval_sample;
+	int interval_report; /* TODO interval_report */
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	int event_report_delay;
+	int event_report_rate;
+	bool backup_report_connected;
+	bool backup_report_disconnected;
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 };
 
 extern struct app_config g_app_config;
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv);
-int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t argc, char **argv);
-int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv);
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+int app_config_cmd_config_event_report_delay(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_event_report_rate(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_backup_report_connected(const struct shell *shell, size_t argc,
+                                                  char **argv);
+int app_config_cmd_config_backup_report_disconnected(const struct shell *shell, size_t argc,
+                                                     char **argv);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #ifdef __cplusplus
 }

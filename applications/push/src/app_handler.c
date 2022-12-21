@@ -1,11 +1,13 @@
+#include "app_backup.h"
+#include "app_config.h"
 #include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
-#include "app_loop.h"
+#include "app_work.h"
 
 /* CHESTER includes */
-#include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
+#include <chester/ctr_rtc.h>
 #include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
@@ -14,50 +16,19 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+/* Standard includes */
+#include <inttypes.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_LRW)
-
-void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param)
-{
-	int ret;
-
-	switch (event) {
-	case CTR_LRW_EVENT_FAILURE:
-		LOG_INF("Event `CTR_LRW_EVENT_FAILURE`");
-		ret = ctr_lrw_start(NULL);
-		if (ret) {
-			LOG_ERR("Call `ctr_lrw_start` failed: %d", ret);
-		}
-		break;
-	case CTR_LRW_EVENT_START_OK:
-		LOG_INF("Event `CTR_LRW_EVENT_START_OK`");
-		ret = ctr_lrw_join(NULL);
-		if (ret) {
-			LOG_ERR("Call `ctr_lrw_join` failed: %d", ret);
-		}
-		break;
-	case CTR_LRW_EVENT_START_ERR:
-		LOG_INF("Event `CTR_LRW_EVENT_START_ERR`");
-		break;
-	case CTR_LRW_EVENT_JOIN_OK:
-		LOG_INF("Event `CTR_LRW_EVENT_JOIN_OK`");
-		break;
-	case CTR_LRW_EVENT_JOIN_ERR:
-		LOG_INF("Event `CTR_LRW_EVENT_JOIN_ERR`");
-		break;
-	case CTR_LRW_EVENT_SEND_OK:
-		LOG_INF("Event `CTR_LRW_EVENT_SEND_OK`");
-		break;
-	case CTR_LRW_EVENT_SEND_ERR:
-		LOG_INF("Event `CTR_LRW_EVENT_SEND_ERR`");
-		break;
-	default:
-		LOG_WRN("Unknown event: %d", event);
-	}
-}
-
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
+#if defined(CONFIG_SHIELD_CTR_Z)
+static atomic_t m_report_rate_hourly_counter = 0;
+static atomic_t m_report_rate_timer_is_active = false;
+static atomic_t m_report_delay_timer_is_active = false;
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_LTE)
 
@@ -168,16 +139,105 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+static void report_delay_timer_handler(struct k_timer *timer)
+{
+	app_work_send();
+	atomic_inc(&m_report_rate_hourly_counter);
+	atomic_set(&m_report_delay_timer_is_active, false);
+}
+
+static K_TIMER_DEFINE(m_report_delay_timer, report_delay_timer_handler, NULL);
+
+static void report_rate_timer_handler(struct k_timer *timer)
+{
+	atomic_set(&m_report_rate_hourly_counter, 0);
+	atomic_set(&m_report_rate_timer_is_active, false);
+}
+
+static K_TIMER_DEFINE(m_report_rate_timer, report_rate_timer_handler, NULL);
+
+static void send_with_rate_limit(void)
+{
+	if (!atomic_get(&m_report_rate_timer_is_active)) {
+		k_timer_start(&m_report_rate_timer, K_HOURS(1), K_NO_WAIT);
+		atomic_set(&m_report_rate_timer_is_active, true);
+	}
+
+	LOG_INF("Hourly counter state: %d/%d", (int)atomic_get(&m_report_rate_hourly_counter),
+		g_app_config.event_report_rate);
+
+	if (atomic_get(&m_report_rate_hourly_counter) <= g_app_config.event_report_rate) {
+		if (!atomic_get(&m_report_delay_timer_is_active)) {
+			LOG_INF("Starting delay timer");
+			k_timer_start(&m_report_delay_timer,
+				      K_SECONDS(g_app_config.event_report_delay), K_NO_WAIT);
+			atomic_set(&m_report_delay_timer_is_active, true);
+		} else {
+			LOG_INF("Delay timer already running");
+		}
+	} else {
+		LOG_WRN("Hourly counter exceeded");
+	}
+}
+
+void handle_dc_event(enum ctr_z_event backup_event)
+{
+	int ret;
+
+	struct app_data_backup *backup = &g_app_data.backup;
+
+	app_data_lock();
+
+	backup->line_present = backup_event == CTR_Z_EVENT_DC_CONNECTED;
+
+	if (backup->event_count < APP_DATA_MAX_BACKUP_EVENTS) {
+		struct app_data_backup_event *event = &backup->events[backup->event_count];
+
+		ret = ctr_rtc_get_ts(&event->timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			app_data_unlock();
+			return;
+		}
+
+		event->connected = backup->line_present;
+		backup->event_count++;
+
+		LOG_INF("Event count: %d", backup->event_count);
+	} else {
+		LOG_WRN("Measurement full");
+		app_data_unlock();
+		return;
+	}
+
+	LOG_INF("Backup: %d", (int)backup->line_present);
+
+	if (g_app_config.backup_report_connected && backup_event == CTR_Z_EVENT_DC_CONNECTED) {
+		send_with_rate_limit();
+	}
+
+	if (g_app_config.backup_report_disconnected &&
+	    backup_event == CTR_Z_EVENT_DC_DISCONNECTED) {
+		send_with_rate_limit();
+	}
+
+	app_data_unlock();
+}
+
 #if defined(CONFIG_APP_FLIP_MODE)
 static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
 			 enum ctr_z_led_channel led_channel,
-			 enum ctr_z_buzzer_command buzzer_command, atomic_t *counter,
-			 atomic_t *source)
+			 enum ctr_z_buzzer_command buzzer_command,
+			 enum app_data_button_event_type button_event,
+			 struct app_data_button *button)
 #else
 static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
 			 enum ctr_z_led_channel led_channel, enum ctr_z_led_command led_command,
-			 enum ctr_z_buzzer_command buzzer_command, atomic_t *counter,
-			 atomic_t *source)
+			 enum ctr_z_buzzer_command buzzer_command,
+			 enum app_data_button_event_type button_event,
+			 struct app_data_button *button)
 #endif /* defined(CONFIG_APP_FLIP_MODE) */
 {
 	int ret;
@@ -221,11 +281,46 @@ static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
 		return ret;
 	}
 
-	atomic_inc(counter);
-	atomic_set(source, true);
+	bool button_event_type_is_click = true;
 
-	atomic_set(&g_app_loop_send, true);
-	k_sem_give(&g_app_loop_sem);
+	if (event == CTR_Z_EVENT_BUTTON_0_HOLD || event == CTR_Z_EVENT_BUTTON_1_HOLD ||
+	    event == CTR_Z_EVENT_BUTTON_2_HOLD || event == CTR_Z_EVENT_BUTTON_3_HOLD ||
+	    event == CTR_Z_EVENT_BUTTON_4_HOLD) {
+		button_event_type_is_click = false;
+	}
+
+	app_data_lock();
+
+	if (button->event_count < APP_DATA_MAX_BUTTON_EVENTS) {
+		struct app_data_button_event *event = &button->events[button->event_count];
+
+		ret = ctr_rtc_get_ts(&event->timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			app_data_unlock();
+			return ret;
+		}
+
+		event->type = button_event_type_is_click ? 0 : 1;
+		button->event_count++;
+
+		LOG_INF("Event count: %d", button->event_count);
+		LOG_INF("Button event: %d", button_event);
+	} else {
+		LOG_WRN("Event full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	if (button_event_type_is_click) {
+		atomic_inc(&button->click_count);
+	} else {
+		atomic_inc(&button->hold_count);
+	}
+
+	app_data_unlock();
+
+	send_with_rate_limit();
 
 	return 1;
 }
@@ -263,11 +358,12 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 
 #undef CLEAR_LED
 
-#define HANDLE_PRESS(button, counter, source)                                                      \
+#define HANDLE_PRESS(button_index, button_event)                                                   \
 	do {                                                                                       \
-		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button##_PRESS,                    \
-				    CTR_Z_LED_CHANNEL_##button##_R, CTR_Z_BUZZER_COMMAND_1X_1_2,   \
-				    counter, source);                                              \
+		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button_index##_PRESS,              \
+				    CTR_Z_LED_CHANNEL_##button_index##_R,                          \
+				    CTR_Z_BUZZER_COMMAND_1X_1_2, button_event,                     \
+				    &g_app_data.button[button_index]);                             \
 		if (ret < 0) {                                                                     \
 			LOG_ERR("Call `handle_button` failed: %d", ret);                           \
 		} else if (ret) {                                                                  \
@@ -275,21 +371,22 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 		}                                                                                  \
 	} while (0)
 
-	HANDLE_PRESS(0, &g_app_data.events.button_x_click, &g_app_data.sources.button_x_click);
-	HANDLE_PRESS(1, &g_app_data.events.button_1_click, &g_app_data.sources.button_1_click);
-	HANDLE_PRESS(2, &g_app_data.events.button_2_click, &g_app_data.sources.button_2_click);
-	HANDLE_PRESS(3, &g_app_data.events.button_3_click, &g_app_data.sources.button_3_click);
-	HANDLE_PRESS(4, &g_app_data.events.button_4_click, &g_app_data.sources.button_4_click);
+	HANDLE_PRESS(0, APP_DATA_BUTTON_EVENT_X_CLICK);
+	HANDLE_PRESS(1, APP_DATA_BUTTON_EVENT_1_CLICK);
+	HANDLE_PRESS(2, APP_DATA_BUTTON_EVENT_2_CLICK);
+	HANDLE_PRESS(3, APP_DATA_BUTTON_EVENT_3_CLICK);
+	HANDLE_PRESS(4, APP_DATA_BUTTON_EVENT_4_CLICK);
 
 #undef HANDLE_PRESS
 
 #else
 
-#define HANDLE_CLICK(button, counter, source)                                                      \
+#define HANDLE_CLICK(button_index, button_event)                                                   \
 	do {                                                                                       \
-		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button##_CLICK,                    \
-				    CTR_Z_LED_CHANNEL_##button##_G, CTR_Z_LED_COMMAND_1X_1_2,      \
-				    CTR_Z_BUZZER_COMMAND_1X_1_2, counter, source);                 \
+		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button_index##_CLICK,              \
+				    CTR_Z_LED_CHANNEL_##button_index##_G,                          \
+				    CTR_Z_LED_COMMAND_1X_1_2, CTR_Z_BUZZER_COMMAND_1X_1_2,         \
+				    button_event, &g_app_data.button[button_index]);               \
 		if (ret < 0) {                                                                     \
 			LOG_ERR("Call `handle_button` failed: %d", ret);                           \
 		} else if (ret) {                                                                  \
@@ -297,19 +394,20 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 		}                                                                                  \
 	} while (0)
 
-	HANDLE_CLICK(0, &g_app_data.events.button_x_click, &g_app_data.sources.button_x_click);
-	HANDLE_CLICK(1, &g_app_data.events.button_1_click, &g_app_data.sources.button_1_click);
-	HANDLE_CLICK(2, &g_app_data.events.button_2_click, &g_app_data.sources.button_2_click);
-	HANDLE_CLICK(3, &g_app_data.events.button_3_click, &g_app_data.sources.button_3_click);
-	HANDLE_CLICK(4, &g_app_data.events.button_4_click, &g_app_data.sources.button_4_click);
+	HANDLE_CLICK(0, APP_DATA_BUTTON_EVENT_X_CLICK);
+	HANDLE_CLICK(1, APP_DATA_BUTTON_EVENT_1_CLICK);
+	HANDLE_CLICK(2, APP_DATA_BUTTON_EVENT_2_CLICK);
+	HANDLE_CLICK(3, APP_DATA_BUTTON_EVENT_3_CLICK);
+	HANDLE_CLICK(4, APP_DATA_BUTTON_EVENT_4_CLICK);
 
 #undef HANDLE_CLICK
 
-#define HANDLE_HOLD(button, counter, source)                                                       \
+#define HANDLE_HOLD(button_index, button_event)                                                    \
 	do {                                                                                       \
-		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button##_HOLD,                     \
-				    CTR_Z_LED_CHANNEL_##button##_R, CTR_Z_LED_COMMAND_2X_1_2,      \
-				    CTR_Z_BUZZER_COMMAND_2X_1_2, counter, source);                 \
+		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button_index##_HOLD,               \
+				    CTR_Z_LED_CHANNEL_##button_index##_R,                          \
+				    CTR_Z_LED_COMMAND_2X_1_2, CTR_Z_BUZZER_COMMAND_2X_1_2,         \
+				    button_event, &g_app_data.button[button_index]);               \
 		if (ret < 0) {                                                                     \
 			LOG_ERR("Call `handle_button` failed: %d", ret);                           \
 		} else if (ret) {                                                                  \
@@ -317,11 +415,11 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 		}                                                                                  \
 	} while (0)
 
-	HANDLE_HOLD(0, &g_app_data.events.button_x_hold, &g_app_data.sources.button_x_hold);
-	HANDLE_HOLD(1, &g_app_data.events.button_1_hold, &g_app_data.sources.button_1_hold);
-	HANDLE_HOLD(2, &g_app_data.events.button_2_hold, &g_app_data.sources.button_2_hold);
-	HANDLE_HOLD(3, &g_app_data.events.button_3_hold, &g_app_data.sources.button_3_hold);
-	HANDLE_HOLD(4, &g_app_data.events.button_4_hold, &g_app_data.sources.button_4_hold);
+	HANDLE_HOLD(0, APP_DATA_BUTTON_EVENT_X_HOLD);
+	HANDLE_HOLD(1, APP_DATA_BUTTON_EVENT_1_HOLD);
+	HANDLE_HOLD(2, APP_DATA_BUTTON_EVENT_2_HOLD);
+	HANDLE_HOLD(3, APP_DATA_BUTTON_EVENT_3_HOLD);
+	HANDLE_HOLD(4, APP_DATA_BUTTON_EVENT_4_HOLD);
 
 #undef HANDLE_HOLD
 
@@ -334,14 +432,14 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 
 	case CTR_Z_EVENT_DC_CONNECTED:
 		LOG_INF("Event `CTR_Z_EVENT_DC_CONNECTED`");
-		atomic_set(&g_app_loop_send, true);
-		k_sem_give(&g_app_loop_sem);
+		app_work_backup_update();
+		handle_dc_event(event);
 		break;
 
 	case CTR_Z_EVENT_DC_DISCONNECTED:
 		LOG_INF("Event `CTR_Z_EVENT_DC_DISCONNECTED`");
-		atomic_set(&g_app_loop_send, true);
-		k_sem_give(&g_app_loop_sem);
+		app_work_backup_update();
+		handle_dc_event(event);
 		break;
 	default:
 		break;
@@ -353,3 +451,5 @@ apply:
 		LOG_ERR("Call `ctr_z_apply` failed: %d", ret);
 	}
 }
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */

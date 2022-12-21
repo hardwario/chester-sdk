@@ -11,43 +11,84 @@
 
 /* Standard includes */
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
-#define SETTINGS_PFX "app"
+#define SETTINGS_PFX "app-push"
 
 struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
-	.measurement_interval = 60,
-	.report_interval = 1800,
+	.interval_sample = 60,
+	.interval_report = 1800,
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	.event_report_delay = 1,
+	.event_report_rate = 60,
+	.backup_report_connected = false,
+	.backup_report_disconnected = false,
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 };
 
-static void print_measurement_interval(const struct shell *shell)
+static void print_interval_sample(const struct shell *shell)
 {
-	shell_print(shell, SETTINGS_PFX " config measurement-interval %d",
-		    m_app_config_interim.measurement_interval);
+	shell_print(shell, "app config interval-sample %d", m_app_config_interim.interval_sample);
 }
 
-static void print_report_interval(const struct shell *shell)
+static void print_interval_report(const struct shell *shell)
 {
-	shell_print(shell, SETTINGS_PFX " config report-interval %d",
-		    m_app_config_interim.report_interval);
+	shell_print(shell, "app config interval-report %d", m_app_config_interim.interval_report);
 }
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+static void print_event_report_delay(const struct shell *shell)
+{
+	shell_print(shell, "app config event-report-delay %d",
+		    m_app_config_interim.event_report_delay);
+}
+
+static void print_event_report_rate(const struct shell *shell)
+{
+	shell_print(shell, "app config event-report-rate %d",
+		    m_app_config_interim.event_report_rate);
+}
+
+static void print_backup_report_connected(const struct shell *shell)
+{
+	shell_print(shell, "app config backup-report-connected %s",
+		    m_app_config_interim.backup_report_connected ? "true" : "false");
+}
+
+static void print_backup_report_disconnected(const struct shell *shell)
+{
+	shell_print(shell, "app config backup-report-disconnected %s",
+		    m_app_config_interim.backup_report_disconnected ? "true" : "false");
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
-	print_measurement_interval(shell);
-	print_report_interval(shell);
+	print_interval_sample(shell);
+	print_interval_report(shell);
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	print_event_report_delay(shell);
+	print_event_report_rate(shell);
+	print_backup_report_connected(shell);
+	print_backup_report_disconnected(shell);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 	return 0;
 }
 
-int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t argc, char **argv)
+int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		print_measurement_interval(shell);
+		print_interval_sample(shell);
 		return 0;
 	}
 
@@ -66,14 +107,14 @@ int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t
 			}
 		}
 
-		int measurement_interval = atoi(argv[1]);
+		int interval_sample = atoi(argv[1]);
 
-		if (measurement_interval < 5 || measurement_interval > 3600) {
+		if (interval_sample < 5 || interval_sample > 3600) {
 			shell_error(shell, "invalid range");
 			return -EINVAL;
 		}
 
-		m_app_config_interim.measurement_interval = measurement_interval;
+		m_app_config_interim.interval_sample = interval_sample;
 
 		return 0;
 	}
@@ -82,10 +123,10 @@ int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t
 	return -EINVAL;
 }
 
-int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc, char **argv)
+int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		print_report_interval(shell);
+		print_interval_report(shell);
 		return 0;
 	}
 
@@ -104,14 +145,14 @@ int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc
 			}
 		}
 
-		int report_interval = atoi(argv[1]);
+		int interval_report = atoi(argv[1]);
 
-		if (report_interval < 30 || report_interval > 86400) {
+		if (interval_report < 30 || interval_report > 86400) {
 			shell_error(shell, "invalid range");
 			return -EINVAL;
 		}
 
-		m_app_config_interim.report_interval = report_interval;
+		m_app_config_interim.interval_report = interval_report;
 
 		return 0;
 	}
@@ -119,13 +160,149 @@ int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc
 	shell_help(shell);
 	return -EINVAL;
 }
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+int app_config_cmd_config_event_report_delay(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_event_report_delay(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len < 1 || len > 4) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		long value = strtol(argv[1], NULL, 10);
+
+		if (value < 1 || value > 86400) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.event_report_delay = (int)value;
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+int app_config_cmd_config_event_report_rate(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_event_report_rate(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		if (len < 1 || len > 4) {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		long value = strtol(argv[1], NULL, 10);
+
+		if (value < 1 || value > 3600) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.event_report_rate = (int)value;
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+int app_config_cmd_config_backup_report_connected(const struct shell *shell, size_t argc,
+						  char **argv)
+{
+	if (argc == 1) {
+		print_backup_report_connected(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		bool is_false = !strcmp(argv[1], "false");
+		bool is_true = !strcmp(argv[1], "true");
+
+		if (is_false) {
+			m_app_config_interim.backup_report_connected = false;
+		} else if (is_true) {
+			m_app_config_interim.backup_report_connected = true;
+		} else {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+int app_config_cmd_config_backup_report_disconnected(const struct shell *shell, size_t argc,
+						     char **argv)
+{
+	if (argc == 1) {
+		print_backup_report_disconnected(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		bool is_false = !strcmp(argv[1], "false");
+		bool is_true = !strcmp(argv[1], "true");
+
+		if (is_false) {
+			m_app_config_interim.backup_report_disconnected = false;
+		} else if (is_true) {
+			m_app_config_interim.backup_report_disconnected = true;
+		} else {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
 	int ret;
 	const char *next;
 
-#define SETTINGS_SET(_key, _var, _size)                                                            \
+#define SETTINGS_SET_ARRAY(_key, _var, _size)                                                      \
 	do {                                                                                       \
 		if (settings_name_steq(key, _key, &next) && !next) {                               \
 			if (len != _size) {                                                        \
@@ -143,12 +320,36 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 		}                                                                                  \
 	} while (0)
 
-	SETTINGS_SET("measurement-interval", &m_app_config_interim.measurement_interval,
-		     sizeof(m_app_config_interim.measurement_interval));
-	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
-		     sizeof(m_app_config_interim.report_interval));
+#define SETTINGS_SET_SCALAR(_key, _var)                                                            \
+	do {                                                                                       \
+		if (settings_name_steq(key, _key, &next) && !next) {                               \
+			if (len != sizeof(m_app_config_interim._var)) {                            \
+				return -EINVAL;                                                    \
+			}                                                                          \
+                                                                                                   \
+			ret = read_cb(cb_arg, &m_app_config_interim._var, len);                    \
+                                                                                                   \
+			if (ret < 0) {                                                             \
+				LOG_ERR("Call `read_cb` failed: %d", ret);                         \
+				return ret;                                                        \
+			}                                                                          \
+                                                                                                   \
+			return 0;                                                                  \
+		}                                                                                  \
+	} while (0)
 
-#undef SETTINGS_SET
+	SETTINGS_SET_SCALAR("interval-sample", interval_sample);
+	SETTINGS_SET_SCALAR("interval-report", interval_report);
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	SETTINGS_SET_SCALAR("event-report-delay", event_report_delay);
+	SETTINGS_SET_SCALAR("event-report-rate", event_report_rate);
+	SETTINGS_SET_SCALAR("backup-report-connected", backup_report_connected);
+	SETTINGS_SET_SCALAR("backup-report-disconnected", backup_report_disconnected);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#undef SETTINGS_SET_ARRAY
+#undef SETTINGS_SET_SCALAR
 
 	return -ENOENT;
 }
@@ -162,17 +363,29 @@ static int h_commit(void)
 
 static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len))
 {
-#define EXPORT_FUNC(_key, _var, _size)                                                             \
+#define EXPORT_FUNC_ARRAY(_key, _var, _size)                                                       \
 	do {                                                                                       \
 		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
 	} while (0)
 
-	EXPORT_FUNC("measurement-interval", &m_app_config_interim.measurement_interval,
-		    sizeof(m_app_config_interim.measurement_interval));
-	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
-		    sizeof(m_app_config_interim.report_interval));
+#define EXPORT_FUNC_SCALAR(_key, _var)                                                             \
+	do {                                                                                       \
+		(void)export_func(SETTINGS_PFX "/" _key, &m_app_config_interim._var,               \
+				  sizeof(m_app_config_interim._var));                              \
+	} while (0)
 
-#undef EXPORT_FUNC
+	EXPORT_FUNC_SCALAR("interval-sample", interval_sample);
+	EXPORT_FUNC_SCALAR("interval-report", interval_report);
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	EXPORT_FUNC_SCALAR("event-report-delay", event_report_delay);
+	EXPORT_FUNC_SCALAR("event-report-rate", event_report_rate);
+	EXPORT_FUNC_SCALAR("backup-report-connected", backup_report_connected);
+	EXPORT_FUNC_SCALAR("backup-report-disconnected", backup_report_disconnected);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#undef EXPORT_FUNC_ARRAY
+#undef EXPORT_FUNC_SCALAR
 
 	return 0;
 }

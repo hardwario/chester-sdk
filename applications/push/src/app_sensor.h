@@ -1,16 +1,11 @@
 #ifndef APP_MEASURE_H_
 #define APP_MEASURE_H_
 
-/* Zephyr includes */
-#include <zephyr/kernel.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern struct k_timer g_app_measure_timer;
-
-int app_measure(void);
+int app_sensor_sample(void);
 
 #ifdef __cplusplus
 }

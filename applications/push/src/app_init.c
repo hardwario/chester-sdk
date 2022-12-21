@@ -1,9 +1,9 @@
 #include "app_handler.h"
 #include "app_init.h"
+#include "app_work.h"
 
 /* CHESTER includes */
 #include <chester/ctr_led.h>
-#include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
 #include <chester/ctr_wdog.h>
 #include <chester/drivers/ctr_z.h>
@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 
 /* Standard includes */
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -25,6 +26,8 @@ K_SEM_DEFINE(g_app_init_sem, 0, 1);
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 struct ctr_wdog_channel g_app_wdog_channel;
+
+#if defined(CONFIG_SHIELD_CTR_Z)
 
 static int init_chester_z(void)
 {
@@ -39,7 +42,7 @@ static int init_chester_z(void)
 
 	ret = ctr_z_set_handler(dev, app_handler_ctr_z, NULL);
 	if (ret) {
-		LOG_ERR("Call `app_handler_ctr_z` failed: %d", ret);
+		LOG_ERR("Call `ctr_z_set_handler` failed: %d", ret);
 		return ret;
 	}
 
@@ -106,6 +109,8 @@ static int init_chester_z(void)
 	return 0;
 }
 
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
 int app_init(void)
 {
 	int ret;
@@ -129,28 +134,6 @@ int app_init(void)
 		LOG_ERR("Call `ctr_wdog_start` failed: %d", ret);
 		return ret;
 	}
-
-	ret = init_chester_z();
-	if (ret) {
-		LOG_ERR("Call `init_chester_z` failed: %d", ret);
-		return ret;
-	}
-
-#if defined(CONFIG_SHIELD_CTR_LRW)
-	ret = ctr_lrw_init(app_handler_lrw, NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lrw_init` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_lrw_start(NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lrw_start` failed: %d", ret);
-		return ret;
-	}
-
-	k_sleep(K_SECONDS(2));
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
 
 #if defined(CONFIG_SHIELD_CTR_LTE)
 	ret = ctr_lte_set_event_cb(app_handler_lte, NULL);
@@ -185,6 +168,20 @@ int app_init(void)
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
+
+	ret = app_work_init();
+	if (ret) {
+		LOG_ERR("Call `app_work_init` failed: %d", ret);
+		return ret;
+	}
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	ret = init_chester_z();
+	if (ret) {
+		LOG_ERR("Call `init_chester_z` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 	return 0;
 }
