@@ -45,13 +45,13 @@ static int reset(void)
 	int ret;
 
 	const struct flash_area *fa;
-	ret = flash_area_open(FLASH_AREA_ID(storage), &fa);
+	ret = flash_area_open(FIXED_PARTITION_ID(storage_partition), &fa);
 	if (ret) {
 		LOG_ERR("Call `flash_area_open` failed: %d", ret);
 		return ret;
 	}
 
-	ret = flash_area_erase(fa, 0, FLASH_AREA_SIZE(storage));
+	ret = flash_area_erase(fa, 0, FIXED_PARTITION_SIZE(storage_partition));
 	if (ret < 0) {
 		LOG_ERR("Call `flash_area_erase` failed: %d", ret);
 		return ret;
