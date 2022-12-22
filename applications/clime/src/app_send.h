@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-extern struct k_timer g_app_send_timer;
-
 int app_send(void);
 
 #ifdef __cplusplus

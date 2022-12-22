@@ -1,24 +1,24 @@
-- accel_x:
+- acceleration_x:
   - div: 1000
   - fpp: 2
-- accel_y:
+- acceleration_y:
   - div: 1000
   - fpp: 2
-- accel_z:
+- acceleration_z:
   - div: 1000
   - fpp: 2
 - accelerometer:
 - altitude:
 - attribute:
 - band:
-- battery:
 - cid:
 - co2_conc:
 - current_load:
 - earfcn:
 - ecl:
 - eest:
-- frame:
+- message:
+- fw_name:
 - fw_version:
 - humidity:
   - div: 100
@@ -26,6 +26,7 @@
 - hygrometer:
 - hw_revision:
 - hw_variant:
+- version:
 - iaq_sensor:
 - illuminance:
 - imei:
@@ -38,26 +39,11 @@
 - press_count:
 - pressure:
 - product_name:
-- protocol:
 - rsrp:
 - rsrq:
-- sample_count:
 - sequence:
 - serial_number:
 - snr:
-- state:
-- temperature_avg:
-  - div: 100
-  - fpp: 2
-- temperature_max:
-  - div: 100
-  - fpp: 2
-- temperature_mdn:
-  - div: 100
-  - fpp: 2
-- temperature_min:
-  - div: 100
-  - fpp: 2
 - temperature:
   - div: 100
   - fpp: 2
@@ -97,3 +83,24 @@
   - key: "measurements"
   - tsp:
     - value:
+- backup_state:
+  - key: "state"
+  - enum:
+    - disconnected
+    - connected
+- events:
+- line_voltage:
+  - div: 1000
+  - fpp: 2
+- batt_voltage:
+  - div: 1000
+  - fpp: 2
+- backup:
+- backup_events:
+  - key: "events"
+  - tso:
+    - type:
+      - enum:
+        - disconnected
+        - connected
+- system:

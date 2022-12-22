@@ -77,24 +77,24 @@ static int compose(struct ctr_buf *buf)
 
 	/* Field BATT */
 	if (header & BIT(0)) {
-		if (isnan(g_app_data.batt_voltage_rest)) {
+		if (isnan(g_app_data.system_voltage_rest)) {
 			ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
 		} else {
-			uint16_t val = g_app_data.batt_voltage_rest * 1000.f;
+			uint16_t val = g_app_data.system_voltage_rest * 1000.f;
 			ret |= ctr_buf_append_u16(buf, val);
 		}
 
-		if (isnan(g_app_data.batt_voltage_load)) {
+		if (isnan(g_app_data.system_voltage_load)) {
 			ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
 		} else {
-			uint16_t val = g_app_data.batt_voltage_load * 1000.f;
+			uint16_t val = g_app_data.system_voltage_load * 1000.f;
 			ret |= ctr_buf_append_u16(buf, val);
 		}
 
-		if (isnan(g_app_data.batt_current_load)) {
+		if (isnan(g_app_data.system_current_load)) {
 			ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
 		} else {
-			uint8_t val = g_app_data.batt_current_load;
+			uint8_t val = g_app_data.system_current_load;
 			ret |= ctr_buf_append_u8(buf, val);
 		}
 	}

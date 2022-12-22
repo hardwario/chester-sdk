@@ -11,8 +11,9 @@
 /* TODO Delete */
 #include <zephyr/kernel.h>
 
-#define APP_DATA_MAX_MEASUREMENTS 32
-#define APP_DATA_MAX_SAMPLES	  32
+#define APP_DATA_MAX_MEASUREMENTS  32
+#define APP_DATA_MAX_SAMPLES	   32
+#define APP_DATA_MAX_BACKUP_EVENTS 32
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 #define APP_DATA_W1_THERM_COUNT	      10
@@ -22,6 +23,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+struct app_data_backup_event {
+	int64_t timestamp;
+	bool connected;
+};
+
+struct app_data_backup {
+	float line_voltage;
+	float battery_voltage;
+	bool line_present;
+	int event_count;
+	struct app_data_backup_event events[APP_DATA_MAX_BACKUP_EVENTS];
+};
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 struct app_data_aggreg {
 	float min;
@@ -59,7 +75,7 @@ struct app_data_iaq {
 
 	int64_t timestamp;
 	atomic_t sample;
-	atomic_t aggregate;
+	atomic_t aggreg;
 };
 
 struct app_data_hygro_measurement {
@@ -77,7 +93,7 @@ struct app_data_hygro {
 
 	int64_t timestamp;
 	atomic_t sample;
-	atomic_t aggregate;
+	atomic_t aggreg;
 };
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
@@ -99,19 +115,23 @@ struct app_data_w1_therm {
 
 	int64_t timestamp;
 	atomic_t sample;
-	atomic_t aggregate;
+	atomic_t aggreg;
 };
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 struct app_data {
-	float batt_voltage_rest;
-	float batt_voltage_load;
-	float batt_current_load;
+	float system_voltage_rest;
+	float system_voltage_load;
+	float system_current_load;
 	float therm_temperature;
-	float accel_x;
-	float accel_y;
-	float accel_z;
+	float accel_acceleration_x;
+	float accel_acceleration_y;
+	float accel_acceleration_z;
 	int accel_orientation;
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	struct app_data_backup backup;
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_S1)
 	struct app_data_iaq iaq;

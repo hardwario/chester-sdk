@@ -8,6 +8,7 @@ extern "C" {
 int app_work_init(void);
 void app_work_sample(void);
 void app_work_send(void);
+void app_work_backup_update(void);
 
 #ifdef __cplusplus
 }

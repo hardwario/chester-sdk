@@ -1,5 +1,7 @@
+#include "app_backup.h"
 #include "app_config.h"
 #include "app_init.h"
+#include "app_power.h"
 #include "app_send.h"
 #include "app_sensor.h"
 #include "app_work.h"
@@ -39,6 +41,10 @@ static void send_work_handler(struct k_work *work)
 		LOG_ERR("Call `app_send` failed: %d", ret);
 	}
 
+#if defined(CONFIG_SHIELD_CTR_Z)
+	app_backup_clear();
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_S1)
 	app_sensor_iaq_clear();
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
@@ -70,8 +76,15 @@ static void sample_work_handler(struct k_work *work)
 {
 	int ret;
 
+#if defined(CONFIG_SHIELD_CTR_Z)
+	ret = app_backup_sample();
+	if (ret) {
+		LOG_ERR("Call `app_backup_sample` failed: %d", ret);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
 	ret = app_sensor_sample();
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `app_sensor_sample` failed: %d", ret);
 	}
 }
@@ -90,6 +103,30 @@ static void sample_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_sample_timer, sample_timer_handler, NULL);
 
+static void power_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_power_sample();
+	if (ret) {
+		LOG_ERR("Call `app_power_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_power_work, power_work_handler);
+
+static void power_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_power_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_power_timer, power_timer_handler, NULL);
+
 #if defined(CONFIG_SHIELD_CTR_S1)
 
 static void iaq_sample_work_handler(struct k_work *work)
@@ -97,7 +134,7 @@ static void iaq_sample_work_handler(struct k_work *work)
 	int ret;
 
 	ret = app_sensor_iaq_sample();
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `app_sensor_iaq_sample` failed: %d", ret);
 	}
 }
@@ -120,9 +157,9 @@ static void iaq_aggreg_work_handler(struct k_work *work)
 {
 	int ret;
 
-	ret = app_sensor_iaq_aggregate();
-	if (ret < 0) {
-		LOG_ERR("Call `app_sensor_iaq_aggregate` failed: %d", ret);
+	ret = app_sensor_iaq_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_iaq_aggreg` failed: %d", ret);
 	}
 }
 
@@ -149,7 +186,7 @@ static void hygro_sample_work_handler(struct k_work *work)
 	int ret;
 
 	ret = app_sensor_hygro_sample();
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `app_sensor_hygro_sample` failed: %d", ret);
 	}
 }
@@ -172,9 +209,9 @@ static void hygro_aggreg_work_handler(struct k_work *work)
 {
 	int ret;
 
-	ret = app_sensor_hygro_aggregate();
-	if (ret < 0) {
-		LOG_ERR("Call `app_sensor_hygro_aggregate` failed: %d", ret);
+	ret = app_sensor_hygro_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_hygro_aggreg` failed: %d", ret);
 	}
 }
 
@@ -201,7 +238,7 @@ static void w1_therm_sample_work_handler(struct k_work *work)
 	int ret;
 
 	ret = app_sensor_w1_therm_sample();
-	if (ret < 0) {
+	if (ret) {
 		LOG_ERR("Call `app_sensor_w1_therm_sample` failed: %d", ret);
 	}
 }
@@ -224,9 +261,9 @@ static void w1_therm_aggreg_work_handler(struct k_work *work)
 {
 	int ret;
 
-	ret = app_sensor_w1_therm_aggregate();
-	if (ret < 0) {
-		LOG_ERR("Call `app_sensor_w1_therm_aggregate` failed: %d", ret);
+	ret = app_sensor_w1_therm_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_w1_therm_aggreg` failed: %d", ret);
 	}
 }
 
@@ -246,38 +283,62 @@ static K_TIMER_DEFINE(m_w1_therm_aggreg_timer, w1_therm_aggreg_timer_handler, NU
 
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+static void backup_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_backup_sample();
+	if (ret) {
+		LOG_ERR("Call `app_backup_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_backup_work, backup_work_handler);
+
+void app_work_backup_update(void)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_backup_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
 int app_work_init(void)
 {
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
 			   WORK_Q_PRIORITY, NULL);
 
-	/* TODO Fix name */
-	k_thread_name_set(&m_work_q.thread, "APP_WORK Thread");
+	k_thread_name_set(&m_work_q.thread, "app_work");
 
 	k_timer_start(&m_send_timer, K_NO_WAIT, K_FOREVER);
-
-	k_timer_start(&m_sample_timer, K_SECONDS(g_app_config.interval_sample),
-		      K_SECONDS(g_app_config.interval_sample));
+	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
+	k_timer_start(&m_power_timer, K_SECONDS(60), K_HOURS(12));
 
 #if defined(CONFIG_SHIELD_CTR_S1)
 	k_timer_start(&m_iaq_sample_timer, K_SECONDS(g_app_config.interval_sample),
 		      K_SECONDS(g_app_config.interval_sample));
-	k_timer_start(&m_iaq_aggreg_timer, K_SECONDS(g_app_config.interval_aggregate),
-		      K_SECONDS(g_app_config.interval_aggregate));
+	k_timer_start(&m_iaq_aggreg_timer, K_SECONDS(g_app_config.interval_aggreg),
+		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 	k_timer_start(&m_hygro_sample_timer, K_SECONDS(g_app_config.interval_sample),
 		      K_SECONDS(g_app_config.interval_sample));
-	k_timer_start(&m_hygro_aggreg_timer, K_SECONDS(g_app_config.interval_aggregate),
-		      K_SECONDS(g_app_config.interval_aggregate));
+	k_timer_start(&m_hygro_aggreg_timer, K_SECONDS(g_app_config.interval_aggreg),
+		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	k_timer_start(&m_w1_therm_sample_timer, K_SECONDS(g_app_config.interval_sample),
 		      K_SECONDS(g_app_config.interval_sample));
-	k_timer_start(&m_w1_therm_aggreg_timer, K_SECONDS(g_app_config.interval_aggregate),
-		      K_SECONDS(g_app_config.interval_aggregate));
+	k_timer_start(&m_w1_therm_aggreg_timer, K_SECONDS(g_app_config.interval_aggreg),
+		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 	return 0;

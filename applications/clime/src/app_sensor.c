@@ -38,7 +38,7 @@ static int compare(const void *a, const void *b)
 	return (fa > fb) - (fa < fb);
 }
 
-static void aggregate(float *samples, size_t count, float *min, float *max, float *avg, float *mdn)
+static void aggreg(float *samples, size_t count, float *min, float *max, float *avg, float *mdn)
 {
 	*min = NAN;
 	*max = NAN;
@@ -70,84 +70,15 @@ static void aggregate(float *samples, size_t count, float *min, float *max, floa
 	*mdn = samples[count / 2];
 }
 
-/* TODO check if linked */
-__unused static void aggregate_sample(float *samples, size_t count, struct app_data_aggreg *sample)
+__unused static void aggreg_sample(float *samples, size_t count, struct app_data_aggreg *sample)
 {
-	aggregate(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
-}
-
-static int update_battery(void)
-{
-	int ret;
-
-	static int64_t next;
-
-	if (k_uptime_get() < next) {
-		return 0;
-	}
-
-	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_batt));
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		ret = -ENODEV;
-		goto error;
-	}
-
-	int rest_mv;
-	ret = ctr_batt_get_rest_voltage_mv(dev, &rest_mv, CTR_BATT_REST_TIMEOUT_DEFAULT_MS);
-	if (ret) {
-		LOG_ERR("Call `ctr_batt_get_rest_voltage_mv` failed: %d", ret);
-		goto error;
-	}
-
-	int load_mv;
-	ret = ctr_batt_get_load_voltage_mv(dev, &load_mv, CTR_BATT_LOAD_TIMEOUT_DEFAULT_MS);
-	if (ret) {
-		LOG_ERR("Call `ctr_batt_get_load_voltage_mv` failed: %d", ret);
-		goto error;
-	}
-
-	int current_ma;
-	ctr_batt_get_load_current_ma(dev, &current_ma, load_mv);
-
-	LOG_INF("Battery voltage (rest): %u mV", rest_mv);
-	LOG_INF("Battery voltage (load): %u mV", load_mv);
-	LOG_INF("Battery current (load): %u mA", current_ma);
-
-	app_data_lock();
-	g_app_data.batt_voltage_rest = rest_mv / 1000.f;
-	g_app_data.batt_voltage_load = load_mv / 1000.f;
-	g_app_data.batt_current_load = current_ma;
-	app_data_unlock();
-
-	next = k_uptime_get() + BATT_TEST_INTERVAL_MSEC;
-
-	return 0;
-
-error:
-	app_data_lock();
-	g_app_data.batt_voltage_rest = NAN;
-	g_app_data.batt_voltage_load = NAN;
-	g_app_data.batt_current_load = NAN;
-	app_data_unlock();
-
-	return ret;
+	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
 }
 
 int app_sensor_sample(void)
 {
 	int ret;
 	float therm_temperature;
-	float accel_x;
-	float accel_y;
-	float accel_z;
-	int accel_orientation;
-
-	ret = update_battery();
-	if (ret) {
-		LOG_ERR("Call `update_battery` failed: %d", ret);
-	}
 
 	ret = ctr_therm_read(&therm_temperature);
 	if (ret) {
@@ -155,20 +86,26 @@ int app_sensor_sample(void)
 		g_app_data.therm_temperature = NAN;
 	}
 
-	ret = ctr_accel_read(&accel_x, &accel_y, &accel_z, &accel_orientation);
+	float accel_acceleration_x;
+	float accel_acceleration_y;
+	float accel_acceleration_z;
+	int accel_orientation;
+
+	ret = ctr_accel_read(&accel_acceleration_x, &accel_acceleration_y, &accel_acceleration_z,
+			     &accel_orientation);
 	if (ret) {
 		LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
-		accel_x = NAN;
-		accel_y = NAN;
-		accel_z = NAN;
+		accel_acceleration_x = NAN;
+		accel_acceleration_y = NAN;
+		accel_acceleration_z = NAN;
 		accel_orientation = INT_MAX;
 	}
 
 	app_data_lock();
 	g_app_data.therm_temperature = therm_temperature;
-	g_app_data.accel_x = accel_x;
-	g_app_data.accel_y = accel_y;
-	g_app_data.accel_z = accel_z;
+	g_app_data.accel_acceleration_x = accel_acceleration_x;
+	g_app_data.accel_acceleration_y = accel_acceleration_y;
+	g_app_data.accel_acceleration_z = accel_acceleration_z;
 	g_app_data.accel_orientation = accel_orientation;
 	app_data_unlock();
 
@@ -258,7 +195,7 @@ int app_sensor_iaq_sample(void)
 	return 0;
 }
 
-int app_sensor_iaq_aggregate(void)
+int app_sensor_iaq_aggreg(void)
 {
 	int ret;
 	struct app_data_iaq *iaq = &g_app_data.iaq;
@@ -278,14 +215,14 @@ int app_sensor_iaq_aggregate(void)
 		struct app_data_iaq_measurement *measurement =
 			&iaq->measurements[iaq->measurement_count];
 
-		aggregate_sample(iaq->samples_temperature, iaq->sample_count,
-				 &measurement->temperature);
-		aggregate_sample(iaq->samples_humidity, iaq->sample_count, &measurement->humidity);
-		aggregate_sample(iaq->samples_illuminance, iaq->sample_count,
-				 &measurement->illuminance);
-		aggregate_sample(iaq->samples_altitude, iaq->sample_count, &measurement->altitude);
-		aggregate_sample(iaq->samples_pressure, iaq->sample_count, &measurement->pressure);
-		aggregate_sample(iaq->samples_co2_conc, iaq->sample_count, &measurement->co2_conc);
+		aggreg_sample(iaq->samples_temperature, iaq->sample_count,
+			      &measurement->temperature);
+		aggreg_sample(iaq->samples_humidity, iaq->sample_count, &measurement->humidity);
+		aggreg_sample(iaq->samples_illuminance, iaq->sample_count,
+			      &measurement->illuminance);
+		aggreg_sample(iaq->samples_altitude, iaq->sample_count, &measurement->altitude);
+		aggreg_sample(iaq->samples_pressure, iaq->sample_count, &measurement->pressure);
+		aggreg_sample(iaq->samples_co2_conc, iaq->sample_count, &measurement->co2_conc);
 
 		measurement->press_count = iaq->press_count;
 		measurement->motion_count = iaq->motion_count;
@@ -351,7 +288,7 @@ int app_sensor_hygro_sample(void)
 	return 0;
 }
 
-int app_sensor_hygro_aggregate(void)
+int app_sensor_hygro_aggreg(void)
 {
 	int ret;
 
@@ -370,11 +307,11 @@ int app_sensor_hygro_aggregate(void)
 		struct app_data_hygro_measurement *hygro_measurement =
 			&g_app_data.hygro.measurements[g_app_data.hygro.measurement_count];
 
-		aggregate_sample(g_app_data.hygro.samples_temperature,
-				 g_app_data.hygro.sample_count, &hygro_measurement->temperature);
+		aggreg_sample(g_app_data.hygro.samples_temperature, g_app_data.hygro.sample_count,
+			      &hygro_measurement->temperature);
 
-		aggregate_sample(g_app_data.hygro.samples_humidity, g_app_data.hygro.sample_count,
-				 &hygro_measurement->humidity);
+		aggreg_sample(g_app_data.hygro.samples_humidity, g_app_data.hygro.sample_count,
+			      &hygro_measurement->humidity);
 
 		g_app_data.hygro.measurement_count++;
 
@@ -441,7 +378,7 @@ int app_sensor_w1_therm_sample(void)
 	return 0;
 }
 
-int app_sensor_w1_therm_aggregate(void)
+int app_sensor_w1_therm_aggreg(void)
 {
 	int ret;
 
@@ -463,9 +400,8 @@ int app_sensor_w1_therm_aggregate(void)
 				&w1_therm->sensor[j]
 					 .measurements[w1_therm->sensor[j].measurement_count];
 
-			aggregate_sample(w1_therm->sensor[j].samples_temperature,
-					 w1_therm->sensor[j].sample_count,
-					 &measurement->temperature);
+			aggreg_sample(w1_therm->sensor[j].samples_temperature,
+				      w1_therm->sensor[j].sample_count, &measurement->temperature);
 
 			w1_therm->sensor[j].measurement_count++;
 

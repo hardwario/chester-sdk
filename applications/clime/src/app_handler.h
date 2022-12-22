@@ -5,6 +5,7 @@
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
 #include <chester/drivers/ctr_s1.h>
+#include <chester/drivers/ctr_z.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,6 +22,10 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 #if defined(CONFIG_SHIELD_CTR_S1)
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data);
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *param);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #ifdef __cplusplus
 }

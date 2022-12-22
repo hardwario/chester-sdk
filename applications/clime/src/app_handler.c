@@ -1,3 +1,5 @@
+#include "app_backup.h"
+#include "app_config.h"
 #include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
@@ -6,6 +8,8 @@
 /* CHESTER includes */
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
+#include <chester/ctr_rtc.h>
+#include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -17,6 +21,12 @@
 #include <stddef.h>
 
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+static atomic_t m_report_rate_hourly_counter = 0;
+static atomic_t m_report_rate_timer_is_active = false;
+static atomic_t m_report_delay_timer_is_active = false;
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_LRW)
 
@@ -170,6 +180,51 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+static void report_delay_timer_handler(struct k_timer *timer)
+{
+	app_work_send();
+	atomic_inc(&m_report_rate_hourly_counter);
+	atomic_set(&m_report_delay_timer_is_active, false);
+}
+
+static K_TIMER_DEFINE(m_report_delay_timer, report_delay_timer_handler, NULL);
+
+static void report_rate_timer_handler(struct k_timer *timer)
+{
+	atomic_set(&m_report_rate_hourly_counter, 0);
+	atomic_set(&m_report_rate_timer_is_active, false);
+}
+
+static K_TIMER_DEFINE(m_report_rate_timer, report_rate_timer_handler, NULL);
+
+static void send_with_rate_limit(void)
+{
+	if (!atomic_get(&m_report_rate_timer_is_active)) {
+		k_timer_start(&m_report_rate_timer, K_HOURS(1), K_NO_WAIT);
+		atomic_set(&m_report_rate_timer_is_active, true);
+	}
+
+	LOG_INF("Hourly counter state: %d/%d", (int)atomic_get(&m_report_rate_hourly_counter),
+		g_app_config.event_report_rate);
+
+	if (atomic_get(&m_report_rate_hourly_counter) <= g_app_config.event_report_rate) {
+		if (!atomic_get(&m_report_delay_timer_is_active)) {
+			LOG_INF("Starting delay timer");
+			k_timer_start(&m_report_delay_timer,
+				      K_SECONDS(g_app_config.event_report_delay), K_NO_WAIT);
+			atomic_set(&m_report_delay_timer_is_active, true);
+		} else {
+			LOG_INF("Delay timer already running");
+		}
+	} else {
+		LOG_WRN("Hourly counter exceeded");
+	}
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
 #if defined(CONFIG_SHIELD_CTR_S1)
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data)
 {
@@ -264,3 +319,58 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 	}
 }
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, void *param)
+{
+	int ret;
+
+	if (backup_event != CTR_Z_EVENT_DC_CONNECTED &&
+	    backup_event != CTR_Z_EVENT_DC_DISCONNECTED) {
+		return;
+	}
+
+	struct app_data_backup *backup = &g_app_data.backup;
+
+	app_work_backup_update();
+
+	app_data_lock();
+
+	backup->line_present = backup_event == CTR_Z_EVENT_DC_CONNECTED;
+
+	if (backup->event_count < APP_DATA_MAX_BACKUP_EVENTS) {
+		struct app_data_backup_event *event = &backup->events[backup->event_count];
+
+		ret = ctr_rtc_get_ts(&event->timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			app_data_unlock();
+			return;
+		}
+
+		event->connected = backup->line_present;
+		backup->event_count++;
+
+		LOG_INF("Event count: %d", backup->event_count);
+	} else {
+		LOG_WRN("Measurement full");
+		app_data_unlock();
+		return;
+	}
+
+	LOG_INF("Backup: %d", (int)backup->line_present);
+
+	if (g_app_config.backup_report_connected && backup_event == CTR_Z_EVENT_DC_CONNECTED) {
+		send_with_rate_limit();
+	}
+
+	if (g_app_config.backup_report_disconnected &&
+	    backup_event == CTR_Z_EVENT_DC_DISCONNECTED) {
+		send_with_rate_limit();
+	}
+
+	app_data_unlock();
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */

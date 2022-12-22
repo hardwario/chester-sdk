@@ -8,6 +8,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+/* Standard includes */
+#include <stdbool.h>
+
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 extern struct ctr_wdog_channel g_app_wdog_channel;

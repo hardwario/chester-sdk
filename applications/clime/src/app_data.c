@@ -10,14 +10,15 @@
 /* Standard includes */
 #include <limits.h>
 #include <math.h>
+#include <stdbool.h>
 
 struct app_data g_app_data = {
-	.batt_voltage_rest = NAN,
-	.batt_voltage_load = NAN,
-	.batt_current_load = NAN,
-	.accel_x = NAN,
-	.accel_y = NAN,
-	.accel_z = NAN,
+	.system_voltage_rest = NAN,
+	.system_voltage_load = NAN,
+	.system_current_load = NAN,
+	.accel_acceleration_x = NAN,
+	.accel_acceleration_y = NAN,
+	.accel_acceleration_z = NAN,
 	.accel_orientation = INT_MAX,
 	.therm_temperature = NAN,
 };
