@@ -14,6 +14,7 @@ add_subdirectory_ifdef(CONFIG_CTR_Z ctr_z)
 add_subdirectory_ifdef(CONFIG_GNSS gnss)
 add_subdirectory_ifdef(CONFIG_GPIO gpio)
 add_subdirectory_ifdef(CONFIG_PEOPLE_COUNTER people_counter)
-add_subdirectory_ifdef(CONFIG_SENSOR sensor)
 add_subdirectory_ifdef(CONFIG_SERIAL serial)
 add_subdirectory_ifdef(CONFIG_W1 w1)
+
+add_subdirectory(sensor)

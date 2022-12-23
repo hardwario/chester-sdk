@@ -33,40 +33,21 @@ enum adxl355_hpf {
 	ADXL355_HPF_0_238 = 6,	/* 0.238 x 10^3 data rate */
 };
 
-enum adxl355_i2c_speed {
-	ADXL355_I2C_SPEED_FAST = 0,
-	ADXL355_I2C_SPEED_HIGH = 1
-};
-
 enum adxl355_op_mode {
 	ADXL355_OP_MODE_WAKEUP = 0,
 	ADXL355_OP_MODE_STANDBY = 1,
 };
 
-struct adxl355_config {
-	struct i2c_dt_spec i2c_spec;
-	int range;
-	int odr_lpf;
-	int hpf;
-	int i2c_speed;
-	int op_mode;
+struct adxl355_data_accelerations {
+	float axis_x;
+	float axis_y;
+	float axis_z;
 };
 
-struct adxl355_accel_data {
-	int32_t axis_x;
-	int32_t axis_y;
-	int32_t axis_z;
-	int16_t temp;
-};
+int adxl355_config_set_range(const struct device *dev, enum adxl355_range val);
+int adxl355_config_set_datarate(const struct device *dev, enum adxl355_odr_lpf val);
+int adxl355_config_set_high_pass_filter(const struct device *dev, enum adxl355_hpf val);
 
-struct adxl355_data {
-	struct k_sem lock;
-	struct adxl355_accel_data data;
-	enum adxl355_range range;
-	enum adxl355_odr_lpf odr_lpf;
-	enum adxl355_hpf hpf;
-	enum adxl355_i2c_speed i2c_speed;
-	enum adxl355_op_mode op_mode;
-};
+int adxl355_get_data(struct device *dev, struct adxl355_data_accelerations *val)
 
 #endif /* CHESTER_INCLUDE_DRIVERS_ADX355_H_ */
