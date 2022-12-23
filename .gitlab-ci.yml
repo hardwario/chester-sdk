@@ -1,4 +1,4 @@
-image: "hardwario/nrf-connect-sdk-build:v1.8.0-2"
+image: "hardwario/nrf-connect-sdk-build:v2.2.0-1"
 
 variables:
   CI_DEBUG_TRACE: "false"
@@ -18,7 +18,7 @@ build:
     - |
       for sample in chester/samples/*/
       do
-        if [[ $sample == *legacy* ]]; then
+        if [[ $sample == chester/samples/_legacy/ ]]; then
           continue
         fi
         printf '\n\033[1;36m'
@@ -30,7 +30,7 @@ build:
     - |
       for application in chester/applications/*/
       do
-        if [[ $application == *legacy* ]]; then
+        if [[ $application == chester/applications/_legacy/ ]]; then
           continue
         fi
         printf '\n\033[1;36m'
