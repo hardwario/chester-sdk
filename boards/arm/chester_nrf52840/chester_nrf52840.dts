@@ -13,7 +13,6 @@
 		ctr,lrw_if = &ctr_lrw_if;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot0_partition;
 	};
 
 	buttons {
@@ -188,6 +187,8 @@
 		led3 = &led_ext;
 		sw0 = &btn_int;
 		sw1 = &btn_ext;
+		mcuboot-button0 = &btn_int;
+		mcuboot-led0 = &led_y;
 	};
 };
 
@@ -375,7 +376,6 @@
 };
 
 &spi1 {
-	compatible = "nordic,nrf-spi";
 	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
@@ -384,18 +384,16 @@
 
 	flash1: at45db641e@0 {
 		compatible = "atmel,at45";
-		label = "NOR";
-		status = "okay";
 		reg = <0>;
 		spi-max-frequency = <15000000>;
-		jedec-id = [ 1f 28 00  ];
-		size = <8388608>;
+		jedec-id = [1f 28 00];
+		size = <67108864>;
 		sector-size = <262144>;
 		block-size = <2048>;
 		page-size = <256>;
 		use-udpd;
-		enter-dpd-delay = <3000>;  /* w/o use-udpd  <2000> */
-		exit-dpd-delay = <100000>; /* w/o use-udpd <35000> */
+		enter-dpd-delay = <3000>;  /* dpd: 2000 ns, udpd: 3000 ns */
+		exit-dpd-delay = <100000>;  /* dpd: 35000 ns, udpd: 100000 ns */
 	};
 };
 
@@ -440,27 +438,28 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x00012000>;
+			reg = <0x00000000 0x0000c000>;
 		};
 
-		slot0_partition: partition@12000 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x00012000 0x000069000>;
+			reg = <0x0000c000 0x00067000>;
 		};
 
-		slot1_partition: partition@7b000 {
+		slot1_partition: partition@73000 {
 			label = "image-1";
-			reg = <0x0007b000 0x000069000>;
+			reg = <0x00073000 0x00067000>;
 		};
 
-		scratch_partition: partition@e4000 {
+		scratch_partition: partition@da000 {
 			label = "image-scratch";
-			reg = <0x000e4000 0x00018000>;
+			reg = <0x000da000 0x0001e000>;
 		};
 
-		storage_partition: partition@fc000 {
+
+		storage_partition: partition@f8000 {
 			label = "storage";
-			reg = <0x000fc000 0x00004000>;
+			reg = <0x000f8000 0x00008000>;
 		};
 	};
 };
