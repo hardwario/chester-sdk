@@ -19,12 +19,12 @@ void main(void)
 
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
-#if defined(CINFIG_SENSOR)
+#if defined(CONFIG_SENSOR)
 	/* Wakeup */
 	const struct sensor_value val = {5, 0};
 	sensor_attr_set(m_dev_adxl355, SENSOR_CHAN_ALL, SENSOR_ATTR_CONFIGURATION, &val);
 
-	struct sensor_value values[4];
+	struct sensor_value valWAKEUP[4];
 
 	for (;;) {
 		LOG_INF("Alive");
@@ -33,7 +33,8 @@ void main(void)
 
 		ret = sensor_sample_fetch(m_dev_adxl355);
 		if (ret)
-			LOG_ERR("Call sensor sample fetch' failed: %d", ret);
+			LOG_ERR("Call sensor sample fat 0x00006F1A.
+etch' failed: %d", ret);
 
 		sensor_channel_get(m_dev_adxl355, SENSOR_CHAN_ALL, values);
 
@@ -45,24 +46,39 @@ void main(void)
 	}
 
 #else
-
-	struct sensor_value values[4];
+	k_sleep(K_MSEC(1000));
 
 	for (;;) {
+		k_sleep(K_MSEC(2000));
+
 		LOG_INF("Alive");
-
 		int ret;
+		/*
+				ret = adxl355_set_op_mode_accel(m_dev_adxl355,
+		   ADXL355_OP_MODE_WAKEUP); if (ret) { LOG_ERR("Call
+		   'adxl355_config_set_op_mode_accel' failed: %d", ret);
+				}
 
-		ret = sensor_sample_fetch(m_dev_adxl355);
-		if (ret)
-			LOG_ERR("Call sensor sample fetch' failed: %d", ret);
+				ret = adxl355_set_op_mode_temp(m_dev_adxl355,
+		   ADXL355_OP_MODE_WAKEUP); if (ret) { LOG_ERR("Call
+		   'adxl355_config_set_op_mode_temp' failed: %d", ret);
+				}
 
-		sensor_channel_get(m_dev_adxl355, SENSOR_CHAN_ALL, values);
+				struct adxl355_data_accelerations accelerations;
+				float temperature;
 
-		LOG_INF("accel: %f \t %f \t %f \t %f", sensor_value_to_double(&values[0]),
-			sensor_value_to_double(&values[1]), sensor_value_to_double(&values[2]),
-			sensor_value_to_double(&values[3]));
+				ret = adxl355_read_data_accel(m_dev_adxl355, &accelerations);
+				if (ret) {
+					LOG_ERR("Call 'adxl355_read_data_accel' failed: %d", ret);
+				}
+				ret = adxl355_read_data_temp(m_dev_adxl355, &temperature);
+				if (ret) {
+					LOG_ERR("Call 'adxl355_read_data_temp' failed: %d", ret);
+				}
 
+				LOG_INF("accel: %f \t %f \t %f \t %f", accelerations.axis_x,
+		   accelerations.axis_y, accelerations.axis_z, temperature);
+		*/
 		k_sleep(K_MSEC(2000));
 	}
 

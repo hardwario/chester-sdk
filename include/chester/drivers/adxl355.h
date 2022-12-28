@@ -36,16 +36,19 @@ enum adxl355_op_mode {
 };
 
 struct adxl355_data_accelerations {
-	float axis_x;
-	float axis_y;
-	float axis_z;
+	double axis_x;
+	double axis_y;
+	double axis_z;
 };
 
-int adxl355_config_set_range(const struct device *dev, enum adxl355_range val);
-int adxl355_config_set_datarate(const struct device *dev, enum adxl355_odr_lpf val);
-int adxl355_config_set_high_pass_filter(const struct device *dev, enum adxl355_hpf val);
-int adxl355_config_set_op_mode_accel(const struct device *dev, enum adxl355_op_mode mode);
-int adxl355_config_set_op_mode_temp(const struct device *dev, enum adxl355_op_mode mode);
+int adxl355_set_range(const struct device *dev, enum adxl355_range val);
+int adxl355_set_datarate(const struct device *dev, enum adxl355_odr_lpf val);
+int adxl355_set_high_pass_filter(const struct device *dev, enum adxl355_hpf val);
+int adxl355_set_op_mode_accel(const struct device *dev, enum adxl355_op_mode mode);
+int adxl355_set_op_mode_temp(const struct device *dev, enum adxl355_op_mode mode);
+int adxl355_read_data_accel(const struct device *dev,
+			    struct adxl355_data_accelerations *accelerations);
+int adxl355_read_data_temp(const struct device *dev, float *temperature);
 
 // int adxl355_get_data(struct device *dev);
 
