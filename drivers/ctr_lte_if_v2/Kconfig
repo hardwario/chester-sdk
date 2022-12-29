@@ -1,0 +1,19 @@
+config CTR_LTE_IF_V2
+	bool "CHESTER LTE Interface Driver"
+	select NRFX_TIMER1
+	select PIPES
+	select POLL
+	select SERIAL
+	select UART_0_NRF_HW_ASYNC
+	select UART_ASYNC_API
+
+if CTR_LTE_IF_V2
+
+module = CTR_LTE_IF_V2
+module-str = CHESTER LTE Interface Driver
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_LTE_IF_V2
+
+config UART_0_NRF_HW_ASYNC_TIMER
+	default 1 if CTR_LTE_IF_V2
