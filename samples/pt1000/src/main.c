@@ -17,7 +17,7 @@ void main(void)
 
 	for (;;) {
 		float temperature;
-		ret = ctr_rtd_read(CTR_RTD_CHANNEL_B1, CTR_RTD_TYPE_PT1000, &temperature);
+		ret = ctr_rtd_read(CTR_RTD_CHANNEL_A1, CTR_RTD_TYPE_PT1000, &temperature);
 		if (ret) {
 			LOG_ERR("Call `ctr_rtd_read` failed: %d", ret);
 			k_oops();
