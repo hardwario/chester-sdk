@@ -1,12 +1,34 @@
 # ADXL355, 3-Axis, +/-16g Digital Accelerometer
 
-config ADXL355
+menuconfig ADXL355
 	bool "ADXL355 Three Axis I2C accelerometer"
 	depends on I2C
+	depends on SENSOR
 	help
 	  Enable driver for ADXL355 Three-Axis Digital Accelerometer.
 
 if ADXL355
+
+config ADXL355_TRIGGER
+	bool "enable trigger"
+	depends on GPIO
+
+choice
+	prompt "Trigger mode"
+	default ADXL355_TRIGGER_NONE
+	help 
+	  spedify the type of triggering used by the driver.
+
+config ADXL355_TRIGGER_NONE
+	bool "No trigger"
+
+config ADXL355_TRIGGER_GLOBAL_THREAD
+	bool  "Use global thread"
+	depends on ADXL355_TRIGGER
+
+endchoice
+
+
 
 module = ADXL355
 module-str = adi_adxl355
