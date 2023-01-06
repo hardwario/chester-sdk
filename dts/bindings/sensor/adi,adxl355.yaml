@@ -65,7 +65,6 @@ properties:
     drdy-gpios:
       type: phandle-array
       required: false
-      default: false
       description: |
           The DRDY signal defaults to active high as produced by the
           sensor.

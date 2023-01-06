@@ -13,6 +13,8 @@ config ADXL355_TRIGGER
 	bool "enable trigger"
 	depends on GPIO
 
+if ADXL355_TRIGGER
+
 choice
 	prompt "Trigger mode"
 	default ADXL355_TRIGGER_NONE
@@ -24,10 +26,10 @@ config ADXL355_TRIGGER_NONE
 
 config ADXL355_TRIGGER_GLOBAL_THREAD
 	bool  "Use global thread"
-	depends on ADXL355_TRIGGER
 
 endchoice
 
+endif # ADXL355_TRIGGER
 
 
 module = ADXL355

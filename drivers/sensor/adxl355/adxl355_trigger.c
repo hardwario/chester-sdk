@@ -50,7 +50,7 @@ int adxl355_trigger_set(const struct device *dev, const struct sensor_trigger *t
 	case SENSOR_TRIG_DATA_READY:
 		k_mutex_lock(&data->trigger_mutex, K_FOREVER);
 
-#if defined(CONFIG_ADXL355_TRIGGER_PIN_INT1)
+#if defined(CONFIG_ADXL355_TRIGGER)
 		if (device_is_ready(config->int1.port)) {
 			data->handler_int1 = handler;
 			data->trigger_int1 = *trig;
@@ -66,7 +66,7 @@ int adxl355_trigger_set(const struct device *dev, const struct sensor_trigger *t
 		}
 #endif
 		k_mutex_unlock(&data->trigger_mutex);
-		int_mask = 0x2A; // ADXL362_INTMAP1_DATA_READY;
+		int_mask = 0x2A; // ADXL355_INTMAP1_DATA_READY;
 		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");
@@ -84,8 +84,36 @@ int adxl355_trigger_set(const struct device *dev, const struct sensor_trigger *t
 	return 0;
 }
 
-int adxl355_init_interrupt(const struct device *dev)
+static int adxl355_init_interrupt_gpio(const struct device *dev, const struct gpio_dt_spec *gpio,
+				       struct gpio_callback *cb)
 {
+	int ret;
+
+	if (!device_is_ready(gpio->port)) {
+		LOG_DBG("GPIO port %s not ready", gpio->port->name);
+	} else {
+		ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		gpio_init_callback(cb, adxl355_gpio_callback, BIT(gpio->pin));
+		ret = gpio_add_callback(gpio->port, cb);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_EDGE_TO_ACTIVE);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int adxl355_init_interrupts(const struct device *dev)
+{
+	LOG_INF("Interupts initialization");
 	const struct adxl355_config *config = dev->config;
 	struct adxl355_data *data = dev->data;
 	int ret;
@@ -93,40 +121,16 @@ int adxl355_init_interrupt(const struct device *dev)
 	k_mutex_init(&data->trigger_mutex);
 
 	/* Configure used interupts pins */
-
-#if defined(CONFIG_ADXL355_TRIGGER_PIN_INT1)
-
-	if (!device_is_ready(config->int1.port)) {
-		LOG_DBG("GPIO port %s not ready", config->int1.port->name);
-	} else {
-		ret = gpio_pin_configure_dt(&config->int1, GPIO_INPUT);
-		if (ret < 0) {
-			return ret;
-		}
-		gpio_init_callback(&data->gpio_cb_int1, adxl355_gpio_callback,
-				   BIT(config->int1.pin));
-		ret = gpio_add_callback(config->int1.port, &data->gpio_cb_int1);
-		if (ret < 0) {
-			return ret;
-		}
-		ret = gpio_pin_interrupt_configure_dt(&config->int1, GPIO_INT_EDGE_TO_ACTIVE);
-		if (ret) {
-			return ret;
-		}
-	}
-
-#endif
-
-	/*
-	    ret = adxl355_set_interrupt_mode(dev, CONFIG_ADXL355_INTERRUPT_MODE);
-	    if (ret < 0) {
-		    return ret;
-	    }
-	*/
+	/* init drdy */
+	ret = adxl355_init_interrupt_gpio(dev, &config->drdy, &data->gpio_cb_drdy);
+	/* init int1 */
+	ret = adxl355_init_interrupt_gpio(dev, &config->int1, &data->gpio_cb_int1);
+	/* init int2 */
+	ret = adxl355_init_interrupt_gpio(dev, &config->int2, &data->gpio_cb_int2);
 
 	data->dev = dev;
 
-#if defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
+#if defined(CONFIG_ADXL355_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = adxl355_work_cb;
 #endif
 

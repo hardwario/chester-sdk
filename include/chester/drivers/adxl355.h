@@ -1,6 +1,23 @@
 #ifndef CHESTER_INCLUDE_DRIVERS_ADX355_H_
 #define CHESTER_INCLUDE_DRIVERS_ADX355_H_
 
+#define STATUS_REG	     0x04
+#define STATUS_DATA_RDY_MSK  BIT(0)
+#define STATUS_FIFO_FULL_MSK BIT(1)
+#define STATUS_FIFO_OVR_MSK  BIT(2)
+#define STATUS_ACTICITY_MSK  BIT(3)
+#define STATUS_NVM_BUSY_MSK  BIT(4)
+
+#define INT_MAP_REG	     0x2A
+#define INT_MAP_ACT_EN2_MSK  BIT(7)
+#define INT_MAP_OVR_EN2_MSK  BIT(6)
+#define INT_MAP_FULL_EN2_MSK BIT(5)
+#define INT_MAP_DRDY_EN2_MSK BIT(4)
+#define INT_MAP_ACT_EN1_MSK  BIT(3)
+#define INT_MAP_OVR_EN1_MSK  BIT(2)
+#define INT_MAP_FULL_EN1_MSK BIT(1)
+#define INT_MAP_DRDY_EN1_MSK BIT(0)
+
 /* Zephyre includes */
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -57,7 +74,7 @@ struct adxl355_config {
 	struct gpio_dt_spec drdy;
 	struct gpio_dt_spec int1;
 	struct gpio_dt_spec int2;
-#endif
+#endif /* CONFIG_ADXL355_TRIGGER */
 };
 
 struct adxl355_results {
@@ -80,23 +97,29 @@ struct adxl355_data {
 #if defined(CONFIG_ADXL355_TRIGGER)
 	const struct device *dev;
 	struct k_mutex trigger_mutex;
-#if defined(CONFIG_ADXL355_TRIGGER_PIN_INT1)
+	struct gpio_callback gpio_cb_drdy;
 	struct gpio_callback gpio_cb_int1;
+	struct gpio_callback gpio_cb_int2;
+	sensor_trigger_handler_t handler_drdy;
 	sensor_trigger_handler_t handler_int1;
+	sensor_trigger_handler_t handler_int2;
+	struct sensor_trigger trigger_drdy;
 	struct sensor_trigger trigger_int1;
-#endif
+	struct sensor_trigger trigger_int2;
 #if defined(CONFIG_ADXL355_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-#endif
-#endif
+#endif /* CONFIG_ADXL355_TRIGGER_GLOBAL_THREAD */
+#endif /* CONFIG_ADXL355_TRIGGER */
 };
 
 #if defined(CONFIG_ADXL355_TRIGGER)
 int adxl355_write_mask(const struct device *dev, uint8_t reg, uint32_t mask, uint8_t data);
 int adxl355_get_status(const struct device *dev, uint8_t *status);
-int adxl355_get_status_drdy(const struct device *dev, bool *state);
-int adxl355_get_status_fifo_full(const struct device *dev, bool *state);
-
-#endif
+int adxl355_init_interrupts(const struct device *dev);
+// int adxl355_get_status_drdy(const struct device *dev, bool *state);
+// int adxl355_get_status_fifo_full(const struct device *dev, bool *state);
+int adxl355_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler);
+#endif /* CONFIG_ADXL355_TRIGGER */
 
 #endif /* CHESTER_INCLUDE_DRIVERS_ADX355_H_ */
