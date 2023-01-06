@@ -51,12 +51,28 @@ int adxl355_trigger_set(const struct device *dev, const struct sensor_trigger *t
 		k_mutex_lock(&data->trigger_mutex, K_FOREVER);
 
 #if defined(CONFIG_ADXL355_TRIGGER)
+		if (device_is_ready(config->drdy.port)) {
+			data->handler_drdy = handler;
+			data->trigger_drdy = *trig;
+			LOG_DBG("trigger drdy is initialize to gpio '%d'", config->drdy.pin);
+		} else {
+			LOG_DBG("drdy is not maped any gpio pin");
+		}
+
 		if (device_is_ready(config->int1.port)) {
 			data->handler_int1 = handler;
 			data->trigger_int1 = *trig;
-			LOG_INF("trigger drdy is initialize to gpio '%d'", config->int1.pin);
+			LOG_DBG("trigger int1 is initialize to gpio '%d'", config->int1.pin);
 		} else {
-			LOG_ERR("is not maped any gpio pin");
+			LOG_DBG("int1 is not maped any gpio pin");
+		}
+
+		if (device_is_ready(config->int2.port)) {
+			data->handler_int2 = handler;
+			data->trigger_int2 = *trig;
+			LOG_DBG("trigger int2 is initialize to gpio '%d'", config->int2.pin);
+		} else {
+			LOG_DBG("int2 is not maped any gpio pin");
 		}
 
 		ret = adxl355_get_status(dev, &status);
@@ -66,7 +82,6 @@ int adxl355_trigger_set(const struct device *dev, const struct sensor_trigger *t
 		}
 #endif
 		k_mutex_unlock(&data->trigger_mutex);
-		int_mask = 0x2A; // ADXL355_INTMAP1_DATA_READY;
 		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");
@@ -125,8 +140,69 @@ int adxl355_init_interrupts(const struct device *dev)
 	ret = adxl355_init_interrupt_gpio(dev, &config->drdy, &data->gpio_cb_drdy);
 	/* init int1 */
 	ret = adxl355_init_interrupt_gpio(dev, &config->int1, &data->gpio_cb_int1);
+	if (!ret) {
+#if defined(CONFIG_ADXL355_INT1_DRDY)
+		ret = adxl355_write_mask(dev, ADXL355_INT_MAP_REG, ADXL355_INT_MAP_DRDY_EN1_MSK,
+					 ADXL355_INT_MAP_DRDY_EN1_MODE(0x01));
+		if (ret) {
+			LOG_ERR("Call 'write_mask' failed: %d", ret);
+		}
+#endif
+#if defined(CONFIG_ADXL355_INT1_FIFO_FULL)
+		ret = adxl355_write_mask(dev, ADXL355_INT_MAP_REG, ADXL355_INT_MAP_FULL_EN1_MSK,
+					 ADXL355_INT_MAP_FULL_EN1_MODE(0x01));
+		if (ret) {
+			LOG_ERR("Call 'write_mask' failed: %d", ret);
+		}
+#endif
+#if defined(CONFIG_ADXL355_INT1_FIFO_OVR)
+		ret = adxl355_write_mask(dev, ADXL355_INT_MAP_REG, ADXL355_INT_MAP_OVR_EN1_MSK,
+					 ADXL355_INT_MAP_OVR_EN1_MODE(0x01));
+		if (ret) {
+			LOG_ERR("Call 'write_mask' failed: %d", ret);
+		}
+#endif
+#if defined(CONFIG_ADXL355_INT1_ACT)
+		ret = adxl355_write_mask(dev, ADXL355_INT_MAP_REG, ADXL355_INT_MAP_ACT_EN1_MSK,
+					 ADXL355_INT_MAP_ACT_EN1_MODE(0x01));
+		if (ret) {
+			LOG_ERR("Call 'write_mask' failed: %d", ret);
+		}
+#endif
+	}
+
 	/* init int2 */
 	ret = adxl355_init_interrupt_gpio(dev, &config->int2, &data->gpio_cb_int2);
+	if (!ret) {
+#if defined(CONFIG_ADXL355_INT2_DRDY)
+		ret = adxl355_write_mask(dev, ADXL355_INT_MAP_REG, ADXL355_INT_MAP_DRDY_EN2_MSK,
+					 ADXL355_INT_MAP_DRDY_EN2_MODE(0x01));
+		if (ret) {
+			LOG_ERR("Call 'write_mask' failed: %d", ret);
+		}
+#endif
+#if defined(CONFIG_ADXL355_INT2_FIFO_FULL)
+		ret = adxl355_write_mask(dev, ADXL355_INT_MAP_REG, ADXL355_INT_MAP_FULL_EN2_MSK,
+					 ADXL355_INT_MAP_FULL_EN2_MODE(0x01));
+		if (ret) {
+			LOG_ERR("Call 'write_mask' failed: %d", ret);
+		}
+#endif
+#if defined(CONFIG_ADXL355_INT2_FIFO_OVR)
+		ret = adxl355_write_mask(dev, ADXL355_INT_MAP_REG, ADXL355_INT_MAP_OVR_EN2_MSK,
+					 ADXL355_INT_MAP_OVR_EN2_MODE(0x01));
+		if (ret) {
+			LOG_ERR("Call 'write_mask' failed: %d", ret);
+		}
+#endif
+#if defined(CONFIG_ADXL355_INT2_ACT)
+		ret = adxl355_write_mask(dev, ADXL355_INT_MAP_REG, ADXL355_INT_MAP_ACT_EN2_MSK,
+					 ADXL355_INT_MAP_ACT_EN2_MODE(0x01));
+		if (ret) {
+			LOG_ERR("Call 'write_mask' failed: %d", ret);
+		}
+#endif
+	}
 
 	data->dev = dev;
 

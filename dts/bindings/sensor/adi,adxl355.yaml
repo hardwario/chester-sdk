@@ -18,7 +18,7 @@ properties:
     odr_lpf:
       type: int
       description: data rate and low pass filter
-      default: 5
+      default: 10
       enum: 
         - 0 # Data rate 4000     Hz | low pass filter 1000      Hz
         - 1 # Data rate 2000     Hz | low pass filter  500      Hz

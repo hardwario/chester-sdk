@@ -30,14 +30,14 @@ LOG_MODULE_REGISTER(ADXL355, CONFIG_ADXL355_LOG_LEVEL);
 #define DATA_REG	 0x06
 #define DATA_TEMP_REG	 0x06
 #define DATA_ACCEL_REG	 0x08
-// #define DATA_FIFO_REG 0x11
+#define DATA_FIFO_REG	 0x11
 #define FIFO_SAMPLES_REG 0x29
 
 #define FILTER_REG	       0x28
 #define FILTER_ODR_LPF_MSK     GENMASK(3, 0)
 #define FILTER_ODR_LPF_MODE(x) (((x)&0xF) << 0)
 #define FILTER_HPF_MSK	       GENMASK(6, 4)
-#define FILTER_HPF_MODE(x)     (((x)&0x3) << 4)
+#define FILTER_HPF_MODE(x)     (((x)&0x1) << 4)
 
 #define RANGE_REG	    0x2C
 #define RANGE_RANGE_MSK	    GENMASK(1, 0)
@@ -248,19 +248,6 @@ static int reset(const struct device *dev)
 	return 0;
 }
 
-static int get_range(const struct device *dev, enum adxl355_range *val)
-{
-	int ret;
-
-	ret = read_mask(dev, RANGE_REG, RANGE_RANGE_MSK, val);
-	if (ret) {
-		LOG_ERR("Call 'read_mask' failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 static int set_range(const struct device *dev, enum adxl355_range val)
 {
 	int ret;
@@ -272,19 +259,6 @@ static int set_range(const struct device *dev, enum adxl355_range val)
 	}
 
 	get_data(dev)->range = val;
-
-	return 0;
-}
-
-static int get_odr_lpf(const struct device *dev, enum adxl355_odr_lpf *val)
-{
-	int ret;
-
-	ret = read_mask(dev, FILTER_REG, FILTER_ODR_LPF_MSK, val);
-	if (ret) {
-		LOG_ERR("Call 'read_mask' failed: %d", ret);
-		return ret;
-	}
 
 	return 0;
 }
@@ -304,19 +278,6 @@ static int set_odr_lpf(const struct device *dev, enum adxl355_odr_lpf val)
 	return 0;
 }
 
-static int get_hpf(const struct device *dev, enum adxl355_hpf *val)
-{
-	int ret;
-
-	ret = read_mask(dev, FILTER_REG, FILTER_HPF_MSK, val);
-	if (ret) {
-		LOG_ERR("Call 'read_mask' failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 static int set_hpf(const struct device *dev, enum adxl355_hpf val)
 {
 	int ret;
@@ -328,19 +289,6 @@ static int set_hpf(const struct device *dev, enum adxl355_hpf val)
 	}
 
 	get_data(dev)->hpf = val;
-
-	return 0;
-}
-
-static int get_i2c_speed(const struct device *dev, enum adxl355_i2c_speed *val)
-{
-	int ret;
-
-	ret = read_mask(dev, RANGE_REG, RANGE_I2C_HS_MSK, val);
-	if (ret) {
-		LOG_ERR("Call 'read_write_mask' failed: %d", ret);
-		return ret;
-	}
 
 	return 0;
 }
@@ -357,20 +305,7 @@ static int set_i2c_speed(const struct device *dev, enum adxl355_i2c_speed val)
 
 	k_sleep((K_MSEC(10)));
 
-	get_data(dev)->hpf = val;
-
-	return 0;
-}
-
-static int get_op_mode_accel(const struct device *dev, enum adxl355_op_mode *mode)
-{
-	int ret;
-
-	ret = read_mask(dev, POWER_CTL_REG, POWER_CTL_STANDBY_MSK, mode);
-	if (ret) {
-		LOG_ERR("Call 'read_mask' failed: %d", ret);
-		return ret;
-	}
+	get_data(dev)->i2c_speed = val;
 
 	return 0;
 }
@@ -391,18 +326,6 @@ static int set_op_mode_accel(const struct device *dev, enum adxl355_op_mode mode
 	return 0;
 }
 
-static int get_op_mode_temp(const struct device *dev, enum adxl355_op_mode *mode)
-{
-	int ret;
-	ret = read_mask(dev, POWER_CTL_REG, POWER_CTL_TEMP_OFF_MSK, mode);
-	if (ret) {
-		LOG_ERR("Call 'read_mask' failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 static int set_op_mode_temp(const struct device *dev, enum adxl355_op_mode mode)
 {
 	int ret;
@@ -419,21 +342,11 @@ static int set_op_mode_temp(const struct device *dev, enum adxl355_op_mode mode)
 	return 0;
 }
 
-static int get_fifo_samples(const struct device *dev, uint8_t *samples)
-{
-	int ret;
-
-	ret = read_byte(dev, FIFO_SAMPLES_REG, samples);
-	if (ret) {
-		LOG_ERR("Call 'read_byte' failed: %d", ret);
-	}
-
-	return 0;
-}
+#if defined(CONFIG_ADXL355_FIFO)
 
 static int set_fifo_samples(const struct device *dev, uint8_t samples)
 {
-	if (samples > 0 && samples > 96) {
+	if (samples < 0 && samples > 96) {
 		LOG_ERR("wrong number fifo samples acceptable range is <1-96>");
 		return -EINVAL;
 	}
@@ -452,47 +365,46 @@ static int set_fifo_samples(const struct device *dev, uint8_t samples)
 static int get_fifo_entries(const struct device *dev, uint8_t *entries)
 {
 	int ret;
+
 	ret = read_byte(dev, FIFO_ENTRIES_REG, entries);
 	if (ret) {
 		LOG_ERR("Call 'read_byte' failed: %d", ret);
+		return ret;
 	}
 
 	return 0;
 }
 
-#if defined(CONFIG_ADXL355_TRIGGER)
-
-static int set_int1(const struct device *dev, uint8_t)
-
 #endif
 
-/*
-static int adxl355_get_configurations(const struct device *dev)
+static int get_configurations(const struct device *dev)
 {
 	int ret;
 	uint8_t data;
 
-	ret = adxl355_read_byte(dev, DEVID_AD_REG, &data);
-	LOG_ERR("%i \t %02x", DEVID_AD_REG, data);
+	ret = read_byte(dev, DEVID_AD_REG, &data);
+	LOG_DBG("reg: 0x%02x = 0x%02x", DEVID_AD_REG, data);
 
-	ret = adxl355_read_byte(dev, DEVID_MST_REG, &data);
-	LOG_ERR("%i \t %02x", DEVID_MST_REG, data);
+	ret = read_byte(dev, DEVID_MST_REG, &data);
+	LOG_DBG("reg: 0x%02x = 0x%02x", DEVID_MST_REG, data);
 
-	ret = adxl355_read_byte(dev, STATUS_REG, &data);
-	LOG_ERR("%i \t %02x", STATUS_REG, data);
+	ret = read_byte(dev, ADXL355_STATUS_REG, &data);
+	LOG_DBG("reg: 0x%02x = 0x%02x", ADXL355_STATUS_REG, data);
 
-	ret = adxl355_read_byte(dev, FILTER_REG, &data);
-	LOG_ERR("%i \t %02x", FILTER_REG, data);
+	ret = read_byte(dev, FILTER_REG, &data);
+	LOG_DBG("reg: 0x%02x = 0x%02x", FILTER_REG, data);
 
-	ret = adxl355_read_byte(dev, RANGE_REG, &data);
-	LOG_ERR("%i \t %02x", RANGE_REG, data);
+	ret = read_byte(dev, ADXL355_INT_MAP_REG, &data);
+	LOG_DBG("reg: 0x%02x = 0x%02x", ADXL355_INT_MAP_REG, data);
 
-	ret = adxl355_read_byte(dev, POWER_CTL_REG, &data);
-	LOG_ERR("%i \t %02x", POWER_CTL_REG, data);
+	ret = read_byte(dev, RANGE_REG, &data);
+	LOG_DBG("reg: 0x%02x = 0x%02x", RANGE_REG, data);
+
+	ret = read_byte(dev, POWER_CTL_REG, &data);
+	LOG_DBG("reg: 0x%02x = 0x%02x", POWER_CTL_REG, data);
 
 	return 0;
 }
-*/
 
 int adxl355_write_mask(const struct device *dev, uint8_t reg, uint32_t mask, uint8_t data)
 {
@@ -511,7 +423,7 @@ int adxl355_get_status(const struct device *dev, uint8_t *status)
 {
 	int ret;
 
-	ret = read_byte(dev, STATUS_REG, status);
+	ret = read_byte(dev, ADXL355_STATUS_REG, status);
 	if (ret) {
 		LOG_ERR("Call 'read_byte' failed: %d", ret);
 		return ret;
@@ -523,7 +435,7 @@ int adxl355_get_status_drdy(const struct device *dev, bool *state)
 {
 	uint8_t tmp = 0;
 
-	read_mask(dev, STATUS_REG, STATUS_DATA_RDY_MSK, &tmp);
+	read_mask(dev, ADXL355_STATUS_REG, ADXL355_STATUS_DATA_RDY_MSK, &tmp);
 
 	if (tmp == 0x00) {
 		*state = false;
@@ -541,7 +453,7 @@ int adxl355_get_status_fifo_full(const struct device *dev, bool *state)
 {
 	uint8_t tmp = 0;
 
-	read_mask(dev, STATUS_REG, STATUS_DATA_RDY_MSK, &tmp);
+	read_mask(dev, ADXL355_STATUS_REG, ADXL355_STATUS_DATA_RDY_MSK, &tmp);
 
 	if (tmp == 0x00) {
 		*state = false;
@@ -658,20 +570,19 @@ static int convert_temperature_value(int16_t *input, struct sensor_value *val)
 	return 0;
 }
 
-static int read_data_fifo(const struct device *dev)
+#if defined(CONFIG_ADXL355_FIFO)
+
+static int read_data_accel(const struct device *dev)
 {
-	int ret;
-	uint8_t entries;
-	ret = get_fifo_entries(dev, &entries);
-	if (ret) {
-		LOG_ERR("Call 'get_fifo_entries' failed: %d", ret);
-		return ret;
+	/* check operation mode */
+	if (get_data(dev)->op_mode == ADXL355_OP_MODE_STANDBY) {
+		LOG_ERR("Accelerometer is in standby");
+		return -EACCES;
 	}
 
-	if (entries < 1) {
-		LOG_DBG("No entries");
-		return -ENODATA;
-	}
+	struct adxl355_data *data = get_data(dev);
+
+	int ret;
 
 	bool drdy;
 	ret = adxl355_get_status_drdy(dev, &drdy);
@@ -680,13 +591,39 @@ static int read_data_fifo(const struct device *dev)
 		return ret;
 	}
 
-	if (drdy) {
+	uint8_t entries;
+	ret = get_fifo_entries(dev, &entries);
+	if (ret) {
+		LOG_ERR("Call 'get_fifo_entries' failed: %d", ret);
+		return ret;
+	}
+
+	if (drdy || entries < 1) {
 		uint8_t buf[entries][3];
 
-		ret = read(dev, DATA_ACCEL_REG, (uint8_t *)buf, sizeof(buf));
+		ret = read(dev, DATA_FIFO_REG, (uint8_t *)buf, sizeof(buf));
 		if (ret) {
 			LOG_ERR("Call `read` failed: %d", ret);
 			return ret;
+		}
+
+		int result_id = 0;
+		int byte = 0;
+		for (int i = 0; i < entries; i++) {
+			ret = normalize_axis(&buf[byte][0], &data->results_accel[result_id].axis_x);
+			byte += 3;
+			ret = normalize_axis(&buf[byte][1], &data->results_accel[result_id].axis_y);
+			byte += 3;
+			ret = normalize_axis(&buf[byte][0],
+					     &data->results_accel[result_id++].axis_z);
+			byte += 3;
+		}
+
+		for (int i = 0; i < entries; i++) {
+			LOG_INF("%d | %d | %d", data->results_accel[i].axis_x,
+				data->results_accel[i].axis_y, data->results_accel[i].axis_z
+
+			);
 		}
 
 		return 0;
@@ -694,6 +631,8 @@ static int read_data_fifo(const struct device *dev)
 
 	return -ENODATA;
 }
+
+#else
 
 static int read_data_accel(const struct device *dev)
 {
@@ -722,17 +661,17 @@ static int read_data_accel(const struct device *dev)
 				return ret;
 			}
 
-			ret = normalize_axis(&buf[0], &data->results.axis_x);
+			ret = normalize_axis(&buf[0], &data->results_accel.axis_x);
 			if (ret) {
 				LOG_ERR("Call `normalize_axis` failed: %d", ret);
 				return ret;
 			}
-			ret = normalize_axis(&buf[3], &data->results.axis_y);
+			ret = normalize_axis(&buf[3], &data->results_accel.axis_y);
 			if (ret) {
 				LOG_ERR("Call `normalize_axis` failed: %d", ret);
 				return ret;
 			}
-			ret = normalize_axis(&buf[6], &data->results.axis_z);
+			ret = normalize_axis(&buf[6], &data->results_accel.axis_z);
 			if (ret) {
 				LOG_ERR("Call `normalize_axis` failed: %d", ret);
 				return ret;
@@ -745,6 +684,8 @@ static int read_data_accel(const struct device *dev)
 
 	return -ENODATA;
 }
+
+#endif
 
 static int read_data_temp(const struct device *dev)
 {
@@ -771,7 +712,7 @@ static int read_data_temp(const struct device *dev)
 		return ret;
 	}
 
-	ret = normalize_temperature(&buf[0], &data->results.temp);
+	ret = normalize_temperature(&buf[0], &data->result_temp);
 	if (ret) {
 		LOG_ERR("Call `normalize_temperature` failed: %d", ret);
 		return ret;
@@ -779,131 +720,6 @@ static int read_data_temp(const struct device *dev)
 
 	return 0;
 }
-
-/*
-
-int adxl355_set_range(const struct device *dev, enum adxl355_range val)
-{
-	int ret;
-
-	ret = set_range(dev, val);
-	if (ret) {
-		LOG_ERR("Call 'set_range' failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int adxl355_set_datarate(const struct device *dev, enum adxl355_odr_lpf val)
-{
-	int ret;
-
-	ret = set_odr_lpf(dev, val);
-	if (ret) {
-		LOG_ERR("Call 'set_odr_lpf' failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int adxl355_set_high_pass_filter(const struct device *dev, enum adxl355_hpf val)
-{
-	int ret;
-
-	ret = set_hpf(dev, val);
-	if (ret) {
-		LOG_ERR("Call 'set_hpf' failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int adxl355_set_op_mode_accel(const struct device *dev, enum adxl355_op_mode mode)
-{
-	int ret;
-
-	ret = adxl355_set_op_mode_accel(dev, mode);
-	if (ret) {
-		LOG_ERR("Call 'adxl355_set_op_mode_accel' failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int adxl355_set_op_mode_temp(const struct device *dev, enum adxl355_op_mode mode)
-{
-	int ret;
-
-	ret = adxl355_set_op_mode_temp(dev, mode);
-	if (ret) {
-		LOG_ERR("Call 'adxl355_set_op_mode_temp' failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int adxl355_read_data_accel(const struct device *dev,
-			    struct adxl355_data_accelerations *accelerations)
-{
-	int ret;
-
-	ret = read_data_accel(dev);
-	if (ret) {
-		LOG_ERR("Call 'read_data_accel' failed: %d", ret);
-		return ret;
-	}
-
-	struct adxl355_data *data = get_data(dev);
-
-	ret = convert_acceleration(&data->results.axis_x, data->range, &accelerations->axis_x);
-	if (ret) {
-		LOG_ERR("Call 'convert_acceleration' failed: %d", ret);
-		return ret;
-	}
-
-	ret = convert_acceleration(&data->results.axis_y, data->range, &accelerations->axis_z);
-	if (ret) {
-		LOG_ERR("Call 'convert_acceleration' failed: %d", ret);
-		return ret;
-	}
-
-	ret = convert_acceleration(&data->results.axis_z, data->range, &accelerations->axis_z);
-	if (ret) {
-		LOG_ERR("Call 'convert_acceleration' failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int adxl355_read_data_temp(const struct device *dev, float *temperature)
-{
-
-	int ret;
-
-	ret = read_data_temp(dev);
-	if (ret) {
-		LOG_ERR("Call 'read_data_temp' failed: %d", ret);
-		return ret;
-	}
-
-	struct adxl355_data *data = get_data(dev);
-
-	ret = convert_temperature(&data->results.temp, temperature);
-	if (ret) {
-		LOG_ERR("Call 'convert_temperature' failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-*/
 
 static int set_attr_range(const struct device *dev, const struct sensor_value val)
 {
@@ -914,7 +730,7 @@ static int set_attr_range(const struct device *dev, const struct sensor_value va
 		return -EINVAL;
 	}
 
-	ret = set_range(dev, val.val1);
+	ret = set_range(dev, (enum adxl355_range)val.val1);
 	if (ret) {
 		LOG_ERR("Call 'set_range' failed: %d", ret);
 		return ret;
@@ -923,153 +739,51 @@ static int set_attr_range(const struct device *dev, const struct sensor_value va
 	return 0;
 }
 
-static int get_config(const struct device *dev, const struct sensor_value *val)
-{
-	switch (val->val1) {
-	case 1:
-		ret = get_range(dev, (enum adxl355_range)val->val2);
-		if (ret) {
-			LOG_ERR("Call 'set_range' failed: %d", ret);
-			return ret;
-		}
-		break;
-	case 2:
-		ret = set_odr_lpf(dev, (enum adxl355_odr_lpf)val->val2);
-		if (ret) {
-			LOG_ERR("Call 'set_odr_lpf' failed: %d", ret);
-			return ret;
-		}
-		break;
-	case 3:
-		ret = set_hpf(dev, (enum adxl355_hpf)val->val2);
-		if (ret) {
-			LOG_ERR("Call 'set_hpf' failed: %d", ret);
-			return ret;
-		}
-		break;
-	case 4:
-		ret = set_i2c_speed(dev, (enum adxl355_i2c_speed)val->val2);
-		if (ret) {
-			LOG_ERR("Call 'set_i2c_speed' failed: %d", ret);
-			return ret;
-		}
-		break;
-	case 5: /* Wakeup or stand by measuring */
-		ret = set_op_mode_accel(dev, (enum adxl355_op_mode)val->val2);
-		if (ret) {
-			LOG_ERR("Call 'set_op_mode_accel' failed: %d", ret);
-			return ret;
-		}
-
-		ret = set_op_mode_temp(dev, (enum adxl355_op_mode)val->val2);
-		if (ret) {
-			LOG_ERR("Call 'set_op_mode_temp' failed: %d", ret);
-			return ret;
-		}
-		break;
-	case 6: /* configuration of the fifo samples <1-96> */
-		ret = set_fifo_samples(dev, (uint8_t)val->val2);
-		if (ret) {
-			LOG_ERR("Call 'set_fifo_samples' failed: %d", ret);
-			return ret;
-		}
-		break;
-#if defined(CONFIG_ADXL355_TRIGGER)
-	case 7: /* configuration interrupt int1 */
-
-		break;
-#endif
-	default:
-		LOG_ERR("Attribute is out off range <1-5>");
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
 static int set_config(const struct device *dev, const struct sensor_value *val)
 {
 	int ret;
 
 	switch (val->val1) {
-	case 1:
+	case 1: /* Configure range */
 		ret = set_range(dev, (enum adxl355_range)val->val2);
 		if (ret) {
 			LOG_ERR("Call 'set_range' failed: %d", ret);
 			return ret;
 		}
 		break;
-	case 2:
+	case 2: /* Configure data rate (low pass filter)*/
 		ret = set_odr_lpf(dev, (enum adxl355_odr_lpf)val->val2);
 		if (ret) {
 			LOG_ERR("Call 'set_odr_lpf' failed: %d", ret);
 			return ret;
 		}
 		break;
-	case 3:
+	case 3: /* configure high pass filter */
 		ret = set_hpf(dev, (enum adxl355_hpf)val->val2);
 		if (ret) {
 			LOG_ERR("Call 'set_hpf' failed: %d", ret);
 			return ret;
 		}
 		break;
-	case 4:
-		ret = set_i2c_speed(dev, (enum adxl355_i2c_speed)val->val2);
-		if (ret) {
-			LOG_ERR("Call 'set_i2c_speed' failed: %d", ret);
-			return ret;
-		}
-		break;
-	case 5: /* Wakeup or stand by measuring */
+	case 4: /* Wakeup or stand by measuring */
 		ret = set_op_mode_accel(dev, (enum adxl355_op_mode)val->val2);
 		if (ret) {
 			LOG_ERR("Call 'set_op_mode_accel' failed: %d", ret);
 			return ret;
 		}
 
+		/*
 		ret = set_op_mode_temp(dev, (enum adxl355_op_mode)val->val2);
 		if (ret) {
 			LOG_ERR("Call 'set_op_mode_temp' failed: %d", ret);
 			return ret;
 		}
+		*/
 		break;
-	case 6: /* configuration of the fifo samples <1-96> */
-		ret = set_fifo_samples(dev, (uint8_t)val->val2);
-		if (ret) {
-			LOG_ERR("Call 'set_fifo_samples' failed: %d", ret);
-			return ret;
-		}
-		break;
-#if defined(CONFIG_ADXL355_TRIGGER)
-	case 7: /* configuration interrupt int1 */
 
-		break;
-#endif
 	default:
 		LOG_ERR("Attribute is out off range <1-5>");
 		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
-static int get_attr(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
-		    struct sensor_value *val)
-{
-	int ret;
-
-	if (chan != SENSOR_CHAN_ALL) {
-		LOG_ERR("Channel is not supported");
-		return -ENOTSUP;
-	}
-
-	switch (attr) {
-	case SENSOR_ATTR_FULL_SCALE:
-
-		break;
-	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		break;
-	case SENSOR_ATTR_CONFIGURATION:
-		break;
 	}
 
 	return 0;
@@ -1170,33 +884,47 @@ static int sample_fetch(const struct device *dev, enum sensor_channel chan)
 static int channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val)
 {
 	int ret;
+	int val_id = 0;
 
 	struct adxl355_data *data = get_data(dev);
 
 	switch (chan) {
-	case SENSOR_CHAN_ACCEL_X:
-		ret = convert_acceleration_value(&data->results.axis_x, data->range, val);
-		break;
-	case SENSOR_CHAN_ACCEL_Y:
-		ret = convert_acceleration_value(&data->results.axis_y, data->range, val);
-		break;
-	case SENSOR_CHAN_ACCEL_Z:
-		ret = convert_acceleration_value(&data->results.axis_z, data->range, val);
-		break;
-	case SENSOR_CHAN_ACCEL_XYZ:
-		ret = convert_acceleration_value(&data->results.axis_x, data->range, &val[0]);
-		ret = convert_acceleration_value(&data->results.axis_y, data->range, &val[1]);
-		ret = convert_acceleration_value(&data->results.axis_z, data->range, &val[2]);
-		break;
 	case SENSOR_CHAN_DIE_TEMP:
-		ret = convert_temperature_value(&data->results.temp, val);
+		ret = convert_temperature_value(&data->result_temp, val);
+		break;
+
+#if defined(CONFIG_ADXL355_FIFO)
+	case SENSOR_CHAN_ALL:
+		for (int i = 0; i < data->results_count; i++) {
+			ret = convert_acceleration_value(&data->results_accel[i].axis_x,
+							 data->range, &val[val_id++]);
+			ret = convert_acceleration_value(&data->results_accel[i].axis_y,
+							 data->range, &val[val_id++]);
+			ret = convert_acceleration_value(&data->results_accel[i].axis_z,
+							 data->range, &val[val_id++]);
+		}
+		ret = convert_temperature_value(&data->result_temp, &val[val_id]);
+		break;
+#else
+	case SENSOR_CHAN_ACCEL_XYZ:
+		ret = convert_acceleration_value(&data->results_accel.axis_x, data->range,
+						 &val[val_id++]);
+		ret = convert_acceleration_value(&data->results_accel.axis_y, data->range,
+						 &val[val_id++]);
+		ret = convert_acceleration_value(&data->results_accel.axis_z, data->range,
+						 &val[val_id++]);
 		break;
 	case SENSOR_CHAN_ALL:
-		ret = convert_acceleration_value(&data->results.axis_x, data->range, &val[0]);
-		ret = convert_acceleration_value(&data->results.axis_y, data->range, &val[1]);
-		ret = convert_acceleration_value(&data->results.axis_z, data->range, &val[2]);
-		ret = convert_temperature_value(&data->results.temp, &val[3]);
+		ret = convert_acceleration_value(&data->results_accel.axis_x, data->range,
+						 &val[val_id++]);
+		ret = convert_acceleration_value(&data->results_accel.axis_y, data->range,
+						 &val[val_id++]);
+		ret = convert_acceleration_value(&data->results_accel.axis_z, data->range,
+						 &val[val_id++]);
+		ret = convert_temperature_value(&data->result_temp, &val[val_id]);
 		break;
+
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -1206,7 +934,6 @@ static int channel_get(const struct device *dev, enum sensor_channel chan, struc
 
 static const struct sensor_driver_api adxl355_api_funcs = {
 	.attr_set = set_attr,
-	.attr_get = get_attr,
 	.sample_fetch = sample_fetch,
 	.channel_get = channel_get,
 #if defined(CONFIG_ADXL355_TRIGGER)
@@ -1241,15 +968,15 @@ static int init(const struct device *dev)
 		LOG_INF("Device found with revision 0x%02x", rev);
 	}
 
-	ret = config_to_data(dev);
+	ret = reset(dev);
 	if (ret) {
-		LOG_ERR("Call 'config_to_data' failed %d", ret);
+		LOG_ERR("Call 'reset' failed %d", ret);
 		return ret;
 	}
 
-	ret = reset(dev);
+	ret = config_to_data(dev);
 	if (ret) {
-		LOG_ERR("Call 'reset' failed: %d", ret);
+		LOG_ERR("Call 'config_to_data' failed %d", ret);
 		return ret;
 	}
 
@@ -1277,6 +1004,27 @@ static int init(const struct device *dev)
 		return ret;
 	}
 
+#if defined(CONFIG_ADXL355_TRIGGER)
+	if (get_config(dev)->drdy.port || get_config(dev)->int1.port ||
+	    get_config(dev)->int2.port) {
+		ret = adxl355_init_interrupts(dev);
+		if (ret) {
+			LOG_ERR("Call '' failed: %d", ret);
+			return -EIO;
+		}
+	}
+#endif
+
+#if defined(CONFIG_ADXL355_FIFO)
+
+	ret = set_fifo_samples(dev, CONFIG_ADXL355_FIFO_SAMPLES);
+	if (ret) {
+		LOG_ERR("Call 'set_fifo_samples' failed %d", ret);
+		return ret;
+	}
+
+#endif
+
 	ret = set_op_mode_temp(dev, ADXL355_OP_MODE_STANDBY);
 	if (ret) {
 		LOG_ERR("Call 'set_op_mode_temp' failed %d", ret);
@@ -1289,16 +1037,7 @@ static int init(const struct device *dev)
 		return ret;
 	}
 
-#if defined(CONFIG_ADXL355_TRIGGER)
-	if (get_config(dev)->drdy.port || get_config(dev)->int1.port ||
-	    get_config(dev)->int2.port) {
-		ret = adxl355_init_interrupts(dev);
-		if (ret) {
-			LOG_ERR("Call '' failed: %d", ret);
-			return -EIO;
-		}
-	}
-#endif
+	ret = get_configurations(dev);
 
 	k_sem_give(&get_data(dev)->lock);
 

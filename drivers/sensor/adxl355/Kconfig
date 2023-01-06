@@ -18,18 +18,59 @@ if ADXL355_TRIGGER
 choice
 	prompt "Trigger mode"
 	default ADXL355_TRIGGER_NONE
-	help 
-	  spedify the type of triggering used by the driver.
+		help 
+			spedify the type of triggering used by the driver.
+	
+	config ADXL355_TRIGGER_NONE
+		bool "No trigger"
+	
+	config ADXL355_TRIGGER_GLOBAL_THREAD
+		bool  "Use global thread"
+	
+	
+endchoice 
 
-config ADXL355_TRIGGER_NONE
-	bool "No trigger"
+config ADXL355_FIFO
+	bool "enable fifo"
 
-config ADXL355_TRIGGER_GLOBAL_THREAD
-	bool  "Use global thread"
+if ADXL355_FIFO
 
-endchoice
+	config ADXL355_FIFO_SAMPLES
+		int "fifo samples <1-96>"
+		default 96
+		help
+		number of samples stored in the fifo  that triggers a FIFO_FULL
 
-endif # ADXL355_TRIGGER
+endif # ADXL355_FIFO	
+
+config ADXL355_INT1_DRDY
+	bool "enable data ready interupt on the int1"
+default n
+
+config ADXL355_INT1_FIFO_FULL
+	bool "enable fifo full interupt on the int1"
+
+config ADXL355_INT1_FIFO_OVR
+	bool "enable fifo overrun on interupt the int1"
+
+config ADXL355_INT1_ACT
+	bool "enable fifo activity interupt on the int1"
+
+
+config ADXL355_INT2_DRDY
+	bool "enable data ready interupt on the int2"
+default n
+
+config ADXL355_INT2_FIFO_FULL
+	bool "enable fifo full interupt on the int2"
+
+config ADXL355_INT2_FIFO_OVR
+	bool "enable fifo overrun on interupt the int2"
+
+config ADXL355_INT2_ACT
+	bool "enable fifo activity interupt on the int2"
+
+endif # ADXL355_TRIGGER	
 
 
 module = ADXL355

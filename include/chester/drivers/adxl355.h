@@ -1,28 +1,39 @@
 #ifndef CHESTER_INCLUDE_DRIVERS_ADX355_H_
 #define CHESTER_INCLUDE_DRIVERS_ADX355_H_
 
-#define STATUS_REG	     0x04
-#define STATUS_DATA_RDY_MSK  BIT(0)
-#define STATUS_FIFO_FULL_MSK BIT(1)
-#define STATUS_FIFO_OVR_MSK  BIT(2)
-#define STATUS_ACTICITY_MSK  BIT(3)
-#define STATUS_NVM_BUSY_MSK  BIT(4)
+#define ADXL355_STATUS_REG	     0x04
+#define ADXL355_STATUS_DATA_RDY_MSK  BIT(0)
+#define ADXL355_STATUS_FIFO_FULL_MSK BIT(1)
+#define ADXL355_STATUS_FIFO_OVR_MSK  BIT(2)
+#define ADXL355_STATUS_ACTICITY_MSK  BIT(3)
+#define ADXL355_STATUS_NVM_BUSY_MSK  BIT(4)
 
-#define INT_MAP_REG	     0x2A
-#define INT_MAP_ACT_EN2_MSK  BIT(7)
-#define INT_MAP_OVR_EN2_MSK  BIT(6)
-#define INT_MAP_FULL_EN2_MSK BIT(5)
-#define INT_MAP_DRDY_EN2_MSK BIT(4)
-#define INT_MAP_ACT_EN1_MSK  BIT(3)
-#define INT_MAP_OVR_EN1_MSK  BIT(2)
-#define INT_MAP_FULL_EN1_MSK BIT(1)
-#define INT_MAP_DRDY_EN1_MSK BIT(0)
+#define ADXL355_INT_MAP_REG		 0x2A
+#define ADXL355_INT_MAP_ACT_EN2_MSK	 BIT(7)
+#define ADXL355_INT_MAP_ACT_EN2_MODE(x)	 (((x)&0x1) << 7)
+#define ADXL355_INT_MAP_OVR_EN2_MSK	 BIT(6)
+#define ADXL355_INT_MAP_OVR_EN2_MODE(x)	 (((x)&0x1) << 6)
+#define ADXL355_INT_MAP_FULL_EN2_MSK	 BIT(5)
+#define ADXL355_INT_MAP_FULL_EN2_MODE(x) (((x)&0x1) << 5)
+#define ADXL355_INT_MAP_DRDY_EN2_MSK	 BIT(4)
+#define ADXL355_INT_MAP_DRDY_EN2_MODE(x) (((x)&0x1) << 4)
+#define ADXL355_INT_MAP_ACT_EN1_MSK	 BIT(3)
+#define ADXL355_INT_MAP_ACT_EN1_MODE(x)	 (((x)&0x1) << 3)
+#define ADXL355_INT_MAP_OVR_EN1_MSK	 BIT(2)
+#define ADXL355_INT_MAP_OVR_EN1_MODE(x)	 (((x)&0x1) << 2)
+#define ADXL355_INT_MAP_FULL_EN1_MSK	 BIT(1)
+#define ADXL355_INT_MAP_FULL_EN1_MODE(x) (((x)&0x1) << 1)
+#define ADXL355_INT_MAP_DRDY_EN1_MSK	 BIT(0)
+#define ADXL355_INT_MAP_DRDY_EN1_MODE(x) (((x)&0x1) << 0)
 
 /* Zephyre includes */
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+
+/* Standard includes */
+#include <math.h>
 
 enum adxl355_range {
 	ADXL355_RANGE_2G = 1,
@@ -77,16 +88,21 @@ struct adxl355_config {
 #endif /* CONFIG_ADXL355_TRIGGER */
 };
 
-struct adxl355_results {
+struct adxl355_results_accel {
 	int32_t axis_x;
 	int32_t axis_y;
 	int32_t axis_z;
-	int16_t temp;
 };
 
 struct adxl355_data {
 	struct k_sem lock;
-	struct adxl355_results results;
+#if defined(CONFIG_ADXL355_FIFO)
+	uint8_t results_count;
+	struct adxl355_results_accel results_accel[CONFIG_ADXL355_FIFO_SAMPLES / 3];
+#else
+	struct adxl355_results_accel results_accel;
+#endif
+	int16_t result_temp;
 	enum adxl355_range range;
 	enum adxl355_odr_lpf odr_lpf;
 	enum adxl355_hpf hpf;
@@ -116,8 +132,6 @@ struct adxl355_data {
 int adxl355_write_mask(const struct device *dev, uint8_t reg, uint32_t mask, uint8_t data);
 int adxl355_get_status(const struct device *dev, uint8_t *status);
 int adxl355_init_interrupts(const struct device *dev);
-// int adxl355_get_status_drdy(const struct device *dev, bool *state);
-// int adxl355_get_status_fifo_full(const struct device *dev, bool *state);
 int adxl355_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 #endif /* CONFIG_ADXL355_TRIGGER */
