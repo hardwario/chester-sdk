@@ -5,13 +5,11 @@
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
-#include "app_loop.h"
 #include "app_send.h"
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
 #include <chester/ctr_info.h>
-#include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
 #include <chester/ctr_rtc.h>
 
@@ -26,62 +24,13 @@
 #include <zcbor_encode.h>
 
 /* Standard includes */
+#include <errno.h>
 #include <limits.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
-
-#if defined(CONFIG_SHIELD_CTR_LRW)
-static int compose(struct ctr_buf *buf)
-{
-	int ret = 0;
-
-	ctr_buf_reset(buf);
-
-	if (isnan(g_app_data.batt_voltage_rest)) {
-		ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
-	} else {
-		uint16_t val = g_app_data.batt_voltage_rest * 1000.f;
-		ret |= ctr_buf_append_u16(buf, val);
-	}
-
-	if (isnan(g_app_data.batt_voltage_load)) {
-		ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
-	} else {
-		uint16_t val = g_app_data.batt_voltage_load * 1000.f;
-		ret |= ctr_buf_append_u16(buf, val);
-	}
-
-	if (isnan(g_app_data.batt_current_load)) {
-		ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
-	} else {
-		uint8_t val = g_app_data.batt_current_load;
-		ret |= ctr_buf_append_u8(buf, val);
-	}
-
-	if (g_app_data.accel_orientation == INT_MAX) {
-		ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
-	} else {
-		uint8_t val = g_app_data.accel_orientation;
-		ret |= ctr_buf_append_u8(buf, val);
-	}
-
-	if (isnan(g_app_data.therm_temperature)) {
-		ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
-	} else {
-		int16_t val = g_app_data.therm_temperature * 100.f;
-		ret |= ctr_buf_append_s16(buf, val);
-	}
-
-	if (ret) {
-		return -EFAULT;
-	}
-
-	return 0;
-}
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
 
 #if defined(CONFIG_SHIELD_CTR_LTE)
 static int compose(struct ctr_buf *buf)
@@ -167,58 +116,16 @@ static int compose(struct ctr_buf *buf)
 }
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
-static void send_timer(struct k_timer *timer_id)
-{
-	LOG_INF("Send timer expired");
-
-	atomic_set(&g_app_loop_send, true);
-	k_sem_give(&g_app_loop_sem);
-}
-
-K_TIMER_DEFINE(g_app_send_timer, send_timer, NULL);
-
 int app_send(void)
 {
-#if defined(CONFIG_SHIELD_CTR_LRW) || defined(CONFIG_SHIELD_CTR_LTE)
-	int ret;
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) || defined(CONFIG_SHIELD_CTR_LTE) */
-
-	int64_t jitter = (int32_t)sys_rand32_get() % (g_app_config.report_interval * 1000 / 5);
-	int64_t duration = g_app_config.report_interval * 1000 + jitter;
-
-	LOG_INF("Scheduling next report in %lld second(s)", duration / 1000);
-
-	k_timer_start(&g_app_send_timer, K_MSEC(duration), K_FOREVER);
-
-#if defined(CONFIG_SHIELD_CTR_LRW)
-	CTR_BUF_DEFINE_STATIC(buf, 51);
-
-	ret = compose(&buf);
-	if (ret) {
-		LOG_ERR("Call `compose` failed: %d", ret);
-		if (ret == -EFAULT) {
-			g_app_data.channel_measurement_count = 0;
-		}
-		return ret;
-	}
-
-	struct ctr_lrw_send_opts opts = CTR_LRW_SEND_OPTS_DEFAULTS;
-	ret = ctr_lrw_send(&opts, ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
-		return ret;
-	}
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
-
 #if defined(CONFIG_SHIELD_CTR_LTE)
+	int ret;
+
 	CTR_BUF_DEFINE_STATIC(buf, 1024);
 
 	ret = compose(&buf);
 	if (ret) {
 		LOG_ERR("Call `compose` failed: %d", ret);
-		if (ret == -EFAULT) {
-			g_app_data.channel_measurement_count = 0;
-		}
 		return ret;
 	}
 
@@ -236,8 +143,6 @@ int app_send(void)
 		return ret;
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
-
-	g_app_data.channel_measurement_count = 0;
 
 	return 0;
 }

@@ -13,25 +13,105 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
-#define SETTINGS_PFX "app"
+#define SETTINGS_PFX "app-current"
 
 struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
-	.measurement_interval = 60,
-	.report_interval = 900,
+	.interval_report = 900,
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	.event_report_delay = 1,
+	.event_report_rate = 30,
+	.backup_report_connected = true,
+	.backup_report_disconnected = true,
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_K)
+	.channel_interval_sample = 60,
+	.channel_interval_aggreg = 300,
+#endif /* defined(CONFIG_SHIELD_CTR_K) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	.w1_therm_interval_sample = 60,
+	.w1_therm_interval_aggreg = 300,
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 };
+
+int app_config_get_interval_report(void)
+{
+	return m_app_config_interim.interval_report;
+}
+
+int app_config_set_interval_report(int value)
+{
+	if (value < APP_CONFIG_INTERVAL_REPORT_MIN || value > APP_CONFIG_INTERVAL_REPORT_MAX) {
+		return -ERANGE;
+	}
+
+	m_app_config_interim.interval_report = value;
+
+	return 0;
+}
+
+static void print_interval_report(const struct shell *shell)
+{
+	shell_print(shell, "app config interval-report %d", m_app_config_interim.interval_report);
+}
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+static void print_event_report_delay(const struct shell *shell)
+{
+	shell_print(shell, "app config event-report-delay %d",
+		    m_app_config_interim.event_report_delay);
+}
+
+static void print_event_report_rate(const struct shell *shell)
+{
+	shell_print(shell, "app config event-report-rate %d",
+		    m_app_config_interim.event_report_rate);
+}
+
+static void print_backup_report_connected(const struct shell *shell)
+{
+	shell_print(shell, "app config backup-report-connected %s",
+		    m_app_config_interim.backup_report_connected ? "true" : "false");
+}
+
+static void print_backup_report_disconnected(const struct shell *shell)
+{
+	shell_print(shell, "app config backup-report-disconnected %s",
+		    m_app_config_interim.backup_report_disconnected ? "true" : "false");
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_K)
+
+static void print_channel_interval_sample(const struct shell *shell)
+{
+	shell_print(shell, "app config channel-interval-sample %d",
+		    m_app_config_interim.channel_interval_sample);
+}
+
+static void print_channel_interval_aggreg(const struct shell *shell)
+{
+	shell_print(shell, "app config channel-interval-aggreg %d",
+		    m_app_config_interim.channel_interval_aggreg);
+}
 
 static void print_channel_active(const struct shell *shell, int channel)
 {
 	int ch = channel;
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
-		shell_print(shell, SETTINGS_PFX " config channel-active %d %s", i + 1,
+		shell_print(shell, "app config channel-active %d %s", i + 1,
 			    m_app_config_interim.channel_active[i] ? "true" : "false");
 	}
 }
@@ -41,7 +121,7 @@ static void print_channel_differential(const struct shell *shell, int channel)
 	int ch = channel;
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
-		shell_print(shell, SETTINGS_PFX " config channel-differential %d %s", i + 1,
+		shell_print(shell, "app config channel-differential %d %s", i + 1,
 			    m_app_config_interim.channel_differential[i] ? "true" : "false");
 	}
 }
@@ -51,7 +131,7 @@ static void print_channel_calib_x0(const struct shell *shell, int channel)
 	int ch = channel;
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
-		shell_print(shell, SETTINGS_PFX " config channel-calib-x0 %d %d", i + 1,
+		shell_print(shell, "app config channel-calib-x0 %d %d", i + 1,
 			    m_app_config_interim.channel_calib_x0[i]);
 	}
 }
@@ -61,7 +141,7 @@ static void print_channel_calib_y0(const struct shell *shell, int channel)
 	int ch = channel;
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
-		shell_print(shell, SETTINGS_PFX " config channel-calib-y0 %d %d", i + 1,
+		shell_print(shell, "app config channel-calib-y0 %d %d", i + 1,
 			    m_app_config_interim.channel_calib_y0[i]);
 	}
 }
@@ -71,7 +151,7 @@ static void print_channel_calib_x1(const struct shell *shell, int channel)
 	int ch = channel;
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
-		shell_print(shell, SETTINGS_PFX " config channel-calib-x1 %d %d", i + 1,
+		shell_print(shell, "app config channel-calib-x1 %d %d", i + 1,
 			    m_app_config_interim.channel_calib_x1[i]);
 	}
 }
@@ -81,52 +161,131 @@ static void print_channel_calib_y1(const struct shell *shell, int channel)
 	int ch = channel;
 
 	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : APP_CONFIG_CHANNEL_COUNT); i++) {
-		shell_print(shell, SETTINGS_PFX " config channel-calib-y1 %d %d", i + 1,
+		shell_print(shell, "app config channel-calib-y1 %d %d", i + 1,
 			    m_app_config_interim.channel_calib_y1[i]);
 	}
 }
 
-static void print_measurement_interval(const struct shell *shell)
+#endif /* defined(CONFIG_SHIELD_CTR_K) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+
+static void print_w1_therm_interval_sample(const struct shell *shell)
 {
-	shell_print(shell, SETTINGS_PFX " config measurement-interval %d",
-		    m_app_config_interim.measurement_interval);
+	shell_print(shell, "app config w1-therm-interval-sample %d",
+		    m_app_config_interim.w1_therm_interval_sample);
 }
 
-static void print_report_interval(const struct shell *shell)
+static void print_w1_therm_interval_aggreg(const struct shell *shell)
 {
-	shell_print(shell, SETTINGS_PFX " config report-interval %d",
-		    m_app_config_interim.report_interval);
+	shell_print(shell, "app config w1-therm-interval-aggreg %d",
+		    m_app_config_interim.w1_therm_interval_aggreg);
 }
 
-int app_config_get_report_interval(void)
-{
-	return m_app_config_interim.report_interval;
-}
-
-int app_config_set_report_interval(int value)
-{
-	if (value < APP_CONFIG_REPORT_INTERVAL_MIN || value > APP_CONFIG_REPORT_INTERVAL_MAX) {
-		return -ERANGE;
-	}
-
-	m_app_config_interim.report_interval = value;
-
-	return 0;
-}
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
+
+	print_interval_report(shell);
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	print_event_report_delay(shell);
+	print_event_report_rate(shell);
+	print_backup_report_connected(shell);
+	print_backup_report_disconnected(shell);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_K)
+	print_channel_interval_sample(shell);
+	print_channel_interval_aggreg(shell);
 	print_channel_active(shell, 0);
 	print_channel_differential(shell, 0);
 	print_channel_calib_x0(shell, 0);
 	print_channel_calib_y0(shell, 0);
 	print_channel_calib_x1(shell, 0);
 	print_channel_calib_y1(shell, 0);
-	print_measurement_interval(shell);
-	print_report_interval(shell);
+#endif /* defined(CONFIG_SHIELD_CTR_K) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	print_w1_therm_interval_sample(shell);
+	print_w1_therm_interval_aggreg(shell);
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 	return 0;
 }
+
+#define CMD_CONFIG_FUNCTION_INT(NAME, MIN, MAX)                                                    \
+	int app_config_cmd_config_##NAME(const struct shell *shell, size_t argc, char **argv)      \
+	{                                                                                          \
+		if (argc == 1) {                                                                   \
+			print_##NAME(shell);                                                       \
+			return 0;                                                                  \
+		}                                                                                  \
+		if (argc == 2) {                                                                   \
+			size_t len = strlen(argv[1]);                                              \
+			if (len < 1 || len > 4) {                                                  \
+				shell_error(shell, "invalid format");                              \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			for (size_t i = 0; i < len; i++) {                                         \
+				if (!isdigit((int)argv[1][i])) {                                   \
+					shell_error(shell, "invalid format");                      \
+					return -EINVAL;                                            \
+				}                                                                  \
+			}                                                                          \
+			long value = strtol(argv[1], NULL, 10);                                    \
+			if (value < MIN || value > MAX) {                                          \
+				shell_error(shell, "invalid range");                               \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			m_app_config_interim.NAME = (int)value;                                    \
+			return 0;                                                                  \
+		}                                                                                  \
+		shell_help(shell);                                                                 \
+		return -EINVAL;                                                                    \
+	}
+
+#define CMD_CONFIG_FUNCTION_BOOL(NAME)                                                             \
+	int app_config_cmd_config_##NAME(const struct shell *shell, size_t argc, char **argv)      \
+	{                                                                                          \
+		if (argc == 1) {                                                                   \
+			print_##NAME(shell);                                                       \
+			return 0;                                                                  \
+		}                                                                                  \
+		if (argc == 2) {                                                                   \
+			bool is_false = !strcmp(argv[1], "false");                                 \
+			bool is_true = !strcmp(argv[1], "true");                                   \
+			if (is_false) {                                                            \
+				m_app_config_interim.NAME = false;                                 \
+			} else if (is_true) {                                                      \
+				m_app_config_interim.NAME = true;                                  \
+			} else {                                                                   \
+				shell_error(shell, "invalid format");                              \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			return 0;                                                                  \
+		}                                                                                  \
+		shell_help(shell);                                                                 \
+		return -EINVAL;                                                                    \
+	}
+
+CMD_CONFIG_FUNCTION_INT(interval_report, 30, 86400);
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+CMD_CONFIG_FUNCTION_INT(event_report_delay, 1, 86400);
+CMD_CONFIG_FUNCTION_INT(event_report_rate, 1, 3600);
+
+CMD_CONFIG_FUNCTION_BOOL(backup_report_connected);
+CMD_CONFIG_FUNCTION_BOOL(backup_report_disconnected);
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_K)
+
+CMD_CONFIG_FUNCTION_INT(channel_interval_sample, 1, 86400);
+CMD_CONFIG_FUNCTION_INT(channel_interval_aggreg, 1, 86400);
 
 int app_config_cmd_config_channel_active(const struct shell *shell, size_t argc, char **argv)
 {
@@ -384,172 +543,110 @@ int app_config_cmd_config_channel_calib_y1(const struct shell *shell, size_t arg
 	return -EINVAL;
 }
 
-int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_measurement_interval(shell);
-		return 0;
-	}
+#endif /* defined(CONFIG_SHIELD_CTR_K) */
 
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
+CMD_CONFIG_FUNCTION_INT(w1_therm_interval_sample, 1, 86400);
+CMD_CONFIG_FUNCTION_INT(w1_therm_interval_aggreg, 1, 86400);
 
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
-		int measurement_interval = atoi(argv[1]);
-
-		if (measurement_interval < 5 || measurement_interval > 3600) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.measurement_interval = measurement_interval;
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc == 1) {
-		print_report_interval(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		int report_interval = atoi(argv[1]);
-
-		ret = app_config_set_report_interval(report_interval);
-		if (ret) {
-			shell_error(shell, "command failed");
-			return ret;
-		}
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
+#undef CMD_CONFIG_FUNCTION_INT
+#undef CMD_CONFIG_FUNCTION_BOOL
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
 	int ret;
 	const char *next;
 
-#define SETTINGS_SET(_key, _var, _size)                                                            \
+#define SETTINGS_SET_ARRAY(_key, _var, _size)                                                      \
 	do {                                                                                       \
 		if (settings_name_steq(key, _key, &next) && !next) {                               \
 			if (len != _size) {                                                        \
 				return -EINVAL;                                                    \
 			}                                                                          \
-                                                                                                   \
 			ret = read_cb(cb_arg, _var, len);                                          \
-                                                                                                   \
 			if (ret < 0) {                                                             \
 				LOG_ERR("Call `read_cb` failed: %d", ret);                         \
 				return ret;                                                        \
 			}                                                                          \
-                                                                                                   \
 			return 0;                                                                  \
 		}                                                                                  \
 	} while (0)
 
-	/* TODO Replace with for-each pre-processor macro */
-	SETTINGS_SET("channel-1-active", &m_app_config_interim.channel_active[0],
-		     sizeof(m_app_config_interim.channel_active[0]));
-	SETTINGS_SET("channel-2-active", &m_app_config_interim.channel_active[1],
-		     sizeof(m_app_config_interim.channel_active[1]));
-	SETTINGS_SET("channel-3-active", &m_app_config_interim.channel_active[2],
-		     sizeof(m_app_config_interim.channel_active[2]));
-	SETTINGS_SET("channel-4-active", &m_app_config_interim.channel_active[3],
-		     sizeof(m_app_config_interim.channel_active[3]));
+#define SETTINGS_SET_SCALAR(_key, _var)                                                            \
+	do {                                                                                       \
+		if (settings_name_steq(key, _key, &next) && !next) {                               \
+			if (len != sizeof(m_app_config_interim._var)) {                            \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			ret = read_cb(cb_arg, &m_app_config_interim._var, len);                    \
+			if (ret < 0) {                                                             \
+				LOG_ERR("Call `read_cb` failed: %d", ret);                         \
+				return ret;                                                        \
+			}                                                                          \
+			return 0;                                                                  \
+		}                                                                                  \
+	} while (0)
+
+	SETTINGS_SET_SCALAR("interval-report", interval_report);
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	SETTINGS_SET_SCALAR("event-report-delay", event_report_delay);
+	SETTINGS_SET_SCALAR("event-report-rate", event_report_rate);
+	SETTINGS_SET_SCALAR("backup-report-connected", backup_report_connected);
+	SETTINGS_SET_SCALAR("backup-report-disconnected", backup_report_disconnected);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_K)
+	SETTINGS_SET_SCALAR("channel-interval-sample", channel_interval_sample);
+	SETTINGS_SET_SCALAR("channel-interval-aggreg", channel_interval_aggreg);
 
 	/* TODO Replace with for-each pre-processor macro */
-	SETTINGS_SET("channel-1-differential", &m_app_config_interim.channel_differential[0],
-		     sizeof(m_app_config_interim.channel_differential[0]));
-	SETTINGS_SET("channel-2-differential", &m_app_config_interim.channel_differential[1],
-		     sizeof(m_app_config_interim.channel_differential[1]));
-	SETTINGS_SET("channel-3-differential", &m_app_config_interim.channel_differential[2],
-		     sizeof(m_app_config_interim.channel_differential[2]));
-	SETTINGS_SET("channel-4-differential", &m_app_config_interim.channel_differential[3],
-		     sizeof(m_app_config_interim.channel_differential[3]));
+	SETTINGS_SET_SCALAR("channel-1-active", channel_active[0]);
+	SETTINGS_SET_SCALAR("channel-2-active", channel_active[1]);
+	SETTINGS_SET_SCALAR("channel-3-active", channel_active[2]);
+	SETTINGS_SET_SCALAR("channel-4-active", channel_active[3]);
 
 	/* TODO Replace with for-each pre-processor macro */
-	SETTINGS_SET("channel-1-calib-x0", &m_app_config_interim.channel_calib_x0[0],
-		     sizeof(m_app_config_interim.channel_calib_x0[0]));
-	SETTINGS_SET("channel-2-calib-x0", &m_app_config_interim.channel_calib_x0[1],
-		     sizeof(m_app_config_interim.channel_calib_x0[1]));
-	SETTINGS_SET("channel-3-calib-x0", &m_app_config_interim.channel_calib_x0[2],
-		     sizeof(m_app_config_interim.channel_calib_x0[2]));
-	SETTINGS_SET("channel-4-calib-x0", &m_app_config_interim.channel_calib_x0[3],
-		     sizeof(m_app_config_interim.channel_calib_x0[3]));
+	SETTINGS_SET_SCALAR("channel-1-differential", channel_differential[0]);
+	SETTINGS_SET_SCALAR("channel-2-differential", channel_differential[1]);
+	SETTINGS_SET_SCALAR("channel-3-differential", channel_differential[2]);
+	SETTINGS_SET_SCALAR("channel-4-differential", channel_differential[3]);
 
 	/* TODO Replace with for-each pre-processor macro */
-	SETTINGS_SET("channel-1-calib-y0", &m_app_config_interim.channel_calib_y0[0],
-		     sizeof(m_app_config_interim.channel_calib_y0[0]));
-	SETTINGS_SET("channel-2-calib-y0", &m_app_config_interim.channel_calib_y0[1],
-		     sizeof(m_app_config_interim.channel_calib_y0[1]));
-	SETTINGS_SET("channel-3-calib-y0", &m_app_config_interim.channel_calib_y0[2],
-		     sizeof(m_app_config_interim.channel_calib_y0[2]));
-	SETTINGS_SET("channel-4-calib-y0", &m_app_config_interim.channel_calib_y0[3],
-		     sizeof(m_app_config_interim.channel_calib_y0[3]));
+	SETTINGS_SET_SCALAR("channel-1-calib-x0", channel_calib_x0[0]);
+	SETTINGS_SET_SCALAR("channel-2-calib-x0", channel_calib_x0[1]);
+	SETTINGS_SET_SCALAR("channel-3-calib-x0", channel_calib_x0[2]);
+	SETTINGS_SET_SCALAR("channel-4-calib-x0", channel_calib_x0[3]);
 
 	/* TODO Replace with for-each pre-processor macro */
-	SETTINGS_SET("channel-1-calib-x1", &m_app_config_interim.channel_calib_x1[0],
-		     sizeof(m_app_config_interim.channel_calib_x1[0]));
-	SETTINGS_SET("channel-2-calib-x1", &m_app_config_interim.channel_calib_x1[1],
-		     sizeof(m_app_config_interim.channel_calib_x1[1]));
-	SETTINGS_SET("channel-3-calib-x1", &m_app_config_interim.channel_calib_x1[2],
-		     sizeof(m_app_config_interim.channel_calib_x1[2]));
-	SETTINGS_SET("channel-4-calib-x1", &m_app_config_interim.channel_calib_x1[3],
-		     sizeof(m_app_config_interim.channel_calib_x1[3]));
+	SETTINGS_SET_SCALAR("channel-1-calib-y0", channel_calib_y0[0]);
+	SETTINGS_SET_SCALAR("channel-2-calib-y0", channel_calib_y0[1]);
+	SETTINGS_SET_SCALAR("channel-3-calib-y0", channel_calib_y0[2]);
+	SETTINGS_SET_SCALAR("channel-4-calib-y0", channel_calib_y0[3]);
 
 	/* TODO Replace with for-each pre-processor macro */
-	SETTINGS_SET("channel-1-calib-y1", &m_app_config_interim.channel_calib_y1[0],
-		     sizeof(m_app_config_interim.channel_calib_y1[0]));
-	SETTINGS_SET("channel-2-calib-y1", &m_app_config_interim.channel_calib_y1[1],
-		     sizeof(m_app_config_interim.channel_calib_y1[1]));
-	SETTINGS_SET("channel-3-calib-y1", &m_app_config_interim.channel_calib_y1[2],
-		     sizeof(m_app_config_interim.channel_calib_y1[2]));
-	SETTINGS_SET("channel-4-calib-y1", &m_app_config_interim.channel_calib_y1[3],
-		     sizeof(m_app_config_interim.channel_calib_y1[3]));
+	SETTINGS_SET_SCALAR("channel-1-calib-x1", channel_calib_x1[0]);
+	SETTINGS_SET_SCALAR("channel-2-calib-x1", channel_calib_x1[1]);
+	SETTINGS_SET_SCALAR("channel-3-calib-x1", channel_calib_x1[2]);
+	SETTINGS_SET_SCALAR("channel-4-calib-x1", channel_calib_x1[3]);
 
-	SETTINGS_SET("measurement-interval", &m_app_config_interim.measurement_interval,
-		     sizeof(m_app_config_interim.measurement_interval));
-	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
-		     sizeof(m_app_config_interim.report_interval));
+	/* TODO Replace with for-each pre-processor macro */
+	SETTINGS_SET_SCALAR("channel-1-calib-y1", channel_calib_y1[0]);
+	SETTINGS_SET_SCALAR("channel-2-calib-y1", channel_calib_y1[1]);
+	SETTINGS_SET_SCALAR("channel-3-calib-y1", channel_calib_y1[2]);
+	SETTINGS_SET_SCALAR("channel-4-calib-y1", channel_calib_y1[3]);
+#endif /* defined(CONFIG_SHIELD_CTR_K) */
 
-#undef SETTINGS_SET
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	SETTINGS_SET_SCALAR("w1-therm-interval-sample", w1_therm_interval_sample);
+	SETTINGS_SET_SCALAR("w1-therm-interval-aggreg", w1_therm_interval_aggreg);
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#undef SETTINGS_SET_ARRAY
+#undef SETTINGS_SET_SCALAR
 
 	return -ENOENT;
 }
@@ -563,77 +660,75 @@ static int h_commit(void)
 
 static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len))
 {
-#define EXPORT_FUNC(_key, _var, _size)                                                             \
+#define EXPORT_FUNC_ARRAY(_key, _var, _size)                                                       \
 	do {                                                                                       \
 		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
 	} while (0)
 
-	/* TODO Replace with for-each pre-processor macro */
-	EXPORT_FUNC("channel-1-active", &m_app_config_interim.channel_active[0],
-		    sizeof(m_app_config_interim.channel_active[0]));
-	EXPORT_FUNC("channel-2-active", &m_app_config_interim.channel_active[1],
-		    sizeof(m_app_config_interim.channel_active[1]));
-	EXPORT_FUNC("channel-3-active", &m_app_config_interim.channel_active[2],
-		    sizeof(m_app_config_interim.channel_active[2]));
-	EXPORT_FUNC("channel-4-active", &m_app_config_interim.channel_active[3],
-		    sizeof(m_app_config_interim.channel_active[3]));
+#define EXPORT_FUNC_SCALAR(_key, _var)                                                             \
+	do {                                                                                       \
+		(void)export_func(SETTINGS_PFX "/" _key, &m_app_config_interim._var,               \
+				  sizeof(m_app_config_interim._var));                              \
+	} while (0)
+
+	EXPORT_FUNC_SCALAR("interval-report", interval_report);
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	EXPORT_FUNC_SCALAR("event-report-delay", event_report_delay);
+	EXPORT_FUNC_SCALAR("event-report-rate", event_report_rate);
+	EXPORT_FUNC_SCALAR("backup-report-connected", backup_report_connected);
+	EXPORT_FUNC_SCALAR("backup-report-disconnected", backup_report_disconnected);
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_K)
+
+	EXPORT_FUNC_SCALAR("channel-interval-sample", channel_interval_sample);
+	EXPORT_FUNC_SCALAR("channel-interval-aggreg", channel_interval_aggreg);
 
 	/* TODO Replace with for-each pre-processor macro */
-	EXPORT_FUNC("channel-1-differential", &m_app_config_interim.channel_differential[0],
-		    sizeof(m_app_config_interim.channel_differential[0]));
-	EXPORT_FUNC("channel-2-differential", &m_app_config_interim.channel_differential[1],
-		    sizeof(m_app_config_interim.channel_differential[1]));
-	EXPORT_FUNC("channel-3-differential", &m_app_config_interim.channel_differential[2],
-		    sizeof(m_app_config_interim.channel_differential[2]));
-	EXPORT_FUNC("channel-4-differential", &m_app_config_interim.channel_differential[3],
-		    sizeof(m_app_config_interim.channel_differential[3]));
+	EXPORT_FUNC_SCALAR("channel-1-active", channel_active[0]);
+	EXPORT_FUNC_SCALAR("channel-2-active", channel_active[1]);
+	EXPORT_FUNC_SCALAR("channel-3-active", channel_active[2]);
+	EXPORT_FUNC_SCALAR("channel-4-active", channel_active[3]);
 
 	/* TODO Replace with for-each pre-processor macro */
-	EXPORT_FUNC("channel-1-calib-x0", &m_app_config_interim.channel_calib_x0[0],
-		    sizeof(m_app_config_interim.channel_calib_x0[0]));
-	EXPORT_FUNC("channel-2-calib-x0", &m_app_config_interim.channel_calib_x0[1],
-		    sizeof(m_app_config_interim.channel_calib_x0[1]));
-	EXPORT_FUNC("channel-3-calib-x0", &m_app_config_interim.channel_calib_x0[2],
-		    sizeof(m_app_config_interim.channel_calib_x0[2]));
-	EXPORT_FUNC("channel-4-calib-x0", &m_app_config_interim.channel_calib_x0[3],
-		    sizeof(m_app_config_interim.channel_calib_x0[3]));
+	EXPORT_FUNC_SCALAR("channel-1-differential", channel_differential[0]);
+	EXPORT_FUNC_SCALAR("channel-2-differential", channel_differential[1]);
+	EXPORT_FUNC_SCALAR("channel-3-differential", channel_differential[2]);
+	EXPORT_FUNC_SCALAR("channel-4-differential", channel_differential[3]);
 
 	/* TODO Replace with for-each pre-processor macro */
-	EXPORT_FUNC("channel-1-calib-y0", &m_app_config_interim.channel_calib_y0[0],
-		    sizeof(m_app_config_interim.channel_calib_y0[0]));
-	EXPORT_FUNC("channel-2-calib-y0", &m_app_config_interim.channel_calib_y0[1],
-		    sizeof(m_app_config_interim.channel_calib_y0[1]));
-	EXPORT_FUNC("channel-3-calib-y0", &m_app_config_interim.channel_calib_y0[2],
-		    sizeof(m_app_config_interim.channel_calib_y0[2]));
-	EXPORT_FUNC("channel-4-calib-y0", &m_app_config_interim.channel_calib_y0[3],
-		    sizeof(m_app_config_interim.channel_calib_y0[3]));
+	EXPORT_FUNC_SCALAR("channel-1-calib-x0", channel_calib_x0[0]);
+	EXPORT_FUNC_SCALAR("channel-2-calib-x0", channel_calib_x0[1]);
+	EXPORT_FUNC_SCALAR("channel-3-calib-x0", channel_calib_x0[2]);
+	EXPORT_FUNC_SCALAR("channel-4-calib-x0", channel_calib_x0[3]);
 
 	/* TODO Replace with for-each pre-processor macro */
-	EXPORT_FUNC("channel-1-calib-x1", &m_app_config_interim.channel_calib_x1[0],
-		    sizeof(m_app_config_interim.channel_calib_x1[0]));
-	EXPORT_FUNC("channel-2-calib-x1", &m_app_config_interim.channel_calib_x1[1],
-		    sizeof(m_app_config_interim.channel_calib_x1[1]));
-	EXPORT_FUNC("channel-3-calib-x1", &m_app_config_interim.channel_calib_x1[2],
-		    sizeof(m_app_config_interim.channel_calib_x1[2]));
-	EXPORT_FUNC("channel-4-calib-x1", &m_app_config_interim.channel_calib_x1[3],
-		    sizeof(m_app_config_interim.channel_calib_x1[3]));
+	EXPORT_FUNC_SCALAR("channel-1-calib-y0", channel_calib_y0[0]);
+	EXPORT_FUNC_SCALAR("channel-2-calib-y0", channel_calib_y0[1]);
+	EXPORT_FUNC_SCALAR("channel-3-calib-y0", channel_calib_y0[2]);
+	EXPORT_FUNC_SCALAR("channel-4-calib-y0", channel_calib_y0[3]);
 
 	/* TODO Replace with for-each pre-processor macro */
-	EXPORT_FUNC("channel-1-calib-y1", &m_app_config_interim.channel_calib_y1[0],
-		    sizeof(m_app_config_interim.channel_calib_y1[0]));
-	EXPORT_FUNC("channel-2-calib-y1", &m_app_config_interim.channel_calib_y1[1],
-		    sizeof(m_app_config_interim.channel_calib_y1[1]));
-	EXPORT_FUNC("channel-3-calib-y1", &m_app_config_interim.channel_calib_y1[2],
-		    sizeof(m_app_config_interim.channel_calib_y1[2]));
-	EXPORT_FUNC("channel-4-calib-y1", &m_app_config_interim.channel_calib_y1[3],
-		    sizeof(m_app_config_interim.channel_calib_y1[3]));
+	EXPORT_FUNC_SCALAR("channel-1-calib-x1", channel_calib_x1[0]);
+	EXPORT_FUNC_SCALAR("channel-2-calib-x1", channel_calib_x1[1]);
+	EXPORT_FUNC_SCALAR("channel-3-calib-x1", channel_calib_x1[2]);
+	EXPORT_FUNC_SCALAR("channel-4-calib-x1", channel_calib_x1[3]);
 
-	EXPORT_FUNC("measurement-interval", &m_app_config_interim.measurement_interval,
-		    sizeof(m_app_config_interim.measurement_interval));
-	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
-		    sizeof(m_app_config_interim.report_interval));
+	/* TODO Replace with for-each pre-processor macro */
+	EXPORT_FUNC_SCALAR("channel-1-calib-y1", channel_calib_y1[0]);
+	EXPORT_FUNC_SCALAR("channel-2-calib-y1", channel_calib_y1[1]);
+	EXPORT_FUNC_SCALAR("channel-3-calib-y1", channel_calib_y1[2]);
+	EXPORT_FUNC_SCALAR("channel-4-calib-y1", channel_calib_y1[3]);
+#endif /* defined(CONFIG_SHIELD_CTR_K) */
 
-#undef EXPORT_FUNC
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	EXPORT_FUNC_SCALAR("w1-therm-interval-sample", w1_therm_interval_sample);
+	EXPORT_FUNC_SCALAR("w1-therm-interval-aggreg", w1_therm_interval_aggreg);
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#undef EXPORT_FUNC_ARRAY
+#undef EXPORT_FUNC_SCALAR
 
 	return 0;
 }

@@ -4,20 +4,35 @@
 /* CHESTER includes */
 #include <chester/ctr_lte.h>
 
+/* Zephyr includes */
+#include <zephyr/kernel.h>
+
 /* Standard includes */
 #include <limits.h>
 #include <math.h>
 
 struct app_data g_app_data = {
-	.batt_voltage_rest = NAN,
-	.batt_voltage_load = NAN,
-	.batt_current_load = NAN,
+	.system_voltage_rest = NAN,
+	.system_voltage_load = NAN,
+	.system_current_load = NAN,
+	.accel_acceleration_x = NAN,
+	.accel_acceleration_y = NAN,
+	.accel_acceleration_z = NAN,
+	.accel_orientation = INT_MAX,
 	.therm_temperature = NAN,
-	.acceleration_x = NAN,
-	.acceleration_y = NAN,
-	.acceleration_z = NAN,
-	.orientation = INT_MAX,
 };
+
+static K_MUTEX_DEFINE(m_lock);
+
+void app_data_lock(void)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+}
+
+void app_data_unlock(void)
+{
+	k_mutex_unlock(&m_lock);
+}
 
 K_MUTEX_DEFINE(g_app_data_lte_eval_mut);
 bool g_app_data_lte_eval_valid;

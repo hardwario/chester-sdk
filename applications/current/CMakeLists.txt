@@ -1,20 +1,22 @@
 cmake_minimum_required(VERSION 3.20.0)
 
-# Supported shields: ctr_k ctr_lrw ctr_lte ctr_z
+# Supported shields: ctr_ds18b20 ctr_k ctr_lte ctr_z
 set(SHIELD ctr_k ctr_lte)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(current)
 
+target_sources(app PRIVATE src/app_backup.c)
 target_sources_ifdef(CONFIG_CTR_BLE app PRIVATE src/app_ble_svc.c)
 target_sources(app PRIVATE src/app_cbor.c)
 target_sources(app PRIVATE src/app_config.c)
 target_sources(app PRIVATE src/app_data.c)
 target_sources(app PRIVATE src/app_handler.c)
 target_sources(app PRIVATE src/app_init.c)
-target_sources(app PRIVATE src/app_loop.c)
-target_sources(app PRIVATE src/app_measure.c)
+target_sources(app PRIVATE src/app_power.c)
 target_sources(app PRIVATE src/app_send.c)
+target_sources(app PRIVATE src/app_sensor.c)
 target_sources(app PRIVATE src/app_shell.c)
+target_sources(app PRIVATE src/app_work.c)
 
 target_sources(app PRIVATE src/main.c)
