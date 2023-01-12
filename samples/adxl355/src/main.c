@@ -51,13 +51,19 @@ void main(void)
 	}
 }
 
-#elif !defined(CONFIG_ADXL355_FIFO)
+#elif defined(CONFIG_ADXL355_TRIGGER) && !defined(CONFIG_ADXL355_FIFO)
 
 K_SEM_DEFINE(sem, 0, 1);
 
 static void trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
-	LOG_INF("%d", trig->type);
+	int ret;
+
+	/* fetch samples */
+	ret = sensor_sample_fetch(dev);
+	if (ret) {
+		LOG_ERR("Call sensor sample fatetch' failed: %d", ret);
+	}
 	k_sem_give(&sem);
 }
 
@@ -82,26 +88,16 @@ void main(void)
 		return;
 	}
 
-	LOG_INF("trigger1");
-
 	/* WakeUp */
-	const struct sensor_value val = {4, 0};
+	struct sensor_value val = {4, 0};
 	sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_CONFIGURATION, &val);
-
-	LOG_INF("trigger2");
 
 	for (;;) {
 
-		LOG_INF("Alive");
-
+		/* wait to data ready */
 		k_sem_take(&sem, K_FOREVER);
 
-		/* fetch and get samples */
-		ret = sensor_sample_fetch(dev);
-		if (ret) {
-			LOG_ERR("Call sensor sample fatetch' failed: %d", ret);
-		}
-
+		/* get samples */
 		struct sensor_value values[4];
 		sensor_channel_get(dev, SENSOR_CHAN_ALL, values);
 
@@ -111,13 +107,26 @@ void main(void)
 	}
 }
 
-#else
+#elif defined(CONFIG_ADXL355_TRIGGER) && defined(CONFIG_ADXL355_FIFO)
+
 K_SEM_DEFINE(sem, 0, 1);
 
 static void trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
-	LOG_INF("%d", trig->type);
-	k_sem_give(&sem);
+	int ret;
+
+	switch (trig->type) {
+	case SENSOR_TRIG_DATA_READY:
+		/* fetch data */
+		ret = sensor_sample_fetch(dev);
+		if (ret) {
+			LOG_ERR("Call sensor sample fatetch' failed: %d", ret);
+		}
+		k_sem_give(&sem);
+		break;
+	default:
+		break;
+	}
 }
 
 void main(void)
@@ -132,22 +141,48 @@ void main(void)
 	int ret;
 
 	/* set trigger handler */
-	struct sensor_trigger trig = {.chan = SENSOR_CHAN_ACCEL_XYZ};
-
-	trig.type = SENSOR_TRIG_DATA_READY;
+	struct sensor_trigger trig = {.chan = SENSOR_CHAN_ACCEL_XYZ,
+				      .type = SENSOR_TRIG_DATA_READY};
 	ret = sensor_trigger_set(dev, &trig, trigger_handler);
 	if (ret) {
 		LOG_ERR("Call 'sensor_trigger_set' failed: %d", ret);
 		return;
 	}
 
+	/* WakeUp */
+	struct sensor_value val = {4, 0};
+	sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_CONFIGURATION, &val);
+
+	long sample = 0;
+
 	for (;;) {
 
-		LOG_INF("Alive");
-
+		/* wait to data ready */
 		k_sem_take(&sem, K_FOREVER);
 
-		/* fetch and get samples */
+		/* get count of accelerations array samples */
+		struct sensor_value samples;
+		sensor_attr_get(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_COMMON_COUNT, &samples);
+
+		/* get accelerations array*/
+		struct sensor_value values[samples.val1 * 3];
+		sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, values);
+
+		/* get temperature */
+		struct sensor_value value_temp;
+		sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP, &value_temp);
+
+		/* Print accelerations array in g */
+		for (int i = 0; i < ARRAY_SIZE(values);) {
+			LOG_INF("accel: %ld | %f \t %f \t %f \t %f", sample,
+				sensor_value_to_double(&values[i]),
+				sensor_value_to_double(&values[i + 1]),
+				sensor_value_to_double(&values[i + 2]),
+				sensor_value_to_double(&value_temp));
+
+			i += 3;
+			sample++;
+		}
 	}
 }
 #endif

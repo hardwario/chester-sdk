@@ -75,6 +75,13 @@ enum adxl355_op_mode {
 	ADXL355_OP_MODE_STANDBY = 1,
 };
 
+enum adxl355_int_pol {
+	ADXL355_INT_POL_LOW = 0x00,
+	ADXL355_INT_POL_HIGH = 0x01,
+};
+
+#define ADXL355_FIFO_SAMPLES_MAX 96
+
 struct adxl355_config {
 	struct i2c_dt_spec i2c_spec;
 	int range;
@@ -95,10 +102,9 @@ struct adxl355_results_accel {
 };
 
 struct adxl355_data {
-	struct k_sem lock;
 #if defined(CONFIG_ADXL355_FIFO)
 	uint8_t results_count;
-	struct adxl355_results_accel results_accel[CONFIG_ADXL355_FIFO_SAMPLES / 3];
+	struct adxl355_results_accel results_accel[ADXL355_FIFO_SAMPLES_MAX / 3];
 #else
 	struct adxl355_results_accel results_accel;
 #endif
@@ -123,7 +129,9 @@ struct adxl355_data {
 	struct sensor_trigger trigger_int1;
 	struct sensor_trigger trigger_int2;
 #if defined(CONFIG_ADXL355_TRIGGER_GLOBAL_THREAD)
-	struct k_work work;
+	struct k_work work_drdy;
+	struct k_work work_int1;
+	struct k_work work_int2;
 #endif /* CONFIG_ADXL355_TRIGGER_GLOBAL_THREAD */
 #endif /* CONFIG_ADXL355_TRIGGER */
 };
@@ -132,6 +140,7 @@ struct adxl355_data {
 int adxl355_write_mask(const struct device *dev, uint8_t reg, uint32_t mask, uint8_t data);
 int adxl355_get_status(const struct device *dev, uint8_t *status);
 int adxl355_init_interrupts(const struct device *dev);
+int adxl355_clear_interrupts(const struct device *dev);
 int adxl355_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 #endif /* CONFIG_ADXL355_TRIGGER */
