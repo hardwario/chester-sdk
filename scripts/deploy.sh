@@ -14,7 +14,7 @@ deploy_current() {
     cd current
 
     # Check default SHIELDs we expect
-    if grep -q "set(SHIELD ctr_k ctr_lte)" "CMakeLists.txt"; then
+    if grep -q "set(SHIELD ctr_k1 ctr_lte)" "CMakeLists.txt"; then
         echo "String found ok"
     else
         echo "Default SHIELD string not found, update deploy script."
@@ -36,7 +36,7 @@ deploy_current() {
     # Build CHESTER Current Z
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_k ctr_lte)*/, "set(SHIELD ctr_k ctr_lte ctr_z)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_k1 ctr_lte)*/, "set(SHIELD ctr_k1 ctr_lte ctr_z)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Current Z" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "CHESTER Current Z" --version $FW_VERSION
@@ -45,7 +45,7 @@ deploy_current() {
     # Build CHESTER Current 1W
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_k ctr_lte)*/, "set(SHIELD ctr_ds18b20 ctr_k ctr_lte)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_k1 ctr_lte)*/, "set(SHIELD ctr_ds18b20 ctr_k1 ctr_lte)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Current 1W" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "CHESTER Current 1W" --version $FW_VERSION

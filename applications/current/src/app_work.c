@@ -48,9 +48,9 @@ static void send_work_handler(struct k_work *work)
 	app_backup_clear();
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 	app_sensor_analog_clear();
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	app_sensor_w1_therm_clear();
@@ -126,7 +126,7 @@ static void power_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_power_timer, power_timer_handler, NULL);
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 
 static void analog_sample_work_handler(struct k_work *work)
 {
@@ -176,7 +176,7 @@ static void analog_aggreg_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_analog_aggreg_timer, analog_aggreg_timer_handler, NULL);
 
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 
@@ -267,12 +267,12 @@ int app_work_init(void)
 	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(60));
 	k_timer_start(&m_power_timer, K_SECONDS(60), K_HOURS(12));
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 	k_timer_start(&m_analog_sample_timer, K_SECONDS(g_app_config.channel_interval_sample),
 		      K_SECONDS(g_app_config.channel_interval_sample));
 	k_timer_start(&m_analog_aggreg_timer, K_SECONDS(g_app_config.channel_interval_aggreg),
 		      K_SECONDS(g_app_config.channel_interval_aggreg));
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	k_timer_start(&m_w1_therm_sample_timer, K_SECONDS(g_app_config.w1_therm_interval_sample),
@@ -288,10 +288,10 @@ void app_work_sample(void)
 {
 	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(60));
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 	k_timer_start(&m_analog_sample_timer, K_NO_WAIT,
 		      K_SECONDS(g_app_config.channel_interval_sample));
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	k_timer_start(&m_w1_therm_sample_timer, K_NO_WAIT,

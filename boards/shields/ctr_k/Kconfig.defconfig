@@ -1,6 +1,0 @@
-if SHIELD_CTR_K
-
-config CTR_K
-	default y
-
-endif # SHIELD_CTR_K

@@ -1,7 +1,7 @@
 add_subdirectory_ifdef(CONFIG_ADC adc)
 add_subdirectory_ifdef(CONFIG_CTR_B1 ctr_b1)
 add_subdirectory_ifdef(CONFIG_CTR_BATT ctr_batt)
-add_subdirectory_ifdef(CONFIG_CTR_K ctr_k)
+add_subdirectory_ifdef(CONFIG_CTR_K1 ctr_k1)
 add_subdirectory_ifdef(CONFIG_CTR_LRW ctr_lrw_if)
 add_subdirectory_ifdef(CONFIG_CTR_LTE_IF_V2 ctr_lte_if_v2)
 add_subdirectory_ifdef(CONFIG_CTR_LTE_IF ctr_lte_if)

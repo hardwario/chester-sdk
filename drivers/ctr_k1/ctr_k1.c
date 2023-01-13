@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <chester/drivers/ctr_k.h>
+#include <chester/drivers/ctr_k1.h>
 
 /* Nordic includes */
 #include <hal/nrf_saadc.h>
@@ -21,9 +21,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define DT_DRV_COMPAT hardwario_ctr_k
+#define DT_DRV_COMPAT hardwario_ctr_k1
 
-LOG_MODULE_REGISTER(ctr_k, CONFIG_CTR_K_LOG_LEVEL);
+LOG_MODULE_REGISTER(ctr_k1, CONFIG_CTR_K1_LOG_LEVEL);
 
 #define STEP_UP_START_DELAY K_MSEC(100)
 #define STEP_UP_STOP_DELAY  K_MSEC(10)
@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(ctr_k, CONFIG_CTR_K_LOG_LEVEL);
 #define MAX_SAMPLE_COUNT    500
 #define SAMPLE_INTERVAL_US  1000
 
-struct ctr_k_config {
+struct ctr_k1_config {
 	const struct gpio_dt_spec on1_spec;
 	const struct gpio_dt_spec on2_spec;
 	const struct gpio_dt_spec on3_spec;
@@ -42,7 +42,7 @@ struct ctr_k_config {
 	const struct gpio_dt_spec nc3_spec;
 };
 
-struct ctr_k_data {
+struct ctr_k1_data {
 	const struct device *dev;
 	bool is_on1_enabled;
 	bool is_on2_enabled;
@@ -75,34 +75,34 @@ static const nrf_saadc_channel_config_t m_channel_config_differential = {
 	.burst = NRF_SAADC_BURST_ENABLED,
 };
 
-static inline const struct ctr_k_config *get_config(const struct device *dev)
+static inline const struct ctr_k1_config *get_config(const struct device *dev)
 {
 	return dev->config;
 }
 
-static inline struct ctr_k_data *get_data(const struct device *dev)
+static inline struct ctr_k1_data *get_data(const struct device *dev)
 {
 	return dev->data;
 }
 
-static int get_spec(const struct device *dev, enum ctr_k_channel channel,
+static int get_spec(const struct device *dev, enum ctr_k1_channel channel,
 		    const struct gpio_dt_spec **spec)
 {
 	switch (channel) {
-	case CTR_K_CHANNEL_1_SINGLE_ENDED:
-	case CTR_K_CHANNEL_1_DIFFERENTIAL:
+	case CTR_K1_CHANNEL_1_SINGLE_ENDED:
+	case CTR_K1_CHANNEL_1_DIFFERENTIAL:
 		*spec = &get_config(dev)->on1_spec;
 		break;
-	case CTR_K_CHANNEL_2_SINGLE_ENDED:
-	case CTR_K_CHANNEL_2_DIFFERENTIAL:
+	case CTR_K1_CHANNEL_2_SINGLE_ENDED:
+	case CTR_K1_CHANNEL_2_DIFFERENTIAL:
 		*spec = &get_config(dev)->on2_spec;
 		break;
-	case CTR_K_CHANNEL_3_SINGLE_ENDED:
-	case CTR_K_CHANNEL_3_DIFFERENTIAL:
+	case CTR_K1_CHANNEL_3_SINGLE_ENDED:
+	case CTR_K1_CHANNEL_3_DIFFERENTIAL:
 		*spec = &get_config(dev)->on3_spec;
 		break;
-	case CTR_K_CHANNEL_4_SINGLE_ENDED:
-	case CTR_K_CHANNEL_4_DIFFERENTIAL:
+	case CTR_K1_CHANNEL_4_SINGLE_ENDED:
+	case CTR_K1_CHANNEL_4_DIFFERENTIAL:
 		*spec = &get_config(dev)->on4_spec;
 		break;
 	default:
@@ -113,7 +113,7 @@ static int get_spec(const struct device *dev, enum ctr_k_channel channel,
 	return 0;
 }
 
-static int ctr_k_set_power_(const struct device *dev, enum ctr_k_channel channel, bool is_enabled)
+static int ctr_k1_set_power_(const struct device *dev, enum ctr_k1_channel channel, bool is_enabled)
 {
 	int ret;
 
@@ -165,20 +165,20 @@ static int ctr_k_set_power_(const struct device *dev, enum ctr_k_channel channel
 	}
 
 	switch (channel) {
-	case CTR_K_CHANNEL_1_SINGLE_ENDED:
-	case CTR_K_CHANNEL_1_DIFFERENTIAL:
+	case CTR_K1_CHANNEL_1_SINGLE_ENDED:
+	case CTR_K1_CHANNEL_1_DIFFERENTIAL:
 		get_data(dev)->is_on1_enabled = is_enabled;
 		break;
-	case CTR_K_CHANNEL_2_SINGLE_ENDED:
-	case CTR_K_CHANNEL_2_DIFFERENTIAL:
+	case CTR_K1_CHANNEL_2_SINGLE_ENDED:
+	case CTR_K1_CHANNEL_2_DIFFERENTIAL:
 		get_data(dev)->is_on2_enabled = is_enabled;
 		break;
-	case CTR_K_CHANNEL_3_SINGLE_ENDED:
-	case CTR_K_CHANNEL_3_DIFFERENTIAL:
+	case CTR_K1_CHANNEL_3_SINGLE_ENDED:
+	case CTR_K1_CHANNEL_3_DIFFERENTIAL:
 		get_data(dev)->is_on3_enabled = is_enabled;
 		break;
-	case CTR_K_CHANNEL_4_SINGLE_ENDED:
-	case CTR_K_CHANNEL_4_DIFFERENTIAL:
+	case CTR_K1_CHANNEL_4_SINGLE_ENDED:
+	case CTR_K1_CHANNEL_4_DIFFERENTIAL:
 		get_data(dev)->is_on4_enabled = is_enabled;
 		break;
 	default:
@@ -377,9 +377,9 @@ static inline float convert_differential_to_millivolts(nrf_saadc_value_t value)
 	return (float)value * 6 * 600 / 2048;
 }
 
-static int ctr_k_measure_(const struct device *dev, const enum ctr_k_channel channels[],
-			  size_t channels_count, const struct ctr_k_calibration calibrations[],
-			  struct ctr_k_result results[])
+static int ctr_k1_measure_(const struct device *dev, const enum ctr_k1_channel channels[],
+			   size_t channels_count, const struct ctr_k1_calibration calibrations[],
+			   struct ctr_k1_result results[])
 {
 	int ret;
 
@@ -401,49 +401,49 @@ static int ctr_k_measure_(const struct device *dev, const enum ctr_k_channel cha
 		saadc_channels[i].channel_index = i;
 
 		switch (channels[i]) {
-		case CTR_K_CHANNEL_1_SINGLE_ENDED:
+		case CTR_K1_CHANNEL_1_SINGLE_ENDED:
 			saadc_channels[i].channel_config = m_channel_config_single_ended;
 			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN1;
 			saadc_channels[i].pin_n = NRF_SAADC_INPUT_DISABLED;
 			convert[i] = convert_single_ended_to_millivolts;
 			break;
-		case CTR_K_CHANNEL_2_SINGLE_ENDED:
+		case CTR_K1_CHANNEL_2_SINGLE_ENDED:
 			saadc_channels[i].channel_config = m_channel_config_single_ended;
 			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN0;
 			saadc_channels[i].pin_n = NRF_SAADC_INPUT_DISABLED;
 			convert[i] = convert_single_ended_to_millivolts;
 			break;
-		case CTR_K_CHANNEL_3_SINGLE_ENDED:
+		case CTR_K1_CHANNEL_3_SINGLE_ENDED:
 			saadc_channels[i].channel_config = m_channel_config_single_ended;
 			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN4;
 			saadc_channels[i].pin_n = NRF_SAADC_INPUT_DISABLED;
 			convert[i] = convert_single_ended_to_millivolts;
 			break;
-		case CTR_K_CHANNEL_4_SINGLE_ENDED:
+		case CTR_K1_CHANNEL_4_SINGLE_ENDED:
 			saadc_channels[i].channel_config = m_channel_config_single_ended;
 			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN2;
 			saadc_channels[i].pin_n = NRF_SAADC_INPUT_DISABLED;
 			convert[i] = convert_single_ended_to_millivolts;
 			break;
-		case CTR_K_CHANNEL_1_DIFFERENTIAL:
+		case CTR_K1_CHANNEL_1_DIFFERENTIAL:
 			saadc_channels[i].channel_config = m_channel_config_differential;
 			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN5;
 			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN1;
 			convert[i] = convert_differential_to_millivolts;
 			break;
-		case CTR_K_CHANNEL_2_DIFFERENTIAL:
+		case CTR_K1_CHANNEL_2_DIFFERENTIAL:
 			saadc_channels[i].channel_config = m_channel_config_differential;
 			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN7;
 			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN0;
 			convert[i] = convert_differential_to_millivolts;
 			break;
-		case CTR_K_CHANNEL_3_DIFFERENTIAL:
+		case CTR_K1_CHANNEL_3_DIFFERENTIAL:
 			saadc_channels[i].channel_config = m_channel_config_differential;
 			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN6;
 			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN4;
 			convert[i] = convert_differential_to_millivolts;
 			break;
-		case CTR_K_CHANNEL_4_DIFFERENTIAL:
+		case CTR_K1_CHANNEL_4_DIFFERENTIAL:
 			saadc_channels[i].channel_config = m_channel_config_differential;
 			saadc_channels[i].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN3;
 			saadc_channels[i].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN2;
@@ -492,7 +492,7 @@ static int ctr_k_measure_(const struct device *dev, const enum ctr_k_channel cha
 	k_mutex_unlock(&m_lock);
 
 	for (size_t i = 0; i < channels_count; i++) {
-		unsigned ch = CTR_K_CHANNEL_IDX(channels[i]) + 1;
+		unsigned ch = CTR_K1_CHANNEL_IDX(channels[i]) + 1;
 
 		raw_avg[i] = raw_avg[i] / MAX_SAMPLE_COUNT;
 		raw_rms[i] = sqrtf(raw_rms[i] / MAX_SAMPLE_COUNT);
@@ -510,7 +510,7 @@ static int ctr_k_measure_(const struct device *dev, const enum ctr_k_channel cha
 	return 0;
 }
 
-static int ctr_k_init(const struct device *dev)
+static int ctr_k1_init(const struct device *dev)
 {
 	int ret;
 
@@ -581,13 +581,13 @@ static int ctr_k_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ctr_k_driver_api ctr_k_driver_api = {
-	.set_power = ctr_k_set_power_,
-	.measure = ctr_k_measure_,
+static const struct ctr_k1_driver_api ctr_k1_driver_api = {
+	.set_power = ctr_k1_set_power_,
+	.measure = ctr_k1_measure_,
 };
 
-#define CTR_K_INIT(n)                                                                              \
-	static const struct ctr_k_config inst_##n##_config = {                                     \
+#define CTR_K1_INIT(n)                                                                             \
+	static const struct ctr_k1_config inst_##n##_config = {                                    \
 		.on1_spec = GPIO_DT_SPEC_INST_GET(n, on1_gpios),                                   \
 		.on2_spec = GPIO_DT_SPEC_INST_GET(n, on2_gpios),                                   \
 		.on3_spec = GPIO_DT_SPEC_INST_GET(n, on3_gpios),                                   \
@@ -597,10 +597,10 @@ static const struct ctr_k_driver_api ctr_k_driver_api = {
 		.nc2_spec = GPIO_DT_SPEC_INST_GET(n, nc2_gpios),                                   \
 		.nc3_spec = GPIO_DT_SPEC_INST_GET(n, nc3_gpios),                                   \
 	};                                                                                         \
-	static struct ctr_k_data inst_##n##_data = {                                               \
+	static struct ctr_k1_data inst_##n##_data = {                                              \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, ctr_k_init, NULL, &inst_##n##_data, &inst_##n##_config,           \
-			      POST_KERNEL, CONFIG_CTR_K_INIT_PRIORITY, &ctr_k_driver_api);
+	DEVICE_DT_INST_DEFINE(n, ctr_k1_init, NULL, &inst_##n##_data, &inst_##n##_config,          \
+			      POST_KERNEL, CONFIG_CTR_K1_INIT_PRIORITY, &ctr_k1_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(CTR_K_INIT)
+DT_INST_FOREACH_STATUS_OKAY(CTR_K1_INIT)

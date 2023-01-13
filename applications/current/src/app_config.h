@@ -27,7 +27,7 @@ struct app_config {
 	bool backup_report_disconnected;
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 	int channel_interval_sample;
 	int channel_interval_aggreg;
 	bool channel_active[APP_CONFIG_CHANNEL_COUNT];
@@ -36,7 +36,7 @@ struct app_config {
 	int channel_calib_y0[APP_CONFIG_CHANNEL_COUNT];
 	int channel_calib_x1[APP_CONFIG_CHANNEL_COUNT];
 	int channel_calib_y1[APP_CONFIG_CHANNEL_COUNT];
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	int w1_therm_interval_sample;
@@ -61,7 +61,7 @@ int app_config_cmd_config_backup_report_disconnected(const struct shell *shell, 
 						     char **argv);
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 int app_config_cmd_config_channel_interval_sample(const struct shell *shell, size_t argc,
 						  char **argv);
 int app_config_cmd_config_channel_interval_aggreg(const struct shell *shell, size_t argc,
@@ -72,7 +72,7 @@ int app_config_cmd_config_channel_calib_x0(const struct shell *shell, size_t arg
 int app_config_cmd_config_channel_calib_y0(const struct shell *shell, size_t argc, char **argv);
 int app_config_cmd_config_channel_calib_x1(const struct shell *shell, size_t argc, char **argv);
 int app_config_cmd_config_channel_calib_y1(const struct shell *shell, size_t argc, char **argv);
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 int app_config_cmd_config_w1_therm_interval_sample(const struct shell *shell, size_t argc,

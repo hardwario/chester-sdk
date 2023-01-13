@@ -376,7 +376,7 @@ static int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 	zcbor_uint32_put(zs, MSG_KEY_ANALOG_CHANNELS);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -411,7 +411,7 @@ static int encode(zcbor_state_t *zs)
 		}
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	zcbor_uint32_put(zs, MSG_KEY_W1_THERMOMETERS);

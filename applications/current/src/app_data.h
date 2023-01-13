@@ -38,7 +38,7 @@ struct app_data_backup {
 };
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 struct app_data_analog_aggreg {
 	float min;
 	float max;
@@ -57,7 +57,7 @@ struct app_data_channel {
 	struct app_data_analog_aggreg measurements_mean[APP_DATA_ANALOG_MAX_MEASUREMENTS];
 	struct app_data_analog_aggreg measurements_rms[APP_DATA_ANALOG_MAX_MEASUREMENTS];
 };
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 struct app_data_w1_therm_measurement {
@@ -96,9 +96,9 @@ struct app_data {
 	struct app_data_backup backup;
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 	struct app_data_channel channel[4];
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	struct app_data_w1_therm w1_therm;

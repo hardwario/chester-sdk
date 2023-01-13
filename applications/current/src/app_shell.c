@@ -84,7 +84,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      app_config_cmd_config_backup_report_disconnected, 1, 1),
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 	SHELL_CMD_ARG(channel-interval-sample, NULL,
 	              "Get/Set sample interval in seconds (format: <1-86400>).",
 	              app_config_cmd_config_channel_interval_sample, 1, 1),
@@ -120,7 +120,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "Get/Set channel Y1 calibration point "
 	              "(format: <channel> <-2147483648..2147483647>).",
 	              app_config_cmd_config_channel_calib_y1, 2, 1),
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	SHELL_CMD_ARG(w1-therm-interval-sample, NULL,

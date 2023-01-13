@@ -8,7 +8,7 @@
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_therm.h>
-#include <chester/drivers/ctr_k.h>
+#include <chester/drivers/ctr_k1.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -108,15 +108,15 @@ int app_sensor_sample(void)
 	return 0;
 }
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 
 int app_sensor_analog_sample(void)
 {
 	int ret;
 	int err = 0;
 
-	enum ctr_k_channel channels[APP_CONFIG_CHANNEL_COUNT] = {0};
-	struct ctr_k_calibration calibrations[APP_CONFIG_CHANNEL_COUNT] = {0};
+	enum ctr_k1_channel channels[APP_CONFIG_CHANNEL_COUNT] = {0};
+	struct ctr_k1_calibration calibrations[APP_CONFIG_CHANNEL_COUNT] = {0};
 
 	size_t channels_count = 0;
 
@@ -136,9 +136,9 @@ int app_sensor_analog_sample(void)
 		}
 
 		if (g_app_config.channel_differential[i]) {
-			channels[channels_count] = CTR_K_CHANNEL_DIFFERENTIAL(i + 1);
+			channels[channels_count] = CTR_K1_CHANNEL_DIFFERENTIAL(i + 1);
 		} else {
-			channels[channels_count] = CTR_K_CHANNEL_SINGLE_ENDED(i + 1);
+			channels[channels_count] = CTR_K1_CHANNEL_SINGLE_ENDED(i + 1);
 		}
 
 		int x0 = g_app_config.channel_calib_x0[i];
@@ -165,7 +165,7 @@ int app_sensor_analog_sample(void)
 		return 0;
 	}
 
-	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_k));
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_k1));
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
@@ -173,9 +173,9 @@ int app_sensor_analog_sample(void)
 	}
 
 	for (size_t i = 0; i < channels_count; i++) {
-		ret = ctr_k_set_power(dev, channels[i], true);
+		ret = ctr_k1_set_power(dev, channels[i], true);
 		if (ret) {
-			LOG_ERR("Call `ctr_k_set_power` (%u) failed: %d", i, ret);
+			LOG_ERR("Call `ctr_k1_set_power` (%u) failed: %d", i, ret);
 			err = ret;
 			goto error;
 		}
@@ -187,10 +187,10 @@ int app_sensor_analog_sample(void)
 
 	k_sleep(K_MSEC(100));
 
-	struct ctr_k_result results[ARRAY_SIZE(channels)] = {0};
-	ret = ctr_k_measure(dev, channels, channels_count, calibrations, results);
+	struct ctr_k1_result results[ARRAY_SIZE(channels)] = {0};
+	ret = ctr_k1_measure(dev, channels, channels_count, calibrations, results);
 	if (ret) {
-		LOG_ERR("Call `ctr_k_measure` failed: %d", ret);
+		LOG_ERR("Call `ctr_k1_measure` failed: %d", ret);
 		err = ret;
 		goto error;
 	}
@@ -204,14 +204,14 @@ int app_sensor_analog_sample(void)
 	}
 
 	for (size_t i = 0; i < channels_count; i++) {
-		int sample_count = g_app_data.channel[CTR_K_CHANNEL_IDX(channels[i])].sample_count;
-		g_app_data.channel[CTR_K_CHANNEL_IDX(channels[i])].samples_mean[sample_count] =
+		int sample_count = g_app_data.channel[CTR_K1_CHANNEL_IDX(channels[i])].sample_count;
+		g_app_data.channel[CTR_K1_CHANNEL_IDX(channels[i])].samples_mean[sample_count] =
 			results[i].avg;
-		g_app_data.channel[CTR_K_CHANNEL_IDX(channels[i])].samples_rms[sample_count] =
+		g_app_data.channel[CTR_K1_CHANNEL_IDX(channels[i])].samples_rms[sample_count] =
 			results[i].rms;
 
 		LOG_INF("Channel %d: sample count: %d, mean: %.1f, rms: %.1f",
-			CTR_K_CHANNEL_IDX(channels[i]) + 1, sample_count, results[i].avg,
+			CTR_K1_CHANNEL_IDX(channels[i]) + 1, sample_count, results[i].avg,
 			results[i].rms);
 	}
 
@@ -224,9 +224,9 @@ int app_sensor_analog_sample(void)
 error:
 
 	for (size_t i = 0; i < ARRAY_SIZE(channels); i++) {
-		ret = ctr_k_set_power(dev, channels[i], false);
+		ret = ctr_k1_set_power(dev, channels[i], false);
 		if (ret) {
-			LOG_ERR("Call `ctr_k_set_power` (%u) failed: %d", i, ret);
+			LOG_ERR("Call `ctr_k1_set_power` (%u) failed: %d", i, ret);
 			err = err ? err : ret;
 		}
 
@@ -301,7 +301,7 @@ int app_sensor_analog_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 

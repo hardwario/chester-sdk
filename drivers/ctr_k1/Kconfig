@@ -1,5 +1,5 @@
-config CTR_K
-	bool "HARDWARIO CHESTER-K (Differential Inputs) Driver"
+config CTR_K1
+	bool "HARDWARIO CHESTER-K1 (Differential Inputs) Driver"
 	depends on !ADC_NRFX_SAADC && !ADC_SHELL
 	select CBPRINTF_FP_SUPPORT if CTR_SIGNAL_LOG_LEVEL_DBG
 	select GPIO
@@ -11,16 +11,16 @@ config CTR_K
 	select NRFX_TIMER4
 	select REQUIRES_FULL_LIBC
 
-if CTR_K
+if CTR_K1
 
-module = CTR_K
-module-str = ctr_k
+module = CTR_K1
+module-str = ctr_k1
 source "subsys/logging/Kconfig.template.log_config"
 
-config CTR_K_INIT_PRIORITY
+config CTR_K1_INIT_PRIORITY
 	int "Init priority"
 	default 99
 	help
 	  Device driver initialization priority.
 
-endif # CTR_K
+endif # CTR_K1

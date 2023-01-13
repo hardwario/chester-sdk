@@ -1,6 +1,6 @@
-description: HARDWARIO CHESTER-K Driver
+description: HARDWARIO CHESTER-K1 Driver
 
-compatible: "hardwario,ctr-k"
+compatible: "hardwario,ctr-k1"
 
 include: base.yaml
 

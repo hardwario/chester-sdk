@@ -32,10 +32,10 @@ static struct app_config m_app_config_interim = {
 	.backup_report_disconnected = true,
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 	.channel_interval_sample = 60,
 	.channel_interval_aggreg = 300,
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	.w1_therm_interval_sample = 60,
@@ -92,7 +92,7 @@ static void print_backup_report_disconnected(const struct shell *shell)
 
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 
 static void print_channel_interval_sample(const struct shell *shell)
 {
@@ -166,7 +166,7 @@ static void print_channel_calib_y1(const struct shell *shell, int channel)
 	}
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 
@@ -196,7 +196,7 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 	print_backup_report_disconnected(shell);
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 	print_channel_interval_sample(shell);
 	print_channel_interval_aggreg(shell);
 	print_channel_active(shell, 0);
@@ -205,7 +205,7 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 	print_channel_calib_y0(shell, 0);
 	print_channel_calib_x1(shell, 0);
 	print_channel_calib_y1(shell, 0);
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	print_w1_therm_interval_sample(shell);
@@ -282,7 +282,7 @@ CMD_CONFIG_FUNCTION_BOOL(backup_report_disconnected);
 
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 
 CMD_CONFIG_FUNCTION_INT(channel_interval_sample, 1, 86400);
 CMD_CONFIG_FUNCTION_INT(channel_interval_aggreg, 1, 86400);
@@ -543,7 +543,7 @@ int app_config_cmd_config_channel_calib_y1(const struct shell *shell, size_t arg
 	return -EINVAL;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 
@@ -599,7 +599,7 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET_SCALAR("backup-report-disconnected", backup_report_disconnected);
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 	SETTINGS_SET_SCALAR("channel-interval-sample", channel_interval_sample);
 	SETTINGS_SET_SCALAR("channel-interval-aggreg", channel_interval_aggreg);
 
@@ -638,7 +638,7 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET_SCALAR("channel-2-calib-y1", channel_calib_y1[1]);
 	SETTINGS_SET_SCALAR("channel-3-calib-y1", channel_calib_y1[2]);
 	SETTINGS_SET_SCALAR("channel-4-calib-y1", channel_calib_y1[3]);
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	SETTINGS_SET_SCALAR("w1-therm-interval-sample", w1_therm_interval_sample);
@@ -680,7 +680,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC_SCALAR("backup-report-disconnected", backup_report_disconnected);
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_K)
+#if defined(CONFIG_SHIELD_CTR_K1)
 
 	EXPORT_FUNC_SCALAR("channel-interval-sample", channel_interval_sample);
 	EXPORT_FUNC_SCALAR("channel-interval-aggreg", channel_interval_aggreg);
@@ -720,7 +720,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC_SCALAR("channel-2-calib-y1", channel_calib_y1[1]);
 	EXPORT_FUNC_SCALAR("channel-3-calib-y1", channel_calib_y1[2]);
 	EXPORT_FUNC_SCALAR("channel-4-calib-y1", channel_calib_y1[3]);
-#endif /* defined(CONFIG_SHIELD_CTR_K) */
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	EXPORT_FUNC_SCALAR("w1-therm-interval-sample", w1_therm_interval_sample);

@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include <chester/drivers/ctr_k.h>
+#include <chester/drivers/ctr_k1.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>
@@ -19,21 +19,21 @@ void main(void)
 
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
-	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_k));
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_k1));
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
 		k_oops();
 	}
 
-	static const enum ctr_k_channel channels[] = {
-		CTR_K_CHANNEL_1_DIFFERENTIAL,
-		CTR_K_CHANNEL_2_DIFFERENTIAL,
-		CTR_K_CHANNEL_3_DIFFERENTIAL,
-		CTR_K_CHANNEL_4_DIFFERENTIAL,
+	static const enum ctr_k1_channel channels[] = {
+		CTR_K1_CHANNEL_1_DIFFERENTIAL,
+		CTR_K1_CHANNEL_2_DIFFERENTIAL,
+		CTR_K1_CHANNEL_3_DIFFERENTIAL,
+		CTR_K1_CHANNEL_4_DIFFERENTIAL,
 	};
 
-	static const struct ctr_k_calibration calibrations[] = {
+	static const struct ctr_k1_calibration calibrations[] = {
 		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
 		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
 		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
@@ -42,9 +42,9 @@ void main(void)
 
 #if 0
 	for (size_t i = 0; i < ARRAY_SIZE(channels); i++) {
-		ret = ctr_k_set_power(dev, channels[i], true);
+		ret = ctr_k1_set_power(dev, channels[i], true);
 		if (ret) {
-			LOG_ERR("Call `ctr_k_set_power` failed: %d", ret);
+			LOG_ERR("Call `ctr_k1_set_power` failed: %d", ret);
 			k_oops();
 		}
 	}
@@ -55,9 +55,9 @@ void main(void)
 
 #if 1
 		for (size_t i = 0; i < ARRAY_SIZE(channels); i++) {
-			ret = ctr_k_set_power(dev, channels[i], true);
+			ret = ctr_k1_set_power(dev, channels[i], true);
 			if (ret) {
-				LOG_ERR("Call `ctr_k_set_power` failed: %d", ret);
+				LOG_ERR("Call `ctr_k1_set_power` failed: %d", ret);
 				k_oops();
 			}
 		}
@@ -65,18 +65,18 @@ void main(void)
 		k_sleep(K_MSEC(100));
 #endif
 
-		struct ctr_k_result results[ARRAY_SIZE(channels)] = {0};
-		ret = ctr_k_measure(dev, channels, ARRAY_SIZE(channels), calibrations, results);
+		struct ctr_k1_result results[ARRAY_SIZE(channels)] = {0};
+		ret = ctr_k1_measure(dev, channels, ARRAY_SIZE(channels), calibrations, results);
 		if (ret) {
-			LOG_ERR("Call `ctr_k_measure` failed: %d", ret);
+			LOG_ERR("Call `ctr_k1_measure` failed: %d", ret);
 			k_oops();
 		}
 
 #if 1
 		for (size_t i = 0; i < ARRAY_SIZE(channels); i++) {
-			ret = ctr_k_set_power(dev, channels[i], false);
+			ret = ctr_k1_set_power(dev, channels[i], false);
 			if (ret) {
-				LOG_ERR("Call `ctr_k_set_power` failed: %d", ret);
+				LOG_ERR("Call `ctr_k1_set_power` failed: %d", ret);
 				k_oops();
 			}
 		}
