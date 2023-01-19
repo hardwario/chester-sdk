@@ -1,0 +1,9 @@
+if SHIELD_CTR_RTD_B
+
+config CTR_X3
+	default y
+
+config CTR_RTD
+	default y
+
+endif # SHIELD_CTR_RTD_B

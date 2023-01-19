@@ -1,0 +1,17 @@
+&ctr_x3_b {
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_b1 {
+	vref = <1>;
+	idac = <6>;
+	i1mux = <4>;
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_b2 {
+	vref = <1>;
+	idac = <6>;
+	i1mux = <4>;
+	status = "okay";
+};
