@@ -1,3 +1,8 @@
 &ctr_x2_sc16is740_a {
 	current-speed = <9600>;
 };
+
+
+&i2c0 {
+	label = "LBLI2C0";
+};

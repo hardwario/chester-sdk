@@ -1,0 +1,27 @@
+description: HARDWARIO CHESTER-V1 Driver
+
+compatible: "hardwario,ctr-v1"
+
+include: base.yaml
+
+properties:
+
+  uart-controller:
+    type: phandle
+    required: true
+    description: xxx
+
+  modem-reset-gpios:
+    type: phandle-array
+    required: true
+    description: yyy
+
+  modem-wakeup-gpios:
+    type: phandle-array
+    required: true
+    description: zzz
+
+  modem-event-gpios:
+    type: phandle-array
+    required: true
+    description: zzz1

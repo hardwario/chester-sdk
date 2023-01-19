@@ -1,0 +1,24 @@
+if SHIELD_CTR_V1
+
+config CTR_SAT
+	default y
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config PM
+	default y
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_SC16IS7XX
+	default y
+
+endif # SHIELD_CTR_V1

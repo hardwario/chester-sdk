@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 
-# set(SHIELD ctr_sat)
-set(SHIELD ctr_x2_a)
+set(SHIELD ctr_v1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(sat)
 
