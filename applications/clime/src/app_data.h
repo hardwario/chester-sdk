@@ -20,6 +20,13 @@
 #define APP_DATA_W1_THERM_MAX_SAMPLES 128
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
+#if (defined(CONFIG_SHIELD_CTR_RTD_A) && !defined(CONFIG_SHIELD_CTR_RTD_B)) ||                     \
+	(!defined(CONFIG_SHIELD_CTR_RTD_A) && defined(CONFIG_SHIELD_CTR_RTD_B))
+#define APP_DATA_RTD_THERM_COUNT 2
+#elif defined(CONFIG_SHIELD_CTR_RTD_A) && defined(CONFIG_SHIELD_CTR_RTD_B)
+#define APP_DATA_RTD_THERM_COUNT 4
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -74,8 +81,6 @@ struct app_data_iaq {
 	struct app_data_iaq_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	int64_t timestamp;
-	atomic_t sample;
-	atomic_t aggreg;
 };
 
 struct app_data_hygro_measurement {
@@ -92,8 +97,6 @@ struct app_data_hygro {
 	struct app_data_hygro_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	int64_t timestamp;
-	atomic_t sample;
-	atomic_t aggreg;
 };
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
@@ -118,6 +121,26 @@ struct app_data_w1_therm {
 	atomic_t aggreg;
 };
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+struct app_data_rtd_therm_measurement {
+	struct app_data_aggreg temperature;
+};
+
+struct app_data_rtd_therm_sensor {
+	int sample_count;
+	float samples_temperature[APP_DATA_MAX_SAMPLES];
+
+	int measurement_count;
+	struct app_data_rtd_therm_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+};
+
+struct app_data_rtd_therm {
+	struct app_data_rtd_therm_sensor sensor[APP_DATA_RTD_THERM_COUNT];
+
+	int64_t timestamp;
+};
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 
 struct app_data {
 	float system_voltage_rest;
@@ -144,6 +167,10 @@ struct app_data {
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	struct app_data_w1_therm w1_therm;
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+	struct app_data_rtd_therm rtd_therm;
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 };
 
 extern struct app_data g_app_data;

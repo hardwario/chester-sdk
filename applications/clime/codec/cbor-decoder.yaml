@@ -104,3 +104,5 @@
         - disconnected
         - connected
 - system:
+- rtd_thermometer:
+- channel:

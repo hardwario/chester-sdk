@@ -49,7 +49,7 @@ static int compose(struct ctr_buf *buf)
 	}
 
 	/* Flag ACCEL */
-	if (IS_ENABLED(CONFIG_CTR_ACCEL) && 0) {
+	if (IS_ENABLED(CONFIG_CTR_ACCEL)) {
 		header |= BIT(1);
 	}
 
@@ -71,6 +71,11 @@ static int compose(struct ctr_buf *buf)
 	/* Flag W1_THERM */
 	if (IS_ENABLED(CONFIG_SHIELD_CTR_DS18B20)) {
 		header |= BIT(5);
+	}
+
+	/* Flag RTD_THERM */
+	if (IS_ENABLED(CONFIG_SHIELD_CTR_RTD_A) || IS_ENABLED(CONFIG_SHIELD_CTR_RTD_B)) {
+		header |= BIT(6);
 	}
 
 	ret |= ctr_buf_append_u8(buf, header);
@@ -189,6 +194,29 @@ static int compose(struct ctr_buf *buf)
 		}
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+	/* Field RTD_THERM */
+	if (header & BIT(6)) {
+
+		ret |= ctr_buf_append_u8(buf, APP_DATA_RTD_THERM_COUNT);
+
+		for (int i = 0; i < APP_DATA_RTD_THERM_COUNT; i++) {
+			struct app_data_rtd_therm_sensor *sensor = &g_app_data.rtd_therm.sensor[i];
+			float t = NAN;
+
+			if (sensor->sample_count) {
+				t = sensor->samples_temperature[sensor->sample_count - 1];
+			}
+
+			if (isnan(t)) {
+				ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
+			} else {
+				ret |= ctr_buf_append_s16(buf, t * 100.f);
+			}
+		}
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 
 	app_data_unlock();
 

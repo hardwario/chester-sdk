@@ -94,255 +94,77 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 	return 0;
 }
 
-int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_interval_sample(shell);
-		return 0;
+#define CMD_CONFIG_FUNCTION_INT(NAME, MIN, MAX)                                                    \
+	int app_config_cmd_config_##NAME(const struct shell *shell, size_t argc, char **argv)      \
+	{                                                                                          \
+		if (argc == 1) {                                                                   \
+			print_##NAME(shell);                                                       \
+			return 0;                                                                  \
+		}                                                                                  \
+		if (argc == 2) {                                                                   \
+			size_t len = strlen(argv[1]);                                              \
+			if (len < 1 || len > 4) {                                                  \
+				shell_error(shell, "invalid format");                              \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			for (size_t i = 0; i < len; i++) {                                         \
+				if (!isdigit((int)argv[1][i])) {                                   \
+					shell_error(shell, "invalid format");                      \
+					return -EINVAL;                                            \
+				}                                                                  \
+			}                                                                          \
+			long value = strtol(argv[1], NULL, 10);                                    \
+			if (value < MIN || value > MAX) {                                          \
+				shell_error(shell, "invalid range");                               \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			m_app_config_interim.NAME = (int)value;                                    \
+			return 0;                                                                  \
+		}                                                                                  \
+		shell_help(shell);                                                                 \
+		return -EINVAL;                                                                    \
 	}
 
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long interval_sample = strtol(argv[1], NULL, 10);
-
-		if (interval_sample < 1 || interval_sample > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.interval_sample = (int)interval_sample;
-
-		return 0;
+#define CMD_CONFIG_FUNCTION_BOOL(NAME)                                                             \
+	int app_config_cmd_config_##NAME(const struct shell *shell, size_t argc, char **argv)      \
+	{                                                                                          \
+		if (argc == 1) {                                                                   \
+			print_##NAME(shell);                                                       \
+			return 0;                                                                  \
+		}                                                                                  \
+		if (argc == 2) {                                                                   \
+			bool is_false = !strcmp(argv[1], "false");                                 \
+			bool is_true = !strcmp(argv[1], "true");                                   \
+			if (is_false) {                                                            \
+				m_app_config_interim.NAME = false;                                 \
+			} else if (is_true) {                                                      \
+				m_app_config_interim.NAME = true;                                  \
+			} else {                                                                   \
+				shell_error(shell, "invalid format");                              \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			return 0;                                                                  \
+		}                                                                                  \
+		shell_help(shell);                                                                 \
+		return -EINVAL;                                                                    \
 	}
 
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int app_config_cmd_config_interval_aggreg(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_interval_aggreg(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long interval_aggreg = strtol(argv[1], NULL, 10);
-
-		if (interval_aggreg < 1 || interval_aggreg > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.interval_aggreg = (int)interval_aggreg;
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_interval_report(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long interval_report = strtol(argv[1], NULL, 10);
-
-		if (interval_report < 30 || interval_report > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.interval_report = (int)interval_report;
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
+CMD_CONFIG_FUNCTION_INT(interval_sample, 1, 86400);
+CMD_CONFIG_FUNCTION_INT(interval_aggreg, 1, 86400);
+CMD_CONFIG_FUNCTION_INT(interval_report, 30, 86400);
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 
-int app_config_cmd_config_event_report_delay(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_event_report_delay(shell);
-		return 0;
-	}
+CMD_CONFIG_FUNCTION_INT(event_report_delay, 1, 86400);
+CMD_CONFIG_FUNCTION_INT(event_report_rate, 1, 3600);
 
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long value = strtol(argv[1], NULL, 10);
-
-		if (value < 1 || value > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.event_report_delay = (int)value;
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int app_config_cmd_config_event_report_rate(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_event_report_rate(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long value = strtol(argv[1], NULL, 10);
-
-		if (value < 1 || value > 3600) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.event_report_rate = (int)value;
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int app_config_cmd_config_backup_report_connected(const struct shell *shell, size_t argc,
-						  char **argv)
-{
-	if (argc == 1) {
-		print_backup_report_connected(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		bool is_false = !strcmp(argv[1], "false");
-		bool is_true = !strcmp(argv[1], "true");
-
-		if (is_false) {
-			m_app_config_interim.backup_report_connected = false;
-		} else if (is_true) {
-			m_app_config_interim.backup_report_connected = true;
-		} else {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int app_config_cmd_config_backup_report_disconnected(const struct shell *shell, size_t argc,
-						     char **argv)
-{
-	if (argc == 1) {
-		print_backup_report_disconnected(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		bool is_false = !strcmp(argv[1], "false");
-		bool is_true = !strcmp(argv[1], "true");
-
-		if (is_false) {
-			m_app_config_interim.backup_report_disconnected = false;
-		} else if (is_true) {
-			m_app_config_interim.backup_report_disconnected = true;
-		} else {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
+CMD_CONFIG_FUNCTION_BOOL(backup_report_connected);
+CMD_CONFIG_FUNCTION_BOOL(backup_report_disconnected);
 
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#undef CMD_CONFIG_FUNCTION_INT
+#undef CMD_CONFIG_FUNCTION_BOOL
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {

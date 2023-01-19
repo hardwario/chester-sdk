@@ -659,6 +659,50 @@ static int encode(zcbor_state_t *zs)
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+	zcbor_uint32_put(zs, MSG_KEY_RTD_THERMOMETER);
+	{
+		const int channel_lookup[] = {
+#if defined(CONFIG_SHIELD_CTR_RTD_A)
+			1,
+			2,
+#endif
+#if defined(CONFIG_SHIELD_CTR_RTD_B)
+			3,
+			4,
+#endif
+		};
+
+		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		for (int i = 0; i < APP_DATA_RTD_THERM_COUNT; i++) {
+			struct app_data_rtd_therm_sensor *sensor = &g_app_data.rtd_therm.sensor[i];
+
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_CHANNEL);
+			zcbor_uint32_put(zs, channel_lookup[i]);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.rtd_therm.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int j = 0; j < sensor->measurement_count; j++) {
+					put_sample_mul(zs, &sensor->measurements[j].temperature,
+						       100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 	if (!zcbor_check_error(zs)) {

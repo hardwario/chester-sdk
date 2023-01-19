@@ -56,6 +56,10 @@ static void send_work_handler(struct k_work *work)
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	app_sensor_w1_therm_clear();
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+	app_sensor_rtd_therm_clear();
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 }
 
 static K_WORK_DEFINE(m_send_work, send_work_handler);
@@ -283,6 +287,58 @@ static K_TIMER_DEFINE(m_w1_therm_aggreg_timer, w1_therm_aggreg_timer_handler, NU
 
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+
+static void rtd_therm_sample_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_rtd_therm_sample();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_rtd_therm_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_rtd_therm_sample_work, rtd_therm_sample_work_handler);
+
+static void rtd_therm_sample_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_rtd_therm_sample_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_rtd_therm_sample_timer, rtd_therm_sample_timer_handler, NULL);
+
+static void rtd_therm_aggreg_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_rtd_therm_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_rtd_therm_aggreg` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_rtd_therm_aggreg_work, rtd_therm_aggreg_work_handler);
+
+static void rtd_therm_aggreg_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_rtd_therm_aggreg_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_rtd_therm_aggreg_timer, rtd_therm_aggreg_timer_handler, NULL);
+
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 
 static void backup_work_handler(struct k_work *work)
@@ -316,7 +372,7 @@ int app_work_init(void)
 
 	k_thread_name_set(&m_work_q.thread, "app_work");
 
-	k_timer_start(&m_send_timer, K_NO_WAIT, K_FOREVER);
+	k_timer_start(&m_send_timer, K_SECONDS(10), K_FOREVER);
 	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
 	k_timer_start(&m_power_timer, K_SECONDS(60), K_HOURS(12));
 
@@ -341,6 +397,13 @@ int app_work_init(void)
 		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+	k_timer_start(&m_rtd_therm_sample_timer, K_SECONDS(g_app_config.interval_sample),
+		      K_SECONDS(g_app_config.interval_sample));
+	k_timer_start(&m_rtd_therm_aggreg_timer, K_SECONDS(g_app_config.interval_aggreg),
+		      K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
 	return 0;
 }
 
@@ -359,6 +422,11 @@ void app_work_sample(void)
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	k_timer_start(&m_w1_therm_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+	k_timer_start(&m_rtd_therm_sample_timer, K_NO_WAIT,
+		      K_SECONDS(g_app_config.interval_sample));
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 }
 
 void app_work_send(void)

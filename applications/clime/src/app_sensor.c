@@ -8,6 +8,7 @@
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_hygro.h>
 #include <chester/ctr_rtc.h>
+#include <chester/ctr_rtd.h>
 #include <chester/ctr_therm.h>
 #include <chester/drivers/ctr_batt.h>
 #include <chester/drivers/ctr_s1.h>
@@ -345,17 +346,14 @@ int app_sensor_hygro_clear(void)
 int app_sensor_w1_therm_sample(void)
 {
 	int ret;
-	float temperature;
 	uint64_t serial_number;
 
-	for (int j = 0; j < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); j++) {
-		if (g_app_data.w1_therm.sensor[j].sample_count < APP_DATA_MAX_SAMPLES) {
-			int i = g_app_data.w1_therm.sensor[j].sample_count;
-
-			ret = ctr_ds18b20_read(j, &serial_number, &temperature);
+	for (int i = 0; i < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
+		if (g_app_data.w1_therm.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
+			float temperature = NAN;
+			ret = ctr_ds18b20_read(i, &serial_number, &temperature);
 
 			if (ret) {
-				temperature = NAN;
 				LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
 				continue;
 			} else {
@@ -363,12 +361,14 @@ int app_sensor_w1_therm_sample(void)
 			}
 
 			app_data_lock();
-			g_app_data.w1_therm.sensor[j].samples_temperature[i] = temperature;
-			g_app_data.w1_therm.sensor[j].serial_number = serial_number;
-			g_app_data.w1_therm.sensor[j].sample_count++;
+			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];
+			sensor->samples_temperature[sensor->sample_count] = temperature;
+			sensor->serial_number = serial_number;
+			sensor->sample_count++;
+
+			LOG_INF("Sample count: %d", sensor->sample_count);
 			app_data_unlock();
 
-			LOG_INF("Sample count: %d", g_app_data.w1_therm.sensor[j].sample_count);
 		} else {
 			LOG_WRN("Sample buffer full");
 			return -ENOSPC;
@@ -386,8 +386,8 @@ int app_sensor_w1_therm_aggreg(void)
 
 	app_data_lock();
 
-	for (int j = 0; j < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); j++) {
-		if (w1_therm->sensor[j].measurement_count == 0) {
+	for (int i = 0; i < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
+		if (w1_therm->sensor[i].measurement_count == 0) {
 			ret = ctr_rtc_get_ts(&w1_therm->timestamp);
 			if (ret) {
 				LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
@@ -395,24 +395,24 @@ int app_sensor_w1_therm_aggreg(void)
 				return ret;
 			}
 		}
-		if (w1_therm->sensor[j].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+		if (w1_therm->sensor[i].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
 			struct app_data_w1_therm_measurement *measurement =
-				&w1_therm->sensor[j]
-					 .measurements[w1_therm->sensor[j].measurement_count];
+				&w1_therm->sensor[i]
+					 .measurements[w1_therm->sensor[i].measurement_count];
 
-			aggreg_sample(w1_therm->sensor[j].samples_temperature,
-				      w1_therm->sensor[j].sample_count, &measurement->temperature);
+			aggreg_sample(w1_therm->sensor[i].samples_temperature,
+				      w1_therm->sensor[i].sample_count, &measurement->temperature);
 
-			w1_therm->sensor[j].measurement_count++;
+			w1_therm->sensor[i].measurement_count++;
 
-			LOG_INF("Measurement count: %d", w1_therm->sensor[j].measurement_count);
+			LOG_INF("Measurement count: %d", w1_therm->sensor[i].measurement_count);
 		} else {
 			LOG_WRN("Measurement buffer full");
 			app_data_unlock();
 			return -ENOSPC;
 		}
 
-		w1_therm->sensor[j].sample_count = 0;
+		w1_therm->sensor[i].sample_count = 0;
 	}
 
 	app_data_unlock();
@@ -424,8 +424,8 @@ int app_sensor_w1_therm_clear(void)
 {
 	app_data_lock();
 
-	for (int j = 0; j < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); j++) {
-		g_app_data.w1_therm.sensor[j].measurement_count = 0;
+	for (int i = 0; i < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
+		g_app_data.w1_therm.sensor[i].measurement_count = 0;
 	}
 
 	app_data_unlock();
@@ -434,3 +434,105 @@ int app_sensor_w1_therm_clear(void)
 }
 
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+
+int app_sensor_rtd_therm_sample(void)
+{
+	int ret;
+	const enum ctr_rtd_channel channel_lookup[] = {
+#if defined(CONFIG_SHIELD_CTR_RTD_A)
+		CTR_RTD_CHANNEL_A1,
+		CTR_RTD_CHANNEL_A2,
+#endif
+#if defined(CONFIG_SHIELD_CTR_RTD_B)
+		CTR_RTD_CHANNEL_B1,
+		CTR_RTD_CHANNEL_B2,
+#endif
+	};
+
+	for (int i = 0; i < APP_DATA_RTD_THERM_COUNT; i++) {
+		if (g_app_data.rtd_therm.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
+			float temperature = NAN;
+			ret = ctr_rtd_read(channel_lookup[i], CTR_RTD_TYPE_PT1000, &temperature);
+
+			if (ret) {
+				LOG_ERR("Call `ctr_rtd_read` failed: %d", ret);
+				continue;
+			} else {
+				LOG_INF("Temperature: %.1f C", temperature);
+			}
+
+			app_data_lock();
+			struct app_data_rtd_therm_sensor *sensor = &g_app_data.rtd_therm.sensor[i];
+			sensor->samples_temperature[sensor->sample_count] = temperature;
+			sensor->sample_count++;
+
+			LOG_INF("Sample count: %d", sensor->sample_count);
+			app_data_unlock();
+
+		} else {
+			LOG_WRN("Sample buffer full");
+			return -ENOSPC;
+		}
+	}
+
+	return 0;
+}
+
+int app_sensor_rtd_therm_aggreg(void)
+{
+	int ret;
+
+	struct app_data_rtd_therm *rtd_therm = &g_app_data.rtd_therm;
+
+	app_data_lock();
+
+	for (int i = 0; i < APP_DATA_RTD_THERM_COUNT; i++) {
+		if (rtd_therm->sensor[i].measurement_count == 0) {
+			ret = ctr_rtc_get_ts(&rtd_therm->timestamp);
+			if (ret) {
+				LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+				app_data_unlock();
+				return ret;
+			}
+		}
+		if (rtd_therm->sensor[i].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+			struct app_data_rtd_therm_measurement *measurement =
+				&rtd_therm->sensor[i]
+					 .measurements[rtd_therm->sensor[i].measurement_count];
+
+			aggreg_sample(rtd_therm->sensor[i].samples_temperature,
+				      rtd_therm->sensor[i].sample_count, &measurement->temperature);
+
+			rtd_therm->sensor[i].measurement_count++;
+
+			LOG_INF("Measurement count: %d", rtd_therm->sensor[i].measurement_count);
+		} else {
+			LOG_WRN("Measurement buffer full");
+			app_data_unlock();
+			return -ENOSPC;
+		}
+
+		rtd_therm->sensor[i].sample_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_rtd_therm_clear(void)
+{
+	app_data_lock();
+
+	for (int i = 0; i < APP_DATA_RTD_THERM_COUNT; i++) {
+		g_app_data.rtd_therm.sensor[i].measurement_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */

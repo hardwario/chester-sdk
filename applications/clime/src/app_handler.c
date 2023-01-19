@@ -210,11 +210,10 @@ static void send_with_rate_limit(void)
 		g_app_config.event_report_rate);
 
 	if (atomic_get(&m_report_rate_hourly_counter) <= g_app_config.event_report_rate) {
-		if (!atomic_get(&m_report_delay_timer_is_active)) {
+		if (!atomic_set(&m_report_delay_timer_is_active, true)) {
 			LOG_INF("Starting delay timer");
 			k_timer_start(&m_report_delay_timer,
 				      K_SECONDS(g_app_config.event_report_delay), K_NO_WAIT);
-			atomic_set(&m_report_delay_timer_is_active, true);
 		} else {
 			LOG_INF("Delay timer already running");
 		}
