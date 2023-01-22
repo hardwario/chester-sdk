@@ -1,0 +1,19 @@
+config CTR_FLASH
+	bool "CTR_FLASH"
+	select FLASH_PAGE_LAYOUT
+	select FLASH
+	select PM_DEVICE
+	select PM
+	select SPI
+
+if CTR_FLASH
+
+module = CTR_FLASH
+module-str = CHESTER External Flash Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_FLASH_INIT_PRIORITY
+	int "Initialization priority"
+	default 0
+
+endif # CTR_FLASH
