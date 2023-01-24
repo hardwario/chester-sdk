@@ -89,6 +89,9 @@ struct app_data_hygro_measurement {
 };
 
 struct app_data_hygro {
+	float last_sample_temperature;
+	float last_sample_humidity;
+
 	int sample_count;
 	float samples_temperature[APP_DATA_MAX_SAMPLES];
 	float samples_humidity[APP_DATA_MAX_SAMPLES];
@@ -106,6 +109,9 @@ struct app_data_w1_therm_measurement {
 
 struct app_data_w1_therm_sensor {
 	uint64_t serial_number;
+
+	float last_sample_temperature;
+
 	int sample_count;
 	float samples_temperature[APP_DATA_MAX_SAMPLES];
 
@@ -128,6 +134,8 @@ struct app_data_rtd_therm_measurement {
 };
 
 struct app_data_rtd_therm_sensor {
+	float last_sample_temperature;
+
 	int sample_count;
 	float samples_temperature[APP_DATA_MAX_SAMPLES];
 

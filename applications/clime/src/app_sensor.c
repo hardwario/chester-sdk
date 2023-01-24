@@ -275,6 +275,8 @@ int app_sensor_hygro_sample(void)
 		}
 
 		app_data_lock();
+		g_app_data.hygro.last_sample_temperature = temperature;
+		g_app_data.hygro.last_sample_humidity = humidity;
 		g_app_data.hygro.samples_temperature[g_app_data.hygro.sample_count] = temperature;
 		g_app_data.hygro.samples_humidity[g_app_data.hygro.sample_count] = humidity;
 		g_app_data.hygro.sample_count++;
@@ -362,6 +364,7 @@ int app_sensor_w1_therm_sample(void)
 
 			app_data_lock();
 			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];
+			sensor->last_sample_temperature = temperature;
 			sensor->samples_temperature[sensor->sample_count] = temperature;
 			sensor->serial_number = serial_number;
 			sensor->sample_count++;
@@ -465,6 +468,7 @@ int app_sensor_rtd_therm_sample(void)
 
 			app_data_lock();
 			struct app_data_rtd_therm_sensor *sensor = &g_app_data.rtd_therm.sensor[i];
+			sensor->last_sample_temperature = temperature;
 			sensor->samples_temperature[sensor->sample_count] = temperature;
 			sensor->sample_count++;
 

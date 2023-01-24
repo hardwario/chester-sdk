@@ -21,6 +21,29 @@ struct app_data g_app_data = {
 	.accel_acceleration_z = NAN,
 	.accel_orientation = INT_MAX,
 	.therm_temperature = NAN,
+
+#if defined(CONFIG_SHIELD_CTR_S2)
+	.hygro =
+		{
+			.last_sample_temperature = NAN,
+			.last_sample_humidity = NAN,
+		},
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	.w1_therm.sensor[0 ... APP_DATA_W1_THERM_COUNT - 1] =
+		{
+			.last_sample_temperature = NAN,
+		},
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+	.rtd_therm.sensor[0 ... APP_DATA_RTD_THERM_COUNT - 1] =
+		{
+			.last_sample_temperature = NAN,
+		},
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
 };
 
 static K_MUTEX_DEFINE(m_lock);

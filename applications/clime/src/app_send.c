@@ -136,24 +136,16 @@ static int compose(struct ctr_buf *buf)
 	if (header & BIT(4)) {
 		struct app_data_hygro *hygro = &g_app_data.hygro;
 
-		float t = NAN;
-		float h = NAN;
-
-		if (hygro->sample_count) {
-			t = hygro->samples_temperature[hygro->sample_count - 1];
-			h = hygro->samples_humidity[hygro->sample_count - 1];
-		}
-
-		if (isnan(t)) {
+		if (isnan(hygro->last_sample_temperature)) {
 			ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
 		} else {
-			ret |= ctr_buf_append_s16(buf, t * 100.f);
+			ret |= ctr_buf_append_s16(buf, hygro->last_sample_temperature * 100.f);
 		}
 
-		if (isnan(h)) {
+		if (isnan(hygro->last_sample_humidity)) {
 			ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
 		} else {
-			ret |= ctr_buf_append_u8(buf, h * 2.f);
+			ret |= ctr_buf_append_u8(buf, hygro->last_sample_humidity * 2.f);
 		}
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
@@ -172,15 +164,7 @@ static int compose(struct ctr_buf *buf)
 				continue;
 			}
 
-			float *samples = sensor->samples_temperature;
-
-			if (sensor->sample_count) {
-				t[count++] = samples[sensor->sample_count - 1];
-			} else {
-				t[count++] = NAN;
-			}
-
-			sensor->sample_count = 0;
+			t[count++] = sensor->last_sample_temperature;
 		}
 
 		ret |= ctr_buf_append_u8(buf, count);
@@ -203,16 +187,12 @@ static int compose(struct ctr_buf *buf)
 
 		for (int i = 0; i < APP_DATA_RTD_THERM_COUNT; i++) {
 			struct app_data_rtd_therm_sensor *sensor = &g_app_data.rtd_therm.sensor[i];
-			float t = NAN;
 
-			if (sensor->sample_count) {
-				t = sensor->samples_temperature[sensor->sample_count - 1];
-			}
-
-			if (isnan(t)) {
+			if (isnan(sensor->last_sample_temperature)) {
 				ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
 			} else {
-				ret |= ctr_buf_append_s16(buf, t * 100.f);
+				ret |= ctr_buf_append_s16(buf,
+							  sensor->last_sample_temperature * 100.f);
 			}
 		}
 	}
