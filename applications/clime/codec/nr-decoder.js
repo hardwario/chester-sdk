@@ -63,10 +63,6 @@ function decode(buffer) {
         }
     }
 
-    if ((header & 0x08) !== 0) {
-        /* TODO */
-    }
-
     if ((header & 0x10) !== 0) {
         data.hygro_temperature = buffer.readInt16LE(offset);
         offset += 2;
@@ -108,7 +104,7 @@ function decode(buffer) {
     }
 
     if ((header & 0x40) !== 0) {
-        data.rtd_temperatures = [];
+        data.rtd_thermometers = [];
 
         let count = buffer.readUInt8(offset);
         offset += 1;
@@ -123,7 +119,7 @@ function decode(buffer) {
                 t = t / 100;
             }
 
-            data.rtd_temperatures.push(t);
+            data.rtd_thermometers.push(t);
         }
     }
 
