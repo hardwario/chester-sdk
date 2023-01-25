@@ -27,6 +27,13 @@
 extern "C" {
 #endif
 
+struct app_data_aggreg {
+	float min;
+	float max;
+	float avg;
+	float mdn;
+};
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 
 struct app_data_backup_event {
@@ -68,19 +75,12 @@ struct app_data_counter {
 	struct app_data_counter_measurement measurements[APP_DATA_COUNTER_MAX_MEASUREMENTS];
 };
 
-struct app_data_analog_aggreg {
-	float min;
-	float max;
-	float avg;
-	float mdn;
-};
-
 struct app_data_analog {
 	int64_t timestamp;
 	int sample_count;
 	float samples[APP_DATA_ANALOG_MAX_SAMPLES];
 	int measurement_count;
-	struct app_data_analog_aggreg measurements[APP_DATA_ANALOG_MAX_MEASUREMENTS];
+	struct app_data_aggreg measurements[APP_DATA_ANALOG_MAX_MEASUREMENTS];
 };
 
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
@@ -88,8 +88,8 @@ struct app_data_analog {
 #if defined(CONFIG_SHIELD_CTR_S2)
 
 struct app_data_hygro_measurement {
-	struct app_data_analog_aggreg temperature;
-	struct app_data_analog_aggreg humidity;
+	struct app_data_aggreg temperature;
+	struct app_data_aggreg humidity;
 };
 
 struct app_data_hygro {

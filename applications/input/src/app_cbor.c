@@ -26,40 +26,36 @@ LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 
-__unused static void put_sample(zcbor_state_t *zs, struct app_data_analog_aggreg *sample)
+__unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *sample, float mul)
 {
 	if (isnan(sample->min)) {
 		zcbor_nil_put(zs, NULL);
 	} else {
-		zcbor_int32_put(zs, sample->min);
+		zcbor_int32_put(zs, sample->min * mul);
 	}
 
 	if (isnan(sample->max)) {
 		zcbor_nil_put(zs, NULL);
 	} else {
-		zcbor_int32_put(zs, sample->max);
+		zcbor_int32_put(zs, sample->max * mul);
 	}
 
 	if (isnan(sample->avg)) {
 		zcbor_nil_put(zs, NULL);
 	} else {
-		zcbor_int32_put(zs, sample->avg);
+		zcbor_int32_put(zs, sample->avg * mul);
 	}
 
 	if (isnan(sample->mdn)) {
 		zcbor_nil_put(zs, NULL);
 	} else {
-		zcbor_int32_put(zs, sample->mdn);
+		zcbor_int32_put(zs, sample->mdn * mul);
 	}
 }
 
-__unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_analog_aggreg *sample,
-				    float mul)
+__unused static void put_sample(zcbor_state_t *zs, struct app_data_aggreg *sample)
 {
-	zcbor_int32_put(zs, sample->min * mul);
-	zcbor_int32_put(zs, sample->max * mul);
-	zcbor_int32_put(zs, sample->avg * mul);
-	zcbor_int32_put(zs, sample->mdn * mul);
+	put_sample_mul(zs, sample, 1.f);
 }
 
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
