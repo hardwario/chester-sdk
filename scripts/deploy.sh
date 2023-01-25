@@ -75,6 +75,141 @@ deploy_clime() {
     cd ..
 }
 
+
+deploy_push() {
+
+    local FW_VERSION="$1"
+
+    cd push
+
+    # Check default prj.conf we expect
+    if grep -q "CONFIG_APP_FLIP_MODE=n" "prj.conf"; then
+        echo "String found ok"
+    else
+        echo "Default CONFIG_APP_FLIP_MODE=n string not found, update deploy script."
+        exit
+    fi
+
+    # Backup original prj.conf
+    cp prj.conf prj.conf.bak
+
+    #
+    # Build CHESTER Push
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Push" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-push" --version $FW_VERSION
+
+    #
+    # Build CHESTER Push FM
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    gawk -i inplace '{ gsub(/CONFIG_APP_FLIP_MODE=n*/, "CONFIG_APP_FLIP_MODE=y"); print }' prj.conf
+    rm -rf build/
+    FW_NAME="CHESTER Push FM" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-push-fm" --version $FW_VERSION
+
+    # Recover original prj.conf
+    cp prj.conf.bak prj.conf
+    rm prj.conf.bak
+
+    cd ..
+}
+
+deploy_counter() {
+
+    local FW_VERSION="$1"
+
+    cd counter
+
+    # Check default SHIELDs we expect
+    if grep -q "set(SHIELD ctr_lte ctr_x0_a)" "CMakeLists.txt"; then
+        echo "String found ok"
+    else
+        echo "Default SHIELD string not found, update deploy script."
+        exit
+    fi
+
+    # Backup original CMakeLists
+    cp CMakeLists.txt CMakeLists.txt.bak
+
+    #
+    # Build CHESTER Counter
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Counter" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-counter" --version $FW_VERSION
+
+    #
+    # Build CHESTER Counter Z
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_x0_a)*/, "set(SHIELD ctr_lte ctr_x0_a ctr_z)"); print }' CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Counter Z" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-counter-z" --version $FW_VERSION
+
+    # Recover original CMakeLists
+    cp CMakeLists.txt.bak CMakeLists.txt
+    rm CMakeLists.txt.bak
+
+    cd ..
+}
+
+deploy_input() {
+
+    local FW_VERSION="$1"
+
+    cd input
+
+    # Check default SHIELDs we expect
+    if grep -q "set(SHIELD ctr_lte ctr_x0_a ctr_z)" "CMakeLists.txt"; then
+        echo "String found ok"
+    else
+        echo "Default SHIELD string not found, update deploy script."
+        exit
+    fi
+
+    # Backup original CMakeLists
+    cp CMakeLists.txt CMakeLists.txt.bak
+
+    #
+    # Build CHESTER Input
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    # Default CMakeLists contains ctr_z, so we remove it
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_x0_a ctr_z)*/, "set(SHIELD ctr_lte ctr_x0_a)"); print }' CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Input" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-input" --version $FW_VERSION
+
+    #
+    # Build CHESTER Input Z
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    # Default CMakeLists contains ctr_z, so we do not do any string replace
+    rm -rf build/
+    FW_NAME="CHESTER Input Z" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-input-z" --version $FW_VERSION
+
+    #
+    # Build CHESTER Input ZH
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_x0_a ctr_z)*/, "set(SHIELD ctr_lte ctr_x0_a ctr_z ctr_s2)"); print }' CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Input ZH" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-input-zh" --version $FW_VERSION
+
+    # Recover original CMakeLists
+    cp CMakeLists.txt.bak CMakeLists.txt
+    rm CMakeLists.txt.bak
+
+    cd ..
+}
+
 deploy_current() {
 
     local FW_VERSION="$1"
@@ -125,5 +260,50 @@ deploy_current() {
     cd ..
 }
 
-#deploy_current "v0.0.1"
-#deploy_clime "v1.9.0"
+deploy_scale() {
+
+    local FW_VERSION="$1"
+
+    cd scale
+
+    # Check default SHIELDs we expect
+    if grep -q "set(SHIELD ctr_lte ctr_x3_a)" "CMakeLists.txt"; then
+        echo "String found ok"
+    else
+        echo "Default SHIELD string not found, update deploy script."
+        exit
+    fi
+
+    # Backup original CMakeLists
+    cp CMakeLists.txt CMakeLists.txt.bak
+
+    #
+    # Build CHESTER Scale
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Scale" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-scale" --version $FW_VERSION
+
+    #
+    # Build CHESTER Scale Z
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_x3_a)*/, "set(SHIELD ctr_lte ctr_x3_a ctr_z)"); print }' CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Scale Z" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-scale-z" --version $FW_VERSION
+
+    # Recover original CMakeLists
+    cp CMakeLists.txt.bak CMakeLists.txt
+    rm CMakeLists.txt.bak
+
+    cd ..
+}
+
+# deploy_clime "v2.0.0"
+# deploy_push "v2.0.0"
+# deploy_counter "v2.0.0"
+# deploy_input "v2.0.0"
+# deploy_current "v2.0.0"
+# deploy_scale "v2.0.0"
