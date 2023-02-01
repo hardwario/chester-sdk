@@ -25,20 +25,20 @@ extern "C" {
 
 #define MAX_PAYLOADS 8
 
-enum ctr_sat_event {
+enum ctr_sat_event_code {
 	CTR_SAT_EVENT_MESSAGE_SENT = 0,
-	// CTR_SAT_EVENT_MESSAGE_TIMED_OUT = 1,
+	CTR_SAT_EVENT_MESSAGE_RECEIVED = 1,
 };
 
 typedef struct {
-	int event_code;
+	enum ctr_sat_event_code event_code;
 
 	// TODO: Think about content of this structure.
-} ctr_sat_message_event;
+} ctr_sat_event_data;
 
 typedef uint16_t message_handle;
 
-typedef void (*ctr_sat_message_event_cb)(ctr_sat_message_event *event_data, void *user_data);
+typedef void (*ctr_sat_message_event_cb)(ctr_sat_event_data *event_data, void *user_data);
 
 struct ctr_sat {
 	const struct device *uart_dev;
@@ -56,11 +56,22 @@ struct ctr_sat {
 	uint8_t *rx_buf_receive_ptr;
 
 	ctr_sat_message_event_cb callback;
-	void *callback_data;
+	void *callback_user_data;
 
 	uint16_t enqued_payload_ids[MAX_PAYLOADS];
 	uint16_t enqued_payloads;
 	uint16_t last_payload_id;
+
+	struct gpio_dt_spec module_reset_gpio;
+	struct gpio_dt_spec module_wakeup_gpio;
+	struct gpio_dt_spec module_event_gpio;
+
+	struct gpio_callback event_cb;
+	// struct k_work event_work;
+
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_CTR_SAT_THREAD_STACK_SIZE);
+	struct k_thread thread;
+	struct k_sem event_trig_sem;
 };
 
 struct ctr_sat_hwcfg {
@@ -73,8 +84,8 @@ struct ctr_sat_hwcfg {
 #define CTR_SAT_HWCONFIG_SYSCON                                                                    \
 	{                                                                                          \
 		.uart_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_sc16is740_syscon)),                  \
-		.module_wakeup_gpio =                                                              \
-			GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_wakeup_gpios),         \
+		.module_reset_gpio =                                                               \
+			GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_reset_gpios),          \
 		.module_wakeup_gpio =                                                              \
 			GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_wakeup_gpios),         \
 		.module_event_gpio =                                                               \
@@ -82,8 +93,6 @@ struct ctr_sat_hwcfg {
 	}
 
 int ctr_sat_set_callback(struct ctr_sat *sat, ctr_sat_message_event_cb user_cb, void *user_data);
-void ctr_sat_get_hwcfg_syscon(struct ctr_sat_hwcfg *hwcfg);
-void ctr_sat_get_hwcfg_w1(struct ctr_sat_hwcfg *hwcfg);
 int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg);
 int ctr_sat_stop(struct ctr_sat *sat);
 int ctr_sat_send_message(struct ctr_sat *sat, message_handle *msg_handle, const void *buf,

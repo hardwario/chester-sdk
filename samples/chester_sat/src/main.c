@@ -14,7 +14,7 @@
 #include <string.h>
 
 /* Chester includes */
-#include "../samples/chester_sat/wifi_credentials.h"
+// #include "../samples/chester_sat/wifi_credentials.h"
 
 #include <chester/ctr_led.h>
 #include <chester/ctr_sat.h>
@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 static message_handle msg1;
 static message_handle msg2;
 
-void message_processed_callback(ctr_sat_message_event *event_data, void *user_data)
+void message_processed_callback(ctr_sat_event_data *event_data, void *user_data)
 {
 	LOG_INF("Message was successfully transmitted and confirmed.");
 }

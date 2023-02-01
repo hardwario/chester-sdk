@@ -4,6 +4,9 @@
 /* Standard includes */
 #include <stdint.h>
 
+/* Zephyr includes */
+#include <zephyr/sys/util.h>
+
 #define ASTRONODE_S_CMD_CFG_W 0x05 /* Write configuration, and store in RAM */
 #define ASTRONODE_S_CMD_WIF_W 0x06 /* Write Wi-Fi settings, and store in RAM - Wi-Fi DK only */
 #define ASTRONODE_S_CMD_SSC_W                                                                      \
@@ -94,9 +97,40 @@
 
 #define ASTRONODE_MAX_MESSAGE_LEN 160
 
+#define ASTRONODE_MAX_RESET_WAKEUP_TIME_MSEC 400
+
+#define ASTRONODE_S_CFG1_ACK_EN_MASK		BIT(0)
+#define ASTRONODE_S_CFG1_ADD_GEO_MASK		BIT(1)
+#define ASTRONODE_S_CFG1_EPHEMERIS_EN_MASK	BIT(2)
+#define ASTRONODE_S_CFG1_DEEPSLEEP_EN_MASK	BIT(3)
+#define ASTRONODE_S_CFG3_INT_ACK_EN_MASK	BIT(0)
+#define ASTRONODE_S_CFG3_INT_RST_EN_MASK	BIT(1)
+#define ASTRONODE_S_CFG3_INT_CMD_EN_MASK	BIT(2)
+#define ASTRONODE_S_CFG3_INT_TX_PENDING_EN_MASK BIT(3)
+
+#define ASTRONODE_S_CFG_RA_PRODUCT_ID	   0
+#define ASTRONODE_S_CFG_RA_HW_REV	   1
+#define ASTRONODE_S_CFG_RA_FW_VER_MAJOR	   2
+#define ASTRONODE_S_CFG_RA_FW_VER_MINOR	   3
+#define ASTRONODE_S_CFG_RA_FW_VER_REVISION 4
+#define ASTRONODE_S_CFG_RA_CFG1		   5
+#define ASTRONODE_S_CFG_RA_CFG2		   6
+#define ASTRONODE_S_CFG_RA_CFG3		   7
+
+#define ASTRONODE_S_CFG_WR_CFG1 0
+#define ASTRONODE_S_CFG_WR_CFG2 1
+#define ASTRONODE_S_CFG_WR_CFG3 2
+
 typedef struct {
 	/* empty */
 } astronode_cfg_r_request;
+
+enum {
+	ASTRONODE_S_EVENT_SAT_ACK = BIT(0),
+	ASTRONODE_S_EVENT_MODULE_RESET = BIT(1),
+	ASTRONODE_S_EVENT_COMMAND_AVAILABLE = BIT(2),
+	ASTRONODE_S_EVENT_MESSAGE_TRANSMIT_PENDING = BIT(3)
+} astronode_s_event;
 
 typedef struct {
 	uint8_t product_id;

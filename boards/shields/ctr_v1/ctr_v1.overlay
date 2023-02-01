@@ -1,14 +1,4 @@
 / {
-	ctr_v1_syscon: ctr_v1_syscon {
-		compatible = "hardwario,ctr-v1";
-		label = "CTR_V1_SYSCON";
-		status = "okay";
-
-		uart-controller = <&ctr_v1_sc16is740_syscon>;
-		modem-reset-gpios = <&ctr_v1_tca9534a_syscon 0 GPIO_ACTIVE_HIGH>;
-		modem-wakeup-gpios = <&ctr_v1_tca9534a_syscon 1 GPIO_ACTIVE_HIGH>;
-		modem-event-gpios = <&ctr_v1_tca9534a_syscon 2 GPIO_ACTIVE_HIGH>;
-	};
 };
 
 &i2c0 {
@@ -21,6 +11,7 @@
 		#gpio-cells = <2>;
 		gpio-controller;
 		ngpios = <8>;
+		nint-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 	};
 
 	ctr_v1_sc16is740_syscon: ctr_v1_sc16is740@4c {
@@ -34,5 +25,17 @@
 		prescaler = <1>;
 		irq-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&ctr_v1_tca9534a_syscon 3 GPIO_ACTIVE_LOW>;
+
+		ctr_v1_syscon: ctr_v1_syscon {
+			compatible = "hardwario,ctr-v1";
+			label = "CTR_V1_SYSCON";
+			status = "okay";
+
+			uart-controller = <&ctr_v1_sc16is740_syscon>;
+			modem-reset-gpios = <&ctr_v1_tca9534a_syscon 0 GPIO_ACTIVE_LOW>;
+			modem-wakeup-gpios = <&ctr_v1_tca9534a_syscon 1 GPIO_ACTIVE_HIGH>;
+			//modem-event-gpios = <&ctr_v1_tca9534a_syscon 2 GPIO_ACTIVE_HIGH>;
+			modem-event-gpios = <&ctr_v1_tca9534a_syscon 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
 	};
 };

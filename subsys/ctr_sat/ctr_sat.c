@@ -1,4 +1,3 @@
-
 /* CHESTER includes */
 #include "astronode_s_messages.h"
 
@@ -222,6 +221,8 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 {
 	int ret;
 
+	k_mutex_lock(&sat->mutex, K_FOREVER);
+
 	size_t encoded_command_size = 1 /* start byte */ + 2 /* command ID */ +
 				      2 * parameters_size /* command */ + 4 /* CRC */ +
 				      1 /* stop byte */;
@@ -232,17 +233,20 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 
 	if (encoded_command_size > TX_MESSAGE_MAX_SIZE) {
 		LOG_ERR("Encoded command is too large.");
+		k_mutex_unlock(&sat->mutex);
 		return -EINVAL;
 	}
 
 	if (encoded_response_size > RX_MESSAGE_MAX_SIZE) {
 		LOG_ERR("Encoded response is too large.");
+		k_mutex_unlock(&sat->mutex);
 		return -EINVAL;
 	}
 
 	ret = ctr_sat_encode_message(sat, command, parameters, parameters_size);
 	if (ret) {
 		LOG_ERR("Error while formatting command %d.", ret);
+		k_mutex_unlock(&sat->mutex);
 		return -EINVAL;
 	}
 
@@ -277,10 +281,12 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 	if (ret == -EAGAIN) {
 		LOG_ERR("Command failed because Astronode module did not respond within specified "
 			"time. This may happen when module is disconnected.");
+		k_mutex_unlock(&sat->mutex);
 		return ret;
 	}
 	if (ret < 0) {
 		LOG_ERR("Call `k_poll` failed: %d", ret);
+		k_mutex_unlock(&sat->mutex);
 		return ret;
 	}
 
@@ -299,6 +305,7 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 				    sat->rx_buf_len);
 	if (ret) {
 		// error details printed in ctr_sat_parse_message
+		k_mutex_unlock(&sat->mutex);
 		return ret;
 	}
 
@@ -307,8 +314,64 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 		LOG_ERR("Astronode replied with unexpected response. Request code: %02X, expected "
 			"response code: %02X, received response code: %02X",
 			command, expected_response_code, response_id);
+		k_mutex_unlock(&sat->mutex);
 		return -EINVAL;
 	}
+
+	k_mutex_unlock(&sat->mutex);
+	return 0;
+}
+
+static int ctr_sat_get_pending_event(struct ctr_sat *sat, int *event)
+{
+	int ret;
+
+	uint8_t response;
+	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_EVT_R, NULL, 0, &response,
+				      sizeof(response));
+	if (ret) {
+		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		return ret;
+	}
+
+	*event = (int)response;
+
+	return 0;
+}
+
+static int ctr_sat_read_ack(struct ctr_sat *sat, uint16_t *payload_id)
+{
+	int ret;
+
+	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_SAK_R, NULL, 0, payload_id,
+				      sizeof(*payload_id));
+	if (ret) {
+		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int ctr_sat_reset(struct ctr_sat *sat)
+{
+	int ret;
+
+	ret = gpio_pin_set_dt(&sat->module_reset_gpio, 1);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_set_dt` failed %d", ret);
+		return ret;
+	}
+
+	k_sleep(K_MSEC(10));
+
+	ret = gpio_pin_set_dt(&sat->module_reset_gpio, 0);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_set_dt` failed %d", ret);
+		return ret;
+	}
+
+	k_sleep(K_MSEC(ASTRONODE_MAX_RESET_WAKEUP_TIME_MSEC + 1));
 
 	return 0;
 }
@@ -433,6 +496,242 @@ static void ctr_sat_uart_callback(const struct device *dev, void *user_data)
 	}
 }
 
+static void ctr_sat_event_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+					uint32_t pin_mask)
+{
+	struct ctr_sat *sat = CONTAINER_OF(cb, struct ctr_sat, event_cb);
+	// k_work_submit(&sat->event_work);
+	k_sem_give(&sat->event_trig_sem);
+}
+
+static int ctr_sat_clear_reset_event(struct ctr_sat *sat)
+{
+	int ret;
+
+	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_RES_C, NULL, 0, NULL, 0);
+	if (ret) {
+		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		return ret;
+	}
+
+	LOG_DBG("Reset event cleared");
+
+	return 0;
+}
+
+static int ctr_sat_reconfigure(struct ctr_sat *sat)
+{
+	int ret;
+	LOG_DBG("AAAA0");
+
+	uint8_t cur_cfg[8];
+	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_CFG_R, NULL, 0, cur_cfg,
+				      sizeof(cur_cfg));
+	if (ret) {
+		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		return ret;
+	}
+
+	LOG_DBG("AAAA1");
+
+	LOG_INF("=========== Atronode S configuration ===========");
+	if (cur_cfg[ASTRONODE_S_CFG_RA_PRODUCT_ID] == 3) {
+		LOG_INF("Product ID: Commercial Satellite Astronode");
+	} else if (cur_cfg[ASTRONODE_S_CFG_RA_PRODUCT_ID] == 4) {
+		LOG_INF("Product ID: Commercial Wi-Fi Dev Kit");
+	} else {
+		LOG_INF("Product ID: Unknown");
+	}
+	LOG_INF("Hardware revision: %d", cur_cfg[ASTRONODE_S_CFG_RA_HW_REV]);
+	LOG_INF("Firmware version: %d.%d.%d", cur_cfg[ASTRONODE_S_CFG_RA_FW_VER_MAJOR],
+		cur_cfg[ASTRONODE_S_CFG_RA_FW_VER_MINOR],
+		cur_cfg[ASTRONODE_S_CFG_RA_FW_VER_REVISION]);
+	LOG_INF("");
+	LOG_DBG("AAAA2");
+
+	LOG_INF("Payload Acknowledgement: %s",
+		FIELD_GET(ASTRONODE_S_CFG1_ACK_EN_MASK, cur_cfg[ASTRONODE_S_CFG_RA_CFG1])
+			? "Enabled"
+			: "Disabled");
+
+	LOG_INF("Add Geolocation: %s",
+		FIELD_GET(ASTRONODE_S_CFG1_ADD_GEO_MASK, cur_cfg[ASTRONODE_S_CFG_RA_CFG1])
+			? "Enabled"
+			: "Disabled");
+
+	LOG_INF("Ephemeris Enabled: %s",
+		FIELD_GET(ASTRONODE_S_CFG1_EPHEMERIS_EN_MASK, cur_cfg[ASTRONODE_S_CFG_RA_CFG1])
+			? "Enabled"
+			: "Disabled");
+
+	LOG_INF("Deep Sleep Mode: %s",
+		FIELD_GET(ASTRONODE_S_CFG1_DEEPSLEEP_EN_MASK, cur_cfg[ASTRONODE_S_CFG_RA_CFG1])
+			? "Enabled"
+			: "Disabled");
+
+	LOG_INF("");
+	LOG_DBG("AAAA3");
+
+	LOG_INF("Payload Ack Event Interrupt: %s",
+		FIELD_GET(ASTRONODE_S_CFG3_INT_ACK_EN_MASK, cur_cfg[ASTRONODE_S_CFG_RA_CFG3])
+			? "Enabled"
+			: "Disabled");
+
+	LOG_INF("Reset Event Interrupt: %s",
+		FIELD_GET(ASTRONODE_S_CFG3_INT_RST_EN_MASK, cur_cfg[ASTRONODE_S_CFG_RA_CFG3])
+			? "Enabled"
+			: "Disabled");
+
+	LOG_INF("Command Avalaible Event Interrupt: %s",
+		FIELD_GET(ASTRONODE_S_CFG3_INT_CMD_EN_MASK, cur_cfg[ASTRONODE_S_CFG_RA_CFG3])
+			? "Enabled"
+			: "Disabled");
+
+	LOG_INF("Messate TX Pending Event Interrupt: %s",
+		FIELD_GET(ASTRONODE_S_CFG3_INT_TX_PENDING_EN_MASK, cur_cfg[ASTRONODE_S_CFG_RA_CFG3])
+			? "Enabled"
+			: "Disabled");
+
+	LOG_INF("================================================");
+
+	uint8_t new_cfg[3];
+	LOG_DBG("AAAA4");
+
+	new_cfg[ASTRONODE_S_CFG_WR_CFG1] = FIELD_PREP(ASTRONODE_S_CFG1_ACK_EN_MASK, 1) |
+					   FIELD_PREP(ASTRONODE_S_CFG1_ADD_GEO_MASK, 0) |
+					   FIELD_PREP(ASTRONODE_S_CFG1_EPHEMERIS_EN_MASK, 1) |
+					   FIELD_PREP(ASTRONODE_S_CFG1_DEEPSLEEP_EN_MASK, 0);
+
+	new_cfg[ASTRONODE_S_CFG_WR_CFG2] = 0;
+
+	new_cfg[ASTRONODE_S_CFG_WR_CFG3] = FIELD_PREP(ASTRONODE_S_CFG3_INT_ACK_EN_MASK, 1) |
+					   FIELD_PREP(ASTRONODE_S_CFG3_INT_RST_EN_MASK, 1) |
+					   FIELD_PREP(ASTRONODE_S_CFG3_INT_CMD_EN_MASK, 1) |
+					   FIELD_PREP(ASTRONODE_S_CFG3_INT_TX_PENDING_EN_MASK, 0);
+	LOG_DBG("AAAA5");
+
+	if (memcpy(cur_cfg + ASTRONODE_S_CFG_RA_CFG1, new_cfg, 3) != 0) {
+		LOG_DBG("AAAA6");
+		ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_CFG_W, new_cfg, sizeof(new_cfg),
+					      NULL, 0);
+		if (ret) {
+			LOG_DBG("AAAA7");
+			LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+			return ret;
+		}
+		LOG_DBG("AAAA8");
+
+		LOG_INF("Configuration was adjusted");
+	}
+	LOG_DBG("AAAA9");
+
+	return 0;
+}
+
+static int ctr_sat_receive_command(struct ctr_sat *sat)
+{
+	return -9999;
+}
+
+static int ctr_sat_handle_event(struct ctr_sat *sat)
+{
+	int ret;
+
+	int event;
+	ret = ctr_sat_get_pending_event(sat, &event);
+	if (ret) {
+		LOG_DBG("Call `ctr_sat_get_pending_event` failed %d", ret);
+		return ret;
+	}
+
+	if (event == 0) {
+		LOG_DBG("Spurious interrupt detected. Astrnonode module has no event flag set.");
+		return -EAGAIN;
+	}
+
+	LOG_DBG("Astronode event 0x%02x", event);
+
+	if (event & ASTRONODE_S_EVENT_MODULE_RESET) {
+		ret = ctr_sat_clear_reset_event(sat);
+		if (ret) {
+			LOG_WRN("Call `ctr_sat_clear_reset_event` failed %d", ret);
+		} else {
+			LOG_DBG("XXXX");
+			ret = ctr_sat_reconfigure(sat);
+			if (ret) {
+				LOG_WRN("Call `ctr_sat_reconfigure` failed %d", ret);
+			}
+			LOG_DBG("YYYY");
+		}
+	}
+
+	if (event & ASTRONODE_S_EVENT_SAT_ACK) {
+		uint16_t confirmed_message;
+
+		ret = ctr_sat_read_ack(sat, &confirmed_message);
+		if (ret) {
+			LOG_ERR("Call `ctr_sat_read_ack` failed %d", ret);
+		} else {
+			if (sat->callback) {
+				ctr_sat_event_data event_data = {
+					.event_code = CTR_SAT_EVENT_MESSAGE_SENT};
+				sat->callback(&event_data, sat->callback_user_data);
+			}
+		}
+	}
+
+	if (event & ASTRONODE_S_EVENT_COMMAND_AVAILABLE) {
+		ret = ctr_sat_receive_command(sat);
+		if (ret) {
+			LOG_ERR("Call `ctr_sat_receive_command` failed %d", ret);
+		}
+	}
+
+	return 0;
+}
+
+static int ctr_sat_poll_intrrupt(struct ctr_sat *sat)
+{
+	int ret;
+
+	ret = gpio_pin_get_dt(&sat->module_reset_gpio);
+	if (ret != 0 && ret != 1) {
+		LOG_ERR("Call `gpio_pin_get_dt` failed %d", ret);
+		return ret;
+	}
+
+	if (ret == 1) {
+		return ctr_sat_handle_event(sat);
+	} else {
+		return 0;
+	}
+}
+
+static void ctr_sat_thread_main(struct ctr_sat *sat)
+{
+	int ret;
+
+	LOG_INF("CTR_SAT thread started");
+
+	while (true) {
+		ret = k_sem_take(&sat->event_trig_sem, K_MSEC(CONFIG_CTR_SAT_INT_POLL_PERIOD_MSEC));
+		if (ret == 0) {
+			ret = ctr_sat_handle_event(sat);
+			if (ret) {
+				LOG_WRN("Call `ctr_sat_handle_event` failed %d", ret);
+			}
+		} else if (ret == -EAGAIN) {
+			ret = ctr_sat_poll_intrrupt(sat);
+			if (ret) {
+				LOG_WRN("Call `ctr_sat_poll_intrrupt` failed %d", ret);
+			}
+		} else {
+			LOG_WRN("Call `k_sem_take` failed %d", ret);
+			k_sleep(K_MSEC(1));
+		}
+	}
+}
+
 int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg)
 {
 	int ret;
@@ -444,24 +743,69 @@ int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg)
 
 	sat->uart_dev = hwcfg->uart_dev;
 
+	memcpy(&sat->module_reset_gpio, &hwcfg->module_reset_gpio, sizeof(sat->module_reset_gpio));
+	memcpy(&sat->module_wakeup_gpio, &hwcfg->module_wakeup_gpio,
+	       sizeof(sat->module_wakeup_gpio));
+	memcpy(&sat->module_event_gpio, &hwcfg->module_event_gpio, sizeof(sat->module_event_gpio));
+
 	sat->last_payload_id = 0;
 	sat->enqued_payloads = 0;
 
+	sat->callback = NULL;
+	sat->callback_user_data = NULL;
+
 	k_mutex_init(&sat->mutex);
-	k_mutex_lock(&sat->mutex, K_FOREVER);
 	k_poll_signal_init(&sat->rx_completed_signal);
+	// k_work_init(&sat->event_work, ctr_sat_event_work);
+
+	k_sem_init(&sat->event_trig_sem, 0, K_SEM_MAX_LIMIT);
 
 	uart_irq_callback_user_data_set(sat->uart_dev, ctr_sat_uart_callback, sat);
 
-	astronode_cfg_r_answer response;
-	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_CFG_R, NULL, 0, (uint8_t *)&response,
-				      sizeof(response));
-	if (ret < 0) {
-		LOG_ERR("Error while getting configuration.");
+	ret = gpio_pin_configure_dt(&sat->module_reset_gpio, GPIO_OUTPUT | GPIO_ACTIVE_HIGH);
+	if (ret) {
+		LOG_DBG("Call `gpio_pin_configure_dt` failed %d", ret);
 		return ret;
 	}
 
-	k_mutex_unlock(&(sat->mutex));
+	// TODO: thread for handling interrupt happended when procesing other interrupt
+
+	ret = gpio_pin_set_dt(&sat->module_reset_gpio, 0);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_set_dt` failed %d", ret);
+		return ret;
+	}
+
+	ret = ctr_sat_reset(sat);
+	if (ret) {
+		LOG_DBG("Call `ctr_sat_reset` failed %d", ret);
+		return ret;
+	}
+
+	ret = ctr_sat_reconfigure(sat);
+	if (ret) {
+		LOG_DBG("Call `ctr_sat_reconfigure` failed %d", ret);
+		return ret;
+	}
+
+	gpio_init_callback(&sat->event_cb, ctr_sat_event_gpio_callback,
+			   BIT(sat->module_event_gpio.pin));
+
+	ret = gpio_add_callback(sat->module_event_gpio.port, &sat->event_cb);
+	if (ret) {
+		LOG_ERR("Call `gpio_add_callback` failed %d", ret);
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&sat->module_event_gpio, GPIO_INT_EDGE_RISING);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed %d", ret);
+		return ret;
+	}
+
+	k_thread_create(&sat->thread, sat->thread_stack, CONFIG_CTR_SAT_THREAD_STACK_SIZE,
+			(k_thread_entry_t)ctr_sat_thread_main, sat, NULL, NULL,
+			K_PRIO_COOP(CONFIG_CTR_SAT_THREAD_PRIORITY), 0, K_NO_WAIT);
 
 	return 0;
 }
@@ -469,28 +813,9 @@ int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg)
 int ctr_sat_set_callback(struct ctr_sat *sat, ctr_sat_message_event_cb user_cb, void *user_data)
 {
 	sat->callback = user_cb;
-	sat->callback_data = user_data;
+	sat->callback_user_data = user_data;
 
 	return 0;
-}
-
-void ctr_sat_get_hwcfg_syscon(struct ctr_sat_hwcfg *hwcfg)
-{
-	/*
-	hwcfg->uart_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_sc16is740_syscon));
-	// hwcfg->module_reset_gpio = {.port = NULL, .pin = 2, .dt_flags = GPIO_ACTIVE_LOW};
-	hwcfg->module_reset_gpio.port = NULL;
-	// GPIO_DT_SPEC_GET(			DT_NODELABEL(ctr_v1_syscon), modem_reset_gpios);
-	hwcfg->module_wakeup_gpio =
-		GPIO_DT_SPEC_INST_GET(DT_NODELABEL(ctr_v1_syscon), modem_wakeup_gpios);
-	hwcfg->module_event_gpio =
-		GPIO_DT_SPEC_INST_GET(DT_NODELABEL(ctr_v1_syscon), modem_event_gpios);
-	*/
-}
-
-void ctr_sat_get_hwcfg_w1(struct ctr_sat_hwcfg *hwcfg)
-{
-	k_oops();
 }
 
 #if CONFIG_CTR_SAT_USE_WIFI_DEVKIT
@@ -503,8 +828,6 @@ int ctr_sat_use_wifi_devkit(struct ctr_sat *sat, const char *ssid, const char *p
 		return -EWOULDBLOCK;
 	}
 
-	k_mutex_lock(&sat->mutex, K_FOREVER);
-
 	astronode_wfi_w_request req = {0};
 
 	ret = snprintf(req.ssid, sizeof(req.ssid), "%s", ssid);
@@ -514,7 +837,6 @@ int ctr_sat_use_wifi_devkit(struct ctr_sat *sat, const char *ssid, const char *p
 
 	} else if (ret >= sizeof(req.ssid)) {
 		LOG_ERR("Wi-Fi SSID length exceeded maximum allowed length.");
-		k_mutex_unlock(&sat->mutex);
 		return -EINVAL;
 	}
 
@@ -525,31 +847,25 @@ int ctr_sat_use_wifi_devkit(struct ctr_sat *sat, const char *ssid, const char *p
 	}
 	if (ret >= sizeof(req.password)) {
 		LOG_ERR("Wi-Fi password length exceeded maxmimum allowed length.");
-		k_mutex_unlock(&sat->mutex);
 		return -EINVAL;
 	}
 
 	ret = snprintf(req.api_key, sizeof(req.api_key), "%s", api_key);
 	if (ret < 0) {
 		LOG_ERR("snprintf failed with return code %d", ret);
-		k_mutex_unlock(&sat->mutex);
 		return ret;
 
 	} else if (ret != 96) {
 		LOG_ERR("API key must be exactly 96 characters. You passed string of length %d.",
 			ret);
-		k_mutex_unlock(&sat->mutex);
 		return -EINVAL;
 	}
 
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_WIF_W, &req, sizeof(req), NULL, 0);
 	if (ret) {
 		LOG_ERR("Error while executing WIF_W command. Error code: %d", ret);
-		k_mutex_unlock(&sat->mutex);
 		return ret;
 	}
-
-	k_mutex_unlock(&sat->mutex);
 
 	return 0;
 }
@@ -575,8 +891,6 @@ int ctr_sat_send_message(struct ctr_sat *sat, message_handle *msg_handle, const 
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
-
-	k_mutex_lock(&sat->mutex, K_FOREVER);
 
 	if (sat->enqued_payloads == MAX_PAYLOADS) {
 		LOG_ERR("Unable to send message because end buffer is full.");
@@ -621,8 +935,6 @@ int ctr_sat_send_message(struct ctr_sat *sat, message_handle *msg_handle, const 
 	}
 
 exit:
-	k_mutex_unlock(&sat->mutex);
-
 	return ret;
 }
 
@@ -635,19 +947,15 @@ int ctr_sat_flush_messages(struct ctr_sat *sat)
 {
 	int ret;
 
-	k_mutex_lock(&sat->mutex, K_FOREVER);
-
 	// ASTRONODE_S_ERROR_BUFFER_EMPTY is allowed error
 
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_PLD_F, NULL, 0, NULL, 0);
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
-		k_mutex_unlock(&sat->mutex);
 		return ret;
 	} else if (ret) {
 		if (ret != ASTRONODE_S_ERROR_BUFFER_EMPTY) {
 			LOG_WRN("Satellite module error status: 0x%04x", ret);
-			k_mutex_unlock(&sat->mutex);
 			return -EIO;
 		} else {
 			LOG_WRN("Flush was attempted while there were no messages enqueued. Ignore "
@@ -655,8 +963,6 @@ int ctr_sat_flush_messages(struct ctr_sat *sat)
 				ASTRONODE_S_ERROR_BUFFER_EMPTY);
 		}
 	}
-
-	k_mutex_unlock(&sat->mutex);
 
 	return 0;
 }
