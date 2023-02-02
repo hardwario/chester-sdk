@@ -16,122 +16,11 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-uint32_t wind_adc_angle[16] = {
-	273, // 0°		North
-	59,  // 22.5°
-	73,  // 45°
-	8,   // 67.5°
-	9,   // 90°		East
-	6,   // 112.5°
-	20,  // 135°
-	13,  // 157.5°
-	35,  // 180°		South
-	28,  // 202.5°
-	139, // 225°
-	123, // 247.5°
-	800, // 270°		West
-	340, // 292.5°
-	493, // 315°
-	187, // 337.5°
-};
-
-float my_fabs(float value)
-{
-	if (value < 0.f) {
-		return -value;
-	} else {
-		return value;
-	}
-}
-
-float wind_voltage_to_angle(float voltage)
-{
-	float smallest_difference_value = 1E8f; // Set big number
-	float smallest_difference_angle = 0;
-
-	uint32_t i;
-
-	for (i = 0; i < 16; i++) {
-		float current_difference = my_fabs(voltage - wind_adc_angle[i]);
-		if (smallest_difference_value > current_difference) {
-			smallest_difference_value = current_difference;
-			smallest_difference_angle = 22.50f * i;
-		}
-	}
-
-	return smallest_difference_angle;
-}
-
-void main2(void)
-{
-	int ret;
-
-	LOG_INF("Build time: " __DATE__ " " __TIME__);
-
-	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x0_a));
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		k_oops();
-	}
-
-	ret = ctr_x0_set_mode(dev, CTR_X0_CHANNEL_1, CTR_X0_MODE_NPN_INPUT);
-	if (ret) {
-		LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);
-		k_oops();
-	}
-
-	ret = ctr_adc_init(CTR_ADC_CHANNEL_A0);
-	if (ret) {
-		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
-		k_oops();
-	}
-
-	ret = ctr_adc_init(CTR_ADC_CHANNEL_VDD);
-	if (ret) {
-		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
-		k_oops();
-	}
-
-	for (;;) {
-
-		uint16_t adc_voltage;
-		/*
-		ret = ctr_adc_read(CTR_ADC_CHANNEL_A0, &adc_voltage);
-
-		float sample;
-
-		if (!ret) {
-			sample = (float)CTR_ADC_MILLIVOLTS(adc_voltage);
-		} else {
-			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
-			sample = 0.f; // NAN;
-		}
-
-		LOG_INF("Voltage: %.0f mV   %.0f deg", sample, wind_voltage_to_angle(sample));
-*/
-		ret = ctr_adc_read(CTR_ADC_CHANNEL_VDD, &adc_voltage);
-
-		float sample;
-
-		if (!ret) {
-			sample = (float)CTR_ADC_MILLIVOLTS(adc_voltage);
-		} else {
-			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
-			sample = 0.f; // NAN;
-		}
-
-		LOG_INF("VDD: %.0f mV", sample);
-
-		k_sleep(K_MSEC(200));
-	}
-}
+#define X0_CHANNEL  CTR_X0_CHANNEL_4
+#define ADC_CHANNEL CTR_ADC_CHANNEL_A3 // ADC Channel is off-by-one
 
 K_SEM_DEFINE(g_app_init_sem, 0, 1);
 enum ctr_x0_mode x0_mode = CTR_X0_MODE_DEFAULT;
-
-#define X0_CHANNEL  CTR_X0_CHANNEL_1
-#define ADC_CHANNEL CTR_ADC_CHANNEL_A0 // ADC Channel is off-by-one
 
 void main(void)
 {
@@ -152,7 +41,9 @@ void main(void)
 		k_oops();
 	}
 
-	LOG_WRN("Enter command to confgiure X0_A CH1");
+	LOG_WRN("Enter command to confgiure X0 CH%d", X0_CHANNEL + 1);
+	LOG_WRN("default, npn, ai, cl, pwr");
+	LOG_WRN("Start again by typing \"kernel reboot cold\"");
 
 	ret = k_sem_take(&g_app_init_sem, K_FOREVER);
 	if (ret) {
