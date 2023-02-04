@@ -21,6 +21,15 @@ config CTR_SAT_INT_POLL_PERIOD_MSEC
 	int "Polling delay (in msec) used for polling interrupt singnal for handling frequent interrupts and interrupts over W1"
 	default 10000
 
+config CTR_SAT_RESET_ON_INIT
+	bool "Enable for eforcing module reset on init"
+	default y
+
+config CTR_SAT_CRC_ERRORS_ALLOWED_RETRIES
+	int "Number of retries allowed when detecting CRC error. Set to 0 for disabling retries on CRC error"
+	default 2
+
+
 module = CTR_SAT
 module-str = CHESTER Satelite Module Subsystem
 source "subsys/logging/Kconfig.template.log_config"

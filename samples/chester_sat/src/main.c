@@ -24,7 +24,8 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 static message_handle msg1;
 static message_handle msg2;
 
-void message_processed_callback(ctr_sat_event_data *event_data, void *user_data)
+void message_processed_callback(enum ctr_sat_event event, union ctr_sat_event_data *data,
+				void *user_data)
 {
 	LOG_INF("Message was successfully transmitted and confirmed.");
 }

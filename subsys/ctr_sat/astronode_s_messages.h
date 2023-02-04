@@ -133,32 +133,6 @@ enum {
 } astronode_s_event;
 
 typedef struct {
-	uint8_t product_id;
-	uint8_t hw_revision;
-	uint8_t fw_revision_major;
-	uint8_t fw_revision_minor;
-	uint8_t fw_revision_build;
-
-	uint8_t payload_acknowledgment_enabled : 1;
-	uint8_t geolocation_adding_enabled : 1;
-	uint8_t ephemeris_enabled : 1;
-	uint8_t deep_sleep_mode_enabled : 1;
-	uint8_t reserved1 : 4;
-
-	uint8_t reserved2;
-
-	struct {
-		uint8_t payload_ack_int_enabled : 1;
-		uint8_t reset_int_enabled : 1;
-		uint8_t command_available_int_enabled : 1;
-		uint8_t message_transmission_pending_int_enabled : 1;
-
-		uint8_t reserved3 : 4;
-	} __attribute__((packed)) interrupts;
-
-} __attribute__((packed)) astronode_cfg_r_answer;
-
-typedef struct {
 	uint8_t ssid[33];
 	uint8_t password[64];
 	uint8_t api_key[97];

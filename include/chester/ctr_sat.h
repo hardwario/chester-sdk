@@ -25,20 +25,29 @@ extern "C" {
 
 #define MAX_PAYLOADS 8
 
-enum ctr_sat_event_code {
+typedef uint16_t message_handle;
+
+enum ctr_sat_event {
 	CTR_SAT_EVENT_MESSAGE_SENT = 0,
 	CTR_SAT_EVENT_MESSAGE_RECEIVED = 1,
 };
 
-typedef struct {
-	enum ctr_sat_event_code event_code;
+struct ctr_sat_event_msg_sent_data {
+	message_handle msg;
+};
 
-	// TODO: Think about content of this structure.
-} ctr_sat_event_data;
+struct ctr_sat_event_msg_recv_data {
+	void *data;
+	size_t data_len;
+};
 
-typedef uint16_t message_handle;
+union ctr_sat_event_data {
+	struct ctr_sat_event_msg_sent_data msg_send;
+	struct ctr_sat_event_msg_recv_data msg_recv;
+};
 
-typedef void (*ctr_sat_message_event_cb)(ctr_sat_event_data *event_data, void *user_data);
+typedef void (*ctr_sat_message_event_cb)(enum ctr_sat_event event, union ctr_sat_event_data *data,
+					 void *user_data);
 
 struct ctr_sat {
 	const struct device *uart_dev;
@@ -67,7 +76,6 @@ struct ctr_sat {
 	struct gpio_dt_spec module_event_gpio;
 
 	struct gpio_callback event_cb;
-	// struct k_work event_work;
 
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_CTR_SAT_THREAD_STACK_SIZE);
 	struct k_thread thread;
