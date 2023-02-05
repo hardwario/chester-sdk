@@ -10,18 +10,21 @@ extern "C" {
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/timeutil.h>
 
 #if CONFIG_CTR_SAT_USE_WIFI_DEVKIT
-// TODO: Compute more accurate
-// Longest message WIF_W
-#define TX_MESSAGE_MAX_SIZE 820
+// Longest request: WIF_W (194 bytes)
+// 8 == 1 (start byte) + 2 (command) + 4 (CRC) + 1 (end byte)
+#define TX_MESSAGE_MAX_SIZE (194 * 2 + 8)
 #else
-// TODO: Compute more accurate.
-// Longest message PLD_E
-#define TX_MESSAGE_MAX_SIZE 400
+// Longest request: PLD_E (162 bytes)
+// 8 == 1 (start byte) + 2 (command) + 4 (CRC) + 1 (end byte)
+#define TX_MESSAGE_MAX_SIZE (162 * 2 + 8)
 #endif
 
-#define RX_MESSAGE_MAX_SIZE 1000
+// Longest answer: CMD_R (44 bytes)
+// 8 == 1 (start byte) + 2 (command) + 4 (CRC) + 1 (end byte)
+#define RX_MESSAGE_MAX_SIZE (44 * 2 + 8)
 
 #define MAX_PAYLOADS 8
 
@@ -39,6 +42,7 @@ struct ctr_sat_event_msg_sent_data {
 struct ctr_sat_event_msg_recv_data {
 	void *data;
 	size_t data_len;
+	time_t created_at;
 };
 
 union ctr_sat_event_data {

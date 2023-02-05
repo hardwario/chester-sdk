@@ -95,8 +95,6 @@
 #define ASTRONODE_S_START_BYTE 0x02
 #define ASTRONODE_S_END_BYTE   0x03
 
-#define ASTRONODE_MAX_MESSAGE_LEN 160
-
 #define ASTRONODE_MAX_RESET_WAKEUP_TIME_MSEC 400
 
 #define ASTRONODE_S_CFG1_ACK_EN_MASK		BIT(0)
@@ -108,6 +106,7 @@
 #define ASTRONODE_S_CFG3_INT_CMD_EN_MASK	BIT(2)
 #define ASTRONODE_S_CFG3_INT_TX_PENDING_EN_MASK BIT(3)
 
+#define ASTRONODE_S_CFG_RA_SIZE		   8
 #define ASTRONODE_S_CFG_RA_PRODUCT_ID	   0
 #define ASTRONODE_S_CFG_RA_HW_REV	   1
 #define ASTRONODE_S_CFG_RA_FW_VER_MAJOR	   2
@@ -117,13 +116,10 @@
 #define ASTRONODE_S_CFG_RA_CFG2		   6
 #define ASTRONODE_S_CFG_RA_CFG3		   7
 
+#define ASTRONODE_S_CFG_WR_SIZE 3
 #define ASTRONODE_S_CFG_WR_CFG1 0
 #define ASTRONODE_S_CFG_WR_CFG2 1
 #define ASTRONODE_S_CFG_WR_CFG3 2
-
-typedef struct {
-	/* empty */
-} astronode_cfg_r_request;
 
 enum {
 	ASTRONODE_S_EVENT_SAT_ACK = BIT(0),
@@ -132,23 +128,27 @@ enum {
 	ASTRONODE_S_EVENT_MESSAGE_TRANSMIT_PENDING = BIT(3)
 } astronode_s_event;
 
-typedef struct {
-	uint8_t ssid[33];
-	uint8_t password[64];
-	uint8_t api_key[97];
-} __attribute__((packed)) astronode_wfi_w_request;
+#define ASTRONODE_S_WFI_WR_SIZE		 194
+#define ASTRONODE_S_WFI_WR_SSID		 0
+#define ASTRONODE_S_WFI_WR_SSID_SIZE	 33
+#define ASTRONODE_S_WFI_WR_PASSWORD	 33
+#define ASTRONODE_S_WFI_WR_PASSWORD_SIZE 64
+#define ASTRONODE_S_WFI_WR_API_KEY	 97
+#define ASTRONODE_S_WFI_WR_API_KEY_SIZE	 97
 
-typedef struct {
-	uint16_t id;
-	uint8_t message[160];
-} __attribute__((packed)) astronode_pld_e_request;
+#define ASTRONODE_S_PLD_ER_SIZE	     162
+#define ASTRONODE_S_PLD_ER_ID	     0
+#define ASTRONODE_S_PLD_ER_DATA	     2
+#define ASTRONODE_S_PLD_ER_DATA_SIZE 160
 
-typedef struct {
-	uint16_t id;
-} __attribute__((packed)) astronode_pld_e_answer;
+#define ASTRONODE_S_PLD_EA_SIZE 2
+#define ASTRONODE_S_PLD_EA_ID	0
 
-typedef struct {
-	uint16_t error_code;
-} __attribute__((packed)) astronode_error_answer;
+#define ASTRONODE_S_CMD_RA_SIZE		44
+#define ASTRONODE_S_CMD_RA_CREATED_DATE 0
+#define ASTRONODE_S_CMD_RA_PAYLOAD	4
+
+#define ASTRONODE_S_ERR_ANSWER_SIZE	2
+#define ASTRONODE_S_ERR_ANSWER_ERROR_ID 0
 
 #endif /* CHESTER_SUBSYS_CTR_SAT_ASTRONODE_S_MESSAGES_H_ */
