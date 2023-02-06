@@ -21,21 +21,25 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-static message_handle msg1;
-static message_handle msg2;
-
-volatile message_handle sent_events[5];
-volatile int events = 0;
+static ctr_sat_msg_handle msg1;
+static ctr_sat_msg_handle msg2;
 
 void message_processed_callback(enum ctr_sat_event event, union ctr_sat_event_data *data,
 				void *user_data)
 {
 
-	if (event == CTR_SAT_EVENT_MESSAGE_SENT && events < 5) {
-		sent_events[events++] = data->msg_send.msg;
+	if (event == CTR_SAT_EVENT_MESSAGE_SENT) {
+		if (data->msg_send.msg == msg1) {
+			LOG_INF("Message #1 was successfully transmitted and confirmed");
+		} else if (data->msg_send.msg == msg2) {
+			LOG_INF("Message #2 was successfully transmitted and confirmed");
+		} else {
+			LOG_INF("Unknown message was transmitted and confirmed");
+		}
+	} else {
+		LOG_HEXDUMP_INF(data->msg_recv.data, data->msg_recv.data_len,
+				"Received message from cloud:");
 	}
-
-	LOG_INF("Message was successfully transmitted and confirmed.");
 }
 
 void main(void)
@@ -54,15 +58,6 @@ void main(void)
 	ctr_led_set(CTR_LED_CHANNEL_Y, false);
 
 	const struct ctr_sat_hwcfg sat_hwcfg = CTR_SAT_HWCONFIG_SYSCON;
-	// ctr_sat_get_hwcfg_syscon(&sat_hwcfg);
-
-	// const struct device *uart_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_sc16is740_syscon));
-	// const struct device *gpio_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_tca9534a_syscon));
-
-	// const struct device *dev_uart = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_sc16is740));
-	// const struct device *dev_uart = DEVICE_DT_GET(DT_NODELABEL(ctr_x2_sc16is740_a));
-
-	// const struct device *dev_gpio_wakeup = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_sc16is740));
 
 	ret = ctr_sat_start(&sat, &sat_hwcfg);
 	if (ret < 0) {
@@ -78,30 +73,18 @@ void main(void)
 		LOG_ERR("Call `ctr_sat_set_callback` failed: %d", ret);
 	}
 
-	// ret = ctr_sat_use_wifi_devkit(&sat, WIFI_SSID, WIFI_PASS, WIFI_API_KEY);
-	// if (ret < 0) {
-	//	LOG_ERR("Call `ctr_sat_use_wifi_devkit` failed: %d", ret);
-	//
-	//	ctr_led_set(CTR_LED_CHANNEL_R, true);
-	//	k_sleep(K_MSEC(5000));
-	//	sys_reboot(SYS_REBOOT_COLD);
-	//}
-
-	// k_sleep(K_MSEC(5000));
-
 	/*
-		ret = ctr_sat_flush_messages(&sat);
-		if (ret < 0) {
-			LOG_ERR("Call `ctr_sat_flush_messages` failed: %d", ret);
+	ret = ctr_sat_use_wifi_devkit(&sat, WIFI_SSID, WIFI_PASS, WIFI_API_KEY);
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_sat_use_wifi_devkit` failed: %d", ret);
 
-			ctr_led_set(CTR_LED_CHANNEL_R, true);
-			k_sleep(K_MSEC(5000));
-			sys_reboot(SYS_REBOOT_COLD);
-		}
+		ctr_led_set(CTR_LED_CHANNEL_R, true);
+		k_sleep(K_MSEC(5000));
+		sys_reboot(SYS_REBOOT_COLD);
+	}
+	k_sleep(K_MSEC(5000));
 	*/
 
-	// calling revoke all twice for testing internal error handlers
-	/*
 	ret = ctr_sat_flush_messages(&sat);
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_sat_flush_messages` failed: %d", ret);
@@ -110,7 +93,6 @@ void main(void)
 		k_sleep(K_MSEC(5000));
 		sys_reboot(SYS_REBOOT_COLD);
 	}
-	*/
 
 	const char *message = "Chester say hello!";
 	ret = ctr_sat_send_message(&sat, &msg1, message, strlen(message));

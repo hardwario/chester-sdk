@@ -28,7 +28,7 @@ extern "C" {
 
 #define MAX_PAYLOADS 8
 
-typedef uint16_t message_handle;
+typedef uint16_t ctr_sat_msg_handle;
 
 enum ctr_sat_event {
 	CTR_SAT_EVENT_MESSAGE_SENT = 0,
@@ -36,7 +36,7 @@ enum ctr_sat_event {
 };
 
 struct ctr_sat_event_msg_sent_data {
-	message_handle msg;
+	ctr_sat_msg_handle msg;
 };
 
 struct ctr_sat_event_msg_recv_data {
@@ -107,9 +107,8 @@ struct ctr_sat_hwcfg {
 int ctr_sat_set_callback(struct ctr_sat *sat, ctr_sat_event_cb user_cb, void *user_data);
 int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg);
 int ctr_sat_stop(struct ctr_sat *sat);
-int ctr_sat_send_message(struct ctr_sat *sat, message_handle *msg_handle, const void *buf,
+int ctr_sat_send_message(struct ctr_sat *sat, ctr_sat_msg_handle *msg_handle, const void *buf,
 			 size_t len);
-int ctr_sat_flush_message(struct ctr_sat *sat, message_handle msg_handle);
 int ctr_sat_flush_messages(struct ctr_sat *sat);
 int ctr_sat_use_wifi_devkit(struct ctr_sat *sat, const char *ssid, const char *password,
 			    const char *api_key);

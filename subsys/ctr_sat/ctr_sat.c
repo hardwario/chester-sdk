@@ -26,25 +26,32 @@ LOG_MODULE_REGISTER(ctr_sat, CONFIG_CTR_SAT_LOG_LEVEL);
 	flags definition as used in ctr_sat_execute_command function. Flags are used only for
    internal pusrpose of this subsys module and are not intended for use by user.
 
-	bit 0: NO_WARN_ASTRONODE_ERROR - used when error reply message is not directly error. Cleans
-   log for misleading error messages. When this bit is set, ensure to set
+	bit 0: FLAG_NO_WARN_ASTRONODE_ERROR - used when error reply message is not directly error.
+   Cleans log from misleading error messages. When this bit is set, ensure to set
    FLAG_ALLOW_UNEXPECTED_LENGTH also becase error messages usualy have different length than
    standard reply.
 
-	bit 1: REPEAT_ON_REQ_CRC_ERROR: - number of allowed repetition of command exectuion when
-   astronode respod with valid reply containing CRC error message.
+	bit 1: FLAG_REPEAT_ON_REQ_CRC_ERROR: - allows retrying exectuion of command after receiving
+   valid reply containing CRC error message (meaning that CRC error happended when transfering
+   request).
 
-	bit 2: REPEAT_ON_ANS_CRC_ERROR: - number of allowed repetition of command exectuion when
+	bit 2: FLAG_REPEAT_ON_ANS_CRC_ERROR: - allows retrying exectuion of command exectuion when
    astronode respond with any message and local CRC check fails.
 
-	bit 7:3: REPEAT_ON_CRC_ERROR_MAX_RETRIES: - number of allowed repetition of command
-   exectuion when astronode respond with any message and local CRC check fails.
+	bit 7:3: FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES: - number of allowed repetition of command
+   exectuion when transmission of request or answer is affected by CRC error. For enabling this
+   feature you need to specify REPEAT_ON_REQ_CRC_ERROR or REPEAT_ON_ANS_CRC_ERROR or both.
 
 	bit 8: FLAG_ALLOW_UNEXPECTED_LENGTH - used for preventing log warning when received message
    has unexpected length. Cleans log for misleading messages.
 
 	bit 9: FLAG_TRIM_LONG_REPLY - used for commands with TLV structure which can be extended in
    future. This flag allow trimming (future) messages.
+
+   Do not use FLAG_REPEAT_ON_REQ_CRC_ERROR_BIT, FLAG_REPEAT_ON_ANS_CRC_ERROR_BIT and
+   FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES_MASK macros directly. Instead use
+   FLAG_REPEAT_ON_REQ_CRC_ERRORS, FLAG_REPEAT_ON_ANS_CRC_ERRORS or FLAG_REPEAT_ON_ALL_CRC_ERRORS
+   which contains embeded both flag and retry count defined by standard Kconfig option.
 */
 #define FLAG_NO_WARN_ASTRONODE_ERROR		  BIT(0)
 #define FLAG_REPEAT_ON_REQ_CRC_ERROR_BIT	  BIT(1)
@@ -82,7 +89,7 @@ static int ctr_sat_check_message_crc(uint8_t response_id, const uint8_t *paramet
 	ret = hex2bin(rx_buf + rx_buf_len - 5, 4, crc_bytes, sizeof(crc_bytes));
 	if (ret != sizeof(crc_bytes)) {
 		/* possible ret == 0 when hex2bin fail */
-		LOG_ERR("Error while parsing response message. Mallformed CRC byte value.");
+		LOG_ERR("Parse error: Mallformed CRC byte value");
 		return -E_INVCRC;
 	}
 
@@ -90,7 +97,7 @@ static int ctr_sat_check_message_crc(uint8_t response_id, const uint8_t *paramet
 
 	if (message_crc != actual_crc) {
 		LOG_ERR("CRC mismatch detected when checking CRC of response message. Expected "
-			"CRC: %04X. Actual CRC: %04X",
+			"CRC: 0x%04x. Actual CRC: 0x%04x",
 			message_crc, actual_crc);
 		return -E_INVCRC;
 	}
@@ -105,24 +112,24 @@ static int ctr_sat_parse_message_container(uint8_t *response_id, const uint8_t *
 
 	/* 8 == 1 (start byte) + 2 (code) + 4 (crc) + 1 (stop byte) */
 	if (rx_buf_len < 8) {
-		LOG_ERR("Error while parsing response message. Message too short.");
+		LOG_ERR("Parse error: Message too short");
 		return -EINVAL;
 	}
 
 	if (rx_buf[0] != ASTRONODE_S_START_BYTE) {
-		LOG_ERR("Error while parsing response message. Unexpected start of message.");
+		LOG_ERR("Parse error: Unexpected start of message");
 		return -EINVAL;
 	}
 
 	if (rx_buf[rx_buf_len - 1] != ASTRONODE_S_END_BYTE) {
-		LOG_ERR("Error while parsing response message. Missing end of message.");
+		LOG_ERR("Parse error: Missing end of message");
 		return -EINVAL;
 	}
 
 	ret = hex2bin((const char *)(rx_buf + 1), 2, (char *)response_id, sizeof(*response_id));
 	if (ret != sizeof(*response_id)) {
 		/* possible ret == 0 when hex2bin fail */
-		LOG_ERR("Error while parsing response message. Mallformed reply ID byte received. "
+		LOG_ERR("Parse error: Mallformed reply ID byte received. "
 			"Error %d",
 			ret);
 		return -EIO;
@@ -144,9 +151,7 @@ static int ctr_sat_parse_response_data(uint8_t *response_data, size_t response_d
 			LOG_ERR("Received asnwer with invalid odd length. Received: %d",
 				rx_buf_len);
 			return -EINVAL;
-		}
-
-		if (rx_buf_len < 8) {
+		} else if (rx_buf_len < 8) {
 			LOG_ERR("Received asnwer is too short. Received: %d", rx_buf_len);
 			return -EINVAL;
 		}
@@ -169,7 +174,7 @@ static int ctr_sat_parse_response_data(uint8_t *response_data, size_t response_d
 	ret = hex2bin(rx_buf + 3, MIN(rx_buf_len - 3, to_parse * 2), response_data, to_parse);
 	if (ret != to_parse) {
 		LOG_ERR("Call `hex2bin` failed %d", ret);
-		return -EIO; // ret == 0 when hex2bin fail
+		return -EIO; /* ret == 0 when hex2bin fail */
 	}
 
 	*response_data_size_parsed = to_parse;
@@ -187,21 +192,21 @@ static int ctr_sat_parse_error_answer(const uint8_t *rx_buf, size_t rx_buf_len, 
 	ret = ctr_sat_parse_response_data(error_answer, error_answer_size, &parsed_len, rx_buf,
 					  rx_buf_len, 0);
 	if (ret) {
-		// error details are printed in ctr_sat_parse_response_data
+		/* error details are printed in ctr_sat_parse_response_data */
 		return ret;
 	}
 
 	ret = ctr_sat_check_message_crc(ASTRONODE_S_ANSWER_ERROR, error_answer,
 					sizeof(error_answer), rx_buf, rx_buf_len);
 	if (ret) {
-		// error details are printed in ctr_sat_check_message_crc
+		/* error details are printed in ctr_sat_check_message_crc */
 		return ret;
 	}
 
 	uint16_t error_code = sys_get_le16(error_answer);
 
 	if (FIELD_GET(FLAG_NO_WARN_ASTRONODE_ERROR, flags) == 0) {
-		LOG_ERR("Astronode command execution failed with error code 0x%04X.", error_code);
+		LOG_ERR("Astronode command execution failed with error code 0x%04X", error_code);
 	}
 
 	if (error_code == 0) {
@@ -219,7 +224,7 @@ static int ctr_sat_parse_message(uint8_t *response_id, void *response_data,
 
 	ret = ctr_sat_parse_message_container(response_id, rx_buf, rx_buf_len);
 	if (ret) {
-		// error details are printed in ctr_sat_parse_message_container
+		/* error details are printed in ctr_sat_parse_message_container */
 		return ret;
 	}
 
@@ -230,14 +235,14 @@ static int ctr_sat_parse_message(uint8_t *response_id, void *response_data,
 	ret = ctr_sat_parse_response_data(response_data, response_data_max_size,
 					  response_data_parsed_len, rx_buf, rx_buf_len, flags);
 	if (ret) {
-		// error details are printed in ctr_sat_parse_response_data
+		/* error details are printed in ctr_sat_parse_response_data */
 		return ret;
 	}
 
 	ret = ctr_sat_check_message_crc(*response_id, response_data, *response_data_parsed_len,
 					rx_buf, rx_buf_len);
 	if (ret) {
-		// error details are printed in ctr_sat_check_message_crc
+		/* error details are printed in ctr_sat_check_message_crc */
 		return ret;
 	}
 
@@ -249,7 +254,7 @@ static int ctr_sat_encode_message(struct ctr_sat *sat, uint8_t command, const vo
 {
 	uint8_t *tx_buf_wrptr = sat->tx_buf;
 
-	// write start byte
+	/* write start byte */
 	*tx_buf_wrptr++ = ASTRONODE_S_START_BYTE;
 
 #define WRITE_HEX_BYTE(b)                                                                          \
@@ -257,35 +262,35 @@ static int ctr_sat_encode_message(struct ctr_sat *sat, uint8_t command, const vo
 		uint8_t var = (b);                                                                 \
 		size_t written = bin2hex(&var, sizeof(var), tx_buf_wrptr, 3);                      \
 		if (written != 2) {                                                                \
-			LOG_ERR("Call (1) `bin2hex(0x%02x)` failed ret=%d.", var, written);        \
+			LOG_ERR("Call (1) `bin2hex(0x%02x)` failed %d", var, written);             \
 			return -EFAULT;                                                            \
 		}                                                                                  \
 		tx_buf_wrptr += written;                                                           \
 	} while (0)
 
-	// write command id
+	/* write command id */
 	WRITE_HEX_BYTE(command);
 
-	// write parameters
+	/* write parameters */
 	size_t written = bin2hex(parameters, parameters_size, tx_buf_wrptr,
 				 sat->tx_buf + TX_MESSAGE_MAX_SIZE - tx_buf_wrptr);
 	if (written != parameters_size * 2) {
-		LOG_ERR("Call (2)`bin2hex` failed ret=%d.", written);
+		LOG_ERR("Call (2)`bin2hex` failed %d", written);
 		return -EFAULT;
 	}
 	tx_buf_wrptr += written;
 
-	// write CRC
+	/* write CRC */
 	uint16_t crc = crc16_itu_t(0xFFFF, &command, sizeof(command));
 	crc = crc16_itu_t(crc, parameters, parameters_size);
 	WRITE_HEX_BYTE((uint8_t)((crc & 0x00FF) >> 0));
 	WRITE_HEX_BYTE((uint8_t)((crc & 0xFF00) >> 8));
 
-	// write end byte
+	/* write end byte */
 	*tx_buf_wrptr++ = ASTRONODE_S_END_BYTE;
 
 	if (tx_buf_wrptr > sat->tx_buf + TX_MESSAGE_MAX_SIZE) {
-		LOG_ERR("Error while formatting command. Stack possibly corrupted.");
+		LOG_ERR("Error while formatting command. Stack possibly corrupted");
 		k_oops();
 	}
 
@@ -315,20 +320,22 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 	}
 
 	if (encoded_command_size > TX_MESSAGE_MAX_SIZE) {
-		LOG_ERR("Encoded command is too large.");
+		LOG_ERR("Encoded response is too large (%d bytes). Maximum is %d",
+			encoded_command_size, TX_MESSAGE_MAX_SIZE);
 		k_mutex_unlock(&sat->mutex);
 		return -EINVAL;
 	}
 
 	if (encoded_response_size > RX_MESSAGE_MAX_SIZE) {
-		LOG_ERR("Encoded response is too large (%d bytes)", encoded_response_size);
+		LOG_ERR("Encoded response is too large (%d bytes). Maximum is %d",
+			encoded_response_size, RX_MESSAGE_MAX_SIZE);
 		k_mutex_unlock(&sat->mutex);
 		return -EINVAL;
 	}
 
 	ret = ctr_sat_encode_message(sat, command, parameters, parameters_size);
 	if (ret) {
-		LOG_ERR("Error while formatting command %d.", ret);
+		LOG_ERR("Error while formatting command %d", ret);
 		k_mutex_unlock(&sat->mutex);
 		return -EINVAL;
 	}
@@ -339,7 +346,7 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 	sat->rx_buf_receive_ptr = sat->rx_buf;
 	sat->rx_buf_len = 0;
 
-	LOG_DBG("Starting UART transmission. To send: %d bytes. To receive: %d bytes.",
+	LOG_DBG("Starting UART transmission. To send: %d bytes. To receive: %d bytes",
 		encoded_command_size, encoded_response_size);
 	LOG_HEXDUMP_INF(sat->tx_buf, encoded_command_size, "Encoded command to astronode:");
 
@@ -348,32 +355,53 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 	uart_irq_rx_enable(sat->uart_dev);
 	uart_irq_tx_enable(sat->uart_dev);
 
-	// wait for reply
-	struct k_poll_event events[] = {
+	/* wait for reply */
+	struct k_poll_event events[1] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
 					 &sat->rx_completed_signal),
 	};
 
-	// TODO: Check that timeout matches astronode specification. Take in account
-	// delays of transsmision and recpetion delays due to complicated chip
-	// structure (I2C, 1W and UART bridges)
-	// Following timeout must also take into account delay of command transmission. Astronode
-	// UART is only 9600 bauds.
-	ret = k_poll(events, ARRAY_SIZE(events),
-		     K_MSEC(100 + 1000 * encoded_command_size * 10 / 9600));
+	/*
+		100 msec: max time to respond by module
+
+		100 msec: pesimistic assumption of delay by I2C -> UART or W1 -> I2C -> UART bridges
+
+		1000 * encoded_command_size * 10 / 9600: delay of command transmission (1000 =
+	   conversion sec to msec, * 10 = 10 bauds per byte, 9600 = baudrate)
+
+		1000 * encoded_response_size * 10 / 9600: delay of answer transmission (the same as
+	   for command)
+
+	*/
+	long timeout_ms = 100 + 100 + (1000 * encoded_command_size * 10 / 9600) +
+			  (1000 * encoded_response_size * 10 / 9600);
+	k_timeout_t timeout = K_MSEC(timeout_ms);
+	ret = k_poll(events, ARRAY_SIZE(events), timeout);
 	if (ret == -EAGAIN) {
 		LOG_ERR("Command failed because Astronode module did not respond within specified "
 			"time. This may happen when module is disconnected");
 		k_mutex_unlock(&sat->mutex);
 		return ret;
-	}
-	if (ret < 0) {
-		LOG_ERR("Call `k_poll` failed: %d", ret);
+	} else if (ret < 0) {
+		LOG_ERR("Call `k_poll` failed %d", ret);
 		k_mutex_unlock(&sat->mutex);
 		return ret;
 	}
 
-	LOG_DBG("UART transmission completed. Sent: %d bytes. Received: %d bytes.",
+	if (events->signal->result == -ENOSPC) {
+		/* ENOSPC is related to internal buffer, not the user one. For this reason
+		 * FLAG_TRIM_LONG_REPLY has no effect here. */
+		LOG_ERR("Received message was longer than maximum allowed size %d",
+			RX_MESSAGE_MAX_SIZE);
+		k_mutex_unlock(&sat->mutex);
+		return -ENOSPC;
+	} else if (events->signal->result) {
+		LOG_ERR("Error while receiving data %d", events->signal->result);
+		k_mutex_unlock(&sat->mutex);
+		return events->signal->result;
+	}
+
+	LOG_DBG("UART transmission completed. Sent: %d bytes. Received: %d bytes",
 		encoded_command_size, sat->rx_buf_len);
 	LOG_HEXDUMP_INF(sat->rx_buf, sat->rx_buf_len, "Encoded answer from astronode:");
 
@@ -396,7 +424,7 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 				    &response_data_size_parsed, sat->rx_buf, sat->rx_buf_len,
 				    flags);
 	if (ret) {
-		// error details printed in ctr_sat_parse_message
+		/* error details are printed in ctr_sat_parse_message */
 
 		int allowed_retries = FIELD_GET(FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES_MASK, flags);
 		int new_flags =
@@ -434,9 +462,9 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 		bool log_allowed = FIELD_GET(FLAG_NO_WARN_ASTRONODE_ERROR, flags) == 0;
 		bool is_error_ans = response_id == ASTRONODE_S_ANSWER_ERROR;
 		if (log_allowed && !is_error_ans) {
-			LOG_ERR("Astronode replied with unexpected response. Request code: %02X, "
+			LOG_ERR("Astronode replied with unexpected response. Request code: 0x%02x, "
 				"expected "
-				"response code: %02X, received response code: %02X",
+				"response code: 0x%02x, received response code: 0x%02x",
 				command, expected_response_code, response_id);
 		}
 		k_mutex_unlock(&sat->mutex);
@@ -484,7 +512,8 @@ static int ctr_sat_handle_ack(struct ctr_sat *sat)
 	}
 
 	if (sat->callback) {
-		union ctr_sat_event_data data = {.msg_send = {.msg = (message_handle)payload_id}};
+		union ctr_sat_event_data data = {
+			.msg_send = {.msg = (ctr_sat_msg_handle)payload_id}};
 		sat->callback(CTR_SAT_EVENT_MESSAGE_SENT, &data, sat->callback_user_data);
 	}
 
@@ -651,19 +680,18 @@ static int ctr_sat_reset(struct ctr_sat *sat)
 static void ctr_sat_handle_uart_rx_irq(struct ctr_sat *sat)
 {
 	int ret;
-
-	// TODO remove MIN()
-	// MIN() is here only because underlaying driver (sc16is7xx) currently returns err when
-	// passed buffer is too large
+	/*
+		TODO remove MIN()
+		MIN() is here only because underlaying driver (sc16is7xx) currently returns err when
+	   passed buffer is too large
+	*/
 	int bytes_read = uart_fifo_read(sat->uart_dev, sat->rx_buf_receive_ptr,
 					MIN(RX_MESSAGE_MAX_SIZE - sat->rx_buf_len, 64));
 
 	if (bytes_read < 0) {
 		LOG_ERR("Call `uart_fifo_read` failed %d", bytes_read);
 		return;
-	}
-
-	if (bytes_read == 0 && RX_MESSAGE_MAX_SIZE - sat->rx_buf_len != 0) {
+	} else if (bytes_read == 0 && RX_MESSAGE_MAX_SIZE - sat->rx_buf_len != 0) {
 		LOG_WRN("Call `uart_fifo_read` read 0 bytes");
 	}
 
@@ -672,7 +700,7 @@ static void ctr_sat_handle_uart_rx_irq(struct ctr_sat *sat)
 	for (int i = 0; i < bytes_read; i++) {
 		if (sat->rx_buf_receive_ptr[i] == ASTRONODE_S_END_BYTE) {
 			contains_stop_byte = true;
-			// stop byte should be last received byte
+			/* stop byte should be last received byte */
 			if (i != bytes_read - 1) {
 				LOG_WRN("Stop byte was received but satelite module send "
 					"additional data after stop byte!");
@@ -703,7 +731,7 @@ static void ctr_sat_handle_uart_rx_irq(struct ctr_sat *sat)
 			k_oops();
 		}
 
-		LOG_DBG("Disabling RX interrupt.");
+		LOG_DBG("Disabling RX interrupt");
 
 		uart_irq_rx_disable(sat->uart_dev);
 	}
@@ -712,14 +740,16 @@ static void ctr_sat_handle_uart_rx_irq(struct ctr_sat *sat)
 static void ctr_sat_handle_tx_irq(struct ctr_sat *sat)
 {
 	if (sat->tx_buf_len == 0) {
-		LOG_DBG("TX completed. No bytes remains to send. Disabling TX interrupt.");
+		LOG_DBG("TX completed. No bytes remains to send. Disabling TX interrupt");
 		uart_irq_tx_disable(sat->uart_dev);
 		return;
 	}
 
-	// TODO remove MIN()
-	// MIN() is here only because underlaying driver (sc16is7xx) currently returns err when
-	// passed buffer is too large
+	/*
+		TODO remove MIN()
+		MIN() is here only because underlaying driver (sc16is7xx) currently returns err when
+	   passed buffer is too large
+	*/
 	int bytes_sent =
 		uart_fifo_fill(sat->uart_dev, sat->tx_buf_transmit_ptr, MIN(sat->tx_buf_len, 64));
 	if (bytes_sent < 0) {
@@ -733,7 +763,7 @@ static void ctr_sat_handle_tx_irq(struct ctr_sat *sat)
 	if (bytes_sent == 0) {
 		LOG_ERR("Call `uart_fifo_fill` accepted 0 bytes!");
 	} else {
-		LOG_DBG("Written %u byte(s) to FIFO. %u bytes remains.", bytes_sent,
+		LOG_DBG("Written %u byte(s) to FIFO. %u bytes remains", bytes_sent,
 			sat->tx_buf_len);
 	}
 }
@@ -744,24 +774,24 @@ static void ctr_sat_uart_callback(const struct device *dev, void *user_data)
 
 	if (!uart_irq_update(sat->uart_dev)) {
 		LOG_WRN("uart_irq_update did not allow execution of UART interrupt handler. "
-			"Possible spurious interrupt.");
+			"Possible spurious interrupt");
 		return;
 	}
 
-	int isHandled = 0;
+	int is_handled = 0;
 
 	if (uart_irq_rx_ready(sat->uart_dev)) {
-		isHandled = 1;
+		is_handled = 1;
 		ctr_sat_handle_uart_rx_irq(sat);
 	}
 
 	if (uart_irq_tx_ready(sat->uart_dev)) {
-		isHandled = 1;
+		is_handled = 1;
 		ctr_sat_handle_tx_irq(sat);
 	}
 
-	if (!isHandled) {
-		LOG_WRN("Possible spurious UART interrupt. No TX and no RX flag was set.");
+	if (!is_handled) {
+		LOG_WRN("Possible spurious UART interrupt. No TX and no RX flag was set");
 	}
 }
 
@@ -776,7 +806,7 @@ static int ctr_sat_receive_command(struct ctr_sat *sat)
 {
 	int ret;
 
-	// last byte is used for terminating possible string
+	/* last byte is used for terminating possible string */
 	uint8_t cmd_ra[ASTRONODE_S_CMD_RA_SIZE + 1];
 	size_t cmd_ra_size = sizeof(cmd_ra) - 1;
 
@@ -827,7 +857,7 @@ static int ctr_sat_handle_event(struct ctr_sat *sat)
 	}
 
 	if (event == 0) {
-		LOG_DBG("Spurious interrupt detected. Astrnonode module has no event flag set.");
+		LOG_DBG("Spurious interrupt detected. Astrnonode module has no event flag set");
 		return -EAGAIN;
 	}
 
@@ -915,9 +945,13 @@ int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg)
 {
 	int ret;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
 	if (!device_is_ready(hwcfg->uart_dev)) {
 		LOG_ERR("UART Device not ready");
-		k_oops();
+		return -ENODEV;
 	}
 
 	sat->uart_dev = hwcfg->uart_dev;
@@ -1022,7 +1056,7 @@ int ctr_sat_use_wifi_devkit(struct ctr_sat *sat, const char *ssid, const char *p
 
 	ssize_t api_key_len = strlen(api_key);
 	if (api_key_len != (ASTRONODE_S_WFI_WR_API_KEY_SIZE - 1)) {
-		LOG_ERR("API key must be exactly 96 characters. You passed string of length %d.",
+		LOG_ERR("API key must be exactly 96 characters. You passed string of length %d",
 			api_key_len);
 		return -EINVAL;
 	}
@@ -1055,7 +1089,7 @@ static uint16_t ctr_sat_get_next_payload_id(struct ctr_sat *sat)
 	return next_id;
 }
 
-int ctr_sat_send_message(struct ctr_sat *sat, message_handle *msg_handle, const void *buf,
+int ctr_sat_send_message(struct ctr_sat *sat, ctr_sat_msg_handle *msg_handle, const void *buf,
 			 const size_t len)
 {
 	int ret;
@@ -1065,13 +1099,13 @@ int ctr_sat_send_message(struct ctr_sat *sat, message_handle *msg_handle, const 
 	}
 
 	if (sat->enqued_payloads == MAX_PAYLOADS) {
-		LOG_ERR("Unable to send message because end buffer is full.");
+		LOG_ERR("Unable to send message because end buffer is full");
 		return -EAGAIN;
 	}
 
 	if (atomic_get(&sat->is_started) == 0) {
 		LOG_ERR("satelite module is not started. Please call ctr_sat_start() "
-			"first.");
+			"first");
 		ret = -EACCES;
 		goto exit;
 	}
@@ -1099,14 +1133,14 @@ int ctr_sat_send_message(struct ctr_sat *sat, message_handle *msg_handle, const 
 		if (ret) {
 			if (ret == ASTRONODE_S_ERROR_DUPLICATE_ID) {
 				if (was_previous_answer_affected_by_crc_error) {
-					// dumplicate ID here means that previous request was
-					// successfull and only answer was malformed
+					/* dumplicate ID here means that previous request was
+					 * successfull and only answer was malformed */
 					ret = 0;
 					goto exit;
 				} else {
 					was_previous_answer_affected_by_crc_error = false;
 					LOG_INF("Message with id 0x%04x was already enqueud. "
-						"Retrying with different ID.",
+						"Retrying with different ID",
 						payload_id);
 					payload_id = ctr_sat_get_next_payload_id(sat);
 					sys_put_le16(payload_id, req + ASTRONODE_S_PLD_ER_ID);
@@ -1115,14 +1149,12 @@ int ctr_sat_send_message(struct ctr_sat *sat, message_handle *msg_handle, const 
 				was_previous_answer_affected_by_crc_error = false;
 				LOG_INF("Enquing message with id 0x%04x failed because of CRC "
 					"error on request transmission. Retrying with the same "
-					"ID.",
+					"ID",
 					payload_id);
 			} else if (ret == -E_INVCRC) {
 				was_previous_answer_affected_by_crc_error = true;
-				LOG_INF("Enquing message with id 0x%04x failed because of "
-					"CRC error on answer transmission. Retrying with "
-					"the "
-					"same ID.",
+				LOG_INF("Enquing message with id 0x%04x failed because of CRC "
+					"error on answer transmission. Retrying with the same ID",
 					payload_id);
 			} else {
 				was_previous_answer_affected_by_crc_error = false;
@@ -1140,26 +1172,25 @@ exit:
 	return ret;
 }
 
-int ctr_sat_flush_message(struct ctr_sat *sat, message_handle msg_handle)
-{
-	return -9999;
-}
-
 int ctr_sat_flush_messages(struct ctr_sat *sat)
 {
 	int ret;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
 	LOG_DBG("Flushing all messages");
 
-	// ASTRONODE_S_ERROR_BUFFER_EMPTY is allowed error
+	/* ASTRONODE_S_ERROR_BUFFER_EMPTY is allowed error */
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_PLD_F, NULL, 0, NULL, 0,
 				      FLAG_REPEAT_ON_ALL_CRC_ERRORS | FLAG_NO_WARN_ASTRONODE_ERROR |
 					      FLAG_ALLOW_UNEXPECTED_LENGTH);
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
-		return ret;
-	} else if (ret) {
-		if (ret != ASTRONODE_S_ERROR_BUFFER_EMPTY) {
+	if (ret) {
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
+			return ret;
+		} else if (ret != ASTRONODE_S_ERROR_BUFFER_EMPTY) {
 			LOG_WRN("Satellite module error 0x%04x", ret);
 			return -EIO;
 		}
