@@ -24,9 +24,17 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 static message_handle msg1;
 static message_handle msg2;
 
+volatile message_handle sent_events[5];
+volatile int events = 0;
+
 void message_processed_callback(enum ctr_sat_event event, union ctr_sat_event_data *data,
 				void *user_data)
 {
+
+	if (event == CTR_SAT_EVENT_MESSAGE_SENT && events < 5) {
+		sent_events[events++] = data->msg_send.msg;
+	}
+
 	LOG_INF("Message was successfully transmitted and confirmed.");
 }
 
@@ -40,6 +48,10 @@ void main(void)
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
 	ctr_led_set(CTR_LED_CHANNEL_G, false);
+
+	ctr_led_set(CTR_LED_CHANNEL_Y, true);
+	k_sleep(K_MSEC(30000));
+	ctr_led_set(CTR_LED_CHANNEL_Y, false);
 
 	const struct ctr_sat_hwcfg sat_hwcfg = CTR_SAT_HWCONFIG_SYSCON;
 	// ctr_sat_get_hwcfg_syscon(&sat_hwcfg);
@@ -77,16 +89,19 @@ void main(void)
 
 	// k_sleep(K_MSEC(5000));
 
-	ret = ctr_sat_flush_messages(&sat);
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_sat_flush_messages` failed: %d", ret);
+	/*
+		ret = ctr_sat_flush_messages(&sat);
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_sat_flush_messages` failed: %d", ret);
 
-		ctr_led_set(CTR_LED_CHANNEL_R, true);
-		k_sleep(K_MSEC(5000));
-		sys_reboot(SYS_REBOOT_COLD);
-	}
+			ctr_led_set(CTR_LED_CHANNEL_R, true);
+			k_sleep(K_MSEC(5000));
+			sys_reboot(SYS_REBOOT_COLD);
+		}
+	*/
 
 	// calling revoke all twice for testing internal error handlers
+	/*
 	ret = ctr_sat_flush_messages(&sat);
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_sat_flush_messages` failed: %d", ret);
@@ -95,6 +110,7 @@ void main(void)
 		k_sleep(K_MSEC(5000));
 		sys_reboot(SYS_REBOOT_COLD);
 	}
+	*/
 
 	const char *message = "Chester say hello!";
 	ret = ctr_sat_send_message(&sat, &msg1, message, strlen(message));

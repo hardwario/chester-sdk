@@ -467,20 +467,35 @@ static int ctr_sat_get_pending_event(struct ctr_sat *sat, int *event)
 	return 0;
 }
 
-static int ctr_sat_read_ack(struct ctr_sat *sat, uint16_t *payload_id)
+static int ctr_sat_handle_ack(struct ctr_sat *sat)
 {
 	int ret;
 
 	LOG_DBG("Reading satelite ack");
 
-	size_t payload_id_size = sizeof(*payload_id);
+	uint16_t payload_id;
+	size_t payload_id_size = sizeof(payload_id);
 
-	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_SAK_R, NULL, 0, payload_id,
+	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_SAK_R, NULL, 0, &payload_id,
 				      &payload_id_size, FLAG_REPEAT_ON_ALL_CRC_ERRORS);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		LOG_ERR("Call `ctr_sat_execute_command` (1) failed %d", ret);
 		return ret;
 	}
+
+	if (sat->callback) {
+		union ctr_sat_event_data data = {.msg_send = {.msg = (message_handle)payload_id}};
+		sat->callback(CTR_SAT_EVENT_MESSAGE_SENT, &data, sat->callback_user_data);
+	}
+
+	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_SAK_C, NULL, 0, NULL, NULL,
+				      FLAG_REPEAT_ON_REQ_CRC_ERRORS);
+	if (ret) {
+		LOG_ERR("Call `ctr_sat_execute_command` (2) failed %d", ret);
+		return ret;
+	}
+
+	LOG_DBG("Sateilite message 0x%04x was processed", payload_id);
 
 	return 0;
 }
@@ -831,18 +846,9 @@ static int ctr_sat_handle_event(struct ctr_sat *sat)
 	}
 
 	if (event & ASTRONODE_S_EVENT_SAT_ACK) {
-		uint16_t confirmed_message;
-
-		ret = ctr_sat_read_ack(sat, &confirmed_message);
+		ret = ctr_sat_handle_ack(sat);
 		if (ret) {
-			LOG_ERR("Call `ctr_sat_read_ack` failed %d", ret);
-		} else {
-			if (sat->callback) {
-				union ctr_sat_event_data data = {
-					.msg_send = {.msg = (message_handle)confirmed_message}};
-				sat->callback(CTR_SAT_EVENT_MESSAGE_SENT, &data,
-					      sat->callback_user_data);
-			}
+			LOG_ERR("Call `ctr_sat_handle_ack` failed %d", ret);
 		}
 	}
 
@@ -860,7 +866,7 @@ static int ctr_sat_poll_intrrupt(struct ctr_sat *sat)
 {
 	int ret;
 
-	ret = gpio_pin_get_dt(&sat->module_reset_gpio);
+	ret = gpio_pin_get_dt(&sat->module_event_gpio);
 	if (ret != 0 && ret != 1) {
 		LOG_ERR("Call `gpio_pin_get_dt` failed %d", ret);
 		return ret;
@@ -982,7 +988,7 @@ int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg)
 	return 0;
 }
 
-int ctr_sat_set_callback(struct ctr_sat *sat, ctr_sat_message_event_cb user_cb, void *user_data)
+int ctr_sat_set_callback(struct ctr_sat *sat, ctr_sat_event_cb user_cb, void *user_data)
 {
 	sat->callback = user_cb;
 	sat->callback_user_data = user_data;

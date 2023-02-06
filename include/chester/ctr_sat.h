@@ -50,8 +50,8 @@ union ctr_sat_event_data {
 	struct ctr_sat_event_msg_recv_data msg_recv;
 };
 
-typedef void (*ctr_sat_message_event_cb)(enum ctr_sat_event event, union ctr_sat_event_data *data,
-					 void *user_data);
+typedef void (*ctr_sat_event_cb)(enum ctr_sat_event event, union ctr_sat_event_data *data,
+				 void *user_data);
 
 struct ctr_sat {
 	const struct device *uart_dev;
@@ -68,7 +68,7 @@ struct ctr_sat {
 	size_t rx_buf_len;
 	uint8_t *rx_buf_receive_ptr;
 
-	ctr_sat_message_event_cb callback;
+	ctr_sat_event_cb callback;
 	void *callback_user_data;
 
 	uint16_t enqued_payload_ids[MAX_PAYLOADS];
@@ -104,7 +104,7 @@ struct ctr_sat_hwcfg {
 			GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_event_gpios),          \
 	}
 
-int ctr_sat_set_callback(struct ctr_sat *sat, ctr_sat_message_event_cb user_cb, void *user_data);
+int ctr_sat_set_callback(struct ctr_sat *sat, ctr_sat_event_cb user_cb, void *user_data);
 int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg);
 int ctr_sat_stop(struct ctr_sat *sat);
 int ctr_sat_send_message(struct ctr_sat *sat, message_handle *msg_handle, const void *buf,
