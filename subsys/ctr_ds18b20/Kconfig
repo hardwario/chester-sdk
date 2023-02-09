@@ -1,6 +1,6 @@
 config CTR_DS18B20
 	bool "CTR_DS18B20"
-	select CBPRINTF_FP_SUPPORT if CTR_DS18B20_LOG_LEVEL_DBG
+	select CBPRINTF_FP_SUPPORT if CTR_DS18B20_LOG_LEVEL_DBG || CTR_DS18B20_SHELL
 	select CTR_W1
 	select DS18B20
 	select GPIO
@@ -13,5 +13,10 @@ if CTR_DS18B20
 module = CTR_DS18B20
 module-str = CHESTER DS18B20 Subsystem
 source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_DS18B20_SHELL
+	bool "CTR_DS18B20_SHELL"
+	depends on SHELL
+	default y
 
 endif # CTR_DS18B20
