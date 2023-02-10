@@ -8,6 +8,7 @@
 
 /* Standard includes */
 #include <stddef.h>
+#include <stdlib.h>
 
 LOG_MODULE_REGISTER(ctr_hygro_shell, CONFIG_CTR_HYGRO_LOG_LEVEL);
 
@@ -15,17 +16,40 @@ static int cmd_hygro_read(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	float temperature;
-	float humidity;
-	ret = ctr_hygro_read(&temperature, &humidity);
-	if (ret) {
-		LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
+	int repetitions = 1;
+
+	if (argc == 2) {
+		repetitions = strtoll(argv[1], NULL, 10);
+
+		if (repetitions < 1 || repetitions > 3600) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
 	}
 
-	shell_print(shell, "temperature: %.2f C", temperature);
-	shell_print(shell, "humidity: %.1f %%", humidity);
+	for (int i = 0; i < repetitions; i++) {
+		if (i) {
+			k_sleep(K_SECONDS(1));
+		}
+
+		if (repetitions > 1) {
+			shell_print(shell, "repetition: %d/%d", i + 1, repetitions);
+		}
+
+		float temperature;
+		float humidity;
+		ret = ctr_hygro_read(&temperature, &humidity);
+		if (ret) {
+			LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		shell_print(shell, "temperature: %.2f C", temperature);
+		shell_print(shell, "humidity: %.1f %%", humidity);
+	}
+
+	shell_print(shell, "command succeeded");
 
 	return 0;
 }
@@ -49,8 +73,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_hygro,
 
 	SHELL_CMD_ARG(read, NULL,
-	              "Read sensor data.",
-		      cmd_hygro_read, 1, 0),
+	              "Read hygrometer "
+	              "w/ optional number of repetitions (format: [<1-3600>]).",
+		      cmd_hygro_read, 1, 1),
 
 	SHELL_SUBCMD_SET_END
 );

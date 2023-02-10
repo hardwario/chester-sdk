@@ -99,7 +99,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              cmd_ds18b20_scan, 1, 0),
 
 	SHELL_CMD_ARG(read, NULL,
-	              "Read DS18B20 thermometers"
+	              "Read DS18B20 thermometers "
 	              "w/ optional number of repetitions (format: [<1-3600>]).",
 	              cmd_ds18b20_read, 1, 1),
 
