@@ -8,6 +8,7 @@
 
 /* Standard includes */
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(ctr_rtd_shell, CONFIG_CTR_RTD_LOG_LEVEL);
@@ -44,15 +45,38 @@ static int cmd_rtd_read(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	float temperature;
-	ret = ctr_rtd_read(channel, type, &temperature);
-	if (ret) {
-		LOG_ERR("Call `ctr_rtd_read` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
+	int repetitions = 1;
+
+	if (argc == 4) {
+		repetitions = strtoll(argv[1], NULL, 10);
+
+		if (repetitions < 1 || repetitions > 3600) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
 	}
 
-	shell_print(shell, "temperature: %.3f celsius", temperature);
+	for (int i = 0; i < repetitions; i++) {
+		if (i) {
+			k_sleep(K_SECONDS(1));
+		}
+
+		if (repetitions > 1) {
+			shell_print(shell, "repetition: %d/%d", i + 1, repetitions);
+		}
+
+		float temperature;
+		ret = ctr_rtd_read(channel, type, &temperature);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtd_read` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		shell_print(shell, "temperature: %.3f celsius", temperature);
+	}
+
+	shell_print(shell, "command succeeded");
 
 	return 0;
 }
@@ -76,8 +100,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_rtd,
 
 	SHELL_CMD_ARG(read, NULL,
-	              "Read temperature (format: <a1|a2|b1|b2> <pt100|pt1000>).",
-	              cmd_rtd_read, 3, 0),
+	              "Read temperature w/ optional number of repetitions"
+		      "(format: <a1|a2|b1|b2> <pt100|pt1000> [<1-3600>]).",
+	              cmd_rtd_read, 3, 1),
 
         SHELL_SUBCMD_SET_END
 );
