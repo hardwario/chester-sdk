@@ -1,0 +1,5 @@
+description: NXP MPL3115A2 Barometric Pressure/Altitude/Temperature Sensor
+
+compatible: "nxp,mpl3115a2"
+
+include: [sensor-device.yaml, i2c-device.yaml]

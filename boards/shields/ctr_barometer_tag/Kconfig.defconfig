@@ -1,0 +1,12 @@
+if SHIELD_CTR_BAROMETER_TAG
+
+config I2C
+	default y
+
+config SENSOR
+	default y
+
+config MPL3115A2
+	default y
+
+endif # SHIELD_CTR_BAROMETER_TAG

@@ -1,0 +1,3 @@
+&ctr_barometer_tag {
+	status = "okay";
+};

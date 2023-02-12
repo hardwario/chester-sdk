@@ -374,6 +374,12 @@
 		reg = <0x4b>;
 		#io-channel-cells = <1>;
 	};
+
+	ctr_barometer_tag: ctr_barometer_tag@60 {
+		compatible = "nxp,mpl3115a2";
+		status = "disabled";
+		reg = <0x60>;
+	};
 };
 
 &spi1 {
