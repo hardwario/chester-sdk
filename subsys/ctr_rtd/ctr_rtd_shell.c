@@ -48,7 +48,7 @@ static int cmd_rtd_read(const struct shell *shell, size_t argc, char **argv)
 	int repetitions = 1;
 
 	if (argc == 4) {
-		repetitions = strtoll(argv[1], NULL, 10);
+		repetitions = strtoll(argv[3], NULL, 10);
 
 		if (repetitions < 1 || repetitions > 3600) {
 			shell_error(shell, "invalid range");
