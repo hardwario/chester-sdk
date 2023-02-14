@@ -4,17 +4,14 @@
 		compatible = "gpio-leds";
 
 		led_r: led_r {
-			label = "LED_R";
 			gpios = <&ctr_c1_tca9534a 5 GPIO_ACTIVE_LOW>;
 		};
 
 		led_g: led_g {
-			label = "LED_G";
 			gpios = <&ctr_c1_tca9534a 6 GPIO_ACTIVE_LOW>;
 		};
 
 		led_y: led_y {
-			label = "LED_Y";
 			gpios = <&ctr_c1_tca9534a 7 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -23,7 +20,6 @@
 &i2c0 {
 	ctr_c1_tca9534a: ctr_c1_tca9534a@3e {
 		compatible = "ti,tca9538";
-		label = "CTR_C1_TCA9534A";
 		status = "okay";
 		reg = <0x3e>;
 		#gpio-cells = <2>;

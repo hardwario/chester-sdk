@@ -3,24 +3,20 @@
 		compatible = "gpio-leds";
 
 		led_r: led_r {
-			label = "LED_R";
 			gpios = <&ctr_b1_tca9534a 5 GPIO_ACTIVE_LOW>;
 		};
 
 		led_g: led_g {
-			label = "LED_G";
 			gpios = <&ctr_b1_tca9534a 6 GPIO_ACTIVE_LOW>;
 		};
 
 		led_y: led_y {
-			label = "LED_Y";
 			gpios = <&ctr_b1_tca9534a 7 GPIO_ACTIVE_LOW>;
 		};
 	};
 
 	ctr_b1: ctr_b1 {
 		compatible = "hardwario,ctr-b1";
-		label = "CTR_B1";
 		status = "okay";
 		wm-reset-gpios = <&ctr_b1_tca9534a 0 GPIO_ACTIVE_HIGH>;
 		wm-on-gpios = <&ctr_b1_tca9534a 2 GPIO_ACTIVE_HIGH>;
@@ -32,7 +28,6 @@
 &i2c0 {
 	ctr_b1_tca9534a: ctr_b1_tca9534a@3e {
 		compatible = "ti,tca9538";
-		label = "CTR_B1_TCA9534A";
 		status = "okay";
 		reg = <0x3e>;
 		#gpio-cells = <2>;
@@ -45,7 +40,6 @@
 		reg = <0x4e>;
 		clock-frequency = <14745600>;
 		prescaler = <1>;
-		label = "CTR_B1_SC16IS740";
 		irq-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&ctr_b1_tca9534a 1 GPIO_ACTIVE_LOW>;
 	};

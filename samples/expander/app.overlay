@@ -1,7 +1,6 @@
 &i2c0 {
 	ctr_b1_tca9534a: ctr_b1_tca9534a@3e {
 		compatible = "ti,tca9538";
-		label = "CTR_B1_TCA9534A";
 		status = "okay";
 		reg = <0x3e>;
 		#gpio-cells = <2>;

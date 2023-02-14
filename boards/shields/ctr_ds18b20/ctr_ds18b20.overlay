@@ -3,69 +3,59 @@
 		compatible = "maxim,ds18b20";
 		resolution = <12>;
 		family-code = <0x28>;
-		label = "DS18B20_0";
 	};
 
 	ds18b20_1: ds18b20_1 {
 		compatible = "maxim,ds18b20";
 		resolution = <12>;
 		family-code = <0x28>;
-		label = "DS18B20_1";
 	};
 
 	ds18b20_2: ds18b20_2 {
 		compatible = "maxim,ds18b20";
 		resolution = <12>;
 		family-code = <0x28>;
-		label = "DS18B20_2";
 	};
 
 	ds18b20_3: ds18b20_3 {
 		compatible = "maxim,ds18b20";
 		resolution = <12>;
 		family-code = <0x28>;
-		label = "DS18B20_3";
 	};
 
 	ds18b20_4: ds18b20_4 {
 		compatible = "maxim,ds18b20";
 		resolution = <12>;
 		family-code = <0x28>;
-		label = "DS18B20_4";
 	};
 
 	ds18b20_5: ds18b20_5 {
 		compatible = "maxim,ds18b20";
 		resolution = <12>;
 		family-code = <0x28>;
-		label = "DS18B20_5";
 	};
 
 	ds18b20_6: ds18b20_6 {
 		compatible = "maxim,ds18b20";
 		resolution = <12>;
 		family-code = <0x28>;
-		label = "DS18B20_6";
 	};
 
 	ds18b20_7: ds18b20_7 {
 		compatible = "maxim,ds18b20";
 		resolution = <12>;
 		family-code = <0x28>;
-		label = "DS18B20_7";
 	};
 
 	ds18b20_8: ds18b20_8 {
 		compatible = "maxim,ds18b20";
 		resolution = <12>;
 		family-code = <0x28>;
-		label = "DS18B20_8";
 	};
 
 	ds18b20_9: ds18b20_9 {
 		compatible = "maxim,ds18b20";
 		resolution = <12>;
 		family-code = <0x28>;
-		label = "DS18B20_9";
 	};
 };

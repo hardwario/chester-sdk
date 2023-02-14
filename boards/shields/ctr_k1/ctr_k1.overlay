@@ -1,7 +1,6 @@
 / {
 	ctr_k1: ctr_k1 {
 		compatible = "hardwario,ctr-k1";
-		label = "CTR_K1";
 		status = "okay";
 		on1-gpios = <&ctr_k1_tca9534a 0 GPIO_ACTIVE_HIGH>;
 		on2-gpios = <&ctr_k1_tca9534a 1 GPIO_ACTIVE_HIGH>;
@@ -17,7 +16,6 @@
 &i2c0 {
 	ctr_k1_tca9534a: ctr_k1_tca9534a@3d {
 		compatible = "ti,tca9538";
-		label = "CTR_K1_TCA9534A";
 		status = "okay";
 		reg = <0x3d>;
 		#gpio-cells = <2>;

@@ -2,51 +2,41 @@
 	ctr_soil_sensor_0: ctr_soil_sensor_0 {
 		compatible = "maxim,ds28e17";
 		family-code = <0x19>;
-		label = "CTR_SOIL_SENSOR_0";
 	};
 	ctr_soil_sensor_1: ctr_soil_sensor_1 {
 		compatible = "maxim,ds28e17";
 		family-code = <0x19>;
-		label = "CTR_SOIL_SENSOR_1";
 	};
 	ctr_soil_sensor_2: ctr_soil_sensor_2 {
 		compatible = "maxim,ds28e17";
 		family-code = <0x19>;
-		label = "CTR_SOIL_SENSOR_2";
 	};
 	ctr_soil_sensor_3: ctr_soil_sensor_3 {
 		compatible = "maxim,ds28e17";
 		family-code = <0x19>;
-		label = "CTR_SOIL_SENSOR_3";
 	};
 	ctr_soil_sensor_4: ctr_soil_sensor_4 {
 		compatible = "maxim,ds28e17";
 		family-code = <0x19>;
-		label = "CTR_SOIL_SENSOR_4";
 	};
 	ctr_soil_sensor_5: ctr_soil_sensor_5 {
 		compatible = "maxim,ds28e17";
 		family-code = <0x19>;
-		label = "CTR_SOIL_SENSOR_5";
 	};
 	ctr_soil_sensor_6: ctr_soil_sensor_6 {
 		compatible = "maxim,ds28e17";
 		family-code = <0x19>;
-		label = "CTR_SOIL_SENSOR_6";
 	};
 	ctr_soil_sensor_7: ctr_soil_sensor_7 {
 		compatible = "maxim,ds28e17";
 		family-code = <0x19>;
-		label = "CTR_SOIL_SENSOR_7";
 	};
 	ctr_soil_sensor_8: ctr_soil_sensor_8 {
 		compatible = "maxim,ds28e17";
 		family-code = <0x19>;
-		label = "CTR_SOIL_SENSOR_8";
 	};
 	ctr_soil_sensor_9: ctr_soil_sensor_9 {
 		compatible = "maxim,ds28e17";
 		family-code = <0x19>;
-		label = "CTR_SOIL_SENSOR_9";
 	};
 };

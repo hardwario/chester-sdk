@@ -1,7 +1,6 @@
 &i2c0 {
 	opt3001: opt3001@44 {
 		compatible = "ti,opt3001";
-		label = "OPT3001";
 		reg = <0x44>;
 	};
 };

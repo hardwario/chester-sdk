@@ -1,7 +1,6 @@
 &i2c0 {
 	people_counter: people_counter@7f {
 		compatible = "adastra,people-counter";
-		label = "PEOPLE_COUNTER";
 		status = "okay";
 		reg = <0x7f>;
 	};

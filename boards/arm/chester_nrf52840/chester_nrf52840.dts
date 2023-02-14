@@ -19,12 +19,10 @@
 		compatible = "gpio-keys";
 
 		btn_int: btn_int {
-			label = "BTN_INT";
 			gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 
 		btn_ext: btn_ext {
-			label = "BTN_EXT";
 			gpios = <&gpio0 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
@@ -33,17 +31,14 @@
 		compatible = "gpio-leds";
 
 		led_r: led_r {
-			label = "LED_R";
 			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_g: led_g {
-			label = "LED_G";
 			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_y: led_y {
-			label = "LED_Y";
 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -52,14 +47,12 @@
 		compatible = "gpio-leds";
 
 		led_ext: led_ext {
-			label = "LED_EXT";
 			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
 	ctr_gpio: ctr_gpio {
 		compatible = "hardwario,ctr-gpio";
-		label = "CTR_GPIO";
 		status = "disabled";
 		a0-gpios = <&gpio0 3 0>;
 		a1-gpios = <&gpio0 29 0>;
@@ -73,7 +66,6 @@
 
 	ctr_x0_a: ctr_x0_a {
 		compatible = "hardwario,ctr-x0";
-		label = "CTR_X0_A";
 		status = "disabled";
 		ch1-gpios = <&gpio0 3 0>;
 		on1-gpios = <&ctr_x0_pcal6416a_a 11 GPIO_ACTIVE_LOW>;
@@ -99,7 +91,6 @@
 
 	ctr_x0_b: ctr_x0_b {
 		compatible = "hardwario,ctr-x0";
-		label = "CTR_X0_B";
 		status = "disabled";
 		ch1-gpios = <&gpio0 28 0>;
 		on1-gpios = <&ctr_x0_pcal6416a_b 11 GPIO_ACTIVE_LOW>;
@@ -125,7 +116,6 @@
 
 	ctr_x3_a: ctr_x3_a {
 		compatible = "hardwario,ctr-x3";
-		label = "CTR_X3_A";
 		status = "disabled";
 		slot = "A";
 		pwr0-gpios = <&gpio0 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -134,7 +124,6 @@
 
 	ctr_x3_b: ctr_x3_b {
 		compatible = "hardwario,ctr-x3";
-		label = "CTR_X3_B";
 		status = "disabled";
 		slot = "B";
 		pwr0-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -143,7 +132,6 @@
 
 	ctr_x4_a: ctr_x4_a {
 		compatible = "hardwario,ctr-x4";
-		label = "CTR_X4_A";
 		status = "disabled";
 		pwr1-gpios = <&gpio0 3 0>;
 		pwr2-gpios = <&gpio0 29 0>;
@@ -153,7 +141,6 @@
 
 	ctr_x4_b: ctr_x4_b {
 		compatible = "hardwario,ctr-x4";
-		label = "CTR_X4_B";
 		status = "disabled";
 		pwr1-gpios = <&gpio0 28 0>;
 		pwr2-gpios = <&gpio0 30 0>;
@@ -163,7 +150,6 @@
 
 	ctr_batt: ctr_batt {
 		compatible = "hardwario,ctr-batt";
-		label = "CTR_BATT";
 		load-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		test-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 		load-resistor = <100>;
@@ -173,7 +159,6 @@
 
 	ctr_rfmux: ctr_rfmux {
 		compatible = "hardwario,ctr-rfmux";
-		label = "CTR_RFMUX";
 		rf-lte-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 		rf-lrw-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 		rf-int-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
@@ -222,7 +207,6 @@
 
 	ctr_s1: ctr_s1@11 {
 		compatible = "hardwario,ctr-s1";
-		label = "CTR_S1";
 		status = "disabled";
 		reg = <0x11>;
 		irq-gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -230,7 +214,6 @@
 
 	ctr_x0_pcal6416a_a: ctr_x0_pcal6416a_a@20 {
 		compatible = "nxp,pcal6416a";
-		label = "CTR_X0_PCAL6416A_A";
 		status = "disabled";
 		reg = <0x20>;
 		gpio-controller;
@@ -240,7 +223,6 @@
 
 	ctr_x0_pcal6416a_b: ctr_x0_pcal6416a_b@21 {
 		compatible = "nxp,pcal6416a";
-		label = "CTR_X0_PCAL6416A_B";
 		status = "disabled";
 		reg = <0x21>;
 		gpio-controller;
@@ -250,7 +232,6 @@
 
 	ctr_x2_sc16is740_a: uart@50 {
 		compatible = "nxp,sc16is7xx";
-		label = "CTR_X2_SC16IS740_A";
 		status = "disabled";
 		reg = <0x50>;
 		clock-frequency = <14745600>;
@@ -260,7 +241,6 @@
 
 	ctr_x2_sc16is740_b: uart@51 {
 		compatible = "nxp,sc16is7xx";
-		label = "CTR_X2_SC16IS740_B";
 		status = "disabled";
 		reg = <0x51>;
 		clock-frequency = <14745600>;
@@ -270,7 +250,6 @@
 
 	ctr_x3_ads122c04_a1: ctr_x3_ads122c04_a1@46 {
 		compatible = "ti,ads122c04";
-		label = "CTR_X3_ADS122C04_A1";
 		status = "disabled";
 		reg = <0x46>;
 		mux = <3>;
@@ -279,7 +258,6 @@
 
 	ctr_x3_ads122c04_a2: ctr_x3_ads122c04_a2@47 {
 		compatible = "ti,ads122c04";
-		label = "CTR_X3_ADS122C04_A2";
 		status = "disabled";
 		reg = <0x47>;
 		mux = <3>;
@@ -288,7 +266,6 @@
 
 	ctr_x3_ads122c04_b1: ctr_x3_ads122c04_b1@4a {
 		compatible = "ti,ads122c04";
-		label = "CTR_X3_ADS122C04_B1";
 		status = "disabled";
 		reg = <0x4a>;
 		mux = <3>;
@@ -297,7 +274,6 @@
 
 	ctr_x3_ads122c04_b2: ctr_x3_ads122c04b2@4f {
 		compatible = "ti,ads122c04";
-		label = "CTR_X3_ADS122C04_B2";
 		status = "disabled";
 		reg = <0x4f>;
 		mux = <3>;
@@ -306,7 +282,6 @@
 
 	ctr_x4_tla2021: ctr_x4_tla2021@49 {
 		compatible = "ti,tla2021";
-		label = "TLA2021";
 		status = "disabled";
 		reg = <0x49>;
 		#io-channel-cells = <1>;
@@ -314,7 +289,6 @@
 
 	ctr_z: ctr_z@10 {
 		compatible = "hardwario,ctr-z";
-		label = "CTR_Z";
 		status = "disabled";
 		reg = <0x10>;
 		irq-gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -325,14 +299,12 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x18>;
-		label = "DS2484";
 		slpz-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 		active-pullup;
 	};
 
 	lis2dh12: lis2dh12@19 {
 		compatible = "st,lis2dh";
-		label = "LIS2DH12";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>,
 		            <&gpio0 17 GPIO_ACTIVE_HIGH>;
@@ -343,34 +315,29 @@
 		compatible = "u-blox,m8";
 		status = "disabled";
 		reg = <0x42>;
-		label = "M8";
 		main-en-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 		bckp-en-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 	};
 
 	sht30_int: sht30_int@44 {
 		compatible = "sensirion,sht3xd";
-		label = "SHT30_INT";
 		status = "disabled";
 		reg = <0x44>;
 	};
 
 	sht30_ext: sht30_ext@45 {
 		compatible = "sensirion,sht3xd";
-		label = "SHT30_EXT";
 		status = "disabled";
 		reg = <0x45>;
 	};
 
 	tmp112: tmp112@48 {
 		compatible = "ti,tmp112";
-		label = "TMP112";
 		reg = <0x48>;
 	};
 
 	tla2021: tla2021@4b {
 		compatible = "ti,tla2021";
-		label = "TLA2021";
 		reg = <0x4b>;
 		#io-channel-cells = <1>;
 	};
@@ -414,7 +381,6 @@
 
 	ctr_lte_if: ctr_lte_if {
 		compatible = "hardwario,ctr-lte-if";
-		label = "CTR_LTE_IF";
 		status = "disabled";
 		reset-gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
 		wakeup-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
@@ -431,7 +397,6 @@
 
 	ctr_lrw_if: ctr_lrw_if {
 		compatible = "hardwario,ctr-lrw-if";
-		label = "CTR_LRW_IF";
 		status = "disabled";
 		reset-gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
 	};
