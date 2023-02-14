@@ -9,8 +9,10 @@
 #include <zephyr/logging/log.h>
 
 /* Standard includes */
+#include <errno.h>
 #include <inttypes.h>
 #include <math.h>
+#include <stddef.h>
 #include <stdint.h>
 
 LOG_MODULE_REGISTER(ctr_rtd, CONFIG_CTR_RTD_LOG_LEVEL);
@@ -37,24 +39,32 @@ int ctr_rtd_read(enum ctr_rtd_channel channel, enum ctr_rtd_type type, float *te
 {
 	int ret;
 
-	const struct device *dev;
+	const struct device *dev = NULL;
 	enum ctr_x3_channel chan;
 
 	switch (channel) {
 	case CTR_RTD_CHANNEL_A1:
-		dev = device_get_binding("CTR_X3_A");
+#if CONFIG_SHIELD_CTR_X3_A
+		dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_a));
+#endif /* CONFIG_SHIELD_CTR_X3_A */
 		chan = CTR_X3_CHANNEL_1;
 		break;
 	case CTR_RTD_CHANNEL_A2:
-		dev = device_get_binding("CTR_X3_A");
+#if CONFIG_SHIELD_CTR_X3_A
+		dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_a));
+#endif /* CONFIG_SHIELD_CTR_X3_A */
 		chan = CTR_X3_CHANNEL_2;
 		break;
 	case CTR_RTD_CHANNEL_B1:
-		dev = device_get_binding("CTR_X3_B");
+#if CONFIG_SHIELD_CTR_X3_B
+		dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_b));
+#endif /* CONFIG_SHIELD_CTR_X3_B */
 		chan = CTR_X3_CHANNEL_1;
 		break;
 	case CTR_RTD_CHANNEL_B2:
-		dev = device_get_binding("CTR_X3_B");
+#if CONFIG_SHIELD_CTR_X3_B
+		dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_b));
+#endif /* CONFIG_SHIELD_CTR_X3_B */
 		chan = CTR_X3_CHANNEL_2;
 		break;
 	default:
