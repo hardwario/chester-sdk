@@ -34,6 +34,9 @@ choice BT_CTLR_TX_PWR
 	default BT_CTLR_TX_PWR_PLUS_8
 endchoice
 
+config BT_AUTO_PHY_UPDATE
+	default n
+
 config BT_BUF_ACL_RX_SIZE
 	default 502
 
