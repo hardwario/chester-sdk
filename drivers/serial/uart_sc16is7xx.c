@@ -453,13 +453,10 @@ static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, in
 {
 	int ret;
 
-	if (!data_len) {
-		return 0;
-	}
+	int data_len_ = MIN(data_len, RX_FIFO_SIZE);
 
-	if (data_len > TX_FIFO_SIZE) {
-		LOG_ERR("Data length exceeds FIFO size");
-		return -EINVAL;
+	if (!data_len_) {
+		return 0;
 	}
 
 	if (k_is_in_isr()) {
@@ -479,7 +476,7 @@ static int sc16is7xx_fifo_fill(const struct device *dev, const uint8_t *data, in
 		return -ENODEV;
 	}
 
-	size_t buf_len = MIN(get_data(dev)->reg_txlvl, data_len);
+	size_t buf_len = MIN(get_data(dev)->reg_txlvl, data_len_);
 
 	get_data(dev)->tx_buffer[0] = SC16IS7XX_REG_THR << SC16IS7XX_REG_SHIFT;
 	memcpy(&get_data(dev)->tx_buffer[1], data, buf_len);
@@ -502,13 +499,10 @@ static int sc16is7xx_fifo_read(const struct device *dev, uint8_t *data, const in
 {
 	int ret;
 
-	if (!data_len) {
-		return 0;
-	}
+	int data_len_ = MIN(data_len, RX_FIFO_SIZE);
 
-	if (data_len > RX_FIFO_SIZE) {
-		LOG_ERR("Data length exceeds FIFO size");
-		return -EINVAL;
+	if (!data_len_) {
+		return 0;
 	}
 
 	if (k_is_in_isr()) {
@@ -528,7 +522,7 @@ static int sc16is7xx_fifo_read(const struct device *dev, uint8_t *data, const in
 		return -ENODEV;
 	}
 
-	size_t buf_len = MIN(get_data(dev)->reg_rxlvl, data_len);
+	size_t buf_len = MIN(get_data(dev)->reg_rxlvl, data_len_);
 
 	uint8_t reg = SC16IS7XX_REG_RHR << SC16IS7XX_REG_SHIFT;
 
