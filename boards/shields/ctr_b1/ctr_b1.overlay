@@ -37,6 +37,7 @@
 
 	ctr_b1_sc16is740: ctr_b1_sc16is740@4e {
 		compatible = "nxp,sc16is7xx";
+		status = "disabled";
 		reg = <0x4e>;
 		clock-frequency = <14745600>;
 		prescaler = <1>;
