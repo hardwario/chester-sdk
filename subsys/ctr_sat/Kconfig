@@ -1,6 +1,10 @@
 config CTR_SAT
 	bool "CTR_SAT"
 	select REQUIRES_FULL_LIBC
+	select DS28E17
+	select CTR_W1
+	select GPIO
+	select I2C
 	depends on SHELL
 
 if CTR_SAT

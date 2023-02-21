@@ -54,12 +54,18 @@ void main(void)
 	ctr_led_set(CTR_LED_CHANNEL_G, false);
 
 	ctr_led_set(CTR_LED_CHANNEL_Y, true);
-	k_sleep(K_MSEC(30000));
+	k_sleep(K_MSEC(30));
 	ctr_led_set(CTR_LED_CHANNEL_Y, false);
 
-	const struct ctr_sat_hwcfg sat_hwcfg = CTR_SAT_HWCONFIG_SYSCON;
+	ret = ctr_sat_v1_init_w1(&sat);
+	if (ret) {
+		LOG_ERR("Call `ctr_sat_v1_init_w1` failed: %d", ret);
+		ctr_led_set(CTR_LED_CHANNEL_R, true);
+		k_sleep(K_MSEC(5000));
+		sys_reboot(SYS_REBOOT_COLD);
+	}
 
-	ret = ctr_sat_start(&sat, &sat_hwcfg);
+	ret = ctr_sat_start(&sat);
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_sat_start` failed: %d", ret);
 

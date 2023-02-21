@@ -5,7 +5,7 @@
 	ctr_v1_tca9534a_syscon: ctr_v1_tca9534a@38 {
 		compatible = "ti,tca9538";
 		label = "CTR_V1_TCA9534A_SYSCON";
-		status = "okay";
+		status = "disabled";
 		reg = <0x38>;
 
 		#gpio-cells = <2>;
@@ -17,7 +17,7 @@
 	ctr_v1_sc16is740_syscon: ctr_v1_sc16is740@4c {
 		compatible = "nxp,sc16is7xx";
 		label = "CTR_V1_SC16IS740";
-		status = "okay";
+		status = "disabled";
 		reg = <0x4c>;
 
 		clock-frequency = <14745600>;
@@ -37,5 +37,16 @@
 			//modem-event-gpios = <&ctr_v1_tca9534a_syscon 2 GPIO_ACTIVE_HIGH>;
 			modem-event-gpios = <&ctr_v1_tca9534a_syscon 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
+	};
+};
+
+&ds2484 {
+	ctr_v1_0: ctr_v1_0 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_v1_1: ctr_v1_1 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
 	};
 };

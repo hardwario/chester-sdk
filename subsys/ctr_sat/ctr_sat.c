@@ -2,6 +2,8 @@
 #include "astronode_s_messages.h"
 
 #include <chester/ctr_sat.h>
+#include <chester/ctr_w1.h>
+#include <chester/drivers/w1/ds28e17.h>
 
 /* Zephyr includes */
 #include <zephyr/drivers/uart.h>
@@ -340,65 +342,18 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 		return -EINVAL;
 	}
 
-	sat->tx_buf_transmit_ptr = sat->tx_buf;
 	sat->tx_buf_len = encoded_command_size;
-
-	sat->rx_buf_receive_ptr = sat->rx_buf;
 	sat->rx_buf_len = 0;
 
 	LOG_DBG("Starting UART transmission. To send: %d bytes. To receive: %d bytes",
 		encoded_command_size, encoded_response_size);
 	LOG_HEXDUMP_INF(sat->tx_buf, encoded_command_size, "Encoded command to astronode:");
 
-	k_poll_signal_reset(&sat->rx_completed_signal);
-
-	uart_irq_rx_enable(sat->uart_dev);
-	uart_irq_tx_enable(sat->uart_dev);
-
-	/* wait for reply */
-	struct k_poll_event events[1] = {
-		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-					 &sat->rx_completed_signal),
-	};
-
-	/*
-		100 msec: max time to respond by module
-
-		100 msec: pesimistic assumption of delay by I2C -> UART or W1 -> I2C -> UART bridges
-
-		1000 * encoded_command_size * 10 / 9600: delay of command transmission (1000 =
-	   conversion sec to msec, * 10 = 10 bauds per byte, 9600 = baudrate)
-
-		1000 * encoded_response_size * 10 / 9600: delay of answer transmission (the same as
-	   for command)
-
-	*/
-	long timeout_ms = 100 + 100 + (1000 * encoded_command_size * 10 / 9600) +
-			  (1000 * encoded_response_size * 10 / 9600);
-	k_timeout_t timeout = K_MSEC(timeout_ms);
-	ret = k_poll(events, ARRAY_SIZE(events), timeout);
-	if (ret == -EAGAIN) {
-		LOG_ERR("Command failed because Astronode module did not respond within specified "
-			"time. This may happen when module is disconnected");
+	ret = sat->ctr_sat_uart_write_read(sat);
+	if (ret) {
+		LOG_DBG("Call `ctr_sat_uart_write_read` failed %d.", ret);
 		k_mutex_unlock(&sat->mutex);
 		return ret;
-	} else if (ret < 0) {
-		LOG_ERR("Call `k_poll` failed %d", ret);
-		k_mutex_unlock(&sat->mutex);
-		return ret;
-	}
-
-	if (events->signal->result == -ENOSPC) {
-		/* ENOSPC is related to internal buffer, not the user one. For this reason
-		 * FLAG_TRIM_LONG_REPLY has no effect here. */
-		LOG_ERR("Received message was longer than maximum allowed size %d",
-			RX_MESSAGE_MAX_SIZE);
-		k_mutex_unlock(&sat->mutex);
-		return -ENOSPC;
-	} else if (events->signal->result) {
-		LOG_ERR("Error while receiving data %d", events->signal->result);
-		k_mutex_unlock(&sat->mutex);
-		return events->signal->result;
 	}
 
 	LOG_DBG("UART transmission completed. Sent: %d bytes. Received: %d bytes",
@@ -636,7 +591,7 @@ static int ctr_sat_reconfigure(struct ctr_sat *sat)
 
 	LOG_DBG("Updating module configuration");
 
-	if (memcpy(cur_cfg + ASTRONODE_S_CFG_RA_CFG1, new_cfg, 3) != 0) {
+	if (memcpy(cur_cfg + ASTRONODE_S_CFG_RA_CFG1, new_cfg, sizeof(new_cfg)) != 0) {
 		ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_CFG_W, new_cfg, sizeof(new_cfg),
 					      NULL, NULL, FLAG_REPEAT_ON_ALL_CRC_ERRORS);
 		if (ret) {
@@ -657,17 +612,17 @@ static int ctr_sat_reset(struct ctr_sat *sat)
 
 	LOG_DBG("Resseting module");
 
-	ret = gpio_pin_set_dt(&sat->module_reset_gpio, 1);
+	ret = sat->ctr_sat_gpio_write(sat, CTR_SAT_PIN_RESET, true);
 	if (ret) {
-		LOG_ERR("Call `gpio_pin_set_dt` failed %d", ret);
+		LOG_ERR("Call `ctr_sat_gpio_write` (1) failed %d", ret);
 		return ret;
 	}
 
 	k_sleep(K_MSEC(10));
 
-	ret = gpio_pin_set_dt(&sat->module_reset_gpio, 0);
+	ret = sat->ctr_sat_gpio_write(sat, CTR_SAT_PIN_RESET, false);
 	if (ret) {
-		LOG_ERR("Call `gpio_pin_set_dt` failed %d", ret);
+		LOG_ERR("Call `ctr_sat_gpio_write` (2) failed %d", ret);
 		return ret;
 	}
 
@@ -676,131 +631,6 @@ static int ctr_sat_reset(struct ctr_sat *sat)
 	return 0;
 }
 #endif
-
-static void ctr_sat_handle_uart_rx_irq(struct ctr_sat *sat)
-{
-	int ret;
-	/*
-		TODO remove MIN()
-		MIN() is here only because underlaying driver (sc16is7xx) currently returns err when
-	   passed buffer is too large
-	*/
-	int bytes_read = uart_fifo_read(sat->uart_dev, sat->rx_buf_receive_ptr,
-					MIN(RX_MESSAGE_MAX_SIZE - sat->rx_buf_len, 64));
-
-	if (bytes_read < 0) {
-		LOG_ERR("Call `uart_fifo_read` failed %d", bytes_read);
-		return;
-	} else if (bytes_read == 0 && RX_MESSAGE_MAX_SIZE - sat->rx_buf_len != 0) {
-		LOG_WRN("Call `uart_fifo_read` read 0 bytes");
-	}
-
-	bool contains_stop_byte = false;
-
-	for (int i = 0; i < bytes_read; i++) {
-		if (sat->rx_buf_receive_ptr[i] == ASTRONODE_S_END_BYTE) {
-			contains_stop_byte = true;
-			/* stop byte should be last received byte */
-			if (i != bytes_read - 1) {
-				LOG_WRN("Stop byte was received but satelite module send "
-					"additional data after stop byte!");
-			}
-			break;
-		}
-	}
-
-	sat->rx_buf_receive_ptr += bytes_read;
-	sat->rx_buf_len += bytes_read;
-
-	LOG_DBG("Received %d bytes from satelite module. stop_byte=%d, "
-		"remaining_buf_size=%d",
-		bytes_read, contains_stop_byte, RX_MESSAGE_MAX_SIZE - sat->rx_buf_len);
-
-	if (RX_MESSAGE_MAX_SIZE - sat->rx_buf_len == 0 || contains_stop_byte) {
-		int status;
-
-		if (contains_stop_byte) {
-			status = 0;
-		} else {
-			status = -ENOSPC;
-		}
-
-		ret = k_poll_signal_raise(&sat->rx_completed_signal, status);
-		if (ret < 0) {
-			LOG_ERR("Call `k_poll_signal_raise` failed with status %d!", ret);
-			k_oops();
-		}
-
-		LOG_DBG("Disabling RX interrupt");
-
-		uart_irq_rx_disable(sat->uart_dev);
-	}
-}
-
-static void ctr_sat_handle_tx_irq(struct ctr_sat *sat)
-{
-	if (sat->tx_buf_len == 0) {
-		LOG_DBG("TX completed. No bytes remains to send. Disabling TX interrupt");
-		uart_irq_tx_disable(sat->uart_dev);
-		return;
-	}
-
-	/*
-		TODO remove MIN()
-		MIN() is here only because underlaying driver (sc16is7xx) currently returns err when
-	   passed buffer is too large
-	*/
-	int bytes_sent =
-		uart_fifo_fill(sat->uart_dev, sat->tx_buf_transmit_ptr, MIN(sat->tx_buf_len, 64));
-	if (bytes_sent < 0) {
-		LOG_ERR("Call `uart_fifo_fill` failed: %d", bytes_sent);
-		return;
-	}
-
-	sat->tx_buf_transmit_ptr += bytes_sent;
-	sat->tx_buf_len -= bytes_sent;
-
-	if (bytes_sent == 0) {
-		LOG_ERR("Call `uart_fifo_fill` accepted 0 bytes!");
-	} else {
-		LOG_DBG("Written %u byte(s) to FIFO. %u bytes remains", bytes_sent,
-			sat->tx_buf_len);
-	}
-}
-
-static void ctr_sat_uart_callback(const struct device *dev, void *user_data)
-{
-	struct ctr_sat *sat = (struct ctr_sat *)user_data;
-
-	if (!uart_irq_update(sat->uart_dev)) {
-		LOG_WRN("uart_irq_update did not allow execution of UART interrupt handler. "
-			"Possible spurious interrupt");
-		return;
-	}
-
-	int is_handled = 0;
-
-	if (uart_irq_rx_ready(sat->uart_dev)) {
-		is_handled = 1;
-		ctr_sat_handle_uart_rx_irq(sat);
-	}
-
-	if (uart_irq_tx_ready(sat->uart_dev)) {
-		is_handled = 1;
-		ctr_sat_handle_tx_irq(sat);
-	}
-
-	if (!is_handled) {
-		LOG_WRN("Possible spurious UART interrupt. No TX and no RX flag was set");
-	}
-}
-
-static void ctr_sat_event_gpio_callback(const struct device *dev, struct gpio_callback *cb,
-					uint32_t pin_mask)
-{
-	struct ctr_sat *sat = CONTAINER_OF(cb, struct ctr_sat, event_cb);
-	k_sem_give(&sat->event_trig_sem);
-}
 
 static int ctr_sat_receive_command(struct ctr_sat *sat)
 {
@@ -894,6 +724,7 @@ static int ctr_sat_handle_event(struct ctr_sat *sat)
 
 static int ctr_sat_poll_intrrupt(struct ctr_sat *sat)
 {
+	/*
 	int ret;
 
 	ret = gpio_pin_get_dt(&sat->module_event_gpio);
@@ -907,6 +738,9 @@ static int ctr_sat_poll_intrrupt(struct ctr_sat *sat)
 	} else {
 		return 0;
 	}
+	*/
+
+	return 0;
 }
 
 static void ctr_sat_thread_main(struct ctr_sat *sat)
@@ -916,8 +750,7 @@ static void ctr_sat_thread_main(struct ctr_sat *sat)
 	/*
 		Thread is responsible for two tasks:
 			- Deferred processing of events (blocking tasks triggered by interrupt)
-			- Polling interrupt (needed when using over W1 and for handling edge cases
-	   of level interrupt detection using edge interrupts)
+			- Polling interrupt (needed when using over W1)
 	*/
 
 	LOG_INF("CTR_SAT thread started");
@@ -941,25 +774,13 @@ static void ctr_sat_thread_main(struct ctr_sat *sat)
 	}
 }
 
-int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg)
+int ctr_sat_init_generic(struct ctr_sat *sat)
 {
 	int ret;
 
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
-
-	if (!device_is_ready(hwcfg->uart_dev)) {
-		LOG_ERR("UART Device not ready");
-		return -ENODEV;
-	}
-
-	sat->uart_dev = hwcfg->uart_dev;
-
-	memcpy(&sat->module_reset_gpio, &hwcfg->module_reset_gpio, sizeof(sat->module_reset_gpio));
-	memcpy(&sat->module_wakeup_gpio, &hwcfg->module_wakeup_gpio,
-	       sizeof(sat->module_wakeup_gpio));
-	memcpy(&sat->module_event_gpio, &hwcfg->module_event_gpio, sizeof(sat->module_event_gpio));
 
 	sat->last_payload_id = 0;
 	sat->enqued_payloads = 0;
@@ -968,23 +789,7 @@ int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg)
 	sat->callback_user_data = NULL;
 
 	k_mutex_init(&sat->mutex);
-	k_poll_signal_init(&sat->rx_completed_signal);
-
 	k_sem_init(&sat->event_trig_sem, 0, K_SEM_MAX_LIMIT);
-
-	uart_irq_callback_user_data_set(sat->uart_dev, ctr_sat_uart_callback, sat);
-
-	ret = gpio_pin_configure_dt(&sat->module_reset_gpio, GPIO_OUTPUT | GPIO_ACTIVE_HIGH);
-	if (ret) {
-		LOG_DBG("Call `gpio_pin_configure_dt` failed %d", ret);
-		return ret;
-	}
-
-	ret = gpio_pin_set_dt(&sat->module_reset_gpio, 0);
-	if (ret) {
-		LOG_ERR("Call `gpio_pin_set_dt` failed %d", ret);
-		return ret;
-	}
 
 #if CONFIG_CTR_SAT_RESET_ON_INIT
 	ret = ctr_sat_reset(sat);
@@ -1000,24 +805,15 @@ int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg)
 		return ret;
 	}
 
-	gpio_init_callback(&sat->event_cb, ctr_sat_event_gpio_callback,
-			   BIT(sat->module_event_gpio.pin));
+	return 0;
+}
 
-	ret = gpio_add_callback(sat->module_event_gpio.port, &sat->event_cb);
-	if (ret) {
-		LOG_ERR("Call `gpio_add_callback` failed %d", ret);
-		return ret;
-	}
-
-	ret = gpio_pin_interrupt_configure_dt(&sat->module_event_gpio, GPIO_INT_EDGE_RISING);
-	if (ret) {
-		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed %d", ret);
-		return ret;
-	}
-
-	k_thread_create(&sat->thread, sat->thread_stack, CONFIG_CTR_SAT_THREAD_STACK_SIZE,
-			(k_thread_entry_t)ctr_sat_thread_main, sat, NULL, NULL,
-			K_PRIO_COOP(CONFIG_CTR_SAT_THREAD_PRIORITY), 0, K_NO_WAIT);
+int ctr_sat_start(struct ctr_sat *sat)
+{
+	sat->thread_id =
+		k_thread_create(&sat->thread, sat->thread_stack, CONFIG_CTR_SAT_THREAD_STACK_SIZE,
+				(k_thread_entry_t)ctr_sat_thread_main, sat, NULL, NULL,
+				K_PRIO_COOP(CONFIG_CTR_SAT_THREAD_PRIORITY), 0, K_NO_WAIT);
 
 	return 0;
 }

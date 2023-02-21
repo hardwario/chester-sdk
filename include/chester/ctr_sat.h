@@ -50,23 +50,24 @@ union ctr_sat_event_data {
 	struct ctr_sat_event_msg_recv_data msg_recv;
 };
 
+enum ctr_sat_pin {
+	CTR_SAT_PIN_RESET = 0,
+	CTR_SAT_PIN_WAKEUP = 1
+};
+
 typedef void (*ctr_sat_event_cb)(enum ctr_sat_event event, union ctr_sat_event_data *data,
 				 void *user_data);
 
 struct ctr_sat {
-	const struct device *uart_dev;
 
-	struct k_poll_signal rx_completed_signal;
 	atomic_t is_started;
 	struct k_mutex mutex;
 
 	uint8_t tx_buf[TX_MESSAGE_MAX_SIZE];
 	size_t tx_buf_len;
-	uint8_t *tx_buf_transmit_ptr;
 
 	uint8_t rx_buf[RX_MESSAGE_MAX_SIZE];
 	size_t rx_buf_len;
-	uint8_t *rx_buf_receive_ptr;
 
 	ctr_sat_event_cb callback;
 	void *callback_user_data;
@@ -75,37 +76,42 @@ struct ctr_sat {
 	uint16_t enqued_payloads;
 	uint16_t last_payload_id;
 
-	struct gpio_dt_spec module_reset_gpio;
-	struct gpio_dt_spec module_wakeup_gpio;
-	struct gpio_dt_spec module_event_gpio;
+	union {
+		struct ctr_sat_syscon {
+			struct k_poll_signal rx_completed_signal;
 
-	struct gpio_callback event_cb;
+			uint8_t *tx_buf_transmit_ptr;
+			uint8_t *rx_buf_receive_ptr;
+
+			const struct device *uart_dev;
+			struct gpio_dt_spec module_reset_gpio;
+			struct gpio_dt_spec module_wakeup_gpio;
+			struct gpio_dt_spec module_event_gpio;
+
+			struct gpio_callback event_cb;
+		} syscon;
+
+		struct ctr_sat_w1 {
+			uint64_t serial_number;
+			const struct device *ds28e17_dev;
+
+			uint8_t gpio_state;
+		} w1;
+	} hw_abstraction;
+
+	int (*ctr_sat_uart_write_read)(struct ctr_sat *sat);
+	int (*ctr_sat_gpio_write)(struct ctr_sat *sat, enum ctr_sat_pin pin, bool value);
 
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_CTR_SAT_THREAD_STACK_SIZE);
 	struct k_thread thread;
+	k_tid_t thread_id;
 	struct k_sem event_trig_sem;
 };
 
-struct ctr_sat_hwcfg {
-	const struct device *uart_dev;
-	const struct gpio_dt_spec module_reset_gpio;
-	const struct gpio_dt_spec module_wakeup_gpio;
-	const struct gpio_dt_spec module_event_gpio;
-};
-
-#define CTR_SAT_HWCONFIG_SYSCON                                                                    \
-	{                                                                                          \
-		.uart_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_sc16is740_syscon)),                  \
-		.module_reset_gpio =                                                               \
-			GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_reset_gpios),          \
-		.module_wakeup_gpio =                                                              \
-			GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_wakeup_gpios),         \
-		.module_event_gpio =                                                               \
-			GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_event_gpios),          \
-	}
-
 int ctr_sat_set_callback(struct ctr_sat *sat, ctr_sat_event_cb user_cb, void *user_data);
-int ctr_sat_start(struct ctr_sat *sat, const struct ctr_sat_hwcfg *hwcfg);
+int ctr_sat_v1_init_syscon(struct ctr_sat *sat);
+int ctr_sat_v1_init_w1(struct ctr_sat *sat);
+int ctr_sat_start(struct ctr_sat *sat);
 int ctr_sat_stop(struct ctr_sat *sat);
 int ctr_sat_send_message(struct ctr_sat *sat, ctr_sat_msg_handle *msg_handle, const void *buf,
 			 size_t len);
