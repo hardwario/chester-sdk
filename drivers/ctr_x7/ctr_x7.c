@@ -300,8 +300,8 @@ static int ctr_x7_measure_(const struct device *dev,
 
 	saadc_channels[0].channel_index = 0;
 	saadc_channels[0].channel_config = m_channel_config_differential;
-	saadc_channels[0].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN5;
-	saadc_channels[0].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN1;
+	saadc_channels[0].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN1;
+	saadc_channels[0].pin_n = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN5;
 
 	saadc_channels[1].channel_index = 1;
 	saadc_channels[1].channel_config = m_channel_config_single_ended;
