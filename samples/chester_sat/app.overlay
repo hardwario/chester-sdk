@@ -6,3 +6,11 @@
 &i2c0 {
 	label = "LBLI2C0";
 };
+
+&ctr_v1_tca9534a_syscon {
+	status = "disabled";
+};
+
+&ctr_v1_sc16is740_syscon {
+	status = "disabled";
+};

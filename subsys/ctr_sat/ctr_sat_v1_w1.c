@@ -40,8 +40,16 @@ static const struct device *m_dev_ds2484 = DEVICE_DT_GET(DT_NODELABEL(ds2484));
 #define SC16IS7XX_REG_SHIFT	3
 #define SC16IS7XX_REG_THR	0x00
 #define SC16IS7XX_REG_RHR	0x00
+#define SC16IS7XX_REG_FCR	0x02
+#define SC16IS7XX_REG_LCR	0x03
+#define SC16IS7XX_REG_MCR	0x04
 #define SC16IS7XX_REG_TXLVL	0x08
 #define SC16IS7XX_REG_RXLVL	0x09
+#define SC16IS7XX_REG_EFCR	0x0f
+#define SC16IS7XX_REG_DLL	0x00
+#define SC16IS7XX_REG_DLH	0x01
+
+#define SC16IS7XX_LCR_MAGIC 0xbf
 
 #define TCA9534_I2C_ADDR	   0x38
 #define TCA9534_REG_OUTPUT	   0x01
@@ -179,6 +187,40 @@ static int ctr_sat_v1_init_w1_pca9534(struct ctr_sat *sat)
 
 static int ctr_sat_v1_init_w1_sc16is740(struct ctr_sat *sat)
 {
+	int ret;
+	struct ctr_sat_w1 *sat_w1 = &sat->hw_abstraction.w1;
+
+	struct reg_write_op {
+		uint8_t reg;
+		uint8_t val;
+	};
+
+	struct reg_write_op transactions[] = {
+		{.reg = SC16IS7XX_REG_LCR, .val = SC16IS7XX_LCR_MAGIC},
+		{.reg = SC16IS7XX_REG_FCR, .val = 0x10},
+		{.reg = SC16IS7XX_REG_LCR, .val = 0},
+		{.reg = SC16IS7XX_REG_EFCR, .val = 0},
+		{.reg = SC16IS7XX_REG_FCR, .val = 0x07},
+		{.reg = SC16IS7XX_REG_LCR, .val = 0x03},
+		{.reg = SC16IS7XX_REG_MCR, .val = 0},
+		{.reg = SC16IS7XX_REG_LCR, .val = 0x83},
+		{.reg = SC16IS7XX_REG_DLL, .val = 0x60},
+		{.reg = SC16IS7XX_REG_DLH, .val = 0x00},
+		{.reg = SC16IS7XX_REG_LCR, .val = 0x3},
+	};
+	struct reg_write_op *transactions_end = transactions + ARRAY_SIZE(transactions);
+
+	for (struct reg_write_op *i = transactions; i < transactions_end; i++) {
+		uint8_t buf[2];
+		buf[0] = i->reg << SC16IS7XX_REG_SHIFT;
+		buf[1] = i->val;
+		ret = ds28e17_i2c_write(sat_w1->ds28e17_dev, SC16IS740_I2C_ADDR, buf, sizeof(buf));
+		if (ret) {
+			LOG_ERR("Call `ds28e17_i2c_write` failed: %d.", ret);
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -217,7 +259,7 @@ static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat)
 
 	while (sat->tx_buf_len) {
 		size_t to_copy = MIN(sat->tx_buf_len, BULK_SIZE);
-		memcpy(tx_buf, tx_rd_ptr, to_copy);
+		memcpy(tx_buf + 1, tx_rd_ptr, to_copy);
 
 		ret = ctr_sat_w1_wait_for_buffer_space(sat, to_copy);
 		if (ret) {
@@ -486,22 +528,6 @@ static int ctr_sat_w1_scan_callback(struct w1_rom rom, void *user_data)
 	m_w1_shields[m_w1_shields_count].serial_number = serial_number;
 
 	LOG_DBG("Registered serial number: %llu", serial_number);
-
-	LOG_DBG("XXXX %p", m_w1_shields[m_w1_shields_count].ds28e17_dev);
-
-	LOG_DBG("AAA");
-	k_sleep(K_MSEC(2000));
-
-	reg = SC16IS7XX_REG_TXLVL << SC16IS7XX_REG_SHIFT;
-	ret = ds28e17_i2c_write_read(m_w1_shields[m_w1_shields_count].ds28e17_dev,
-				     SC16IS740_I2C_ADDR, &reg, 1, &val, 1);
-	if (ret) {
-		LOG_ERR("Call `ds28e17_i2c_write_read` failed: %d", ret);
-		return ret;
-	}
-
-	k_sleep(K_MSEC(2000));
-	LOG_DBG("BBB");
 
 	m_w1_shields_count++;
 

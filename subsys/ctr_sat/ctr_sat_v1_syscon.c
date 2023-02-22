@@ -49,9 +49,12 @@ int ctr_sat_v1_init_syscon(struct ctr_sat *sat)
 		GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_reset_gpios);
 	struct gpio_dt_spec wakeup_spec =
 		GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_wakeup_gpios);
+	struct gpio_dt_spec event_spec =
+		GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_event_gpios);
 
 	memcpy(&sat_syscon->module_reset_gpio, &reset_spec, sizeof(struct gpio_dt_spec));
 	memcpy(&sat_syscon->module_wakeup_gpio, &wakeup_spec, sizeof(struct gpio_dt_spec));
+	memcpy(&sat_syscon->module_event_gpio, &event_spec, sizeof(struct gpio_dt_spec));
 
 	k_poll_signal_init(&sat_syscon->rx_completed_signal);
 
@@ -81,6 +84,9 @@ int ctr_sat_v1_init_syscon(struct ctr_sat *sat)
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed %d", ret);
 		return ret;
 	}
+
+	sat->ctr_sat_uart_write_read = ctr_sat_v1_syscon_uart_write_read;
+	sat->ctr_sat_gpio_write = ctr_sat_v1_syscon_gpio_write;
 
 	return ctr_sat_init_generic(sat);
 }
