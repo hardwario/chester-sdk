@@ -60,6 +60,15 @@ deploy_clime() {
     hardwario chester app fw upload --name "hio-chester-clime-1w" --version $FW_VERSION
 
     #
+    # Build CHESTER Clime 1WH
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_s2)*/, "set(SHIELD ctr_lte ctr_ds18b20 ctr_s2)"); print }' CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Clime 1WH" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-clime-1wh" --version $FW_VERSION
+
+    #
     # Build CHESTER Clime RTD
     #
     cp CMakeLists.txt.bak CMakeLists.txt
@@ -301,7 +310,7 @@ deploy_scale() {
     cd ..
 }
 
-# deploy_clime "v2.0.0"
+deploy_clime "v2.1.0"
 # deploy_push "v2.0.0"
 # deploy_counter "v2.0.0"
 # deploy_input "v2.0.0"

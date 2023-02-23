@@ -2,6 +2,7 @@
 #include "app_data.h"
 #include "app_send.h"
 #include "app_sensor.h"
+#include "app_work.h"
 
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
@@ -256,6 +257,91 @@ int app_sensor_iaq_clear(void)
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 
+static void append_hygro_event(enum app_data_hygro_event_type type, float value)
+{
+	int ret;
+	struct app_data_hygro *hygro = &g_app_data.hygro;
+
+	if (hygro->event_count < APP_DATA_MAX_HYGRO_EVENTS) {
+		struct app_data_hygro_event *event = &hygro->events[hygro->event_count];
+
+		ret = ctr_rtc_get_ts(&event->timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			return;
+		}
+
+		event->type = type;
+		event->value = value;
+		hygro->event_count++;
+
+		LOG_INF("Event count: %d", hygro->event_count);
+	} else {
+		LOG_WRN("Measurement full");
+	}
+}
+
+static void check_hygro_temperature(float temperature)
+{
+	struct app_data_hygro *hygro = &g_app_data.hygro;
+
+	bool report_hi_deactivated = false;
+	bool report_hi_activated = false;
+
+	float thr_hi = g_app_config.hygro_t_alarm_hi_thr;
+	float hst_hi = g_app_config.hygro_t_alarm_hi_hst;
+
+	if (hygro->alarm_hi_active) {
+		if (temperature < thr_hi - hst_hi) {
+			hygro->alarm_hi_active = false;
+			report_hi_deactivated = true;
+		}
+	} else {
+		if (temperature > thr_hi + hst_hi) {
+			hygro->alarm_hi_active = true;
+			report_hi_activated = true;
+		}
+	}
+
+	if (g_app_config.hygro_t_alarm_hi_report && report_hi_deactivated) {
+		append_hygro_event(APP_DATA_HYGRO_EVENT_TYPE_ALARM_HI_DEACTIVATED, temperature);
+		app_work_send_with_rate_limit();
+	}
+
+	if (g_app_config.hygro_t_alarm_hi_report && report_hi_activated) {
+		append_hygro_event(APP_DATA_HYGRO_EVENT_TYPE_ALARM_HI_ACTIVATED, temperature);
+		app_work_send_with_rate_limit();
+	}
+
+	bool report_lo_deactivated = false;
+	bool report_lo_activated = false;
+
+	float thr_lo = g_app_config.hygro_t_alarm_lo_thr;
+	float hst_lo = g_app_config.hygro_t_alarm_lo_hst;
+
+	if (hygro->alarm_lo_active) {
+		if (temperature > thr_lo + hst_lo) {
+			hygro->alarm_lo_active = false;
+			report_lo_deactivated = true;
+		}
+	} else {
+		if (temperature < thr_lo - hst_lo) {
+			hygro->alarm_lo_active = true;
+			report_lo_activated = true;
+		}
+	}
+
+	if (g_app_config.hygro_t_alarm_lo_report && report_lo_deactivated) {
+		append_hygro_event(APP_DATA_HYGRO_EVENT_TYPE_ALARM_LO_DEACTIVATED, temperature);
+		app_work_send_with_rate_limit();
+	}
+
+	if (g_app_config.hygro_t_alarm_lo_report && report_lo_activated) {
+		append_hygro_event(APP_DATA_HYGRO_EVENT_TYPE_ALARM_LO_ACTIVATED, temperature);
+		app_work_send_with_rate_limit();
+	}
+}
+
 int app_sensor_hygro_sample(void)
 {
 	int ret;
@@ -280,6 +366,7 @@ int app_sensor_hygro_sample(void)
 		g_app_data.hygro.samples_temperature[g_app_data.hygro.sample_count] = temperature;
 		g_app_data.hygro.samples_humidity[g_app_data.hygro.sample_count] = humidity;
 		g_app_data.hygro.sample_count++;
+		check_hygro_temperature(temperature);
 		app_data_unlock();
 
 		LOG_INF("Sample count: %d", g_app_data.hygro.sample_count);
@@ -336,6 +423,7 @@ int app_sensor_hygro_clear(void)
 {
 	app_data_lock();
 	g_app_data.hygro.measurement_count = 0;
+	g_app_data.hygro.event_count = 0;
 	app_data_unlock();
 
 	return 0;

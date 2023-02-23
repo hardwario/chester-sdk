@@ -22,12 +22,6 @@
 
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_Z)
-static atomic_t m_report_rate_hourly_counter = 0;
-static atomic_t m_report_rate_timer_is_active = false;
-static atomic_t m_report_delay_timer_is_active = false;
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
-
 #if defined(CONFIG_SHIELD_CTR_LRW)
 
 void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param)
@@ -180,50 +174,6 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 
 #endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
-
-static void report_delay_timer_handler(struct k_timer *timer)
-{
-	app_work_send();
-	atomic_inc(&m_report_rate_hourly_counter);
-	atomic_set(&m_report_delay_timer_is_active, false);
-}
-
-static K_TIMER_DEFINE(m_report_delay_timer, report_delay_timer_handler, NULL);
-
-static void report_rate_timer_handler(struct k_timer *timer)
-{
-	atomic_set(&m_report_rate_hourly_counter, 0);
-	atomic_set(&m_report_rate_timer_is_active, false);
-}
-
-static K_TIMER_DEFINE(m_report_rate_timer, report_rate_timer_handler, NULL);
-
-static void send_with_rate_limit(void)
-{
-	if (!atomic_get(&m_report_rate_timer_is_active)) {
-		k_timer_start(&m_report_rate_timer, K_HOURS(1), K_NO_WAIT);
-		atomic_set(&m_report_rate_timer_is_active, true);
-	}
-
-	LOG_INF("Hourly counter state: %d/%d", (int)atomic_get(&m_report_rate_hourly_counter),
-		g_app_config.event_report_rate);
-
-	if (atomic_get(&m_report_rate_hourly_counter) <= g_app_config.event_report_rate) {
-		if (!atomic_set(&m_report_delay_timer_is_active, true)) {
-			LOG_INF("Starting delay timer");
-			k_timer_start(&m_report_delay_timer,
-				      K_SECONDS(g_app_config.event_report_delay), K_NO_WAIT);
-		} else {
-			LOG_INF("Delay timer already running");
-		}
-	} else {
-		LOG_WRN("Hourly counter exceeded");
-	}
-}
-
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
-
 #if defined(CONFIG_SHIELD_CTR_S1)
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data)
 {
@@ -361,12 +311,12 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, 
 	LOG_INF("Backup: %d", (int)backup->line_present);
 
 	if (g_app_config.backup_report_connected && backup_event == CTR_Z_EVENT_DC_CONNECTED) {
-		send_with_rate_limit();
+		app_work_send_with_rate_limit();
 	}
 
 	if (g_app_config.backup_report_disconnected &&
 	    backup_event == CTR_Z_EVENT_DC_DISCONNECTED) {
-		send_with_rate_limit();
+		app_work_send_with_rate_limit();
 	}
 
 	app_data_unlock();

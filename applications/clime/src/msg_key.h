@@ -66,6 +66,7 @@ enum msg_key {
 	MSG_KEY_SYSTEM = 55,
 	MSG_KEY_RTD_THERMOMETER = 56,
 	MSG_KEY_CHANNEL = 57,
+	MSG_KEY_HYGRO_EVENTS = 58,
 };
 
 #ifdef __cplusplus

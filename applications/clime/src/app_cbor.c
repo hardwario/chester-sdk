@@ -578,6 +578,31 @@ static int encode(zcbor_state_t *zs)
 		{
 			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
+			zcbor_uint32_put(zs, MSG_KEY_HYGRO_EVENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				if (g_app_data.hygro.event_count) {
+					/* TSO absolute timestamp */
+					int64_t timestamp_abs =
+						g_app_data.hygro.events[0].timestamp;
+					zcbor_int64_put(zs, timestamp_abs);
+
+					for (int i = 0; i < g_app_data.hygro.event_count; i++) {
+						/* TSO offset timestamp */
+						zcbor_int64_put(
+							zs, g_app_data.hygro.events[i].timestamp -
+								    timestamp_abs);
+						zcbor_uint32_put(zs,
+								 g_app_data.hygro.events[i].type);
+						zcbor_int32_put(zs,
+								g_app_data.hygro.events[i].value *
+									100.f);
+					}
+				}
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
 			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);

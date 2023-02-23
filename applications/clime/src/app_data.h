@@ -14,6 +14,7 @@
 #define APP_DATA_MAX_MEASUREMENTS  32
 #define APP_DATA_MAX_SAMPLES	   32
 #define APP_DATA_MAX_BACKUP_EVENTS 32
+#define APP_DATA_MAX_HYGRO_EVENTS  32
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 #define APP_DATA_W1_THERM_COUNT	      10
@@ -53,6 +54,7 @@ struct app_data_aggreg {
 	float mdn;
 };
 
+#if defined(CONFIG_SHIELD_CTR_S1)
 struct app_data_iaq_measurement {
 	struct app_data_aggreg temperature;
 	struct app_data_aggreg humidity;
@@ -82,6 +84,22 @@ struct app_data_iaq {
 
 	int64_t timestamp;
 };
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+
+#if defined(CONFIG_SHIELD_CTR_S2)
+
+enum app_data_hygro_event_type {
+	APP_DATA_HYGRO_EVENT_TYPE_ALARM_HI_ACTIVATED,
+	APP_DATA_HYGRO_EVENT_TYPE_ALARM_HI_DEACTIVATED,
+	APP_DATA_HYGRO_EVENT_TYPE_ALARM_LO_ACTIVATED,
+	APP_DATA_HYGRO_EVENT_TYPE_ALARM_LO_DEACTIVATED,
+};
+
+struct app_data_hygro_event {
+	int64_t timestamp;
+	enum app_data_hygro_event_type type;
+	float value;
+};
 
 struct app_data_hygro_measurement {
 	struct app_data_aggreg temperature;
@@ -92,6 +110,12 @@ struct app_data_hygro {
 	float last_sample_temperature;
 	float last_sample_humidity;
 
+	int event_count;
+	struct app_data_hygro_event events[APP_DATA_MAX_HYGRO_EVENTS];
+
+	bool alarm_hi_active;
+	bool alarm_lo_active;
+
 	int sample_count;
 	float samples_temperature[APP_DATA_MAX_SAMPLES];
 	float samples_humidity[APP_DATA_MAX_SAMPLES];
@@ -101,6 +125,7 @@ struct app_data_hygro {
 
 	int64_t timestamp;
 };
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 struct app_data_w1_therm_measurement {

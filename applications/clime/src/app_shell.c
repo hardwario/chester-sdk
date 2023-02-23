@@ -51,6 +51,13 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)                                      \
+	SHELL_CMD_ARG(_name_d, NULL, _help, app_config_cmd_config_##_name_u, 1, 1),
+#define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help)                                    \
+	SHELL_CMD_ARG(_name_d, NULL, _help, app_config_cmd_config_##_name_u, 1, 1),
+#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help)                                                 \
+	SHELL_CMD_ARG(_name_d, NULL, _help, app_config_cmd_config_##_name_u, 1, 1),
+
 /* clang-format off */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -60,35 +67,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "List current configuration.",
 	              app_config_cmd_config_show, 1, 0),
 
-	SHELL_CMD_ARG(interval-sample, NULL,
-	              "Get/Set sample interval in seconds (format: <1-86400>).",
-	              app_config_cmd_config_interval_sample, 1, 1),
-
-	SHELL_CMD_ARG(interval-aggreg, NULL,
-	              "Get/Set aggregate interval in seconds (format: <1-86400>).",
-	              app_config_cmd_config_interval_aggreg, 1, 1),
-
-	SHELL_CMD_ARG(interval-report, NULL,
-	              "Get/Set report interval in seconds (format: <30-86400>).",
-	              app_config_cmd_config_interval_report, 1, 1),
-
-#if defined(CONFIG_SHIELD_CTR_Z)
-	SHELL_CMD_ARG(event-report-delay, NULL,
-		      "Get/Set event report delay in seconds (format: <1-86400>).",
-		      app_config_cmd_config_event_report_delay, 1, 1),
-
-	SHELL_CMD_ARG(event-report-rate, NULL,
-		      "Get/Set event report rate in reports per hour (format: <1-3600>).",
-		      app_config_cmd_config_event_report_rate, 1, 1),
-
-	SHELL_CMD_ARG(backup-report-connected, NULL,
-		      "Get/Set report when backup is active (format: true, false).",
-		      app_config_cmd_config_backup_report_connected, 1, 1),
-
-	SHELL_CMD_ARG(backup-report-disconnected, NULL,
-		      "Get/Set report when backup is inactive (format: true, false).",
-		      app_config_cmd_config_backup_report_disconnected, 1, 1),
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+	CONFIG_PARAM_LIST()
 
 	SHELL_SUBCMD_SET_END
 );
@@ -108,3 +87,7 @@ SHELL_CMD_REGISTER(sample, NULL, "Sample immediately.", cmd_sample);
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
 
 /* clang-format on */
+
+#undef CONFIG_PARAM_INT
+#undef CONFIG_PARAM_FLOAT
+#undef CONFIG_PARAM_BOOL

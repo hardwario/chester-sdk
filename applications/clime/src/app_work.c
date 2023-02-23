@@ -433,3 +433,50 @@ void app_work_send(void)
 {
 	k_timer_start(&m_send_timer, K_NO_WAIT, K_FOREVER);
 }
+
+#if defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z)
+static atomic_t m_report_rate_hourly_counter = 0;
+static atomic_t m_report_rate_timer_is_active = false;
+static atomic_t m_report_delay_timer_is_active = false;
+
+static void report_delay_timer_handler(struct k_timer *timer)
+{
+	app_work_send();
+	atomic_inc(&m_report_rate_hourly_counter);
+	atomic_set(&m_report_delay_timer_is_active, false);
+}
+
+static K_TIMER_DEFINE(m_report_delay_timer, report_delay_timer_handler, NULL);
+
+static void report_rate_timer_handler(struct k_timer *timer)
+{
+	atomic_set(&m_report_rate_hourly_counter, 0);
+	atomic_set(&m_report_rate_timer_is_active, false);
+}
+
+static K_TIMER_DEFINE(m_report_rate_timer, report_rate_timer_handler, NULL);
+
+void app_work_send_with_rate_limit(void)
+{
+	if (!atomic_get(&m_report_rate_timer_is_active)) {
+		k_timer_start(&m_report_rate_timer, K_HOURS(1), K_NO_WAIT);
+		atomic_set(&m_report_rate_timer_is_active, true);
+	}
+
+	LOG_INF("Hourly counter state: %d/%d", (int)atomic_get(&m_report_rate_hourly_counter),
+		g_app_config.event_report_rate);
+
+	if (atomic_get(&m_report_rate_hourly_counter) <= g_app_config.event_report_rate) {
+		if (!atomic_set(&m_report_delay_timer_is_active, true)) {
+			LOG_INF("Starting delay timer");
+			k_timer_start(&m_report_delay_timer,
+				      K_SECONDS(g_app_config.event_report_delay), K_NO_WAIT);
+		} else {
+			LOG_INF("Delay timer already running");
+		}
+	} else {
+		LOG_WRN("Hourly counter exceeded");
+	}
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) */

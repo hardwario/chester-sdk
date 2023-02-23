@@ -106,3 +106,15 @@
 - system:
 - rtd_thermometer:
 - channel:
+- hygro_events:
+  - key: "events"
+  - tso:
+    - type:
+      - enum:
+        - alarm_hi_activated
+        - alarm_hi_deactivated
+        - alarm_lo_activated
+        - alarm_lo_deactivated
+    - value:
+      - div: 100
+      - fpp: 2
