@@ -292,12 +292,12 @@ static void check_hygro_temperature(float temperature)
 	float hst_hi = g_app_config.hygro_t_alarm_hi_hst;
 
 	if (hygro->alarm_hi_active) {
-		if (temperature < thr_hi - hst_hi) {
+		if (temperature < thr_hi - hst_hi / 2.f) {
 			hygro->alarm_hi_active = false;
 			report_hi_deactivated = true;
 		}
 	} else {
-		if (temperature > thr_hi + hst_hi) {
+		if (temperature > thr_hi + hst_hi / 2.f) {
 			hygro->alarm_hi_active = true;
 			report_hi_activated = true;
 		}
@@ -320,12 +320,12 @@ static void check_hygro_temperature(float temperature)
 	float hst_lo = g_app_config.hygro_t_alarm_lo_hst;
 
 	if (hygro->alarm_lo_active) {
-		if (temperature > thr_lo + hst_lo) {
+		if (temperature > thr_lo + hst_lo / 2.f) {
 			hygro->alarm_lo_active = false;
 			report_lo_deactivated = true;
 		}
 	} else {
-		if (temperature < thr_lo - hst_lo) {
+		if (temperature < thr_lo - hst_lo / 2.f) {
 			hygro->alarm_lo_active = true;
 			report_lo_activated = true;
 		}
