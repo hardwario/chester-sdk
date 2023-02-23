@@ -1,0 +1,13 @@
+&ctr_x0_a {
+	status = "okay";
+
+	ctr_meteo_a: ctr_meteo_a {
+		compatible = "hardwario,ctr-meteo";
+		slot = "A";
+		status = "okay";
+	};
+};
+
+&ctr_x0_pcal6416a_a {
+	status = "okay";
+};

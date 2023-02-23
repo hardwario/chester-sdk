@@ -1,0 +1,21 @@
+config CTR_METEO
+	bool "HARDWARIO CHESTER Meteo Driver"
+	select CTR_ADC
+	select CTR_EDGE
+	select GPIO
+	select I2C
+	select REQUIRES_FULL_LIBC
+
+if CTR_METEO
+
+module = CTR_METEO
+module-str = ctr_meteo
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_METEO_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+endif # CTR_METEO

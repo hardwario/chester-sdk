@@ -1,0 +1,14 @@
+description: HARDWARIO CHESTER-Meteo
+
+compatible: "hardwario,ctr-meteo"
+
+include: i2c-device.yaml
+
+properties:
+  slot:
+    type: string
+    required: true
+    description: Slot position (A or B) on CHESTER mainboard
+    enum:
+      - "A"
+      - "B"
