@@ -5,12 +5,14 @@
 extern "C" {
 #endif
 
-#include <stddef.h>
-#include <stdint.h>
-
+/* Zephyr includes */
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/timeutil.h>
+
+/* Standard includes */
+#include <stddef.h>
+#include <stdint.h>
 
 #if CONFIG_CTR_SAT_USE_WIFI_DEVKIT
 // Longest request: WIF_W (194 bytes)
@@ -106,7 +108,7 @@ struct ctr_sat {
 	struct k_thread thread;
 	k_tid_t thread_id;
 	atomic_t thread_cancelation_requested;
-	k_sem thread_cancelation_complete;
+	struct k_sem thread_cancelation_complete;
 	struct k_sem event_trig_sem;
 };
 

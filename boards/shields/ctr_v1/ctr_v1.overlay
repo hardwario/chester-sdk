@@ -21,7 +21,7 @@
 
 		ctr_v1_syscon: ctr_v1_syscon {
 			compatible = "hardwario,ctr-v1";
-			status = "okay";
+			status = "disabled";
 			modem-reset-gpios = <&ctr_v1_tca9534a_syscon 0 GPIO_ACTIVE_LOW>;
 			modem-wakeup-gpios = <&ctr_v1_tca9534a_syscon 1 GPIO_ACTIVE_HIGH>;
 			modem-event-gpios = <&ctr_v1_tca9534a_syscon 2 GPIO_ACTIVE_HIGH>;

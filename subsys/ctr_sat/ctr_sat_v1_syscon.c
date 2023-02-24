@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-LOG_MODULE_REGISTER(ctr_sat_syscon, CONFIG_CTR_SAT_LOG_LEVEL);
+LOG_MODULE_REGISTER(ctr_sat_v1_syscon, CONFIG_CTR_SAT_LOG_LEVEL);
 
 static void ctr_sat_uart_callback(const struct device *dev, void *user_data);
 static void ctr_sat_event_gpio_callback(const struct device *dev, struct gpio_callback *cb,
@@ -74,7 +74,7 @@ int ctr_sat_v1_init_syscon(struct ctr_sat *sat)
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&sat_syscon->module_event_gpio, GPIO_INT_EDGE_RISING);
+	ret = gpio_pin_interrupt_configure_dt(&sat_syscon->event_gpio, GPIO_INT_EDGE_RISING);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 		return ret;
@@ -150,9 +150,9 @@ int ctr_sat_v1_syscon_gpio_write(struct ctr_sat *sat, enum ctr_sat_pin pin, bool
 	struct ctr_sat_syscon *sat_syscon = &sat->hw_abstraction.syscon;
 
 	if (pin == CTR_SAT_PIN_RESET) {
-		return gpio_pin_set_dt(&sat_syscon->module_reset_gpio, value);
+		return gpio_pin_set_dt(&sat_syscon->reset_gpio, value);
 	} else if (pin == CTR_SAT_PIN_WAKEUP) {
-		return gpio_pin_set_dt(&sat_syscon->module_wakeup_gpio, value);
+		return gpio_pin_set_dt(&sat_syscon->wakeup_gpio, value);
 	} else {
 		return -EINVAL;
 	}

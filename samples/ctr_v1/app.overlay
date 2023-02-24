@@ -5,3 +5,7 @@
 &ctr_v1_sc16is740_syscon {
 	status = "disabled";
 };
+
+&ctr_v1_syscon {
+	status = "disabled";
+};

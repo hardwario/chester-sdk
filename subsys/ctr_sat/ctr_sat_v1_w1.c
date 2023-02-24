@@ -1,5 +1,6 @@
 /* CHESTER includes */
 #include "astronode_s.h"
+#include "ctr_sat_v1_internal.h"
 
 #include <chester/ctr_sat.h>
 #include <chester/ctr_w1.h>
@@ -17,7 +18,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-LOG_MODULE_REGISTER(ctr_sat_w1, CONFIG_CTR_SAT_LOG_LEVEL);
+LOG_MODULE_REGISTER(ctr_sat_v1_w1, CONFIG_CTR_SAT_LOG_LEVEL);
 
 static struct ctr_w1 m_w1;
 
@@ -55,16 +56,14 @@ static const struct device *m_dev_ds2484 = DEVICE_DT_GET(DT_NODELABEL(ds2484));
 #define TCA9534_EVENT_PIN_BIT	   BIT(2)
 #define TCA9534_RESET_UART_PIN_BIT BIT(3)
 
-int ctr_sat_init_generic(struct ctr_sat *sat);
-
-static int ctr_sat_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_requirement);
-static int ctr_sat_w1_get_rx_fifo_level(struct ctr_sat *sat, size_t *level);
-static int ctr_sat_v1_w1_update_gpio_output(struct ctr_sat *sat);
+static int ctr_sat_w1_scan(void);
 static int ctr_sat_v1_init_w1_pca9534(struct ctr_sat *sat);
 static int ctr_sat_v1_init_w1_sc16is740(struct ctr_sat *sat);
-static int ctr_sat_w1_scan(void);
+static int ctr_sat_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_requirement);
+static int ctr_sat_w1_get_rx_fifo_level(struct ctr_sat *sat, size_t *level);
 static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat);
 static int ctr_sat_v1_w1_gpio_write(struct ctr_sat *sat, enum ctr_sat_pin pin, bool value);
+static int ctr_sat_v1_w1_update_gpio_output(struct ctr_sat *sat);
 
 int ctr_sat_v1_init_w1(struct ctr_sat *sat)
 {
