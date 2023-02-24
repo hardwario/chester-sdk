@@ -85,14 +85,14 @@ static int compose(struct ctr_buf *buf)
 		if (isnan(g_app_data.system_voltage_rest)) {
 			ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
 		} else {
-			uint16_t val = g_app_data.system_voltage_rest * 1000.f;
+			uint16_t val = g_app_data.system_voltage_rest;
 			ret |= ctr_buf_append_u16(buf, val);
 		}
 
 		if (isnan(g_app_data.system_voltage_load)) {
 			ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
 		} else {
-			uint16_t val = g_app_data.system_voltage_load * 1000.f;
+			uint16_t val = g_app_data.system_voltage_load;
 			ret |= ctr_buf_append_u16(buf, val);
 		}
 
