@@ -35,15 +35,15 @@ void main(void)
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: s8");
 
 	ctr_buf_reset(&buf);
-	ctr_buf_append_s16(&buf, 0x0102);
+	ctr_buf_append_s16_le(&buf, 0x0102);
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: s16");
 
 	ctr_buf_reset(&buf);
-	ctr_buf_append_s32(&buf, 0x01020304);
+	ctr_buf_append_s32_le(&buf, 0x01020304);
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: s32");
 
 	ctr_buf_reset(&buf);
-	ctr_buf_append_s64(&buf, 0x0102030405060708);
+	ctr_buf_append_s64_le(&buf, 0x0102030405060708);
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: s64");
 
 	ctr_buf_reset(&buf);
@@ -51,18 +51,18 @@ void main(void)
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: u8");
 
 	ctr_buf_reset(&buf);
-	ctr_buf_append_u16(&buf, 0x0102);
+	ctr_buf_append_u16_le(&buf, 0x0102);
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: u16");
 
 	ctr_buf_reset(&buf);
-	ctr_buf_append_u32(&buf, 0x01020304);
+	ctr_buf_append_u32_le(&buf, 0x01020304);
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: u32");
 
 	ctr_buf_reset(&buf);
-	ctr_buf_append_u64(&buf, 0x0102030405060708);
+	ctr_buf_append_u64_le(&buf, 0x0102030405060708);
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: u64");
 
 	ctr_buf_reset(&buf);
-	ctr_buf_append_float(&buf, 1.234f);
+	ctr_buf_append_float_le(&buf, 1.234f);
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: float");
 }

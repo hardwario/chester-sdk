@@ -634,8 +634,8 @@ static int compose(struct ctr_buf *buf, const struct data *data)
 
 	int64_t timestamp = k_uptime_get();
 
-	ret |= ctr_buf_append_u32(buf, timestamp / 1000);
-	ret |= ctr_buf_append_u16(buf, timestamp % 1000);
+	ret |= ctr_buf_append_u32_le(buf, timestamp / 1000);
+	ret |= ctr_buf_append_u16_le(buf, timestamp % 1000);
 
 	uint32_t flags = 0;
 
@@ -660,7 +660,7 @@ static int compose(struct ctr_buf *buf, const struct data *data)
 	flags |= data->states.line_present ? 0x40000000 : 0;
 	flags |= data->errors.line_present ? 0x80000000 : 0;
 
-	ret |= ctr_buf_append_u32(buf, flags);
+	ret |= ctr_buf_append_u32_le(buf, flags);
 
 	if (data->errors.orientation) {
 		ret |= ctr_buf_append_u8(buf, 0x00);
@@ -669,17 +669,17 @@ static int compose(struct ctr_buf *buf, const struct data *data)
 	}
 
 	if (data->errors.int_temperature) {
-		ret |= ctr_buf_append_s16(buf, 0x7fff);
+		ret |= ctr_buf_append_s16_le(buf, 0x7fff);
 	} else {
 		int16_t val = data->states.int_temperature * 100.f;
-		ret |= ctr_buf_append_s16(buf, val);
+		ret |= ctr_buf_append_s16_le(buf, val);
 	}
 
 	if (data->errors.ext_temperature) {
-		ret |= ctr_buf_append_s16(buf, 0x7fff);
+		ret |= ctr_buf_append_s16_le(buf, 0x7fff);
 	} else {
 		int16_t val = data->states.ext_temperature * 100.f;
-		ret |= ctr_buf_append_s16(buf, val);
+		ret |= ctr_buf_append_s16_le(buf, val);
 	}
 
 	if (data->errors.ext_humidity) {
@@ -690,42 +690,42 @@ static int compose(struct ctr_buf *buf, const struct data *data)
 	}
 
 	if (data->errors.line_voltage) {
-		ret |= ctr_buf_append_u16(buf, 0xffff);
+		ret |= ctr_buf_append_u16_le(buf, 0xffff);
 	} else {
 		uint16_t val = data->states.line_voltage * 1000.f;
-		ret |= ctr_buf_append_u16(buf, val);
+		ret |= ctr_buf_append_u16_le(buf, val);
 	}
 
 	if (data->errors.bckp_voltage) {
-		ret |= ctr_buf_append_u16(buf, 0xffff);
+		ret |= ctr_buf_append_u16_le(buf, 0xffff);
 	} else {
 		uint16_t val = data->states.bckp_voltage * 1000.f;
-		ret |= ctr_buf_append_u16(buf, val);
+		ret |= ctr_buf_append_u16_le(buf, val);
 	}
 
 	if (data->errors.batt_voltage_rest) {
-		ret |= ctr_buf_append_u16(buf, 0xffff);
+		ret |= ctr_buf_append_u16_le(buf, 0xffff);
 	} else {
 		uint16_t val = data->states.batt_voltage_rest * 1000.f;
-		ret |= ctr_buf_append_u16(buf, val);
+		ret |= ctr_buf_append_u16_le(buf, val);
 	}
 
 	if (data->errors.batt_voltage_load) {
-		ret |= ctr_buf_append_u16(buf, 0xffff);
+		ret |= ctr_buf_append_u16_le(buf, 0xffff);
 	} else {
 		uint16_t val = data->states.batt_voltage_load * 1000.f;
-		ret |= ctr_buf_append_u16(buf, val);
+		ret |= ctr_buf_append_u16_le(buf, val);
 	}
 
 	if (data->errors.batt_current_load) {
-		ret |= ctr_buf_append_u16(buf, 0xffff);
+		ret |= ctr_buf_append_u16_le(buf, 0xffff);
 	} else {
 		uint16_t val = data->states.batt_current_load * 1000.f;
-		ret |= ctr_buf_append_u16(buf, val);
+		ret |= ctr_buf_append_u16_le(buf, val);
 	}
 
-	ret |= ctr_buf_append_u16(buf, atomic_get(&data->events.device_boot));
-	ret |= ctr_buf_append_u16(buf, atomic_get(&data->events.device_tilt));
+	ret |= ctr_buf_append_u16_le(buf, atomic_get(&data->events.device_boot));
+	ret |= ctr_buf_append_u16_le(buf, atomic_get(&data->events.device_tilt));
 	ret |= ctr_buf_append_u8(buf, atomic_get(&data->events.input_1_rise));
 	ret |= ctr_buf_append_u8(buf, atomic_get(&data->events.input_1_fall));
 	ret |= ctr_buf_append_u8(buf, atomic_get(&data->events.input_2_rise));

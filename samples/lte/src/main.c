@@ -129,23 +129,23 @@ static int send(void)
 		return -EBUSY;
 	}
 
-	ctr_buf_append_u64(&buf, imsi);
+	ctr_buf_append_u64_le(&buf, imsi);
 
 	static uint32_t counter;
-	ctr_buf_append_u32(&buf, counter++);
+	ctr_buf_append_u32_le(&buf, counter++);
 
 	k_mutex_lock(&m_lte_eval_mut, K_FOREVER);
 
 	if (m_lte_eval_valid) {
-		ctr_buf_append_s32(&buf, m_lte_eval.eest);
-		ctr_buf_append_s32(&buf, m_lte_eval.ecl);
-		ctr_buf_append_s32(&buf, m_lte_eval.rsrp);
-		ctr_buf_append_s32(&buf, m_lte_eval.rsrq);
-		ctr_buf_append_s32(&buf, m_lte_eval.snr);
-		ctr_buf_append_s32(&buf, m_lte_eval.plmn);
-		ctr_buf_append_s32(&buf, m_lte_eval.cid);
-		ctr_buf_append_s32(&buf, m_lte_eval.band);
-		ctr_buf_append_s32(&buf, m_lte_eval.earfcn);
+		ctr_buf_append_s32_le(&buf, m_lte_eval.eest);
+		ctr_buf_append_s32_le(&buf, m_lte_eval.ecl);
+		ctr_buf_append_s32_le(&buf, m_lte_eval.rsrp);
+		ctr_buf_append_s32_le(&buf, m_lte_eval.rsrq);
+		ctr_buf_append_s32_le(&buf, m_lte_eval.snr);
+		ctr_buf_append_s32_le(&buf, m_lte_eval.plmn);
+		ctr_buf_append_s32_le(&buf, m_lte_eval.cid);
+		ctr_buf_append_s32_le(&buf, m_lte_eval.band);
+		ctr_buf_append_s32_le(&buf, m_lte_eval.earfcn);
 	}
 
 	m_lte_eval_valid = false;

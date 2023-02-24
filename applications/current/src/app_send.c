@@ -51,9 +51,9 @@ static int compose(struct ctr_buf *buf)
 		return ret;
 	}
 
-	ret = ctr_buf_append_u32(buf, serial_number);
+	ret = ctr_buf_append_u32_le(buf, serial_number);
 	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u32` failed: %d", ret);
+		LOG_ERR("Call `ctr_buf_append_u32_le` failed: %d", ret);
 		return ret;
 	}
 
@@ -94,9 +94,9 @@ static int compose(struct ctr_buf *buf)
 		return ret;
 	}
 
-	ret = ctr_buf_append_u16(buf, len);
+	ret = ctr_buf_append_u16_le(buf, len);
 	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u16` failed: %d", ret);
+		LOG_ERR("Call `ctr_buf_append_u16_le` failed: %d", ret);
 		return ret;
 	}
 

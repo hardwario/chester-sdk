@@ -42,14 +42,21 @@ int ctr_buf_append_mem(struct ctr_buf *buf, const uint8_t *mem, size_t len);
 int ctr_buf_append_str(struct ctr_buf *buf, const char *str);
 int ctr_buf_append_char(struct ctr_buf *buf, char val);
 int ctr_buf_append_s8(struct ctr_buf *buf, int8_t val);
-int ctr_buf_append_s16(struct ctr_buf *buf, int16_t val);
-int ctr_buf_append_s32(struct ctr_buf *buf, int32_t val);
-int ctr_buf_append_s64(struct ctr_buf *buf, int64_t val);
+int ctr_buf_append_s16_le(struct ctr_buf *buf, int16_t val);
+int ctr_buf_append_s16_be(struct ctr_buf *buf, int16_t val);
+int ctr_buf_append_s32_le(struct ctr_buf *buf, int32_t val);
+int ctr_buf_append_s32_be(struct ctr_buf *buf, int32_t val);
+int ctr_buf_append_s64_le(struct ctr_buf *buf, int64_t val);
+int ctr_buf_append_s64_be(struct ctr_buf *buf, int64_t val);
 int ctr_buf_append_u8(struct ctr_buf *buf, uint8_t val);
-int ctr_buf_append_u16(struct ctr_buf *buf, uint16_t val);
-int ctr_buf_append_u32(struct ctr_buf *buf, uint32_t val);
-int ctr_buf_append_u64(struct ctr_buf *buf, uint64_t val);
-int ctr_buf_append_float(struct ctr_buf *buf, float val);
+int ctr_buf_append_u16_le(struct ctr_buf *buf, uint16_t val);
+int ctr_buf_append_u16_be(struct ctr_buf *buf, uint16_t val);
+int ctr_buf_append_u32_le(struct ctr_buf *buf, uint32_t val);
+int ctr_buf_append_u32_be(struct ctr_buf *buf, uint32_t val);
+int ctr_buf_append_u64_le(struct ctr_buf *buf, uint64_t val);
+int ctr_buf_append_u64_be(struct ctr_buf *buf, uint64_t val);
+int ctr_buf_append_float_le(struct ctr_buf *buf, float val);
+int ctr_buf_append_float_be(struct ctr_buf *buf, float val);
 
 #ifdef __cplusplus
 }

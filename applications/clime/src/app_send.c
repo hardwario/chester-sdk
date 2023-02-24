@@ -83,17 +83,17 @@ static int compose(struct ctr_buf *buf)
 	/* Field BATT */
 	if (header & BIT(0)) {
 		if (isnan(g_app_data.system_voltage_rest)) {
-			ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
 		} else {
 			uint16_t val = g_app_data.system_voltage_rest;
-			ret |= ctr_buf_append_u16(buf, val);
+			ret |= ctr_buf_append_u16_le(buf, val);
 		}
 
 		if (isnan(g_app_data.system_voltage_load)) {
-			ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
 		} else {
 			uint16_t val = g_app_data.system_voltage_load;
-			ret |= ctr_buf_append_u16(buf, val);
+			ret |= ctr_buf_append_u16_le(buf, val);
 		}
 
 		if (isnan(g_app_data.system_current_load)) {
@@ -117,10 +117,10 @@ static int compose(struct ctr_buf *buf)
 	/* Field THERM */
 	if (header & BIT(2)) {
 		if (isnan(g_app_data.therm_temperature)) {
-			ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
+			ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
 		} else {
 			int16_t val = g_app_data.therm_temperature * 100.f;
-			ret |= ctr_buf_append_s16(buf, val);
+			ret |= ctr_buf_append_s16_le(buf, val);
 		}
 	}
 
@@ -137,9 +137,9 @@ static int compose(struct ctr_buf *buf)
 		struct app_data_hygro *hygro = &g_app_data.hygro;
 
 		if (isnan(hygro->last_sample_temperature)) {
-			ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
+			ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
 		} else {
-			ret |= ctr_buf_append_s16(buf, hygro->last_sample_temperature * 100.f);
+			ret |= ctr_buf_append_s16_le(buf, hygro->last_sample_temperature * 100.f);
 		}
 
 		if (isnan(hygro->last_sample_humidity)) {
@@ -171,9 +171,9 @@ static int compose(struct ctr_buf *buf)
 
 		for (size_t i = 0; i < count; i++) {
 			if (isnan(t[i])) {
-				ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
+				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
 			} else {
-				ret |= ctr_buf_append_s16(buf, t[i] * 100.f);
+				ret |= ctr_buf_append_s16_le(buf, t[i] * 100.f);
 			}
 		}
 	}
@@ -189,9 +189,9 @@ static int compose(struct ctr_buf *buf)
 			struct app_data_rtd_therm_sensor *sensor = &g_app_data.rtd_therm.sensor[i];
 
 			if (isnan(sensor->last_sample_temperature)) {
-				ret |= ctr_buf_append_s16(buf, BIT_MASK(15));
+				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
 			} else {
-				ret |= ctr_buf_append_s16(buf,
+				ret |= ctr_buf_append_s16_le(buf,
 							  sensor->last_sample_temperature * 100.f);
 			}
 		}
@@ -229,9 +229,9 @@ static int compose(struct ctr_buf *buf)
 		return ret;
 	}
 
-	ret = ctr_buf_append_u32(buf, serial_number);
+	ret = ctr_buf_append_u32_le(buf, serial_number);
 	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u32` failed: %d", ret);
+		LOG_ERR("Call `ctr_buf_append_u32_le` failed: %d", ret);
 		return ret;
 	}
 
@@ -272,9 +272,9 @@ static int compose(struct ctr_buf *buf)
 		return ret;
 	}
 
-	ret = ctr_buf_append_u16(buf, len);
+	ret = ctr_buf_append_u16_le(buf, len);
 	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u16` failed: %d", ret);
+		LOG_ERR("Call `ctr_buf_append_u16_le` failed: %d", ret);
 		return ret;
 	}
 

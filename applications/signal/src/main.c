@@ -158,13 +158,13 @@ static int compose(struct ctr_buf *buf)
 	err |= ctr_buf_seek(buf, 8);
 
 	static uint32_t sequence;
-	err |= ctr_buf_append_u32(buf, sequence++);
+	err |= ctr_buf_append_u32_le(buf, sequence++);
 
 	uint8_t protocol = 1;
 	err |= ctr_buf_append_u8(buf, protocol);
 
 	uint32_t uptime = k_uptime_get() / 1000;
-	err |= ctr_buf_append_u32(buf, uptime);
+	err |= ctr_buf_append_u32_le(buf, uptime);
 
 	uint64_t imei;
 	ret = ctr_lte_get_imei(&imei);
@@ -173,7 +173,7 @@ static int compose(struct ctr_buf *buf)
 		return ret;
 	}
 
-	err |= ctr_buf_append_u64(buf, imei);
+	err |= ctr_buf_append_u64_le(buf, imei);
 
 	uint64_t imsi;
 	ret = ctr_lte_get_imsi(&imsi);
@@ -182,40 +182,40 @@ static int compose(struct ctr_buf *buf)
 		return ret;
 	}
 
-	err |= ctr_buf_append_u64(buf, imsi);
+	err |= ctr_buf_append_u64_le(buf, imsi);
 
 	k_mutex_lock(&m_lte_eval_mut, K_FOREVER);
 
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.eest);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.ecl);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.rsrp);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.rsrq);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.snr);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.plmn);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.cid);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.band);
-	err |= ctr_buf_append_s32(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.earfcn);
+	err |= ctr_buf_append_s32_le(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.eest);
+	err |= ctr_buf_append_s32_le(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.ecl);
+	err |= ctr_buf_append_s32_le(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.rsrp);
+	err |= ctr_buf_append_s32_le(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.rsrq);
+	err |= ctr_buf_append_s32_le(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.snr);
+	err |= ctr_buf_append_s32_le(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.plmn);
+	err |= ctr_buf_append_s32_le(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.cid);
+	err |= ctr_buf_append_s32_le(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.band);
+	err |= ctr_buf_append_s32_le(buf, !m_lte_eval_valid ? INT32_MAX : m_lte_eval.earfcn);
 
 	m_lte_eval_valid = false;
 
 	k_mutex_unlock(&m_lte_eval_mut);
 
 	if (isnan(m_data.therm_temperature)) {
-		err |= ctr_buf_append_s16(buf, INT16_MAX);
+		err |= ctr_buf_append_s16_le(buf, INT16_MAX);
 	} else {
-		err |= ctr_buf_append_s16(buf, m_data.therm_temperature * 10.f);
+		err |= ctr_buf_append_s16_le(buf, m_data.therm_temperature * 10.f);
 	}
 
 	if (isnan(m_data.hygro_temperature)) {
-		err |= ctr_buf_append_s16(buf, INT16_MAX);
+		err |= ctr_buf_append_s16_le(buf, INT16_MAX);
 	} else {
-		err |= ctr_buf_append_s16(buf, m_data.hygro_temperature * 10.f);
+		err |= ctr_buf_append_s16_le(buf, m_data.hygro_temperature * 10.f);
 	}
 
 	if (isnan(m_data.hygro_humidity)) {
-		err |= ctr_buf_append_u16(buf, UINT16_MAX);
+		err |= ctr_buf_append_u16_le(buf, UINT16_MAX);
 	} else {
-		err |= ctr_buf_append_u16(buf, m_data.hygro_humidity * 10.f);
+		err |= ctr_buf_append_u16_le(buf, m_data.hygro_humidity * 10.f);
 	}
 
 	size_t len = ctr_buf_get_used(buf);
@@ -241,7 +241,7 @@ static int compose(struct ctr_buf *buf)
 	}
 
 	err |= ctr_buf_seek(buf, 0);
-	err |= ctr_buf_append_u16(buf, len);
+	err |= ctr_buf_append_u16_le(buf, len);
 	err |= ctr_buf_append_mem(buf, digest, 6);
 	err |= ctr_buf_seek(buf, len);
 

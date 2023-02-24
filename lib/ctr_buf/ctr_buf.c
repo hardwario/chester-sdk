@@ -12,7 +12,7 @@
 
 int ctr_buf_init(struct ctr_buf *buf, void *mem, size_t size)
 {
-	if (size == 0) {
+	if (!size) {
 		return -EINVAL;
 	}
 
@@ -112,7 +112,7 @@ int ctr_buf_append_s8(struct ctr_buf *buf, int8_t val)
 	return 0;
 }
 
-int ctr_buf_append_s16(struct ctr_buf *buf, int16_t val)
+int ctr_buf_append_s16_le(struct ctr_buf *buf, int16_t val)
 {
 	if (ctr_buf_get_free(buf) < 2) {
 		return -ENOSPC;
@@ -124,7 +124,19 @@ int ctr_buf_append_s16(struct ctr_buf *buf, int16_t val)
 	return 0;
 }
 
-int ctr_buf_append_s32(struct ctr_buf *buf, int32_t val)
+int ctr_buf_append_s16_be(struct ctr_buf *buf, int16_t val)
+{
+	if (ctr_buf_get_free(buf) < 2) {
+		return -ENOSPC;
+	}
+
+	sys_put_be16(val, &buf->mem[buf->len]);
+	buf->len += 2;
+
+	return 0;
+}
+
+int ctr_buf_append_s32_le(struct ctr_buf *buf, int32_t val)
 {
 	if (ctr_buf_get_free(buf) < 4) {
 		return -ENOSPC;
@@ -136,13 +148,37 @@ int ctr_buf_append_s32(struct ctr_buf *buf, int32_t val)
 	return 0;
 }
 
-int ctr_buf_append_s64(struct ctr_buf *buf, int64_t val)
+int ctr_buf_append_s32_be(struct ctr_buf *buf, int32_t val)
+{
+	if (ctr_buf_get_free(buf) < 4) {
+		return -ENOSPC;
+	}
+
+	sys_put_be32(val, &buf->mem[buf->len]);
+	buf->len += 4;
+
+	return 0;
+}
+
+int ctr_buf_append_s64_le(struct ctr_buf *buf, int64_t val)
 {
 	if (ctr_buf_get_free(buf) < 8) {
 		return -ENOSPC;
 	}
 
 	sys_put_le64(val, &buf->mem[buf->len]);
+	buf->len += 8;
+
+	return 0;
+}
+
+int ctr_buf_append_s64_be(struct ctr_buf *buf, int64_t val)
+{
+	if (ctr_buf_get_free(buf) < 8) {
+		return -ENOSPC;
+	}
+
+	sys_put_be64(val, &buf->mem[buf->len]);
 	buf->len += 8;
 
 	return 0;
@@ -160,7 +196,7 @@ int ctr_buf_append_u8(struct ctr_buf *buf, uint8_t val)
 	return 0;
 }
 
-int ctr_buf_append_u16(struct ctr_buf *buf, uint16_t val)
+int ctr_buf_append_u16_le(struct ctr_buf *buf, uint16_t val)
 {
 	if (ctr_buf_get_free(buf) < 2) {
 		return -ENOSPC;
@@ -172,7 +208,19 @@ int ctr_buf_append_u16(struct ctr_buf *buf, uint16_t val)
 	return 0;
 }
 
-int ctr_buf_append_u32(struct ctr_buf *buf, uint32_t val)
+int ctr_buf_append_u16_be(struct ctr_buf *buf, uint16_t val)
+{
+	if (ctr_buf_get_free(buf) < 2) {
+		return -ENOSPC;
+	}
+
+	sys_put_be16(val, &buf->mem[buf->len]);
+	buf->len += 2;
+
+	return 0;
+}
+
+int ctr_buf_append_u32_le(struct ctr_buf *buf, uint32_t val)
 {
 	if (ctr_buf_get_free(buf) < 4) {
 		return -ENOSPC;
@@ -184,7 +232,19 @@ int ctr_buf_append_u32(struct ctr_buf *buf, uint32_t val)
 	return 0;
 }
 
-int ctr_buf_append_u64(struct ctr_buf *buf, uint64_t val)
+int ctr_buf_append_u32_be(struct ctr_buf *buf, uint32_t val)
+{
+	if (ctr_buf_get_free(buf) < 4) {
+		return -ENOSPC;
+	}
+
+	sys_put_be32(val, &buf->mem[buf->len]);
+	buf->len += 4;
+
+	return 0;
+}
+
+int ctr_buf_append_u64_le(struct ctr_buf *buf, uint64_t val)
 {
 	if (ctr_buf_get_free(buf) < 8) {
 		return -ENOSPC;
@@ -196,13 +256,41 @@ int ctr_buf_append_u64(struct ctr_buf *buf, uint64_t val)
 	return 0;
 }
 
-int ctr_buf_append_float(struct ctr_buf *buf, float val)
+int ctr_buf_append_u64_be(struct ctr_buf *buf, uint64_t val)
+{
+	if (ctr_buf_get_free(buf) < 8) {
+		return -ENOSPC;
+	}
+
+	sys_put_be64(val, &buf->mem[buf->len]);
+	buf->len += 8;
+
+	return 0;
+}
+
+int ctr_buf_append_float_le(struct ctr_buf *buf, float val)
 {
 	if (ctr_buf_get_free(buf) < 4) {
 		return -ENOSPC;
 	}
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	sys_mem_swap(&val, sizeof(val));
+#endif
+
+	memcpy(&buf->mem[buf->len], &val, 4);
+	buf->len += 4;
+
+	return 0;
+}
+
+int ctr_buf_append_float_be(struct ctr_buf *buf, float val)
+{
+	if (ctr_buf_get_free(buf) < 4) {
+		return -ENOSPC;
+	}
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	sys_mem_swap(&val, sizeof(val));
 #endif
 
