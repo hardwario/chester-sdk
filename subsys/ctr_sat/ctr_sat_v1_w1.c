@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include "astronode_s_messages.h"
+#include "astronode_s.h"
 
 #include <chester/ctr_sat.h>
 #include <chester/ctr_w1.h>
@@ -8,10 +8,6 @@
 /* Zephyr includes */
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/shell/shell.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/crc.h>
-#include <zephyr/sys/util.h>
 
 /* Standard includes */
 #include <errno.h>
@@ -83,7 +79,7 @@ int ctr_sat_v1_init_w1(struct ctr_sat *sat)
 	if (m_is_initialized == false) {
 		ret = ctr_sat_w1_scan();
 		if (ret) {
-			LOG_DBG("Call `ctr_sat_w1_scan` failed %d.", ret);
+			LOG_DBG("Call `ctr_sat_w1_scan` failed: %d", ret);
 			k_mutex_unlock(&m_init_mutex);
 			return ret;
 		}
@@ -127,14 +123,14 @@ int ctr_sat_v1_init_w1(struct ctr_sat *sat)
 
 	ret = ctr_sat_v1_init_w1_pca9534(sat);
 	if (ret) {
-		LOG_DBG("Call `ctr_sat_v1_init_w1_pca9534` failed %d.", ret);
+		LOG_DBG("Call `ctr_sat_v1_init_w1_pca9534` failed: %d", ret);
 		res = ret;
 		goto error;
 	}
 
 	ret = ctr_sat_v1_init_w1_sc16is740(sat);
 	if (ret) {
-		LOG_DBG("Call `ctr_sat_v1_init_w1_sc16is740` failed %d.", ret);
+		LOG_DBG("Call `ctr_sat_v1_init_w1_sc16is740` failed: %d", ret);
 		res = ret;
 		goto error;
 	}
@@ -168,7 +164,7 @@ static int ctr_sat_v1_init_w1_pca9534(struct ctr_sat *sat)
 	sat_w1->gpio_state = TCA9534_RESET_PIN_BIT | TCA9534_RESET_UART_PIN_BIT;
 	ret = ctr_sat_v1_w1_update_gpio_output(sat);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_v1_w1_update_gpio_output` failed: %d.", ret);
+		LOG_ERR("Call `ctr_sat_v1_w1_update_gpio_output` failed: %d", ret);
 		return ret;
 	}
 
@@ -178,7 +174,7 @@ static int ctr_sat_v1_init_w1_pca9534(struct ctr_sat *sat)
 	buf[1] = ~((uint8_t)TCA9534_RESET_PIN_BIT | (uint8_t)TCA9534_RESET_UART_PIN_BIT);
 	ret = ds28e17_i2c_write(sat_w1->ds28e17_dev, TCA9534_I2C_ADDR, buf, sizeof(buf));
 	if (ret) {
-		LOG_ERR("Call `ds28e17_i2c_write` failed: %d.", ret);
+		LOG_ERR("Call `ds28e17_i2c_write` failed: %d", ret);
 		return ret;
 	}
 
@@ -216,7 +212,7 @@ static int ctr_sat_v1_init_w1_sc16is740(struct ctr_sat *sat)
 		buf[1] = i->val;
 		ret = ds28e17_i2c_write(sat_w1->ds28e17_dev, SC16IS740_I2C_ADDR, buf, sizeof(buf));
 		if (ret) {
-			LOG_ERR("Call `ds28e17_i2c_write` failed: %d.", ret);
+			LOG_ERR("Call `ds28e17_i2c_write` failed: %d", ret);
 			return ret;
 		}
 	}
@@ -263,7 +259,7 @@ static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat)
 
 		ret = ctr_sat_w1_wait_for_buffer_space(sat, to_copy);
 		if (ret) {
-			LOG_ERR("Call `ctr_sat_w1_wait_for_buffer_space` failed %d.", ret);
+			LOG_ERR("Call `ctr_sat_w1_wait_for_buffer_space` failed: %d", ret);
 			res = ret;
 			goto error;
 		}
@@ -271,7 +267,7 @@ static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat)
 		ret = ds28e17_i2c_write(sat_w1->ds28e17_dev, SC16IS740_I2C_ADDR, tx_buf,
 					to_copy + 1);
 		if (ret) {
-			LOG_ERR("Call `ds28e17_i2c_write` failed: %d.", ret);
+			LOG_ERR("Call `ds28e17_i2c_write` failed: %d", ret);
 			res = ret;
 			goto error;
 		}
@@ -291,7 +287,7 @@ static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat)
 		size_t received_bytes;
 		ret = ctr_sat_w1_get_rx_fifo_level(sat, &received_bytes);
 		if (ret) {
-			LOG_ERR("Call `ctr_sat_w1_get_rx_fifo_level` failed: %d.", ret);
+			LOG_ERR("Call `ctr_sat_w1_get_rx_fifo_level` failed: %d", ret);
 			res = ret;
 			goto error;
 		}
@@ -308,7 +304,7 @@ static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat)
 			ret = ds28e17_i2c_write_read(sat_w1->ds28e17_dev, SC16IS740_I2C_ADDR, &reg,
 						     1, rx_wr_ptr, received_bytes);
 			if (ret) {
-				LOG_ERR("Call `ds28e17_i2c_write_read` failed: %d.", ret);
+				LOG_ERR("Call `ds28e17_i2c_write_read` failed: %d", ret);
 				res = ret;
 				goto error;
 			}
@@ -363,7 +359,7 @@ static int ctr_sat_v1_w1_update_gpio_output(struct ctr_sat *sat)
 	buf[1] = sat_w1->gpio_state;
 	ret = ds28e17_i2c_write(sat_w1->ds28e17_dev, TCA9534_I2C_ADDR, buf, sizeof(buf));
 	if (ret) {
-		LOG_ERR("Call `ds28e17_i2c_write` failed: %d.", ret);
+		LOG_ERR("Call `ds28e17_i2c_write` failed: %d", ret);
 		return ret;
 	}
 

@@ -6,22 +6,17 @@ include: base.yaml
 
 properties:
 
-  uart-controller:
-    type: phandle
-    required: true
-    description: xxx
-
   modem-reset-gpios:
     type: phandle-array
     required: true
-    description: yyy
+    description: Astronode S Module reset pin
 
   modem-wakeup-gpios:
     type: phandle-array
     required: true
-    description: zzz
+    description: Astronode S Module wakeup pin
 
   modem-event-gpios:
     type: phandle-array
     required: true
-    description: zzz1
+    description: Astronode S Module event pin

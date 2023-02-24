@@ -1,26 +1,20 @@
 /* CHESTER includes */
-#include "astronode_s_messages.h"
+#include "astronode_s.h"
 
 #include <chester/ctr_sat.h>
-#include <chester/ctr_w1.h>
-#include <chester/drivers/w1/ds28e17.h>
 
 /* Zephyr includes */
-#include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/util.h>
 
 /* Standard includes */
 #include <errno.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 LOG_MODULE_REGISTER(ctr_sat, CONFIG_CTR_SAT_LOG_LEVEL);
 
@@ -175,7 +169,7 @@ static int ctr_sat_parse_response_data(uint8_t *response_data, size_t response_d
 
 	ret = hex2bin(rx_buf + 3, MIN(rx_buf_len - 3, to_parse * 2), response_data, to_parse);
 	if (ret != to_parse) {
-		LOG_ERR("Call `hex2bin` failed %d", ret);
+		LOG_ERR("Call `hex2bin` failed: %d", ret);
 		return -EIO; /* ret == 0 when hex2bin fail */
 	}
 
@@ -194,21 +188,21 @@ static int ctr_sat_parse_error_answer(const uint8_t *rx_buf, size_t rx_buf_len, 
 	ret = ctr_sat_parse_response_data(error_answer, error_answer_size, &parsed_len, rx_buf,
 					  rx_buf_len, 0);
 	if (ret) {
-		/* error details are printed in ctr_sat_parse_response_data */
+		LOG_ERR("Call `ctr_sat_parse_response_data` failed: %d", ret);
 		return ret;
 	}
 
 	ret = ctr_sat_check_message_crc(ASTRONODE_S_ANSWER_ERROR, error_answer,
 					sizeof(error_answer), rx_buf, rx_buf_len);
 	if (ret) {
-		/* error details are printed in ctr_sat_check_message_crc */
+		LOG_ERR("Call `ctr_sat_check_message_crc` failed: %d", ret);
 		return ret;
 	}
 
 	uint16_t error_code = sys_get_le16(error_answer);
 
 	if (FIELD_GET(FLAG_NO_WARN_ASTRONODE_ERROR, flags) == 0) {
-		LOG_ERR("Astronode command execution failed with error code 0x%04X", error_code);
+		LOG_ERR("Astronode command execution failed with error code 0x%04x", error_code);
 	}
 
 	if (error_code == 0) {
@@ -226,7 +220,7 @@ static int ctr_sat_parse_message(uint8_t *response_id, void *response_data,
 
 	ret = ctr_sat_parse_message_container(response_id, rx_buf, rx_buf_len);
 	if (ret) {
-		/* error details are printed in ctr_sat_parse_message_container */
+		LOG_ERR("Call `ctr_sat_parse_message_container` failed: %d", ret);
 		return ret;
 	}
 
@@ -237,14 +231,14 @@ static int ctr_sat_parse_message(uint8_t *response_id, void *response_data,
 	ret = ctr_sat_parse_response_data(response_data, response_data_max_size,
 					  response_data_parsed_len, rx_buf, rx_buf_len, flags);
 	if (ret) {
-		/* error details are printed in ctr_sat_parse_response_data */
+		LOG_ERR("Call `ctr_sat_parse_response_data` failed: %d", ret);
 		return ret;
 	}
 
 	ret = ctr_sat_check_message_crc(*response_id, response_data, *response_data_parsed_len,
 					rx_buf, rx_buf_len);
 	if (ret) {
-		/* error details are printed in ctr_sat_check_message_crc */
+		LOG_ERR("Call `ctr_sat_check_message_crc` failed: %d", ret);
 		return ret;
 	}
 
@@ -264,7 +258,7 @@ static int ctr_sat_encode_message(struct ctr_sat *sat, uint8_t command, const vo
 		uint8_t var = (b);                                                                 \
 		size_t written = bin2hex(&var, sizeof(var), tx_buf_wrptr, 3);                      \
 		if (written != 2) {                                                                \
-			LOG_ERR("Call (1) `bin2hex(0x%02x)` failed %d", var, written);             \
+			LOG_ERR("Call `bin2hex(0x%02x)` (1) failed: %d", var, written);            \
 			return -EFAULT;                                                            \
 		}                                                                                  \
 		tx_buf_wrptr += written;                                                           \
@@ -277,7 +271,7 @@ static int ctr_sat_encode_message(struct ctr_sat *sat, uint8_t command, const vo
 	size_t written = bin2hex(parameters, parameters_size, tx_buf_wrptr,
 				 sat->tx_buf + TX_MESSAGE_MAX_SIZE - tx_buf_wrptr);
 	if (written != parameters_size * 2) {
-		LOG_ERR("Call (2)`bin2hex` failed %d", written);
+		LOG_ERR("Call `bin2hex` (2) failed: %d", written);
 		return -EFAULT;
 	}
 	tx_buf_wrptr += written;
@@ -351,7 +345,7 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 
 	ret = sat->ctr_sat_uart_write_read(sat);
 	if (ret) {
-		LOG_DBG("Call `ctr_sat_uart_write_read` failed %d.", ret);
+		LOG_DBG("Call `ctr_sat_uart_write_read` failed: %d", ret);
 		k_mutex_unlock(&sat->mutex);
 		return ret;
 	}
@@ -379,7 +373,7 @@ static int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *p
 				    &response_data_size_parsed, sat->rx_buf, sat->rx_buf_len,
 				    flags);
 	if (ret) {
-		/* error details are printed in ctr_sat_parse_message */
+		LOG_ERR("Call `ctr_sat_parse_message` failed: %d", ret);
 
 		int allowed_retries = FIELD_GET(FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES_MASK, flags);
 		int new_flags =
@@ -441,7 +435,7 @@ static int ctr_sat_get_pending_event(struct ctr_sat *sat, int *event)
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_EVT_R, NULL, 0, &response,
 				      &response_size, FLAG_REPEAT_ON_ALL_CRC_ERRORS);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
 		return ret;
 	}
 
@@ -462,20 +456,20 @@ static int ctr_sat_handle_ack(struct ctr_sat *sat)
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_SAK_R, NULL, 0, &payload_id,
 				      &payload_id_size, FLAG_REPEAT_ON_ALL_CRC_ERRORS);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_execute_command` (1) failed %d", ret);
+		LOG_ERR("Call `ctr_sat_execute_command` (1) failed: %d", ret);
 		return ret;
 	}
 
-	if (sat->callback) {
+	if (sat->user_cb) {
 		union ctr_sat_event_data data = {
 			.msg_send = {.msg = (ctr_sat_msg_handle)payload_id}};
-		sat->callback(CTR_SAT_EVENT_MESSAGE_SENT, &data, sat->callback_user_data);
+		sat->user_cb(CTR_SAT_EVENT_MESSAGE_SENT, &data, sat->user_data);
 	}
 
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_SAK_C, NULL, 0, NULL, NULL,
 				      FLAG_REPEAT_ON_REQ_CRC_ERRORS);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_execute_command` (2) failed %d", ret);
+		LOG_ERR("Call `ctr_sat_execute_command` (2) failed: %d", ret);
 		return ret;
 	}
 
@@ -493,7 +487,7 @@ static int ctr_sat_clear_reset_event(struct ctr_sat *sat)
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_RES_C, NULL, 0, NULL, NULL,
 				      FLAG_REPEAT_ON_ALL_CRC_ERRORS);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
 		return ret;
 	}
 
@@ -513,7 +507,7 @@ static int ctr_sat_reconfigure(struct ctr_sat *sat)
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_CFG_R, NULL, 0, cur_cfg, &cur_cfg_size,
 				      FLAG_REPEAT_ON_ALL_CRC_ERRORS);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
 		return ret;
 	}
 
@@ -595,7 +589,7 @@ static int ctr_sat_reconfigure(struct ctr_sat *sat)
 		ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_CFG_W, new_cfg, sizeof(new_cfg),
 					      NULL, NULL, FLAG_REPEAT_ON_ALL_CRC_ERRORS);
 		if (ret) {
-			LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+			LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
 			return ret;
 		}
 
@@ -614,7 +608,7 @@ static int ctr_sat_reset(struct ctr_sat *sat)
 
 	ret = sat->ctr_sat_gpio_write(sat, CTR_SAT_PIN_RESET, true);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_gpio_write` (1) failed %d", ret);
+		LOG_ERR("Call `ctr_sat_gpio_write` (1) failed: %d", ret);
 		return ret;
 	}
 
@@ -622,7 +616,7 @@ static int ctr_sat_reset(struct ctr_sat *sat)
 
 	ret = sat->ctr_sat_gpio_write(sat, CTR_SAT_PIN_RESET, false);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_gpio_write` (2) failed %d", ret);
+		LOG_ERR("Call `ctr_sat_gpio_write` (2) failed: %d", ret);
 		return ret;
 	}
 
@@ -643,7 +637,7 @@ static int ctr_sat_receive_command(struct ctr_sat *sat)
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_CMD_R, NULL, 0, cmd_ra, &cmd_ra_size,
 				      FLAG_REPEAT_ON_ALL_CRC_ERRORS | FLAG_ALLOW_UNEXPECTED_LENGTH);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
 		return ret;
 	}
 
@@ -652,11 +646,11 @@ static int ctr_sat_receive_command(struct ctr_sat *sat)
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_CMD_C, NULL, 0, NULL, 0,
 				      FLAG_REPEAT_ON_ALL_CRC_ERRORS);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
 		return ret;
 	}
 
-	if (sat->callback) {
+	if (sat->user_cb) {
 		/* Astrnode date is defined as number of seconds since 2018-01-01 00:00:00 which is
 		 * equivalent to unix timestamp 1514764800.*/
 		time_t astronode_time_offset = 1514764800UL;
@@ -669,7 +663,7 @@ static int ctr_sat_receive_command(struct ctr_sat *sat)
 					(time_t)(astronode_time_offset +
 						 sys_get_le32(cmd_ra +
 							      ASTRONODE_S_CMD_RA_CREATED_DATE))}};
-		sat->callback(CTR_SAT_EVENT_MESSAGE_RECEIVED, &data, sat->callback_user_data);
+		sat->user_cb(CTR_SAT_EVENT_MESSAGE_RECEIVED, &data, sat->user_data);
 	}
 
 	return 0;
@@ -682,7 +676,7 @@ static int ctr_sat_handle_event(struct ctr_sat *sat)
 	int event;
 	ret = ctr_sat_get_pending_event(sat, &event);
 	if (ret) {
-		LOG_DBG("Call `ctr_sat_get_pending_event` failed %d", ret);
+		LOG_DBG("Call `ctr_sat_get_pending_event` failed: %d", ret);
 		return ret;
 	}
 
@@ -696,11 +690,11 @@ static int ctr_sat_handle_event(struct ctr_sat *sat)
 	if (event & ASTRONODE_S_EVENT_MODULE_RESET) {
 		ret = ctr_sat_clear_reset_event(sat);
 		if (ret) {
-			LOG_WRN("Call `ctr_sat_clear_reset_event` failed %d", ret);
+			LOG_WRN("Call `ctr_sat_clear_reset_event` failed: %d", ret);
 		} else {
 			ret = ctr_sat_reconfigure(sat);
 			if (ret) {
-				LOG_WRN("Call `ctr_sat_reconfigure` failed %d", ret);
+				LOG_WRN("Call `ctr_sat_reconfigure` failed: %d", ret);
 			}
 		}
 	}
@@ -708,14 +702,14 @@ static int ctr_sat_handle_event(struct ctr_sat *sat)
 	if (event & ASTRONODE_S_EVENT_SAT_ACK) {
 		ret = ctr_sat_handle_ack(sat);
 		if (ret) {
-			LOG_ERR("Call `ctr_sat_handle_ack` failed %d", ret);
+			LOG_ERR("Call `ctr_sat_handle_ack` failed: %d", ret);
 		}
 	}
 
 	if (event & ASTRONODE_S_EVENT_COMMAND_AVAILABLE) {
 		ret = ctr_sat_receive_command(sat);
 		if (ret) {
-			LOG_ERR("Call `ctr_sat_receive_command` failed %d", ret);
+			LOG_ERR("Call `ctr_sat_receive_command` failed: %d", ret);
 		}
 	}
 
@@ -727,9 +721,9 @@ static int ctr_sat_poll_intrrupt(struct ctr_sat *sat)
 	/*
 	int ret;
 
-	ret = gpio_pin_get_dt(&sat->module_event_gpio);
+	ret = gpio_pin_get_dt(&sat->event_gpio);
 	if (ret != 0 && ret != 1) {
-		LOG_ERR("Call `gpio_pin_get_dt` failed %d", ret);
+		LOG_ERR("Call `gpio_pin_get_dt` failed: %d", ret);
 		return ret;
 	}
 
@@ -756,19 +750,24 @@ static void ctr_sat_thread_main(struct ctr_sat *sat)
 	LOG_INF("CTR_SAT thread started");
 
 	while (true) {
+		if (atomic_get(&sat->thread_cancelation_requested) == 1) {
+			k_sem_give(&sat->thread_cancelation_complete);
+			return;
+		}
+
 		ret = k_sem_take(&sat->event_trig_sem, K_MSEC(CONFIG_CTR_SAT_INT_POLL_PERIOD_MSEC));
 		if (ret == 0) {
 			ret = ctr_sat_handle_event(sat);
 			if (ret) {
-				LOG_WRN("Call `ctr_sat_handle_event` failed %d", ret);
+				LOG_WRN("Call `ctr_sat_handle_event` failed: %d", ret);
 			}
 		} else if (ret == -EAGAIN) {
 			ret = ctr_sat_poll_intrrupt(sat);
 			if (ret) {
-				LOG_WRN("Call `ctr_sat_poll_intrrupt` failed %d", ret);
+				LOG_WRN("Call `ctr_sat_poll_intrrupt` failed: %d", ret);
 			}
 		} else {
-			LOG_WRN("Call `k_sem_take` failed %d", ret);
+			LOG_WRN("Call `k_sem_take` failed: %d", ret);
 			k_sleep(K_MSEC(1));
 		}
 	}
@@ -783,10 +782,10 @@ int ctr_sat_init_generic(struct ctr_sat *sat)
 	}
 
 	sat->last_payload_id = 0;
-	sat->enqued_payloads = 0;
+	sat->enqued_payload_count = 0;
 
-	sat->callback = NULL;
-	sat->callback_user_data = NULL;
+	sat->user_cb = NULL;
+	sat->user_data = NULL;
 
 	k_mutex_init(&sat->mutex);
 	k_sem_init(&sat->event_trig_sem, 0, K_SEM_MAX_LIMIT);
@@ -794,14 +793,14 @@ int ctr_sat_init_generic(struct ctr_sat *sat)
 #if CONFIG_CTR_SAT_RESET_ON_INIT
 	ret = ctr_sat_reset(sat);
 	if (ret) {
-		LOG_DBG("Call `ctr_sat_reset` failed %d", ret);
+		LOG_DBG("Call `ctr_sat_reset` failed: %d", ret);
 		return ret;
 	}
 #endif
 
 	ret = ctr_sat_reconfigure(sat);
 	if (ret) {
-		LOG_DBG("Call `ctr_sat_reconfigure` failed %d", ret);
+		LOG_DBG("Call `ctr_sat_reconfigure` failed: %d", ret);
 		return ret;
 	}
 
@@ -818,10 +817,17 @@ int ctr_sat_start(struct ctr_sat *sat)
 	return 0;
 }
 
+int ctr_sat_stop(struct ctr_sat *sat)
+{
+	atomic_set(&sat->thread_cancelation_requested, 1);
+	k_sem_take(&sat->thread_cancelation_token, K_FOREVER);
+	return 0;
+}
+
 int ctr_sat_set_callback(struct ctr_sat *sat, ctr_sat_event_cb user_cb, void *user_data)
 {
-	sat->callback = user_cb;
-	sat->callback_user_data = user_data;
+	sat->user_cb = user_cb;
+	sat->user_data = user_data;
 
 	return 0;
 }
@@ -865,7 +871,7 @@ int ctr_sat_use_wifi_devkit(struct ctr_sat *sat, const char *ssid, const char *p
 	ret = ctr_sat_execute_command(sat, ASTRONODE_S_CMD_WIF_W, req, sizeof(req), NULL, NULL,
 				      FLAG_REPEAT_ON_ALL_CRC_ERRORS);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+		LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
 		return ret;
 	}
 
@@ -894,7 +900,7 @@ int ctr_sat_send_message(struct ctr_sat *sat, ctr_sat_msg_handle *msg_handle, co
 		return -EWOULDBLOCK;
 	}
 
-	if (sat->enqued_payloads == MAX_PAYLOADS) {
+	if (sat->enqued_payload_count == MAX_PAYLOADS) {
 		LOG_ERR("Unable to send message because end buffer is full");
 		return -EAGAIN;
 	}
@@ -954,7 +960,7 @@ int ctr_sat_send_message(struct ctr_sat *sat, ctr_sat_msg_handle *msg_handle, co
 					payload_id);
 			} else {
 				was_previous_answer_affected_by_crc_error = false;
-				LOG_ERR("Call `ctr_sat_execute_command` failed %d", ret);
+				LOG_ERR("Call `ctr_sat_execute_command` failed: %d", ret);
 				goto exit;
 			}
 		}
@@ -992,11 +998,5 @@ int ctr_sat_flush_messages(struct ctr_sat *sat)
 		}
 	}
 
-	return 0;
-}
-
-int ctr_sat_stop(struct ctr_sat *sat)
-{
-	atomic_set(&(sat->is_started), false);
 	return 0;
 }

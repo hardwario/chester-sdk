@@ -10,7 +10,7 @@ config CTR_SAT
 if CTR_SAT
 
 config CTR_SAT_USE_WIFI_DEVKIT
-	bool "Enable support for using Wi-Fi Devkit. Increase SRAM memory usage."
+	bool "Enable support for using Wi-Fi Devkit. Increases SRAM memory usage."
 	default y
 
 config CTR_SAT_THREAD_STACK_SIZE
@@ -32,7 +32,6 @@ config CTR_SAT_RESET_ON_INIT
 config CTR_SAT_CRC_ERRORS_ALLOWED_RETRIES
 	int "Number of retries allowed when detecting CRC error. Set to 0 for disabling retries on CRC error"
 	default 2
-
 
 module = CTR_SAT
 module-str = CHESTER Satelite Module Subsystem

@@ -1,5 +1,5 @@
 /* CHESTER includes */
-#include "astronode_s_messages.h"
+#include "astronode_s.h"
 
 #include <chester/ctr_sat.h>
 
@@ -7,17 +7,12 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/shell/shell.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/crc.h>
-#include <zephyr/sys/util.h>
 
 /* Standard includes */
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 LOG_MODULE_REGISTER(ctr_sat_syscon, CONFIG_CTR_SAT_LOG_LEVEL);
 
@@ -52,36 +47,36 @@ int ctr_sat_v1_init_syscon(struct ctr_sat *sat)
 	struct gpio_dt_spec event_spec =
 		GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_event_gpios);
 
-	memcpy(&sat_syscon->module_reset_gpio, &reset_spec, sizeof(struct gpio_dt_spec));
-	memcpy(&sat_syscon->module_wakeup_gpio, &wakeup_spec, sizeof(struct gpio_dt_spec));
-	memcpy(&sat_syscon->module_event_gpio, &event_spec, sizeof(struct gpio_dt_spec));
+	memcpy(&sat_syscon->reset_gpio, &reset_spec, sizeof(struct gpio_dt_spec));
+	memcpy(&sat_syscon->wakeup_gpio, &wakeup_spec, sizeof(struct gpio_dt_spec));
+	memcpy(&sat_syscon->event_gpio, &event_spec, sizeof(struct gpio_dt_spec));
 
 	k_poll_signal_init(&sat_syscon->rx_completed_signal);
 
-	ret = gpio_pin_configure_dt(&sat_syscon->module_reset_gpio, GPIO_OUTPUT | GPIO_ACTIVE_HIGH);
+	ret = gpio_pin_configure_dt(&sat_syscon->reset_gpio, GPIO_OUTPUT | GPIO_ACTIVE_HIGH);
 	if (ret) {
-		LOG_DBG("Call `gpio_pin_configure_dt` failed %d", ret);
+		LOG_DBG("Call `gpio_pin_configure_dt` failed: %d", ret);
 		return ret;
 	}
 
-	ret = gpio_pin_set_dt(&sat_syscon->module_reset_gpio, 0);
+	ret = gpio_pin_set_dt(&sat_syscon->reset_gpio, 0);
 	if (ret) {
-		LOG_ERR("Call `gpio_pin_set_dt` failed %d", ret);
+		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
 		return ret;
 	}
 
 	gpio_init_callback(&sat_syscon->event_cb, ctr_sat_event_gpio_callback,
-			   BIT(sat_syscon->module_event_gpio.pin));
+			   BIT(sat_syscon->event_gpio.pin));
 
-	ret = gpio_add_callback(sat_syscon->module_event_gpio.port, &sat_syscon->event_cb);
+	ret = gpio_add_callback(sat_syscon->event_gpio.port, &sat_syscon->event_cb);
 	if (ret) {
-		LOG_ERR("Call `gpio_add_callback` failed %d", ret);
+		LOG_ERR("Call `gpio_add_callback` failed: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&sat_syscon->module_event_gpio, GPIO_INT_EDGE_RISING);
 	if (ret) {
-		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed %d", ret);
+		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
 		return ret;
 	}
 
@@ -132,7 +127,7 @@ int ctr_sat_v1_syscon_uart_write_read(struct ctr_sat *sat)
 			"time. This may happen when module is disconnected");
 		return ret;
 	} else if (ret < 0) {
-		LOG_ERR("Call `k_poll` failed %d", ret);
+		LOG_ERR("Call `k_poll` failed: %d", ret);
 		return ret;
 	}
 
@@ -178,7 +173,7 @@ static void ctr_sat_handle_uart_rx_irq(struct ctr_sat *sat)
 					MIN(RX_MESSAGE_MAX_SIZE - sat->rx_buf_len, 64));
 
 	if (bytes_read < 0) {
-		LOG_ERR("Call `uart_fifo_read` failed %d", bytes_read);
+		LOG_ERR("Call `uart_fifo_read` failed: %d", bytes_read);
 		return;
 	} else if (bytes_read == 0 && RX_MESSAGE_MAX_SIZE - sat->rx_buf_len != 0) {
 		LOG_WRN("Call `uart_fifo_read` read 0 bytes");
@@ -216,7 +211,7 @@ static void ctr_sat_handle_uart_rx_irq(struct ctr_sat *sat)
 
 		ret = k_poll_signal_raise(&sat_syscon->rx_completed_signal, status);
 		if (ret < 0) {
-			LOG_ERR("Call `k_poll_signal_raise` failed with status %d!", ret);
+			LOG_ERR("Call `k_poll_signal_raise` failed: %d", ret);
 			k_oops();
 		}
 

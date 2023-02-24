@@ -20,7 +20,7 @@ extern "C" {
 // Longest request: PLD_E (162 bytes)
 // 8 == 1 (start byte) + 2 (command) + 4 (CRC) + 1 (end byte)
 #define TX_MESSAGE_MAX_SIZE (162 * 2 + 8)
-#endif
+#endif /* CONFIG_CTR_SAT_USE_WIFI_DEVKIT */
 
 // Longest answer: CMD_R (44 bytes)
 // 8 == 1 (start byte) + 2 (command) + 4 (CRC) + 1 (end byte)
@@ -69,11 +69,11 @@ struct ctr_sat {
 	uint8_t rx_buf[RX_MESSAGE_MAX_SIZE];
 	size_t rx_buf_len;
 
-	ctr_sat_event_cb callback;
-	void *callback_user_data;
+	ctr_sat_event_cb user_cb;
+	void *user_data;
 
 	uint16_t enqued_payload_ids[MAX_PAYLOADS];
-	uint16_t enqued_payloads;
+	uint16_t enqued_payload_count;
 	uint16_t last_payload_id;
 
 	union {
@@ -84,9 +84,9 @@ struct ctr_sat {
 			uint8_t *rx_buf_receive_ptr;
 
 			const struct device *uart_dev;
-			struct gpio_dt_spec module_reset_gpio;
-			struct gpio_dt_spec module_wakeup_gpio;
-			struct gpio_dt_spec module_event_gpio;
+			struct gpio_dt_spec reset_gpio;
+			struct gpio_dt_spec wakeup_gpio;
+			struct gpio_dt_spec event_gpio;
 
 			struct gpio_callback event_cb;
 		} syscon;
@@ -105,6 +105,8 @@ struct ctr_sat {
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_CTR_SAT_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	k_tid_t thread_id;
+	atomic_t thread_cancelation_requested;
+	k_sem thread_cancelation_complete;
 	struct k_sem event_trig_sem;
 };
 

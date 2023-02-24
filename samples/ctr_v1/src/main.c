@@ -1,23 +1,17 @@
 /* Zephyr includes */
-#include <zephyr/device.h>
-#include <zephyr/devicetree.h>
-#include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/reboot.h>
-#include <zephyr/sys/ring_buffer.h>
+
+/* Chester includes */
+#include <chester/ctr_led.h>
+#include <chester/ctr_sat.h>
 
 /* Standard includes */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
-/* Chester includes */
-// #include "../samples/chester_sat/wifi_credentials.h"
-
-#include <chester/ctr_led.h>
-#include <chester/ctr_sat.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
@@ -78,18 +72,6 @@ void main(void)
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_sat_set_callback` failed: %d", ret);
 	}
-
-	/*
-	ret = ctr_sat_use_wifi_devkit(&sat, WIFI_SSID, WIFI_PASS, WIFI_API_KEY);
-	if (ret < 0) {
-		LOG_ERR("Call `ctr_sat_use_wifi_devkit` failed: %d", ret);
-
-		ctr_led_set(CTR_LED_CHANNEL_R, true);
-		k_sleep(K_MSEC(5000));
-		sys_reboot(SYS_REBOOT_COLD);
-	}
-	k_sleep(K_MSEC(5000));
-	*/
 
 	ret = ctr_sat_flush_messages(&sat);
 	if (ret < 0) {
