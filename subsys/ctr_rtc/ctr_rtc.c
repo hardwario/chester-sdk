@@ -15,6 +15,7 @@
 
 /* Standard includes */
 #include <ctype.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -24,7 +25,6 @@ LOG_MODULE_REGISTER(ctr_rtc, CONFIG_CTR_RTC_LOG_LEVEL);
 
 static const nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(2);
 static struct onoff_client m_lfclk_cli;
-static atomic_t m_set;
 static int m_year = 1970;
 static int m_month = 1;
 static int m_day = 1;
@@ -32,6 +32,9 @@ static int m_wday = 4;
 static int m_hours = 0;
 static int m_minutes = 0;
 static int m_seconds = 0;
+
+static atomic_t m_set;
+static K_SEM_DEFINE(m_set_sem, 0, 1);
 
 static int get_days_in_month(int year, int month)
 {
@@ -59,13 +62,9 @@ static int get_day_of_week(int year, int month, int day)
 	int adjustment = (14 - month) / 12;
 	int m = month + 12 * adjustment - 2;
 	int y = year - adjustment;
+	int w = (day + (13 * m - 1) / 5 + y + y / 4 - y / 100 + y / 400) % 7;
 
-	return 1 + (day + (13 * m - 1) / 5 + y + y / 4 - y / 100 + y / 400) % 7;
-}
-
-bool ctr_rtc_is_set(void)
-{
-	return atomic_get(&m_set);
+	return w ? w : 7;
 }
 
 int ctr_rtc_get_tm(struct ctr_rtc_tm *tm)
@@ -124,6 +123,7 @@ int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm)
 	irq_enable(RTC2_IRQn);
 
 	atomic_set(&m_set, true);
+	k_sem_give(&m_set_sem);
 
 	return 0;
 }
@@ -147,6 +147,26 @@ int ctr_rtc_get_ts(int64_t *ts)
 	*ts = timeutil_timegm64(&tm);
 
 	return 0;
+}
+
+bool ctr_rtc_is_set(void)
+{
+	return atomic_get(&m_set);
+}
+
+int ctr_rtc_wait(k_timeout_t timeout)
+{
+	if (atomic_get(&m_set)) {
+		return 0;
+	}
+
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		return -ETIMEDOUT;
+	}
+
+	LOG_INF("Waiting for RTC to be set");
+
+	return k_sem_take(&m_set_sem, timeout);
 }
 
 static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
@@ -177,24 +197,37 @@ static int cmd_rtc_set(const struct shell *shell, size_t argc, char **argv)
 	char *date = argv[1];
 	char *time = argv[2];
 
-	if (strlen(date) != 10 || !isdigit((unsigned char)date[0]) ||
-	    !isdigit((unsigned char)date[1]) || !isdigit((unsigned char)date[2]) ||
-	    !isdigit((unsigned char)date[3]) || date[4] != '/' ||
-	    !isdigit((unsigned char)date[5]) || !isdigit((unsigned char)date[6]) ||
-	    date[7] != '/' || !isdigit((unsigned char)date[8]) ||
+	/* clang-format off */
+
+	if (strlen(date) != 10 ||
+	    !isdigit((unsigned char)date[0]) ||
+	    !isdigit((unsigned char)date[1]) ||
+	    !isdigit((unsigned char)date[2]) ||
+	    !isdigit((unsigned char)date[3]) ||
+	    date[4] != '/' ||
+	    !isdigit((unsigned char)date[5]) ||
+	    !isdigit((unsigned char)date[6]) ||
+	    date[7] != '/' ||
+	    !isdigit((unsigned char)date[8]) ||
 	    !isdigit((unsigned char)date[9])) {
 		shell_help(shell);
 		return -EINVAL;
 	}
 
-	if (strlen(time) != 8 || !isdigit((unsigned char)time[0]) ||
-	    !isdigit((unsigned char)time[1]) || time[2] != ':' ||
-	    !isdigit((unsigned char)time[3]) || !isdigit((unsigned char)time[4]) ||
-	    time[5] != ':' || !isdigit((unsigned char)time[6]) ||
+	if (strlen(time) != 8 ||
+	    !isdigit((unsigned char)time[0]) ||
+	    !isdigit((unsigned char)time[1]) ||
+	    time[2] != ':' ||
+	    !isdigit((unsigned char)time[3]) ||
+	    !isdigit((unsigned char)time[4]) ||
+	    time[5] != ':' ||
+	    !isdigit((unsigned char)time[6]) ||
 	    !isdigit((unsigned char)time[7])) {
 		shell_help(shell);
 		return -EINVAL;
 	}
+
+	/* clang-format on */
 
 	date[4] = '\0';
 	date[7] = '\0';
@@ -203,12 +236,12 @@ static int cmd_rtc_set(const struct shell *shell, size_t argc, char **argv)
 
 	struct ctr_rtc_tm tm;
 
-	tm.year = atoi(&date[0]);
-	tm.month = atoi(&date[5]);
-	tm.day = atoi(&date[8]);
-	tm.hours = atoi(&time[0]);
-	tm.minutes = atoi(&time[3]);
-	tm.seconds = atoi(&time[6]);
+	tm.year = strtoll(&date[0], NULL, 10);
+	tm.month = strtoll(&date[5], NULL, 10);
+	tm.day = strtoll(&date[8], NULL, 10);
+	tm.hours = strtoll(&time[0], NULL, 10);
+	tm.minutes = strtoll(&time[3], NULL, 10);
+	tm.seconds = strtoll(&time[6], NULL, 10);
 
 	ret = ctr_rtc_set_tm(&tm);
 	if (ret) {
@@ -266,30 +299,38 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type)
 
 	prescaler = 0;
 
-	if (++m_seconds >= 60) {
-		m_seconds = 0;
+	if (++m_seconds < 60) {
+		return;
+	}
 
-		if (++m_minutes >= 60) {
-			m_minutes = 0;
+	m_seconds = 0;
 
-			if (++m_hours >= 24) {
-				m_hours = 0;
+	if (++m_minutes < 60) {
+		return;
+	}
 
-				if (++m_wday >= 8) {
-					m_wday = 1;
-				}
+	m_minutes = 0;
 
-				if (++m_day > get_days_in_month(m_year, m_month)) {
-					m_day = 1;
+	if (++m_hours < 24) {
+		return;
+	}
 
-					if (++m_month > 12) {
-						m_month = 1;
+	m_hours = 0;
 
-						++m_year;
-					}
-				}
-			}
-		}
+	if (++m_wday >= 8) {
+		m_wday = 1;
+	}
+
+	if (++m_day < get_days_in_month(m_year, m_month)) {
+		return;
+	}
+
+	m_day = 1;
+
+	if (++m_month > 12) {
+		m_month = 1;
+
+		++m_year;
 	}
 }
 
