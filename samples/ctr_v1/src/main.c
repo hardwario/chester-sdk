@@ -5,7 +5,7 @@
 
 /* Chester includes */
 #include <chester/ctr_led.h>
-#include <chester/ctr_sat.h>
+#include <chester/ctr_sat_v1.h>
 
 /* Standard includes */
 #include <stddef.h>
@@ -15,14 +15,14 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-static ctr_sat_msg_handle msg1;
-static ctr_sat_msg_handle msg2;
+static ctr_sat_v1_msg_handle msg1;
+static ctr_sat_v1_msg_handle msg2;
 
-void message_processed_callback(enum ctr_sat_event event, union ctr_sat_event_data *data,
+void message_processed_callback(enum ctr_sat_v1_event event, union ctr_sat_v1_event_data *data,
 				void *user_data)
 {
 
-	if (event == CTR_SAT_EVENT_MESSAGE_SENT) {
+	if (event == CTR_SAT_V1_EVENT_MESSAGE_SENT) {
 		if (data->msg_send.msg == msg1) {
 			LOG_INF("Message #1 was successfully transmitted and confirmed");
 		} else if (data->msg_send.msg == msg2) {
@@ -59,23 +59,23 @@ void main(void)
 		sys_reboot(SYS_REBOOT_COLD);
 	}
 
-	ret = ctr_sat_start(&sat);
+	ret = ctr_sat_v1_start(&sat);
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_sat_start` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_start` failed: %d", ret);
 
 		ctr_led_set(CTR_LED_CHANNEL_R, true);
 		k_sleep(K_MSEC(5000));
 		sys_reboot(SYS_REBOOT_COLD);
 	}
 
-	ret = ctr_sat_set_callback(&sat, message_processed_callback, NULL);
+	ret = ctr_sat_v1_set_callback(&sat, message_processed_callback, NULL);
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_sat_set_callback` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_set_callback` failed: %d", ret);
 	}
 
-	ret = ctr_sat_flush_messages(&sat);
+	ret = ctr_sat_v1_flush_messages(&sat);
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_sat_flush_messages` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_flush_messages` failed: %d", ret);
 
 		ctr_led_set(CTR_LED_CHANNEL_R, true);
 		k_sleep(K_MSEC(5000));
@@ -83,9 +83,9 @@ void main(void)
 	}
 
 	const char *message = "Chester say hello!";
-	ret = ctr_sat_send_message(&sat, &msg1, message, strlen(message));
+	ret = ctr_sat_v1_send_message(&sat, &msg1, message, strlen(message));
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_sat_send_message` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_send_message` failed: %d", ret);
 
 		ctr_led_set(CTR_LED_CHANNEL_R, true);
 		k_sleep(K_MSEC(5000));
@@ -93,9 +93,9 @@ void main(void)
 	}
 
 	message = "Chester say hello again!";
-	ret = ctr_sat_send_message(&sat, &msg2, message, strlen(message));
+	ret = ctr_sat_v1_send_message(&sat, &msg2, message, strlen(message));
 	if (ret < 0) {
-		LOG_ERR("Call `ctr_sat_send_message` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_send_message` failed: %d", ret);
 
 		ctr_led_set(CTR_LED_CHANNEL_R, true);
 		k_sleep(K_MSEC(5000));

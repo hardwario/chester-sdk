@@ -2,7 +2,7 @@
 #define CHESTER_SUBSYS_CTR_SAT_V1_CTR_SAT_V1_INTERNAL_H_
 
 /* CHESTER includes */
-#include <chester/ctr_sat.h>
+#include <chester/ctr_sat_v1.h>
 
 /*
 	flags definition as used in ctr_sat_execute_command function. Flags are used only for
@@ -43,24 +43,26 @@
 #define FLAG_TRIM_LONG_REPLY			  BIT(9)
 
 #define FLAG_REPEAT_ON_REQ_CRC_ERRORS                                                              \
-	(FLAG_REPEAT_ON_REQ_CRC_ERROR_BIT | FIELD_PREP(FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES_MASK,  \
-						       CONFIG_CTR_SAT_CRC_ERRORS_ALLOWED_RETRIES))
+	(FLAG_REPEAT_ON_REQ_CRC_ERROR_BIT |                                                        \
+	 FIELD_PREP(FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES_MASK,                                     \
+		    CONFIG_CTR_SAT_V1_CRC_ERRORS_ALLOWED_RETRIES))
 
 #define FLAG_REPEAT_ON_ANS_CRC_ERRORS                                                              \
-	(FLAG_REPEAT_ON_ANS_CRC_ERROR_BIT | FIELD_PREP(FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES_MASK,  \
-						       CONFIG_CTR_SAT_CRC_ERRORS_ALLOWED_RETRIES))
+	(FLAG_REPEAT_ON_ANS_CRC_ERROR_BIT |                                                        \
+	 FIELD_PREP(FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES_MASK,                                     \
+		    CONFIG_CTR_SAT_V1_CRC_ERRORS_ALLOWED_RETRIES))
 
 #define FLAG_REPEAT_ON_ALL_CRC_ERRORS                                                              \
 	(FLAG_REPEAT_ON_REQ_CRC_ERROR_BIT | FLAG_REPEAT_ON_ANS_CRC_ERROR_BIT |                     \
 	 FIELD_PREP(FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES_MASK,                                     \
-		    CONFIG_CTR_SAT_CRC_ERRORS_ALLOWED_RETRIES))
+		    CONFIG_CTR_SAT_V1_CRC_ERRORS_ALLOWED_RETRIES))
 
 /* Invalid CRC error code used for distinguishing from other EIO errors.*/
 #define E_INVCRC 10000
 
-int ctr_sat_init_generic(struct ctr_sat *sat);
-int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *parameters,
-			    size_t parameters_size, void *response_data, size_t *response_data_size,
-			    int flags);
+int ctr_sat_v1_init_generic(struct ctr_sat *sat);
+int ctr_sat_v1_execute_command(struct ctr_sat *sat, uint8_t command, void *parameters,
+			       size_t parameters_size, void *response_data,
+			       size_t *response_data_size, int flags);
 
 #endif /* CHESTER_SUBSYS_CTR_SAT_V1_CTR_SAT_V1_INTERNAL_H_ */

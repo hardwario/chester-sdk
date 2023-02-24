@@ -2,7 +2,7 @@
 #include "astronode_s.h"
 #include "ctr_sat_v1_internal.h"
 
-#include <chester/ctr_sat.h>
+#include <chester/ctr_sat_v1.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -17,11 +17,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-LOG_MODULE_REGISTER(ctr_sat_v1_communication, CONFIG_CTR_SAT_LOG_LEVEL);
+LOG_MODULE_REGISTER(ctr_sat_v1_communication, CONFIG_CTR_SAT_V1_LOG_LEVEL);
 
-static int ctr_sat_check_message_crc(uint8_t response_id, const uint8_t *parameters,
-				     size_t parameters_len, const uint8_t *rx_buf,
-				     size_t rx_buf_len)
+static int ctr_sat_v1_check_message_crc(uint8_t response_id, const uint8_t *parameters,
+					size_t parameters_len, const uint8_t *rx_buf,
+					size_t rx_buf_len)
 {
 	int ret;
 	uint16_t actual_crc = crc16_itu_t(0xFFFF, &response_id, sizeof(response_id));
@@ -48,8 +48,8 @@ static int ctr_sat_check_message_crc(uint8_t response_id, const uint8_t *paramet
 	return 0;
 }
 
-static int ctr_sat_parse_message_container(uint8_t *response_id, const uint8_t *rx_buf,
-					   size_t rx_buf_len)
+static int ctr_sat_v1_parse_message_container(uint8_t *response_id, const uint8_t *rx_buf,
+					      size_t rx_buf_len)
 {
 	int ret;
 
@@ -81,9 +81,9 @@ static int ctr_sat_parse_message_container(uint8_t *response_id, const uint8_t *
 	return 0;
 }
 
-static int ctr_sat_parse_response_data(uint8_t *response_data, size_t response_data_size_max,
-				       size_t *response_data_size_parsed, const uint8_t *rx_buf,
-				       size_t rx_buf_len, int flags)
+static int ctr_sat_v1_parse_response_data(uint8_t *response_data, size_t response_data_size_max,
+					  size_t *response_data_size_parsed, const uint8_t *rx_buf,
+					  size_t rx_buf_len, int flags)
 {
 	int ret;
 
@@ -125,24 +125,24 @@ static int ctr_sat_parse_response_data(uint8_t *response_data, size_t response_d
 	return 0;
 }
 
-static int ctr_sat_parse_error_answer(const uint8_t *rx_buf, size_t rx_buf_len, int flags)
+static int ctr_sat_v1_parse_error_answer(const uint8_t *rx_buf, size_t rx_buf_len, int flags)
 {
 	int ret;
 
 	uint8_t error_answer[ASTRONODE_S_ERR_ANSWER_SIZE];
 	size_t error_answer_size = sizeof(error_answer);
 	size_t parsed_len;
-	ret = ctr_sat_parse_response_data(error_answer, error_answer_size, &parsed_len, rx_buf,
-					  rx_buf_len, 0);
+	ret = ctr_sat_v1_parse_response_data(error_answer, error_answer_size, &parsed_len, rx_buf,
+					     rx_buf_len, 0);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_parse_response_data` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_parse_response_data` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_sat_check_message_crc(ASTRONODE_S_ANSWER_ERROR, error_answer,
-					sizeof(error_answer), rx_buf, rx_buf_len);
+	ret = ctr_sat_v1_check_message_crc(ASTRONODE_S_ANSWER_ERROR, error_answer,
+					   sizeof(error_answer), rx_buf, rx_buf_len);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_check_message_crc` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_check_message_crc` failed: %d", ret);
 		return ret;
 	}
 
@@ -159,41 +159,41 @@ static int ctr_sat_parse_error_answer(const uint8_t *rx_buf, size_t rx_buf_len, 
 	}
 }
 
-static int ctr_sat_parse_message(uint8_t *response_id, void *response_data,
-				 size_t response_data_max_size, size_t *response_data_parsed_len,
-				 const void *rx_buf, size_t rx_buf_len, int flags)
+static int ctr_sat_v1_parse_message(uint8_t *response_id, void *response_data,
+				    size_t response_data_max_size, size_t *response_data_parsed_len,
+				    const void *rx_buf, size_t rx_buf_len, int flags)
 {
 	int ret;
 
-	ret = ctr_sat_parse_message_container(response_id, rx_buf, rx_buf_len);
+	ret = ctr_sat_v1_parse_message_container(response_id, rx_buf, rx_buf_len);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_parse_message_container` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_parse_message_container` failed: %d", ret);
 		return ret;
 	}
 
 	if (*response_id == ASTRONODE_S_ANSWER_ERROR) {
-		return ctr_sat_parse_error_answer(rx_buf, rx_buf_len, flags);
+		return ctr_sat_v1_parse_error_answer(rx_buf, rx_buf_len, flags);
 	}
 
-	ret = ctr_sat_parse_response_data(response_data, response_data_max_size,
-					  response_data_parsed_len, rx_buf, rx_buf_len, flags);
+	ret = ctr_sat_v1_parse_response_data(response_data, response_data_max_size,
+					     response_data_parsed_len, rx_buf, rx_buf_len, flags);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_parse_response_data` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_parse_response_data` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_sat_check_message_crc(*response_id, response_data, *response_data_parsed_len,
-					rx_buf, rx_buf_len);
+	ret = ctr_sat_v1_check_message_crc(*response_id, response_data, *response_data_parsed_len,
+					   rx_buf, rx_buf_len);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_check_message_crc` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_check_message_crc` failed: %d", ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-static int ctr_sat_encode_message(struct ctr_sat *sat, uint8_t command, const void *parameters,
-				  size_t parameters_size)
+static int ctr_sat_v1_encode_message(struct ctr_sat *sat, uint8_t command, const void *parameters,
+				     size_t parameters_size)
 {
 	uint8_t *tx_buf_wrptr = sat->tx_buf;
 
@@ -240,9 +240,9 @@ static int ctr_sat_encode_message(struct ctr_sat *sat, uint8_t command, const vo
 	return 0;
 }
 
-int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *parameters,
-			    size_t parameters_size, void *response_data, size_t *response_data_size,
-			    int flags)
+int ctr_sat_v1_execute_command(struct ctr_sat *sat, uint8_t command, void *parameters,
+			       size_t parameters_size, void *response_data,
+			       size_t *response_data_size, int flags)
 {
 	int ret;
 
@@ -276,7 +276,7 @@ int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *paramete
 		return -EINVAL;
 	}
 
-	ret = ctr_sat_encode_message(sat, command, parameters, parameters_size);
+	ret = ctr_sat_v1_encode_message(sat, command, parameters, parameters_size);
 	if (ret) {
 		LOG_ERR("Error while formatting command %d", ret);
 		k_mutex_unlock(&sat->mutex);
@@ -290,9 +290,9 @@ int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *paramete
 		encoded_command_size, encoded_response_size);
 	LOG_HEXDUMP_INF(sat->tx_buf, encoded_command_size, "Encoded command to astronode:");
 
-	ret = sat->ctr_sat_uart_write_read(sat);
+	ret = sat->ctr_sat_v1_uart_write_read(sat);
 	if (ret) {
-		LOG_DBG("Call `ctr_sat_uart_write_read` failed: %d", ret);
+		LOG_DBG("Call `ctr_sat_v1_uart_write_read` failed: %d", ret);
 		k_mutex_unlock(&sat->mutex);
 		return ret;
 	}
@@ -316,11 +316,11 @@ int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *paramete
 	} else {
 		response_data_size_max = *response_data_size;
 	}
-	ret = ctr_sat_parse_message(&response_id, response_data, response_data_size_max,
-				    &response_data_size_parsed, sat->rx_buf, sat->rx_buf_len,
-				    flags);
+	ret = ctr_sat_v1_parse_message(&response_id, response_data, response_data_size_max,
+				       &response_data_size_parsed, sat->rx_buf, sat->rx_buf_len,
+				       flags);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_parse_message` failed: %d", ret);
+		LOG_ERR("Call `ctr_sat_v1_parse_message` failed: %d", ret);
 
 		int allowed_retries = FIELD_GET(FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES_MASK, flags);
 		int new_flags =
@@ -333,9 +333,9 @@ int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *paramete
 				LOG_DBG("CRC error reply was detected. Trying again");
 
 				k_mutex_unlock(&sat->mutex);
-				return ctr_sat_execute_command(sat, command, parameters,
-							       parameters_size, response_data,
-							       response_data_size, new_flags);
+				return ctr_sat_v1_execute_command(sat, command, parameters,
+								  parameters_size, response_data,
+								  response_data_size, new_flags);
 			}
 		} else if (ret == -E_INVCRC) {
 			if (FIELD_GET(FLAG_REPEAT_ON_ANS_CRC_ERROR_BIT, flags) &&
@@ -343,9 +343,9 @@ int ctr_sat_execute_command(struct ctr_sat *sat, uint8_t command, void *paramete
 				LOG_DBG("CRC error was detected in answer message. Trying again");
 
 				k_mutex_unlock(&sat->mutex);
-				return ctr_sat_execute_command(sat, command, parameters,
-							       parameters_size, response_data,
-							       response_data_size, new_flags);
+				return ctr_sat_v1_execute_command(sat, command, parameters,
+								  parameters_size, response_data,
+								  response_data_size, new_flags);
 			}
 		}
 

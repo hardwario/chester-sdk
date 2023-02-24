@@ -1,51 +1,47 @@
-config CTR_SAT
-	bool "CTR_SAT"
+config CTR_SAT_V1
+	bool "Enable support for CHESTER-V1 Satelite Module"
 	select REQUIRES_FULL_LIBC
-	select DS28E17
-	select CTR_W1
-	select GPIO
-	select I2C
 
-if CTR_SAT
+if CTR_SAT_V1
 
-config CTR_SAT_USE_WIFI_DEVKIT
+config CTR_SAT_V1_USE_WIFI_DEVKIT
 	bool "Enable support for using Wi-Fi Devkit. Increases SRAM memory usage."
 	default y
 
-config CTR_SAT_USE_SYSCON
+config CTR_SAT_V1_USE_SYSCON
 	bool "Enable support for using CHESTER-V1 over CHESTER system connector."
 	default y
-	depends on GPIO
-	depends on I2C
+	select GPIO
+	select I2C
 
-config CTR_SAT_USE_W1
+config CTR_SAT_V1_USE_W1
 	bool "Enable support for using CHESTER-V1 over W1 bus."
 	default n
-	depends on CTR_W1
-	depends on I2C
+	select DS28E17
+	select CTR_W1
 
-config CTR_SAT_THREAD_STACK_SIZE
+config CTR_SAT_V1_THREAD_STACK_SIZE
 	int "CHESTER SAT thread stack size"
 	default 1024
 
-config CTR_SAT_THREAD_PRIORITY
+config CTR_SAT_V1_THREAD_PRIORITY
 	int "CHESTER SAT thread priority"
 	default 10
 
-config CTR_SAT_INT_POLL_PERIOD_MSEC
+config CTR_SAT_V1_INT_POLL_PERIOD_MSEC
 	int "Polling delay (in msec) used for polling interrupt singnal for handling frequent interrupts and interrupts over W1."
 	default 10000
 
-config CTR_SAT_RESET_ON_INIT
+config CTR_SAT_V1_RESET_ON_INIT
 	bool "Enable for eforcing module reset on init."
 	default y
 
-config CTR_SAT_CRC_ERRORS_ALLOWED_RETRIES
+config CTR_SAT_V1_CRC_ERRORS_ALLOWED_RETRIES
 	int "Number of retries allowed when detecting CRC error. Set to 0 for disabling retries on CRC error."
 	default 2
 
-module = CTR_SAT
+module = CTR_SAT_V1
 module-str = CHESTER Satelite Module Subsystem
 source "subsys/logging/Kconfig.template.log_config"
 
-endif # CTR_SAT
+endif # CTR_SAT_V1

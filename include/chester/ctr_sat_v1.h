@@ -1,5 +1,5 @@
-#ifndef CHESTER_INCLUDE_CTR_SAT_H_
-#define CHESTER_INCLUDE_CTR_SAT_H_
+#ifndef CHESTER_INCLUDE_CTR_SAT_V1_H_
+#define CHESTER_INCLUDE_CTR_SAT_V1_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,7 +14,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#if CONFIG_CTR_SAT_USE_WIFI_DEVKIT
+#if CONFIG_CTR_SAT_V1_USE_WIFI_DEVKIT
 // Longest request: WIF_W (194 bytes)
 // 8 == 1 (start byte) + 2 (command) + 4 (CRC) + 1 (end byte)
 #define TX_MESSAGE_MAX_SIZE (194 * 2 + 8)
@@ -22,7 +22,7 @@ extern "C" {
 // Longest request: PLD_E (162 bytes)
 // 8 == 1 (start byte) + 2 (command) + 4 (CRC) + 1 (end byte)
 #define TX_MESSAGE_MAX_SIZE (162 * 2 + 8)
-#endif /* CONFIG_CTR_SAT_USE_WIFI_DEVKIT */
+#endif /* CONFIG_CTR_SAT_V1_USE_WIFI_DEVKIT */
 
 // Longest answer: CMD_R (44 bytes)
 // 8 == 1 (start byte) + 2 (command) + 4 (CRC) + 1 (end byte)
@@ -30,35 +30,35 @@ extern "C" {
 
 #define MAX_PAYLOADS 8
 
-typedef uint16_t ctr_sat_msg_handle;
+typedef uint16_t ctr_sat_v1_msg_handle;
 
-enum ctr_sat_event {
-	CTR_SAT_EVENT_MESSAGE_SENT = 0,
-	CTR_SAT_EVENT_MESSAGE_RECEIVED = 1,
+enum ctr_sat_v1_event {
+	CTR_SAT_V1_EVENT_MESSAGE_SENT = 0,
+	CTR_SAT_V1_EVENT_MESSAGE_RECEIVED = 1,
 };
 
-struct ctr_sat_event_msg_sent_data {
-	ctr_sat_msg_handle msg;
+struct ctr_sat_v1_event_msg_sent_data {
+	ctr_sat_v1_msg_handle msg;
 };
 
-struct ctr_sat_event_msg_recv_data {
+struct ctr_sat_v1_event_msg_recv_data {
 	void *data;
 	size_t data_len;
 	time_t created_at;
 };
 
-union ctr_sat_event_data {
-	struct ctr_sat_event_msg_sent_data msg_send;
-	struct ctr_sat_event_msg_recv_data msg_recv;
+union ctr_sat_v1_event_data {
+	struct ctr_sat_v1_event_msg_sent_data msg_send;
+	struct ctr_sat_v1_event_msg_recv_data msg_recv;
 };
 
-enum ctr_sat_pin {
-	CTR_SAT_PIN_RESET = 0,
-	CTR_SAT_PIN_WAKEUP = 1
+enum ctr_sat_v1_pin {
+	CTR_SAT_V1_PIN_RESET = 0,
+	CTR_SAT_V1_PIN_WAKEUP = 1
 };
 
-typedef void (*ctr_sat_event_cb)(enum ctr_sat_event event, union ctr_sat_event_data *data,
-				 void *user_data);
+typedef void (*ctr_sat_v1_event_cb)(enum ctr_sat_v1_event event, union ctr_sat_v1_event_data *data,
+				    void *user_data);
 
 struct ctr_sat {
 
@@ -71,7 +71,7 @@ struct ctr_sat {
 	uint8_t rx_buf[RX_MESSAGE_MAX_SIZE];
 	size_t rx_buf_len;
 
-	ctr_sat_event_cb user_cb;
+	ctr_sat_v1_event_cb user_cb;
 	void *user_data;
 
 	uint16_t enqued_payload_ids[MAX_PAYLOADS];
@@ -79,7 +79,7 @@ struct ctr_sat {
 	uint16_t last_payload_id;
 
 	union {
-		struct ctr_sat_syscon {
+		struct ctr_sat_v1_syscon {
 			struct k_poll_signal rx_completed_signal;
 
 			uint8_t *tx_buf_transmit_ptr;
@@ -93,7 +93,7 @@ struct ctr_sat {
 			struct gpio_callback event_cb;
 		} syscon;
 
-		struct ctr_sat_w1 {
+		struct ctr_sat_v1_w1 {
 			uint64_t serial_number;
 			const struct device *ds28e17_dev;
 
@@ -101,10 +101,10 @@ struct ctr_sat {
 		} w1;
 	} hw_abstraction;
 
-	int (*ctr_sat_uart_write_read)(struct ctr_sat *sat);
-	int (*ctr_sat_gpio_write)(struct ctr_sat *sat, enum ctr_sat_pin pin, bool value);
+	int (*ctr_sat_v1_uart_write_read)(struct ctr_sat *sat);
+	int (*ctr_sat_v1_gpio_write)(struct ctr_sat *sat, enum ctr_sat_v1_pin pin, bool value);
 
-	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_CTR_SAT_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_CTR_SAT_V1_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	k_tid_t thread_id;
 	atomic_t thread_cancelation_requested;
@@ -112,19 +112,19 @@ struct ctr_sat {
 	struct k_sem event_trig_sem;
 };
 
-int ctr_sat_set_callback(struct ctr_sat *sat, ctr_sat_event_cb user_cb, void *user_data);
+int ctr_sat_v1_set_callback(struct ctr_sat *sat, ctr_sat_v1_event_cb user_cb, void *user_data);
 int ctr_sat_v1_init_syscon(struct ctr_sat *sat);
 int ctr_sat_v1_init_w1(struct ctr_sat *sat);
-int ctr_sat_start(struct ctr_sat *sat);
-int ctr_sat_stop(struct ctr_sat *sat);
-int ctr_sat_send_message(struct ctr_sat *sat, ctr_sat_msg_handle *msg_handle, const void *buf,
-			 size_t len);
-int ctr_sat_flush_messages(struct ctr_sat *sat);
-int ctr_sat_use_wifi_devkit(struct ctr_sat *sat, const char *ssid, const char *password,
-			    const char *api_key);
+int ctr_sat_v1_start(struct ctr_sat *sat);
+int ctr_sat_v1_stop(struct ctr_sat *sat);
+int ctr_sat_v1_send_message(struct ctr_sat *sat, ctr_sat_v1_msg_handle *msg_handle, const void *buf,
+			    size_t len);
+int ctr_sat_v1_flush_messages(struct ctr_sat *sat);
+int ctr_sat_v1_use_wifi_devkit(struct ctr_sat *sat, const char *ssid, const char *password,
+			       const char *api_key);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CHESTER_INCLUDE_CTR_SAT_H_ */
+#endif /* CHESTER_INCLUDE_CTR_SAT_V1_H_ */

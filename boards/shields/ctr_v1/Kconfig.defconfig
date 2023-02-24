@@ -1,6 +1,6 @@
 if SHIELD_CTR_V1
 
-config CTR_SAT
+config CTR_SAT_V1
 	default y
 
 config GPIO

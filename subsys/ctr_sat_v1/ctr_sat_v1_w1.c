@@ -2,7 +2,7 @@
 #include "astronode_s.h"
 #include "ctr_sat_v1_internal.h"
 
-#include <chester/ctr_sat.h>
+#include <chester/ctr_sat_v1.h>
 #include <chester/ctr_w1.h>
 #include <chester/drivers/w1/ds28e17.h>
 
@@ -18,15 +18,16 @@
 #include <stdint.h>
 #include <stdio.h>
 
-LOG_MODULE_REGISTER(ctr_sat_v1_w1, CONFIG_CTR_SAT_LOG_LEVEL);
+LOG_MODULE_REGISTER(ctr_sat_v1_w1, CONFIG_CTR_SAT_V1_LOG_LEVEL);
 
 static struct ctr_w1 m_w1;
 
 static bool m_is_initialized = false;
 K_MUTEX_DEFINE(m_init_mutex);
 
-static struct ctr_sat_w1 m_w1_shields[] = {{.ds28e17_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_0))},
-					   {.ds28e17_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_1))}};
+static struct ctr_sat_v1_w1 m_w1_shields[] = {
+	{.ds28e17_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_0))},
+	{.ds28e17_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_1))}};
 static int m_w1_shields_count = 0;
 static int m_w1_shields_used = 0;
 
@@ -56,13 +57,13 @@ static const struct device *m_dev_ds2484 = DEVICE_DT_GET(DT_NODELABEL(ds2484));
 #define TCA9534_EVENT_PIN_BIT	   BIT(2)
 #define TCA9534_RESET_UART_PIN_BIT BIT(3)
 
-static int ctr_sat_w1_scan(void);
+static int ctr_sat_v1_w1_scan(void);
 static int ctr_sat_v1_init_w1_pca9534(struct ctr_sat *sat);
 static int ctr_sat_v1_init_w1_sc16is740(struct ctr_sat *sat);
-static int ctr_sat_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_requirement);
-static int ctr_sat_w1_get_rx_fifo_level(struct ctr_sat *sat, size_t *level);
+static int ctr_sat_v1_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_requirement);
+static int ctr_sat_v1_w1_get_rx_fifo_level(struct ctr_sat *sat, size_t *level);
 static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat);
-static int ctr_sat_v1_w1_gpio_write(struct ctr_sat *sat, enum ctr_sat_pin pin, bool value);
+static int ctr_sat_v1_w1_gpio_write(struct ctr_sat *sat, enum ctr_sat_v1_pin pin, bool value);
 static int ctr_sat_v1_w1_update_gpio_output(struct ctr_sat *sat);
 
 int ctr_sat_v1_init_w1(struct ctr_sat *sat)
@@ -76,9 +77,9 @@ int ctr_sat_v1_init_w1(struct ctr_sat *sat)
 
 	k_mutex_lock(&m_init_mutex, K_FOREVER);
 	if (m_is_initialized == false) {
-		ret = ctr_sat_w1_scan();
+		ret = ctr_sat_v1_w1_scan();
 		if (ret) {
-			LOG_DBG("Call `ctr_sat_w1_scan` failed: %d", ret);
+			LOG_DBG("Call `ctr_sat_v1_w1_scan` failed: %d", ret);
 			k_mutex_unlock(&m_init_mutex);
 			return ret;
 		}
@@ -95,7 +96,7 @@ int ctr_sat_v1_init_w1(struct ctr_sat *sat)
 
 	k_mutex_unlock(&m_init_mutex);
 
-	struct ctr_sat_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
 	sat_w1->ds28e17_dev = m_w1_shields[shield_id].ds28e17_dev;
 	sat_w1->serial_number = m_w1_shields[shield_id].serial_number;
@@ -140,10 +141,10 @@ int ctr_sat_v1_init_w1(struct ctr_sat *sat)
 		return ret;
 	}
 
-	sat->ctr_sat_uart_write_read = ctr_sat_v1_w1_uart_write_read;
-	sat->ctr_sat_gpio_write = ctr_sat_v1_w1_gpio_write;
+	sat->ctr_sat_v1_uart_write_read = ctr_sat_v1_w1_uart_write_read;
+	sat->ctr_sat_v1_gpio_write = ctr_sat_v1_w1_gpio_write;
 
-	return ctr_sat_init_generic(sat);
+	return ctr_sat_v1_init_generic(sat);
 
 error:
 	ret = ctr_w1_release(&m_w1, m_dev_ds2484);
@@ -157,7 +158,7 @@ error:
 static int ctr_sat_v1_init_w1_pca9534(struct ctr_sat *sat)
 {
 	int ret;
-	struct ctr_sat_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
 	// set initial GPIO output port value
 	sat_w1->gpio_state = TCA9534_RESET_PIN_BIT | TCA9534_RESET_UART_PIN_BIT;
@@ -183,7 +184,7 @@ static int ctr_sat_v1_init_w1_pca9534(struct ctr_sat *sat)
 static int ctr_sat_v1_init_w1_sc16is740(struct ctr_sat *sat)
 {
 	int ret;
-	struct ctr_sat_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
 	struct reg_write_op {
 		uint8_t reg;
@@ -223,7 +224,7 @@ static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat)
 {
 	int ret;
 	int res;
-	struct ctr_sat_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
 	ret = ctr_w1_acquire(&m_w1, m_dev_ds2484);
 	if (ret) {
@@ -256,9 +257,9 @@ static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat)
 		size_t to_copy = MIN(sat->tx_buf_len, BULK_SIZE);
 		memcpy(tx_buf + 1, tx_rd_ptr, to_copy);
 
-		ret = ctr_sat_w1_wait_for_buffer_space(sat, to_copy);
+		ret = ctr_sat_v1_w1_wait_for_buffer_space(sat, to_copy);
 		if (ret) {
-			LOG_ERR("Call `ctr_sat_w1_wait_for_buffer_space` failed: %d", ret);
+			LOG_ERR("Call `ctr_sat_v1_w1_wait_for_buffer_space` failed: %d", ret);
 			res = ret;
 			goto error;
 		}
@@ -284,9 +285,9 @@ static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat)
 
 	while (true) {
 		size_t received_bytes;
-		ret = ctr_sat_w1_get_rx_fifo_level(sat, &received_bytes);
+		ret = ctr_sat_v1_w1_get_rx_fifo_level(sat, &received_bytes);
 		if (ret) {
-			LOG_ERR("Call `ctr_sat_w1_get_rx_fifo_level` failed: %d", ret);
+			LOG_ERR("Call `ctr_sat_v1_w1_get_rx_fifo_level` failed: %d", ret);
 			res = ret;
 			goto error;
 		}
@@ -351,7 +352,7 @@ error:
 static int ctr_sat_v1_w1_update_gpio_output(struct ctr_sat *sat)
 {
 	int ret;
-	struct ctr_sat_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
 	uint8_t buf[2];
 	buf[0] = TCA9534_REG_OUTPUT;
@@ -365,15 +366,15 @@ static int ctr_sat_v1_w1_update_gpio_output(struct ctr_sat *sat)
 	return 0;
 }
 
-static int ctr_sat_v1_w1_gpio_write(struct ctr_sat *sat, enum ctr_sat_pin pin, bool value)
+static int ctr_sat_v1_w1_gpio_write(struct ctr_sat *sat, enum ctr_sat_v1_pin pin, bool value)
 {
 	int ret;
 	int res;
-	struct ctr_sat_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
-	if (pin == CTR_SAT_PIN_RESET) {
+	if (pin == CTR_SAT_V1_PIN_RESET) {
 		WRITE_BIT(sat_w1->gpio_state, TCA9534_RESET_PIN_BIT, value);
-	} else if (pin == CTR_SAT_PIN_WAKEUP) {
+	} else if (pin == CTR_SAT_V1_PIN_WAKEUP) {
 		WRITE_BIT(sat_w1->gpio_state, TCA9534_WAKEUP_PIN_BIT, value);
 	} else {
 		return -EINVAL;
@@ -416,11 +417,11 @@ error:
 	return res;
 }
 
-static int ctr_sat_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_requirement)
+static int ctr_sat_v1_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_requirement)
 {
 	int ret;
 
-	struct ctr_sat_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
 	if (space_requirement > SC16IS7XX_FIFO_CAPACITY) {
 		return -EINVAL;
@@ -448,13 +449,13 @@ static int ctr_sat_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_requi
 	return 0;
 }
 
-static int ctr_sat_w1_get_rx_fifo_level(struct ctr_sat *sat, size_t *level)
+static int ctr_sat_v1_w1_get_rx_fifo_level(struct ctr_sat *sat, size_t *level)
 {
 	int ret;
 	uint8_t reg = SC16IS7XX_REG_RXLVL << SC16IS7XX_REG_SHIFT;
 	uint8_t val;
 
-	struct ctr_sat_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
 	ret = ds28e17_i2c_write_read(sat_w1->ds28e17_dev, SC16IS740_I2C_ADDR, &reg, 1, &val, 1);
 	if (ret) {
@@ -466,7 +467,7 @@ static int ctr_sat_w1_get_rx_fifo_level(struct ctr_sat *sat, size_t *level)
 	return 0;
 }
 
-static int ctr_sat_w1_scan_callback(struct w1_rom rom, void *user_data)
+static int ctr_sat_v1_w1_scan_callback(struct w1_rom rom, void *user_data)
 {
 	int ret;
 
@@ -529,7 +530,7 @@ static int ctr_sat_w1_scan_callback(struct w1_rom rom, void *user_data)
 	return 0;
 }
 
-static int ctr_sat_w1_scan(void)
+static int ctr_sat_v1_w1_scan(void)
 {
 	int ret;
 	int res;
@@ -547,7 +548,7 @@ static int ctr_sat_w1_scan(void)
 
 	m_w1_shields_count = 0;
 
-	ret = ctr_w1_scan(&m_w1, m_dev_ds2484, ctr_sat_w1_scan_callback, NULL);
+	ret = ctr_w1_scan(&m_w1, m_dev_ds2484, ctr_sat_v1_w1_scan_callback, NULL);
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_w1_scan` failed: %d", ret);
 		res = ret;

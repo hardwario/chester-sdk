@@ -1,7 +1,7 @@
 /* CHESTER includes */
 #include "astronode_s.h"
 
-#include <chester/ctr_sat.h>
+#include <chester/ctr_sat_v1.h>
 
 /* Zephyr includes */
 #include <zephyr/drivers/uart.h>
@@ -14,22 +14,22 @@
 #include <stddef.h>
 #include <stdint.h>
 
-LOG_MODULE_REGISTER(ctr_sat_v1_syscon, CONFIG_CTR_SAT_LOG_LEVEL);
+LOG_MODULE_REGISTER(ctr_sat_v1_syscon, CONFIG_CTR_SAT_V1_LOG_LEVEL);
 
-static void ctr_sat_uart_callback(const struct device *dev, void *user_data);
-static void ctr_sat_event_gpio_callback(const struct device *dev, struct gpio_callback *cb,
-					uint32_t pin_mask);
+static void ctr_sat_v1_uart_callback(const struct device *dev, void *user_data);
+static void ctr_sat_v1_event_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+					   uint32_t pin_mask);
 
 int ctr_sat_v1_syscon_uart_write_read(struct ctr_sat *sat);
-int ctr_sat_v1_syscon_gpio_write(struct ctr_sat *sat, enum ctr_sat_pin pin, bool value);
+int ctr_sat_v1_syscon_gpio_write(struct ctr_sat *sat, enum ctr_sat_v1_pin pin, bool value);
 
-int ctr_sat_init_generic(struct ctr_sat *sat);
+int ctr_sat_v1_init_generic(struct ctr_sat *sat);
 
 int ctr_sat_v1_init_syscon(struct ctr_sat *sat)
 {
 	int ret;
 
-	struct ctr_sat_syscon *sat_syscon = &sat->hw_abstraction.syscon;
+	struct ctr_sat_v1_syscon *sat_syscon = &sat->hw_abstraction.syscon;
 
 	sat_syscon->uart_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_sc16is740_syscon));
 
@@ -38,7 +38,7 @@ int ctr_sat_v1_init_syscon(struct ctr_sat *sat)
 		return -ENODEV;
 	}
 
-	uart_irq_callback_user_data_set(sat_syscon->uart_dev, ctr_sat_uart_callback, sat);
+	uart_irq_callback_user_data_set(sat_syscon->uart_dev, ctr_sat_v1_uart_callback, sat);
 
 	struct gpio_dt_spec reset_spec =
 		GPIO_DT_SPEC_GET(DT_NODELABEL(ctr_v1_syscon), modem_reset_gpios);
@@ -65,7 +65,7 @@ int ctr_sat_v1_init_syscon(struct ctr_sat *sat)
 		return ret;
 	}
 
-	gpio_init_callback(&sat_syscon->event_cb, ctr_sat_event_gpio_callback,
+	gpio_init_callback(&sat_syscon->event_cb, ctr_sat_v1_event_gpio_callback,
 			   BIT(sat_syscon->event_gpio.pin));
 
 	ret = gpio_add_callback(sat_syscon->event_gpio.port, &sat_syscon->event_cb);
@@ -80,17 +80,17 @@ int ctr_sat_v1_init_syscon(struct ctr_sat *sat)
 		return ret;
 	}
 
-	sat->ctr_sat_uart_write_read = ctr_sat_v1_syscon_uart_write_read;
-	sat->ctr_sat_gpio_write = ctr_sat_v1_syscon_gpio_write;
+	sat->ctr_sat_v1_uart_write_read = ctr_sat_v1_syscon_uart_write_read;
+	sat->ctr_sat_v1_gpio_write = ctr_sat_v1_syscon_gpio_write;
 
-	return ctr_sat_init_generic(sat);
+	return ctr_sat_v1_init_generic(sat);
 }
 
 int ctr_sat_v1_syscon_uart_write_read(struct ctr_sat *sat)
 {
 	int ret;
 
-	struct ctr_sat_syscon *sat_syscon = &sat->hw_abstraction.syscon;
+	struct ctr_sat_v1_syscon *sat_syscon = &sat->hw_abstraction.syscon;
 
 	sat_syscon->tx_buf_transmit_ptr = sat->tx_buf;
 	sat_syscon->rx_buf_receive_ptr = sat->rx_buf;
@@ -145,24 +145,24 @@ int ctr_sat_v1_syscon_uart_write_read(struct ctr_sat *sat)
 	return 0;
 }
 
-int ctr_sat_v1_syscon_gpio_write(struct ctr_sat *sat, enum ctr_sat_pin pin, bool value)
+int ctr_sat_v1_syscon_gpio_write(struct ctr_sat *sat, enum ctr_sat_v1_pin pin, bool value)
 {
-	struct ctr_sat_syscon *sat_syscon = &sat->hw_abstraction.syscon;
+	struct ctr_sat_v1_syscon *sat_syscon = &sat->hw_abstraction.syscon;
 
-	if (pin == CTR_SAT_PIN_RESET) {
+	if (pin == CTR_SAT_V1_PIN_RESET) {
 		return gpio_pin_set_dt(&sat_syscon->reset_gpio, value);
-	} else if (pin == CTR_SAT_PIN_WAKEUP) {
+	} else if (pin == CTR_SAT_V1_PIN_WAKEUP) {
 		return gpio_pin_set_dt(&sat_syscon->wakeup_gpio, value);
 	} else {
 		return -EINVAL;
 	}
 }
 
-static void ctr_sat_handle_uart_rx_irq(struct ctr_sat *sat)
+static void ctr_sat_v1_handle_uart_rx_irq(struct ctr_sat *sat)
 {
 	int ret;
 
-	struct ctr_sat_syscon *sat_syscon = &sat->hw_abstraction.syscon;
+	struct ctr_sat_v1_syscon *sat_syscon = &sat->hw_abstraction.syscon;
 
 	/*
 		TODO remove MIN()
@@ -221,9 +221,9 @@ static void ctr_sat_handle_uart_rx_irq(struct ctr_sat *sat)
 	}
 }
 
-static void ctr_sat_handle_tx_irq(struct ctr_sat *sat)
+static void ctr_sat_v1_handle_tx_irq(struct ctr_sat *sat)
 {
-	struct ctr_sat_syscon *sat_syscon = &sat->hw_abstraction.syscon;
+	struct ctr_sat_v1_syscon *sat_syscon = &sat->hw_abstraction.syscon;
 
 	if (sat->tx_buf_len == 0) {
 		LOG_DBG("TX completed. No bytes remains to send. Disabling TX interrupt");
@@ -254,10 +254,10 @@ static void ctr_sat_handle_tx_irq(struct ctr_sat *sat)
 	}
 }
 
-static void ctr_sat_uart_callback(const struct device *dev, void *user_data)
+static void ctr_sat_v1_uart_callback(const struct device *dev, void *user_data)
 {
 	struct ctr_sat *sat = (struct ctr_sat *)user_data;
-	struct ctr_sat_syscon *sat_syscon = &sat->hw_abstraction.syscon;
+	struct ctr_sat_v1_syscon *sat_syscon = &sat->hw_abstraction.syscon;
 
 	if (!uart_irq_update(sat_syscon->uart_dev)) {
 		LOG_WRN("uart_irq_update did not allow execution of UART interrupt handler. "
@@ -269,12 +269,12 @@ static void ctr_sat_uart_callback(const struct device *dev, void *user_data)
 
 	if (uart_irq_rx_ready(sat_syscon->uart_dev)) {
 		is_handled = 1;
-		ctr_sat_handle_uart_rx_irq(sat);
+		ctr_sat_v1_handle_uart_rx_irq(sat);
 	}
 
 	if (uart_irq_tx_ready(sat_syscon->uart_dev)) {
 		is_handled = 1;
-		ctr_sat_handle_tx_irq(sat);
+		ctr_sat_v1_handle_tx_irq(sat);
 	}
 
 	if (!is_handled) {
@@ -282,8 +282,8 @@ static void ctr_sat_uart_callback(const struct device *dev, void *user_data)
 	}
 }
 
-static void ctr_sat_event_gpio_callback(const struct device *dev, struct gpio_callback *cb,
-					uint32_t pin_mask)
+static void ctr_sat_v1_event_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+					   uint32_t pin_mask)
 {
 	struct ctr_sat *sat = CONTAINER_OF(cb, struct ctr_sat, hw_abstraction.syscon.event_cb);
 
