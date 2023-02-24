@@ -164,13 +164,8 @@ static void ctr_sat_v1_handle_uart_rx_irq(struct ctr_sat *sat)
 
 	struct ctr_sat_v1_syscon *sat_syscon = &sat->hw_abstraction.syscon;
 
-	/*
-		TODO remove MIN()
-		MIN() is here only because underlaying driver (sc16is7xx) currently returns err when
-	   passed buffer is too large
-	*/
 	int bytes_read = uart_fifo_read(sat_syscon->uart_dev, sat_syscon->rx_buf_receive_ptr,
-					MIN(RX_MESSAGE_MAX_SIZE - sat->rx_buf_len, 64));
+					RX_MESSAGE_MAX_SIZE - sat->rx_buf_len);
 
 	if (bytes_read < 0) {
 		LOG_ERR("Call `uart_fifo_read` failed: %d", bytes_read);
@@ -231,13 +226,8 @@ static void ctr_sat_v1_handle_tx_irq(struct ctr_sat *sat)
 		return;
 	}
 
-	/*
-		TODO remove MIN()
-		MIN() is here only because underlaying driver (sc16is7xx) currently returns err when
-	   passed buffer is too large
-	*/
 	int bytes_sent = uart_fifo_fill(sat_syscon->uart_dev, sat_syscon->tx_buf_transmit_ptr,
-					MIN(sat->tx_buf_len, 64));
+					sat->tx_buf_len);
 	if (bytes_sent < 0) {
 		LOG_ERR("Call `uart_fifo_fill` failed: %d", bytes_sent);
 		return;
