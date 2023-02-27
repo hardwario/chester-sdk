@@ -38,6 +38,7 @@ struct ctr_rtc_tm {
 int ctr_rtc_get_tm(struct ctr_rtc_tm *tm);
 int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm);
 int ctr_rtc_get_ts(int64_t *ts);
+int ctr_rtc_set_ts(int64_t ts);
 bool ctr_rtc_is_set(void);
 int ctr_rtc_wait(k_timeout_t timeout);
 

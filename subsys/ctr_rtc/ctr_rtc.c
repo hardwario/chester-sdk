@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 LOG_MODULE_REGISTER(ctr_rtc, CONFIG_CTR_RTC_LOG_LEVEL);
 
@@ -145,6 +146,35 @@ int ctr_rtc_get_ts(int64_t *ts)
 	irq_enable(RTC2_IRQn);
 
 	*ts = timeutil_timegm64(&tm);
+
+	return 0;
+}
+
+int ctr_rtc_set_ts(int64_t ts)
+{
+	int ret;
+
+	time_t time = ts;
+	struct tm result = {0};
+	if (!gmtime_r(&time, &result)) {
+		LOG_ERR("Call `gmtime_r` failed");
+		return -EINVAL;
+	}
+
+	struct ctr_rtc_tm tm = {
+		.year = result.tm_year + 1900,
+		.month = result.tm_mon + 1,
+		.day = result.tm_mday,
+		.hours = result.tm_hour,
+		.minutes = result.tm_min,
+		.seconds = result.tm_sec,
+	};
+
+	ret = ctr_rtc_set_tm(&tm);
+	if (ret) {
+		LOG_ERR("Call `ctr_rtc_set_tm` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }
