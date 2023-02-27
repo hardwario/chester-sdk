@@ -14,7 +14,7 @@ extern "C" {
 
 struct app_config {
 	int interval_sample;
-	int interval_report; /* TODO interval_report */
+	int interval_report;
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 	int event_report_delay;
