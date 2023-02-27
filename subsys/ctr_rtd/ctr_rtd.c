@@ -44,27 +44,23 @@ int ctr_rtd_read(enum ctr_rtd_channel channel, enum ctr_rtd_type type, float *te
 
 	switch (channel) {
 	case CTR_RTD_CHANNEL_A1:
-#if CONFIG_SHIELD_CTR_X3_A
-		dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_a));
-#endif /* CONFIG_SHIELD_CTR_X3_A */
+		LOG_INF("A1");
+		dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_a));
 		chan = CTR_X3_CHANNEL_1;
 		break;
 	case CTR_RTD_CHANNEL_A2:
-#if CONFIG_SHIELD_CTR_X3_A
-		dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_a));
-#endif /* CONFIG_SHIELD_CTR_X3_A */
+		LOG_INF("A2");
+		dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_a));
 		chan = CTR_X3_CHANNEL_2;
 		break;
 	case CTR_RTD_CHANNEL_B1:
-#if CONFIG_SHIELD_CTR_X3_B
-		dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_b));
-#endif /* CONFIG_SHIELD_CTR_X3_B */
+		LOG_INF("B1");
+		dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_b));
 		chan = CTR_X3_CHANNEL_1;
 		break;
 	case CTR_RTD_CHANNEL_B2:
-#if CONFIG_SHIELD_CTR_X3_B
-		dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_b));
-#endif /* CONFIG_SHIELD_CTR_X3_B */
+		LOG_INF("B2");
+		dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(ctr_x3_b));
 		chan = CTR_X3_CHANNEL_2;
 		break;
 	default:
@@ -72,7 +68,7 @@ int ctr_rtd_read(enum ctr_rtd_channel channel, enum ctr_rtd_type type, float *te
 		return -EINVAL;
 	}
 
-	if (!dev) {
+	if (!dev || !device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
 		return -ENODEV;
 	}
