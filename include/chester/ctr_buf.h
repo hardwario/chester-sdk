@@ -58,6 +58,14 @@ int ctr_buf_append_u64_be(struct ctr_buf *buf, uint64_t val);
 int ctr_buf_append_float_le(struct ctr_buf *buf, float val);
 int ctr_buf_append_float_be(struct ctr_buf *buf, float val);
 
+#define ctr_buf_append_s16(buf, val)   ctr_buf_append_s16_le(buf, val) __DEPRECATED_MACRO
+#define ctr_buf_append_s32(buf, val)   ctr_buf_append_s32_le(buf, val) __DEPRECATED_MACRO
+#define ctr_buf_append_s64(buf, val)   ctr_buf_append_s64_le(buf, val) __DEPRECATED_MACRO
+#define ctr_buf_append_u16(buf, val)   ctr_buf_append_u16_le(buf, val) __DEPRECATED_MACRO
+#define ctr_buf_append_u32(buf, val)   ctr_buf_append_u32_le(buf, val) __DEPRECATED_MACRO
+#define ctr_buf_append_u64(buf, val)   ctr_buf_append_u64_le(buf, val) __DEPRECATED_MACRO
+#define ctr_buf_append_float(buf, val) ctr_buf_append_float_le(buf, val) __DEPRECATED_MACRO
+
 #ifdef __cplusplus
 }
 #endif
