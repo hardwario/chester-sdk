@@ -24,8 +24,14 @@
 
 LOG_MODULE_REGISTER(ctr_rtc, CONFIG_CTR_RTC_LOG_LEVEL);
 
+#define EVENT_RTC_SET BIT(0)
+
+static K_EVENT_DEFINE(m_rtc_events);
+
 static const nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(2);
+
 static struct onoff_client m_lfclk_cli;
+
 static int m_year = 1970;
 static int m_month = 1;
 static int m_day = 1;
@@ -33,9 +39,6 @@ static int m_wday = 4;
 static int m_hours = 0;
 static int m_minutes = 0;
 static int m_seconds = 0;
-
-static atomic_t m_set;
-static K_SEM_DEFINE(m_set_sem, 0, 1);
 
 static int get_days_in_month(int year, int month)
 {
@@ -123,8 +126,7 @@ int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm)
 
 	irq_enable(RTC2_IRQn);
 
-	atomic_set(&m_set, true);
-	k_sem_give(&m_set_sem);
+	k_event_post(&m_rtc_events, EVENT_RTC_SET);
 
 	return 0;
 }
@@ -179,24 +181,20 @@ int ctr_rtc_set_ts(int64_t ts)
 	return 0;
 }
 
-bool ctr_rtc_is_set(void)
+int ctr_rtc_wait_set(k_timeout_t timeout)
 {
-	return atomic_get(&m_set);
-}
-
-int ctr_rtc_wait(k_timeout_t timeout)
-{
-	if (atomic_get(&m_set)) {
+	if (k_event_wait(&m_rtc_events, EVENT_RTC_SET, false, K_NO_WAIT)) {
 		return 0;
-	}
-
-	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		return -ETIMEDOUT;
 	}
 
 	LOG_INF("Waiting for RTC to be set");
 
-	return k_sem_take(&m_set_sem, timeout);
+	if (k_event_wait(&m_rtc_events, EVENT_RTC_SET, false, timeout)) {
+		LOG_INF("RTC has been set - continuing");
+		return 0;
+	}
+
+	return -ETIMEDOUT;
 }
 
 static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)
@@ -369,7 +367,7 @@ static int request_lfclk(void)
 	int ret;
 
 	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
-	if (mgr == NULL) {
+	if (!mgr) {
 		LOG_ERR("Call `z_nrf_clock_control_get_onoff` failed");
 		return -ENXIO;
 	}

@@ -1,6 +1,7 @@
 config CTR_RTC
 	bool "CTR_RTC"
 	depends on SHELL
+	select EVENTS
 	select NRFX_RTC2
 	select POLL
 
