@@ -13,6 +13,7 @@ config CTR_SAT_V1_USE_SYSCON
 	default y
 	select GPIO
 	select I2C
+	select POLL
 
 config CTR_SAT_V1_USE_W1
 	bool "Enable support for using CHESTER-V1 over W1 bus."
