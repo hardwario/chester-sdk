@@ -29,7 +29,12 @@ static void send_work_handler(struct k_work *work)
 {
 	int ret;
 
+#if CONFIG_APP_REPORT_JITTER
 	int64_t jitter = (int32_t)sys_rand32_get() % (g_app_config.interval_report * 1000 / 5);
+#else
+	int64_t jitter = 0;
+#endif /* CONFIG_APP_REPORT_JITTER */
+
 	int64_t duration = g_app_config.interval_report * 1000 + jitter;
 
 	LOG_INF("Scheduling next timeout in %lld second(s)", duration / 1000);
