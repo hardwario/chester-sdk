@@ -1,4 +1,4 @@
-image: "hardwario/nrf-connect-sdk-build:v2.2.0-6"
+image: "hardwario/nrf-connect-sdk-build:v2.3.0-1"
 
 variables:
   CI_DEBUG_TRACE: "false"

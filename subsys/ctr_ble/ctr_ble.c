@@ -10,17 +10,13 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/mgmt/mcumgr/smp_bt.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <bluetooth/services/dfu_smp.h>
 #include <bluetooth/services/nus.h>
-#include <img_mgmt/img_mgmt.h>
-#include <os_mgmt/os_mgmt.h>
 #include <shell/shell_bt_nus.h>
-#include <shell_mgmt/shell_mgmt.h>
 
 /* Standard includes */
 #include <ctype.h>
@@ -136,11 +132,6 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	LOG_INF("Connected");
 
 	m_current_conn = bt_conn_ref(conn);
-
-	ret = bt_conn_set_security(conn, BT_SECURITY_L4);
-	if (ret) {
-		LOG_ERR("Call `bt_conn_set_security` failed: %d", ret);
-	}
 
 #if defined(CONFIG_SHELL_BT_NUS)
 	shell_bt_nus_enable(conn);
@@ -361,18 +352,6 @@ static int init(const struct device *dev)
 
 	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
 
-#ifdef CONFIG_MCUMGR_CMD_OS_MGMT
-	os_mgmt_register_group();
-#endif
-
-#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
-	img_mgmt_register_group();
-#endif
-
-#ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
-	shell_mgmt_register_group();
-#endif
-
 	ret = bt_enable(NULL);
 	if (ret) {
 		LOG_ERR("Call `bt_enable` failed: %d", ret);
@@ -406,14 +385,6 @@ static int init(const struct device *dev)
 	if (ret) {
 		LOG_WRN("Call `load_passkey` failed: %d", ret);
 	}
-
-#if defined(CONFIG_MCUMGR_SMP_BT)
-	ret = smp_bt_register();
-	if (ret) {
-		LOG_ERR("Call `smp_bt_register` failed: %d", ret);
-		return ret;
-	}
-#endif /* defined(CONFIG_MCUMGR_SMP_BT) */
 
 #if defined(CONFIG_SHELL_BT_NUS)
 	ret = shell_bt_nus_init();
