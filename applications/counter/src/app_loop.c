@@ -109,7 +109,7 @@ int app_loop(void)
 
 	ret = update_battery();
 	if (ret) {
-		LOG_ERR("Call `task_battery` failed: %d", ret);
+		LOG_ERR("Call `update_battery` failed: %d", ret);
 	}
 
 	if (atomic_set(&g_app_loop_measure, false)) {
