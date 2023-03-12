@@ -371,6 +371,7 @@ static int meteo_aggreg_rainfall(void)
 		rf->measurements[rf->measurement_count] = rainfall;
 		rf->measurement_count++;
 
+		LOG_INF("Rainfall: %.2f mm", rainfall);
 		LOG_INF("Measurement count: %d", rf->measurement_count);
 	} else {
 		LOG_WRN("Measurement full");

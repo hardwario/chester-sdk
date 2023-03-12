@@ -24,7 +24,6 @@ void main(void)
 	}
 
 	for (;;) {
-
 		float rainfall;
 		ret = ctr_meteo_get_rainfall_and_clear(dev, &rainfall);
 		if (ret) {
@@ -32,7 +31,7 @@ void main(void)
 			k_oops();
 		}
 
-		LOG_INF("Rainfall %.2f mm", rainfall);
+		LOG_INF("Rainfall: %.2f mm", rainfall);
 
 		float speed;
 		ret = ctr_meteo_get_wind_speed_and_clear(dev, &speed);
@@ -41,7 +40,7 @@ void main(void)
 			k_oops();
 		}
 
-		LOG_INF("Wind speed %.2f meters per second", speed);
+		LOG_INF("Wind speed: %.2f m/s", speed);
 
 		float direction;
 		ret = ctr_meteo_get_wind_direction(dev, &direction);
@@ -50,7 +49,7 @@ void main(void)
 			k_oops();
 		}
 
-		LOG_INF("Wind direction %.2f°", direction);
+		LOG_INF("Wind direction: %.2f deg", direction);
 
 		k_sleep(K_MSEC(5000));
 	}
