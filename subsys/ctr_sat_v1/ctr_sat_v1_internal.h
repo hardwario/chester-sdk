@@ -35,6 +35,7 @@
    FLAG_REPEAT_ON_REQ_CRC_ERRORS, FLAG_REPEAT_ON_ANS_CRC_ERRORS or FLAG_REPEAT_ON_ALL_CRC_ERRORS
    which contains embeded both flag and retry count defined by standard Kconfig option.
 */
+
 #define FLAG_NO_WARN_ASTRONODE_ERROR		  BIT(0)
 #define FLAG_REPEAT_ON_REQ_CRC_ERROR_BIT	  BIT(1)
 #define FLAG_REPEAT_ON_ANS_CRC_ERROR_BIT	  BIT(2)
@@ -57,7 +58,7 @@
 	 FIELD_PREP(FLAG_REPEAT_ON_CRC_ERROR_MAX_RETRIES_MASK,                                     \
 		    CONFIG_CTR_SAT_V1_CRC_ERRORS_ALLOWED_RETRIES))
 
-/* Invalid CRC error code used for distinguishing from other EIO errors.*/
+/* Invalid CRC error code used for distinguishing from other EIO errors */
 #define E_INVCRC 10000
 
 int ctr_sat_v1_init_generic(struct ctr_sat *sat);

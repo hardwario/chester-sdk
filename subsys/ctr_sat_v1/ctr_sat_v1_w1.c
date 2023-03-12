@@ -22,18 +22,20 @@ LOG_MODULE_REGISTER(ctr_sat_v1_w1, CONFIG_CTR_SAT_V1_LOG_LEVEL);
 
 static struct ctr_w1 m_w1;
 
-static bool m_is_initialized = false;
-K_MUTEX_DEFINE(m_init_mutex);
+static bool m_is_initialized;
+
+static K_MUTEX_DEFINE(m_init_mutex);
 
 static struct ctr_sat_v1_w1 m_w1_shields[] = {
 	{.ds28e17_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_0))},
 	{.ds28e17_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_v1_1))}};
-static int m_w1_shields_count = 0;
-static int m_w1_shields_used = 0;
+
+static int m_w1_shields_count;
+static int m_w1_shields_used;
 
 static const struct device *m_dev_ds2484 = DEVICE_DT_GET(DT_NODELABEL(ds2484));
 
-#define SC16IS740_I2C_ADDR	0x4C
+#define SC16IS740_I2C_ADDR	0x4c
 #define SC16IS7XX_FIFO_CAPACITY 64
 #define SC16IS7XX_REG_SHIFT	3
 #define SC16IS7XX_REG_THR	0x00
@@ -46,8 +48,7 @@ static const struct device *m_dev_ds2484 = DEVICE_DT_GET(DT_NODELABEL(ds2484));
 #define SC16IS7XX_REG_EFCR	0x0f
 #define SC16IS7XX_REG_DLL	0x00
 #define SC16IS7XX_REG_DLH	0x01
-
-#define SC16IS7XX_LCR_MAGIC 0xbf
+#define SC16IS7XX_LCR_MAGIC	0xbf
 
 #define TCA9534_I2C_ADDR	   0x38
 #define TCA9534_REG_OUTPUT	   0x01
@@ -57,121 +58,36 @@ static const struct device *m_dev_ds2484 = DEVICE_DT_GET(DT_NODELABEL(ds2484));
 #define TCA9534_EVENT_PIN_BIT	   BIT(2)
 #define TCA9534_RESET_UART_PIN_BIT BIT(3)
 
-static int ctr_sat_v1_w1_scan(void);
-static int ctr_sat_v1_init_w1_pca9534(struct ctr_sat *sat);
-static int ctr_sat_v1_init_w1_sc16is740(struct ctr_sat *sat);
-static int ctr_sat_v1_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_requirement);
-static int ctr_sat_v1_w1_get_rx_fifo_level(struct ctr_sat *sat, size_t *level);
-static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat);
-static int ctr_sat_v1_w1_gpio_write(struct ctr_sat *sat, enum ctr_sat_v1_pin pin, bool value);
-static int ctr_sat_v1_w1_update_gpio_output(struct ctr_sat *sat);
+/*
+static int scan_bus(void);
+static int init_pca9534(struct ctr_sat *sat);
+static int init_sc16is740(struct ctr_sat *sat);
+static int wait_for_tx_space(struct ctr_sat *sat, int space_requirement);
+static int get_rx_fifo_level(struct ctr_sat *sat, size_t *level);
+static int read_write_uart(struct ctr_sat *sat);
+static int write_gpio(struct ctr_sat *sat, enum ctr_sat_v1_pin pin, bool value);
+static int flush_gpio(struct ctr_sat *sat);
+*/
 
-int ctr_sat_v1_init_w1(struct ctr_sat *sat)
-{
-	int ret;
-	int res;
-
-	if (k_is_in_isr()) {
-		return -EWOULDBLOCK;
-	}
-
-	k_mutex_lock(&m_init_mutex, K_FOREVER);
-	if (m_is_initialized == false) {
-		ret = ctr_sat_v1_w1_scan();
-		if (ret) {
-			LOG_DBG("Call `ctr_sat_v1_w1_scan` failed: %d", ret);
-			k_mutex_unlock(&m_init_mutex);
-			return ret;
-		}
-
-		m_is_initialized = true;
-	}
-
-	if (m_w1_shields_used >= m_w1_shields_count) {
-		k_mutex_unlock(&m_init_mutex);
-		return -ENODEV;
-	}
-
-	int shield_id = m_w1_shields_used++;
-
-	k_mutex_unlock(&m_init_mutex);
-
-	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
-
-	sat_w1->ds28e17_dev = m_w1_shields[shield_id].ds28e17_dev;
-	sat_w1->serial_number = m_w1_shields[shield_id].serial_number;
-
-	ret = ctr_w1_acquire(&m_w1, m_dev_ds2484);
-	if (ret) {
-		LOG_ERR("Call `ctr_w1_acquire` failed: %d", ret);
-		res = ret;
-		goto error;
-	}
-
-	if (!device_is_ready(sat_w1->ds28e17_dev)) {
-		LOG_ERR("Device not ready");
-		res = -ENODEV;
-		goto error;
-	}
-
-	ret = ds28e17_write_config(sat_w1->ds28e17_dev, DS28E17_I2C_SPEED_100_KHZ);
-	if (ret) {
-		LOG_ERR("Call `ds28e17_write_config` failed: %d", ret);
-		res = ret;
-		goto error;
-	}
-
-	ret = ctr_sat_v1_init_w1_pca9534(sat);
-	if (ret) {
-		LOG_DBG("Call `ctr_sat_v1_init_w1_pca9534` failed: %d", ret);
-		res = ret;
-		goto error;
-	}
-
-	ret = ctr_sat_v1_init_w1_sc16is740(sat);
-	if (ret) {
-		LOG_DBG("Call `ctr_sat_v1_init_w1_sc16is740` failed: %d", ret);
-		res = ret;
-		goto error;
-	}
-
-	ret = ctr_w1_release(&m_w1, m_dev_ds2484);
-	if (ret) {
-		LOG_ERR("Call `ctr_w1_release` failed: %d", ret);
-		return ret;
-	}
-
-	sat->ctr_sat_v1_uart_write_read = ctr_sat_v1_w1_uart_write_read;
-	sat->ctr_sat_v1_gpio_write = ctr_sat_v1_w1_gpio_write;
-
-	return ctr_sat_v1_init_generic(sat);
-
-error:
-	ret = ctr_w1_release(&m_w1, m_dev_ds2484);
-	if (ret) {
-		LOG_ERR("Call `ctr_w1_release` failed: %d", ret);
-		res = res ? res : ret;
-	}
-	return res;
-}
-
-static int ctr_sat_v1_init_w1_pca9534(struct ctr_sat *sat)
+static int init_pca9534(struct ctr_sat *sat)
 {
 	int ret;
 	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
-	// set initial GPIO output port value
+	/* Set initial GPIO output port value */
 	sat_w1->gpio_state = TCA9534_RESET_PIN_BIT | TCA9534_RESET_UART_PIN_BIT;
-	ret = ctr_sat_v1_w1_update_gpio_output(sat);
+	ret = flush_gpio(sat);
 	if (ret) {
-		LOG_ERR("Call `ctr_sat_v1_w1_update_gpio_output` failed: %d", ret);
+		LOG_ERR("Call `flush_gpio` failed: %d", ret);
 		return ret;
 	}
 
-	// set IO ports direction
-	uint8_t buf[2];
-	buf[0] = TCA9534_REG_CONFIG;
-	buf[1] = ~((uint8_t)TCA9534_RESET_PIN_BIT | (uint8_t)TCA9534_RESET_UART_PIN_BIT);
+	/* Set I/O ports direction */
+	uint8_t buf[2] = {
+		TCA9534_REG_CONFIG,
+		~(TCA9534_RESET_PIN_BIT | TCA9534_RESET_UART_PIN_BIT),
+	};
+
 	ret = ds28e17_i2c_write(sat_w1->ds28e17_dev, TCA9534_I2C_ADDR, buf, sizeof(buf));
 	if (ret) {
 		LOG_ERR("Call `ds28e17_i2c_write` failed: %d", ret);
@@ -181,9 +97,10 @@ static int ctr_sat_v1_init_w1_pca9534(struct ctr_sat *sat)
 	return 0;
 }
 
-static int ctr_sat_v1_init_w1_sc16is740(struct ctr_sat *sat)
+static int init_sc16is740(struct ctr_sat *sat)
 {
 	int ret;
+
 	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
 	struct reg_write_op {
@@ -204,12 +121,15 @@ static int ctr_sat_v1_init_w1_sc16is740(struct ctr_sat *sat)
 		{.reg = SC16IS7XX_REG_DLH, .val = 0x00},
 		{.reg = SC16IS7XX_REG_LCR, .val = 0x3},
 	};
+
 	struct reg_write_op *transactions_end = transactions + ARRAY_SIZE(transactions);
 
 	for (struct reg_write_op *i = transactions; i < transactions_end; i++) {
-		uint8_t buf[2];
-		buf[0] = i->reg << SC16IS7XX_REG_SHIFT;
-		buf[1] = i->val;
+		uint8_t buf[2] = {
+			i->reg << SC16IS7XX_REG_SHIFT,
+			i->val,
+		};
+
 		ret = ds28e17_i2c_write(sat_w1->ds28e17_dev, SC16IS740_I2C_ADDR, buf, sizeof(buf));
 		if (ret) {
 			LOG_ERR("Call `ds28e17_i2c_write` failed: %d", ret);
@@ -220,11 +140,119 @@ static int ctr_sat_v1_init_w1_sc16is740(struct ctr_sat *sat)
 	return 0;
 }
 
-static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat)
+static int write_uart(struct ctr_sat *sat, struct ctr_sat_v1_w1 *w1)
 {
 	int ret;
-	int res;
-	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	int res = 0;
+
+#define BULK_SIZE 32
+
+	uint8_t tx_buf[BULK_SIZE + 1] = {SC16IS7XX_REG_THR << SC16IS7XX_REG_SHIFT};
+
+	uint8_t *p = sat->tx_buf;
+
+	while (sat->tx_buf_len) {
+		size_t n = MIN(sat->tx_buf_len, BULK_SIZE);
+
+		memcpy(tx_buf + 1, p, n);
+
+		ret = wait_for_tx_space(sat, n);
+		if (ret) {
+			LOG_ERR("Call `wait_for_tx_space` failed: %d", ret);
+			res = ret;
+			break;
+		}
+
+		ret = ds28e17_i2c_write(sat_w1->ds28e17_dev, SC16IS740_I2C_ADDR, tx_buf, n + 1);
+		if (ret) {
+			LOG_ERR("Call `ds28e17_i2c_write` failed: %d", ret);
+			res = ret;
+			break;
+		}
+
+		p += n;
+		sat->tx_buf_len -= n;
+
+		LOG_DBG("Written %u byte(s) to FIFO (%u byte(s) remaining)", n, sat->tx_buf_len);
+	}
+
+	LOG_DBG("TX completed");
+
+	return res;
+}
+
+static int read_uart(struct ctr_sat *sat, struct ctr_sat_v1_w1 *w1)
+{
+	int ret;
+	int res = 0;
+
+	uint8_t *p = sat->rx_buf;
+	int timeout = 100;
+
+	for (;;) {
+		size_t n;
+		ret = get_rx_fifo_level(sat, &n);
+		if (ret) {
+			LOG_ERR("Call `get_rx_fifo_level` failed: %d", ret);
+			res = ret;
+			break;
+		}
+
+		if (!n) {
+			if (timeout--) {
+				k_sleep(K_MSEC(1));
+			} else {
+				res = -ETIMEDOUT;
+				break;
+			}
+
+			continue;
+		}
+
+		size_t remaining_buffer_size = RX_MESSAGE_MAX_SIZE - sat->rx_buf_len;
+		if (n > remaining_buffer_size) {
+			res = -ENOSPC;
+			break;
+		}
+
+		uint8_t reg = SC16IS7XX_REG_RHR << SC16IS7XX_REG_SHIFT;
+		ret = ds28e17_i2c_write_read(w1->ds28e17_dev, SC16IS740_I2C_ADDR, &reg, 1, p, n);
+		if (ret) {
+			LOG_ERR("Call `ds28e17_i2c_write_read` failed: %d", ret);
+			res = ret;
+			break;
+		}
+
+		bool contains_stop_byte = false;
+		uint8_t *end = p + n;
+		for (uint8_t *i = p; i < end; i++) {
+			if (*i != ASTRONODE_S_END_BYTE) {
+				continue;
+			}
+			contains_stop_byte = true;
+			if (i != end - 1) {
+				LOG_WRN("Data received after stop byte");
+			}
+			break;
+		}
+
+		p += n;
+		sat->rx_buf_len += n;
+
+		if (contains_stop_byte) {
+			break;
+		}
+	}
+
+	return res;
+}
+
+static int read_write_uart(struct ctr_sat *sat)
+{
+	int ret;
+	int res = 0;
+
+	struct ctr_sat_v1_w1 *w1 = &sat->hw_abstraction.w1;
 
 	ret = ctr_w1_acquire(&m_w1, m_dev_ds2484);
 	if (ret) {
@@ -233,111 +261,31 @@ static int ctr_sat_v1_w1_uart_write_read(struct ctr_sat *sat)
 		goto error;
 	}
 
-	if (!device_is_ready(sat_w1->ds28e17_dev)) {
+	if (!device_is_ready(w1->ds28e17_dev)) {
 		LOG_ERR("Device not ready");
 		res = -ENODEV;
 		goto error;
 	}
 
-	ret = ds28e17_write_config(sat_w1->ds28e17_dev, DS28E17_I2C_SPEED_100_KHZ);
+	ret = ds28e17_write_config(w1->ds28e17_dev, DS28E17_I2C_SPEED_100_KHZ);
 	if (ret) {
 		LOG_ERR("Call `ds28e17_write_config` failed: %d", ret);
 		res = ret;
 		goto error;
 	}
 
-#define BULK_SIZE 32
-
-	uint8_t tx_buf[BULK_SIZE + 1];
-	tx_buf[0] = SC16IS7XX_REG_THR << SC16IS7XX_REG_SHIFT;
-
-	uint8_t *tx_rd_ptr = sat->tx_buf;
-
-	while (sat->tx_buf_len) {
-		size_t to_copy = MIN(sat->tx_buf_len, BULK_SIZE);
-		memcpy(tx_buf + 1, tx_rd_ptr, to_copy);
-
-		ret = ctr_sat_v1_w1_wait_for_buffer_space(sat, to_copy);
-		if (ret) {
-			LOG_ERR("Call `ctr_sat_v1_w1_wait_for_buffer_space` failed: %d", ret);
-			res = ret;
-			goto error;
-		}
-
-		ret = ds28e17_i2c_write(sat_w1->ds28e17_dev, SC16IS740_I2C_ADDR, tx_buf,
-					to_copy + 1);
-		if (ret) {
-			LOG_ERR("Call `ds28e17_i2c_write` failed: %d", ret);
-			res = ret;
-			goto error;
-		}
-
-		tx_rd_ptr += to_copy;
-		sat->tx_buf_len -= to_copy;
-
-		LOG_DBG("Written %u byte(s) to FIFO. %u bytes remains", to_copy, sat->tx_buf_len);
+	ret = write_uart(sat, w1);
+	if (ret) {
+		LOG_ERR("Call `write_uart` failed: %d", ret);
+		res = ret;
+		goto error;
 	}
 
-	LOG_DBG("TX completed. No bytes remains to send.");
-
-	uint8_t *rx_wr_ptr = sat->rx_buf;
-	int timeout = 100;
-
-	while (true) {
-		size_t received_bytes;
-		ret = ctr_sat_v1_w1_get_rx_fifo_level(sat, &received_bytes);
-		if (ret) {
-			LOG_ERR("Call `ctr_sat_v1_w1_get_rx_fifo_level` failed: %d", ret);
-			res = ret;
-			goto error;
-		}
-
-		if (received_bytes > 0) {
-
-			size_t remaining_buffer_size = RX_MESSAGE_MAX_SIZE - sat->rx_buf_len;
-			if (received_bytes > remaining_buffer_size) {
-				res = -ENOSPC;
-				goto error;
-			}
-
-			uint8_t reg = SC16IS7XX_REG_RHR << SC16IS7XX_REG_SHIFT;
-			ret = ds28e17_i2c_write_read(sat_w1->ds28e17_dev, SC16IS740_I2C_ADDR, &reg,
-						     1, rx_wr_ptr, received_bytes);
-			if (ret) {
-				LOG_ERR("Call `ds28e17_i2c_write_read` failed: %d", ret);
-				res = ret;
-				goto error;
-			}
-
-			bool contains_stop_byte = false;
-			uint8_t *end = rx_wr_ptr + received_bytes;
-			for (uint8_t *i = rx_wr_ptr; i < end; i++) {
-				if (*i == ASTRONODE_S_END_BYTE) {
-					contains_stop_byte = true;
-					if (i != end - 1) {
-						LOG_WRN("Stop byte was received but satelite "
-							"module send "
-							"additional data after stop byte!");
-					}
-					break;
-				}
-			}
-
-			rx_wr_ptr += received_bytes;
-			sat->rx_buf_len += received_bytes;
-
-			if (contains_stop_byte) {
-				res = 0;
-				goto error;
-			}
-		} else {
-			if (timeout--) {
-				k_sleep(K_MSEC(1));
-			} else {
-				res = -ETIMEDOUT;
-				goto error;
-			}
-		}
+	ret = read_uart(sat, w1);
+	if (ret) {
+		LOG_ERR("Call `read_uart` failed: %d", ret);
+		res = ret;
+		goto error;
 	}
 
 error:
@@ -346,17 +294,20 @@ error:
 		LOG_ERR("Call `ctr_w1_release` failed: %d", ret);
 		res = res ? res : ret;
 	}
+
 	return res;
 }
 
-static int ctr_sat_v1_w1_update_gpio_output(struct ctr_sat *sat)
+static int flush_gpio(struct ctr_sat *sat)
 {
 	int ret;
 	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
 
-	uint8_t buf[2];
-	buf[0] = TCA9534_REG_OUTPUT;
-	buf[1] = sat_w1->gpio_state;
+	uint8_t buf[2] = {
+		TCA9534_REG_OUTPUT,
+		sat_w1->gpio_state,
+	};
+
 	ret = ds28e17_i2c_write(sat_w1->ds28e17_dev, TCA9534_I2C_ADDR, buf, sizeof(buf));
 	if (ret) {
 		LOG_ERR("Call `ds28e17_i2c_write` failed: %d", ret);
@@ -366,16 +317,17 @@ static int ctr_sat_v1_w1_update_gpio_output(struct ctr_sat *sat)
 	return 0;
 }
 
-static int ctr_sat_v1_w1_gpio_write(struct ctr_sat *sat, enum ctr_sat_v1_pin pin, bool value)
+static int write_gpio(struct ctr_sat *sat, enum ctr_sat_v1_pin pin, bool value)
 {
 	int ret;
-	int res;
-	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	int res = 0;
+
+	struct ctr_sat_v1_w1 *w1 = &sat->hw_abstraction.w1;
 
 	if (pin == CTR_SAT_V1_PIN_RESET) {
-		WRITE_BIT(sat_w1->gpio_state, TCA9534_RESET_PIN_BIT, value);
+		WRITE_BIT(w1->gpio_state, TCA9534_RESET_PIN_BIT, value);
 	} else if (pin == CTR_SAT_V1_PIN_WAKEUP) {
-		WRITE_BIT(sat_w1->gpio_state, TCA9534_WAKEUP_PIN_BIT, value);
+		WRITE_BIT(w1->gpio_state, TCA9534_WAKEUP_PIN_BIT, value);
 	} else {
 		return -EINVAL;
 	}
@@ -387,37 +339,37 @@ static int ctr_sat_v1_w1_gpio_write(struct ctr_sat *sat, enum ctr_sat_v1_pin pin
 		goto error;
 	}
 
-	if (!device_is_ready(sat_w1->ds28e17_dev)) {
+	if (!device_is_ready(w1->ds28e17_dev)) {
 		LOG_ERR("Device not ready");
 		res = -ENODEV;
 		goto error;
 	}
 
-	ret = ds28e17_write_config(sat_w1->ds28e17_dev, DS28E17_I2C_SPEED_100_KHZ);
+	ret = ds28e17_write_config(w1->ds28e17_dev, DS28E17_I2C_SPEED_100_KHZ);
 	if (ret) {
 		LOG_ERR("Call `ds28e17_write_config` failed: %d", ret);
 		res = ret;
 		goto error;
 	}
 
-	ret = ctr_sat_v1_w1_update_gpio_output(sat);
+	ret = flush_gpio(sat);
 	if (ret) {
 		LOG_ERR("Call `ctr_sat_v1_w1_update_gpio_output` failed: %d", ret);
 		res = ret;
 		goto error;
 	}
 
-	res = 0;
 error:
 	ret = ctr_w1_release(&m_w1, m_dev_ds2484);
 	if (ret) {
 		LOG_ERR("Call `ctr_w1_release` failed: %d", ret);
 		res = res ? res : ret;
 	}
+
 	return res;
 }
 
-static int ctr_sat_v1_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_requirement)
+static int wait_for_tx_space(struct ctr_sat *sat, int space_requirement)
 {
 	int ret;
 
@@ -427,6 +379,7 @@ static int ctr_sat_v1_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_re
 		return -EINVAL;
 	}
 
+	/* TODO Implement better */
 	int timeout = 1000; // following loop will wait for 1ms for each timeout decrement
 	uint8_t val;
 	do {
@@ -449,21 +402,23 @@ static int ctr_sat_v1_w1_wait_for_buffer_space(struct ctr_sat *sat, int space_re
 	return 0;
 }
 
-static int ctr_sat_v1_w1_get_rx_fifo_level(struct ctr_sat *sat, size_t *level)
+static int get_rx_fifo_level(struct ctr_sat *sat, size_t *level)
 {
 	int ret;
+
 	uint8_t reg = SC16IS7XX_REG_RXLVL << SC16IS7XX_REG_SHIFT;
 	uint8_t val;
 
-	struct ctr_sat_v1_w1 *sat_w1 = &sat->hw_abstraction.w1;
+	struct ctr_sat_v1_w1 *w1 = &sat->hw_abstraction.w1;
 
-	ret = ds28e17_i2c_write_read(sat_w1->ds28e17_dev, SC16IS740_I2C_ADDR, &reg, 1, &val, 1);
+	ret = ds28e17_i2c_write_read(w1->ds28e17_dev, SC16IS740_I2C_ADDR, &reg, 1, &val, 1);
 	if (ret) {
 		LOG_ERR("Call `ds28e17_i2c_write_read` failed: %d", ret);
 		return ret;
 	}
 
 	*level = val;
+
 	return 0;
 }
 
@@ -475,12 +430,10 @@ static int ctr_sat_v1_w1_scan_callback(struct w1_rom rom, void *user_data)
 		return 0;
 	}
 
-	LOG_DBG("Found 1W device which is possibly CHESTER-V1");
-
 	uint64_t serial_number = sys_get_le48(rom.serial);
 
 	if (m_w1_shields_count >= ARRAY_SIZE(m_w1_shields)) {
-		LOG_WRN("No more space for additional device: %llu", serial_number);
+		LOG_WRN("No more space for device: %llu", serial_number);
 		return 0;
 	}
 
@@ -503,19 +456,19 @@ static int ctr_sat_v1_w1_scan_callback(struct w1_rom rom, void *user_data)
 		return ret;
 	}
 
-	// test existence of SC16IS740 and TCA9534 devices for identifying CHESTER-V1
+	const struct device *ds28e17_dev = m_w1_shields[m_w1_shields_count].ds28e17_dev;
+
+	/* Test existence of SC16IS740 and TCA9534 devices for CHESTER-V1 identification */
 	uint8_t reg = SC16IS7XX_REG_TXLVL << SC16IS7XX_REG_SHIFT;
 	uint8_t val;
-	ret = ds28e17_i2c_write_read(m_w1_shields[m_w1_shields_count].ds28e17_dev,
-				     SC16IS740_I2C_ADDR, &reg, 1, &val, 1);
+	ret = ds28e17_i2c_write_read(ds28e17_dev, SC16IS740_I2C_ADDR, &reg, 1, &val, 1);
 	if (ret) {
 		LOG_DBG("Skipping serial number: %llu", serial_number);
 		return 0;
 	}
 
 	reg = TCA9534_REG_CONFIG;
-	ret = ds28e17_i2c_write_read(m_w1_shields[m_w1_shields_count].ds28e17_dev, TCA9534_I2C_ADDR,
-				     &reg, 1, &val, 1);
+	ret = ds28e17_i2c_write_read(ds28e17_dev, TCA9534_I2C_ADDR, &reg, 1, &val, 1);
 	if (ret) {
 		LOG_DBG("Skipping serial number: %llu", serial_number);
 		return 0;
@@ -530,7 +483,7 @@ static int ctr_sat_v1_w1_scan_callback(struct w1_rom rom, void *user_data)
 	return 0;
 }
 
-static int ctr_sat_v1_w1_scan(void)
+static int scan_bus(void)
 {
 	int ret;
 	int res;
@@ -548,14 +501,12 @@ static int ctr_sat_v1_w1_scan(void)
 
 	m_w1_shields_count = 0;
 
-	ret = ctr_w1_scan(&m_w1, m_dev_ds2484, ctr_sat_v1_w1_scan_callback, NULL);
+	ret = ctr_w1_scan_bus(&m_w1, m_dev_ds2484, ctr_sat_v1_w1_scan_callback, NULL);
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_w1_scan` failed: %d", ret);
 		res = ret;
 		goto error;
 	}
-
-	res = 0;
 
 error:
 	ret = ctr_w1_release(&m_w1, m_dev_ds2484);
@@ -564,5 +515,95 @@ error:
 		res = res ? res : ret;
 	}
 
+	return res;
+}
+
+int ctr_sat_v1_init_w1(struct ctr_sat *sat)
+{
+	int ret;
+	int res = 0;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&m_init_mutex, K_FOREVER);
+
+	if (m_is_initialized == false) {
+		ret = scan_bus();
+		if (ret) {
+			LOG_DBG("Call `ctr_sat_v1_w1_scan` failed: %d", ret);
+			k_mutex_unlock(&m_init_mutex);
+			return ret;
+		}
+
+		m_is_initialized = true;
+	}
+
+	if (m_w1_shields_used >= m_w1_shields_count) {
+		k_mutex_unlock(&m_init_mutex);
+		return -ENODEV;
+	}
+
+	int shield_id = m_w1_shields_used++;
+
+	k_mutex_unlock(&m_init_mutex);
+
+	struct ctr_sat_v1_w1 *w1 = &sat->hw_abstraction.w1;
+
+	w1->ds28e17_dev = m_w1_shields[shield_id].ds28e17_dev;
+	w1->serial_number = m_w1_shields[shield_id].serial_number;
+
+	ret = ctr_w1_acquire(&m_w1, m_dev_ds2484);
+	if (ret) {
+		LOG_ERR("Call `ctr_w1_acquire` failed: %d", ret);
+		res = ret;
+		goto error;
+	}
+
+	if (!device_is_ready(w1->ds28e17_dev)) {
+		LOG_ERR("Device not ready");
+		res = -ENODEV;
+		goto error;
+	}
+
+	ret = ds28e17_write_config(w1->ds28e17_dev, DS28E17_I2C_SPEED_100_KHZ);
+	if (ret) {
+		LOG_ERR("Call `ds28e17_write_config` failed: %d", ret);
+		res = ret;
+		goto error;
+	}
+
+	ret = init_pca9534(sat);
+	if (ret) {
+		LOG_DBG("Call `ctr_sat_v1_init_w1_pca9534` failed: %d", ret);
+		res = ret;
+		goto error;
+	}
+
+	ret = init_sc16is740(sat);
+	if (ret) {
+		LOG_DBG("Call `ctr_sat_v1_init_w1_sc16is740` failed: %d", ret);
+		res = ret;
+		goto error;
+	}
+
+	ret = ctr_w1_release(&m_w1, m_dev_ds2484);
+	if (ret) {
+		LOG_ERR("Call `ctr_w1_release` failed: %d", ret);
+		return ret;
+	}
+
+	sat->ctr_sat_v1_uart_write_read = read_write_uart;
+	sat->ctr_sat_v1_gpio_write = write_gpio;
+
+	return ctr_sat_v1_init_generic(sat);
+
+error:
+	ret = ctr_w1_release(&m_w1, m_dev_ds2484);
+	if (ret) {
+		LOG_ERR("Call `ctr_w1_release` failed: %d", ret);
+		res = res ? res : ret;
+	}
 	return res;
 }
