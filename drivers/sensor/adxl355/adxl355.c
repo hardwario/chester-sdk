@@ -671,7 +671,7 @@ static int read_data_accel(const struct device *dev)
 #if !defined(CONFIG_ADXL355_TRIGGER) /* Check data ready by status register*/
 		bool drdy;
 		ret = adxl355_get_status_drdy(dev, &drdy);
-		if (drdy) {
+		if (drdy == false) {
 			k_sleep(K_MSEC(2));
 			continue;
 		}
@@ -710,6 +710,8 @@ static int read_data_accel(const struct device *dev)
 int adxl355_clear_interrupts(const struct device *dev)
 {
 	int ret;
+
+	bool drdy;
 
 	ret = adxl355_get_status_drdy(dev, &drdy);
 	if (ret) {
@@ -906,7 +908,7 @@ static int sample_fetch(const struct device *dev, enum sensor_channel chan)
 		/* read accelerations from sensor */
 		ret = read_data_accel(dev);
 		if (ret) {
-			LOG_ERR("Call 'read_data' failed: %d", ret);
+			LOG_ERR("Call 'read_data_accel' failed: %d", ret);
 			return ret;
 		}
 	}
@@ -932,7 +934,11 @@ static int sample_fetch(const struct device *dev, enum sensor_channel chan)
 
 static int channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val)
 {
-	int ret, val_id = 0, i = 0;
+	int ret, val_id = 0;
+
+#if defined(CONFIG_ADXL355_FIFO)
+	int i = 0;
+#endif
 
 	struct adxl355_data *data = get_data(dev);
 
