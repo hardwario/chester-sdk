@@ -122,8 +122,6 @@ static int load_passkey(void)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	int ret;
-
 	if (err) {
 		LOG_ERR("Connection failed (reason: %u)", err);
 		return;

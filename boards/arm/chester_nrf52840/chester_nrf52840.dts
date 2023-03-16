@@ -172,8 +172,6 @@
 		led3 = &led_ext;
 		sw0 = &btn_int;
 		sw1 = &btn_ext;
-		mcuboot-button0 = &btn_int;
-		mcuboot-led0 = &led_y;
 	};
 };
 
@@ -427,7 +425,6 @@
 			label = "image-scratch";
 			reg = <0x000da000 0x0001e000>;
 		};
-
 
 		storage_partition: partition@f8000 {
 			label = "storage";
