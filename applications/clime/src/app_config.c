@@ -27,6 +27,8 @@ static struct app_config m_app_config_interim = {
 	.interval_sample = 60,
 	.interval_aggreg = 300,
 	.interval_report = 1800,
+	.alarm_thr_lo = 55.f,
+	.alarm_thr_hi = 65.f,
 
 #if defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z)
 	.event_report_delay = 1,

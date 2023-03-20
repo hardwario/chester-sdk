@@ -32,6 +32,9 @@ LOG_MODULE_REGISTER(app_sensor, LOG_LEVEL_DBG);
 
 #define BATT_TEST_INTERVAL_MSEC (12 * 60 * 60 * 1000)
 
+#define TEMPERATURE_ALARM_THR_LO 55.f
+#define TEMPERATURE_ALARM_THR_HI 65.f
+
 static int compare(const void *a, const void *b)
 {
 	float fa = *(const float *)a;
@@ -436,21 +439,41 @@ int app_sensor_hygro_clear(void)
 int app_sensor_w1_therm_sample(void)
 {
 	int ret;
-	uint64_t serial_number;
+
+	app_data_lock();
+
+	bool temperature_alarm = g_app_data.temperature_alarm;
+	g_app_data.temperature_alarm = false;
 
 	for (int i = 0; i < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
-		if (g_app_data.w1_therm.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
-			float temperature = NAN;
-			ret = ctr_ds18b20_read(i, &serial_number, &temperature);
+		uint64_t serial_number;
+		float temperature = NAN;
+		ret = ctr_ds18b20_read(i, &serial_number, &temperature);
+		if (ret) {
+			LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
+			continue;
+		}
 
-			if (ret) {
-				LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
-				continue;
-			} else {
-				LOG_INF("Temperature: %.1f C", temperature);
+		LOG_INF("Temperature: %.1f C", temperature);
+
+		if (temperature_alarm) {
+			if (temperature >= g_app_config.alarm_thr_lo) {
+				g_app_data.temperature_alarm = true;
 			}
+		} else {
+			if (temperature > g_app_config.alarm_thr_hi) {
+				LOG_WRN("Temperature alarm ON");
+				g_app_data.temperature_alarm = true;
+				app_work_send();
+			}
+		}
 
-			app_data_lock();
+		if (g_app_data.w1_therm.sensor[i].sample_count >= APP_DATA_MAX_SAMPLES) {
+			LOG_WRN("Sample buffer full");
+			continue;
+		}
+
+		if (g_app_data.w1_therm.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
 			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];
 			sensor->last_sample_temperature = temperature;
 			sensor->samples_temperature[sensor->sample_count] = temperature;
@@ -458,13 +481,15 @@ int app_sensor_w1_therm_sample(void)
 			sensor->sample_count++;
 
 			LOG_INF("Sample count: %d", sensor->sample_count);
-			app_data_unlock();
-
-		} else {
-			LOG_WRN("Sample buffer full");
-			return -ENOSPC;
 		}
 	}
+
+	if (temperature_alarm && !g_app_data.temperature_alarm) {
+		LOG_WRN("Temperature alarm OFF");
+		app_work_send();
+	}
+
+	app_data_unlock();
 
 	return 0;
 }

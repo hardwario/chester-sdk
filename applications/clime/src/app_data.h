@@ -222,6 +222,8 @@ struct app_data {
 #if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
 	struct app_data_rtd_therm rtd_therm;
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
+	bool temperature_alarm;
 };
 
 extern struct app_data g_app_data;

@@ -17,6 +17,9 @@ struct app_config {
 	int interval_aggreg;
 	int interval_report;
 
+	float alarm_thr_lo;
+	float alarm_thr_hi;
+
 #if defined(CONFIG_SHIELD_CTR_S2)
 	bool hygro_t_alarm_hi_report;
 	bool hygro_t_alarm_lo_report;
@@ -35,6 +38,9 @@ struct app_config {
 	bool backup_report_connected;
 	bool backup_report_disconnected;
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+	bool backup_report_connected;
+	bool backup_report_disconnected;
 };
 
 extern struct app_config g_app_config;
@@ -44,7 +50,9 @@ extern struct app_config g_app_config;
 #define CONFIG_PARAM_LIST_COMMON() \
 	CONFIG_PARAM_INT(interval-sample, interval_sample, 1, 86400, "Get/Set sample interval in seconds (format: <1-86400>).") \
 	CONFIG_PARAM_INT(interval-aggreg, interval_aggreg, 1, 86400, "Get/Set aggregate interval in seconds (format: <1-86400>).") \
-	CONFIG_PARAM_INT(interval-report, interval_report, 30, 86400, "Get/Set report interval in seconds (format: <30-86400>).")
+	CONFIG_PARAM_INT(interval-report, interval_report, 30, 86400, "Get/Set report interval in seconds (format: <30-86400>).") \
+	CONFIG_PARAM_FLOAT(alarm-thr-lo, alarm_thr_lo, -40.f, 125.f, "Get/Set temperature alarm low threshold (format: <-40.0..125.0>).") \
+	CONFIG_PARAM_FLOAT(alarm-thr-hi, alarm_thr_hi, -40.f, 125.f, "Get/Set temperature alarm high threshold (format: <-40.0..125.0>).")
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 #define CONFIG_PARAM_LIST_CTR_S2() \

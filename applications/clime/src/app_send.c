@@ -78,6 +78,12 @@ static int compose(struct ctr_buf *buf)
 		header |= BIT(6);
 	}
 
+	if (g_app_data.temperature_alarm) {
+		header |= BIT(7);
+	}
+
+	header &= BIT(5) | BIT(7);
+
 	ret |= ctr_buf_append_u8(buf, header);
 
 	/* Field BATT */
@@ -182,7 +188,6 @@ static int compose(struct ctr_buf *buf)
 #if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
 	/* Field RTD_THERM */
 	if (header & BIT(6)) {
-
 		ret |= ctr_buf_append_u8(buf, APP_DATA_RTD_THERM_COUNT);
 
 		for (int i = 0; i < APP_DATA_RTD_THERM_COUNT; i++) {
@@ -191,8 +196,8 @@ static int compose(struct ctr_buf *buf)
 			if (isnan(sensor->last_sample_temperature)) {
 				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
 			} else {
-				ret |= ctr_buf_append_s16_le(buf,
-							  sensor->last_sample_temperature * 100.f);
+				ret |= ctr_buf_append_s16_le(buf, sensor->last_sample_temperature *
+									  100.f);
 			}
 		}
 	}
