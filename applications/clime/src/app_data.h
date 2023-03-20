@@ -13,6 +13,7 @@
 
 #define APP_DATA_MAX_MEASUREMENTS  32
 #define APP_DATA_MAX_SAMPLES	   32
+#define APP_DATA_MAX_TAMPER_EVENTS 32
 #define APP_DATA_MAX_BACKUP_EVENTS 32
 #define APP_DATA_MAX_HYGRO_EVENTS  32
 
@@ -31,6 +32,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(CONFIG_APP_TAMPER)
+struct app_data_tamper_event {
+	int64_t timestamp;
+	bool activated;
+};
+
+struct app_data_tamper {
+	bool activated;
+	int event_count;
+	struct app_data_tamper_event events[APP_DATA_MAX_TAMPER_EVENTS];
+};
+#endif /* defined(CONFIG_APP_TAMPER) */
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 struct app_data_backup_event {
@@ -184,6 +198,10 @@ struct app_data {
 	float accel_acceleration_y;
 	float accel_acceleration_z;
 	int accel_orientation;
+
+#if defined(CONFIG_APP_TAMPER)
+	struct app_data_tamper tamper;
+#endif /* defined(CONFIG_APP_TAMPER) */
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 	struct app_data_backup backup;

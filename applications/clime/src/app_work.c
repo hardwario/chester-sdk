@@ -4,6 +4,7 @@
 #include "app_power.h"
 #include "app_send.h"
 #include "app_sensor.h"
+#include "app_tamper.h"
 #include "app_work.h"
 
 /* Zephyr includes */
@@ -45,6 +46,10 @@ static void send_work_handler(struct k_work *work)
 	if (ret) {
 		LOG_ERR("Call `app_send` failed: %d", ret);
 	}
+
+#if defined(CONFIG_APP_TAMPER)
+	app_tamper_clear();
+#endif /* defined(CONFIG_APP_TAMPER) */
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 	app_backup_clear();

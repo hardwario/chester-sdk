@@ -1,6 +1,7 @@
 #include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
+#include "app_tamper.h"
 #include "app_work.h"
 
 /* CHESTER includes */
@@ -227,6 +228,14 @@ int app_init(void)
 		LOG_ERR("Call `app_work_init` failed: %d", ret);
 		return ret;
 	}
+
+#if defined(CONFIG_APP_TAMPER)
+	ret = app_tamper_init();
+	if (ret) {
+		LOG_ERR("Call `app_tamper_init` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_APP_TAMPER) */
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 	ret = init_chester_z();

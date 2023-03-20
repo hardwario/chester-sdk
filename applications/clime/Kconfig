@@ -5,6 +5,11 @@ config APP_REPORT_JITTER
 	default y
 	select ENTROPY_GENERATOR
 
+config APP_TAMPER
+	bool "Enable tamper functionality"
+	default y
+	select CTR_EDGE
+
 endmenu
 
 menu "Zephyr Kernel"

@@ -190,6 +190,46 @@ static int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
+#if defined(CONFIG_APP_TAMPER)
+	zcbor_uint32_put(zs, MSG_KEY_TAMPER);
+	{
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, MSG_KEY_TAMPER_STATE);
+		zcbor_uint32_put(zs, g_app_data.tamper.activated ? 1 : 0);
+
+		if (g_app_data.tamper.event_count) {
+			int64_t timestamp_abs = g_app_data.tamper.events[0].timestamp;
+
+			zcbor_uint32_put(zs, MSG_KEY_TAMPER_EVENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				/* TSO absolute timestamp */
+				zcbor_int64_put(zs, timestamp_abs);
+
+				for (int i = 0; i < g_app_data.tamper.event_count; i++) {
+					/* TSO offset timestamp */
+					zcbor_int64_put(zs, g_app_data.tamper.events[i].timestamp -
+								    timestamp_abs);
+					zcbor_uint32_put(
+						zs, g_app_data.tamper.events[i].activated ? 1 : 0);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+		} else {
+			zcbor_uint32_put(zs, MSG_KEY_TAMPER_EVENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+		}
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(CONFIG_APP_TAMPER) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 	zcbor_uint32_put(zs, MSG_KEY_BACKUP);
 	{
