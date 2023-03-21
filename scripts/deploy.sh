@@ -310,9 +310,51 @@ deploy_scale() {
     cd ..
 }
 
-deploy_clime "v2.1.0"
+deploy_meteo() {
+
+    local FW_VERSION="$1"
+
+    cd meteo
+
+    # Check default SHIELDs we expect
+    if grep -q "set(SHIELD ctr_barometer_tag ctr_ds18b20 ctr_lte ctr_s2 ctr_meteo_a ctr_soil_sensor)" "CMakeLists.txt"; then
+        echo "String found ok"
+    else
+        echo "Default SHIELD string not found, update deploy script."
+        exit
+    fi
+
+    # Backup original CMakeLists
+    cp CMakeLists.txt CMakeLists.txt.bak
+
+    #
+    # Build CHESTER Meteo
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Meteo" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-meteo" --version $FW_VERSION
+
+    #
+    # Build CHESTER Meteo Z
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_barometer_tag ctr_ds18b20 ctr_lte ctr_s2 ctr_meteo_a ctr_soil_sensor)*/, "set(SHIELD ctr_barometer_tag ctr_ds18b20 ctr_lte ctr_s2 ctr_meteo_a ctr_soil_sensor ctr_z)"); print }' CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Meteo Z" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-meteo-z" --version $FW_VERSION
+
+    # Recover original CMakeLists
+    cp CMakeLists.txt.bak CMakeLists.txt
+    rm CMakeLists.txt.bak
+
+    cd ..
+}
+
+# deploy_clime "v2.1.0"
 # deploy_push "v2.0.0"
 # deploy_counter "v2.0.0"
 # deploy_input "v2.0.0"
 # deploy_current "v2.0.0"
 # deploy_scale "v2.0.0"
+# deploy_meteo "v2.0.0"
