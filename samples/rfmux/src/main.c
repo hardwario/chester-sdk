@@ -77,7 +77,7 @@ void main(void)
 
 		ret = ctr_rfmux_release(dev);
 		if (ret) {
-			LOG_ERR("Call `ctr_rfmux_acquire` failed: %d", ret);
+			LOG_ERR("Call `ctr_rfmux_release` failed: %d", ret);
 			k_oops();
 		}
 

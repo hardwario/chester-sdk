@@ -115,7 +115,7 @@ static int init_chester_x0(void)
 		}                                                                                  \
 		ret = gpio_pin_configure_dt(spec, GPIO_INPUT | GPIO_ACTIVE_LOW);                   \
 		if (ret) {                                                                         \
-			LOG_ERR("Call `gpio_configure_dt` failed: %d", ret);                       \
+			LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);                   \
 			return ret;                                                                \
 		}                                                                                  \
 		ret = ctr_edge_init(&m_edge_ch##ch, spec, false);                                  \

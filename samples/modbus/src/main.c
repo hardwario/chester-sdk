@@ -50,7 +50,7 @@ static void read_modbus(void)
 	ret = modbus_read_input_regs(iface, 1, 1, reg, ARRAY_SIZE(reg));
 
 	if (ret != 0) {
-		LOG_ERR("Call `modbus_read_holding_regs` failed: %d", ret);
+		LOG_ERR("Call `modbus_read_input_regs` failed: %d", ret);
 		return;
 	}
 

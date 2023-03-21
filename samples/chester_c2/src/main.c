@@ -28,7 +28,7 @@ static int init_edge(void)
 
 	ret = gpio_pin_configure_dt(&spec, GPIO_INPUT);
 	if (ret) {
-		LOG_ERR("Call `gpio_configure_dt` failed: %d", ret);
+		LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);
 		return ret;
 	}
 

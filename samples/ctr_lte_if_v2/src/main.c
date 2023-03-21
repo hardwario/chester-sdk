@@ -28,7 +28,7 @@ static void recv_cb(const struct device *dev, enum ctr_lte_if_v2_event event, vo
 			char *line;
 			ret = ctr_lte_if_v2_recv_line(dev, K_NO_WAIT, &line);
 			if (ret) {
-				LOG_ERR("Call `ctr_lte_if_v2_api_recv_line` failed: %d", ret);
+				LOG_ERR("Call `ctr_lte_if_v2_recv_line` failed: %d", ret);
 				break;
 			}
 
@@ -40,7 +40,7 @@ static void recv_cb(const struct device *dev, enum ctr_lte_if_v2_event event, vo
 
 			ret = ctr_lte_if_v2_free_line(dev, line);
 			if (ret) {
-				LOG_ERR("Call `ctr_lte_if_v2_api_free_line` failed: %d", ret);
+				LOG_ERR("Call `ctr_lte_if_v2_free_line` failed: %d", ret);
 			}
 		}
 		break;

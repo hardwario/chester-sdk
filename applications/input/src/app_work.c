@@ -275,7 +275,7 @@ static void backup_work_handler(struct k_work *work)
 
 	ret = app_backup_sample();
 	if (ret < 0) {
-		LOG_ERR("Call `app_sensor_hygro_aggreg` failed: %d", ret);
+		LOG_ERR("Call `app_backup_sample` failed: %d", ret);
 	}
 }
 

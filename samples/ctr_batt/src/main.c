@@ -25,7 +25,7 @@ void main(void)
 		ret = ctr_batt_get_rest_voltage_mv(m_dev, &rest_mv,
 						   CTR_BATT_REST_TIMEOUT_DEFAULT_MS);
 		if (ret) {
-			LOG_ERR("Call `ctr_batt_get_rest_voltage` failed: %d", ret);
+			LOG_ERR("Call `ctr_batt_get_rest_voltage_mv` failed: %d", ret);
 			k_oops();
 		}
 
@@ -33,7 +33,7 @@ void main(void)
 		ret = ctr_batt_get_load_voltage_mv(m_dev, &load_mv,
 						   CTR_BATT_LOAD_TIMEOUT_DEFAULT_MS);
 		if (ret) {
-			LOG_ERR("Call `ctr_batt_get_load_voltage` failed: %d", ret);
+			LOG_ERR("Call `ctr_batt_get_load_voltage_mv` failed: %d", ret);
 			k_oops();
 		}
 
