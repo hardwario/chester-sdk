@@ -4,3 +4,8 @@ west-commands:
       - name: chester-gen-bt-uuid
         class: ChesterGenerateBluetoothUuid
         help: generate Bluetooth UUID
+  - file: scripts/west_commands/check-ret-log.py
+    commands:
+      - name: check-ret-log
+        class: CheckRetLog
+        help: check LOG messages consistency
