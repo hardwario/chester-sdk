@@ -70,6 +70,10 @@ static void send_work_handler(struct k_work *work)
 #if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
 	app_sensor_rtd_therm_clear();
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
+#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+	app_sensor_soil_sensor_clear();
+#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
 }
 
 static K_WORK_DEFINE(m_send_work, send_work_handler);
@@ -349,6 +353,58 @@ static K_TIMER_DEFINE(m_rtd_therm_aggreg_timer, rtd_therm_aggreg_timer_handler, 
 
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 
+#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+
+static void soil_sensor_sample_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_soil_sensor_sample();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_soil_sensor_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_soil_sensor_sample_work, soil_sensor_sample_work_handler);
+
+static void soil_sensor_sample_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_soil_sensor_sample_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_soil_sensor_sample_timer, soil_sensor_sample_timer_handler, NULL);
+
+static void soil_sensor_aggreg_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_soil_sensor_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_soil_sensor_aggreg` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_soil_sensor_aggreg_work, soil_sensor_aggreg_work_handler);
+
+static void soil_sensor_aggreg_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_soil_sensor_aggreg_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_soil_sensor_aggreg_timer, soil_sensor_aggreg_timer_handler, NULL);
+
+#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 
 static void backup_work_handler(struct k_work *work)
@@ -414,6 +470,13 @@ int app_work_init(void)
 		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 
+#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+	k_timer_start(&m_soil_sensor_sample_timer, K_SECONDS(g_app_config.interval_sample),
+		      K_SECONDS(g_app_config.interval_sample));
+	k_timer_start(&m_soil_sensor_aggreg_timer, K_SECONDS(g_app_config.interval_aggreg),
+		      K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
 	return 0;
 }
 
@@ -437,6 +500,11 @@ void app_work_sample(void)
 	k_timer_start(&m_rtd_therm_sample_timer, K_NO_WAIT,
 		      K_SECONDS(g_app_config.interval_sample));
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
+#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+	k_timer_start(&m_soil_sensor_sample_timer, K_NO_WAIT,
+		      K_SECONDS(g_app_config.interval_sample));
+#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
 }
 
 void app_work_send(void)

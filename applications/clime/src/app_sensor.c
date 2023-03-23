@@ -10,6 +10,7 @@
 #include <chester/ctr_hygro.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_rtd.h>
+#include <chester/ctr_soil_sensor.h>
 #include <chester/ctr_therm.h>
 #include <chester/drivers/ctr_batt.h>
 #include <chester/drivers/ctr_s1.h>
@@ -628,3 +629,108 @@ int app_sensor_rtd_therm_clear(void)
 }
 
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
+#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+
+int app_sensor_soil_sensor_sample(void)
+{
+	int ret;
+
+	for (int i = 0; i < MIN(APP_DATA_SOIL_SENSOR_COUNT, ctr_soil_sensor_get_count()); i++) {
+		if (g_app_data.soil_sensor.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
+			uint64_t serial_number;
+			float temperature;
+			int moisture;
+			ret = ctr_soil_sensor_read(i, &serial_number, &temperature, &moisture);
+			if (ret) {
+				LOG_ERR("Call `ctr_soil_sensor_read` failed: %d", ret);
+				continue;
+			}
+
+			LOG_INF("Temperature: %.1f C Moisture: %d", temperature, moisture);
+
+			app_data_lock();
+
+			struct app_data_soil_sensor_sensor *sensor =
+				&g_app_data.soil_sensor.sensor[i];
+
+			sensor->samples_temperature[sensor->sample_count] = temperature;
+			sensor->samples_moisture[sensor->sample_count] = moisture;
+			sensor->serial_number = serial_number;
+			sensor->sample_count++;
+
+			LOG_INF("Sample count: %d", sensor->sample_count);
+
+			app_data_unlock();
+
+		} else {
+			LOG_WRN("Sample buffer full");
+			return -ENOSPC;
+		}
+	}
+
+	return 0;
+}
+
+int app_sensor_soil_sensor_aggreg(void)
+{
+	int ret;
+
+	struct app_data_soil_sensor *soil_sensor = &g_app_data.soil_sensor;
+
+	app_data_lock();
+
+	for (int i = 0; i < MIN(APP_DATA_SOIL_SENSOR_COUNT, ctr_soil_sensor_get_count()); i++) {
+		if (soil_sensor->sensor[i].measurement_count == 0) {
+			ret = ctr_rtc_get_ts(&soil_sensor->timestamp);
+			if (ret) {
+				LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+				app_data_unlock();
+				return ret;
+			}
+		}
+
+		if (soil_sensor->sensor[i].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+			struct app_data_soil_sensor_measurement *measurement =
+				&soil_sensor->sensor[i]
+					 .measurements[soil_sensor->sensor[i].measurement_count];
+
+			aggreg_sample(soil_sensor->sensor[i].samples_temperature,
+				      soil_sensor->sensor[i].sample_count,
+				      &measurement->temperature);
+
+			aggreg_sample(soil_sensor->sensor[i].samples_moisture,
+				      soil_sensor->sensor[i].sample_count, &measurement->moisture);
+
+			soil_sensor->sensor[i].measurement_count++;
+
+			LOG_INF("Measurement count: %d", soil_sensor->sensor[i].measurement_count);
+
+		} else {
+			LOG_WRN("Measurement buffer full");
+			app_data_unlock();
+			return -ENOSPC;
+		}
+
+		soil_sensor->sensor[i].sample_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_soil_sensor_clear(void)
+{
+	app_data_lock();
+
+	for (int i = 0; i < MIN(APP_DATA_SOIL_SENSOR_COUNT, ctr_soil_sensor_get_count()); i++) {
+		g_app_data.soil_sensor.sensor[i].measurement_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */

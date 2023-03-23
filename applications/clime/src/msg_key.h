@@ -70,6 +70,8 @@ enum msg_key {
 	MSG_KEY_TAMPER = 59,
 	MSG_KEY_TAMPER_EVENTS = 60,
 	MSG_KEY_TAMPER_STATE = 61,
+	MSG_KEY_SOIL_SENSORS = 62,
+	MSG_KEY_MOISTURE = 63,
 };
 
 #ifdef __cplusplus

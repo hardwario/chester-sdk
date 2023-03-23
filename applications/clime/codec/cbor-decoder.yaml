@@ -131,3 +131,5 @@
   - enum:
     - inactive
     - active
+- soil_sensors:
+- moisture:

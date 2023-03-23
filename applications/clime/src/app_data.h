@@ -29,6 +29,8 @@
 #define APP_DATA_RTD_THERM_COUNT 4
 #endif
 
+#define APP_DATA_SOIL_SENSOR_COUNT 10
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -189,6 +191,31 @@ struct app_data_rtd_therm {
 };
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 
+#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+
+struct app_data_soil_sensor_measurement {
+	struct app_data_aggreg temperature;
+	struct app_data_aggreg moisture;
+};
+
+struct app_data_soil_sensor_sensor {
+	uint64_t serial_number;
+
+	int sample_count;
+	float samples_temperature[APP_DATA_MAX_SAMPLES];
+	float samples_moisture[APP_DATA_MAX_SAMPLES];
+
+	int measurement_count;
+	struct app_data_soil_sensor_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+};
+
+struct app_data_soil_sensor {
+	struct app_data_soil_sensor_sensor sensor[APP_DATA_SOIL_SENSOR_COUNT];
+	int64_t timestamp;
+};
+
+#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
 struct app_data {
 	float system_voltage_rest;
 	float system_voltage_load;
@@ -222,6 +249,10 @@ struct app_data {
 #if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
 	struct app_data_rtd_therm rtd_therm;
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
+#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+	struct app_data_soil_sensor soil_sensor;
+#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
 };
 
 extern struct app_data g_app_data;

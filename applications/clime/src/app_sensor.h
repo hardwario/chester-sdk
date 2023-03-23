@@ -23,6 +23,10 @@ int app_sensor_rtd_therm_sample(void);
 int app_sensor_rtd_therm_aggreg(void);
 int app_sensor_rtd_therm_clear(void);
 
+int app_sensor_soil_sensor_sample(void);
+int app_sensor_soil_sensor_aggreg(void);
+int app_sensor_soil_sensor_clear(void);
+
 #ifdef __cplusplus
 }
 #endif

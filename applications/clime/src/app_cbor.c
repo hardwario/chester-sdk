@@ -768,6 +768,69 @@ static int encode(zcbor_state_t *zs)
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 
+#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+	zcbor_uint32_put(zs, MSG_KEY_SOIL_SENSORS);
+	{
+		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		for (int i = 0; i < APP_DATA_SOIL_SENSOR_COUNT; i++) {
+			struct app_data_soil_sensor_sensor *sensor =
+				&g_app_data.soil_sensor.sensor[i];
+
+			if (!sensor->serial_number) {
+				continue;
+			}
+
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_SERIAL_NUMBER);
+			zcbor_uint64_put(zs, sensor->serial_number);
+
+			zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.soil_sensor.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int j = 0; j < sensor->measurement_count; j++) {
+						put_sample_mul(zs,
+							       &sensor->measurements[j].temperature,
+							       100.f);
+					}
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_uint32_put(zs, MSG_KEY_MOISTURE);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.soil_sensor.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int j = 0; j < sensor->measurement_count; j++) {
+						put_sample(zs, &sensor->measurements[j].moisture);
+					}
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 	if (!zcbor_check_error(zs)) {

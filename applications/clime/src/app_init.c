@@ -9,6 +9,7 @@
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
+#include <chester/ctr_soil_sensor.h>
 #include <chester/ctr_wdog.h>
 #include <chester/drivers/ctr_s1.h>
 #include <chester/drivers/ctr_z.h>
@@ -150,6 +151,14 @@ int app_init(void)
 		return ret;
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+	ret = ctr_soil_sensor_scan();
+	if (ret) {
+		LOG_ERR("Call `ctr_soil_sensor_scan` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
 
 #if defined(CONFIG_SHIELD_CTR_S1)
 	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_s1));
