@@ -267,11 +267,6 @@ int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -307,11 +302,6 @@ int app_config_cmd_config_event_report_delay(const struct shell *shell, size_t a
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -344,11 +334,6 @@ int app_config_cmd_config_event_report_rate(const struct shell *shell, size_t ar
 
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
 
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
@@ -475,11 +460,6 @@ int app_config_cmd_config_trigger_duration_active(const struct shell *shell, siz
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -514,11 +494,6 @@ int app_config_cmd_config_trigger_duration_inactive(const struct shell *shell, s
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -551,11 +526,6 @@ int app_config_cmd_config_trigger_cooldown_time(const struct shell *shell, size_
 
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
 
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
@@ -646,11 +616,6 @@ int app_config_cmd_config_counter_interval_aggreg(const struct shell *shell, siz
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -712,11 +677,6 @@ int app_config_cmd_config_counter_duration_active(const struct shell *shell, siz
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -751,11 +711,6 @@ int app_config_cmd_config_counter_duration_inactive(const struct shell *shell, s
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -788,11 +743,6 @@ int app_config_cmd_config_counter_cooldown_time(const struct shell *shell, size_
 
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
 
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
@@ -828,11 +778,6 @@ int app_config_cmd_config_analog_interval_sample(const struct shell *shell, size
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -866,11 +811,6 @@ int app_config_cmd_config_analog_interval_aggreg(const struct shell *shell, size
 
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
 
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
@@ -909,11 +849,6 @@ int app_config_cmd_config_hygro_interval_sample(const struct shell *shell, size_
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -946,11 +881,6 @@ int app_config_cmd_config_hygro_interval_aggreg(const struct shell *shell, size_
 
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
 
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {

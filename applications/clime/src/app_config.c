@@ -52,10 +52,6 @@ static struct app_config m_app_config_interim = {
 		}                                                                                  \
 		if (argc == 2) {                                                                   \
 			size_t len = strlen(argv[1]);                                              \
-			if (len < 1 || len > 4) {                                                  \
-				shell_error(shell, "invalid format");                              \
-				return -EINVAL;                                                    \
-			}                                                                          \
 			for (size_t i = 0; i < len; i++) {                                         \
 				if (!isdigit((int)argv[1][i])) {                                   \
 					shell_error(shell, "invalid format");                      \

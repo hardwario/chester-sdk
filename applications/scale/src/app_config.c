@@ -226,11 +226,6 @@ int app_config_cmd_config_weight_measurement_interval(const struct shell *shell,
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -267,11 +262,6 @@ int app_config_cmd_config_people_measurement_interval(const struct shell *shell,
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
 
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
 				shell_error(shell, "invalid format");
@@ -306,11 +296,6 @@ int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc
 
 	if (argc == 2) {
 		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
 
 		for (size_t i = 0; i < len; i++) {
 			if (!isdigit((int)argv[1][i])) {
