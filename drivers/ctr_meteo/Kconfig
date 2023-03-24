@@ -18,4 +18,9 @@ config CTR_METEO_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
+config CTR_METEO_SHELL
+	bool "CTR_METEO_SHELL"
+	depends on SHELL
+	default y
+
 endif # CTR_METEO

@@ -1,3 +1,4 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_CTR_METEO ctr_meteo.c)
+zephyr_library_sources_ifdef(CONFIG_CTR_METEO_SHELL ctr_meteo_shell.c)
