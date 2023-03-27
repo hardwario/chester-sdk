@@ -135,6 +135,8 @@ int ctr_edge_init(struct ctr_edge *edge, const struct gpio_dt_spec *spec, bool s
 	edge->spec = spec;
 	edge->start_active = start_active;
 
+	atomic_set(&edge->is_active, edge->start_active);
+
 	k_mutex_init(&edge->lock);
 	k_timer_init(&edge->cooldown_timer, cooldown_timer, NULL);
 	k_timer_init(&edge->event_timer, event_timer, NULL);
@@ -211,8 +213,6 @@ int ctr_edge_watch(struct ctr_edge *edge)
 	int ret;
 
 	int key = irq_lock();
-
-	atomic_set(&edge->is_active, edge->start_active);
 
 	gpio_flags_t level =
 		atomic_get(&edge->is_active) ? GPIO_INT_LEVEL_INACTIVE : GPIO_INT_LEVEL_ACTIVE;
