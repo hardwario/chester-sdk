@@ -2,7 +2,7 @@ description: HARDWARIO CHESTER-Meteo
 
 compatible: "hardwario,ctr-meteo"
 
-include: i2c-device.yaml
+include: base.yaml
 
 properties:
   slot:
