@@ -19,6 +19,14 @@
 
 LOG_MODULE_REGISTER(app_tamper, LOG_LEVEL_DBG);
 
+#define ON_TIME	 K_MSEC(30)
+#define OFF_TIME K_MSEC(1000)
+
+static const struct gpio_dt_spec m_tamper_spec =
+	GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), tamper_gpios);
+
+static struct ctr_edge m_edge;
+
 static void edge_callback(struct ctr_edge *edge, enum ctr_edge_event event, void *user_data)
 {
 	int ret;
@@ -56,63 +64,120 @@ static void edge_callback(struct ctr_edge *edge, enum ctr_edge_event event, void
 	app_data_unlock();
 }
 
+static struct k_timer m_on_timer;
+static struct k_timer m_off_timer;
+
+void off_work_handler(struct k_work *work)
+{
+	int ret;
+
+	k_timer_start(&m_on_timer, OFF_TIME, K_FOREVER);
+
+	ret = ctr_edge_unwatch(&m_edge);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_unwatch` failed: %d", ret);
+		return;
+	}
+
+	if (!device_is_ready(m_tamper_spec.port)) {
+		LOG_ERR("Port not ready");
+		return;
+	}
+
+	ret = gpio_pin_configure_dt(&m_tamper_spec, GPIO_INPUT | GPIO_PULL_DOWN);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);
+		return;
+	}
+}
+
+static K_WORK_DEFINE(m_off_work, off_work_handler);
+
+void off_timer_handler(struct k_timer *timer)
+{
+	k_work_submit(&m_off_work);
+}
+
+void on_work_handler(struct k_work *work)
+{
+	int ret;
+
+	k_timer_start(&m_off_timer, ON_TIME, K_FOREVER);
+
+	if (!device_is_ready(m_tamper_spec.port)) {
+		LOG_ERR("Port not ready");
+		return;
+	}
+
+	ret = gpio_pin_configure_dt(&m_tamper_spec, GPIO_INPUT | GPIO_PULL_UP);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);
+		return;
+	}
+
+	ret = ctr_edge_watch(&m_edge);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_watch` failed: %d", ret);
+		return;
+	}
+}
+
+static K_WORK_DEFINE(m_on_work, on_work_handler);
+
+void on_timer_handler(struct k_timer *timer)
+{
+	k_work_submit(&m_on_work);
+}
+
 int app_tamper_init(void)
 {
 	int ret;
 
-	LOG_INF("System initialization");
+	k_timer_init(&m_on_timer, on_timer_handler, NULL);
+	k_timer_init(&m_off_timer, off_timer_handler, NULL);
 
-	static const struct gpio_dt_spec tamper_spec =
-		GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), tamper_gpios);
-
-	if (!device_is_ready(tamper_spec.port)) {
+	if (!device_is_ready(m_tamper_spec.port)) {
 		LOG_ERR("Port not ready");
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_configure_dt(&tamper_spec, GPIO_INPUT);
+	ret = gpio_pin_configure_dt(&m_tamper_spec, GPIO_INPUT);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);
 		return ret;
 	}
 
-	static struct ctr_edge edge;
-
-	ret = ctr_edge_init(&edge, &tamper_spec, false);
+	ret = ctr_edge_init(&m_edge, &m_tamper_spec, false);
 	if (ret) {
 		LOG_ERR("Call `ctr_edge_init` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_edge_set_callback(&edge, edge_callback, NULL);
+	ret = ctr_edge_set_callback(&m_edge, edge_callback, NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_edge_set_callback` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_edge_set_cooldown_time(&edge, 10);
+	ret = ctr_edge_set_cooldown_time(&m_edge, 10);
 	if (ret) {
 		LOG_ERR("Call `ctr_edge_set_cooldown_time` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_edge_set_active_duration(&edge, 50);
+	ret = ctr_edge_set_active_duration(&m_edge, 20);
 	if (ret) {
 		LOG_ERR("Call `ctr_edge_set_active_duration` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_edge_set_inactive_duration(&edge, 50);
+	ret = ctr_edge_set_inactive_duration(&m_edge, 20);
 	if (ret) {
 		LOG_ERR("Call `ctr_edge_set_inactive_duration` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_edge_watch(&edge);
-	if (ret) {
-		LOG_ERR("Call `ctr_edge_watch` failed: %d", ret);
-		return ret;
-	}
+	k_timer_start(&m_on_timer, K_NO_WAIT, K_FOREVER);
 
 	return 0;
 }
