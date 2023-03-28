@@ -350,10 +350,10 @@ static const struct ctr_meteo_driver_api ctr_meteo_driver_api = {
 #define CTR_METEO_INIT(n)                                                                          \
 	static const struct ctr_meteo_config inst_##n##_config = {                                 \
 		.ctr_x0_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                    \
-		.adc_channel_direction = COND_CODE_0(DT_INST_ENUM_IDX_OR(n, slot, 0),              \
+		.adc_channel_direction = COND_CODE_0(DT_INST_ENUM_IDX(n, slot),                    \
 						     (CTR_ADC_CHANNEL_A2), (CTR_ADC_CHANNEL_B2)),  \
-		.adc_channel_vdd = COND_CODE_0(DT_INST_ENUM_IDX_OR(n, slot, 0),                    \
-					       (CTR_ADC_CHANNEL_A3), (CTR_ADC_CHANNEL_B3)),        \
+		.adc_channel_vdd = COND_CODE_0(DT_INST_ENUM_IDX(n, slot), (CTR_ADC_CHANNEL_A3),    \
+					       (CTR_ADC_CHANNEL_B3)),                              \
 	};                                                                                         \
 	static struct ctr_meteo_data inst_##n##_data = {                                           \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
