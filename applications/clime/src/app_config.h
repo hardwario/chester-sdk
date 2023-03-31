@@ -84,11 +84,11 @@ extern struct app_config g_app_config;
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv);
 
-#define CONFIG_PARAM_INT(_name_d, _name_u, MIN, MAX, HELP)                                         \
+#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)                                      \
 	int app_config_cmd_config_##_name_u(const struct shell *shell, size_t argc, char **argv);
-#define CONFIG_PARAM_FLOAT(_name_d, _name_u, MIN, MAX, HELP)                                       \
+#define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help)                                    \
 	int app_config_cmd_config_##_name_u(const struct shell *shell, size_t argc, char **argv);
-#define CONFIG_PARAM_BOOL(_name_d, _name_u, HELP)                                                  \
+#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help)                                                 \
 	int app_config_cmd_config_##_name_u(const struct shell *shell, size_t argc, char **argv);
 
 CONFIG_PARAM_LIST();
