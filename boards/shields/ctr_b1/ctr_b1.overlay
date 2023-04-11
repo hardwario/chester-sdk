@@ -20,8 +20,8 @@
 		status = "okay";
 		wm-reset-gpios = <&ctr_b1_tca9534a 0 GPIO_ACTIVE_HIGH>;
 		wm-on-gpios = <&ctr_b1_tca9534a 2 GPIO_ACTIVE_HIGH>;
-		nc1-gpios = <&ctr_b1_tca9534a 3 GPIO_ACTIVE_HIGH>;
-		nc2-gpios = <&ctr_b1_tca9534a 4 GPIO_ACTIVE_HIGH>;
+		ant-1-gpios = <&ctr_b1_tca9534a 3 GPIO_ACTIVE_HIGH>;
+		ant-2-gpios = <&ctr_b1_tca9534a 4 GPIO_ACTIVE_HIGH>;
 	};
 };
 

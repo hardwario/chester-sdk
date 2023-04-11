@@ -20,8 +20,8 @@ LOG_MODULE_REGISTER(ctr_b1, CONFIG_CTR_B1_LOG_LEVEL);
 struct ctr_b1_config {
 	const struct gpio_dt_spec wm_reset_spec;
 	const struct gpio_dt_spec wm_on_spec;
-	const struct gpio_dt_spec nc1_spec;
-	const struct gpio_dt_spec nc2_spec;
+	const struct gpio_dt_spec ant_1_spec;
+	const struct gpio_dt_spec ant_2_spec;
 };
 
 struct ctr_b1_data {
@@ -64,6 +64,8 @@ static int ctr_b1_set_output_(const struct device *dev, enum ctr_b1_output outpu
 
 	SET_OUTPUT(WM_RESET, wm_reset);
 	SET_OUTPUT(WM_ON, wm_on);
+	SET_OUTPUT(ANT_1, ant_1);
+	SET_OUTPUT(ANT_2, ant_2);
 
 #undef SET_OUTPUT
 
@@ -88,8 +90,8 @@ static int ctr_b1_init(const struct device *dev)
 
 	CHECK_READY(wm_reset);
 	CHECK_READY(wm_on);
-	CHECK_READY(nc1);
-	CHECK_READY(nc2);
+	CHECK_READY(ant_1);
+	CHECK_READY(ant_2);
 
 #undef CHECK_READY
 
@@ -110,8 +112,8 @@ static int ctr_b1_init(const struct device *dev)
 
 	SETUP_OUTPUT(wm_reset);
 	SETUP_OUTPUT(wm_on);
-	SETUP_OUTPUT(nc1);
-	SETUP_OUTPUT(nc2);
+	SETUP_OUTPUT(ant_1);
+	SETUP_OUTPUT(ant_2);
 
 #undef SETUP_OUTPUT
 
@@ -128,8 +130,8 @@ static const struct ctr_b1_driver_api ctr_b1_driver_api = {
 	static const struct ctr_b1_config inst_##n##_config = {                                    \
 		.wm_reset_spec = GPIO_DT_SPEC_INST_GET(n, wm_reset_gpios),                         \
 		.wm_on_spec = GPIO_DT_SPEC_INST_GET(n, wm_on_gpios),                               \
-		.nc1_spec = GPIO_DT_SPEC_INST_GET(n, nc1_gpios),                                   \
-		.nc2_spec = GPIO_DT_SPEC_INST_GET(n, nc2_gpios),                                   \
+		.ant_1_spec = GPIO_DT_SPEC_INST_GET(n, ant_1_gpios),                               \
+		.ant_2_spec = GPIO_DT_SPEC_INST_GET(n, ant_2_gpios),                               \
 	};                                                                                         \
 	static struct ctr_b1_data inst_##n##_data = {                                              \
 		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 0, 1),                             \

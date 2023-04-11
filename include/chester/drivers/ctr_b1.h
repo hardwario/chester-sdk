@@ -12,6 +12,8 @@ extern "C" {
 enum ctr_b1_output {
 	CTR_B1_OUTPUT_WM_RESET = 0,
 	CTR_B1_OUTPUT_WM_ON = 1,
+	CTR_B1_OUTPUT_ANT_1 = 2,
+	CTR_B1_OUTPUT_ANT_2 = 3,
 };
 
 typedef int (*ctr_b1_api_set_output)(const struct device *dev, enum ctr_b1_output output,

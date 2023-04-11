@@ -16,12 +16,12 @@ properties:
     required: true
     description: wM-Bus module power-switch signal
 
-  nc1-gpios:
+  ant-1-gpios:
     type: phandle-array
     required: true
-    description: Unconnected pin 1
+    description: Antenna 1
 
-  nc2-gpios:
+  ant-2-gpios:
     type: phandle-array
     required: true
-    description: Unconnected pin 2
+    description: Antenna 2
