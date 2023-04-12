@@ -1,0 +1,27 @@
+description: HARDWARIO CHESTER-A1 Driver
+
+compatible: "hardwario,ctr-a1"
+
+include: base.yaml
+
+properties:
+
+  relay1-gpios:
+    type: phandle-array
+    required: true
+    description: Relay output 1
+
+  relay2-gpios:
+    type: phandle-array
+    required: true
+    description: Relay output 2
+
+  led1-gpios:
+    type: phandle-array
+    required: true
+    description: LED output 1
+
+  led2-gpios:
+    type: phandle-array
+    required: true
+    description: LED output 2

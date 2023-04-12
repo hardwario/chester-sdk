@@ -1,0 +1,18 @@
+config CTR_A1
+	bool "HARDWARIO CHESTER-A1 (AC/DC Converter w/ Relay Outputs) Driver"
+	select GPIO
+	select I2C
+
+if CTR_A1
+
+module = CTR_A1
+module-str = ctr_a1
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_A1_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+endif # CTR_A1

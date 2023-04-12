@@ -1,0 +1,2 @@
+config SHIELD_CTR_A1
+	def_bool $(shields_list_contains,ctr_a1)

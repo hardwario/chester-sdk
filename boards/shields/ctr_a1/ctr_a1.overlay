@@ -1,0 +1,21 @@
+/ {
+	ctr_a1: ctr_a1 {
+		compatible = "hardwario,ctr-a1";
+		status = "okay";
+		relay1-gpios = <&ctr_a1_tca9534a 0 GPIO_ACTIVE_HIGH>;
+		relay2-gpios = <&ctr_a1_tca9534a 1 GPIO_ACTIVE_HIGH>;
+		led1-gpios = <&ctr_a1_tca9534a 5 GPIO_ACTIVE_HIGH>;
+		led2-gpios = <&ctr_a1_tca9534a 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c0 {
+	ctr_a1_tca9534a: ctr_a1_tca9534a@3a {
+		compatible = "ti,tca9538";
+		status = "okay";
+		reg = <0x3a>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+	};
+};
