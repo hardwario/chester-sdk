@@ -1,0 +1,18 @@
+config CTR_X9
+	bool "HARDWARIO CHESTER-X9 (Low Side Outputs) Driver"
+	select GPIO
+	select I2C
+
+if CTR_X9
+
+module = CTR_X9
+module-str = ctr_x9
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_X9_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+endif # CTR_X9

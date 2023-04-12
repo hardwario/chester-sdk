@@ -1,0 +1,27 @@
+description: HARDWARIO CHESTER-X9 Driver
+
+compatible: "hardwario,ctr-x9"
+
+include: base.yaml
+
+properties:
+
+  output1-gpios:
+    type: phandle-array
+    required: true
+    description: Output 1
+
+  output2-gpios:
+    type: phandle-array
+    required: true
+    description: Output 2
+
+  output3-gpios:
+    type: phandle-array
+    required: true
+    description: Output 3
+
+  output4-gpios:
+    type: phandle-array
+    required: true
+    description: Output 4

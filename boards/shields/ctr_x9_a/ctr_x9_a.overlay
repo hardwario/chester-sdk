@@ -1,0 +1,10 @@
+/ {
+	ctr_x9_a: ctr_x9_a {
+		compatible = "hardwario,ctr-x9";
+		status = "okay";
+		output1-gpios = <&gpio0 3 0>;
+		output2-gpios = <&gpio0 29 0>;
+		output3-gpios = <&gpio0 2 0>;
+		output4-gpios = <&gpio0 31 0>;
+	};
+};
