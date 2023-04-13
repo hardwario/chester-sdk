@@ -125,6 +125,11 @@ static int ctr_a1_init(const struct device *dev)
 
 #define CONFIGURE_RELAY(ch)                                                                        \
 	do {                                                                                       \
+		ret = gpio_pin_set_dt(&get_config(dev)->relay##ch##_spec, 0);                      \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);                         \
+			return ret;                                                                \
+		}                                                                                  \
 		ret = gpio_pin_configure_dt(&get_config(dev)->relay##ch##_spec, GPIO_OUTPUT);      \
 		if (ret) {                                                                         \
 			LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);                   \
@@ -139,6 +144,11 @@ static int ctr_a1_init(const struct device *dev)
 
 #define CONFIGURE_LED(ch)                                                                          \
 	do {                                                                                       \
+		ret = gpio_pin_set_dt(&get_config(dev)->led##ch##_spec, 0);                        \
+		if (ret) {                                                                         \
+			LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);                         \
+			return ret;                                                                \
+		}                                                                                  \
 		ret = gpio_pin_configure_dt(&get_config(dev)->led##ch##_spec, GPIO_OUTPUT);        \
 		if (ret) {                                                                         \
 			LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);                   \
