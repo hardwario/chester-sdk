@@ -209,7 +209,7 @@ static int ctr_x4_init(const struct device *dev)
 
 #define SETUP_OUTPUT(name)                                                                         \
 	do {                                                                                       \
-		ret = gpio_pin_configure_dt(&get_config(dev)->name##_spec, GPIO_OUTPUT);           \
+		ret = gpio_pin_configure_dt(&get_config(dev)->name##_spec, GPIO_OUTPUT_INACTIVE);  \
 		if (ret) {                                                                         \
 			LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);                   \
 			return ret;                                                                \

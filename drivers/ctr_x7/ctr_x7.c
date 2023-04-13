@@ -395,13 +395,7 @@ static int ctr_x7_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_set_dt(&get_config(dev)->en_spec, 0);
-	if (ret) {
-		LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);
-		return ret;
-	}
-
-	ret = gpio_pin_configure_dt(&get_config(dev)->en_spec, GPIO_OUTPUT);
+	ret = gpio_pin_configure_dt(&get_config(dev)->en_spec, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);
 		return ret;

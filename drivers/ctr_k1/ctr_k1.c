@@ -555,12 +555,7 @@ static int ctr_k1_init(const struct device *dev)
 
 #define SETUP_PIN(name)                                                                            \
 	do {                                                                                       \
-		ret = gpio_pin_set_dt(&get_config(dev)->name##_spec, 0);                           \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);                         \
-			return ret;                                                                \
-		}                                                                                  \
-		ret = gpio_pin_configure_dt(&get_config(dev)->name##_spec, GPIO_OUTPUT);           \
+		ret = gpio_pin_configure_dt(&get_config(dev)->name##_spec, GPIO_OUTPUT_INACTIVE);  \
 		if (ret) {                                                                         \
 			LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);                   \
 			return ret;                                                                \
