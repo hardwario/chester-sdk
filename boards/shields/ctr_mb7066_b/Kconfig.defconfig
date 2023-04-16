@@ -1,0 +1,9 @@
+if SHIELD_CTR_MB7066_B
+
+config CTR_X0
+	default y
+
+config MB7066
+	default y
+
+endif # SHIELD_MB7066_B

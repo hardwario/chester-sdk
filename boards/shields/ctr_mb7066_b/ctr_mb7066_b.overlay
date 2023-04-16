@@ -1,0 +1,13 @@
+&ctr_x0_b {
+	status = "okay";
+	mb7066: mb7066 {
+		compatible = "maxbotix,mb7066";
+		status = "okay";
+		pin-chan = <2>;
+		power-chan = <1>;
+	};
+};
+
+&ctr_x0_pcal6416a_b {
+	status = "okay";
+};
