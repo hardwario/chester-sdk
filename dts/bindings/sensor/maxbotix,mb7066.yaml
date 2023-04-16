@@ -1,0 +1,18 @@
+description: MaxBotix MB7066 ultrasonic distance sensor
+
+compatible: "maxbotix,mb7066"
+
+include: sensor-device.yaml
+
+properties:
+  pin-chan:
+    type: int
+    required: true
+    description: |
+      CHESTER X0 channel used to connect the sensor
+
+  power-chan:
+    type: int
+    required: true
+    description: |
+      CHESTER X0 channel used to power the sensor

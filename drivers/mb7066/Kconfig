@@ -1,0 +1,66 @@
+menuconfig MB7066
+	bool "Maxbotix MB7066 ultrasonic distance sensor"
+	default n
+	select GPIO
+	select NRFX_GPIOTE
+	select NRFX_PPI
+	help
+		Enable the drivers for MB7066 sensor
+
+menuconfig MB7066_SAMPLE_COUNT
+	int "Amount of samples per one measurement"
+	default 9
+
+menuconfig MB7066_TIMER0
+	bool "Timer instance 0"
+	default n
+	select NRFX_TIMER0
+
+menuconfig MB7066_TIMER1
+	bool "Timer instance 1"
+	default n
+	select NRFX_TIMER1
+
+menuconfig MB7066_TIMER2
+	bool "Timer instance 2"
+	default n
+	select NRFX_TIMER2
+
+menuconfig MB7066_TIMER3
+	bool "Timer instance 3"
+	default n
+	select NRFX_TIMER3
+
+menuconfig MB7066_TIMER4
+	bool "Timer instance 4"
+	default n
+	select NRFX_TIMER4
+
+menuconfig MB7066_TIMER
+	int "Timer instance used by the mb7066 driver."
+	default 0 if MB7066_TIMER0
+	default 1 if MB7066_TIMER1
+	default 2 if MB7066_TIMER2
+	default 3 if MB7066_TIMER3
+	default 4 if MB7066_TIMER4
+	default 0
+
+if !(MB7066_TIMER0 || MB7066_TIMER1 || MB7066_TIMER2 || MB7066_TIMER3 || MB7066_TIMER4)
+	config NRFX_TIMER0
+		default y
+endif
+
+if MB7066
+
+module = MB7066
+module-str = mb7066
+source "subsys/logging/Kconfig.template.log_config"
+
+config MB7066_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+endif # MB7066
+

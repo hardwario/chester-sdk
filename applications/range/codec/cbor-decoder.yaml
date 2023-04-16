@@ -1,0 +1,103 @@
+- acceleration_x:
+  - div: 1000
+  - fpp: 2
+- acceleration_y:
+  - div: 1000
+  - fpp: 2
+- acceleration_z:
+  - div: 1000
+  - fpp: 2
+- accelerometer:
+- attribute:
+- band:
+- backup:
+- line_voltage:
+- batt_voltage:
+- backup_state:
+- backup_events:
+- cid:
+- current_load:
+- distance:
+- earfcn:
+- ecl:
+- eest:
+- message:
+- measurements_div3:
+  - key: "measurements"
+  - tsp:
+    - min:
+      - div: 1000
+      - fpp: 3
+    - max:
+      - div: 1000
+      - fpp: 3
+    - avg:
+      - div: 1000
+      - fpp: 3
+    - mdn:
+      - div: 1000
+      - fpp: 3
+- measurements_div2:
+  - key: "measurements"
+  - tsp:
+    - min:
+      - div: 100
+      - fpp: 3
+    - max:
+      - div: 100
+      - fpp: 3
+    - avg:
+      - div: 100
+      - fpp: 3
+    - mdn:
+      - div: 100
+      - fpp: 3
+- fw_name:
+- fw_version:
+- hw_revision:
+- hw_variant:
+- version:
+- humidity:
+  - div: 100
+  - fpp: 1
+- imei:
+- imsi:
+- network:
+- hygrometer:
+- orientation:
+- parameter:
+- plmn:
+- product_name:
+- rsrp:
+- rsrq:
+- sequence:
+- serial_number:
+- snr:
+- ultrasonic_ranger:
+- system:
+- temperature:
+  - div: 100
+  - fpp: 2
+- thermometer:
+- timestamp:
+- uptime:
+- vendor_name:
+- voltage_load:
+  - div: 1000
+  - fpp: 2
+- voltage_rest:
+  - div: 1000
+  - fpp: 2
+- w1_thermometers:
+- hygro_events:
+  - key: "events"
+  - tso:
+    - type:
+      - enum:
+        - alarm_hi_activated
+        - alarm_hi_deactivated
+        - alarm_lo_activated
+        - alarm_lo_deactivated
+    - value:
+      - div: 100
+      - fpp: 2

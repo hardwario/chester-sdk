@@ -16,6 +16,7 @@
 
 /* Standard includes */
 #include <ctype.h>
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>

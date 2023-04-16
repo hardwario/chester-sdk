@@ -1,0 +1,3 @@
+config SHIELD_CTR_MB7066_A
+	def_bool $(shields_list_contains,ctr_mb7066_a)
+	def_bool $(shields_list_contains,ctr_x0_a)
