@@ -349,7 +349,7 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type)
 		m_wday = 1;
 	}
 
-	if (++m_day < get_days_in_month(m_year, m_month)) {
+	if (++m_day <= get_days_in_month(m_year, m_month)) {
 		return;
 	}
 
