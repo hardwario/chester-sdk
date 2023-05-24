@@ -28,6 +28,8 @@ K_SEM_DEFINE(g_app_loop_sem, 1, 1);
 atomic_t g_app_loop_measure = true;
 atomic_t g_app_loop_send = true;
 
+atomic_t g_app_loop_pulse = false;
+
 extern struct ctr_wdog_channel g_app_wdog_channel;
 
 static int update_battery(void)
@@ -95,9 +97,16 @@ int app_loop(void)
 		return ret;
 	}
 
-	ctr_led_set(CTR_LED_CHANNEL_G, true);
-	k_sleep(K_MSEC(30));
-	ctr_led_set(CTR_LED_CHANNEL_G, false);
+	if (g_app_loop_pulse) {
+		ctr_led_set(CTR_LED_CHANNEL_Y, true);
+		k_sleep(K_MSEC(30));
+		ctr_led_set(CTR_LED_CHANNEL_Y, false);
+		g_app_loop_pulse = false;
+	} else {
+		ctr_led_set(CTR_LED_CHANNEL_G, true);
+		k_sleep(K_MSEC(30));
+		ctr_led_set(CTR_LED_CHANNEL_G, false);
+	}
 
 	ret = k_sem_take(&g_app_loop_sem, K_SECONDS(5));
 	if (ret == -EAGAIN) {

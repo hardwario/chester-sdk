@@ -76,6 +76,7 @@ static struct ctr_edge m_edge_ch8;
 			k_mutex_lock(&g_app_data_lock, K_FOREVER);                                 \
 			g_app_data.counter_ch##ch##_total++;                                       \
 			g_app_data.counter_ch##ch##_delta++;                                       \
+			g_app_loop_pulse = true;                                                   \
 			k_mutex_unlock(&g_app_data_lock);                                          \
 		}                                                                                  \
 	}
@@ -133,12 +134,12 @@ static int init_chester_x0(void)
 			LOG_ERR("Call `ctr_edge_set_cooldown_time` failed: %d", ret);              \
 			return ret;                                                                \
 		}                                                                                  \
-		ret = ctr_edge_set_active_duration(&m_edge_ch##ch, 20);                            \
+		ret = ctr_edge_set_active_duration(&m_edge_ch##ch, 2);                             \
 		if (ret) {                                                                         \
 			LOG_ERR("Call `ctr_edge_set_active_duration` failed: %d", ret);            \
 			return ret;                                                                \
 		}                                                                                  \
-		ret = ctr_edge_set_inactive_duration(&m_edge_ch##ch, 20);                          \
+		ret = ctr_edge_set_inactive_duration(&m_edge_ch##ch, 2);                           \
 		if (ret) {                                                                         \
 			LOG_ERR("Call `ctr_edge_set_inactive_duration` failed: %d", ret);          \
 			return ret;                                                                \

@@ -1,4 +1,5 @@
 #include "app_config.h"
+#include "app_data.h"
 #include "app_measure.h"
 #include "app_send.h"
 
@@ -31,6 +32,21 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	k_timer_start(&g_app_send_timer, K_NO_WAIT, K_FOREVER);
+
+	return 0;
+}
+
+static int cmd_status(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	shell_print(shell, "Counters: %llu %llu %llu %llu", g_app_data.counter_ch1_total,
+		    g_app_data.counter_ch2_total, g_app_data.counter_ch3_total,
+		    g_app_data.counter_ch4_total);
 
 	return 0;
 }
@@ -81,5 +97,6 @@ SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 
 SHELL_CMD_REGISTER(measure, NULL, "Start measurement immediately.", cmd_measure);
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
+SHELL_CMD_REGISTER(status, NULL, "Show device status.", cmd_status);
 
 /* clang-format on */

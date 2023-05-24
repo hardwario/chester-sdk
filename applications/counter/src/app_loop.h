@@ -11,6 +11,7 @@ extern "C" {
 extern struct k_sem g_app_loop_sem;
 extern atomic_t g_app_loop_measure;
 extern atomic_t g_app_loop_send;
+extern atomic_t g_app_loop_pulse;
 
 int app_loop(void);
 
