@@ -1,5 +1,6 @@
 /* CHESTER includes */
 #include <chester/ctr_button.h>
+#include <chester/ctr_edge.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>
@@ -107,6 +108,110 @@ SHELL_CMD_REGISTER(button, &sub_button, "Button commands.", print_help);
 
 /* clang-format on */
 
+#define MAX_CLICK_PERIOD 600
+#define MIN_PRESS_LENGTH 1000
+
+static struct ctr_edge m_edge_int;
+static struct ctr_edge m_edge_ext;
+
+struct button_data {
+	int64_t last_event;
+	int click_count;
+	int64_t press_length;
+
+	struct k_work click_breakup_work;
+	struct k_work click_work;
+	struct k_work hold_work;
+	struct k_timer breakup_timer;
+};
+
+static struct button_data m_button_data_int = {0};
+static struct button_data m_button_data_ext = {0};
+
+static ctr_button_event_cb m_event_cb = NULL;
+static void *m_user_data = NULL;
+
+static enum ctr_button_channel button_data_to_channel(struct button_data *data)
+{
+	return data == &m_button_data_int ? CTR_BUTTON_CHANNEL_INT : CTR_BUTTON_CHANNEL_EXT;
+}
+
+static void click_breakup_work_handler(struct k_work *work)
+{
+	struct button_data *data = CONTAINER_OF(work, struct button_data, click_breakup_work);
+
+	m_event_cb(button_data_to_channel(data), CTR_BUTTON_EVENT_CLICK, data->click_count,
+		m_user_data);
+	data->click_count = 0;
+}
+
+static void click_breakup_timer_handler(struct k_timer *timer)
+{
+	struct button_data *data = CONTAINER_OF(timer, struct button_data, breakup_timer);
+
+	k_work_submit(&data->click_breakup_work);
+}
+
+static void click_work_handler(struct k_work *work)
+{
+	struct button_data *data = CONTAINER_OF(work, struct button_data, click_work);
+
+	k_timer_start(&data->breakup_timer, K_MSEC(MAX_CLICK_PERIOD), K_FOREVER);
+}
+
+static void hold_work_handler(struct k_work *work)
+{
+	struct button_data *data = CONTAINER_OF(work, struct button_data, hold_work);
+
+	m_event_cb(button_data_to_channel(data), CTR_BUTTON_EVENT_HOLD, data->press_length,
+		m_user_data);
+}
+
+static void edge_event_cb(struct ctr_edge *edge, enum ctr_edge_event event, void *user_data)
+{
+	if (!m_event_cb)
+		return;
+
+	struct button_data *data = edge == &m_edge_int ? &m_button_data_int : &m_button_data_ext;
+
+	int64_t uptime = k_uptime_get();
+	int64_t diff = uptime - data->last_event;
+
+	if (event == CTR_EDGE_EVENT_INACTIVE) {
+		if (diff > MIN_PRESS_LENGTH) {
+			data->press_length = diff;
+			k_work_submit(&data->hold_work);
+		} else {
+			k_work_submit(&data->click_work);
+			data->click_count++;
+		}
+	}
+
+	data->last_event = uptime;
+}
+
+int ctr_button_set_event_cb(ctr_button_event_cb cb, void *user_data)
+{
+	int ret;
+
+	m_event_cb = cb;
+	m_user_data = user_data;
+
+	ret = ctr_edge_watch(&m_edge_int);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_watch` (BUTTON_INT) failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_edge_watch(&m_edge_ext);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_watch` (BUTTON_EXT) failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static int init(const struct device *dev)
 {
 	int ret;
@@ -132,6 +237,75 @@ static int init(const struct device *dev)
 	ret = gpio_pin_configure_dt(&m_button_ext, GPIO_INPUT);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_configure_dt` (BUTTON_EXT) failed: %d", ret);
+		return ret;
+	}
+
+	k_work_init(&m_button_data_int.click_breakup_work, click_breakup_work_handler);
+	k_work_init(&m_button_data_int.click_work, click_work_handler);
+	k_work_init(&m_button_data_int.hold_work, hold_work_handler);
+	k_timer_init(&m_button_data_int.breakup_timer, click_breakup_timer_handler, NULL);
+	k_work_init(&m_button_data_ext.click_breakup_work, click_breakup_work_handler);
+	k_work_init(&m_button_data_ext.click_work, click_work_handler);
+	k_work_init(&m_button_data_ext.hold_work, hold_work_handler);
+	k_timer_init(&m_button_data_ext.breakup_timer, click_breakup_timer_handler, NULL);
+
+	ret = ctr_edge_init(&m_edge_int, &m_button_int, false);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_init` (BUTTON_INT) failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_edge_set_callback(&m_edge_int, edge_event_cb, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_set_callback` (BUTTON_INT) failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_edge_set_cooldown_time(&m_edge_int, 10);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_set_cooldown_time` (BUTTON_INT) failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_edge_set_active_duration(&m_edge_int, 10);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_set_active_duration` (BUTTON_INT) failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_edge_set_inactive_duration(&m_edge_int, 10);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_set_inactive_duration` (BUTTON_INT) failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_edge_init(&m_edge_ext, &m_button_ext, false);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_init` (BUTTON_EXT) failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_edge_set_callback(&m_edge_ext, edge_event_cb, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_set_callback` (BUTTON_EXT) failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_edge_set_cooldown_time(&m_edge_ext, 10);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_set_cooldown_time` (BUTTON_EXT) failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_edge_set_active_duration(&m_edge_ext, 10);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_set_active_duration` (BUTTON_EXT) failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_edge_set_inactive_duration(&m_edge_ext, 10);
+	if (ret) {
+		LOG_ERR("Call `ctr_edge_set_inactive_duration` (BUTTON_EXT) failed: %d", ret);
 		return ret;
 	}
 

@@ -2,6 +2,7 @@ config CTR_BUTTON
 	bool "CTR_BUTTON"
 	depends on SHELL
 	select GPIO
+	select CTR_EDGE
 
 if CTR_BUTTON
 
