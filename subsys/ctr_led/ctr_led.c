@@ -4,6 +4,7 @@
 /* Zephyr includes */
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -18,6 +19,7 @@ static const struct device *m_dev_led_r = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(l
 static const struct device *m_dev_led_g = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_g)));
 static const struct device *m_dev_led_y = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_y)));
 static const struct device *m_dev_led_ext = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(led_ext)));
+static const struct gpio_dt_spec m_dev_led_load = GPIO_DT_SPEC_GET(DT_NODELABEL(led_load), gpios);
 
 int ctr_led_set(enum ctr_led_channel channel, bool is_on)
 {
@@ -70,6 +72,24 @@ int ctr_led_set(enum ctr_led_channel channel, bool is_on)
 		led = 0;
 		break;
 
+	// the load LED has different behaviour
+	case CTR_LED_CHANNEL_LOAD:
+		if (is_on) {
+			ret = gpio_pin_configure_dt(&m_dev_led_load, GPIO_OUTPUT_ACTIVE);
+			if (ret) {
+				LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);
+				return ret;
+			}
+		} else {
+			ret = gpio_pin_configure_dt(&m_dev_led_load, GPIO_DISCONNECTED);
+			if (ret) {
+				LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);
+				return ret;
+			}
+		}
+
+		return 0;
+
 	default:
 		LOG_ERR("Invalid channel: %d", channel);
 		return -EINVAL;
@@ -94,3 +114,16 @@ int ctr_led_set(enum ctr_led_channel channel, bool is_on)
 
 	return 0;
 }
+
+static int init(const struct device *dev)
+{
+	int ret = gpio_pin_configure_dt(&m_dev_led_load, GPIO_DISCONNECTED);
+	if (ret) {
+		LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+SYS_INIT(init, APPLICATION, CONFIG_CTR_LED_INIT_PRIORITY);

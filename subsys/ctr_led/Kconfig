@@ -14,4 +14,8 @@ config CTR_LED_SHELL
 	depends on SHELL
 	default y
 
+config CTR_LED_INIT_PRIORITY
+	int "Initialization priority"
+	default APPLICATION_INIT_PRIORITY
+
 endif # CTR_LED

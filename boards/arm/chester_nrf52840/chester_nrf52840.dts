@@ -51,6 +51,14 @@
 		};
 	};
 
+	led_load {
+		compatible = "gpio-leds";
+
+		led_load: led_load {
+			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
 	ctr_gpio: ctr_gpio {
 		compatible = "hardwario,ctr-gpio";
 		status = "disabled";
