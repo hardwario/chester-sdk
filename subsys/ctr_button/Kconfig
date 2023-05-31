@@ -11,6 +11,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config CTR_BUTTON_INIT_PRIORITY
 	int "Initialization priority"
-	default APPLICATION_INIT_PRIORITY
+	default 0
 
 endif # CTR_BUTTON

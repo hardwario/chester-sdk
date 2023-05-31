@@ -1,7 +1,11 @@
 /* CHESTER includes */
 #include <chester/ctr_config.h>
+#include <chester/ctr_led.h>
 
 /* Zephyr includes */
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/fs/nvs.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -213,6 +217,45 @@ static int init(const struct device *dev)
 		LOG_ERR("Call `settings_subsys_init` failed: %d", ret);
 		return ret;
 	}
+
+#if defined(CONFIG_CTR_CONFIG_FACTORY_RESET)
+	BUILD_ASSERT(CONFIG_CTR_CONFIG_INIT_PRIORITY > CONFIG_CTR_BUTTON_INIT_PRIORITY,
+		"Incorrect init priority");
+	const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(DT_NODELABEL(btn_int), gpios);
+
+	/* reset is not happening */
+	if (!gpio_pin_get_dt(&button)) {
+		return 0;
+	}
+
+	k_sleep(K_SECONDS(5));
+
+	if (!gpio_pin_get_dt(&button)) {
+		return 0;
+	}
+
+	const int period = 125;
+	const int window = 5000;
+
+	for (int i=0; i < window / period; i++) {
+		if (!gpio_pin_get_dt(&button)) {
+			ctr_led_set(CTR_LED_CHANNEL_R, 1);
+			k_sleep(K_SECONDS(2));
+			ctr_led_set(CTR_LED_CHANNEL_R, 0);
+
+			ctr_config_reset();
+
+			return 0;
+		}
+
+		ctr_led_set(CTR_LED_CHANNEL_R, i % 2);
+
+		k_sleep(K_MSEC(period));
+	}
+
+	ctr_led_set(CTR_LED_CHANNEL_R, 0);
+	k_sleep(K_SECONDS(1));
+#endif /* defined(CTR_CONFIG_FACTORY_RESET) */
 
 	return 0;
 }

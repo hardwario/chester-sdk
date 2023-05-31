@@ -8,6 +8,12 @@ config CTR_CONFIG
 	select SETTINGS
 	select SETTINGS_RUNTIME
 
+config CTR_CONFIG_FACTORY_RESET
+	bool "CTR_CONFIG_FACTORY_RESET"
+	default y if CTR_CONFIG
+	select CTR_BUTTON
+	select CTR_LED
+
 if CTR_CONFIG
 
 module = CTR_CONFIG
@@ -16,6 +22,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config CTR_CONFIG_INIT_PRIORITY
 	int "Initialization priority"
-	default 0
+	default 1
 
 endif # CTR_CONFIG
