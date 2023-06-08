@@ -9,15 +9,31 @@
 extern "C" {
 #endif
 
-enum ctr_lrw_talk_event {
+enum ctr_lrw_talk_event_type {
 	CTR_LRW_TALK_EVENT_BOOT = 0,
 	CTR_LRW_TALK_EVENT_JOIN_OK = 1,
 	CTR_LRW_TALK_EVENT_JOIN_ERR = 2,
 	CTR_LRW_TALK_EVENT_SEND_OK = 3,
 	CTR_LRW_TALK_EVENT_SEND_ERR = 4,
+	CTR_LRW_TALK_EVENT_RECV = 5,
 };
 
-typedef void (*ctr_lrw_talk_event_cb)(enum ctr_lrw_talk_event event);
+struct recv_data {
+	int port;
+	void *buf;
+	size_t len;
+};
+
+union ctr_lrw_talk_event_data {
+	struct recv_data recv_data;
+};
+
+struct ctr_lrw_talk_event {
+	enum ctr_lrw_talk_event_type type;
+	union ctr_lrw_talk_event_data data;
+};
+
+typedef void (*ctr_lrw_talk_event_cb)(struct ctr_lrw_talk_event event);
 
 int ctr_lrw_talk_init(ctr_lrw_talk_event_cb event_cb);
 int ctr_lrw_talk_enable(void);
@@ -40,6 +56,9 @@ int ctr_lrw_talk_at_appeui(const uint8_t *appeui, size_t appeui_size);
 int ctr_lrw_talk_at_appkey(const uint8_t *appkey, size_t appkey_size);
 int ctr_lrw_talk_at_nwkskey(const uint8_t *nwkskey, size_t nwkskey_size);
 int ctr_lrw_talk_at_appskey(const uint8_t *appskey, size_t appskey_size);
+int ctr_lrw_talk_at_delays(const uint32_t *delays);
+int ctr_lrw_talk_at_recv_get(void);
+int ctr_lrw_talk_at_recvurc(uint8_t enable);
 int ctr_lrw_talk_at_chmask(const char *chmask);
 int ctr_lrw_talk_at_utx(const void *payload, size_t payload_len);
 int ctr_lrw_talk_at_ctx(const void *payload, size_t payload_len);

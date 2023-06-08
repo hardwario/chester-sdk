@@ -27,20 +27,23 @@ LOG_MODULE_REGISTER(ctr_lrw, CONFIG_CTR_LRW_LOG_LEVEL);
 
 #define SETTINGS_PFX "lrw"
 
-#define BOOT_RETRY_COUNT     3
-#define BOOT_RETRY_DELAY     K_SECONDS(10)
-#define SETUP_RETRY_COUNT    3
-#define SETUP_RETRY_DELAY    K_SECONDS(10)
-#define JOIN_TIMEOUT	     K_SECONDS(120)
-#define JOIN_RETRY_COUNT     3
-#define JOIN_RETRY_DELAY     K_SECONDS(30)
-#define SEND_TIMEOUT	     K_SECONDS(120)
-#define SEND_RETRY_COUNT     3
-#define SEND_RETRY_DELAY     K_SECONDS(30)
-#define REQ_INTRA_DELAY_MSEC 8000
+#define BOOT_RETRY_COUNT	3
+#define BOOT_RETRY_DELAY	K_SECONDS(10)
+#define SETUP_RETRY_COUNT	3
+#define SETUP_RETRY_DELAY	K_SECONDS(10)
+#define JOIN_TIMEOUT		K_SECONDS(120)
+#define JOIN_RETRY_COUNT	3
+#define JOIN_RETRY_DELAY	K_SECONDS(30)
+#define SEND_TIMEOUT		K_SECONDS(120)
+#define SEND_RETRY_COUNT	3
+#define SEND_RETRY_DELAY	K_SECONDS(30)
+#define REQ_INTRA_DELAY_MSEC	8000
+#define RX_LISTEN_WINDOW_MSEC	250
+#define RECV_LISTEN_WINDOW_MSEC 7000
 
 #define CMD_MSGQ_MAX_ITEMS  16
 #define SEND_MSGQ_MAX_ITEMS 16
+#define RECV_MSGQ_MAX_ITEMS 16
 
 enum cmd_msgq_req {
 	CMD_MSGQ_REQ_START = 0,
@@ -111,12 +114,15 @@ struct config {
 	bool adr;
 	int datarate;
 	bool dutycycle;
+	bool downlink;
+	uint8_t recvurc;
 	uint8_t devaddr[4];
 	uint8_t deveui[8];
 	uint8_t joineui[8];
 	uint8_t appkey[16];
 	uint8_t nwkskey[16];
 	uint8_t appskey[16];
+	uint32_t delays[4];
 };
 
 static const struct device *dev_lrw_if = DEVICE_DT_GET(DT_CHOSEN(ctr_lrw_if));
@@ -133,6 +139,9 @@ static struct config m_config_interim = {
 	.adr = true,
 	.datarate = 0,
 	.dutycycle = true,
+	.downlink = false,
+	.recvurc = 1,
+	.delays = {5000, 6000, 1000, 2000},
 };
 
 static struct config m_config;
@@ -140,18 +149,20 @@ static struct config m_config;
 static struct k_poll_signal m_boot_sig;
 static struct k_poll_signal m_join_sig;
 static struct k_poll_signal m_send_sig;
+static struct k_poll_signal m_recv_sig;
 
 K_MSGQ_DEFINE(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 K_MSGQ_DEFINE(m_send_msgq, sizeof(struct send_msgq_item), SEND_MSGQ_MAX_ITEMS, 4);
+K_MSGQ_DEFINE(m_recv_msgq, sizeof(struct recv_data), RECV_MSGQ_MAX_ITEMS, 4);
 
 static ctr_lrw_event_cb m_callback;
 static void *m_param;
 static atomic_t m_corr_id;
 static int64_t m_last_req;
 
-static void talk_handler(enum ctr_lrw_talk_event event)
+static void talk_handler(struct ctr_lrw_talk_event event)
 {
-	switch (event) {
+	switch (event.type) {
 	case CTR_LRW_TALK_EVENT_BOOT:
 		LOG_DBG("Event `CTR_LRW_TALK_EVENT_BOOT`");
 		k_poll_signal_raise(&m_boot_sig, 0);
@@ -172,8 +183,13 @@ static void talk_handler(enum ctr_lrw_talk_event event)
 		LOG_DBG("Event `CTR_LRW_TALK_EVENT_SEND_ERR`");
 		k_poll_signal_raise(&m_send_sig, 1);
 		break;
+	case CTR_LRW_TALK_EVENT_RECV:
+		LOG_INF("Event `CTR_LRW_TALK_EVENT_RECV`");
+		k_poll_signal_raise(&m_recv_sig, 0);
+		k_msgq_put(&m_recv_msgq, (const void *)&event.data, K_NO_WAIT);
+		break;
 	default:
-		LOG_WRN("Unknown event: %d", event);
+		LOG_WRN("Unknown event: %d", event.type);
 	}
 }
 
@@ -351,6 +367,13 @@ static int setup_once(void)
 		}
 	}
 
+	ret = ctr_lrw_talk_at_recvurc(m_config.recvurc);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lrw_talk_at_recvurc` failed: %d", ret);
+		return ret;
+	}
+
 	ret = ctr_lrw_talk_at_devaddr(m_config.devaddr, sizeof(m_config.devaddr));
 
 	if (ret < 0) {
@@ -390,6 +413,13 @@ static int setup_once(void)
 
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_lrw_talk_at_appskey` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lrw_talk_at_delays(m_config.delays);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lrw_talk_at_delay` failed: %d", ret);
 		return ret;
 	}
 
@@ -584,7 +614,11 @@ static int send_once(const struct send_msgq_data *data)
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &m_send_sig),
 	};
 
-	ret = k_poll(events, ARRAY_SIZE(events), SEND_TIMEOUT);
+	int64_t sleep_start = k_uptime_get();
+
+	int listen_window = RECV_LISTEN_WINDOW_MSEC + m_config_interim.delays[3];
+
+	ret = k_poll(events, ARRAY_SIZE(events), K_MSEC(listen_window));
 
 	if (ret == -EAGAIN) {
 		LOG_WRN("Send response timed out");
@@ -606,6 +640,19 @@ static int send_once(const struct send_msgq_data *data)
 	if (signaled == 0 || result != 0) {
 		/* Return positive error code intentionally */
 		return ENOMSG;
+	}
+
+	if (m_config_interim.downlink) {
+		int to_sleep = listen_window - k_uptime_delta(&sleep_start);
+		LOG_INF("Still have to sleep %dms", to_sleep);
+		k_sleep(K_MSEC(to_sleep));
+
+		ret = ctr_lrw_talk_at_recv_get();
+
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_lrw_talk_at_get_recv` failed: %d", ret);
+			return ret;
+		}
 	}
 
 	return 0;
@@ -928,6 +975,25 @@ static void process_send_msgq(void)
 	m_last_req = k_uptime_get();
 }
 
+static void process_recv_msgq(void)
+{
+	int ret;
+
+	struct recv_data item;
+	ret = k_msgq_get(&m_recv_msgq, &item, K_NO_WAIT);
+
+	union ctr_lrw_event_data event_data = {0};
+	event_data.recv.port = item.port;
+	event_data.recv.buf = item.buf;
+	event_data.recv.len = item.len;
+
+	m_callback(CTR_LRW_EVENT_RECV, &event_data, NULL);
+
+	k_free(item.buf);
+
+	k_msgq_purge(&m_recv_msgq);
+}
+
 static void dispatcher_thread(void)
 {
 	int ret;
@@ -937,10 +1003,12 @@ static void dispatcher_thread(void)
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
 						 K_POLL_MODE_NOTIFY_ONLY, &m_cmd_msgq),
 			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+						 K_POLL_MODE_NOTIFY_ONLY, &m_recv_msgq),
+			K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
 						 K_POLL_MODE_NOTIFY_ONLY, &m_send_msgq),
 		};
 
-		ret = k_poll(events, m_state != STATE_READY ? 1 : 2, K_FOREVER);
+		ret = k_poll(events, m_state != STATE_READY ? 2 : 3, K_FOREVER);
 
 		if (ret < 0) {
 			LOG_ERR("Call `k_poll` failed: %d", ret);
@@ -953,6 +1021,10 @@ static void dispatcher_thread(void)
 		}
 
 		if (events[1].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
+			process_recv_msgq();
+		}
+
+		if (events[2].state == K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
 			if (m_state == STATE_READY) {
 				process_send_msgq();
 			}
@@ -1113,6 +1185,8 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET("adr", &m_config_interim.adr, sizeof(m_config_interim.adr));
 	SETTINGS_SET("datarate", &m_config_interim.datarate, sizeof(m_config_interim.datarate));
 	SETTINGS_SET("dutycycle", &m_config_interim.dutycycle, sizeof(m_config_interim.dutycycle));
+	SETTINGS_SET("downlink", &m_config_interim.downlink, sizeof(m_config_interim.downlink));
+	SETTINGS_SET("recvurc", &m_config_interim.recvurc, sizeof(m_config_interim.recvurc));
 	SETTINGS_SET("devaddr", m_config_interim.devaddr, sizeof(m_config_interim.devaddr));
 	SETTINGS_SET("deveui", m_config_interim.deveui, sizeof(m_config_interim.deveui));
 	SETTINGS_SET("joineui", m_config_interim.joineui, sizeof(m_config_interim.joineui));
@@ -1149,6 +1223,8 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC("adr", &m_config_interim.adr, sizeof(m_config_interim.adr));
 	EXPORT_FUNC("datarate", &m_config_interim.datarate, sizeof(m_config_interim.datarate));
 	EXPORT_FUNC("dutycycle", &m_config_interim.dutycycle, sizeof(m_config_interim.dutycycle));
+	EXPORT_FUNC("downlink", &m_config_interim.downlink, sizeof(m_config_interim.downlink));
+	EXPORT_FUNC("recvurc", &m_config_interim.recvurc, sizeof(m_config_interim.recvurc));
 	EXPORT_FUNC("devaddr", m_config_interim.devaddr, sizeof(m_config_interim.devaddr));
 	EXPORT_FUNC("deveui", m_config_interim.deveui, sizeof(m_config_interim.deveui));
 	EXPORT_FUNC("joineui", m_config_interim.joineui, sizeof(m_config_interim.joineui));
@@ -1270,6 +1346,18 @@ static void print_dutycycle(const struct shell *shell)
 		    m_config_interim.dutycycle ? "true" : "false");
 }
 
+static void print_downlink(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config downlink %s",
+		    m_config_interim.downlink ? "true" : "false");
+}
+
+static void print_recvurc(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config recvurc %s",
+		    m_config_interim.recvurc ? "enabled" : "disabled");
+}
+
 static void print_devaddr(const struct shell *shell)
 {
 	char buf[sizeof(m_config_interim.devaddr) * 2 + 1];
@@ -1330,6 +1418,13 @@ static void print_appskey(const struct shell *shell)
 	}
 }
 
+static void print_delays(const struct shell *shell)
+{
+	shell_print(shell, SETTINGS_PFX " config delays %d %d %d %d", m_config_interim.delays[0],
+		    m_config_interim.delays[1], m_config_interim.delays[2],
+		    m_config_interim.delays[3]);
+}
+
 static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
 	print_test(shell);
@@ -1342,12 +1437,15 @@ static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 	print_adr(shell);
 	print_datarate(shell);
 	print_dutycycle(shell);
+	print_downlink(shell);
+	print_recvurc(shell);
 	print_devaddr(shell);
 	print_deveui(shell);
 	print_joineui(shell);
 	print_appkey(shell);
 	print_nwkskey(shell);
 	print_appskey(shell);
+	print_delays(shell);
 
 	return 0;
 }
@@ -1596,6 +1694,48 @@ static int cmd_config_dutycycle(const struct shell *shell, size_t argc, char **a
 	return -EINVAL;
 }
 
+static int cmd_config_downlink(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_downlink(shell);
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "true") == 0) {
+		m_config_interim.downlink = true;
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "false") == 0) {
+		m_config_interim.downlink = false;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_recvurc(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_recvurc(shell);
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "enable") == 0) {
+		m_config_interim.recvurc = 1;
+		return 0;
+	}
+
+	if (argc == 2 && strcmp(argv[1], "disable") == 0) {
+		m_config_interim.recvurc = 0;
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
 static int cmd_config_devaddr(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -1710,6 +1850,39 @@ static int cmd_config_appskey(const struct shell *shell, size_t argc, char **arg
 		if (ret >= 0) {
 			return 0;
 		}
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_config_delays(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_delays(shell);
+		return 0;
+	}
+
+	if (argc == 5) {
+		int delays[4];
+
+		for (int i = 0; i < 5; i++) {
+			delays[i] = strtol(argv[i + 1], NULL, 10);
+			if (delays[i] < 0) {
+				shell_error(shell, "invalid delay values");
+				return -EINVAL;
+			}
+		}
+
+		if (delays[0] > delays[1] || delays[2] > delays[3]) {
+			shell_error(shell, "invalid delay values");
+		}
+
+		for (int i = 0; i < 4; i++) {
+			m_config_interim.delays[i] = delays[i];
+		}
+
+		return 0;
 	}
 
 	shell_help(shell);
@@ -1882,6 +2055,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_config_datarate, 1, 1),
 	SHELL_CMD_ARG(dutycycle, NULL, "Get/Set duty cycle (format: <true|false>).",
 		      cmd_config_dutycycle, 1, 1),
+	SHELL_CMD_ARG(downlink, NULL, "Get/Set downlink (format: <true|false>).",
+		      cmd_config_downlink, 1, 1),
+	SHELL_CMD_ARG(recvurc, NULL, "Enable/Disable the '+RECV' URC (format: <enable|disable>).",
+		      cmd_config_recvurc, 1, 1),
 	SHELL_CMD_ARG(devaddr, NULL, "Get/Set DevAddr (format: <8 hexadecimal digits>).",
 		      cmd_config_devaddr, 1, 1),
 	SHELL_CMD_ARG(deveui, NULL, "Get/Set DevEUI (format: <16 hexadecimal digits>).",
@@ -1894,6 +2071,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_config_nwkskey, 1, 1),
 	SHELL_CMD_ARG(appskey, NULL, "Get/Set AppSKey (format: <32 hexadecimal digits>).",
 		      cmd_config_appskey, 1, 1),
+	SHELL_CMD_ARG(delays, NULL,
+		      "Get/Set delays (format <positive number> <positive number> <positive "
+		      "number> <positive number>)",
+		      cmd_config_delays, 1, 4),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -1924,6 +2105,7 @@ static int init(const struct device *dev)
 	k_poll_signal_init(&m_boot_sig);
 	k_poll_signal_init(&m_join_sig);
 	k_poll_signal_init(&m_send_sig);
+	k_poll_signal_init(&m_recv_sig);
 
 	static struct settings_handler sh = {
 		.name = SETTINGS_PFX,

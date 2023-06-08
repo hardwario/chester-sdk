@@ -26,6 +26,9 @@ static void lrw_event_cb(enum ctr_lrw_event event, union ctr_lrw_event_data *dat
 			k_oops();
 		}
 		break;
+	case CTR_LRW_EVENT_RECV:
+		LOG_INF("Got downlink message: %s", data->recv.buf);
+		break;
 	default:
 		LOG_DBG("unknown event: %d", event);
 		break;

@@ -18,6 +18,7 @@ enum ctr_lrw_event {
 	CTR_LRW_EVENT_JOIN_ERR = 3,
 	CTR_LRW_EVENT_SEND_OK = 4,
 	CTR_LRW_EVENT_SEND_ERR = 5,
+	CTR_LRW_EVENT_RECV = 6,
 };
 
 struct ctr_lrw_data_start_ok {
@@ -44,6 +45,12 @@ struct ctr_lrw_data_send_err {
 	int corr_id;
 };
 
+struct ctr_lrw_data_recv {
+	int port;
+	char *buf;
+	size_t len;
+};
+
 union ctr_lrw_event_data {
 	struct ctr_lrw_data_start_ok start_ok;
 	struct ctr_lrw_data_start_err start_err;
@@ -51,6 +58,7 @@ union ctr_lrw_event_data {
 	struct ctr_lrw_data_join_err join_err;
 	struct ctr_lrw_data_send_ok send_ok;
 	struct ctr_lrw_data_send_err send_err;
+	struct ctr_lrw_data_recv recv;
 };
 
 typedef void (*ctr_lrw_event_cb)(enum ctr_lrw_event event, union ctr_lrw_event_data *data,

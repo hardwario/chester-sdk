@@ -9,6 +9,7 @@
 
 /* Standard includes */
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(ctr_lrw_talk, CONFIG_CTR_LRW_LOG_LEVEL);
@@ -29,11 +30,69 @@ static K_MUTEX_DEFINE(m_talk_mut);
 static struct k_poll_signal m_response_sig;
 static void *m_handler_param;
 
+static bool m_received_recv_preamble;
+static char m_recv_buf[128];
+static int m_recv_port;
+static int m_recv_len;
+
+static int process_recv_payload(struct ctr_lrw_talk_event *event, const char *hexbuf, int recv_port,
+				int recv_len)
+{
+	int len = strlen(hexbuf);
+	if (len == 0 || recv_len == 0) {
+		return -ENOMSG;
+	}
+
+	if (len > 0) {
+		char cb[3];
+
+		for (int i = 0; i < len / 2; i++) {
+			cb[0] = hexbuf[2 * i];
+			cb[1] = hexbuf[2 * i + 1];
+
+			m_recv_buf[i] = strtol(cb, NULL, 16);
+		}
+
+		m_recv_buf[len / 2] = '\0';
+
+		LOG_INF("RECV: port: %d len: %d msg: %s", recv_port, recv_len, m_recv_buf);
+
+		if (recv_len == strlen(m_recv_buf)) {
+			if (m_event_cb != NULL) {
+				event->data.recv_data.port = recv_port;
+				event->data.recv_data.len = recv_len;
+				event->data.recv_data.buf = k_calloc(recv_len + 1, sizeof(char));
+				if (event->data.recv_data.buf != NULL) {
+					strcpy(event->data.recv_data.buf, m_recv_buf);
+
+					event->type = CTR_LRW_TALK_EVENT_RECV;
+
+					return 0;
+
+				} else {
+					LOG_ERR("No memory to receive message");
+					return -ENOMEM;
+				}
+			}
+		}
+		LOG_ERR("RECV message has inconsistent length: got %d, expected %d",
+			strlen(m_recv_buf), recv_len);
+		return -EINVAL;
+	}
+
+	LOG_INF("No RECV message");
+	return ENOMSG;
+}
+
 static void process_urc(const char *s)
 {
+	struct ctr_lrw_talk_event event = {0};
+
+	LOG_DBG("%s", s);
 	if (strcmp(s, "+ACK") == 0) {
 		if (m_event_cb != NULL) {
-			m_event_cb(CTR_LRW_TALK_EVENT_SEND_OK);
+			event.type = CTR_LRW_TALK_EVENT_SEND_OK;
+			m_event_cb(event);
 		}
 
 		return;
@@ -41,7 +100,8 @@ static void process_urc(const char *s)
 
 	if (strcmp(s, "+NOACK") == 0) {
 		if (m_event_cb != NULL) {
-			m_event_cb(CTR_LRW_TALK_EVENT_SEND_ERR);
+			event.type = CTR_LRW_TALK_EVENT_SEND_ERR;
+			m_event_cb(event);
 		}
 
 		return;
@@ -49,7 +109,8 @@ static void process_urc(const char *s)
 
 	if (strcmp(s, "+EVENT=1,1") == 0) {
 		if (m_event_cb != NULL) {
-			m_event_cb(CTR_LRW_TALK_EVENT_JOIN_OK);
+			event.type = CTR_LRW_TALK_EVENT_JOIN_OK;
+			m_event_cb(event);
 		}
 
 		return;
@@ -57,7 +118,8 @@ static void process_urc(const char *s)
 
 	if (strcmp(s, "+EVENT=1,0") == 0) {
 		if (m_event_cb != NULL) {
-			m_event_cb(CTR_LRW_TALK_EVENT_JOIN_ERR);
+			event.type = CTR_LRW_TALK_EVENT_JOIN_ERR;
+			m_event_cb(event);
 		}
 
 		return;
@@ -65,10 +127,50 @@ static void process_urc(const char *s)
 
 	if (strcmp(s, "+EVENT=0,0") == 0) {
 		if (m_event_cb != NULL) {
-			m_event_cb(CTR_LRW_TALK_EVENT_BOOT);
+			event.type = CTR_LRW_TALK_EVENT_BOOT;
+			m_event_cb(event);
 		}
 
 		return;
+	}
+
+	if (strncmp(s, "$RECVGET=", 9) == 0) {
+		int port = atoi(strchr(s, (int)'=') + 1);
+		const char *msg_cnt_start = strchr(s, (int)',') + 1;
+		int msg_cnt = atoi(msg_cnt_start);
+		LOG_DBG("FIFO has %d messages", msg_cnt);
+		const char *len_start = strchr(msg_cnt_start, (int)',') + 1;
+		int len = atoi(len_start);
+		const char *msg_start = strchr(len_start, (int)',') + 1;
+
+		if (process_recv_payload(&event, msg_start, port, len) == 0 && m_event_cb != NULL) {
+			event.type = CTR_LRW_TALK_EVENT_RECV;
+			m_event_cb(event);
+		}
+
+		return;
+	}
+
+	if (m_received_recv_preamble) {
+		m_received_recv_preamble = false;
+
+		if (process_recv_payload(&event, s, m_recv_port, m_recv_len) == 0 &&
+		    m_event_cb != NULL) {
+
+			event.type = CTR_LRW_TALK_EVENT_RECV;
+			m_event_cb(event);
+		}
+
+		m_recv_port = 0;
+		m_recv_len = 0;
+		m_received_recv_preamble = false;
+	}
+
+	if (strncmp(s, "+RECV=", 6) == 0) {
+		m_received_recv_preamble = true;
+
+		m_recv_port = atoi(strchr(s, (int)'=') + 1);
+		m_recv_len = atoi(strchr(s, (int)',') + 1);
 	}
 }
 
@@ -589,6 +691,49 @@ int ctr_lrw_talk_at_appskey(const uint8_t *appskey, size_t appskey_size)
 	}
 
 	k_free(hex);
+	return 0;
+}
+
+int ctr_lrw_talk_at_delays(const uint32_t *delays)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_L, "AT+DELAY=%d,%d,%d,%d", delays[0], delays[1],
+			  delays[2], delays[3]);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lrw_talk_at_recv_get(void)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_L, "AT$RECVGET?");
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lrw_talk_at_recvurc(uint8_t enable)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_L, "AT$RECVURC=%d", enable);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
