@@ -64,6 +64,7 @@ enum msg_key {
 	MSG_KEY_BACKUP = 53,
 	MSG_KEY_TRIGGER_EVENTS = 54,
 	MSG_KEY_BACKUP_EVENTS = 55,
+	MSG_KEY_DELTA = 56,
 };
 
 #ifdef __cplusplus

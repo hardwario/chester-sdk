@@ -71,6 +71,7 @@ struct app_data_counter_measurement {
 struct app_data_counter {
 	int64_t timestamp;
 	uint64_t value;
+	uint64_t delta;
 	int measurement_count;
 	struct app_data_counter_measurement measurements[APP_DATA_COUNTER_MAX_MEASUREMENTS];
 };

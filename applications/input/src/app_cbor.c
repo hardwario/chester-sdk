@@ -424,6 +424,11 @@ static int encode(zcbor_state_t *zs)
 		zcbor_uint32_put(zs, MSG_KEY_VALUE);
 		zcbor_uint64_put(zs, g_app_data.counter.value);
 
+		zcbor_uint32_put(zs, MSG_KEY_DELTA);
+		zcbor_uint64_put(zs, g_app_data.counter.delta);
+
+		g_app_data.counter.delta = 0;
+
 		zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_VAL);
 		{
 			zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
