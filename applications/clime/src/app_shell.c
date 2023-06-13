@@ -67,8 +67,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "List current configuration.",
 	              app_config_cmd_config_show, 1, 0),
 
-	CONFIG_PARAM_LIST()
+	SHELL_CMD_ARG(mode, NULL, "Get/Set communication mode (None/LTE/LoRaWAN) ('none', 'lte', 'lrw').", app_config_cmd_config_mode, 1, 1),
 
+	CONFIG_PARAM_LIST()
+	
 	SHELL_SUBCMD_SET_END
 );
 

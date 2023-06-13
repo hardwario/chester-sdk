@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 struct app_config g_app_config;
 
 static struct app_config m_app_config_interim = {
+	.mode = APP_CONFIG_MODE_NONE,
+
 	.interval_sample = 60,
 	.interval_aggreg = 300,
 	.interval_report = 1800,
@@ -38,6 +40,60 @@ static struct app_config m_app_config_interim = {
 	.backup_report_disconnected = true,
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 };
+
+static void print_app_config_mode(const struct shell *shell)
+{
+	const char *mode;
+	switch (m_app_config_interim.mode) {
+	case APP_CONFIG_MODE_NONE:
+		mode = "none";
+		break;
+	case APP_CONFIG_MODE_LTE:
+		mode = "lte";
+		break;
+	case APP_CONFIG_MODE_LRW:
+		mode = "lrw";
+		break;
+	default:
+		mode = "(unknown)";
+		break;
+	}
+
+	shell_print(shell, "app config mode %s", mode);
+}
+
+int app_config_cmd_config_mode(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_app_config_mode(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		if (!strcmp("none", argv[1])) {
+			m_app_config_interim.mode = APP_CONFIG_MODE_NONE;
+			return 0;
+		}
+
+		if (!strcmp("lte", argv[1])) {
+			m_app_config_interim.mode = APP_CONFIG_MODE_LTE;
+			return 0;
+		}
+
+		if (!strcmp("lrw", argv[1])) {
+			m_app_config_interim.mode = APP_CONFIG_MODE_LRW;
+			return 0;
+		}
+
+		shell_error(shell, "invalid option");
+
+		return -EINVAL;
+	}
+
+	shell_help(shell);
+
+	return -EINVAL;
+}
 
 #define DEFINE_CMD_CONFIG_INT(_name_d, _name_u, _min, _max)                                        \
 	static void print_##_name_u(const struct shell *shell)                                     \
@@ -148,6 +204,7 @@ CONFIG_PARAM_LIST()
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
+	print_app_config_mode(shell);
 
 #define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)	print_##_name_u(shell);
 #define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help) print_##_name_u(shell);
@@ -202,6 +259,8 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET_SCALAR(_name_d, _name_u);
 #define CONFIG_PARAM_BOOL(_name_d, _name_u, _help) SETTINGS_SET_SCALAR(_name_d, _name_u);
 
+	SETTINGS_SET_SCALAR(mode, mode);
+
 	CONFIG_PARAM_LIST()
 
 #undef CONFIG_PARAM_INT
@@ -238,6 +297,8 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 #define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help)                                    \
 	EXPORT_FUNC_SCALAR(_name_d, _name_u);
 #define CONFIG_PARAM_BOOL(_name_d, _name_u, _help) EXPORT_FUNC_SCALAR(_name_d, _name_u);
+
+	EXPORT_FUNC_SCALAR(mode, mode);
 
 	CONFIG_PARAM_LIST()
 

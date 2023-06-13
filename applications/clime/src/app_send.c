@@ -1,7 +1,3 @@
-#if defined(CONFIG_SHIELD_CTR_LRW) && defined(CONFIG_SHIELD_CTR_LTE)
-#error "Both shields ctr_lrw and ctr_lte cannot be enabled"
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) && defined(CONFIG_SHIELD_CTR_LTE) */
-
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
@@ -31,9 +27,7 @@
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_LRW)
-
-static int compose(struct ctr_buf *buf)
+static int compose_lrw(struct ctr_buf *buf)
 {
 	int ret = 0;
 
@@ -191,8 +185,8 @@ static int compose(struct ctr_buf *buf)
 			if (isnan(sensor->last_sample_temperature)) {
 				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
 			} else {
-				ret |= ctr_buf_append_s16_le(buf,
-							  sensor->last_sample_temperature * 100.f);
+				ret |= ctr_buf_append_s16_le(buf, sensor->last_sample_temperature *
+									  100.f);
 			}
 		}
 	}
@@ -207,11 +201,7 @@ static int compose(struct ctr_buf *buf)
 	return 0;
 }
 
-#endif
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
-
-static int compose(struct ctr_buf *buf)
+static int compose_lte(struct ctr_buf *buf)
 {
 	int ret;
 
@@ -293,54 +283,56 @@ static int compose(struct ctr_buf *buf)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
-
 int app_send(void)
 {
-#if defined(CONFIG_SHIELD_CTR_LRW) || defined(CONFIG_SHIELD_CTR_LTE)
 	int ret;
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) || defined(CONFIG_SHIELD_CTR_LTE) */
 
-#if defined(CONFIG_SHIELD_CTR_LRW)
-	CTR_BUF_DEFINE_STATIC(buf, 51);
+	CTR_BUF_DEFINE_STATIC(lte_buf, 1024);
+	CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
 
-	ret = compose(&buf);
-	if (ret) {
-		LOG_ERR("Call `compose` failed: %d", ret);
-		return ret;
+	switch (g_app_config.mode) {
+	case APP_CONFIG_MODE_LRW:
+		ret = compose_lrw(&lrw_buf);
+		if (ret) {
+			LOG_ERR("Call `compose_lrw` failed: %d", ret);
+			return ret;
+		}
+
+		struct ctr_lrw_send_opts lrw_opts = CTR_LRW_SEND_OPTS_DEFAULTS;
+		ret = ctr_lrw_send(&lrw_opts, ctr_buf_get_mem(&lrw_buf), ctr_buf_get_used(&lrw_buf),
+				   NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
+			return ret;
+		}
+		break;
+
+	case APP_CONFIG_MODE_LTE:
+		ret = compose_lte(&lte_buf);
+		if (ret) {
+			LOG_ERR("Call `compose_lte` failed: %d", ret);
+			return ret;
+		}
+
+		ret = ctr_lte_eval(NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_eval` failed: %d", ret);
+			return ret;
+		}
+
+		struct ctr_lte_send_opts lte_opts = CTR_LTE_SEND_OPTS_DEFAULTS;
+		lte_opts.port = 5000;
+		ret = ctr_lte_send(&lte_opts, ctr_buf_get_mem(&lte_buf), ctr_buf_get_used(&lte_buf),
+				   NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
+			return ret;
+		}
+		break;
+
+	default:
+		break;
 	}
-
-	struct ctr_lrw_send_opts opts = CTR_LRW_SEND_OPTS_DEFAULTS;
-	ret = ctr_lrw_send(&opts, ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
-		return ret;
-	}
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
-	CTR_BUF_DEFINE_STATIC(buf, 1024);
-
-	ret = compose(&buf);
-	if (ret) {
-		LOG_ERR("Call `compose` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_lte_eval(NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_eval` failed: %d", ret);
-		return ret;
-	}
-
-	struct ctr_lte_send_opts opts = CTR_LTE_SEND_OPTS_DEFAULTS;
-	opts.port = 5000;
-	ret = ctr_lte_send(&opts, ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
-		return ret;
-	}
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 	return 0;
 }

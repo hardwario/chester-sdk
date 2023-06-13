@@ -12,7 +12,15 @@
 extern "C" {
 #endif
 
+enum app_config_mode {
+	APP_CONFIG_MODE_NONE = 0,
+	APP_CONFIG_MODE_LTE = 1,
+	APP_CONFIG_MODE_LRW = 2,
+};
+
 struct app_config {
+	enum app_config_mode mode;
+
 	int interval_sample;
 	int interval_aggreg;
 	int interval_report;
@@ -83,6 +91,7 @@ extern struct app_config g_app_config;
 	CONFIG_PARAM_LIST_CTR_Z()
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_mode(const struct shell *shell, size_t argc, char **argv);
 
 #define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)                                      \
 	int app_config_cmd_config_##_name_u(const struct shell *shell, size_t argc, char **argv);

@@ -22,8 +22,6 @@
 
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_LRW)
-
 void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param)
 {
 	int ret;
@@ -62,10 +60,6 @@ void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, v
 		LOG_WRN("Unknown event: %d", event);
 	}
 }
-
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
 
 static void start(void)
 {
@@ -171,8 +165,6 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 		return;
 	}
 }
-
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 #if defined(CONFIG_SHIELD_CTR_S1)
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data)
