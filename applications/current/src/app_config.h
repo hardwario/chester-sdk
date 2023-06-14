@@ -17,7 +17,15 @@ extern "C" {
 #define APP_CONFIG_INTERVAL_REPORT_MIN 30
 #define APP_CONFIG_INTERVAL_REPORT_MAX 86400
 
+enum app_config_mode {
+	APP_CONFIG_MODE_NONE = 0,
+	APP_CONFIG_MODE_LTE = 1,
+	APP_CONFIG_MODE_LRW = 2,
+};
+
 struct app_config {
+	enum app_config_mode mode;
+
 	int interval_report;
 
 #if defined(CONFIG_SHIELD_CTR_Z)
@@ -50,6 +58,7 @@ int app_config_get_interval_report(void);
 int app_config_set_interval_report(int value);
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_mode(const struct shell *shell, size_t argc, char **argv);
 int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv);
 
 #if defined(CONFIG_SHIELD_CTR_Z)

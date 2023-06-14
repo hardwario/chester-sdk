@@ -97,7 +97,7 @@ struct app_data {
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_K1)
-	struct app_data_channel channel[4];
+	struct app_data_channel channel[APP_CONFIG_CHANNEL_COUNT];
 #endif /* defined(CONFIG_SHIELD_CTR_K1) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)

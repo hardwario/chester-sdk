@@ -20,6 +20,21 @@ struct app_data g_app_data = {
 	.accel_acceleration_z = NAN,
 	.accel_orientation = INT_MAX,
 	.therm_temperature = NAN,
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	.backup =
+		{
+			.line_voltage = NAN,
+			.battery_voltage = NAN,
+		},
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	.w1_therm.sensor[0 ... APP_DATA_W1_THERM_COUNT - 1] =
+		{
+			.last_sample_temperature = NAN,
+		},
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 };
 
 static K_MUTEX_DEFINE(m_lock);
