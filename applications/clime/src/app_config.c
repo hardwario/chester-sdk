@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 struct app_config g_app_config;
 
 static struct app_config m_app_config_interim = {
-	.mode = APP_CONFIG_MODE_NONE,
+	.mode = APP_CONFIG_MODE_LTE,
 
 	.interval_sample = 60,
 	.interval_aggreg = 300,
