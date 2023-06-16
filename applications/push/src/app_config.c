@@ -20,7 +20,10 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 #define SETTINGS_PFX "app-push"
 
 struct app_config g_app_config;
+
 static struct app_config m_app_config_interim = {
+	.mode = APP_CONFIG_MODE_NONE,
+
 	.interval_sample = 60,
 	.interval_report = 1800,
 
@@ -31,6 +34,27 @@ static struct app_config m_app_config_interim = {
 	.backup_report_disconnected = false,
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 };
+
+static void print_config_mode(const struct shell *shell)
+{
+	const char *mode;
+	switch (m_app_config_interim.mode) {
+	case APP_CONFIG_MODE_NONE:
+		mode = "none";
+		break;
+	case APP_CONFIG_MODE_LTE:
+		mode = "lte";
+		break;
+	case APP_CONFIG_MODE_LRW:
+		mode = "lrw";
+		break;
+	default:
+		mode = "(unknown)";
+		break;
+	}
+
+	shell_print(shell, "app config mode %s", mode);
+}
 
 static void print_interval_sample(const struct shell *shell)
 {
@@ -72,6 +96,7 @@ static void print_backup_report_disconnected(const struct shell *shell)
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
+	print_config_mode(shell);
 	print_interval_sample(shell);
 	print_interval_report(shell);
 
@@ -83,6 +108,39 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 	return 0;
+}
+
+int app_config_cmd_config_mode(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_config_mode(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		if (!strcmp("none", argv[1])) {
+			m_app_config_interim.mode = APP_CONFIG_MODE_NONE;
+			return 0;
+		}
+
+		if (!strcmp("lte", argv[1])) {
+			m_app_config_interim.mode = APP_CONFIG_MODE_LTE;
+			return 0;
+		}
+
+		if (!strcmp("lrw", argv[1])) {
+			m_app_config_interim.mode = APP_CONFIG_MODE_LRW;
+			return 0;
+		}
+
+		shell_error(shell, "invalid option");
+
+		return -EINVAL;
+	}
+
+	shell_help(shell);
+
+	return -EINVAL;
 }
 
 int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc, char **argv)
@@ -318,6 +376,8 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 		}                                                                                  \
 	} while (0)
 
+	SETTINGS_SET_SCALAR("mode", mode);
+
 	SETTINGS_SET_SCALAR("interval-sample", interval_sample);
 	SETTINGS_SET_SCALAR("interval-report", interval_report);
 
@@ -353,6 +413,8 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 		(void)export_func(SETTINGS_PFX "/" _key, &m_app_config_interim._var,               \
 				  sizeof(m_app_config_interim._var));                              \
 	} while (0)
+
+	EXPORT_FUNC_SCALAR("mode", mode);
 
 	EXPORT_FUNC_SCALAR("interval-sample", interval_sample);
 	EXPORT_FUNC_SCALAR("interval-report", interval_report);

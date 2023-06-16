@@ -36,8 +36,6 @@ void app_data_unlock(void)
 	k_mutex_unlock(&m_lock);
 }
 
-#if defined(CONFIG_SHIELD_CTR_LTE)
 K_MUTEX_DEFINE(g_app_data_lte_eval_mut);
 bool g_app_data_lte_eval_valid;
 struct ctr_lte_eval g_app_data_lte_eval;
-#endif
