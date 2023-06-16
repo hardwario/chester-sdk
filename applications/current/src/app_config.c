@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 #define SETTINGS_PFX "app-current"
 
 struct app_config g_app_config;
+
 static struct app_config m_app_config_interim = {
 	.mode = APP_CONFIG_MODE_NONE,
 

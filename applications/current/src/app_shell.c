@@ -63,29 +63,29 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              app_config_cmd_config_show, 1, 0),
 
 	SHELL_CMD_ARG(mode, NULL,
-				  "Get/Set communication mode (None/LTE/LoRaWAN) ('none', 'lte', 'lrw').",
-				  app_config_cmd_config_mode, 1, 1),
+	              "Get/Set communication mode (None/LTE/LoRaWAN) ('none', 'lte', 'lrw').",
+	              app_config_cmd_config_mode, 1, 1),
 
 	SHELL_CMD_ARG(interval-report, NULL,
-		      "Get/Set report interval in seconds (format: <30..86400>).",
-		      app_config_cmd_config_interval_report, 1, 1),
+	              "Get/Set report interval in seconds (format: <30..86400>).",
+	              app_config_cmd_config_interval_report, 1, 1),
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 	SHELL_CMD_ARG(event-report-delay, NULL,
-		      "Get/Set event report delay in seconds (format: <1-86400>).",
-		      app_config_cmd_config_event_report_delay, 1, 1),
+	              "Get/Set event report delay in seconds (format: <1-86400>).",
+	              app_config_cmd_config_event_report_delay, 1, 1),
 
 	SHELL_CMD_ARG(event-report-rate, NULL,
-		      "Get/Set event report rate in reports per hour (format: <1-3600>).",
-		      app_config_cmd_config_event_report_rate, 1, 1),
+	              "Get/Set event report rate in reports per hour (format: <1-3600>).",
+	              app_config_cmd_config_event_report_rate, 1, 1),
 
 	SHELL_CMD_ARG(backup-report-connected, NULL,
-		      "Get/Set report when backup is active (format: true, false).",
-		      app_config_cmd_config_backup_report_connected, 1, 1),
+	              "Get/Set report when backup is active (format: true, false).",
+	              app_config_cmd_config_backup_report_connected, 1, 1),
 
 	SHELL_CMD_ARG(backup-report-disconnected, NULL,
-		      "Get/Set report when backup is inactive (format: true, false).",
-		      app_config_cmd_config_backup_report_disconnected, 1, 1),
+	              "Get/Set report when backup is inactive (format: true, false).",
+	              app_config_cmd_config_backup_report_disconnected, 1, 1),
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_SHIELD_CTR_K1)
