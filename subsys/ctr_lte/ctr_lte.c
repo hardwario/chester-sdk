@@ -31,18 +31,35 @@ LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 
 #define SETTINGS_PFX "lte"
 
-#define XSLEEP_PAUSE	   K_MSEC(100)
-#define BOOT_TIMEOUT	   K_SECONDS(5)
-#define BOOT_RETRY_COUNT   3
-#define BOOT_RETRY_DELAY   K_SECONDS(10)
-#define SETUP_RETRY_COUNT  1
-#define SETUP_RETRY_DELAY  K_SECONDS(10)
-#define ATTACH_RETRY_COUNT 3
-#define ATTACH_RETRY_DELAY K_SECONDS(60)
-#define EVAL_RETRY_COUNT   3
-#define EVAL_RETRY_DELAY   K_SECONDS(3)
-#define SEND_RETRY_COUNT   3
-#define SEND_RETRY_DELAY   K_SECONDS(10)
+#define XSLEEP_PAUSE	    K_MSEC(100)
+#define BOOT_TIMEOUT	    K_SECONDS(5)
+#define BOOT_RETRY_COUNT    3
+#define BOOT_RETRY_DELAY    K_SECONDS(10)
+#define SETUP_RETRY_COUNT   1
+#define SETUP_RETRY_DELAY   K_SECONDS(10)
+/* Table of the attach retry delays.
+ * column 1: timeout between previous and current attempt
+ * column 2: attach attempt duration */
+#define ATTACH_RETRY_DELAYS {                                                                      \
+	K_NO_WAIT, K_MINUTES(5),                                                                   \
+	K_MINUTES(15), K_MINUTES(15),                                                              \
+                                                                                                   \
+	K_HOURS(1), K_MINUTES(5),                                                                  \
+	K_HOURS(1), K_MINUTES(15),                                                                 \
+                                                                                                   \
+	K_HOURS(6), K_MINUTES(5),                                                                  \
+	K_HOURS(6), K_MINUTES(15),                                                                 \
+                                                                                                   \
+	K_HOURS(24), K_MINUTES(5),                                                                 \
+	K_HOURS(24), K_MINUTES(15),                                                                \
+                                                                                                   \
+	K_HOURS(168), K_MINUTES(5),                                                                \
+	K_HOURS(168), K_MINUTES(15)                                                                \
+}
+#define EVAL_RETRY_COUNT    3
+#define EVAL_RETRY_DELAY    K_SECONDS(3)
+#define SEND_RETRY_COUNT    3
+#define SEND_RETRY_DELAY    K_SECONDS(10)
 
 #define CMD_MSGQ_MAX_ITEMS  16
 #define SEND_MSGQ_MAX_ITEMS 16
@@ -493,7 +510,7 @@ static int setup(int retries, k_timeout_t delay)
 	return -EPIPE;
 }
 
-static int attach_once(void)
+static int attach_once(k_timeout_t timeout)
 {
 	int ret;
 
@@ -652,7 +669,7 @@ static int attach_once(void)
 					 &m_attach_sig),
 	};
 
-	ret = k_poll(events_2, ARRAY_SIZE(events_2), K_MINUTES(5));
+	ret = k_poll(events_2, ARRAY_SIZE(events_2), timeout);
 
 	if (ret == -EAGAIN) {
 		LOG_WRN("Network registration timed out");
@@ -742,7 +759,7 @@ static int attach_once(void)
 	return 0;
 }
 
-static int attach(int retries, k_timeout_t delay)
+static int attach(int retries, const k_timeout_t *delays)
 {
 	int ret;
 
@@ -750,7 +767,14 @@ static int attach(int retries, k_timeout_t delay)
 
 	atomic_set(&m_attached, false);
 
-	while (retries-- > 0) {
+#define CURRENT_DELAY 0
+#define ATTACH_TIMEOUT 1
+#define NEXT_DELAY 2
+#define TABLE_STEP 2
+
+	for (; retries-- > 0; delays += TABLE_STEP) {
+		k_sleep(delays[CURRENT_DELAY]);
+
 		if (m_setup) {
 			ret = setup(SETUP_RETRY_COUNT, SETUP_RETRY_DELAY);
 
@@ -768,7 +792,7 @@ static int attach(int retries, k_timeout_t delay)
 			return ret;
 		}
 
-		ret = attach_once();
+		ret = attach_once(delays[ATTACH_TIMEOUT]);
 
 		if (ret == 0) {
 			ret = ctr_lte_talk_disable();
@@ -797,12 +821,17 @@ static int attach(int retries, k_timeout_t delay)
 		}
 
 		if (retries > 0) {
-			k_sleep(delay);
-			LOG_WRN("Repeating ATTACH operation (retries left: %d)", retries);
+			LOG_WRN("Repeating ATTACH operation in %lld minutes (retries left: %d)",
+				k_ticks_to_ms_ceil64(delays[NEXT_DELAY].ticks) / 1000 / 60, retries);
 		}
 	}
 
 	m_setup = true;
+
+#undef CURRENT_DELAY
+#undef NEXT_DELAY
+#undef ATTACH_TIMEOUT
+#undef TABLE_STEP
 
 	LOG_WRN("Operation ATTACH failed");
 	return -ENOTCONN;
@@ -1099,7 +1128,8 @@ static int process_req_attach(const struct cmd_msgq_item *item)
 
 	union ctr_lte_event_data data = {0};
 
-	ret = attach(ATTACH_RETRY_COUNT, ATTACH_RETRY_DELAY);
+	const k_timeout_t delays[] = ATTACH_RETRY_DELAYS;
+	ret = attach(ARRAY_SIZE(delays) / 2, delays);
 
 	if (ret < 0) {
 		LOG_ERR("Call `attach` failed: %d", ret);
