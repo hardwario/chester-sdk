@@ -51,6 +51,16 @@ struct data {
 extern struct data g_app_data;
 extern struct k_mutex g_app_data_lock;
 
+static inline void app_data_lock(void)
+{
+	k_mutex_lock(&g_app_data_lock, K_FOREVER);
+}
+
+static inline void app_data_unlock(void)
+{
+	k_mutex_unlock(&g_app_data_lock);
+}
+
 /* TODO Delete */
 extern struct k_mutex g_app_data_lte_eval_mut;
 extern bool g_app_data_lte_eval_valid;

@@ -293,7 +293,7 @@ int app_cbor_encode(zcbor_state_t *zs)
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
-		k_mutex_lock(&g_app_data_lock, K_FOREVER);
+		app_data_lock();
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
@@ -319,7 +319,7 @@ int app_cbor_encode(zcbor_state_t *zs)
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
-		k_mutex_unlock(&g_app_data_lock);
+		app_data_unlock();
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
 		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_1_TOTAL);

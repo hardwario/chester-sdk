@@ -146,7 +146,7 @@ int app_send(void)
 		return ret;
 	}
 
-	k_mutex_lock(&g_app_data_lock, K_FOREVER);
+	app_data_lock();
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 	g_app_data.counter_ch1_delta = 0;
@@ -162,7 +162,7 @@ int app_send(void)
 	g_app_data.counter_ch8_delta = 0;
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-	k_mutex_unlock(&g_app_data_lock);
+	app_data_unlock();
 
 	return 0;
 }
