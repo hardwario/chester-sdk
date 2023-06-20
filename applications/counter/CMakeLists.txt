@@ -8,6 +8,7 @@ project(counter)
 
 target_sources(app PRIVATE src/app_cbor.c)
 target_sources(app PRIVATE src/app_config.c)
+target_sources(app PRIVATE src/app_counter.c)
 target_sources(app PRIVATE src/app_data.c)
 target_sources(app PRIVATE src/app_init.c)
 target_sources(app PRIVATE src/app_handler.c)
