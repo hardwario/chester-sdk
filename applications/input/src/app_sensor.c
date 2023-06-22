@@ -12,6 +12,7 @@
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
 #include <chester/ctr_adc.h>
+#include <chester/ctr_ds18b20.h>
 #include <chester/ctr_hygro.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_therm.h>
@@ -421,3 +422,98 @@ void app_sensor_hygro_clear(void)
 }
 
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+
+int app_sensor_w1_therm_sample(void)
+{
+	int ret;
+	uint64_t serial_number;
+
+	for (int i = 0; i < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
+		if (g_app_data.w1_therm.sensor[i].sample_count < APP_DATA_W1_THERM_MAX_SAMPLES) {
+			float temperature = NAN;
+			ret = ctr_ds18b20_read(i, &serial_number, &temperature);
+
+			if (ret) {
+				LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
+				continue;
+			} else {
+				LOG_INF("Temperature: %.1f C", temperature);
+			}
+
+			app_data_lock();
+			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];
+			sensor->last_sample_temperature = temperature;
+			sensor->samples_temperature[sensor->sample_count] = temperature;
+			sensor->serial_number = serial_number;
+			sensor->sample_count++;
+
+			LOG_INF("Sample count: %d", sensor->sample_count);
+			app_data_unlock();
+
+		} else {
+			LOG_WRN("Sample buffer full");
+			return -ENOSPC;
+		}
+	}
+
+	return 0;
+}
+
+int app_sensor_w1_therm_aggreg(void)
+{
+	int ret;
+
+	struct app_data_w1_therm *w1_therm = &g_app_data.w1_therm;
+
+	app_data_lock();
+
+	for (int i = 0; i < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
+		if (w1_therm->sensor[i].measurement_count == 0) {
+			ret = ctr_rtc_get_ts(&w1_therm->timestamp);
+			if (ret) {
+				LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+				app_data_unlock();
+				return ret;
+			}
+		}
+		if (w1_therm->sensor[i].measurement_count < APP_DATA_W1_THERM_MAX_MEASUREMENTS) {
+			struct app_data_w1_therm_measurement *measurement =
+				&w1_therm->sensor[i]
+					 .measurements[w1_therm->sensor[i].measurement_count];
+
+			aggreg_sample(w1_therm->sensor[i].samples_temperature,
+				      w1_therm->sensor[i].sample_count, &measurement->temperature);
+
+			w1_therm->sensor[i].measurement_count++;
+
+			LOG_INF("Measurement count: %d", w1_therm->sensor[i].measurement_count);
+		} else {
+			LOG_WRN("Measurement buffer full");
+			app_data_unlock();
+			return -ENOSPC;
+		}
+
+		w1_therm->sensor[i].sample_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_w1_therm_clear(void)
+{
+	app_data_lock();
+
+	for (int i = 0; i < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
+		g_app_data.w1_therm.sensor[i].measurement_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */

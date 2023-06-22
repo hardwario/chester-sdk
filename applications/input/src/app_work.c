@@ -64,6 +64,10 @@ static void send_work_handler(struct k_work *work)
 #if defined(CONFIG_SHIELD_CTR_S2)
 	app_sensor_hygro_clear();
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	app_sensor_w1_therm_clear();
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 }
 
 static K_WORK_DEFINE(m_send_work, send_work_handler);
@@ -273,6 +277,58 @@ static K_TIMER_DEFINE(m_hygro_aggreg_timer, hygro_aggreg_timer_handler, NULL);
 
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+
+static void w1_therm_sample_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_w1_therm_sample();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_w1_therm_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_w1_therm_sample_work, w1_therm_sample_work_handler);
+
+static void w1_therm_sample_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_w1_therm_sample_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_w1_therm_sample_timer, w1_therm_sample_timer_handler, NULL);
+
+static void w1_therm_aggreg_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_w1_therm_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_w1_therm_aggreg` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_w1_therm_aggreg_work, w1_therm_aggreg_work_handler);
+
+static void w1_therm_aggreg_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_w1_therm_aggreg_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_w1_therm_aggreg_timer, w1_therm_aggreg_timer_handler, NULL);
+
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 #if defined(CONFIG_SHIELD_CTR_Z)
 
 static void backup_work_handler(struct k_work *work)
@@ -327,6 +383,13 @@ int app_work_init(void)
 		      K_SECONDS(g_app_config.analog_interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	k_timer_start(&m_w1_therm_sample_timer, K_SECONDS(g_app_config.w1_therm_interval_sample),
+		      K_SECONDS(g_app_config.w1_therm_interval_sample));
+	k_timer_start(&m_w1_therm_aggreg_timer, K_SECONDS(g_app_config.w1_therm_interval_aggreg),
+		      K_SECONDS(g_app_config.w1_therm_interval_aggreg));
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 	return 0;
 }
 
@@ -343,6 +406,10 @@ void app_work_sample(void)
 	k_timer_start(&m_hygro_sample_timer, K_NO_WAIT,
 		      K_SECONDS(g_app_config.analog_interval_sample));
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	k_timer_start(&m_w1_therm_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.w1_therm_interval_sample));
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 }
 
 void app_work_send(void)

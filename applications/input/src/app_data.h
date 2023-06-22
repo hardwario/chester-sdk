@@ -29,6 +29,12 @@
 #define APP_DATA_HYGRO_MAX_SAMPLES	32
 #define APP_DATA_HYGRO_MAX_MEASUREMENTS 32
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#define APP_DATA_W1_THERM_COUNT	      10
+#define APP_DATA_W1_THERM_MAX_SAMPLES 128
+#define APP_DATA_W1_THERM_MAX_MEASUREMENTS  32
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -110,6 +116,32 @@ struct app_data_hygro {
 
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+struct app_data_w1_therm_measurement {
+	struct app_data_aggreg temperature;
+};
+
+struct app_data_w1_therm_sensor {
+	uint64_t serial_number;
+
+	float last_sample_temperature;
+
+	int sample_count;
+	float samples_temperature[APP_DATA_W1_THERM_MAX_SAMPLES];
+
+	int measurement_count;
+	struct app_data_w1_therm_measurement measurements[APP_DATA_W1_THERM_MAX_MEASUREMENTS];
+};
+
+struct app_data_w1_therm {
+	struct app_data_w1_therm_sensor sensor[APP_DATA_W1_THERM_COUNT];
+
+	int64_t timestamp;
+	atomic_t sample;
+	atomic_t aggreg;
+};
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 struct app_data {
 	float system_voltage_rest;
 	float system_voltage_load;
@@ -134,6 +166,10 @@ struct app_data {
 #if defined(CONFIG_SHIELD_CTR_S2)
 	struct app_data_hygro hygro;
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	struct app_data_w1_therm w1_therm;
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 };
 
 extern struct app_data g_app_data;

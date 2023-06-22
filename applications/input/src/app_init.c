@@ -12,6 +12,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_adc.h>
+#include <chester/ctr_ds18b20.h>
 #include <chester/ctr_edge.h>
 #include <chester/ctr_led.h>
 #include <chester/ctr_lte.h>
@@ -366,6 +367,14 @@ int app_init(void)
 		k_oops();
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	ret = ctr_ds18b20_scan();
+	if (ret) {
+		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 	return 0;
 }

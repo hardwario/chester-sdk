@@ -31,6 +31,12 @@ int app_sensor_hygro_aggreg(void);
 void app_sensor_hygro_clear(void);
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+int app_sensor_w1_therm_sample(void);
+int app_sensor_w1_therm_aggreg(void);
+int app_sensor_w1_therm_clear(void);
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 #ifdef __cplusplus
 }
 #endif
