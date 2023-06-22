@@ -1,7 +1,6 @@
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
-#include "app_loop.h"
 #include "app_send.h"
 
 /* CHESTER includes */
@@ -20,16 +19,6 @@
 #include <zcbor_encode.h>
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
-
-static void send_timer(struct k_timer *timer_id)
-{
-	LOG_INF("Send timer expired");
-
-	atomic_set(&g_app_loop_send, true);
-	k_sem_give(&g_app_loop_sem);
-}
-
-K_TIMER_DEFINE(g_app_send_timer, send_timer, NULL);
 
 static int compose(struct ctr_buf *buf)
 {
@@ -116,13 +105,6 @@ static int compose(struct ctr_buf *buf)
 int app_send(void)
 {
 	int ret;
-
-	int64_t jitter = (int32_t)sys_rand32_get() % (g_app_config.report_interval * 1000 / 5);
-	int64_t duration = g_app_config.report_interval * 1000 + jitter;
-
-	LOG_INF("Scheduling next report in %lld second(s)", duration / 1000);
-
-	k_timer_start(&g_app_send_timer, K_MSEC(duration), K_FOREVER);
 
 	CTR_BUF_DEFINE_STATIC(buf, 512);
 

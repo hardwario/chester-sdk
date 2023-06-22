@@ -1,8 +1,8 @@
-#include "app_data.h"
 #include "app_counter.h"
+#include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
-#include "app_loop.h"
+#include "app_work.h"
 
 /* CHESTER includes */
 #include <chester/ctr_led.h>
@@ -121,6 +121,12 @@ int app_init(void)
 	}
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
+	
+	ret = app_work_init();
+	if (ret) {
+		LOG_ERR("Call `app_work_init` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }

@@ -12,15 +12,15 @@ extern "C" {
 #endif
 
 struct app_config {
-	int sample_interval;
-	int report_interval;
+	int interval_sample;
+	int interval_report;
 };
 
 extern struct app_config g_app_config;
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv);
-int app_config_cmd_config_sample_interval(const struct shell *shell, size_t argc, char **argv);
-int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv);
 
 #ifdef __cplusplus
 }

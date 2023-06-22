@@ -20,34 +20,34 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
 struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
-	.sample_interval = 60,
-	.report_interval = 1800,
+	.interval_sample = 60,
+	.interval_report = 1800,
 };
 
-static void print_sample_interval(const struct shell *shell)
+static void print_interval_sample(const struct shell *shell)
 {
-	shell_print(shell, SETTINGS_PFX " config sample-interval %d",
-		    m_app_config_interim.sample_interval);
+	shell_print(shell, SETTINGS_PFX " config interval-sample %d",
+		    m_app_config_interim.interval_sample);
 }
 
-static void print_report_interval(const struct shell *shell)
+static void print_interval_report(const struct shell *shell)
 {
-	shell_print(shell, SETTINGS_PFX " config report-interval %d",
-		    m_app_config_interim.report_interval);
+	shell_print(shell, SETTINGS_PFX " config interval-report %d",
+		    m_app_config_interim.interval_report);
 }
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
-	print_sample_interval(shell);
-	print_report_interval(shell);
+	print_interval_sample(shell);
+	print_interval_report(shell);
 
 	return 0;
 }
 
-int app_config_cmd_config_sample_interval(const struct shell *shell, size_t argc, char **argv)
+int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		print_sample_interval(shell);
+		print_interval_sample(shell);
 		return 0;
 	}
 
@@ -61,14 +61,14 @@ int app_config_cmd_config_sample_interval(const struct shell *shell, size_t argc
 			}
 		}
 
-		int sample_interval = atoi(argv[1]);
+		int interval_sample = atoi(argv[1]);
 
-		if (sample_interval < 5 || sample_interval > 3600) {
+		if (interval_sample < 5 || interval_sample > 3600) {
 			shell_error(shell, "invalid range");
 			return -EINVAL;
 		}
 
-		m_app_config_interim.sample_interval = sample_interval;
+		m_app_config_interim.interval_sample = interval_sample;
 
 		return 0;
 	}
@@ -77,10 +77,10 @@ int app_config_cmd_config_sample_interval(const struct shell *shell, size_t argc
 	return -EINVAL;
 }
 
-int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc, char **argv)
+int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		print_report_interval(shell);
+		print_interval_report(shell);
 		return 0;
 	}
 
@@ -94,14 +94,14 @@ int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc
 			}
 		}
 
-		int report_interval = atoi(argv[1]);
+		int interval_report = atoi(argv[1]);
 
-		if (report_interval < 30 || report_interval > 86400) {
+		if (interval_report < 30 || interval_report > 86400) {
 			shell_error(shell, "invalid range");
 			return -EINVAL;
 		}
 
-		m_app_config_interim.report_interval = report_interval;
+		m_app_config_interim.interval_report = interval_report;
 
 		return 0;
 	}
@@ -133,10 +133,10 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 		}                                                                                  \
 	} while (0)
 
-	SETTINGS_SET("sample-interval", &m_app_config_interim.sample_interval,
-		     sizeof(m_app_config_interim.sample_interval));
-	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
-		     sizeof(m_app_config_interim.report_interval));
+	SETTINGS_SET("interval-sample", &m_app_config_interim.interval_sample,
+		     sizeof(m_app_config_interim.interval_sample));
+	SETTINGS_SET("interval-report", &m_app_config_interim.interval_report,
+		     sizeof(m_app_config_interim.interval_report));
 
 #undef SETTINGS_SET
 
@@ -157,10 +157,10 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
 	} while (0)
 
-	EXPORT_FUNC("sample-interval", &m_app_config_interim.sample_interval,
-		    sizeof(m_app_config_interim.sample_interval));
-	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
-		    sizeof(m_app_config_interim.report_interval));
+	EXPORT_FUNC("interval-sample", &m_app_config_interim.interval_sample,
+		    sizeof(m_app_config_interim.interval_sample));
+	EXPORT_FUNC("interval-report", &m_app_config_interim.interval_report,
+		    sizeof(m_app_config_interim.interval_report));
 
 #undef EXPORT_FUNC
 

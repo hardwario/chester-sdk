@@ -15,7 +15,22 @@
 extern "C" {
 #endif
 
-struct data {
+#if defined(CONFIG_SHIELD_CTR_Z)
+struct app_data_backup_event {
+	int64_t timestamp;
+	bool connected;
+};
+
+struct app_data_backup {
+	float line_voltage;
+	float battery_voltage;
+	bool line_present;
+	int event_count;
+	struct app_data_backup_event events[APP_DATA_MAX_BACKUP_EVENTS];
+};
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+struct app_data {
 	float batt_voltage_rest;
 	float batt_voltage_load;
 	float batt_current_load;
@@ -46,9 +61,13 @@ struct data {
 	uint64_t counter_ch8_total;
 	uint64_t counter_ch8_delta;
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	struct app_data_backup backup;
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 };
 
-extern struct data g_app_data;
+extern struct app_data g_app_data;
 extern struct k_mutex g_app_data_lock;
 
 static inline void app_data_lock(void)

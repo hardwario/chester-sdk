@@ -1,6 +1,7 @@
 #include "app_config.h"
 #include "app_send.h"
 #include "app_sensor.h"
+#include "app_work.h"
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -17,7 +18,7 @@ static int cmd_sample(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	k_timer_start(&g_app_measure_timer, K_NO_WAIT, K_FOREVER);
+	app_work_sample();
 
 	return 0;
 }
@@ -30,7 +31,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	k_timer_start(&g_app_send_timer, K_NO_WAIT, K_FOREVER);
+	app_work_send();
 
 	return 0;
 }
@@ -59,11 +60,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 	SHELL_CMD_ARG(sample-interval, NULL,
 	              "Get/Set sample interval in seconds (format: <5-3600>).",
-	              app_config_cmd_config_sample_interval, 1, 1),
+	              app_config_cmd_config_interval_sample, 1, 1),
 
 	SHELL_CMD_ARG(report-interval, NULL,
 	              "Get/Set report interval in seconds (format: <30-86400>).",
-	              app_config_cmd_config_report_interval, 1, 1),
+	              app_config_cmd_config_interval_report, 1, 1),
 
 	SHELL_SUBCMD_SET_END
 );
