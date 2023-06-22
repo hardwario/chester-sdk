@@ -1,6 +1,6 @@
 #include "app_config.h"
-#include "app_measure.h"
 #include "app_send.h"
+#include "app_sensor.h"
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -9,7 +9,7 @@
 
 LOG_MODULE_REGISTER(app_shell, LOG_LEVEL_INF);
 
-static int cmd_measure(const struct shell *shell, size_t argc, char **argv)
+static int cmd_sample(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
 		shell_error(shell, "unknown parameter: %s", argv[1]);
@@ -57,9 +57,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "List current configuration.",
 	              app_config_cmd_config_show, 1, 0),
 
-	SHELL_CMD_ARG(measurement-interval, NULL,
-	              "Get/Set measurement interval in seconds (format: <5-3600>).",
-	              app_config_cmd_config_measurement_interval, 1, 1),
+	SHELL_CMD_ARG(sample-interval, NULL,
+	              "Get/Set sample interval in seconds (format: <5-3600>).",
+	              app_config_cmd_config_sample_interval, 1, 1),
 
 	SHELL_CMD_ARG(report-interval, NULL,
 	              "Get/Set report interval in seconds (format: <30-86400>).",
@@ -79,7 +79,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 
-SHELL_CMD_REGISTER(measure, NULL, "Start measurement immediately.", cmd_measure);
+SHELL_CMD_REGISTER(sample, NULL, "Start sampling immediately.", cmd_sample);
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
 
 /* clang-format on */

@@ -1,8 +1,8 @@
 #include "app_config.h"
 #include "app_data.h"
 #include "app_loop.h"
-#include "app_measure.h"
 #include "app_send.h"
+#include "app_sensor.h"
 
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-LOG_MODULE_REGISTER(app_measure, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(app_sensor, LOG_LEVEL_DBG);
 
 static void measure_timer(struct k_timer *timer_id)
 {
@@ -32,11 +32,11 @@ static void measure_timer(struct k_timer *timer_id)
 
 K_TIMER_DEFINE(g_app_measure_timer, measure_timer, NULL);
 
-int app_measure(void)
+int app_sensor_sample(void)
 {
 	int ret;
 
-	k_timer_start(&g_app_measure_timer, K_MSEC(g_app_config.measurement_interval * 1000),
+	k_timer_start(&g_app_measure_timer, K_MSEC(g_app_config.sample_interval * 1000),
 		      K_FOREVER);
 
 	ret = ctr_therm_read(&g_app_data.therm_temperature);

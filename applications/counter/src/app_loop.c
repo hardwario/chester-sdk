@@ -1,7 +1,7 @@
 #include "app_data.h"
 #include "app_loop.h"
-#include "app_measure.h"
 #include "app_send.h"
+#include "app_sensor.h"
 
 /* CHESTER includes */
 #include <chester/ctr_led.h>
@@ -113,7 +113,7 @@ int app_loop(void)
 	}
 
 	if (atomic_set(&g_app_loop_measure, false)) {
-		ret = app_measure();
+		ret = app_sensor_sample();
 		if (ret) {
 			LOG_ERR("Call `app_measure` failed: %d", ret);
 		}

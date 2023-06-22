@@ -20,14 +20,14 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
 struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
-	.measurement_interval = 60,
+	.sample_interval = 60,
 	.report_interval = 1800,
 };
 
-static void print_measurement_interval(const struct shell *shell)
+static void print_sample_interval(const struct shell *shell)
 {
-	shell_print(shell, SETTINGS_PFX " config measurement-interval %d",
-		    m_app_config_interim.measurement_interval);
+	shell_print(shell, SETTINGS_PFX " config sample-interval %d",
+		    m_app_config_interim.sample_interval);
 }
 
 static void print_report_interval(const struct shell *shell)
@@ -38,16 +38,16 @@ static void print_report_interval(const struct shell *shell)
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
-	print_measurement_interval(shell);
+	print_sample_interval(shell);
 	print_report_interval(shell);
 
 	return 0;
 }
 
-int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t argc, char **argv)
+int app_config_cmd_config_sample_interval(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		print_measurement_interval(shell);
+		print_sample_interval(shell);
 		return 0;
 	}
 
@@ -61,14 +61,14 @@ int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t
 			}
 		}
 
-		int measurement_interval = atoi(argv[1]);
+		int sample_interval = atoi(argv[1]);
 
-		if (measurement_interval < 5 || measurement_interval > 3600) {
+		if (sample_interval < 5 || sample_interval > 3600) {
 			shell_error(shell, "invalid range");
 			return -EINVAL;
 		}
 
-		m_app_config_interim.measurement_interval = measurement_interval;
+		m_app_config_interim.sample_interval = sample_interval;
 
 		return 0;
 	}
@@ -133,8 +133,8 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 		}                                                                                  \
 	} while (0)
 
-	SETTINGS_SET("measurement-interval", &m_app_config_interim.measurement_interval,
-		     sizeof(m_app_config_interim.measurement_interval));
+	SETTINGS_SET("sample-interval", &m_app_config_interim.sample_interval,
+		     sizeof(m_app_config_interim.sample_interval));
 	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
 		     sizeof(m_app_config_interim.report_interval));
 
@@ -157,8 +157,8 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
 	} while (0)
 
-	EXPORT_FUNC("measurement-interval", &m_app_config_interim.measurement_interval,
-		    sizeof(m_app_config_interim.measurement_interval));
+	EXPORT_FUNC("sample-interval", &m_app_config_interim.sample_interval,
+		    sizeof(m_app_config_interim.sample_interval));
 	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
 		    sizeof(m_app_config_interim.report_interval));
 
