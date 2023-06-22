@@ -19,6 +19,8 @@ enum app_config_input_type {
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 struct app_config {
+	int interval_sample;
+	int interval_aggreg;
 	int interval_report;
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
@@ -57,6 +59,8 @@ struct app_config {
 extern struct app_config g_app_config;
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_interval_aggreg(const struct shell *shell, size_t argc, char **argv);
 int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv);
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
