@@ -507,6 +507,32 @@ void app_work_sample(void)
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
 }
 
+void app_work_aggreg(void)
+{
+
+#if defined(CONFIG_SHIELD_CTR_S1)
+	k_timer_start(&m_iaq_aggreg_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+
+#if defined(CONFIG_SHIELD_CTR_S2)
+	k_timer_start(&m_hygro_aggreg_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	k_timer_start(&m_w1_therm_aggreg_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
+#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+	k_timer_start(&m_rtd_therm_aggreg_timer, K_NO_WAIT,
+		      K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
+#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+	k_timer_start(&m_soil_sensor_aggreg_timer, K_NO_WAIT,
+		      K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+}
+
 void app_work_send(void)
 {
 	k_timer_start(&m_send_timer, K_NO_WAIT, K_FOREVER);
