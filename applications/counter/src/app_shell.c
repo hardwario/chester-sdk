@@ -58,11 +58,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "List current configuration.",
 	              app_config_cmd_config_show, 1, 0),
 
-	SHELL_CMD_ARG(sample-interval, NULL,
+	SHELL_CMD_ARG(interval-sample, NULL,
 	              "Get/Set sample interval in seconds (format: <5-3600>).",
 	              app_config_cmd_config_interval_sample, 1, 1),
 
-	SHELL_CMD_ARG(report-interval, NULL,
+	SHELL_CMD_ARG(interval-sample, NULL,
 	              "Get/Set report interval in seconds (format: <30-86400>).",
 	              app_config_cmd_config_interval_report, 1, 1),
 
