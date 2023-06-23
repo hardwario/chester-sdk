@@ -60,14 +60,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "List current configuration.",
 	              app_config_cmd_config_show, 1, 0),
 
-	SHELL_CMD_ARG(interval-sample, NULL,
-	              "Get/Set sample interval in seconds (format: <1-86400>).",
-	              app_config_cmd_config_interval_sample, 1, 1),
-
-	SHELL_CMD_ARG(interval-aggreg, NULL,
-	              "Get/Set aggregation interval in seconds (format: <1-86400>).",
-	              app_config_cmd_config_interval_aggreg, 1, 1),
-
 	SHELL_CMD_ARG(interval-report, NULL,
 	              "Get/Set report interval in seconds (format: <30-86400>).",
 	              app_config_cmd_config_interval_report, 1, 1),
@@ -156,6 +148,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              app_config_cmd_config_hygro_interval_aggreg, 1, 1),
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	SHELL_CMD_ARG(w1-therm-interval-sample, NULL,
+	              "Get/Set ds18b20 sample interval in seconds (format: <1-86400>).",
+	              app_config_cmd_config_w1_therm_interval_sample, 1, 1),
+
+	SHELL_CMD_ARG(w1-therm-interval-aggreg, NULL,
+	              "Get/Set ds18b20 aggregation interval in seconds (format: <1-86400>).",
+	              app_config_cmd_config_w1_therm_interval_aggreg, 1, 1),
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 	SHELL_SUBCMD_SET_END
 );

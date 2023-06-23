@@ -24,8 +24,6 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 struct app_config g_app_config;
 
 static struct app_config m_app_config_interim = {
-	.interval_sample = 60,
-	.interval_aggreg = 300,
 	.interval_report = 1800,
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
@@ -57,17 +55,12 @@ static struct app_config m_app_config_interim = {
 	.hygro_interval_sample = 60,
 	.hygro_interval_aggreg = 300,
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	.w1_therm_interval_sample = 60,
+	.w1_therm_interval_aggreg = 300,
+#endif /* defined(COINFG_SHIELD_CTR_DS18B20)*/
 };
-
-static void print_interval_sample(const struct shell *shell)
-{
-	shell_print(shell, "app config interval-sample %d", m_app_config_interim.interval_sample);
-}
-
-static void print_interval_aggreg(const struct shell *shell)
-{
-	shell_print(shell, "app config interval-aggreg %d", m_app_config_interim.interval_aggreg);
-}
 
 static void print_interval_report(const struct shell *shell)
 {
@@ -230,10 +223,22 @@ static void print_hygro_interval_aggreg(const struct shell *shell)
 
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+
+static void print_w1_therm_interval_sample(const struct shell *shell)
+{
+	shell_print(shell, "app config w1-therm-interval-sample %d", m_app_config_interim.w1_therm_interval_sample);
+}
+
+static void print_w1_therm_interval_aggreg(const struct shell *shell)
+{
+	shell_print(shell, "app config w1-therm-interval-aggreg %d", m_app_config_interim.w1_therm_interval_aggreg);
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
-	print_interval_sample(shell);
-	print_interval_aggreg(shell);
 	print_interval_report(shell);
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
@@ -268,73 +273,12 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 	print_hygro_interval_aggreg(shell);
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	print_w1_therm_interval_sample(shell);
+	print_w1_therm_interval_aggreg(shell);
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 	return 0;
-}
-
-int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_interval_sample(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long interval_sample = strtol(argv[1], NULL, 10);
-
-		if (interval_sample < 1 || interval_sample > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.interval_sample = (int)interval_sample;
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int app_config_cmd_config_interval_aggreg(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_interval_sample(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		long interval_aggreg = strtol(argv[1], NULL, 10);
-
-		if (interval_aggreg < 1 || interval_aggreg > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.interval_aggreg = (int)interval_aggreg;
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
 }
 
 int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv)
@@ -987,6 +931,76 @@ int app_config_cmd_config_hygro_interval_aggreg(const struct shell *shell, size_
 
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+
+int app_config_cmd_config_w1_therm_interval_sample(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_w1_therm_interval_sample(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		long interval_sample = strtol(argv[1], NULL, 10);
+
+		if (interval_sample < 1 || interval_sample > 86400) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.w1_therm_interval_sample = (int)interval_sample;
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+int app_config_cmd_config_w1_therm_interval_aggreg(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_w1_therm_interval_aggreg(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+
+		long interval_aggreg = strtol(argv[1], NULL, 10);
+
+		if (interval_aggreg < 1 || interval_aggreg > 86400) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		m_app_config_interim.w1_therm_interval_aggreg = (int)interval_aggreg;
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
 	int ret;
@@ -1028,8 +1042,6 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 		}                                                                                  \
 	} while (0)
 
-	SETTINGS_SET_SCALAR("interval-sample", interval_sample);
-	SETTINGS_SET_SCALAR("interval-aggreg", interval_aggreg);
 	SETTINGS_SET_SCALAR("interval-report", interval_report);
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
@@ -1064,6 +1076,11 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET_SCALAR("hygro-interval-aggreg", hygro_interval_aggreg);
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	SETTINGS_SET_SCALAR("w1-therm-interval-sample", w1_therm_interval_sample);
+	SETTINGS_SET_SCALAR("w1-therm-interval-aggreg", w1_therm_interval_aggreg);
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 #undef SETTINGS_SET_ARRAY
 
 	return -ENOENT;
@@ -1089,8 +1106,6 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 				  sizeof(m_app_config_interim._var));                              \
 	} while (0)
 
-	EXPORT_FUNC_SCALAR("interval-sample", interval_sample);
-	EXPORT_FUNC_SCALAR("interval-aggreg", interval_aggreg);
 	EXPORT_FUNC_SCALAR("interval-report", interval_report);
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
@@ -1124,6 +1139,11 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC_SCALAR("hygro-interval-sample", hygro_interval_sample);
 	EXPORT_FUNC_SCALAR("hygro-interval-aggreg", hygro_interval_aggreg);
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	EXPORT_FUNC_SCALAR("w1-therm-interval-sample", w1_therm_interval_sample);
+	EXPORT_FUNC_SCALAR("w1-therm-interval-aggreg", w1_therm_interval_aggreg);
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 #undef EXPORT_FUNC_ARRAY
 #undef EXPORT_FUNC_SCALAR

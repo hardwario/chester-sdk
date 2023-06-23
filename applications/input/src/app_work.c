@@ -358,7 +358,7 @@ int app_work_init(void)
 
 	/* Delay first report so ctr_z updates line_present */
 	k_timer_start(&m_send_timer, K_SECONDS(2), K_FOREVER);
-	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
+	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(60));
 	k_timer_start(&m_power_timer, K_SECONDS(60), K_HOURS(12));
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
@@ -378,10 +378,10 @@ int app_work_init(void)
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
-	k_timer_start(&m_w1_therm_sample_timer, K_SECONDS(g_app_config.interval_sample),
-		      K_SECONDS(g_app_config.interval_sample));
-	k_timer_start(&m_w1_therm_aggreg_timer, K_SECONDS(g_app_config.interval_aggreg),
-		      K_SECONDS(g_app_config.interval_aggreg));
+	k_timer_start(&m_w1_therm_sample_timer, K_SECONDS(g_app_config.w1_therm_interval_sample),
+		      K_SECONDS(g_app_config.w1_therm_interval_sample));
+	k_timer_start(&m_w1_therm_aggreg_timer, K_SECONDS(g_app_config.w1_therm_interval_aggreg),
+		      K_SECONDS(g_app_config.w1_therm_interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 	return 0;
@@ -402,7 +402,7 @@ void app_work_sample(void)
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
-	k_timer_start(&m_w1_therm_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
+	k_timer_start(&m_w1_therm_sample_timer, K_NO_WAIT, K_SECONDS(60));
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 }
 

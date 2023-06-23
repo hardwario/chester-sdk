@@ -19,8 +19,6 @@ enum app_config_input_type {
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
 struct app_config {
-	int interval_sample;
-	int interval_aggreg;
 	int interval_report;
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
@@ -54,13 +52,16 @@ struct app_config {
 	int hygro_interval_sample;
 	int hygro_interval_aggreg;
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	int w1_therm_interval_sample;
+	int w1_therm_interval_aggreg;
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 };
 
 extern struct app_config g_app_config;
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv);
-int app_config_cmd_config_interval_sample(const struct shell *shell, size_t argc, char **argv);
-int app_config_cmd_config_interval_aggreg(const struct shell *shell, size_t argc, char **argv);
 int app_config_cmd_config_interval_report(const struct shell *shell, size_t argc, char **argv);
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
@@ -109,6 +110,12 @@ int app_config_cmd_config_hygro_interval_sample(const struct shell *shell, size_
 int app_config_cmd_config_hygro_interval_aggreg(const struct shell *shell, size_t argc,
 						char **argv);
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+int app_config_cmd_config_w1_therm_interval_sample(const struct shell *shell, size_t argc, char **argv);
+int app_config_cmd_config_w1_therm_interval_aggreg(const struct shell *shell, size_t argc, char **argv);
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+
 #ifdef __cplusplus
 }
 #endif

@@ -560,7 +560,7 @@ static int encode(zcbor_state_t *zs)
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 				zcbor_uint64_put(zs, g_app_data.w1_therm.timestamp);
-				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+				zcbor_uint32_put(zs, g_app_config.w1_therm_interval_aggreg);
 
 				for (int j = 0; j < sensor->measurement_count; j++) {
 					put_sample_mul(zs, &sensor->measurements[j].temperature,
