@@ -25,7 +25,7 @@ Optionally, you may install Visual Studio Code as the editor. It is not a requir
 The first step is to initiaze West workspace:
 
 ```
-west init -m git@gitlab.hardwario.com:chester/sdk.git --manifest-rev main chester-sdk
+west init -m git@github.com:hardwario/chester-sdk.git --manifest-rev main chester-sdk
 ```
 
 Go inside the West workspace folder:
