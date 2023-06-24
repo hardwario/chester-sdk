@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #ifndef CHESTER_DRIVERS_CTR_S1_CTR_S1_REG_H_
 #define CHESTER_DRIVERS_CTR_S1_CTR_S1_REG_H_
 

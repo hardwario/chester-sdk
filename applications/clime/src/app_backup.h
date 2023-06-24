@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #ifndef APP_BACKUP_H_
 #define APP_BACKUP_H_
 

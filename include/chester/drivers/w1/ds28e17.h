@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #ifndef CHESTER_INCLUDE_DRIVERS_W1_DS28E17_H_
 #define CHESTER_INCLUDE_DRIVERS_W1_DS28E17_H_
 

@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 description: NXP MPL3115A2 Barometric Pressure/Altitude/Temperature Sensor
 
 compatible: "nxp,mpl3115a2"

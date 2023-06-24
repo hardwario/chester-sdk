@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 /* Sensor wiring for X0 in slot A:
  * | A2 | CH1 | Sensor power  |
  * | A3 | GND | Sensor ground |

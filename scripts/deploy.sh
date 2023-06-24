@@ -1,5 +1,11 @@
 #!/bin/bash
 
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 # First define which applications and versions to build, see the end of this script
 # This script needs to be called from chester/applications folder by typing ../scripts/deploy.sh
 

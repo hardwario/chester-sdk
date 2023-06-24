@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 /* TODO Refactor inputs to work with arrays (this was a dirty copy/paste for time reasons :)) */
 
 #include "app_config.h"

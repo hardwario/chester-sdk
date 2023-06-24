@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_RFMUX
 	bool "CHESTER RF Multiplexer Driver"
 	depends on GPIO

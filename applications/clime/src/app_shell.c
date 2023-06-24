@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #include "app_config.h"
 #include "app_work.h"
 
@@ -70,7 +76,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(mode, NULL, "Get/Set communication mode (None/LTE/LoRaWAN) ('none', 'lte', 'lrw').", app_config_cmd_config_mode, 1, 1),
 
 	CONFIG_PARAM_LIST()
-	
+
 	SHELL_SUBCMD_SET_END
 );
 

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 / {
 	ctr_k1: ctr_k1 {
 		compatible = "hardwario,ctr-k1";

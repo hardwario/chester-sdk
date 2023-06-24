@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_A1
 	bool "HARDWARIO CHESTER-A1 (AC/DC Converter w/ Relay Outputs) Driver"
 	select GPIO

@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_ACCEL
 	bool "CTR_ACCEL"
 	select CBPRINTF_FP_SUPPORT if CTR_ACCEL_LOG_LEVEL_DBG || CTR_ACCEL_SHELL

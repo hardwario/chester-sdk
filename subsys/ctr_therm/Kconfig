@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_THERM
 	bool "CTR_THERM"
 	select CBPRINTF_FP_SUPPORT if CTR_THERM_LOG_LEVEL_DBG || CTR_THERM_SHELL

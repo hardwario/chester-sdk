@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_LRW
 	bool "CTR_LRW"
 	depends on HEAP_MEM_POOL_SIZE >= 8192

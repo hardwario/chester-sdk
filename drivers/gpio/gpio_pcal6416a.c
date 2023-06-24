@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #define DT_DRV_COMPAT nxp_pcal6416a
 
 #include <zephyr/drivers/gpio.h>

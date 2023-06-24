@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 cmake_minimum_required(VERSION 3.20.0)
 
 # Supported shields: ctr_ds18b20 ctr_lrw ctr_lte ctr_rtd_a ctr_rtd_b ctr_s1 ctr_s2 ctr_soil_sensor ctr_z

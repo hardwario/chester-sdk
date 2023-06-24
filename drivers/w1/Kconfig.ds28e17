@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config DS28E17
 	bool "DS28E17 1-Wire-to-I2C Master Bridge"
 	default y if $(dt_compat_enabled,$(maxim,ds28e17))

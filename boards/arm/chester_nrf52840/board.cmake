@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 board_runner_args(nrfjprog "--nrf-family=NRF52" "--softreset")
 board_runner_args(jlink "--device=nrf52" "--speed=4000")
 board_runner_args(pyocd "--target=nrf52840" "--frequency=4000000")

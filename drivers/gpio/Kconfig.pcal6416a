@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 # Workaround for not being able to have commas in macro arguments
 DT_COMPAT_NXP_PCAL6416A := nxp,pcal6416a
 

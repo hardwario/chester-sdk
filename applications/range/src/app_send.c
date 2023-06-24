@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #if !defined(CONFIG_SHIELD_CTR_LTE)
 #error "You need to define ctr_lte."
 #endif /* !defined(CONFIG_SHIELD_CTR_LTE) */

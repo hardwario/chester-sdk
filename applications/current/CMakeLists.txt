@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 cmake_minimum_required(VERSION 3.20.0)
 
 # Supported shields: ctr_ds18b20 ctr_k1 ctr_lrw ctr_lte ctr_z

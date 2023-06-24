@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 /* CHESTER includes */
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_led.h>

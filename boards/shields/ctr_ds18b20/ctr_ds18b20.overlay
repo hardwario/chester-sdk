@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 &ds2484 {
 	ds18b20_0: ds18b20_0 {
 		compatible = "maxim,ds18b20";

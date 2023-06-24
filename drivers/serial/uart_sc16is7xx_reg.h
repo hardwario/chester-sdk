@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #ifndef DRIVERS_SERIAL_SC16IS7XX_REG_H_
 #define DRIVERS_SERIAL_SC16IS7XX_REG_H_
 

@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_X7
 	bool "HARDWARIO CHESTER-X7 (Differential Input) Driver"
 	depends on !ADC_NRFX_SAADC && !ADC_SHELL

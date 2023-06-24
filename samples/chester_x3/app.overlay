@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 &i2c0 {
 	ads122c04_x3: ads122c04_x3@46 {
 		compatible = "ti,ads122c04";

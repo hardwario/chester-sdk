@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 description: MaxBotix MB7066 ultrasonic distance sensor
 
 compatible: "maxbotix,mb7066"

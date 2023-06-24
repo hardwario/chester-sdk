@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s. <www.hardwario.com>
+ * Copyright (c) 2023 HARDWARIO a.s.
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
 /* Zephyr includes */

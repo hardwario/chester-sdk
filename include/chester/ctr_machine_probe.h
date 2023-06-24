@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #ifndef CHESTER_INCLUDE_CTR_MACHINE_PROBE_H_
 #define CHESTER_INCLUDE_CTR_MACHINE_PROBE_H_
 

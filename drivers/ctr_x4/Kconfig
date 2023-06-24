@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_X4
 	bool "HARDWARIO CHESTER-X4 (DC/DC Converter w/ Power Rail Outputs) Driver"
 	select GPIO

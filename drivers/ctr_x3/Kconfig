@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_X3
 	bool "HARDWARIO CHESTER-X3 (Precision Analog) Driver"
 	select ADC

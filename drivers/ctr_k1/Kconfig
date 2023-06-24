@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_K1
 	bool "HARDWARIO CHESTER-K1 (Differential Inputs) Driver"
 	depends on !ADC_NRFX_SAADC && !ADC_SHELL

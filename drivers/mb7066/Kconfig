@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 menuconfig MB7066
 	bool "Maxbotix MB7066 ultrasonic distance sensor"
 	default n

@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_X9
 	bool "HARDWARIO CHESTER-X9 (Low Side Outputs) Driver"
 	select GPIO

@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config CTR_HYGRO
 	bool "CTR_HYGRO"
 	select CBPRINTF_FP_SUPPORT if CTR_HYGRO_LOG_LEVEL_DBG || CTR_HYGRO_SHELL

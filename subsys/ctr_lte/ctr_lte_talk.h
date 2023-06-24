@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #ifndef CHESTER_SUBSYS_CTR_LTE_TALK_H_
 #define CHESTER_SUBSYS_CTR_LTE_TALK_H_
 

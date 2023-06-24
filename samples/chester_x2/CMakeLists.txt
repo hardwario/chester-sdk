@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 cmake_minimum_required(VERSION 3.20.0)
 
 set(SHIELD ctr_x2_a)

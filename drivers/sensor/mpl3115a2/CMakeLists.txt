@@ -1,5 +1,8 @@
-# Copyright (c) 2023 HARDWARIO a.s. <www.hardwario.com>
-# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
 
 zephyr_library()
 

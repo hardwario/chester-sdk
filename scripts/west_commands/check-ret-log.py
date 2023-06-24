@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 '''check-ret-log.py
 
 Utility script to check CHESTER file for correct pair of "ret = xyz_func()"

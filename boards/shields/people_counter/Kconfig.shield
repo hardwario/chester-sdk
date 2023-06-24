@@ -1,2 +1,8 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
 config SHIELD_PEOPLE_COUNTER
 	def_bool $(shields_list_contains,people_counter)
