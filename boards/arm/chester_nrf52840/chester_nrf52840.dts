@@ -14,14 +14,16 @@
 	compatible = "hardwario,chester-nrf52840";
 
 	chosen {
-		ctr,batt_adc = &tla2021;
-		ctr,lte_if = &ctr_lte_if;
-		ctr,lrw_if = &ctr_lrw_if;
-		zephyr,sram = &sram0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,sram = &sram0;
+		ctr,batt_adc = &tla2021;
+		ctr,lrw_if = &ctr_lrw_if;
+		ctr,lte_if = &ctr_lte_if;
 	};
 
-	buttons {
+	gpio_keys {
 		compatible = "gpio-keys";
 
 		btn_int: btn_int {
@@ -31,14 +33,15 @@
 		btn_ext: btn_ext {
 			gpios = <&gpio0 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
+
+		tamper_key: tamper_key {
+			gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			status = "disabled";
+		};
 	};
 
-	led_rgy {
+	gpio_leds {
 		compatible = "gpio-leds";
-
-		led_r: led_r {
-			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-		};
 
 		led_g: led_g {
 			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
@@ -47,22 +50,60 @@
 		led_y: led_y {
 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		};
-	};
 
-	led_ext {
-		compatible = "gpio-leds";
+		led_r: led_r {
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		};
 
 		led_ext: led_ext {
 			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
 		};
-	};
-
-	led_load {
-		compatible = "gpio-leds";
 
 		led_load: led_load {
 			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	pwm_leds {
+		compatible = "pwm-leds";
+
+		pwm_led_g: pwm_led_g {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_led_y: pwm_led_y {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_led_r: pwm_led_r {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_led_ext: pwm_led_ext {
+			pwms = <&pwm0 4 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			status = "disabled";
+		};
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&tla2021 0>;
+		output-ohms = <5000>;
+		full-ohms = <(10000 + 5000)>;
+		power-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+	};
+
+	sky13335_source {
+		compatible = "skyworks,sky13335";
+		vctl1-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		vctl2-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+	};
+
+	sky13335_sink {
+		compatible = "skyworks,sky13335";
+		vctl1-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		vctl2-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 	};
 
 	ctr_gpio: ctr_gpio {
@@ -180,12 +221,23 @@
 	};
 
 	aliases {
-		led0 = &led_r;
-		led1 = &led_g;
-		led2 = &led_y;
+		led0 = &led_g;
+		led1 = &led_y;
+		led2 = &led_r;
 		led3 = &led_ext;
+		pwm-led0 = &pwm_led_g;
+		pwm-led1 = &pwm_led_y;
+		pwm-led2 = &pwm_led_r;
+		pwm-led3 = &pwm_led_ext;
 		sw0 = &btn_int;
 		sw1 = &btn_ext;
+		sw2 = &tamper_key;
+		mcuboot-button0 = &btn_int;
+		mcuboot-led0 = &led_g;
+		watchdog0 = &wdt0;
+		spi-flash0 = &flash1;
+		accel0 = &lis2dh12;
+		ambient-temp0 = &tmp112;
 	};
 };
 
@@ -205,7 +257,10 @@
 	status = "okay";
 };
 
-&gpiote {
+&pwm0 {
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 	status = "okay";
 };
 
@@ -351,7 +406,19 @@
 	tla2021: tla2021@4b {
 		compatible = "ti,tla2021";
 		reg = <0x4b>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		#io-channel-cells = <1>;
+
+		channel@0 {
+			reg = <0>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,input-positive = <0>;
+			zephyr,input-negative = <1>;
+			zephyr,resolution = <12>;
+		};
 	};
 
 	ctr_barometer_tag: ctr_barometer_tag@60 {
@@ -371,11 +438,11 @@
 	flash1: at45db641e@0 {
 		compatible = "atmel,at45";
 		reg = <0>;
-		spi-max-frequency = <15000000>;
+		spi-max-frequency = <DT_FREQ_M(15)>;
 		jedec-id = [1f 28 00];
-		size = <67108864>;
-		sector-size = <262144>;
-		block-size = <2048>;
+		size = <DT_SIZE_M(64)>;
+		sector-size = <DT_SIZE_K(256)>;
+		block-size = <DT_SIZE_K(2)>;
 		page-size = <256>;
 		use-udpd;
 		enter-dpd-delay = <3000>;  /* dpd: 2000 ns, udpd: 3000 ns */
@@ -414,6 +481,17 @@
 	};
 };
 
+&ieee802154 {
+	status = "okay";
+};
+
+/*
+ * NFCT pins are used as GPIOs
+ */
+&nfct {
+	status = "disabled";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -422,27 +500,27 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x0000c000>;
+			reg = <0x00000000 DT_SIZE_K(48)>;
 		};
 
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000c000 0x00067000>;
+			reg = <0x0000c000 DT_SIZE_K(412)>;
 		};
 
 		slot1_partition: partition@73000 {
 			label = "image-1";
-			reg = <0x00073000 0x00067000>;
+			reg = <0x00073000 DT_SIZE_K(412)>;
 		};
 
 		scratch_partition: partition@da000 {
 			label = "image-scratch";
-			reg = <0x000da000 0x0001e000>;
+			reg = <0x000da000 DT_SIZE_K(120)>;
 		};
 
 		storage_partition: partition@f8000 {
 			label = "storage";
-			reg = <0x000f8000 0x00008000>;
+			reg = <0x000f8000 DT_SIZE_K(32)>;
 		};
 	};
 };
