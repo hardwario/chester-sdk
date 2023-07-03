@@ -621,7 +621,7 @@ static int attach_once(k_timeout_t timeout)
 	}
 
 	if (strlen(m_config.apn)) {
-		ret = ctr_lte_talk_at_cgdcont(1, "IP", m_config.apn);
+		ret = ctr_lte_talk_at_cgdcont(0, "IP", m_config.apn);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_at_cgdcont` failed: %d", ret);
@@ -631,14 +631,14 @@ static int attach_once(k_timeout_t timeout)
 
 	if (m_config.auth == AUTH_PAP || m_config.auth == AUTH_CHAP) {
 		int protocol = m_config.auth == AUTH_PAP ? 1 : 2;
-		ret = ctr_lte_talk_at_cgauth(1, &protocol, m_config.username, m_config.password);
+		ret = ctr_lte_talk_at_cgauth(0, &protocol, m_config.username, m_config.password);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_at_cgauth` failed: %d", ret);
 			return ret;
 		}
 	} else {
-		ret = ctr_lte_talk_at_cgauth(1, (int[]){0}, NULL, NULL);
+		ret = ctr_lte_talk_at_cgauth(0, (int[]){0}, NULL, NULL);
 
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_lte_talk_at_cgauth` failed: %d", ret);
