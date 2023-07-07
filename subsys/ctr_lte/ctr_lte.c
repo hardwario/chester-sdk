@@ -38,15 +38,21 @@ LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 
 #define SETTINGS_PFX "lte"
 
-#define XSLEEP_PAUSE	    K_MSEC(100)
-#define BOOT_TIMEOUT	    K_SECONDS(5)
-#define BOOT_RETRY_COUNT    3
-#define BOOT_RETRY_DELAY    K_SECONDS(10)
-#define SETUP_RETRY_COUNT   1
-#define SETUP_RETRY_DELAY   K_SECONDS(10)
+#define XSLEEP_PAUSE	  K_MSEC(100)
+#define BOOT_TIMEOUT	  K_SECONDS(5)
+#define BOOT_RETRY_COUNT  3
+#define BOOT_RETRY_DELAY  K_SECONDS(10)
+#define SETUP_RETRY_COUNT 1
+#define SETUP_RETRY_DELAY K_SECONDS(10)
+#define EVAL_RETRY_COUNT  3
+#define EVAL_RETRY_DELAY  K_SECONDS(3)
+#define SEND_RETRY_COUNT  3
+#define SEND_RETRY_DELAY  K_SECONDS(10)
+
 /* Table of the attach retry delays.
  * column 1: timeout between previous and current attempt
  * column 2: attach attempt duration */
+/* clang-format off */
 #define ATTACH_RETRY_DELAYS {                                                                      \
 	K_NO_WAIT, K_MINUTES(5),                                                                   \
 	K_MINUTES(15), K_MINUTES(15),                                                              \
@@ -63,10 +69,7 @@ LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 	K_HOURS(168), K_MINUTES(5),                                                                \
 	K_HOURS(168), K_MINUTES(15)                                                                \
 }
-#define EVAL_RETRY_COUNT    3
-#define EVAL_RETRY_DELAY    K_SECONDS(3)
-#define SEND_RETRY_COUNT    3
-#define SEND_RETRY_DELAY    K_SECONDS(10)
+/* clang-format on */
 
 #define CMD_MSGQ_MAX_ITEMS  16
 #define SEND_MSGQ_MAX_ITEMS 16
@@ -774,10 +777,10 @@ static int attach(int retries, const k_timeout_t *delays)
 
 	atomic_set(&m_attached, false);
 
-#define CURRENT_DELAY 0
+#define CURRENT_DELAY  0
 #define ATTACH_TIMEOUT 1
-#define NEXT_DELAY 2
-#define TABLE_STEP 2
+#define NEXT_DELAY     2
+#define TABLE_STEP     2
 
 	for (; retries-- > 0; delays += TABLE_STEP) {
 		k_sleep(delays[CURRENT_DELAY]);
@@ -829,7 +832,8 @@ static int attach(int retries, const k_timeout_t *delays)
 
 		if (retries > 0) {
 			LOG_WRN("Repeating ATTACH operation in %lld minutes (retries left: %d)",
-				k_ticks_to_ms_ceil64(delays[NEXT_DELAY].ticks) / 1000 / 60, retries);
+				k_ticks_to_ms_ceil64(delays[NEXT_DELAY].ticks) / 1000 / 60,
+				retries);
 		}
 	}
 
