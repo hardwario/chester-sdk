@@ -49,25 +49,39 @@ LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 #define SEND_RETRY_COUNT  3
 #define SEND_RETRY_DELAY  K_SECONDS(10)
 
-/* Table of the attach retry delays.
- * column 1: timeout between previous and current attempt
- * column 2: attach attempt duration */
+/*
+ * Table of the attach retry delays
+ *
+ * Column 1: Timeout between previous and current attempt
+ * Column 2: Attach attempt duration
+ */
+
 /* clang-format off */
 #define ATTACH_RETRY_DELAYS {                                                                      \
+	K_NO_WAIT, K_MINUTES(1),                                                                   \
 	K_NO_WAIT, K_MINUTES(5),                                                                   \
-	K_MINUTES(15), K_MINUTES(15),                                                              \
+	K_MINUTES(5), K_MINUTES(45),                                                               \
                                                                                                    \
 	K_HOURS(1), K_MINUTES(5),                                                                  \
-	K_HOURS(1), K_MINUTES(15),                                                                 \
+	K_MINUTES(5), K_MINUTES(45),                                                               \
                                                                                                    \
 	K_HOURS(6), K_MINUTES(5),                                                                  \
-	K_HOURS(6), K_MINUTES(15),                                                                 \
+	K_MINUTES(5), K_MINUTES(45),                                                               \
                                                                                                    \
 	K_HOURS(24), K_MINUTES(5),                                                                 \
-	K_HOURS(24), K_MINUTES(15),                                                                \
+	K_MINUTES(5), K_MINUTES(45),                                                               \
                                                                                                    \
 	K_HOURS(168), K_MINUTES(5),                                                                \
-	K_HOURS(168), K_MINUTES(15)                                                                \
+	K_MINUTES(5), K_MINUTES(45),                                                               \
+                                                                                                   \
+	K_HOURS(168), K_MINUTES(5),                                                                \
+	K_MINUTES(5), K_MINUTES(45),                                                               \
+                                                                                                   \
+	K_HOURS(168), K_MINUTES(5),                                                                \
+	K_MINUTES(5), K_MINUTES(45),                                                               \
+                                                                                                   \
+	K_HOURS(168), K_MINUTES(5),                                                                \
+	K_MINUTES(5), K_MINUTES(45),                                                               \
 }
 /* clang-format on */
 
@@ -364,6 +378,13 @@ static int setup_once(void)
 		return ret;
 	}
 
+	ret = ctr_lte_talk_at_mdmev(1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_mdmev` failed: %d", ret);
+		return ret;
+	}
+
 	ret = ctr_lte_talk_at_rai(1);
 
 	if (ret < 0) {
@@ -587,8 +608,13 @@ static int attach_once(k_timeout_t timeout)
 
 	if (!m_config.autoconn) {
 		ret = ctr_lte_talk_at_cops(1, (int[]){2}, m_config.plmnid);
-
-		if (ret < 0) {
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_talk_at_cops` failed: %d", ret);
+			return ret;
+		}
+	} else {
+		ret = ctr_lte_talk_at_cops(0, NULL, NULL);
+		if (ret) {
 			LOG_ERR("Call `ctr_lte_talk_at_cops` failed: %d", ret);
 			return ret;
 		}
@@ -620,6 +646,7 @@ static int attach_once(k_timeout_t timeout)
 		}
 	}
 
+cfun_1:
 	ret = ctr_lte_talk_at_cfun(1);
 
 	if (ret < 0) {
@@ -642,6 +669,31 @@ static int attach_once(k_timeout_t timeout)
 	if (ret < 0) {
 		LOG_ERR("Call `k_poll` failed: %d", ret);
 		return ret;
+	}
+
+	char crsm_144[32];
+	ret = ctr_lte_talk_at_crsm_176(crsm_144, sizeof(crsm_144));
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_talk_at_crsm_176` failed: %d", ret);
+		return ret;
+	}
+
+	if (strcmp(crsm_144, "FFFFFFFFFFFFFFFFFFFFFFFF")) {
+		LOG_WRN("Found forbidden network(s) - erasing");
+
+		ret = ctr_lte_talk_at_crsm_214();
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_talk_at_crsm_214` failed: %d", ret);
+			return ret;
+		}
+
+		ret = ctr_lte_talk_at_cfun(4);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_talk_at_cfun` failed: %d", ret);
+			return ret;
+		}
+
+		goto cfun_1;
 	}
 
 	char imei[32];

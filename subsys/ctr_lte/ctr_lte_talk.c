@@ -925,6 +925,77 @@ int ctr_lte_talk_at_cpsms(int *p1, const char *p2, const char *p3)
 	return 0;
 }
 
+static int at_crsm_176_response_handler(int idx, int count, const char *s, void *p1, void *p2,
+					void *p3)
+{
+	char *buf = p1;
+
+	if (idx == 0 && count == 1) {
+		size_t len = strlen(s);
+
+		if (len != 39 || strncmp(s, "+CRSM: 144,0,", 13)) {
+			return -EINVAL;
+		}
+
+		if (s[13] != '"' || s[38] != '"') {
+			return -EINVAL;
+		}
+
+		strncpy(buf, &s[14], 24);
+		buf[24] = '\0';
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_crsm_176(char *buf, size_t size)
+{
+	int ret;
+
+	if (size < 24 + 1) {
+		return -ENOBUFS;
+	}
+
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_crsm_176_response_handler, buf, &size,
+				   NULL, "AT+CRSM=176,28539,0,0,12");
+	if (ret) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int at_crsm_214_response_handler(int idx, int count, const char *s, void *p1, void *p2,
+					void *p3)
+{
+	if (idx == 0 && count == 1) {
+		if (strcmp(s, "+CRSM: 144,0,\"\"")) {
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_crsm_214(void)
+{
+	int ret;
+
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_crsm_214_response_handler, NULL, NULL,
+				   NULL, "AT+CRSM=214,28539,0,0,12,\"FFFFFFFFFFFFFFFFFFFFFFFF\"");
+	if (ret) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lte_talk_at_cscon(int p1)
 {
 	int ret;
@@ -967,6 +1038,20 @@ int ctr_lte_talk_at_hwversion(char *buf, size_t size)
 
 	if (ret < 0) {
 		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_talk_at_mdmev(int p1)
+{
+	int ret;
+
+	ret = talk_cmd_ok(RESPONSE_TIMEOUT_S, "AT%%MDMEV=%d", p1);
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_ok` failed: %d", ret);
 		return ret;
 	}
 
