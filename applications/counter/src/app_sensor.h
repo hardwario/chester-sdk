@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#ifndef APP_MEASURE_H_
-#define APP_MEASURE_H_
+#ifndef APP_SENSOR_H_
+#define APP_SENSOR_H_
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -16,10 +16,10 @@ extern "C" {
 
 extern struct k_timer g_app_measure_timer;
 
-int app_measure(void);
+int app_sensor_sample(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* APP_MEASURE_H_ */
+#endif /* APP_SENSOR_H_ */

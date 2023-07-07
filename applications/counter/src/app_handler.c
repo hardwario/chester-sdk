@@ -4,13 +4,15 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+#include "app_config.h"
 #include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
-#include "app_measure.h"
+#include "app_work.h"
 
 /* CHESTER includes */
 #include <chester/ctr_lte.h>
+#include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
 #include <zephyr/device.h>
@@ -126,3 +128,58 @@ void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, v
 		return;
 	}
 }
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+
+void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, void *param)
+{
+	int ret;
+
+	if (backup_event != CTR_Z_EVENT_DC_CONNECTED &&
+	    backup_event != CTR_Z_EVENT_DC_DISCONNECTED) {
+		return;
+	}
+
+	struct app_data_backup *backup = &g_app_data.backup;
+
+	app_work_backup_update();
+
+	app_data_lock();
+
+	backup->line_present = backup_event == CTR_Z_EVENT_DC_CONNECTED;
+
+	if (backup->event_count < APP_DATA_MAX_BACKUP_EVENTS) {
+		struct app_data_backup_event *event = &backup->events[backup->event_count];
+
+		ret = ctr_rtc_get_ts(&event->timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			app_data_unlock();
+			return;
+		}
+
+		event->connected = backup->line_present;
+		backup->event_count++;
+
+		LOG_INF("Event count: %d", backup->event_count);
+	} else {
+		LOG_WRN("Measurement full");
+		app_data_unlock();
+		return;
+	}
+
+	LOG_INF("Backup: %d", (int)backup->line_present);
+
+	if (g_app_config.backup_report_connected && backup_event == CTR_Z_EVENT_DC_CONNECTED) {
+		app_work_send_with_rate_limit();
+	}
+
+	if (g_app_config.backup_report_disconnected &&
+	    backup_event == CTR_Z_EVENT_DC_DISCONNECTED) {
+		app_work_send_with_rate_limit();
+	}
+
+	app_data_unlock();
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */

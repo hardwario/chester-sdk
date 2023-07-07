@@ -26,94 +26,140 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
 struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
-	.measurement_interval = 60,
-	.report_interval = 1800,
+	.interval_sample = 60,
+	.interval_report = 1800,
+	
+#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_APP_TAMPER)
+	.event_report_delay = 1,
+	.event_report_rate = 30,
+#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_APP_TAMPER) */
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	.backup_report_connected = true,
+	.backup_report_disconnected = true,
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 };
 
-static void print_measurement_interval(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config measurement-interval %d",
-		    m_app_config_interim.measurement_interval);
-}
+#define DEFINE_CMD_CONFIG_INT(_name_d, _name_u, _min, _max)                                        \
+	static void print_##_name_u(const struct shell *shell)                                     \
+	{                                                                                          \
+		shell_print(shell, "app config " #_name_d " %d", m_app_config_interim._name_u);    \
+	}                                                                                          \
+	int app_config_cmd_config_##_name_u(const struct shell *shell, size_t argc, char **argv)   \
+	{                                                                                          \
+		if (argc == 1) {                                                                   \
+			print_##_name_u(shell);                                                    \
+			return 0;                                                                  \
+		}                                                                                  \
+		if (argc == 2) {                                                                   \
+			size_t len = strlen(argv[1]);                                              \
+			for (size_t i = 0; i < len; i++) {                                         \
+				if (!isdigit((int)argv[1][i])) {                                   \
+					shell_error(shell, "invalid format");                      \
+					return -EINVAL;                                            \
+				}                                                                  \
+			}                                                                          \
+			long value = strtol(argv[1], NULL, 10);                                    \
+			if (value < _min || value > _max) {                                        \
+				shell_error(shell, "invalid range");                               \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			m_app_config_interim._name_u = (int)value;                                 \
+			return 0;                                                                  \
+		}                                                                                  \
+		shell_help(shell);                                                                 \
+		return -EINVAL;                                                                    \
+	}
 
-static void print_report_interval(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config report-interval %d",
-		    m_app_config_interim.report_interval);
-}
+#define DEFINE_CMD_CONFIG_FLOAT(_name_d, _name_u, _min, _max)                                      \
+	static void print_##_name_u(const struct shell *shell)                                     \
+	{                                                                                          \
+		shell_print(shell, "app config " #_name_d " %.1f", m_app_config_interim._name_u);  \
+	}                                                                                          \
+	int app_config_cmd_config_##_name_u(const struct shell *shell, size_t argc, char **argv)   \
+	{                                                                                          \
+		if (argc == 1) {                                                                   \
+			print_##_name_u(shell);                                                    \
+			return 0;                                                                  \
+		}                                                                                  \
+		if (argc == 2) {                                                                   \
+			float value;                                                               \
+			int ret = sscanf(argv[1], "%f", &value);                                   \
+			if (ret != 1) {                                                            \
+				shell_error(shell, "invalid value");                               \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			if (value < _min || value > _max) {                                        \
+				shell_error(shell, "invalid range");                               \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			m_app_config_interim._name_u = value;                                      \
+			return 0;                                                                  \
+		}                                                                                  \
+		shell_help(shell);                                                                 \
+		return -EINVAL;                                                                    \
+	}
+
+#define DEFINE_CMD_CONFIG_BOOL(_name_d, _name_u)                                                   \
+	static void print_##_name_u(const struct shell *shell)                                     \
+	{                                                                                          \
+		shell_print(shell, "app config " #_name_d " %s",                                   \
+			    m_app_config_interim._name_u ? "true" : "false");                      \
+	}                                                                                          \
+	int app_config_cmd_config_##_name_u(const struct shell *shell, size_t argc, char **argv)   \
+	{                                                                                          \
+		if (argc == 1) {                                                                   \
+			print_##_name_u(shell);                                                    \
+			return 0;                                                                  \
+		}                                                                                  \
+		if (argc == 2) {                                                                   \
+			bool is_false = !strcmp(argv[1], "false");                                 \
+			bool is_true = !strcmp(argv[1], "true");                                   \
+			if (is_false) {                                                            \
+				m_app_config_interim._name_u = false;                              \
+			} else if (is_true) {                                                      \
+				m_app_config_interim._name_u = true;                               \
+			} else {                                                                   \
+				shell_error(shell, "invalid format");                              \
+				return -EINVAL;                                                    \
+			}                                                                          \
+			return 0;                                                                  \
+		}                                                                                  \
+		shell_help(shell);                                                                 \
+		return -EINVAL;                                                                    \
+	}
+
+#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)                                      \
+	DEFINE_CMD_CONFIG_INT(_name_d, _name_u, _min, _max)
+
+#define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help)                                    \
+	DEFINE_CMD_CONFIG_FLOAT(_name_d, _name_u, _min, _max)
+
+#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help) DEFINE_CMD_CONFIG_BOOL(_name_d, _name_u)
+
+CONFIG_PARAM_LIST()
+
+#undef CONFIG_PARAM_INT
+#undef CONFIG_PARAM_FLOAT
+#undef CONFIG_PARAM_BOOL
+
+#undef CMD_CONFIG_FUNCTION_INT
+#undef CMD_CONFIG_FUNCTION_FLOAT
+#undef CMD_CONFIG_FUNCTION_BOOL
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
-	print_measurement_interval(shell);
-	print_report_interval(shell);
+#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)	print_##_name_u(shell);
+#define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help) print_##_name_u(shell);
+#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help)		print_##_name_u(shell);
+
+	CONFIG_PARAM_LIST()
+
+#undef CONFIG_PARAM_INT
+#undef CONFIG_PARAM_FLOAT
+#undef CONFIG_PARAM_BOOL
 
 	return 0;
-}
-
-int app_config_cmd_config_measurement_interval(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_measurement_interval(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		int measurement_interval = atoi(argv[1]);
-
-		if (measurement_interval < 5 || measurement_interval > 3600) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.measurement_interval = measurement_interval;
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int app_config_cmd_config_report_interval(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_report_interval(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		int report_interval = atoi(argv[1]);
-
-		if (report_interval < 30 || report_interval > 86400) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_app_config_interim.report_interval = report_interval;
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
 }
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
@@ -121,28 +167,31 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	int ret;
 	const char *next;
 
-#define SETTINGS_SET(_key, _var, _size)                                                            \
+#define SETTINGS_SET_SCALAR(_key, _var)                                                            \
 	do {                                                                                       \
-		if (settings_name_steq(key, _key, &next) && !next) {                               \
-			if (len != _size) {                                                        \
+		if (settings_name_steq(key, #_key, &next) && !next) {                              \
+			if (len != sizeof(m_app_config_interim._var)) {                            \
 				return -EINVAL;                                                    \
 			}                                                                          \
-                                                                                                   \
-			ret = read_cb(cb_arg, _var, len);                                          \
-                                                                                                   \
+			ret = read_cb(cb_arg, &m_app_config_interim._var, len);                    \
 			if (ret < 0) {                                                             \
 				LOG_ERR("Call `read_cb` failed: %d", ret);                         \
 				return ret;                                                        \
 			}                                                                          \
-                                                                                                   \
 			return 0;                                                                  \
 		}                                                                                  \
 	} while (0)
 
-	SETTINGS_SET("measurement-interval", &m_app_config_interim.measurement_interval,
-		     sizeof(m_app_config_interim.measurement_interval));
-	SETTINGS_SET("report-interval", &m_app_config_interim.report_interval,
-		     sizeof(m_app_config_interim.report_interval));
+#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help) SETTINGS_SET_SCALAR(_name_d, _name_u);
+#define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help)                                    \
+	SETTINGS_SET_SCALAR(_name_d, _name_u);
+#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help) SETTINGS_SET_SCALAR(_name_d, _name_u);
+
+	CONFIG_PARAM_LIST()
+
+#undef CONFIG_PARAM_INT
+#undef CONFIG_PARAM_FLOAT
+#undef CONFIG_PARAM_BOOL
 
 #undef SETTINGS_SET
 
@@ -158,17 +207,23 @@ static int h_commit(void)
 
 static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len))
 {
-#define EXPORT_FUNC(_key, _var, _size)                                                             \
+#define EXPORT_FUNC_SCALAR(_key, _var)                                                             \
 	do {                                                                                       \
-		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
+		(void)export_func(SETTINGS_PFX "/" #_key, &m_app_config_interim._var, sizeof(m_app_config_interim._var));                             \
 	} while (0)
 
-	EXPORT_FUNC("measurement-interval", &m_app_config_interim.measurement_interval,
-		    sizeof(m_app_config_interim.measurement_interval));
-	EXPORT_FUNC("report-interval", &m_app_config_interim.report_interval,
-		    sizeof(m_app_config_interim.report_interval));
+#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help) EXPORT_FUNC_SCALAR(_name_d, _name_u);
+#define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help)                                    \
+	EXPORT_FUNC_SCALAR(_name_d, _name_u);
+#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help) EXPORT_FUNC_SCALAR(_name_d, _name_u);
 
-#undef EXPORT_FUNC
+	CONFIG_PARAM_LIST()
+
+#undef CONFIG_PARAM_INT
+#undef CONFIG_PARAM_FLOAT
+#undef CONFIG_PARAM_BOOL
+
+#undef EXPORT_FUNC_SCALAR
 
 	return 0;
 }

@@ -7,7 +7,6 @@
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
-#include "app_loop.h"
 #include "app_send.h"
 
 /* CHESTER includes */
@@ -20,22 +19,12 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/random/rand32.h>
 
-#include <tinycbor/cbor.h>
-#include <tinycbor/cbor_buf_writer.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
-
-static void send_timer(struct k_timer *timer_id)
-{
-	LOG_INF("Send timer expired");
-
-	atomic_set(&g_app_loop_send, true);
-	k_sem_give(&g_app_loop_sem);
-}
-
-K_TIMER_DEFINE(g_app_send_timer, send_timer, NULL);
 
 static int compose(struct ctr_buf *buf)
 {
@@ -61,19 +50,16 @@ static int compose(struct ctr_buf *buf)
 		return ret;
 	}
 
-	struct cbor_buf_writer writer;
-	cbor_buf_writer_init(&writer, ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf));
+	zcbor_state_t zs[8];
+	zcbor_new_state(zs, ARRAY_SIZE(zs), ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf), 0);
 
-	CborEncoder enc;
-	cbor_encoder_init(&enc, &writer.enc, 0);
-
-	ret = app_cbor_encode(&enc);
+	ret = app_cbor_encode(zs);
 	if (ret) {
 		LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
 		return ret;
 	}
 
-	size_t len = 12 + enc.writer->bytes_written;
+	size_t len = zs[0].payload_mut - ctr_buf_get_mem(buf);
 
 	struct tc_sha256_state_struct s;
 	ret = tc_sha256_init(&s);
@@ -126,13 +112,6 @@ int app_send(void)
 {
 	int ret;
 
-	int64_t jitter = (int32_t)sys_rand32_get() % (g_app_config.report_interval * 1000 / 5);
-	int64_t duration = g_app_config.report_interval * 1000 + jitter;
-
-	LOG_INF("Scheduling next report in %lld second(s)", duration / 1000);
-
-	k_timer_start(&g_app_send_timer, K_MSEC(duration), K_FOREVER);
-
 	CTR_BUF_DEFINE_STATIC(buf, 512);
 
 	ret = compose(&buf);
@@ -155,7 +134,7 @@ int app_send(void)
 		return ret;
 	}
 
-	k_mutex_lock(&g_app_data_lock, K_FOREVER);
+	app_data_lock();
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 	g_app_data.counter_ch1_delta = 0;
@@ -171,7 +150,7 @@ int app_send(void)
 	g_app_data.counter_ch8_delta = 0;
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-	k_mutex_unlock(&g_app_data_lock);
+	app_data_unlock();
 
 	return 0;
 }

@@ -16,7 +16,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include <tinycbor/cbor.h>
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
 
 /* Standard includes */
 #include <errno.h>
@@ -27,27 +28,25 @@
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
-int app_cbor_encode(CborEncoder *enc)
+int app_cbor_encode(zcbor_state_t *zs)
 {
 	int ret;
 
-	CborError err = 0;
+	zs->constant_state->stop_on_error = true;
 
-	CborEncoder map;
-	err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+	zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	err |= cbor_encode_uint(&map, MSG_KEY_FRAME);
+	zcbor_uint32_put(zs, MSG_KEY_FRAME);
 	{
-		CborEncoder map;
-		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		uint8_t protocol = 1;
-		err |= cbor_encode_uint(&map, MSG_KEY_PROTOCOL);
-		err |= cbor_encode_uint(&map, protocol);
+		zcbor_uint32_put(zs, MSG_KEY_PROTOCOL);
+		zcbor_uint32_put(zs, protocol);
 
 		static uint32_t sequence;
-		err |= cbor_encode_uint(&map, MSG_KEY_SEQUENCE);
-		err |= cbor_encode_uint(&map, sequence++);
+		zcbor_uint32_put(zs, MSG_KEY_SEQUENCE);
+		zcbor_uint32_put(zs, sequence++);
 
 		uint64_t timestamp;
 		ret = ctr_rtc_get_ts(&timestamp);
@@ -56,100 +55,96 @@ int app_cbor_encode(CborEncoder *enc)
 			return ret;
 		}
 
-		err |= cbor_encode_uint(&map, MSG_KEY_TIMESTAMP);
-		err |= cbor_encode_uint(&map, timestamp);
+		zcbor_uint32_put(zs, MSG_KEY_TIMESTAMP);
+		zcbor_uint32_put(zs, timestamp);
 
-		err |= cbor_encoder_close_container(enc, &map);
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	err |= cbor_encode_uint(&map, MSG_KEY_ATTRIBUTE);
+	zcbor_uint32_put(zs, MSG_KEY_ATTRIBUTE);
 	{
-		CborEncoder map;
-		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		char *vendor_name;
 		ctr_info_get_vendor_name(&vendor_name);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_VENDOR_NAME);
-		err |= cbor_encode_text_stringz(&map, vendor_name);
+		zcbor_uint32_put(zs, MSG_KEY_VENDOR_NAME);
+		zcbor_tstr_put_term(zs, vendor_name);
 
 		char *product_name;
 		ctr_info_get_product_name(&product_name);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_PRODUCT_NAME);
-		err |= cbor_encode_text_stringz(&map, product_name);
+		zcbor_uint32_put(zs, MSG_KEY_PRODUCT_NAME);
+		zcbor_tstr_put_term(zs, product_name);
 
 		char *hw_variant;
 		ctr_info_get_hw_variant(&hw_variant);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_HW_VARIANT);
-		err |= cbor_encode_text_stringz(&map, hw_variant);
+		zcbor_uint32_put(zs, MSG_KEY_HW_VARIANT);
+		zcbor_tstr_put_term(zs, hw_variant);
 
 		char *hw_revision;
 		ctr_info_get_hw_revision(&hw_revision);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_HW_REVISION);
-		err |= cbor_encode_text_stringz(&map, hw_revision);
+		zcbor_uint32_put(zs, MSG_KEY_HW_REVISION);
+		zcbor_tstr_put_term(zs, hw_revision);
 
 		char *fw_version;
 		ctr_info_get_fw_version(&fw_version);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_FW_VERSION);
-		err |= cbor_encode_text_stringz(&map, fw_version);
+		zcbor_uint32_put(zs, MSG_KEY_FW_VERSION);
+		zcbor_tstr_put_term(zs, fw_version);
 
 		char *serial_number;
 		ctr_info_get_serial_number(&serial_number);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_SERIAL_NUMBER);
-		err |= cbor_encode_text_stringz(&map, serial_number);
+		zcbor_uint32_put(zs, MSG_KEY_SERIAL_NUMBER);
+		zcbor_tstr_put_term(zs, serial_number);
 
-		err |= cbor_encoder_close_container(enc, &map);
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	err |= cbor_encode_uint(&map, MSG_KEY_STATE);
+	zcbor_uint32_put(zs, MSG_KEY_STATE);
 	{
-		CborEncoder map;
-		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_UPTIME);
-		err |= cbor_encode_uint(&map, k_uptime_get() / 1000);
+		zcbor_uint32_put(zs, MSG_KEY_UPTIME);
+		zcbor_uint32_put(zs, k_uptime_get() / 1000);
 
-		err |= cbor_encoder_close_container(enc, &map);
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	err |= cbor_encode_uint(&map, MSG_KEY_BATTERY);
+	zcbor_uint32_put(zs, MSG_KEY_BATTERY);
 	{
-		CborEncoder map;
-		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_VOLTAGE_REST);
+		zcbor_uint32_put(zs, MSG_KEY_VOLTAGE_REST);
 		if (isnan(g_app_data.batt_voltage_rest)) {
-			err |= cbor_encode_null(&map);
+			zcbor_nil_put(zs, NULL);
 		} else {
-			err |= cbor_encode_uint(&map, g_app_data.batt_voltage_rest * 1000.f);
+			zcbor_uint32_put(zs, g_app_data.batt_voltage_rest * 1000.f);
 		}
 
-		err |= cbor_encode_uint(&map, MSG_KEY_VOLTAGE_LOAD);
+		zcbor_uint32_put(zs, MSG_KEY_VOLTAGE_LOAD);
 		if (isnan(g_app_data.batt_voltage_load)) {
-			err |= cbor_encode_null(&map);
+			zcbor_nil_put(zs, NULL);
 		} else {
-			err |= cbor_encode_uint(&map, g_app_data.batt_voltage_load * 1000.f);
+			zcbor_uint32_put(zs, g_app_data.batt_voltage_load * 1000.f);
 		}
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CURRENT_LOAD);
+		zcbor_uint32_put(zs, MSG_KEY_CURRENT_LOAD);
 		if (isnan(g_app_data.batt_current_load)) {
-			err |= cbor_encode_null(&map);
+			zcbor_nil_put(zs, NULL);
 		} else {
-			err |= cbor_encode_uint(&map, g_app_data.batt_current_load);
+			zcbor_uint32_put(zs, g_app_data.batt_current_load);
 		}
 
-		err |= cbor_encoder_close_container(enc, &map);
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	err |= cbor_encode_uint(&map, MSG_KEY_NETWORK);
+	zcbor_uint32_put(zs, MSG_KEY_NETWORK);
 	{
-		CborEncoder map;
-		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		uint64_t imei;
 		ret = ctr_lte_get_imei(&imei);
@@ -158,8 +153,8 @@ int app_cbor_encode(CborEncoder *enc)
 			return ret;
 		}
 
-		err |= cbor_encode_uint(&map, MSG_KEY_IMEI);
-		err |= cbor_encode_uint(&map, imei);
+		zcbor_uint32_put(zs, MSG_KEY_IMEI);
+		zcbor_uint32_put(zs, imei);
 
 		uint64_t imsi;
 		ret = ctr_lte_get_imsi(&imsi);
@@ -168,147 +163,143 @@ int app_cbor_encode(CborEncoder *enc)
 			return ret;
 		}
 
-		err |= cbor_encode_uint(&map, MSG_KEY_IMSI);
-		err |= cbor_encode_uint(&map, imsi);
+		zcbor_uint32_put(zs, MSG_KEY_IMSI);
+		zcbor_uint32_put(zs, imsi);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_PARAMETER);
+		zcbor_uint32_put(zs, MSG_KEY_PARAMETER);
 		{
-			CborEncoder map;
-			err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 			k_mutex_lock(&g_app_data_lte_eval_mut, K_FOREVER);
 
-			err |= cbor_encode_uint(&map, MSG_KEY_EEST);
+			zcbor_uint32_put(zs, MSG_KEY_EEST);
 			if (g_app_data_lte_eval_valid) {
-				err |= cbor_encode_int(&map, g_app_data_lte_eval.eest);
+				zcbor_int32_put(zs, g_app_data_lte_eval.eest);
 			} else {
-				err |= cbor_encode_null(&map);
+				zcbor_nil_put(zs, NULL);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_ECL);
+			zcbor_uint32_put(zs, MSG_KEY_ECL);
 			if (g_app_data_lte_eval_valid) {
-				err |= cbor_encode_int(&map, g_app_data_lte_eval.ecl);
+				zcbor_int32_put(zs, g_app_data_lte_eval.ecl);
 			} else {
-				err |= cbor_encode_null(&map);
+				zcbor_nil_put(zs, NULL);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_RSRP);
+			zcbor_uint32_put(zs, MSG_KEY_RSRP);
 			if (g_app_data_lte_eval_valid) {
-				err |= cbor_encode_int(&map, g_app_data_lte_eval.rsrp);
+				zcbor_int32_put(zs, g_app_data_lte_eval.rsrp);
 			} else {
-				err |= cbor_encode_null(&map);
+				zcbor_nil_put(zs, NULL);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_RSRQ);
+			zcbor_uint32_put(zs, MSG_KEY_RSRQ);
 			if (g_app_data_lte_eval_valid) {
-				err |= cbor_encode_int(&map, g_app_data_lte_eval.rsrq);
+				zcbor_int32_put(zs, g_app_data_lte_eval.rsrq);
 			} else {
-				err |= cbor_encode_null(&map);
+				zcbor_nil_put(zs, NULL);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_SNR);
+			zcbor_uint32_put(zs, MSG_KEY_SNR);
 			if (g_app_data_lte_eval_valid) {
-				err |= cbor_encode_int(&map, g_app_data_lte_eval.snr);
+				zcbor_int32_put(zs, g_app_data_lte_eval.snr);
 			} else {
-				err |= cbor_encode_null(&map);
+				zcbor_nil_put(zs, NULL);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_PLMN);
+			zcbor_uint32_put(zs, MSG_KEY_PLMN);
 			if (g_app_data_lte_eval_valid) {
-				err |= cbor_encode_int(&map, g_app_data_lte_eval.plmn);
+				zcbor_int32_put(zs, g_app_data_lte_eval.plmn);
 			} else {
-				err |= cbor_encode_null(&map);
+				zcbor_nil_put(zs, NULL);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_CID);
+			zcbor_uint32_put(zs, MSG_KEY_CID);
 			if (g_app_data_lte_eval_valid) {
-				err |= cbor_encode_int(&map, g_app_data_lte_eval.cid);
+				zcbor_int32_put(zs, g_app_data_lte_eval.cid);
 			} else {
-				err |= cbor_encode_null(&map);
+				zcbor_nil_put(zs, NULL);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_BAND);
+			zcbor_uint32_put(zs, MSG_KEY_BAND);
 			if (g_app_data_lte_eval_valid) {
-				err |= cbor_encode_int(&map, g_app_data_lte_eval.band);
+				zcbor_int32_put(zs, g_app_data_lte_eval.band);
 			} else {
-				err |= cbor_encode_null(&map);
+				zcbor_nil_put(zs, NULL);
 			}
 
-			err |= cbor_encode_uint(&map, MSG_KEY_EARFCN);
+			zcbor_uint32_put(zs, MSG_KEY_EARFCN);
 			if (g_app_data_lte_eval_valid) {
-				err |= cbor_encode_int(&map, g_app_data_lte_eval.earfcn);
+				zcbor_int32_put(zs, g_app_data_lte_eval.earfcn);
 			} else {
-				err |= cbor_encode_null(&map);
+				zcbor_nil_put(zs, NULL);
 			}
 
 			g_app_data_lte_eval_valid = false;
 
 			k_mutex_unlock(&g_app_data_lte_eval_mut);
 
-			err |= cbor_encoder_close_container(enc, &map);
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
-		err |= cbor_encoder_close_container(enc, &map);
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	err |= cbor_encode_uint(&map, MSG_KEY_THERMOMETER);
+	zcbor_uint32_put(zs, MSG_KEY_THERMOMETER);
 	{
-		CborEncoder map;
-		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_TEMPERATURE);
+		zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
 		if (isnan(g_app_data.therm_temperature)) {
-			err |= cbor_encode_null(&map);
+			zcbor_nil_put(zs, NULL);
 		} else {
-			err |= cbor_encode_int(&map, g_app_data.therm_temperature * 100.f);
+			zcbor_int32_put(zs, g_app_data.therm_temperature * 100.f);
 		}
 
-		err |= cbor_encoder_close_container(enc, &map);
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	err |= cbor_encode_uint(&map, MSG_KEY_ACCELEROMETER);
+	zcbor_uint32_put(zs, MSG_KEY_ACCELEROMETER);
 	{
-		CborEncoder map;
-		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		err |= cbor_encode_uint(&map, MSG_KEY_ACCEL_X);
+		zcbor_uint32_put(zs, MSG_KEY_ACCEL_X);
 		if (isnan(g_app_data.accel_x)) {
-			err |= cbor_encode_null(&map);
+			zcbor_nil_put(zs, NULL);
 		} else {
-			err |= cbor_encode_int(&map, g_app_data.accel_x * 1000.f);
+			zcbor_int32_put(zs, g_app_data.accel_x * 1000.f);
 		}
 
-		err |= cbor_encode_uint(&map, MSG_KEY_ACCEL_Y);
+		zcbor_uint32_put(zs, MSG_KEY_ACCEL_Y);
 		if (isnan(g_app_data.accel_y)) {
-			err |= cbor_encode_null(&map);
+			zcbor_nil_put(zs, NULL);
 		} else {
-			err |= cbor_encode_int(&map, g_app_data.accel_y * 1000.f);
+			zcbor_int32_put(zs, g_app_data.accel_y * 1000.f);
 		}
 
-		err |= cbor_encode_uint(&map, MSG_KEY_ACCEL_Z);
+		zcbor_uint32_put(zs, MSG_KEY_ACCEL_Z);
 		if (isnan(g_app_data.accel_z)) {
-			err |= cbor_encode_null(&map);
+			zcbor_nil_put(zs, NULL);
 		} else {
-			err |= cbor_encode_int(&map, g_app_data.accel_z * 1000.f);
+			zcbor_int32_put(zs, g_app_data.accel_z * 1000.f);
 		}
 
-		err |= cbor_encode_uint(&map, MSG_KEY_ORIENTATION);
+		zcbor_uint32_put(zs, MSG_KEY_ORIENTATION);
 		if (g_app_data.accel_orientation == INT_MAX) {
-			err |= cbor_encode_null(&map);
+			zcbor_nil_put(zs, NULL);
 		} else {
-			err |= cbor_encode_uint(&map, g_app_data.accel_orientation);
+			zcbor_uint32_put(zs, g_app_data.accel_orientation);
 		}
 
-		err |= cbor_encoder_close_container(enc, &map);
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	err |= cbor_encode_uint(&map, MSG_KEY_COUNTER);
+	zcbor_uint32_put(zs, MSG_KEY_COUNTER);
 	{
-		CborEncoder map;
-		err |= cbor_encoder_create_map(enc, &map, CborIndefiniteLength);
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
-		k_mutex_lock(&g_app_data_lock, K_FOREVER);
+		app_data_lock();
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
@@ -334,125 +325,224 @@ int app_cbor_encode(CborEncoder *enc)
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
 #if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
-		k_mutex_unlock(&g_app_data_lock);
+		app_data_unlock();
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_1_TOTAL);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_1_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch1_total);
+		zcbor_uint32_put(zs, counter_ch1_total);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_1_DELTA);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_1_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch1_delta);
+		zcbor_uint32_put(zs, counter_ch1_delta);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_2_TOTAL);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_2_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch2_total);
+		zcbor_uint32_put(zs, counter_ch2_total);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_2_DELTA);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_2_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch2_delta);
+		zcbor_uint32_put(zs, counter_ch2_delta);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_3_TOTAL);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_3_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch3_total);
+		zcbor_uint32_put(zs, counter_ch3_total);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_3_DELTA);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_3_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch3_delta);
+		zcbor_uint32_put(zs, counter_ch3_delta);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_4_TOTAL);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_4_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch4_total);
+		zcbor_uint32_put(zs, counter_ch4_total);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_4_DELTA);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_4_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_A)
-		err |= cbor_encode_uint(&map, counter_ch4_delta);
+		zcbor_uint32_put(zs, counter_ch4_delta);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_5_TOTAL);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_5_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch5_total);
+		zcbor_uint32_put(zs, counter_ch5_total);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_5_DELTA);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_5_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch5_delta);
+		zcbor_uint32_put(zs, counter_ch5_delta);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_6_TOTAL);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_6_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch6_total);
+		zcbor_uint32_put(zs, counter_ch6_total);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_6_DELTA);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_6_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch6_delta);
+		zcbor_uint32_put(zs, counter_ch6_delta);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_7_TOTAL);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_7_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch7_total);
+		zcbor_uint32_put(zs, counter_ch7_total);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_7_DELTA);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_7_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch7_delta);
+		zcbor_uint32_put(zs, counter_ch7_delta);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_8_TOTAL);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_8_TOTAL);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch8_total);
+		zcbor_uint32_put(zs, counter_ch8_total);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encode_uint(&map, MSG_KEY_CHANNEL_8_DELTA);
+		zcbor_uint32_put(zs, MSG_KEY_CHANNEL_8_DELTA);
 #if defined(CONFIG_SHIELD_CTR_X0_B)
-		err |= cbor_encode_uint(&map, counter_ch8_delta);
+		zcbor_uint32_put(zs, counter_ch8_delta);
 #else
-		err |= cbor_encode_null(&map);
+		zcbor_nil_put(zs, NULL);
 #endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
 
-		err |= cbor_encoder_close_container(enc, &map);
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	err |= cbor_encoder_close_container(enc, &map);
+#if defined(CONFIG_APP_TAMPER)
+	zcbor_uint32_put(zs, MSG_KEY_TAMPER);
+	{
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	return err ? -EFAULT : 0;
+		zcbor_uint32_put(zs, MSG_KEY_TAMPER_STATE);
+		zcbor_uint32_put(zs, g_app_data.tamper.activated ? 1 : 0);
+
+		if (g_app_data.tamper.event_count) {
+			int64_t timestamp_abs = g_app_data.tamper.events[0].timestamp;
+
+			zcbor_uint32_put(zs, MSG_KEY_TAMPER_EVENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				/* TSO absolute timestamp */
+				zcbor_int64_put(zs, timestamp_abs);
+
+				for (int i = 0; i < g_app_data.tamper.event_count; i++) {
+					/* TSO offset timestamp */
+					zcbor_int64_put(zs, g_app_data.tamper.events[i].timestamp -
+								    timestamp_abs);
+					zcbor_uint32_put(
+						zs, g_app_data.tamper.events[i].activated ? 1 : 0);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+		} else {
+			zcbor_uint32_put(zs, MSG_KEY_TAMPER_EVENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+		}
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(CONFIG_APP_TAMPER) */
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	zcbor_uint32_put(zs, MSG_KEY_BACKUP);
+	{
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, MSG_KEY_LINE_VOLTAGE);
+		if (isnan(g_app_data.backup.line_voltage)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_int32_put(zs, g_app_data.backup.line_voltage * 1000.f);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_BATT_VOLTAGE);
+		if (isnan(g_app_data.backup.battery_voltage)) {
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_int32_put(zs, g_app_data.backup.battery_voltage * 1000.f);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_BACKUP_STATE);
+		zcbor_uint32_put(zs, g_app_data.backup.line_present ? 1 : 0);
+
+		if (g_app_data.backup.event_count) {
+			int64_t timestamp_abs = g_app_data.backup.events[0].timestamp;
+
+			zcbor_uint32_put(zs, MSG_KEY_BACKUP_EVENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				/* TSO absolute timestamp */
+				zcbor_int64_put(zs, timestamp_abs);
+
+				for (int i = 0; i < g_app_data.backup.event_count; i++) {
+					/* TSO offset timestamp */
+					zcbor_int64_put(zs, g_app_data.backup.events[i].timestamp -
+								    timestamp_abs);
+					zcbor_uint32_put(
+						zs, g_app_data.backup.events[i].connected ? 1 : 0);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+		} else {
+			zcbor_uint32_put(zs, MSG_KEY_BACKUP_EVENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+		}
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	
+	if (!zcbor_check_error(zs)) {
+		LOG_ERR("Encoding failed: %d", zcbor_pop_error(zs));
+		return -EFAULT;
+	}
+	
+	return 0;
 }

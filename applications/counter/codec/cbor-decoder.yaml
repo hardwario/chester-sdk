@@ -64,3 +64,27 @@
 - voltage_rest:
   - div: 1000
   - fpp: 2
+- backup:
+- line_voltage:
+- batt_voltage:
+- backup_state:
+- backup_events:
+  - key: "events"
+  - tso:
+    - type:
+      - enum:
+        - disconnected
+        - connected
+- tamper:
+- tamper_events:
+  - key: "events"
+  - tso:
+    - type:
+      - enum:
+        - deactivated
+        - activated
+- tamper_state:
+  - key: "state"
+  - enum:
+    - inactive
+    - active

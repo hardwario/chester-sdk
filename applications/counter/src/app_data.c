@@ -14,7 +14,7 @@
 #include <limits.h>
 #include <math.h>
 
-struct data g_app_data = {
+struct app_data g_app_data = {
 	.batt_voltage_rest = NAN,
 	.batt_voltage_load = NAN,
 	.batt_current_load = NAN,

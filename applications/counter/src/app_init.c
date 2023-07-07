@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+#include "app_counter.h"
 #include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
-#include "app_loop.h"
+#include "app_tamper.h"
+#include "app_work.h"
 
 /* CHESTER includes */
-#include <chester/ctr_edge.h>
 #include <chester/ctr_led.h>
 #include <chester/ctr_lte.h>
 #include <chester/ctr_wdog.h>
-#include <chester/drivers/ctr_x0.h>
 #include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
@@ -36,7 +36,8 @@ K_SEM_DEFINE(g_app_init_sem, 0, 1);
 struct ctr_wdog_channel g_app_wdog_channel;
 
 #if defined(CONFIG_SHIELD_CTR_Z)
-static int init_ctr_z(void)
+
+static int init_chester_z(void)
 {
 	int ret;
 
@@ -47,149 +48,76 @@ static int init_ctr_z(void)
 		return -ENODEV;
 	}
 
+	ret = ctr_z_set_handler(dev, app_handler_ctr_z, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_set_handler` failed: %d", ret);
+		return ret;
+	}
+
 	ret = ctr_z_enable_interrupts(dev);
 	if (ret) {
 		LOG_ERR("Call `ctr_z_enable_interrupts` failed: %d", ret);
 		return ret;
 	}
 
+	uint32_t serial_number;
+	ret = ctr_z_get_serial_number(dev, &serial_number);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_serial_number` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("Serial number: %08x", serial_number);
+
+	uint16_t hw_revision;
+	ret = ctr_z_get_hw_revision(dev, &hw_revision);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_hw_revision` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("HW revision: %04x", hw_revision);
+
+	uint32_t hw_variant;
+	ret = ctr_z_get_hw_variant(dev, &hw_variant);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_hw_variant` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("HW variant: %08x", hw_variant);
+
+	uint32_t fw_version;
+	ret = ctr_z_get_fw_version(dev, &fw_version);
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_fw_version` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("FW version: %08x", fw_version);
+
+	char vendor_name[32];
+	ret = ctr_z_get_vendor_name(dev, vendor_name, sizeof(vendor_name));
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_vendor_name` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("Vendor name: %s", vendor_name);
+
+	char product_name[32];
+	ret = ctr_z_get_product_name(dev, product_name, sizeof(product_name));
+	if (ret) {
+		LOG_ERR("Call `ctr_z_get_product_name` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("Product name: %s", product_name);
+
 	return 0;
 }
+
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
-
-#if defined(CONFIG_SHIELD_CTR_X0_A)
-static struct ctr_edge m_edge_ch1;
-static struct ctr_edge m_edge_ch2;
-static struct ctr_edge m_edge_ch3;
-static struct ctr_edge m_edge_ch4;
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
-
-#if defined(CONFIG_SHIELD_CTR_X0_B)
-static struct ctr_edge m_edge_ch5;
-static struct ctr_edge m_edge_ch6;
-static struct ctr_edge m_edge_ch7;
-static struct ctr_edge m_edge_ch8;
-#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
-
-#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
-
-#define EDGE_CALLBACK(ch)                                                                          \
-	void edge_ch##ch##_callback(struct ctr_edge *edge, enum ctr_edge_event event,              \
-				    void *user_data)                                               \
-	{                                                                                          \
-		if (event == CTR_EDGE_EVENT_ACTIVE) {                                              \
-			LOG_INF("Channel " STRINGIFY(ch) " detected active edge");                 \
-			k_mutex_lock(&g_app_data_lock, K_FOREVER);                                 \
-			g_app_data.counter_ch##ch##_total++;                                       \
-			g_app_data.counter_ch##ch##_delta++;                                       \
-			k_mutex_unlock(&g_app_data_lock);                                          \
-		}                                                                                  \
-	}
-
-#if defined(CONFIG_SHIELD_CTR_X0_A)
-EDGE_CALLBACK(1)
-EDGE_CALLBACK(2)
-EDGE_CALLBACK(3)
-EDGE_CALLBACK(4)
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
-
-#if defined(CONFIG_SHIELD_CTR_X0_B)
-EDGE_CALLBACK(5)
-EDGE_CALLBACK(6)
-EDGE_CALLBACK(7)
-EDGE_CALLBACK(8)
-#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
-
-#undef EDGE_CALLBACK
-
-static int init_chester_x0(void)
-{
-	int ret;
-
-#define SETUP(dev, n, ch)                                                                          \
-	do {                                                                                       \
-		ret = ctr_x0_set_mode(dev, CTR_X0_CHANNEL_##n, CTR_X0_MODE_NPN_INPUT);             \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);                         \
-			return ret;                                                                \
-		}                                                                                  \
-		const struct gpio_dt_spec *spec;                                                   \
-		ret = ctr_x0_get_spec(dev, CTR_X0_CHANNEL_##n, &spec);                             \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `ctr_x0_get_spec` failed: %d", ret);                         \
-			return ret;                                                                \
-		}                                                                                  \
-		ret = gpio_pin_configure_dt(spec, GPIO_INPUT | GPIO_ACTIVE_LOW);                   \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `gpio_pin_configure_dt` failed: %d", ret);                   \
-			return ret;                                                                \
-		}                                                                                  \
-		ret = ctr_edge_init(&m_edge_ch##ch, spec, false);                                  \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `ctr_edge_init` failed: %d", ret);                           \
-			return ret;                                                                \
-		}                                                                                  \
-		ret = ctr_edge_set_callback(&m_edge_ch##ch, edge_ch##ch##_callback, NULL);         \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `ctr_edge_set_callback` failed: %d", ret);                   \
-			return ret;                                                                \
-		}                                                                                  \
-		ret = ctr_edge_set_cooldown_time(&m_edge_ch##ch, 10);                              \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `ctr_edge_set_cooldown_time` failed: %d", ret);              \
-			return ret;                                                                \
-		}                                                                                  \
-		ret = ctr_edge_set_active_duration(&m_edge_ch##ch, 20);                            \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `ctr_edge_set_active_duration` failed: %d", ret);            \
-			return ret;                                                                \
-		}                                                                                  \
-		ret = ctr_edge_set_inactive_duration(&m_edge_ch##ch, 20);                          \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `ctr_edge_set_inactive_duration` failed: %d", ret);          \
-			return ret;                                                                \
-		}                                                                                  \
-		ret = ctr_edge_watch(&m_edge_ch##ch);                                              \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `ctr_edge_watch` failed: %d", ret);                          \
-			return ret;                                                                \
-		}                                                                                  \
-	} while (0)
-
-#if defined(CONFIG_SHIELD_CTR_X0_A)
-	static const struct device *dev_a = DEVICE_DT_GET(DT_NODELABEL(ctr_x0_a));
-
-	if (!device_is_ready(dev_a)) {
-		LOG_ERR("Device not ready");
-		return -ENODEV;
-	}
-
-	SETUP(dev_a, 1, 1);
-	SETUP(dev_a, 2, 2);
-	SETUP(dev_a, 3, 3);
-	SETUP(dev_a, 4, 4);
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
-
-#if defined(CONFIG_SHIELD_CTR_X0_B)
-	static const struct device *dev_b = DEVICE_DT_GET(DT_NODELABEL(ctr_x0_b));
-
-	if (!device_is_ready(dev_b)) {
-		LOG_ERR("Device not ready");
-		return -ENODEV;
-	}
-
-	SETUP(dev_b, 1, 5);
-	SETUP(dev_b, 2, 6);
-	SETUP(dev_b, 3, 7);
-	SETUP(dev_b, 4, 8);
-#endif /* defined(CONFIG_SHIELD_CTR_X0_B) */
-
-#undef SETUP
-
-	return 0;
-}
-
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
 int app_init(void)
 {
@@ -214,22 +142,6 @@ int app_init(void)
 		LOG_ERR("Call `ctr_wdog_start` failed: %d", ret);
 		return ret;
 	}
-
-#if defined(CONFIG_SHIELD_CTR_Z)
-	ret = init_ctr_z();
-	if (ret) {
-		LOG_ERR("Call `init_ctr_z` failed: %d", ret);
-		return ret;
-	}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
-
-#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
-	ret = init_chester_x0();
-	if (ret) {
-		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
-		return ret;
-	}
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
 
 	ret = ctr_lte_set_event_cb(app_handler_lte, NULL);
 	if (ret) {
@@ -262,6 +174,36 @@ int app_init(void)
 	}
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
+
+#if defined(CONFIG_APP_TAMPER)
+	ret = app_tamper_init();
+	if (ret) {
+		LOG_ERR("Call `app_tamper_init` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_APP_TAMPER) */
+
+#if defined(CONFIG_SHIELD_CTR_Z)
+	ret = init_chester_z();
+	if (ret) {
+		LOG_ERR("Call `init_chester_z` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B)
+	ret = app_counter_init();
+	if (ret) {
+		LOG_ERR("Call `app_counter_init` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_X0_B) */
+	
+	ret = app_work_init();
+	if (ret) {
+		LOG_ERR("Call `app_work_init` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }
