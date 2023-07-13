@@ -82,8 +82,7 @@ void main(void)
 		/* X0 Channel 1 */
 		ret = ctr_adc_read(CTR_ADC_CHANNEL_A0, &adc_voltage);
 		if (!ret) {
-
-			sample[0] = (float)CTR_ADC_MILLIVOLTS(adc_voltage) * (10.f + 1.f) / 1000.f;
+			sample[0] = CTR_ADC_X0_AI_MILLIVOLTS(adc_voltage) / 1000.f;
 		} else {
 			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
 			sample[0] = NAN;
@@ -92,9 +91,7 @@ void main(void)
 		/* X0 Channel 2 */
 		ret = ctr_adc_read(CTR_ADC_CHANNEL_A1, &adc_voltage);
 		if (!ret) {
-
-			sample[1] = (float)CTR_ADC_MILLIVOLTS(adc_voltage) / 1000.f;
-
+			sample[1] = CTR_ADC_X0_AI_NODIV_MILLIVOLTS(adc_voltage) / 1000.f;
 		} else {
 			LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
 			sample[1] = NAN;

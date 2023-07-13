@@ -14,7 +14,17 @@
 extern "C" {
 #endif
 
-#define CTR_ADC_MILLIVOLTS(_sample) (((uint32_t)(_sample)) * 600 * 6 / 4095)
+/* Default ADC gain is 1/6 */
+#define CTR_ADC_MILLIVOLTS(_sample)	   (((uint32_t)(_sample)) * 600 * 6 / 4095)
+#define CTR_ADC_MILLIVOLTS_GAIN_1(_sample) (((uint32_t)(_sample)) * 600 * 1 / 4095)
+
+/* X0 contains 100kΩ and 10kΩ voltage divider when PD is enabled */
+#define CTR_ADC_X0_AI_MILLIVOLTS(_sample)                                                          \
+	((float)CTR_ADC_MILLIVOLTS(_sample) * ((100.f + 10.f) / 10.f))
+
+#define CTR_ADC_X0_AI_NODIV_MILLIVOLTS(_sample) ((float)CTR_ADC_MILLIVOLTS(_sample))
+
+/* X0 contains 249Ω ohm measurement resistor and then 100kΩ and 10kΩ voltage divider */
 #define CTR_ADC_X0_CL_MILLIAMPS(_sample)                                                           \
 	((float)CTR_ADC_MILLIVOLTS(_sample) * ((100.f + 10.f) / 10.f) / 249.f)
 
