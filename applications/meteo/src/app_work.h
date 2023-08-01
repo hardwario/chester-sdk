@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 int app_work_init(void);
+void app_work_aggreg(void);
 void app_work_sample(void);
 void app_work_send(void);
 void app_work_backup_update(void);

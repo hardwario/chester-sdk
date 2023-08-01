@@ -10,6 +10,7 @@
 #include "app_work.h"
 
 /* CHESTER includes */
+#include <chester/ctr_button.h>
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
@@ -140,6 +141,14 @@ int app_init(void)
 		LOG_ERR("Call `ctr_wdog_start` failed: %d", ret);
 		return ret;
 	}
+
+#if defined(CONFIG_CTR_BUTTON)
+	ret = ctr_button_set_event_cb(app_handler_ctr_button, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_button_set_event_cb` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_CTR_BUTTON) */
 
 	switch (g_app_config.mode) {
 	case APP_CONFIG_MODE_LRW:

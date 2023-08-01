@@ -290,6 +290,19 @@ int app_work_init(void)
 	return 0;
 }
 
+void app_work_aggreg(void)
+{
+#if defined(CONFIG_SHIELD_CTR_K1)
+	k_timer_start(&m_analog_aggreg_timer, K_NO_WAIT,
+		      K_SECONDS(g_app_config.channel_interval_sample));
+#endif /* defined(CONFIG_SHIELD_CTR_K1) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	k_timer_start(&m_w1_therm_aggreg_timer, K_NO_WAIT,
+		      K_SECONDS(g_app_config.w1_therm_interval_sample));
+#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+}
+
 void app_work_sample(void)
 {
 	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(60));

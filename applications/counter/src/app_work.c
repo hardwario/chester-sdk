@@ -155,8 +155,8 @@ int app_work_init(void)
 	k_timer_start(&m_send_timer, K_SECONDS(10), K_FOREVER);
 	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
 	k_timer_start(&m_power_timer, K_SECONDS(60), K_HOURS(12));
-        
-        return 0;
+
+	return 0;
 }
 
 void app_work_sample(void)

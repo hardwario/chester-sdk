@@ -12,6 +12,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_adc.h>
+#include <chester/ctr_button.h>
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_edge.h>
 #include <chester/ctr_led.h>
@@ -311,6 +312,14 @@ int app_init(void)
 		LOG_ERR("Call `ctr_wdog_start` failed: %d", ret);
 		return ret;
 	}
+
+#if defined(CONFIG_CTR_BUTTON)
+	ret = ctr_button_set_event_cb(app_handler_ctr_button, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_button_set_event_cb` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_CTR_BUTTON) */
 
 #if defined(CONFIG_SHIELD_CTR_LTE)
 	ret = ctr_lte_set_event_cb(app_handler_lte, NULL);

@@ -8,6 +8,7 @@
 #define APP_HANDLER_H_
 
 /* CHESTER includes */
+#include <chester/ctr_button.h>
 #include <chester/ctr_edge.h>
 #include <chester/ctr_lte.h>
 #include <chester/drivers/ctr_z.h>
@@ -30,6 +31,11 @@ void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_even
 #if defined(CONFIG_SHIELD_CTR_Z)
 void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *param);
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_CTR_BUTTON)
+void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val,
+			    void *user_data);
+#endif /* defined(CONFIG_CTR_BUTTON) */
 
 #ifdef __cplusplus
 }
