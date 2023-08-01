@@ -66,10 +66,10 @@ function decode(buffer) {
     if ((header & 0x08) !== 0) {
         data.backup = {}
 
-        data.backup.line_voltage = buffer.readInt16LE(offset);
+        data.backup.line_voltage = buffer.readUInt16LE(offset);
         offset += 2;
 
-        data.backup.battery_voltage = buffer.readInt16LE(offset);
+        data.backup.battery_voltage = buffer.readUInt16LE(offset);
         offset += 2;
 
         data.backup.backup_state = buffer.readUInt8(offset) !== 0 ? "connected" : "disconnected";
