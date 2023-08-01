@@ -157,7 +157,7 @@ static int compose_lrw(struct ctr_buf *buf)
 #if defined(CONFIG_SHIELD_CTR_Z)
 	/* Field BACKUP */
 	if (header & BIT(4)) {
-		struct app_data_backup *backup = &bg_app_data.backup;
+		struct app_data_backup *backup = &g_app_data.backup;
 
 		if (isnan(backup->line_voltage)) {
 			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
