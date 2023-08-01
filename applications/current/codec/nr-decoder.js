@@ -86,10 +86,10 @@ function decode(buffer) {
     if ((header & 0x0010) !== 0) {
         data.backup = {}
 
-        data.backup.line_voltage = buffer.readInt16LE(offset);
+        data.backup.line_voltage = buffer.readUInt16LE(offset);
         offset += 2;
 
-        data.backup.battery_voltage = buffer.readInt16LE(offset);
+        data.backup.battery_voltage = buffer.readUInt16LE(offset);
         offset += 2;
 
         data.backup.backup_state = buffer.readUInt8(offset) !== 0 ? "connected" : "disconnected";
@@ -133,9 +133,6 @@ function decode(buffer) {
             } else {
                 channel.measurements.rms_avg = rms_avg / 1000;
             }
-
-            channel.measurements.mean_avg = mean_avg;
-            channel.measurements.rms_avg = rms_avg;
 
             analog_channels.push(channel);
         }
