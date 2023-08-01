@@ -158,7 +158,7 @@ int app_init(void)
 			return ret;
 		}
 
-		ret = k_sem_take(&g_app_init_sem, K_FOREVER);
+		ret = k_sem_take(&g_app_init_sem, K_SECONDS(1));
 		if (ret == -EAGAIN) {
 			continue;
 		} else if (ret) {
