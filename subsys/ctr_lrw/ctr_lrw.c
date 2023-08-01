@@ -1868,7 +1868,7 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lrw_config,
 	SHELL_CMD_ARG(show, NULL, "List current configuration.", cmd_config_show, 1, 0),
-	SHELL_CMD_ARG(test, NULL, "Get/Set LTE test mode.", cmd_config_test, 1, 1),
+	SHELL_CMD_ARG(test, NULL, "Get/Set LoRaWAN test mode.", cmd_config_test, 1, 1),
 	SHELL_CMD_ARG(antenna, NULL, "Get/Set LoRaWAN antenna (format: <int|ext>).",
 		      cmd_config_antenna, 1, 1),
 	SHELL_CMD_ARG(band, NULL,
