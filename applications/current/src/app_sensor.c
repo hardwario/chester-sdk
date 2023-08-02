@@ -332,6 +332,7 @@ int app_sensor_w1_therm_sample(void)
 			}
 
 			app_data_lock();
+			g_app_data.w1_therm.sensor[j].last_sample_temperature = temperature;
 			g_app_data.w1_therm.sensor[j].samples_temperature[i] = temperature;
 			g_app_data.w1_therm.sensor[j].serial_number = serial_number;
 			g_app_data.w1_therm.sensor[j].sample_count++;

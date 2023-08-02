@@ -72,6 +72,9 @@ struct app_data_w1_therm_measurement {
 
 struct app_data_w1_therm_sensor {
 	uint64_t serial_number;
+
+	float last_sample_temperature;
+
 	int sample_count;
 	float samples_temperature[APP_DATA_W1_THERM_MAX_SAMPLES];
 
