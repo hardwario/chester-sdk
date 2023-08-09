@@ -20,7 +20,7 @@ deploy_clime() {
     cd clime
 
     # Check default SHIELDs we expect
-    if grep -q "set(SHIELD ctr_lte ctr_s2)" "CMakeLists.txt"; then
+    if grep -q "set(SHIELD ctr_lrw ctr_lte ctr_s2)" "CMakeLists.txt"; then
         echo "String found ok"
     else
         echo "Default SHIELD string not found, update deploy script."
@@ -42,7 +42,7 @@ deploy_clime() {
     # Build CHESTER Clime Z
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_s2)*/, "set(SHIELD ctr_lte ctr_s2 ctr_z)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lrw ctr_lte ctr_s2)*/, "set(SHIELD ctr_lrw ctr_lte ctr_s2 ctr_z)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Clime Z" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-clime-z" --version $FW_VERSION
@@ -51,7 +51,7 @@ deploy_clime() {
     # Build CHESTER Clime IAQ
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_s2)*/, "set(SHIELD ctr_lte ctr_s1)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lrw ctr_lte ctr_s2)*/, "set(SHIELD ctr_lrw ctr_lte ctr_s1)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Clime IAQ" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-clime-iaq" --version $FW_VERSION
@@ -60,7 +60,7 @@ deploy_clime() {
     # Build CHESTER Clime 1W
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_s2)*/, "set(SHIELD ctr_lte ctr_ds18b20)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lrw ctr_lte ctr_s2)*/, "set(SHIELD ctr_lrw ctr_lte ctr_ds18b20)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Clime 1W" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-clime-1w" --version $FW_VERSION
@@ -69,7 +69,7 @@ deploy_clime() {
     # Build CHESTER Clime 1WH
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_s2)*/, "set(SHIELD ctr_lte ctr_ds18b20 ctr_s2)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lrw ctr_lte ctr_s2)*/, "set(SHIELD ctr_lrw ctr_lte ctr_ds18b20 ctr_s2)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Clime 1WH" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-clime-1wh" --version $FW_VERSION
@@ -78,7 +78,7 @@ deploy_clime() {
     # Build CHESTER Clime RTD
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_s2)*/, "set(SHIELD ctr_lte ctr_rtd_a)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lrw ctr_lte ctr_s2)*/, "set(SHIELD ctr_lrw ctr_lte ctr_rtd_a)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Clime RTD" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-clime-rtd" --version $FW_VERSION
@@ -232,7 +232,7 @@ deploy_current() {
     cd current
 
     # Check default SHIELDs we expect
-    if grep -q "set(SHIELD ctr_k1 ctr_lte)" "CMakeLists.txt"; then
+    if grep -q "set(SHIELD ctr_k1 ctr_lrw ctr_lte)" "CMakeLists.txt"; then
         echo "String found ok"
     else
         echo "Default SHIELD string not found, update deploy script."
@@ -254,7 +254,7 @@ deploy_current() {
     # Build CHESTER Current Z
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_k1 ctr_lte)*/, "set(SHIELD ctr_k1 ctr_lte ctr_z)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_k1 ctr_lrw ctr_lte)*/, "set(SHIELD ctr_k1 ctr_lrw ctr_lte ctr_z)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Current Z" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-current-z" --version $FW_VERSION
@@ -263,7 +263,7 @@ deploy_current() {
     # Build CHESTER Current 1W
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_k1 ctr_lte)*/, "set(SHIELD ctr_ds18b20 ctr_k1 ctr_lte)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_k1 ctr_lrw ctr_lte)*/, "set(SHIELD ctr_ds18b20 ctr_k1 ctr_lrw ctr_lte)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Current 1W" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-current-1w" --version $FW_VERSION
@@ -357,10 +357,52 @@ deploy_meteo() {
     cd ..
 }
 
-# deploy_clime "v2.1.0"
-# deploy_push "v2.0.0"
-# deploy_counter "v2.0.0"
-# deploy_input "v2.0.0"
-# deploy_current "v2.0.0"
-# deploy_scale "v2.0.0"
-# deploy_meteo "v2.0.0"
+deploy_range() {
+
+    local FW_VERSION="$1"
+
+    cd range
+
+    # Check default SHIELDs we expect
+    if grep -q "set(SHIELD ctr_ds18b20 ctr_lte ctr_mb7066_a)" "CMakeLists.txt"; then
+        echo "String found ok"
+    else
+        echo "Default SHIELD string not found, update deploy script."
+        exit
+    fi
+
+    # Backup original CMakeLists
+    cp CMakeLists.txt CMakeLists.txt.bak
+
+    #
+    # Build CHESTER Range
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Range" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-range" --version $FW_VERSION
+
+    #
+    # Build CHESTER Range Z
+    #
+    cp CMakeLists.txt.bak CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_ds18b20 ctr_lte ctr_mb7066_a)*/, "set(SHIELD ctr_ds18b20 ctr_lte ctr_mb7066_a ctr_z)"); print }' CMakeLists.txt
+    rm -rf build/
+    FW_NAME="CHESTER Range Z" FW_VERSION=$FW_VERSION west build
+    hardwario chester app fw upload --name "hio-chester-range-z" --version $FW_VERSION
+
+    # Recover original CMakeLists
+    cp CMakeLists.txt.bak CMakeLists.txt
+    rm CMakeLists.txt.bak
+
+    cd ..
+}
+
+# deploy_clime "v2.3.0"
+# deploy_push "v2.3.0"
+# deploy_current "v2.3.0"
+# deploy_counter "v2.3.0"
+# deploy_input "v2.3.0"
+# deploy_scale "v2.3.0"
+# deploy_meteo "v2.3.0"
+# deploy_range "v2.3.0"
