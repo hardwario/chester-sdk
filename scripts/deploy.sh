@@ -180,7 +180,7 @@ deploy_input() {
     cd input
 
     # Check default SHIELDs we expect
-    if grep -q "set(SHIELD ctr_lte ctr_x0_a ctr_z)" "CMakeLists.txt"; then
+    if grep -q "set(SHIELD ctr_ds18b20 ctr_lte ctr_x0_a ctr_z)" "CMakeLists.txt"; then
         echo "String found ok"
     else
         echo "Default SHIELD string not found, update deploy script."
@@ -195,7 +195,7 @@ deploy_input() {
     #
     cp CMakeLists.txt.bak CMakeLists.txt
     # Default CMakeLists contains ctr_z, so we remove it
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_x0_a ctr_z)*/, "set(SHIELD ctr_lte ctr_x0_a)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_ds18b20 ctr_lte ctr_x0_a ctr_z)*/, "set(SHIELD ctr_ds18b20 ctr_lte ctr_x0_a)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Input" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-input" --version $FW_VERSION
@@ -213,7 +213,7 @@ deploy_input() {
     # Build CHESTER Input ZH
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lte ctr_x0_a ctr_z)*/, "set(SHIELD ctr_lte ctr_x0_a ctr_z ctr_s2)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_ds18b20 ctr_lte ctr_x0_a ctr_z)*/, "set(SHIELD ctr_ds18b20 ctr_lte ctr_x0_a ctr_z ctr_s2)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Input ZH" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-input-zh" --version $FW_VERSION

@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 # Supported shields: ctr_lte ctr_x0_a ctr_s2 ctr_z ctr_ds18b20
-set(SHIELD ctr_lte ctr_x0_a ctr_z)
+set(SHIELD ctr_ds18b20 ctr_lte ctr_x0_a ctr_z)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(input)

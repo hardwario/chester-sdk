@@ -10,6 +10,7 @@
 #include "msg_key.h"
 
 /* CHESTER includes */
+#include <chester/ctr_ds18b20.h>
 #include <chester/ctr_info.h>
 #include <chester/ctr_rtc.h>
 
@@ -546,39 +547,44 @@ static int encode(zcbor_state_t *zs)
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
-	zcbor_uint32_put(zs, MSG_KEY_W1_THERMOMETERS);
-	{
-		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-		for (int i = 0; i < APP_DATA_W1_THERM_COUNT; i++) {
-			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];
+	if (ctr_ds18b20_get_count()) {
+		zcbor_uint32_put(zs, MSG_KEY_W1_THERMOMETERS);
+		{
+			zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			for (int i = 0; i < APP_DATA_W1_THERM_COUNT; i++) {
+				struct app_data_w1_therm_sensor *sensor =
+					&g_app_data.w1_therm.sensor[i];
 
-			if (!sensor->serial_number) {
-				continue;
-			}
-
-			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-			zcbor_uint32_put(zs, MSG_KEY_SERIAL_NUMBER);
-			zcbor_uint64_put(zs, sensor->serial_number);
-
-			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
-			{
-				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-				zcbor_uint64_put(zs, g_app_data.w1_therm.timestamp);
-				zcbor_uint32_put(zs, g_app_config.w1_therm_interval_aggreg);
-
-				for (int j = 0; j < sensor->measurement_count; j++) {
-					put_sample_mul(zs, &sensor->measurements[j].temperature,
-						       100.f);
+				if (!sensor->serial_number) {
+					continue;
 				}
 
-				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-			}
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs, MSG_KEY_SERIAL_NUMBER);
+				zcbor_uint64_put(zs, sensor->serial_number);
+
+				zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.w1_therm.timestamp);
+					zcbor_uint32_put(zs, g_app_config.w1_therm_interval_aggreg);
+
+					for (int j = 0; j < sensor->measurement_count; j++) {
+						put_sample_mul(zs,
+							       &sensor->measurements[j].temperature,
+							       100.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
-		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
