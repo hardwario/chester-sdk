@@ -40,7 +40,7 @@ struct ctr_x4_config {
 };
 
 struct ctr_x4_data {
-	struct k_sem lock;
+	struct k_mutex lock;
 	struct k_timer timer;
 	struct k_work work;
 	const struct device *dev;
@@ -63,12 +63,12 @@ static inline struct ctr_x4_data *get_data(const struct device *dev)
 
 static int ctr_x4_set_handler_(const struct device *dev, ctr_x4_user_cb user_cb, void *user_data)
 {
-	k_sem_take(&get_data(dev)->lock, K_FOREVER);
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
 	get_data(dev)->user_cb = user_cb;
 	get_data(dev)->user_data = user_data;
 
-	k_sem_give(&get_data(dev)->lock);
+	k_mutex_unlock(&get_data(dev)->lock);
 
 	return 0;
 }
@@ -77,20 +77,20 @@ static int ctr_x4_set_output_(const struct device *dev, enum ctr_x4_output outpu
 {
 	int ret;
 
-	k_sem_take(&get_data(dev)->lock, K_FOREVER);
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
 #define SET_OUTPUT(ch)                                                                             \
 	do {                                                                                       \
 		if (output == CTR_X4_OUTPUT_##ch) {                                                \
 			if (!device_is_ready(get_config(dev)->pwr##ch##_spec.port)) {              \
 				LOG_ERR("Device not ready");                                       \
-				k_sem_give(&get_data(dev)->lock);                                  \
+				k_mutex_unlock(&get_data(dev)->lock);                              \
 				return -EINVAL;                                                    \
 			}                                                                          \
 			ret = gpio_pin_set_dt(&get_config(dev)->pwr##ch##_spec, is_on ? 1 : 0);    \
 			if (ret) {                                                                 \
 				LOG_ERR("Call `gpio_pin_set_dt` failed: %d", ret);                 \
-				k_sem_give(&get_data(dev)->lock);                                  \
+				k_mutex_unlock(&get_data(dev)->lock);                              \
 				return ret;                                                        \
 			}                                                                          \
 		}                                                                                  \
@@ -103,7 +103,7 @@ static int ctr_x4_set_output_(const struct device *dev, enum ctr_x4_output outpu
 
 #undef SET_OUTPUT
 
-	k_sem_give(&get_data(dev)->lock);
+	k_mutex_unlock(&get_data(dev)->lock);
 
 	return 0;
 }
@@ -112,12 +112,12 @@ static int ctr_x4_get_line_voltage_(const struct device *dev, int *line_voltage_
 {
 	int ret;
 
-	k_sem_take(&get_data(dev)->lock, K_FOREVER);
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
 	ret = adc_read(get_config(dev)->adc_dev, &get_data(dev)->adc_sequence);
 	if (ret) {
 		LOG_ERR("Call `adc_read` failed: %d", ret);
-		k_sem_give(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
 
@@ -127,22 +127,22 @@ static int ctr_x4_get_line_voltage_(const struct device *dev, int *line_voltage_
 				    get_data(dev)->adc_sequence.resolution, &valp);
 	if (ret) {
 		LOG_ERR("Call `adc_raw_to_millivolts` failed: %d", ret);
-		k_sem_give(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
 
 	*line_voltage_mv = valp;
 
-	k_sem_give(&get_data(dev)->lock);
+	k_mutex_unlock(&get_data(dev)->lock);
 
 	return 0;
 }
 
 static int ctr_x4_get_line_present_(const struct device *dev, bool *is_line_present)
 {
-	k_sem_take(&get_data(dev)->lock, K_FOREVER);
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 	*is_line_present = get_data(dev)->is_line_present;
-	k_sem_give(&get_data(dev)->lock);
+	k_mutex_unlock(&get_data(dev)->lock);
 
 	return 0;
 }
@@ -167,7 +167,7 @@ static void work_handler(struct k_work *work)
 		return;
 	}
 
-	k_sem_take(&get_data(dev)->lock, K_FOREVER);
+	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
 	if (get_data(dev)->is_line_present) {
 		if (voltage_mv < get_config(dev)->line_threshold_min) {
@@ -189,7 +189,7 @@ static void work_handler(struct k_work *work)
 		}
 	}
 
-	k_sem_give(&get_data(dev)->lock);
+	k_mutex_unlock(&get_data(dev)->lock);
 }
 
 static int ctr_x4_init(const struct device *dev)
@@ -197,6 +197,8 @@ static int ctr_x4_init(const struct device *dev)
 	int ret;
 
 	LOG_INF("System initialization");
+
+	k_mutex_init(&get_data(dev)->lock);
 
 #define CHECK_READY(name)                                                                          \
 	do {                                                                                       \
@@ -246,8 +248,6 @@ static int ctr_x4_init(const struct device *dev)
 	k_timer_start(&get_data(dev)->timer, K_MSEC(get_config(dev)->line_measurement_interval),
 		      K_MSEC(get_config(dev)->line_measurement_interval));
 
-	k_sem_give(&get_data(dev)->lock);
-
 	return 0;
 }
 
@@ -275,7 +275,6 @@ static const struct ctr_x4_driver_api ctr_x4_driver_api = {
 		.line_threshold_max = DT_INST_PROP(n, line_threshold_max),                         \
 	};                                                                                         \
 	static struct ctr_x4_data inst_##n##_data = {                                              \
-		.lock = Z_SEM_INITIALIZER(inst_##n##_data.lock, 0, 1),                             \
 		.timer = Z_TIMER_INITIALIZER(inst_##n##_data.timer, timer_handler, NULL),          \
 		.work = Z_WORK_INITIALIZER(work_handler),                                          \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
