@@ -248,6 +248,15 @@ static int ctr_x4_init(const struct device *dev)
 	k_timer_start(&get_data(dev)->timer, K_MSEC(get_config(dev)->line_measurement_interval),
 		      K_MSEC(get_config(dev)->line_measurement_interval));
 
+	int line_voltage_mv;
+	ret = ctr_x4_get_line_voltage(dev, &line_voltage_mv);
+	if (ret) {
+		LOG_ERR("Call `ctr_x4_get_line_voltage` failed: %d", ret);
+		return ret;
+	}
+
+	get_data(dev)->is_line_present = line_voltage_mv > get_config(dev)->line_threshold_min;
+
 	return 0;
 }
 
@@ -279,7 +288,6 @@ static const struct ctr_x4_driver_api ctr_x4_driver_api = {
 		.work = Z_WORK_INITIALIZER(work_handler),                                          \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 		.adc_sequence = {.channels = BIT(0), .resolution = 12},                            \
-		.is_line_present = true,                                                           \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ctr_x4_init, NULL, &inst_##n##_data, &inst_##n##_config,          \
 			      POST_KERNEL, CONFIG_CTR_X4_INIT_PRIORITY, &ctr_x4_driver_api);
