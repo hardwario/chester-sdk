@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-rsource "Kconfig.adc_ads122c04"
-rsource "Kconfig.adc_tla2021"
-rsource "Kconfig.adc_tla2024"
+config ADC_TLA2024
+	bool "TI TLA2024 Low-Power ADC"
+	depends on I2C

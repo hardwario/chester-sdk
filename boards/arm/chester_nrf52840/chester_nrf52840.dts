@@ -162,6 +162,11 @@
 		pwr4-gpios = <&gpio0 5 0>;
 	};
 
+	ctr_x10: ctr_x10 {
+		compatible = "hardwario,ctr-x10";
+		status = "disabled";
+	};
+
 	ctr_batt: ctr_batt {
 		compatible = "hardwario,ctr-batt";
 		load-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
@@ -297,6 +302,13 @@
 		status = "disabled";
 		reg = <0x49>;
 		#io-channel-cells = <1>;
+	};
+
+	ctr_x10_tla2024: ctr_x10_tla2024@49 {
+		compatible = "ti,tla2024";
+		status = "disabled";
+		reg = <0x49>;
+		#io-channel-cells = <4>;
 	};
 
 	ctr_z: ctr_z@10 {

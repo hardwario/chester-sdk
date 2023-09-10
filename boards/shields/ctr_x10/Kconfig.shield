@@ -4,6 +4,5 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-rsource "Kconfig.adc_ads122c04"
-rsource "Kconfig.adc_tla2021"
-rsource "Kconfig.adc_tla2024"
+config SHIELD_CTR_X10
+	def_bool $(shields_list_contains,ctr_x10)

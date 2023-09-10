@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_X10
+	bool "HARDWARIO CHESTER-X10 Driver"
+	select I2C
+	select ADC
+	select ADC_TLA2024
+
+if CTR_X10
+
+module = CTR_X10
+module-str = ctr_x10
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_X10_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+endif # CTR_X4

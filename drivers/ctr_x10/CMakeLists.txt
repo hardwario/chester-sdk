@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-rsource "Kconfig.adc_ads122c04"
-rsource "Kconfig.adc_tla2021"
-rsource "Kconfig.adc_tla2024"
+zephyr_library()
+
+zephyr_library_sources_ifdef(CONFIG_CTR_X10 ctr_x10.c)

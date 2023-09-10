@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+description: Texas Instruments TLA2024 Low-Power ADC
+
+compatible: "ti,tla2024"
+
+include: [i2c-device.yaml, adc-controller.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 4
+
+  data-rate:
+    type: int
+    description: Data rate in samples per second (SPS)
+    default: 4
+    enum:
+      - 0 # 128 SPS
+      - 1 # 250 SPS
+      - 2 # 490 SPS
+      - 3 # 920 SPS
+      - 4 # 1600 SPS (default)
+      - 5 # 2400 SPS
+      - 6 # 3300 SPS
+      - 7 # 3300 SPS
+
+io-channel-cells:
+  - input

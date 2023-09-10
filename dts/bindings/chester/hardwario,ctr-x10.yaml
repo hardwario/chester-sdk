@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+description: HARDWARIO CHESTER-X10 Driver
+
+compatible: "hardwario,ctr-x10"
+
+include: base.yaml
+
+properties:
+  line-measurement-interval:
+    type: int
+    default: 5000
+    description: Time interval (in milliseconds) for line voltage measurement
+
+  line-threshold-min:
+    type: int
+    default: 7000
+    description: Minimum voltage threshold (in millivolts) for line presence detection
+
+  line-threshold-max:
+    type: int
+    default: 9000
+    description: Maximum voltage threshold (in millivolts) for line presence detection
