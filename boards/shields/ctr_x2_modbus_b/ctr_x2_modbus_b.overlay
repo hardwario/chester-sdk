@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
+&ctr_x2_sc16is740_a {
+	status = "okay";
+	rts-control;
+
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		status = "okay";
+		de-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		re-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+	};
+};

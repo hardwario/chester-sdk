@@ -24,7 +24,7 @@ static void init_modbus(void)
 	int ret;
 
 	const char iface_name[] = {
-		DT_PROP(DT_INST(0, zephyr_modbus_serial), label),
+		DEVICE_DT_NAME(DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_modbus_serial)),
 	};
 
 	iface = modbus_iface_get_by_name(iface_name);

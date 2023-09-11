@@ -7,6 +7,8 @@
 #ifndef APP_DATA_H_
 #define APP_DATA_H_
 
+#include "app_lambrecht.h"
+
 /* CHESTER includes */
 #include <chester/ctr_lte.h>
 
@@ -174,6 +176,50 @@ struct app_data_soil_sensor {
 
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
 
+#if defined(CONFIG_APP_LAMBRECHT)
+
+#define LAMBRECHT_EXPAND_ITEM(sensor, name)                                                        \
+	float name##_samples[APP_DATA_MAX_SAMPLES];                                                \
+	float name##_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+struct app_data_lambrecht {
+	int sample_count;
+	int measurement_count;
+
+	float wind_speed_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg wind_speed_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	float wind_direction_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg wind_direction_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	float temperature_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg temperature_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	float humidity_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg humidity_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	float dew_point_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg dew_point_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	float pressure_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg pressure_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	float rainfall_total_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg rainfall_total_measurements[APP_DATA_MAX_MEASUREMENTS];
+	float rainfall_total_sum;
+
+	float rainfall_intensity_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg rainfall_intensity_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	float illuminance_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg illuminance_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	int64_t timestamp;
+};
+#undef LAMBRECHT_EXPAND_ITEM
+
+#endif /* defined(CONFIG_APP_LAMBRECHT) */
+
 struct app_data {
 	float system_voltage_rest;
 	float system_voltage_load;
@@ -207,6 +253,10 @@ struct app_data {
 #if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
 	struct app_data_soil_sensor soil_sensor;
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
+#if defined(CONFIG_APP_LAMBRECHT)
+	struct app_data_lambrecht lambrecht;
+#endif /* defined(CONFIG_APP_LAMBRECHT) */
 };
 
 extern struct app_data g_app_data;

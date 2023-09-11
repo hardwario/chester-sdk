@@ -5,12 +5,11 @@
  */
 
 &ctr_x2_sc16is740_a {
-	current-speed = <9600>;
+	status = "okay";
 	rts-control;
 
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
-		label = "MODBUS0";
 		status = "okay";
 		de-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 		re-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;

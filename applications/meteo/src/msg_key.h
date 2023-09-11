@@ -1,9 +1,3 @@
-/*
- * Copyright (c) 2023 HARDWARIO a.s.
- *
- * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
- */
-
 #ifndef MSG_KEY_H_
 #define MSG_KEY_H_
 
@@ -74,6 +68,10 @@ enum msg_key {
 	MSG_KEY_PRESSURE = 57,
 	MSG_KEY_SOIL_SENSORS = 58,
 	MSG_KEY_MOISTURE = 59,
+	MSG_KEY_RAINFALL_INTENSITY = 60,
+	MSG_KEY_RAINFALL_TOTAL = 61,
+	MSG_KEY_DEW_POINT = 62,
+	MSG_KEY_ILLUMINANCE = 63,
 };
 
 #ifdef __cplusplus

@@ -643,6 +643,222 @@ static int encode(zcbor_state_t *zs)
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
 
+#if defined(CONFIG_APP_LAMBRECHT)
+	zcbor_uint32_put(zs, MSG_KEY_WEATHER_STATION);
+	{
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, MSG_KEY_WIND_SPEED);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.lambrecht.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.lambrecht.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.lambrecht.wind_speed_measurements[i],
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_WIND_DIRECTION);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.lambrecht.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.lambrecht.measurement_count; i++) {
+					put_sample_mul(zs,
+						       &g_app_data.lambrecht
+								.wind_direction_measurements[i],
+						       100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.lambrecht.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.lambrecht.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.lambrecht.temperature_measurements[i],
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_HUMIDITY);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.lambrecht.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.lambrecht.measurement_count; i++) {
+					put_sample_mul(
+						zs, &g_app_data.lambrecht.humidity_measurements[i],
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_DEW_POINT);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.lambrecht.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.lambrecht.measurement_count; i++) {
+					put_sample_mul(
+						zs, &g_app_data.lambrecht.dew_point_measurements[i],
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_PRESSURE);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.lambrecht.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.lambrecht.measurement_count; i++) {
+					put_sample_mul(
+						zs, &g_app_data.lambrecht.pressure_measurements[i],
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_RAINFALL);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.lambrecht.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.lambrecht.measurement_count; i++) {
+					put_sample_mul(zs,
+						       &g_app_data.lambrecht
+								.rainfall_total_measurements[i],
+						       100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_RAINFALL_INTENSITY);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.lambrecht.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.lambrecht.measurement_count; i++) {
+					put_sample_mul(zs,
+						       &g_app_data.lambrecht
+								.rainfall_intensity_measurements[i],
+						       100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_ILLUMINANCE);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.lambrecht.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.lambrecht.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.lambrecht.illuminance_measurements[i],
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, MSG_KEY_RAINFALL_TOTAL);
+		zcbor_uint32_put(zs, g_app_data.lambrecht.rainfall_total_sum * 1000);
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(CONFIG_APP_LAMBRECHT) */
+
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 	if (!zcbor_check_error(zs)) {

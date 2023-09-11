@@ -33,6 +33,10 @@ int app_sensor_soil_sensor_sample(void);
 int app_sensor_soil_sensor_aggreg(void);
 int app_sensor_soil_sensor_clear(void);
 
+int app_sensor_lambrecht_sample(void);
+int app_sensor_lambrecht_aggreg(void);
+int app_sensor_lambrecht_clear(void);
+
 #ifdef __cplusplus
 }
 #endif

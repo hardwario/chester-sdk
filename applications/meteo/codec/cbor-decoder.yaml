@@ -113,3 +113,10 @@
 - pressure:
 - soil_sensors:
 - moisture:
+- rainfall_intensity:
+- rainfall_total:
+  - div: 1000
+  - fpp: 3
+- dew_point:
+- illuminance:
+

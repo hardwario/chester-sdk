@@ -7,6 +7,7 @@
 #include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
+#include "app_lambrecht.h"
 #include "app_work.h"
 
 /* CHESTER includes */
@@ -157,6 +158,14 @@ int app_init(void)
 		return ret;
 	}
 #endif /* defined(CONFIG_CTR_BUTTON) */
+
+#if defined(CONFIG_APP_LAMBRECHT)
+	ret = app_lambrecht_init();
+	if (ret) {
+		LOG_ERR("Call `app_lambrecht_init` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_APP_LAMBRECHT) */
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 	ret = ctr_ds18b20_scan();

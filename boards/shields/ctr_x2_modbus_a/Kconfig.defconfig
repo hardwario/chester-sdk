@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+if SHIELD_CTR_X2_MODBUS_A
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config MODBUS
+	default y
+
+config MODBUS_BUFFER_SIZE
+	default 64
+
+config PM
+	default y
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_0_INTERRUPT_DRIVEN
+	default n
+
+config UART_ASYNC_API
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+config UART_LINE_CTRL
+	default n
+
+config UART_SC16IS7XX
+	default y
+
+endif # SHIELD_CTR_X2_MODBUS_A

@@ -6,6 +6,7 @@
 
 #include "app_config.h"
 #include "app_data.h"
+#include "app_lambrecht.h"
 #include "app_send.h"
 #include "app_sensor.h"
 
@@ -266,8 +267,8 @@ static int meteo_aggreg_wind_speed(void)
 #if !defined(M_PI)
 #define M_PI 3.14159265f
 #endif
-#define DEGREES_TO_RADIANS(angle_degrees) ((angle_degrees)*M_PI / 180.f)
-#define RADIANS_TO_DEGREES(angle_radians) ((angle_radians)*180.f / M_PI)
+#define DEGREES_TO_RADIANS(angle_degrees) ((angle_degrees) * M_PI / 180.f)
+#define RADIANS_TO_DEGREES(angle_radians) ((angle_radians) * 180.f / M_PI)
 
 static float get_average_angle(float *array, size_t array_size)
 {
@@ -818,3 +819,403 @@ int app_sensor_soil_sensor_clear(void)
 }
 
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
+#if defined(CONFIG_APP_LAMBRECHT)
+
+static int lambrecht_sample_wind_speed(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	if (lambrecht->sample_count >= APP_DATA_MAX_SAMPLES) {
+		LOG_WRN("Sample buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	ret = app_lambrecht_read_wind_speed(
+		&lambrecht->wind_speed_samples[lambrecht->sample_count]);
+	if (ret) {
+		LOG_ERR("Call `app_lambrecht_read_wind_speed` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	LOG_INF("Wind speed: %.1f m/s", lambrecht->wind_speed_samples[lambrecht->sample_count]);
+
+	app_data_unlock();
+
+	return 0;
+}
+
+static int lambrecht_sample_wind_direction(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	if (lambrecht->sample_count >= APP_DATA_MAX_SAMPLES) {
+		LOG_WRN("Sample buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	ret = app_lambrecht_read_wind_direction(
+		&lambrecht->wind_direction_samples[lambrecht->sample_count]);
+	if (ret) {
+		LOG_ERR("Call `app_lambrecht_read_wind_direction` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	LOG_INF("Wind direction: %.1f deg",
+		lambrecht->wind_direction_samples[lambrecht->sample_count]);
+
+	app_data_unlock();
+
+	return 0;
+}
+
+static int lambrecht_sample_temperature(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	if (lambrecht->sample_count >= APP_DATA_MAX_SAMPLES) {
+		LOG_WRN("Sample buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	ret = app_lambrecht_read_temperature(
+		&lambrecht->temperature_samples[lambrecht->sample_count]);
+	if (ret) {
+		LOG_ERR("Call `app_lambrecht_read_temperature` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	LOG_INF("Temperature: %.1f C", lambrecht->temperature_samples[lambrecht->sample_count]);
+
+	app_data_unlock();
+
+	return 0;
+}
+
+static int lambrecht_sample_humidity(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	if (lambrecht->sample_count >= APP_DATA_MAX_SAMPLES) {
+		LOG_WRN("Sample buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	ret = app_lambrecht_read_humidity(&lambrecht->humidity_samples[lambrecht->sample_count]);
+	if (ret) {
+		LOG_ERR("Call `app_lambrecht_read_humidity` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	LOG_INF("Humidity: %.1f %%", lambrecht->humidity_samples[lambrecht->sample_count]);
+
+	app_data_unlock();
+
+	return 0;
+}
+
+static int lambrecht_sample_dew_point(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	if (lambrecht->sample_count >= APP_DATA_MAX_SAMPLES) {
+		LOG_WRN("Sample buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	ret = app_lambrecht_read_dew_point(&lambrecht->dew_point_samples[lambrecht->sample_count]);
+	if (ret) {
+		LOG_ERR("Call `app_lambrecht_read_dew_point` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	LOG_INF("Dew point: %.1f C", lambrecht->dew_point_samples[lambrecht->sample_count]);
+
+	app_data_unlock();
+
+	return 0;
+}
+
+static int lambrecht_sample_pressure(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	if (lambrecht->sample_count >= APP_DATA_MAX_SAMPLES) {
+		LOG_WRN("Sample buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	ret = app_lambrecht_read_pressure(&lambrecht->pressure_samples[lambrecht->sample_count]);
+	if (ret) {
+		LOG_ERR("Call `app_lambrecht_read_pressure` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	LOG_INF("Pressure: %.1f kPa", lambrecht->pressure_samples[lambrecht->sample_count]);
+
+	app_data_unlock();
+
+	return 0;
+}
+
+static int lambrecht_sample_rainfall_total(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	if (lambrecht->sample_count >= APP_DATA_MAX_SAMPLES) {
+		LOG_WRN("Sample buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	ret = app_lambrecht_read_rainfall_total(
+		&lambrecht->rainfall_total_samples[lambrecht->sample_count]);
+	if (ret) {
+		LOG_ERR("Call `app_lambrecht_read_rainfall_total` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	LOG_INF("Rainfall total: %.1f mm",
+		lambrecht->rainfall_total_samples[lambrecht->sample_count]);
+
+	app_data_unlock();
+
+	return 0;
+}
+
+static int lambrecht_sample_rainfall_intensity(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	if (lambrecht->sample_count >= APP_DATA_MAX_SAMPLES) {
+		LOG_WRN("Sample buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	ret = app_lambrecht_read_rainfall_intensity(
+		&lambrecht->rainfall_intensity_samples[lambrecht->sample_count]);
+	if (ret) {
+		LOG_ERR("Call `app_lambrecht_read_rainfall_intensity` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	LOG_INF("Rainfall total: %.3f mm/s",
+		lambrecht->rainfall_intensity_samples[lambrecht->sample_count]);
+
+	app_data_unlock();
+
+	return 0;
+}
+
+static int lambrecht_sample_illuminance(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	if (lambrecht->sample_count >= APP_DATA_MAX_SAMPLES) {
+		LOG_WRN("Sample buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	ret = app_lambrecht_read_illuminance(
+		&lambrecht->illuminance_samples[lambrecht->sample_count]);
+	if (ret) {
+		LOG_ERR("Call `app_lambrecht_read_illuminance` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	LOG_INF("Illuminance: %.3f klx", lambrecht->illuminance_samples[lambrecht->sample_count]);
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_lambrecht_sample(void)
+{
+	int ret;
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	ret = app_lambrecht_enable();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_enable` failed: %d", ret);
+	}
+
+	ret = lambrecht_sample_wind_speed();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_sample_wind_speed` failed: %d", ret);
+	}
+
+	ret = lambrecht_sample_wind_direction();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_sample_wind_direction` failed: %d", ret);
+	}
+
+	ret = lambrecht_sample_temperature();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_sample_temperature` failed: %d", ret);
+	}
+
+	ret = lambrecht_sample_humidity();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_sample_humidity` failed: %d", ret);
+	}
+
+	ret = lambrecht_sample_dew_point();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_sample_dew_point` failed: %d", ret);
+	}
+
+	ret = lambrecht_sample_pressure();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_sample_pressure` failed: %d", ret);
+	}
+
+	ret = lambrecht_sample_rainfall_total();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_sample_rainfall_total` failed: %d", ret);
+	}
+
+	ret = lambrecht_sample_rainfall_intensity();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_sample_rainfall_intensity` failed: %d", ret);
+	}
+
+	ret = lambrecht_sample_illuminance();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_sample_illuminance` failed: %d", ret);
+	}
+
+	lambrecht->sample_count++;
+
+	ret = app_lambrecht_disable();
+	if (ret) {
+		LOG_ERR("Call `lambrecht_disable` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int app_sensor_lambrecht_aggreg(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
+
+	if (lambrecht->measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+		ret = ctr_rtc_get_ts(&lambrecht->timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc-get_tc` failed: %d", ret);
+			app_data_unlock();
+			return ret;
+		}
+
+		aggreg_sample(lambrecht->wind_speed_samples, lambrecht->sample_count,
+			      &lambrecht->wind_speed_measurements[lambrecht->measurement_count]);
+		aggreg_sample(
+			lambrecht->wind_direction_samples, lambrecht->sample_count,
+			&lambrecht->wind_direction_measurements[lambrecht->measurement_count]);
+		aggreg_sample(lambrecht->temperature_samples, lambrecht->sample_count,
+			      &lambrecht->temperature_measurements[lambrecht->measurement_count]);
+		aggreg_sample(lambrecht->humidity_samples, lambrecht->sample_count,
+			      &lambrecht->humidity_measurements[lambrecht->measurement_count]);
+		aggreg_sample(lambrecht->dew_point_samples, lambrecht->sample_count,
+			      &lambrecht->dew_point_measurements[lambrecht->measurement_count]);
+		aggreg_sample(lambrecht->pressure_samples, lambrecht->sample_count,
+			      &lambrecht->pressure_measurements[lambrecht->measurement_count]);
+		aggreg_sample(
+			lambrecht->rainfall_total_samples, lambrecht->sample_count,
+			&lambrecht->rainfall_total_measurements[lambrecht->measurement_count]);
+		aggreg_sample(
+			lambrecht->rainfall_intensity_samples, lambrecht->sample_count,
+			&lambrecht->rainfall_intensity_measurements[lambrecht->measurement_count]);
+		aggreg_sample(lambrecht->illuminance_samples, lambrecht->sample_count,
+			      &lambrecht->illuminance_measurements[lambrecht->measurement_count]);
+
+		for (int i = 0; i < lambrecht->sample_count; i++) {
+			lambrecht->rainfall_total_sum += lambrecht->rainfall_total_samples[i];
+		}
+
+		lambrecht->sample_count = 0;
+		lambrecht->measurement_count++;
+
+	} else {
+		LOG_WRN("Measurement buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_lambrecht_clear(void)
+{
+	app_data_lock();
+
+	g_app_data.lambrecht.measurement_count = 0;
+	g_app_data.lambrecht.rainfall_total_sum = 0;
+
+	app_data_unlock();
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_APP_LAMBRECHT) */

@@ -1119,6 +1119,8 @@ static int pm_control_resume(const struct device *dev)
 		return ret;
 	}
 
+	k_sleep(K_USEC(5));
+
 	return 0;
 }
 
