@@ -13,6 +13,7 @@
 #include <chester/ctr_lte.h>
 #include <chester/drivers/ctr_s1.h>
 #include <chester/drivers/ctr_z.h>
+#include <chester/drivers/ctr_x4.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,8 +31,13 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *p
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_CTR_BUTTON)
-void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val, void *user_data);
+void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val,
+			    void *user_data);
 #endif /* defined(CONFIG_CTR_BUTTON) */
+
+#if defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)
+void app_handler_ctr_x4(const struct device *dev, enum ctr_x4_event event, void *user_data);
+#endif /* defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)*/
 
 #ifdef __cplusplus
 }

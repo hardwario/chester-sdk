@@ -360,3 +360,47 @@ int app_send(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)
+
+static int compose_x4_line_alert(struct ctr_buf *buf, bool line_connected_event)
+{
+	int ret = 0;
+
+	ctr_buf_reset(buf);
+
+	ret |= ctr_buf_append_u8(buf, BIT(7));
+	ret |= ctr_buf_append_u8(buf, line_connected_event ? 1 : 0);
+
+	if (ret) {
+		return -EFAULT;
+	}
+
+	return 0;
+}
+
+int app_send_lrw_x4_line_alert(bool line_connected_event)
+{
+	int ret;
+
+	CTR_BUF_DEFINE_STATIC(x4_lrw_buf, 2);
+
+	ret = compose_x4_line_alert(&x4_lrw_buf, line_connected_event);
+	if (ret) {
+		LOG_ERR("Call `compose_x4_line_alert` failed: %d", ret);
+		return ret;
+	}
+
+	struct ctr_lrw_send_opts lrw_opts = CTR_LRW_SEND_OPTS_DEFAULTS;
+
+	ret = ctr_lrw_send(&lrw_opts, ctr_buf_get_mem(&x4_lrw_buf), ctr_buf_get_used(&x4_lrw_buf),
+			   NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B) */

@@ -123,5 +123,12 @@ function decode(buffer) {
         }
     }
 
+    if ((header & 0x80) !== 0) {
+        let line = buffer.readUInt8(offset);
+        offset += 1;
+
+        data.dc_line = (line != 0);
+    }
+
     return data;
 }

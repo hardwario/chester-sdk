@@ -9,6 +9,7 @@
 #include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
+#include "app_send.h"
 #include "app_work.h"
 
 /* CHESTER includes */
@@ -17,6 +18,7 @@
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
 #include <chester/ctr_rtc.h>
+#include <chester/drivers/ctr_x4.h>
 #include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
@@ -388,3 +390,28 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 }
 
 #endif /* defined(CONFIG_CTR_BUTTON) */
+
+#if defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)
+
+void app_handler_ctr_x4(const struct device *dev, enum ctr_x4_event event, void *user_data)
+{
+	switch (event) {
+	case CTR_X4_EVENT_LINE_CONNECTED:
+		LOG_INF("Line connected");
+		break;
+	case CTR_X4_EVENT_LINE_DISCONNECTED:
+		LOG_INF("Line disconnected");
+		break;
+	default:
+		LOG_ERR("Unknown event: %d", event);
+		k_oops();
+	}
+
+	int ret = app_send_lrw_x4_line_alert(event == CTR_X4_EVENT_LINE_CONNECTED ? BIT(0) : 0);
+	if (ret) {
+		LOG_ERR("Call `app_send_lrw_x4_line_alert` failed: %d", ret);
+		return;
+	}
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)*/

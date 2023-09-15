@@ -20,6 +20,7 @@
 #include <chester/ctr_soil_sensor.h>
 #include <chester/ctr_wdog.h>
 #include <chester/drivers/ctr_s1.h>
+#include <chester/drivers/ctr_x4.h>
 #include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
@@ -125,6 +126,32 @@ static int init_chester_z(void)
 }
 
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)
+
+int init_chester_x4(void)
+{
+	int ret;
+
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x4_a));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
+	}
+
+	if (g_app_config.mode == APP_CONFIG_MODE_LRW) {
+		ret = ctr_x4_set_handler(dev, app_handler_ctr_x4, NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_x4_set_handler` failed: %d", ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B) */
 
 int app_init(void)
 {
@@ -277,6 +304,14 @@ int app_init(void)
 		return ret;
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
+
+#if defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)
+	ret = init_chester_x4();
+	if (ret) {
+		LOG_ERR("Call `init_chester_x4` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B) */
 
 	return 0;
 }

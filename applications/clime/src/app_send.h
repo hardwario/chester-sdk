@@ -16,6 +16,10 @@ extern "C" {
 
 int app_send(void);
 
+#if defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)
+int app_send_lrw_x4_line_alert(bool line_connected_event);
+#endif /* defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B) */
+
 #ifdef __cplusplus
 }
 #endif
