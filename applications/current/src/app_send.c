@@ -35,6 +35,8 @@
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
 
+#if defined(CONFIG_SHIELD_CTR_LRW)
+
 static int compose_lrw(struct ctr_buf *buf)
 {
 	int ret = 0;
@@ -210,6 +212,10 @@ static int compose_lrw(struct ctr_buf *buf)
 	return 0;
 }
 
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
+
+#if defined(CONFIG_SHIELD_CTR_LTE)
+
 static int compose_lte(struct ctr_buf *buf)
 {
 	int ret;
@@ -292,14 +298,23 @@ static int compose_lte(struct ctr_buf *buf)
 	return 0;
 }
 
+#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
+
 int app_send(void)
 {
 	int ret;
 
+#if defined(CONFIG_SHIELD_CTR_LRW)
 	CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
+
+#if defined(CONFIG_SHIELD_CTR_LTE)
 	CTR_BUF_DEFINE_STATIC(lte_buf, 1024);
+#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 	switch (g_app_config.mode) {
+
+#if defined(CONFIG_SHIELD_CTR_LRW)
 	case APP_CONFIG_MODE_LRW:
 		ret = compose_lrw(&lrw_buf);
 		if (ret) {
@@ -315,7 +330,9 @@ int app_send(void)
 			return ret;
 		}
 		break;
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
 
+#if defined(CONFIG_SHIELD_CTR_LTE)
 	case APP_CONFIG_MODE_LTE:
 		ret = compose_lte(&lte_buf);
 		if (ret) {
@@ -337,6 +354,7 @@ int app_send(void)
 			LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
 			return ret;
 		}
+#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 	default:
 		break;

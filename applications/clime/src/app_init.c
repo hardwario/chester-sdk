@@ -197,6 +197,8 @@ int app_init(void)
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
 
 	switch (g_app_config.mode) {
+
+#if defined(CONFIG_SHIELD_CTR_LRW)
 	case APP_CONFIG_MODE_LRW:
 		ret = ctr_lrw_init(app_handler_lrw, NULL);
 		if (ret) {
@@ -212,7 +214,9 @@ int app_init(void)
 
 		k_sleep(K_SECONDS(2));
 		break;
+#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
 
+#if defined(CONFIG_SHIELD_CTR_LTE)
 	case APP_CONFIG_MODE_LTE:
 		ret = ctr_lte_set_event_cb(app_handler_lte, NULL);
 		if (ret) {
@@ -244,6 +248,7 @@ int app_init(void)
 			break;
 		}
 		break;
+#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 	default:
 		break;
