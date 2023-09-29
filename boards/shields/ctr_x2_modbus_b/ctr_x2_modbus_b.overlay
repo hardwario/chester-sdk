@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-&ctr_x2_sc16is740_a {
+&ctr_x2_sc16is740_b {
 	status = "okay";
 	rts-control;
 
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
 		status = "okay";
-		de-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
-		re-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+		de-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		re-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 	};
 };
