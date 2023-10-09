@@ -198,7 +198,7 @@ int app_lambrecht_read_pressure(float *out)
 		return ret;
 	}
 
-	*out = reg * 10.f;
+	*out = reg / 1000.f * 10.f;
 
 	return 0;
 }
