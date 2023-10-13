@@ -83,7 +83,7 @@ config BT_MAX_CONN
 	default 4
 
 config BT_MAX_PAIRED
-	default 4
+	default 8
 
 config BT_PERIPHERAL_PREF_MAX_INT
 	default 6

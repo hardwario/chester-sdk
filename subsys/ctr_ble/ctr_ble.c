@@ -126,6 +126,32 @@ static int load_passkey(void)
 	return 0;
 }
 
+static void bt_foreach_callback(const struct bt_bond_info *info, void *user_data)
+{
+	int *count = (int *)user_data;
+	(*count)++;
+}
+
+static void check_and_erase_bonds(void)
+{
+	int ret;
+
+	int count = 0;
+	bt_foreach_bond(BT_ID_DEFAULT, bt_foreach_callback, &count);
+
+	LOG_INF("Bond count: %u out of %u", count, CONFIG_BT_MAX_PAIRED);
+
+	/* Delete bonds when the maximum number of devices are paired */
+	if (count >= CONFIG_BT_MAX_PAIRED) {
+		ret = bt_unpair(BT_ID_DEFAULT, BT_ADDR_LE_ANY);
+		if (ret) {
+			LOG_ERR("Call `bt_unpair` failed: %d", ret);
+		} else {
+			LOG_WRN("All bonds have been deleted");
+		}
+	}
+}
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
@@ -140,6 +166,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 #if defined(CONFIG_SHELL_BT_NUS)
 	shell_bt_nus_enable(conn);
 #endif /* defined(CONFIG_SHELL_BT_NUS) */
+
+	check_and_erase_bonds();
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -154,6 +182,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		bt_conn_unref(m_current_conn);
 		m_current_conn = NULL;
 	}
+
+	check_and_erase_bonds();
 }
 
 BT_CONN_CB_DEFINE(conn_cb) = {
@@ -367,6 +397,8 @@ static int init(const struct device *dev)
 		LOG_ERR("Call `settings_load` failed: %d", ret);
 		return ret;
 	}
+
+	check_and_erase_bonds();
 
 	ret = bt_conn_auth_cb_register(&auth_cb);
 	if (ret) {
