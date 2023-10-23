@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
+&ds2484 {
+	ctr_weight_probe_0: ctr_weight_probe_0 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_1: ctr_weight_probe_1 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_2: ctr_weight_probe_2 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_3: ctr_weight_probe_3 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_4: ctr_weight_probe_4 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_5: ctr_weight_probe_5 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_6: ctr_weight_probe_6 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_7: ctr_weight_probe_7 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_8: ctr_weight_probe_8 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_9: ctr_weight_probe_9 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+};

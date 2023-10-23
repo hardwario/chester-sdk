@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_WEIGHT_PROBE
+	bool "CTR_WEIGHT_PROBE"
+	select CTR_W1
+	select DS28E17
+	select W1_DS2484
+
+if CTR_WEIGHT_PROBE
+
+module = CTR_WEIGHT_PROBE
+module-str = CHESTER Weight Probe Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_WEIGHT_PROBE

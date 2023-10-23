@@ -30,5 +30,6 @@ rsource "ctr_test/Kconfig"
 rsource "ctr_therm/Kconfig"
 rsource "ctr_w1/Kconfig"
 rsource "ctr_wdog/Kconfig"
+rsource "ctr_weight_probe/Kconfig"
 
 endmenu
