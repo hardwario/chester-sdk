@@ -13,7 +13,7 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -44,4 +44,6 @@ void main(void)
 
 		LOG_INF("Illuminance: %d lux", val.val1);
 	}
+
+	return 0;
 }

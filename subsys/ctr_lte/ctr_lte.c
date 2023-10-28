@@ -2566,7 +2566,7 @@ SHELL_CMD_REGISTER(lte, &sub_lte, "LTE commands.", print_help);
 
 /* clang-format on */
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

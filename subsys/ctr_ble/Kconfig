@@ -18,6 +18,7 @@ config CTR_BLE
 	select BT_SMP
 	select BT_SMP_SC_ONLY
 	select BT_TINYCRYPT_ECC
+	select CRC
 	select CTR_CONFIG
 	select CTR_INFO
 	select CTR_SHELL
@@ -28,7 +29,9 @@ config CTR_BLE
 	select MCUMGR_SMP_BT
 	select MCUMGR_SMP_BT_CONN_PARAM_CONTROL
 	select MCUMGR_SMP_REASSEMBLY_BT
+	select NET_BUF
 	select OS_MGMT_MCUMGR_PARAMS
+	select ZCBOR
 
 if CTR_BLE
 
@@ -96,9 +99,6 @@ config BT_PERIPHERAL_PREF_TIMEOUT
 
 config BT_RX_STACK_SIZE
 	default 4096
-
-config MCUMGR_BUF_SIZE
-	default 2475
 
 config MPSL_WORK_STACK_SIZE
 	default 2048

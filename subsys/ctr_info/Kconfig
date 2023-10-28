@@ -6,6 +6,7 @@
 
 config CTR_INFO
 	bool "CTR_INFO"
+	select CRC
 
 if CTR_INFO
 

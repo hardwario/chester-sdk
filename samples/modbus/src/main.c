@@ -63,7 +63,7 @@ static void read_modbus(void)
 	LOG_HEXDUMP_INF(reg, sizeof(reg), "Input register:");
 }
 
-void main(void)
+int main(void)
 {
 	init_modbus();
 
@@ -72,4 +72,6 @@ void main(void)
 		read_modbus();
 		k_sleep(K_SECONDS(30));
 	}
+
+	return 0;
 }

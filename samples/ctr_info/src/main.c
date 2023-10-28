@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(app);
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -118,4 +118,6 @@ void main(void)
 	} else {
 		LOG_INF("BLE passkey: %s", ble_passkey);
 	}
+
+	return 0;
 }

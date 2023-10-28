@@ -317,7 +317,7 @@ int ctr_info_get_ble_passkey(char **ble_passkey)
 	return 0;
 }
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	LOG_INF("System initialization");
 

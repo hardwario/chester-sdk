@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-void main(void)
+int main(void)
 {
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
@@ -71,4 +71,6 @@ void main(void)
 	ctr_buf_reset(&buf);
 	ctr_buf_append_float_le(&buf, 1.234f);
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), "Test: float");
+
+	return 0;
 }

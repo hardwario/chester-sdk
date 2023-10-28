@@ -229,7 +229,7 @@ static int setup_timer(void)
 	IRQ_CONNECT(TIMER4_IRQn, 0, nrfx_timer_4_irq_handler, NULL, 0);
 	irq_enable(TIMER4_IRQn);
 
-	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG;
+	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG(NRF_TIMER_FREQ_16MHz);
 
 	ret_nrfx = nrfx_timer_init(&m_timer, &timer_config, timer_event_handler);
 	if (ret_nrfx != NRFX_SUCCESS) {

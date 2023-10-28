@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 static const struct device *mb7066 = DEVICE_DT_GET(DT_NODELABEL(mb7066));
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -52,4 +52,6 @@ void main(void)
 
 		k_sleep(K_MSEC(3000));
 	}
+
+	return 0;
 }

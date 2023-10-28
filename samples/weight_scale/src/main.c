@@ -26,8 +26,8 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-#define MAX_REPETITIONS	    5
-#define MAX_DIFFERENCE	    100
+#define MAX_REPETITIONS     5
+#define MAX_DIFFERENCE      100
 #define STABILIZATION_DELAY K_MSEC(300)
 #define MEASUREMENT_PAUSE   K_SECONDS(2)
 
@@ -263,7 +263,7 @@ static int measure(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -300,4 +300,6 @@ void main(void)
 	error:
 		k_sleep(MEASUREMENT_PAUSE);
 	}
+
+	return 0;
 }

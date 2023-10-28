@@ -18,7 +18,7 @@
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -59,4 +59,6 @@ void main(void)
 
 		k_sleep(K_MSEC(5000));
 	}
+
+	return 0;
 }

@@ -208,7 +208,7 @@ SHELL_CMD_REGISTER(config, &sub_config, "Configuration commands.", print_help);
 
 /* clang-format on */
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

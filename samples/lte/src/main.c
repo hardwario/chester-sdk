@@ -179,7 +179,7 @@ static int send(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -205,4 +205,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(60));
 	}
+
+	return 0;
 }

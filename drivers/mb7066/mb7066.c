@@ -190,18 +190,18 @@ static int mb7066_init(const struct device *dev)
 			 .trigger = NRFX_GPIOTE_TRIGGER_TOGGLE,
 		 },
 		 &(nrfx_gpiote_handler_config_t){.handler = gpiote_toggle_handler,
-						 .p_context = dev});
+						 .p_context = (void *)dev});
 
 	/* setup timer */
 	data->timer = (nrfx_timer_t)NRFX_TIMER_INSTANCE(CONFIG_MB7066_TIMER);
-	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG;
+	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG(NRF_TIMER_FREQ_16MHz);
 	timer_config.bit_width = NRF_TIMER_BIT_WIDTH_32;
 	CHECKOUT(nrfx_timer_init, &data->timer, &timer_config, NULL);
 
 	/* setup PPI GPIOTE -> timer capture */
 	CHECKOUT(nrfx_ppi_channel_alloc, &data->ppi_chan);
 	CHECKOUT(nrfx_ppi_channel_assign, data->ppi_chan,
-		 nrfx_gpiote_in_event_addr_get(data->pin->pin),
+		 nrfx_gpiote_in_event_address_get(data->pin->pin),
 		 nrfx_timer_task_address_get(&data->timer, NRF_TIMER_TASK_CAPTURE0));
 	CHECKOUT(nrfx_ppi_channel_fork_assign, data->ppi_chan,
 		 nrfx_timer_task_address_get(&data->timer, NRF_TIMER_TASK_CLEAR));

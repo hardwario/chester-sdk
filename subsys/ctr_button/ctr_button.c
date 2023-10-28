@@ -218,7 +218,7 @@ int ctr_button_set_event_cb(ctr_button_event_cb cb, void *user_data)
 	return 0;
 }
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

@@ -24,7 +24,7 @@ void gnss_handler(enum ctr_gnss_event event, union ctr_gnss_event_data *data, vo
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -45,4 +45,6 @@ void main(void)
 	for (;;) {
 		k_sleep(K_FOREVER);
 	}
+
+	return 0;
 }

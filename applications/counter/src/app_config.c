@@ -28,7 +28,7 @@ struct app_config g_app_config;
 static struct app_config m_app_config_interim = {
 	.interval_sample = 60,
 	.interval_report = 1800,
-	
+
 #if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_APP_TAMPER)
 	.event_report_delay = 1,
 	.event_report_rate = 30,
@@ -149,9 +149,9 @@ CONFIG_PARAM_LIST()
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
-#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)	print_##_name_u(shell);
+#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)   print_##_name_u(shell);
 #define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help) print_##_name_u(shell);
-#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help)		print_##_name_u(shell);
+#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help)              print_##_name_u(shell);
 
 	CONFIG_PARAM_LIST()
 
@@ -209,7 +209,8 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 {
 #define EXPORT_FUNC_SCALAR(_key, _var)                                                             \
 	do {                                                                                       \
-		(void)export_func(SETTINGS_PFX "/" #_key, &m_app_config_interim._var, sizeof(m_app_config_interim._var));                             \
+		(void)export_func(SETTINGS_PFX "/" #_key, &m_app_config_interim._var,              \
+				  sizeof(m_app_config_interim._var));                              \
 	} while (0)
 
 #define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help) EXPORT_FUNC_SCALAR(_name_d, _name_u);
@@ -228,7 +229,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	return 0;
 }
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

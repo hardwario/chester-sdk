@@ -95,7 +95,7 @@ static int init_chester_x0(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -111,4 +111,6 @@ void main(void)
 		LOG_INF("Alive");
 		k_sleep(K_SECONDS(1));
 	}
+
+	return 0;
 }

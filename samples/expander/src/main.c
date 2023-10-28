@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_b1_tca9534a));
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -58,4 +58,6 @@ void main(void)
 		/* Wait 500 ms */
 		k_sleep(K_MSEC(500));
 	}
+
+	return 0;
 }

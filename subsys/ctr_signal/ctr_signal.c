@@ -24,8 +24,8 @@
 
 LOG_MODULE_REGISTER(ctr_signal, CONFIG_CTR_SIGNAL_LOG_LEVEL);
 
-#define SAMPLE_INTERVAL_US	     1000
-#define SAMPLE_COUNT		     500
+#define SAMPLE_INTERVAL_US           1000
+#define SAMPLE_COUNT                 500
 #define SAMPLE_TO_MILLIVOLTS(sample) (sample * 6 * 600 / 2048)
 
 static const nrfx_timer_t m_timer = NRFX_TIMER_INSTANCE(4);
@@ -71,7 +71,7 @@ static int setup_timer(void)
 	IRQ_CONNECT(TIMER1_IRQn, 0, nrfx_timer_1_irq_handler, NULL, 0);
 	irq_enable(TIMER1_IRQn);
 
-	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG;
+	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG(NRF_TIMER_FREQ_16MHz);
 
 	ret_nrfx = nrfx_timer_init(&m_timer, &timer_config, timer_event_handler);
 	if (ret_nrfx != NRFX_SUCCESS) {
@@ -232,7 +232,7 @@ int ctr_signal_measure(double *avg, double *rms)
 	return 0;
 }
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

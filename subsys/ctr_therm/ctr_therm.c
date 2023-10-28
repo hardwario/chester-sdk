@@ -63,7 +63,7 @@ int ctr_therm_read(float *temperature)
 	return 0;
 }
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

@@ -12,7 +12,7 @@
 
 LOG_MODULE_REGISTER(app);
 
-void main(void)
+int main(void)
 {
 	LOG_INF("Hello world");
 
@@ -20,4 +20,6 @@ void main(void)
 		LOG_INF("Alive");
 		k_sleep(K_MSEC(100));
 	}
+
+	return 0;
 }

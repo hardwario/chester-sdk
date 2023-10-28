@@ -9,7 +9,6 @@ config CTR_FLASH
 	select FLASH_PAGE_LAYOUT
 	select FLASH
 	select PM_DEVICE
-	select PM
 	select SPI
 
 if CTR_FLASH

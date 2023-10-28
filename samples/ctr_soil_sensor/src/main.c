@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -53,4 +53,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(10));
 	}
+
+	return 0;
 }

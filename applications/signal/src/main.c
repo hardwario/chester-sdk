@@ -364,7 +364,7 @@ static int loop(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -447,6 +447,8 @@ void main(void)
 			k_oops();
 		}
 	}
+
+	return 0;
 }
 
 static int cmd_measure(const struct shell *shell, size_t argc, char **argv)

@@ -6,7 +6,6 @@
 
 config CTR_W1
 	bool "CTR_W1"
-	select PM
 	select PM_DEVICE
 	select W1
 

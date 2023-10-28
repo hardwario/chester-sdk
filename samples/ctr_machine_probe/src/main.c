@@ -18,8 +18,8 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #define READ_THERMOMETER   0
-#define READ_HYGROMETER	   1
-#define READ_LUX_METER	   1
+#define READ_HYGROMETER    1
+#define READ_LUX_METER     1
 #define READ_MAGNETOMETER  1
 #define READ_ACCELEROMETER 1
 
@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define TILT_DURATION  2
 
 #define WORK_Q_STACK_SIZE 4096
-#define WORK_Q_PRIORITY	  K_LOWEST_APPLICATION_THREAD_PRIO
+#define WORK_Q_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
 
 static struct k_work_q m_work_q;
 static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);
@@ -72,7 +72,7 @@ static K_TIMER_DEFINE(m_poll_timer, poll_timer_handler, NULL);
 
 #endif /* READ_ACCELEROMETER */
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -213,4 +213,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(10));
 	}
+
+	return 0;
 }

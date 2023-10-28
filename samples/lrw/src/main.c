@@ -38,7 +38,7 @@ static void lrw_event_cb(enum ctr_lrw_event event, union ctr_lrw_event_data *dat
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -71,4 +71,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(30));
 	}
+
+	return 0;
 }

@@ -90,7 +90,7 @@ static int init_rfmux(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -112,6 +112,8 @@ void main(void)
 		LOG_ERR("Call `ctr_lte_if_v2_set_callback` failed: %d", ret);
 		k_oops();
 	}
+
+	return 0;
 }
 
 static int cmd_reset(const struct shell *shell, size_t argc, char **argv)

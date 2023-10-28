@@ -140,14 +140,14 @@ int app_init(void)
 		LOG_ERR("Call `ctr_button_set_event_cb` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG                                                                             \
-												   \ \
-#if defined(CONFIG_SHIELD_CTR_DS18B20)                                                               \
-	ret = ctr_ds18b20_scan();                                                                    \
-	if (ret) {                                                                                   \
-		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);                                  \
-		return ret;                                                                          \
-	}                                                                                            \
+#endif /* defined(CONFIG_CTR_BUTTON) */
+
+#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	ret = ctr_ds18b20_scan();
+	if (ret) {
+		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
+		return ret;
+	}
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
 #if defined(CONFIG_SHIELD_CTR_LTE)

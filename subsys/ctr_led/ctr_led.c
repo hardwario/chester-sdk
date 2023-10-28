@@ -121,7 +121,7 @@ int ctr_led_set(enum ctr_led_channel channel, bool is_on)
 	return 0;
 }
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret = gpio_pin_configure_dt(&m_dev_led_load, GPIO_DISCONNECTED);
 	if (ret) {

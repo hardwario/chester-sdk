@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 /* TODO Would be nice to define using K_SECONDS, etc. Proper macros? */
 #define BATT_TEST_INTERVAL_MSEC (12 * 60 * 60 * 1000)
-#define REPORT_INTERVAL_MSEC	(15 * 60 * 1000)
+#define REPORT_INTERVAL_MSEC    (15 * 60 * 1000)
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 static const struct device *m_ctr_z_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
@@ -831,7 +831,7 @@ static void loop(bool with_send)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -899,6 +899,8 @@ void main(void)
 		loop(true);
 #endif
 	}
+
+	return 0;
 }
 
 static int cmd_send(const struct shell *shell, size_t argc, char **argv)

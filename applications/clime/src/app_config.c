@@ -324,7 +324,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	return 0;
 }
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

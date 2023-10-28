@@ -111,7 +111,7 @@ void uart_callback(const struct device *dev, void *user_data)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -151,4 +151,6 @@ void main(void)
 
 		k_sleep(K_MSEC(50));
 	}
+
+	return 0;
 }

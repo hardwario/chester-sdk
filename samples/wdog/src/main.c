@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 static struct ctr_wdog_channel m_wdog_ch1;
 static struct ctr_wdog_channel m_wdog_ch2;
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -72,4 +72,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(1));
 	}
+
+	return 0;
 }

@@ -359,7 +359,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 SHELL_CMD_REGISTER(ble, &sub_ble, "BLE commands.", print_help);
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

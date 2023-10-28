@@ -121,7 +121,7 @@ static void uptime_notify_timer(struct k_timer *timer_id)
 
 static K_TIMER_DEFINE(m_uptime_notify_timer, uptime_notify_timer, NULL);
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	k_timer_start(&m_uptime_notify_timer, K_NO_WAIT, K_SECONDS(5));
 

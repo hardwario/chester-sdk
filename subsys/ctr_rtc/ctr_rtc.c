@@ -400,7 +400,7 @@ static int request_lfclk(void)
 	return 0;
 }
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

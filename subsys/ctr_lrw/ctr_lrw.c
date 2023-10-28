@@ -1921,7 +1921,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_lrw,
 
 SHELL_CMD_REGISTER(lrw, &sub_lrw, "LoRaWAN commands.", print_help);
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

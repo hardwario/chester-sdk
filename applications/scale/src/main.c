@@ -13,7 +13,7 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -34,4 +34,6 @@ void main(void)
 			k_oops();
 		}
 	}
+
+	return 0;
 }

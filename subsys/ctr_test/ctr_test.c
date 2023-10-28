@@ -48,7 +48,7 @@ static int cmd_test(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_CMD_REGISTER(test, NULL, "Start test mode.", cmd_test);
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

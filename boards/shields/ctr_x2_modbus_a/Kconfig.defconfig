@@ -18,9 +18,6 @@ config MODBUS
 config MODBUS_BUFFER_SIZE
 	default 64
 
-config PM
-	default y
-
 config PM_DEVICE
 	default y
 

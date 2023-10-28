@@ -27,7 +27,7 @@ void search_callback(struct w1_rom rom, void *cb_arg)
 		serial_buf);
 }
 
-void main(void)
+int main(void)
 {
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
@@ -44,4 +44,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(10));
 	}
+
+	return 0;
 }

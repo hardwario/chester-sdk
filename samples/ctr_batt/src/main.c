@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 
 static const struct device *m_dev = DEVICE_DT_GET(DT_NODELABEL(ctr_batt));
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -52,4 +52,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(60));
 	}
+
+	return 0;
 }

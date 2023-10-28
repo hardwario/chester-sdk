@@ -78,7 +78,7 @@ static int init_edge(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -104,4 +104,6 @@ void main(void)
 			k_sleep(LED_DELAY);
 		}
 	}
+
+	return 0;
 }

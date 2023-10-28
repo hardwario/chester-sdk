@@ -32,7 +32,7 @@ void ctr_x10_event_handler(const struct device *dev, enum ctr_x10_event ev, void
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -71,4 +71,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(1));
 	}
+
+	return 0;
 }

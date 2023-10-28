@@ -26,7 +26,7 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 	LOG_INF("BDADDR: %s RSSI: %d", s, rssi);
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -49,4 +49,6 @@ void main(void)
 		LOG_INF("Alive");
 		k_sleep(K_SECONDS(1));
 	}
+
+	return 0;
 }

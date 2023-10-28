@@ -63,7 +63,7 @@ void ctr_z_event_handler(const struct device *dev, enum ctr_z_event event, void 
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -143,4 +143,6 @@ void main(void)
 
 		k_sleep(K_MSEC(1000));
 	}
+
+	return 0;
 }

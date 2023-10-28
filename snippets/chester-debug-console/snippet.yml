@@ -1,0 +1,6 @@
+name: chester-debug-console
+boards:
+  chester_nrf52840:
+    append:
+      EXTRA_CONF_FILE: chester-debug-console.conf
+      EXTRA_DTC_OVERLAY_FILE: chester-debug-console.overlay

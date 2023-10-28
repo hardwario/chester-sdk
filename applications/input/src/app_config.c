@@ -233,12 +233,14 @@ static void print_hygro_interval_aggreg(const struct shell *shell)
 
 static void print_w1_therm_interval_sample(const struct shell *shell)
 {
-	shell_print(shell, "app config w1-therm-interval-sample %d", m_app_config_interim.w1_therm_interval_sample);
+	shell_print(shell, "app config w1-therm-interval-sample %d",
+		    m_app_config_interim.w1_therm_interval_sample);
 }
 
 static void print_w1_therm_interval_aggreg(const struct shell *shell)
 {
-	shell_print(shell, "app config w1-therm-interval-aggreg %d", m_app_config_interim.w1_therm_interval_aggreg);
+	shell_print(shell, "app config w1-therm-interval-aggreg %d",
+		    m_app_config_interim.w1_therm_interval_aggreg);
 }
 
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
@@ -939,7 +941,8 @@ int app_config_cmd_config_hygro_interval_aggreg(const struct shell *shell, size_
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
 
-int app_config_cmd_config_w1_therm_interval_sample(const struct shell *shell, size_t argc, char **argv)
+int app_config_cmd_config_w1_therm_interval_sample(const struct shell *shell, size_t argc,
+						   char **argv)
 {
 	if (argc == 1) {
 		print_w1_therm_interval_sample(shell);
@@ -972,7 +975,8 @@ int app_config_cmd_config_w1_therm_interval_sample(const struct shell *shell, si
 	return -EINVAL;
 }
 
-int app_config_cmd_config_w1_therm_interval_aggreg(const struct shell *shell, size_t argc, char **argv)
+int app_config_cmd_config_w1_therm_interval_aggreg(const struct shell *shell, size_t argc,
+						   char **argv)
 {
 	if (argc == 1) {
 		print_w1_therm_interval_aggreg(shell);
@@ -1157,7 +1161,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	return 0;
 }
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

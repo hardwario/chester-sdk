@@ -159,9 +159,9 @@ CONFIG_PARAM_LIST()
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
 
-#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)	print_##_name_u(shell);
+#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)   print_##_name_u(shell);
 #define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help) print_##_name_u(shell);
-#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help)		print_##_name_u(shell);
+#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help)              print_##_name_u(shell);
 
 	CONFIG_PARAM_LIST()
 
@@ -261,7 +261,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	return 0;
 }
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int ret;
 

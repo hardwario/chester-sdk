@@ -14,7 +14,8 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-static void handler(enum ctr_button_channel chan, enum ctr_button_event ev, int val, void *user_data)
+static void handler(enum ctr_button_channel chan, enum ctr_button_event ev, int val,
+		    void *user_data)
 {
 	LOG_INF("Event: %d, %d, %d", chan, ev, val);
 
@@ -23,7 +24,7 @@ static void handler(enum ctr_button_channel chan, enum ctr_button_event ev, int 
 	ctr_led_set(CTR_LED_CHANNEL_Y, 0);
 }
 
-void main(void)
+int main(void)
 {
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
@@ -38,4 +39,6 @@ void main(void)
 
 		k_sleep(K_MSEC(5000));
 	}
+
+	return 0;
 }

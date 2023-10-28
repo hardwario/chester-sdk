@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 		}                                                                                  \
 	} while (0)
 
-void main(void)
+int main(void)
 {
 	CONFIGURE_GPIO(A0);
 	CONFIGURE_GPIO(A1);
@@ -64,4 +64,6 @@ void main(void)
 		PULSE_GPIO(B2);
 		PULSE_GPIO(B3);
 	}
+
+	return 0;
 }

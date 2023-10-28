@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 extern struct ctr_wdog_channel g_app_wdog_channel;
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -48,4 +48,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(5));
 	}
+
+	return 0;
 }

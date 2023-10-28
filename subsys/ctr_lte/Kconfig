@@ -6,7 +6,6 @@
 
 config CTR_LTE
 	bool "CTR_LTE"
-	depends on HEAP_MEM_POOL_SIZE >= 8192
 	select CTR_CONFIG
 	select CTR_LTE_IF
 	select CTR_RFMUX

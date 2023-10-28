@@ -33,7 +33,7 @@ static void ctr_x4_handler(const struct device *dev, enum ctr_x4_event event, vo
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -137,4 +137,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(5));
 	}
+
+	return 0;
 }

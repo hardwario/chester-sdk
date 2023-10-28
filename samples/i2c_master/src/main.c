@@ -18,8 +18,8 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-#define TMP112_I2C_ADDR		 0x48
-#define TMP112_REG_TEMPERATURE	 0x00
+#define TMP112_I2C_ADDR          0x48
+#define TMP112_REG_TEMPERATURE   0x00
 #define TMP112_REG_CONFIGURATION 0x01
 
 static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
@@ -69,7 +69,7 @@ static int write(const struct device *dev, uint8_t addr, uint8_t reg, uint16_t d
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -117,4 +117,6 @@ void main(void)
 
 		k_sleep(K_SECONDS(5));
 	}
+
+	return 0;
 }
