@@ -1,0 +1,206 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
+/ {
+	ctr_x0_a: ctr_x0_a {
+		compatible = "hardwario,ctr-x0";
+		status = "disabled";
+		ch1-gpios = <&gpio0 3 0>;
+		on1-gpios = <&ctr_x0_pcal6416a_a 11 GPIO_ACTIVE_LOW>;
+		pu1-gpios = <&ctr_x0_pcal6416a_a 13 GPIO_ACTIVE_LOW>;
+		pd1-gpios = <&ctr_x0_pcal6416a_a 15 GPIO_ACTIVE_HIGH>;
+		cl1-gpios = <&ctr_x0_pcal6416a_a 14 GPIO_ACTIVE_HIGH>;
+		ch2-gpios = <&gpio0 29 0>;
+		on2-gpios = <&ctr_x0_pcal6416a_a 10 GPIO_ACTIVE_LOW>;
+		pu2-gpios = <&ctr_x0_pcal6416a_a 8 GPIO_ACTIVE_LOW>;
+		pd2-gpios = <&ctr_x0_pcal6416a_a 12 GPIO_ACTIVE_HIGH>;
+		cl2-gpios = <&ctr_x0_pcal6416a_a 9 GPIO_ACTIVE_HIGH>;
+		ch3-gpios = <&gpio0 2 0>;
+		on3-gpios = <&ctr_x0_pcal6416a_a 3 GPIO_ACTIVE_LOW>;
+		pu3-gpios = <&ctr_x0_pcal6416a_a 5 GPIO_ACTIVE_LOW>;
+		pd3-gpios = <&ctr_x0_pcal6416a_a 7 GPIO_ACTIVE_HIGH>;
+		cl3-gpios = <&ctr_x0_pcal6416a_a 6 GPIO_ACTIVE_HIGH>;
+		ch4-gpios = <&gpio0 31 0>;
+		on4-gpios = <&ctr_x0_pcal6416a_a 0 GPIO_ACTIVE_LOW>;
+		pu4-gpios = <&ctr_x0_pcal6416a_a 2 GPIO_ACTIVE_LOW>;
+		pd4-gpios = <&ctr_x0_pcal6416a_a 4 GPIO_ACTIVE_HIGH>;
+		cl4-gpios = <&ctr_x0_pcal6416a_a 1 GPIO_ACTIVE_HIGH>;
+	};
+
+	ctr_x0_b: ctr_x0_b {
+		compatible = "hardwario,ctr-x0";
+		status = "disabled";
+		ch1-gpios = <&gpio0 28 0>;
+		on1-gpios = <&ctr_x0_pcal6416a_b 11 GPIO_ACTIVE_LOW>;
+		pu1-gpios = <&ctr_x0_pcal6416a_b 13 GPIO_ACTIVE_LOW>;
+		pd1-gpios = <&ctr_x0_pcal6416a_b 15 GPIO_ACTIVE_HIGH>;
+		cl1-gpios = <&ctr_x0_pcal6416a_b 14 GPIO_ACTIVE_HIGH>;
+		ch2-gpios = <&gpio0 30 0>;
+		on2-gpios = <&ctr_x0_pcal6416a_b 10 GPIO_ACTIVE_LOW>;
+		pu2-gpios = <&ctr_x0_pcal6416a_b 8 GPIO_ACTIVE_LOW>;
+		pd2-gpios = <&ctr_x0_pcal6416a_b 12 GPIO_ACTIVE_HIGH>;
+		cl2-gpios = <&ctr_x0_pcal6416a_b 9 GPIO_ACTIVE_HIGH>;
+		ch3-gpios = <&gpio0 4 0>;
+		on3-gpios = <&ctr_x0_pcal6416a_b 3 GPIO_ACTIVE_LOW>;
+		pu3-gpios = <&ctr_x0_pcal6416a_b 5 GPIO_ACTIVE_LOW>;
+		pd3-gpios = <&ctr_x0_pcal6416a_b 7 GPIO_ACTIVE_HIGH>;
+		cl3-gpios = <&ctr_x0_pcal6416a_b 6 GPIO_ACTIVE_HIGH>;
+		ch4-gpios = <&gpio0 5 0>;
+		on4-gpios = <&ctr_x0_pcal6416a_b 0 GPIO_ACTIVE_LOW>;
+		pu4-gpios = <&ctr_x0_pcal6416a_b 2 GPIO_ACTIVE_LOW>;
+		pd4-gpios = <&ctr_x0_pcal6416a_b 4 GPIO_ACTIVE_HIGH>;
+		cl4-gpios = <&ctr_x0_pcal6416a_b 1 GPIO_ACTIVE_HIGH>;
+	};
+
+	ctr_x3_a: ctr_x3_a {
+		compatible = "hardwario,ctr-x3";
+		status = "disabled";
+		slot = "A";
+		pwr0-gpios = <&gpio0 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		pwr1-gpios = <&gpio0 31 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+
+	ctr_x3_b: ctr_x3_b {
+		compatible = "hardwario,ctr-x3";
+		status = "disabled";
+		slot = "B";
+		pwr0-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		pwr1-gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+
+	ctr_x4_a: ctr_x4_a {
+		compatible = "hardwario,ctr-x4";
+		status = "disabled";
+		pwr1-gpios = <&gpio0 3 0>;
+		pwr2-gpios = <&gpio0 29 0>;
+		pwr3-gpios = <&gpio0 2 0>;
+		pwr4-gpios = <&gpio0 31 0>;
+	};
+
+	ctr_x4_b: ctr_x4_b {
+		compatible = "hardwario,ctr-x4";
+		status = "disabled";
+		pwr1-gpios = <&gpio0 28 0>;
+		pwr2-gpios = <&gpio0 30 0>;
+		pwr3-gpios = <&gpio0 4 0>;
+		pwr4-gpios = <&gpio0 5 0>;
+	};
+
+	ctr_x10: ctr_x10 {
+		compatible = "hardwario,ctr-x10";
+		status = "disabled";
+	};
+};
+
+&i2c0 {
+	ctr_s1: ctr_s1@11 {
+		compatible = "hardwario,ctr-s1";
+		status = "disabled";
+		reg = <0x11>;
+		irq-gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+
+	ctr_x0_pcal6416a_a: ctr_x0_pcal6416a_a@20 {
+		compatible = "nxp,pcal6416a";
+		status = "disabled";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+	};
+
+	ctr_x0_pcal6416a_b: ctr_x0_pcal6416a_b@21 {
+		compatible = "nxp,pcal6416a";
+		status = "disabled";
+		reg = <0x21>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+	};
+
+	ctr_x2_sc16is740_a: uart@50 {
+		compatible = "nxp,sc16is7xx";
+		status = "disabled";
+		reg = <0x50>;
+		clock-frequency = <14745600>;
+		prescaler = <1>;
+		irq-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+	};
+
+	ctr_x2_sc16is740_b: uart@51 {
+		compatible = "nxp,sc16is7xx";
+		status = "disabled";
+		reg = <0x51>;
+		clock-frequency = <14745600>;
+		prescaler = <1>;
+		irq-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+	};
+
+	ctr_x3_ads122c04_a1: ctr_x3_ads122c04_a1@46 {
+		compatible = "ti,ads122c04";
+		status = "disabled";
+		reg = <0x46>;
+		mux = <3>;
+		#io-channel-cells = <1>;
+	};
+
+	ctr_x3_ads122c04_a2: ctr_x3_ads122c04_a2@47 {
+		compatible = "ti,ads122c04";
+		status = "disabled";
+		reg = <0x47>;
+		mux = <3>;
+		#io-channel-cells = <1>;
+	};
+
+	ctr_x3_ads122c04_b1: ctr_x3_ads122c04_b1@4a {
+		compatible = "ti,ads122c04";
+		status = "disabled";
+		reg = <0x4a>;
+		mux = <3>;
+		#io-channel-cells = <1>;
+	};
+
+	ctr_x3_ads122c04_b2: ctr_x3_ads122c04b2@4f {
+		compatible = "ti,ads122c04";
+		status = "disabled";
+		reg = <0x4f>;
+		mux = <3>;
+		#io-channel-cells = <1>;
+	};
+
+	ctr_x4_tla2021: ctr_x4_tla2021@49 {
+		compatible = "ti,tla2021";
+		status = "disabled";
+		reg = <0x49>;
+		#io-channel-cells = <1>;
+	};
+
+	ctr_x10_tla2024: ctr_x10_tla2024@49 {
+		compatible = "ti,tla2024";
+		status = "disabled";
+		reg = <0x49>;
+		#io-channel-cells = <4>;
+	};
+
+	ctr_z: ctr_z@10 {
+		compatible = "hardwario,ctr-z";
+		status = "disabled";
+		reg = <0x10>;
+		irq-gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+
+	sht30_ext: sht30_ext@45 {
+		compatible = "sensirion,sht3xd";
+		status = "disabled";
+		reg = <0x45>;
+	};
+
+	ctr_barometer_tag: ctr_barometer_tag@60 {
+		compatible = "nxp,mpl3115a2";
+		status = "disabled";
+		reg = <0x60>;
+	};
+};
