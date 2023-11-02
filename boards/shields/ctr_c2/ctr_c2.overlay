@@ -4,22 +4,16 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-/ {
-	led_rgy {
-		compatible = "gpio-leds";
+&led_r {
+	gpios = <&ctr_c2_tca9534a 5 GPIO_ACTIVE_LOW>;
+};
 
-		led_r: led_r {
-			gpios = <&ctr_c2_tca9534a 5 GPIO_ACTIVE_LOW>;
-		};
+&led_g {
+	gpios = <&ctr_c2_tca9534a 6 GPIO_ACTIVE_LOW>;
+};
 
-		led_g: led_g {
-			gpios = <&ctr_c2_tca9534a 6 GPIO_ACTIVE_LOW>;
-		};
-
-		led_y: led_y {
-			gpios = <&ctr_c2_tca9534a 7 GPIO_ACTIVE_LOW>;
-		};
-	};
+&led_y {
+	gpios = <&ctr_c2_tca9534a 7 GPIO_ACTIVE_LOW>;
 };
 
 &i2c0 {

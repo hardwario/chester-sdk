@@ -4,14 +4,13 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-description: CHESTER-M GPIO Driver
+description: GPIO pins exposed to the two expansion slots on CHESTER-M
 
 compatible: "hardwario,ctr-gpio"
 
 include: base.yaml
 
 properties:
-
   a0-gpios:
     type: phandle-array
     required: true

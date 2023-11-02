@@ -26,7 +26,7 @@ static int suspend(void)
 {
 	int ret;
 
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(flash1));
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(spi_flash0));
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
 		return -ENODEV;
@@ -45,7 +45,7 @@ static int resume(void)
 {
 	int ret;
 
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(flash1));
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(spi_flash0));
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
 		return -ENODEV;
