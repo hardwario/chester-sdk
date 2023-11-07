@@ -66,8 +66,6 @@ static int cmd_meteo_read(const struct shell *shell, size_t argc, char **argv)
 
 	shell_print(shell, "wind direction: %.2f deg", direction);
 
-	shell_print(shell, "command succeeded");
-
 	return 0;
 }
 

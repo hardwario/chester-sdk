@@ -57,6 +57,51 @@ static int cmd_aggreg(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_read(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_MPL3115A2_SHELL)
+	shell_print(shell, "Barometer");
+	ret = shell_execute_cmd(shell, "mpl3115a2 read");
+	if (ret) {
+		LOG_ERR("Call `shell_execute_cmd` failed: %d", ret);
+	}
+#endif /* defined(CONFIG_MPL3115A2_SHELL) */
+
+#if defined(CONFIG_SHIELD_CTR_METEO_A)
+	shell_print(shell, "Meteo");
+	ret = shell_execute_cmd(shell, "meteo read ctr_meteo_a");
+	if (ret) {
+		LOG_ERR("Call `shell_execute_cmd` failed: %d", ret);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_METEO_A) */
+
+#if defined(CONFIG_SHIELD_CTR_METEO_B)
+	shell_print(shell, "Meteo");
+	ret = shell_execute_cmd(shell, "meteo read ctr_meteo_b");
+	if (ret) {
+		LOG_ERR("Call `shell_execute_cmd` failed: %d", ret);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_METEO_B) */
+
+#if defined(CONFIG_SHIELD_CTR_S2)
+	shell_print(shell, "Humidity");
+	ret = shell_execute_cmd(shell, "hygro read");
+	if (ret) {
+		LOG_ERR("Call `shell_execute_cmd` failed: %d", ret);
+	}
+#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+
+	return 0;
+}
+
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -126,5 +171,6 @@ SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 SHELL_CMD_REGISTER(sample, NULL, "Sample immediately.", cmd_sample);
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
 SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately", cmd_aggreg);
+SHELL_CMD_REGISTER(sensors_read, NULL, "Read sensors and print values to shell", cmd_read);
 
 /* clang-format on */

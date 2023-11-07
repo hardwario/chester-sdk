@@ -39,7 +39,7 @@ static int cmd_hygro_read(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (repetitions > 1) {
-			shell_print(shell, "repetition: %d/%d", i + 1, repetitions);
+			shell_print(shell, "Repetition: %d/%d", i + 1, repetitions);
 		}
 
 		float temperature;
@@ -51,11 +51,9 @@ static int cmd_hygro_read(const struct shell *shell, size_t argc, char **argv)
 			return ret;
 		}
 
-		shell_print(shell, "temperature: %.2f C", temperature);
-		shell_print(shell, "humidity: %.1f %%", humidity);
+		shell_print(shell, "Temperature: %.2f C", temperature);
+		shell_print(shell, "Humidity: %.1f %%", humidity);
 	}
-
-	shell_print(shell, "command succeeded");
 
 	return 0;
 }
