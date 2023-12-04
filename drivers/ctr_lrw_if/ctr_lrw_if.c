@@ -31,7 +31,7 @@
 #define RX_BLOCK_ALIGN	 4
 #define RX_LINE_MAX_SIZE 256
 #define RX_RING_BUF_SIZE 512
-#define RX_TIMEOUT	 100
+#define RX_TIMEOUT	 100000
 #define TX_LINE_MAX_SIZE 256
 #define TX_PREFIX	 ""
 #define TX_PREFIX_LEN	 0
