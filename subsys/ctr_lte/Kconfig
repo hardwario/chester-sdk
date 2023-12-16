@@ -6,8 +6,9 @@
 
 config CTR_LTE
 	bool "CTR_LTE"
+	default y
+	depends on DT_HAS_HARDWARIO_CTR_LTE_IF_ENABLED
 	select CTR_CONFIG
-	select CTR_LTE_IF
 	select CTR_RFMUX
 	select CTR_SHELL
 	select CTR_UTIL

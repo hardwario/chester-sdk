@@ -6,6 +6,8 @@
 
 config CTR_LTE_IF
 	bool "CHESTER LTE Interface Driver"
+	default y
+	depends on DT_HAS_HARDWARIO_CTR_LTE_IF_ENABLED
 	select NRFX_TIMER1
 	select POLL
 	select SERIAL
