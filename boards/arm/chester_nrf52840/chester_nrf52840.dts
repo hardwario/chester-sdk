@@ -7,6 +7,8 @@
 /dts-v1/;
 
 #include <nordic/nrf52840_qiaa.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
 #include "chester_nrf52840-pinctrl.dtsi"
 
 / {
@@ -23,20 +25,23 @@
 		ctr,lte_if = &ctr_lte_if;
 	};
 
-	gpio_keys {
+	gpio_keys: gpio_keys {
 		compatible = "gpio-keys";
 
 		btn_int: btn_int {
 			gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 
 		btn_ext: btn_ext {
 			gpios = <&gpio0 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_1>;
 			status = "disabled";
 		};
 
 		tamper_key: tamper_key {
 			gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_2>;
 			status = "disabled";
 		};
 	};
@@ -95,7 +100,7 @@
 		full-ohms = <(10000 + 5000)>;
 
 		/*
-		 * The second GPIO is an optional 10k Ohm load resistor
+		 * The second GPIO is an optional 10 kOhm load resistor
 		 */
 		power-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>,
 		              <&gpio1 14 GPIO_ACTIVE_HIGH>;
