@@ -6,6 +6,8 @@
 
 config CTR_LRW_IF
 	bool "CHESTER LRW Interface Driver"
+	default y
+	depends on DT_HAS_HARDWARIO_CTR_LRW_IF_ENABLED
 	select NRFX_TIMER2
 	select POLL
 	select SERIAL
