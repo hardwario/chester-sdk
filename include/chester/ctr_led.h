@@ -7,6 +7,8 @@
 #ifndef CHESTER_INCLUDE_CTR_LED_H_
 #define CHESTER_INCLUDE_CTR_LED_H_
 
+#include <zephyr/drivers/led.h>
+
 /* Standard includes */
 #include <stdbool.h>
 
@@ -22,7 +24,14 @@ enum ctr_led_channel {
 	CTR_LED_CHANNEL_LOAD = 4,
 };
 
-int ctr_led_set(enum ctr_led_channel channel, bool is_on);
+static inline int ctr_led_set(enum ctr_led_channel channel, bool is_on)
+{
+	if (is_on) {
+		return led_on(DEVICE_DT_GET(DT_NODELABEL(gpio_leds)), channel);
+	} else {
+		return led_off(DEVICE_DT_GET(DT_NODELABEL(gpio_leds)), channel);
+	}
+}
 
 #ifdef __cplusplus
 }

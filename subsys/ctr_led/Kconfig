@@ -7,7 +7,6 @@
 config CTR_LED
 	bool "CTR_LED"
 	select LED
-	select LED_GPIO
 
 if CTR_LED
 
