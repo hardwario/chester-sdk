@@ -23,6 +23,7 @@
 
 /* Standard includes */
 #include <stdlib.h>
+#include <stdint.h>
 
 #define DT_DRV_COMPAT maxbotix_mb7066
 
@@ -194,7 +195,8 @@ static int mb7066_init(const struct device *dev)
 
 	/* setup timer */
 	data->timer = (nrfx_timer_t)NRFX_TIMER_INSTANCE(CONFIG_MB7066_TIMER);
-	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG(NRF_TIMER_FREQ_16MHz);
+	uint32_t base_frequency = NRF_TIMER_BASE_FREQUENCY_GET(data->timer.p_reg);
+	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG(base_frequency);
 	timer_config.bit_width = NRF_TIMER_BIT_WIDTH_32;
 	CHECKOUT(nrfx_timer_init, &data->timer, &timer_config, NULL);
 

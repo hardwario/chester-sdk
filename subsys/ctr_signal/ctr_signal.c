@@ -21,6 +21,7 @@
 
 /* Standard includes */
 #include <math.h>
+#include <stdint.h>
 
 LOG_MODULE_REGISTER(ctr_signal, CONFIG_CTR_SIGNAL_LOG_LEVEL);
 
@@ -71,7 +72,8 @@ static int setup_timer(void)
 	IRQ_CONNECT(TIMER1_IRQn, 0, nrfx_timer_1_irq_handler, NULL, 0);
 	irq_enable(TIMER1_IRQn);
 
-	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG(NRF_TIMER_FREQ_16MHz);
+	uint32_t base_frequency = NRF_TIMER_BASE_FREQUENCY_GET(m_timer.p_reg);
+	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG(base_frequency);
 
 	ret_nrfx = nrfx_timer_init(&m_timer, &timer_config, timer_event_handler);
 	if (ret_nrfx != NRFX_SUCCESS) {
