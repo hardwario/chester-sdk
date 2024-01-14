@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(ctr_lte_if_v2, CONFIG_CTR_LTE_IF_V2_LOG_LEVEL);
 #define RX_SLAB_BLOCK_ALIGN 4
 #define RX_SLAB_BLOCK_COUNT 2
 #define RX_SLAB_BLOCK_SIZE  64
-#define RX_TIMEOUT_US	    100
+#define RX_TIMEOUT_US       100000
 
 struct ctr_lte_if_v2_config {
 	const struct device *uart_dev;
@@ -209,7 +209,7 @@ static void rx_restart_work_handler(struct k_work *work)
 			     RX_TIMEOUT_US);
 	if (ret) {
 		LOG_ERR("Call `uart_rx_enable` failed: %d", ret);
-		k_mem_slab_free(&data->rx_slab, (void **)&buf);
+		k_mem_slab_free(&data->rx_slab, buf);
 		return;
 	}
 
@@ -292,14 +292,14 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		ret = uart_rx_buf_rsp(dev, buf, RX_SLAB_BLOCK_SIZE);
 		if (ret) {
 			LOG_ERR("Call `uart_rx_buf_rsp` failed: %d", ret);
-			k_mem_slab_free(&data->rx_slab, (void **)&buf);
+			k_mem_slab_free(&data->rx_slab, buf);
 		}
 
 		break;
 
 	case UART_RX_BUF_RELEASED:
 		LOG_DBG("Event `UART_RX_BUF_RELEASED`");
-		k_mem_slab_free(&data->rx_slab, (void **)&evt->data.rx_buf.buf);
+		k_mem_slab_free(&data->rx_slab, evt->data.rx_buf.buf);
 		break;
 
 	case UART_RX_DISABLED:
@@ -513,7 +513,7 @@ static int ctr_lte_if_v2_enable_uart_(const struct device *dev)
 	ret = uart_rx_enable(get_config(dev)->uart_dev, buf, RX_SLAB_BLOCK_SIZE, RX_TIMEOUT_US);
 	if (ret) {
 		LOG_ERR("Call `uart_rx_enable` failed: %d", ret);
-		k_mem_slab_free(&get_data(dev)->rx_slab, (void **)&buf);
+		k_mem_slab_free(&get_data(dev)->rx_slab, buf);
 		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
