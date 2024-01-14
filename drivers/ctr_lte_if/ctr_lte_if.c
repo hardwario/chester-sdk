@@ -25,17 +25,17 @@
 
 #define DT_DRV_COMPAT hardwario_ctr_lte_if
 
-#define RX_BLOCK_SIZE	 64
-#define RX_BLOCK_COUNT	 2
-#define RX_BLOCK_ALIGN	 4
+#define RX_BLOCK_SIZE    64
+#define RX_BLOCK_COUNT   2
+#define RX_BLOCK_ALIGN   4
 #define RX_LINE_MAX_SIZE 1024
 #define RX_RING_BUF_SIZE 512
-#define RX_TIMEOUT	 100000
+#define RX_TIMEOUT       100000
 #define TX_LINE_MAX_SIZE 1024
-#define TX_PREFIX	 ""
-#define TX_PREFIX_LEN	 0
-#define TX_SUFFIX	 "\r\n"
-#define TX_SUFFIX_LEN	 2
+#define TX_PREFIX        ""
+#define TX_PREFIX_LEN    0
+#define TX_SUFFIX        "\r\n"
+#define TX_SUFFIX_LEN    2
 
 LOG_MODULE_REGISTER(ctr_lte_if, CONFIG_CTR_LTE_IF_LOG_LEVEL);
 
@@ -145,7 +145,7 @@ static void rx_restart_work_handler(struct k_work *work)
 	ret = uart_rx_enable(get_config(data->dev)->uart_dev, buf, RX_BLOCK_SIZE, RX_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("Call `uart_rx_enable` failed: %d", ret);
-		k_mem_slab_free(&data->rx_slab, (void **)&buf);
+		k_mem_slab_free(&data->rx_slab, buf);
 		return;
 	}
 
@@ -207,14 +207,14 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		ret = uart_rx_buf_rsp(dev, buf, RX_BLOCK_SIZE);
 		if (ret < 0) {
 			LOG_ERR("Call `uart_rx_buf_rsp` failed: %d", ret);
-			k_mem_slab_free(&get_data(ctr_lte_if_dev)->rx_slab, (void **)&buf);
+			k_mem_slab_free(&get_data(ctr_lte_if_dev)->rx_slab, buf);
 		}
 
 		break;
 
 	case UART_RX_BUF_RELEASED:
 		LOG_DBG("Event `UART_RX_BUF_RELEASED`");
-		k_mem_slab_free(&get_data(ctr_lte_if_dev)->rx_slab, (void **)&evt->data.rx_buf.buf);
+		k_mem_slab_free(&get_data(ctr_lte_if_dev)->rx_slab, evt->data.rx_buf.buf);
 		break;
 
 	case UART_RX_DISABLED:
@@ -225,7 +225,6 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 
 		} else {
 			ret = k_work_submit(&get_data(ctr_lte_if_dev)->rx_restart_work);
-
 			if (ret < 0) {
 				LOG_ERR("Call `k_work_submit` failed: %d", ret);
 			}
@@ -387,7 +386,7 @@ static int ctr_lte_if_enable_(const struct device *dev)
 	ret = uart_rx_enable(get_config(dev)->uart_dev, buf, RX_BLOCK_SIZE, RX_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("Call `uart_rx_enable` failed: %d", ret);
-		k_mem_slab_free(&get_data(dev)->rx_slab, (void **)&buf);
+		k_mem_slab_free(&get_data(dev)->rx_slab, buf);
 		k_mutex_unlock(&get_data(dev)->mut);
 		return ret;
 	}
