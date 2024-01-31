@@ -15,6 +15,13 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_x0 ctr_x0
+ * @brief Driver for CHESTER X0
+ * @{
+ */
+
+/** @brief Channels */
 enum ctr_x0_channel {
 	CTR_X0_CHANNEL_1 = 0,
 	CTR_X0_CHANNEL_2 = 1,
@@ -22,6 +29,7 @@ enum ctr_x0_channel {
 	CTR_X0_CHANNEL_4 = 3,
 };
 
+/** @brief Modes */
 enum ctr_x0_mode {
 	CTR_X0_MODE_DEFAULT = 0,
 	CTR_X0_MODE_NPN_INPUT = 1,
@@ -31,16 +39,25 @@ enum ctr_x0_mode {
 	CTR_X0_MODE_PWR_SOURCE = 5,
 };
 
+/** @private */
 typedef int (*ctr_x0_api_set_mode)(const struct device *dev, enum ctr_x0_channel channel,
 				   enum ctr_x0_mode mode);
+/** @private */
 typedef int (*ctr_x0_api_get_spec)(const struct device *dev, enum ctr_x0_channel channel,
 				   const struct gpio_dt_spec **spec);
 
+/** @private */
 struct ctr_x0_driver_api {
 	ctr_x0_api_set_mode set_mode;
 	ctr_x0_api_get_spec get_spec;
 };
 
+/**
+ * @brief Set mode
+ * @param[in] dev
+ * @param[in] channel Channel to modify
+ * @param[in] mode
+ */
 static inline int ctr_x0_set_mode(const struct device *dev, enum ctr_x0_channel channel,
 				  enum ctr_x0_mode mode)
 {
@@ -49,6 +66,12 @@ static inline int ctr_x0_set_mode(const struct device *dev, enum ctr_x0_channel 
 	return api->set_mode(dev, channel, mode);
 }
 
+/**
+ * @brief Get channel's GPIO device tree spec
+ * @param[in] dev
+ * @param[in] channel
+ * @param[out] spec
+ */
 static inline int ctr_x0_get_spec(const struct device *dev, enum ctr_x0_channel channel,
 				  const struct gpio_dt_spec **spec)
 {
@@ -56,6 +79,8 @@ static inline int ctr_x0_get_spec(const struct device *dev, enum ctr_x0_channel 
 
 	return api->get_spec(dev, channel, spec);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }
