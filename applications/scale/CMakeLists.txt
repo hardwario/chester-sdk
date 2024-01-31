@@ -12,6 +12,12 @@ set(SHIELD ctr_lte ctr_x3_a)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(scale)
 
+add_custom_command(
+    COMMAND ../../../scripts/gen-msg-key.py ../codec/cbor-decoder.yaml ../src/msg_key.h
+    OUTPUT ../src/msg_key.h
+    MAIN_DEPENDENCY ../codec/cbor-decoder.yaml
+)
+
 target_sources(app PRIVATE src/app_cbor.c)
 target_sources(app PRIVATE src/app_config.c)
 target_sources(app PRIVATE src/app_data.c)
@@ -23,3 +29,5 @@ target_sources(app PRIVATE src/app_send.c)
 target_sources(app PRIVATE src/app_shell.c)
 
 target_sources(app PRIVATE src/main.c)
+
+target_sources(app PRIVATE src/msg_key.h)

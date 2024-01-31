@@ -12,6 +12,12 @@ set(SHIELD ctr_lrw ctr_lte ctr_s2)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(clime)
 
+add_custom_command(
+    COMMAND ../../../scripts/gen-msg-key.py ../codec/cbor-decoder.yaml ../src/msg_key.h
+    OUTPUT ../src/msg_key.h
+    MAIN_DEPENDENCY ../codec/cbor-decoder.yaml
+)
+
 target_sources_ifdef(CONFIG_APP_TAMPER app PRIVATE src/app_tamper.c)
 target_sources(app PRIVATE src/app_backup.c)
 target_sources(app PRIVATE src/app_cbor.c)
@@ -26,3 +32,5 @@ target_sources(app PRIVATE src/app_shell.c)
 target_sources(app PRIVATE src/app_work.c)
 
 target_sources(app PRIVATE src/main.c)
+
+target_sources(app PRIVATE src/msg_key.h)

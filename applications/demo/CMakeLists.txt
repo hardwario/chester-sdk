@@ -11,8 +11,13 @@ set(ENV{FW_BUNDLE} "com.hardwario.chester.app.demo")
 set(ENV{FW_NAME} "CHESTER Demo")
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-
 project(app)
+
+add_custom_command(
+    COMMAND west gen-codec -d ../codec/cbor-decoder.yaml -e ../codec/cbor-encoder.yaml -o ../src/app_codec.h
+    OUTPUT ../src/app_codec.h
+    DEPENDS ../codec/cbor-decoder.yaml ../codec/cbor-encoder.yaml
+)
 
 target_sources(app PRIVATE src/app_cbor.c)
 target_sources(app PRIVATE src/app_config.c)
@@ -25,3 +30,5 @@ target_sources(app PRIVATE src/app_shell.c)
 target_sources(app PRIVATE src/app_work.c)
 
 target_sources(app PRIVATE src/main.c)
+
+target_sources(app PRIVATE src/app_codec.h)

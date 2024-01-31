@@ -22,6 +22,12 @@ def main():
 
     decoder = yaml.load(inp, Loader=yaml.FullLoader)
 
+    out.write("""/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+\n""")
     out.write('#ifndef MSG_KEY_H_\n')
     out.write('#define MSG_KEY_H_\n\n')
     out.write('/* This file has been generated using the script gen-msg-key.py */\n\n')
