@@ -1,0 +1,9 @@
+<map id="ctr_lrw_event_data" name="ctr_lrw_event_data">
+<area shape="rect" id="node1" title=" " alt="" coords="257,129,389,155"/>
+<area shape="rect" id="node2" href="$structctr__lrw__data__start__ok.html" title=" " alt="" coords="7,5,154,31"/>
+<area shape="rect" id="node3" href="$structctr__lrw__data__start__err.html" title=" " alt="" coords="7,55,155,80"/>
+<area shape="rect" id="node4" href="$structctr__lrw__data__join__ok.html" title=" " alt="" coords="10,104,151,129"/>
+<area shape="rect" id="node5" href="$structctr__lrw__data__join__err.html" title=" " alt="" coords="9,153,152,179"/>
+<area shape="rect" id="node6" href="$structctr__lrw__data__send__ok.html" title=" " alt="" coords="6,203,155,228"/>
+<area shape="rect" id="node7" href="$structctr__lrw__data__send__err.html" title=" " alt="" coords="5,252,156,277"/>
+</map>

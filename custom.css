@@ -1,0 +1,10 @@
+@media (prefers-color-scheme: dark) {
+    html:not(.light-mode) {
+	--primary-color: rgba(227, 4, 39, 1);
+	--primary-dark-color: rgb(33, 175, 144);
+	--primary-light-color: rgb(70, 203, 174);
+	--page-background-color: #1b1b1b;
+	--fragment-background: rgb(37, 37, 50);
+    }
+}
+

@@ -1,0 +1,8 @@
+<map id="ctr_gnss_event_data" name="ctr_gnss_event_data">
+<area shape="rect" id="node1" title=" " alt="" coords="264,104,407,129"/>
+<area shape="rect" id="node2" href="$structctr__gnss__data__start__ok.html" title=" " alt="" coords="5,5,164,31"/>
+<area shape="rect" id="node3" href="$structctr__gnss__data__start__err.html" title=" " alt="" coords="5,55,164,80"/>
+<area shape="rect" id="node4" href="$structctr__gnss__data__stop__ok.html" title=" " alt="" coords="6,104,163,129"/>
+<area shape="rect" id="node5" href="$structctr__gnss__data__stop__err.html" title=" " alt="" coords="5,153,164,179"/>
+<area shape="rect" id="node6" href="$structctr__gnss__data__update.html" title=" " alt="" coords="9,203,160,228"/>
+</map>
