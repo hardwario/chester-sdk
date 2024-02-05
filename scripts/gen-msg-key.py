@@ -14,27 +14,37 @@ import yaml
 import sys
 
 def main():
-    decoder = yaml.load(open(sys.argv[1]), Loader=yaml.FullLoader)
+    inp = sys.stdin
+    out = sys.stdout
+    if len(sys.argv) == 3:
+        inp = open(sys.argv[1])
+        out = open(sys.argv[2], 'w')
 
-    with open(sys.argv[2], 'w') as f:
-        f.write('#ifndef MSG_KEY_H_\n')
-        f.write('#define MSG_KEY_H_\n\n')
-        f.write('/* This file has been generated using the script gen-msg-key.py */\n\n')
-        f.write('#ifdef __cplusplus\n')
-        f.write('extern "C" {\n')
-        f.write('#endif\n\n')
-        f.write('enum msg_key {\n')
+    decoder = yaml.load(inp, Loader=yaml.FullLoader)
 
-        for i, item in enumerate(decoder):
-            key, _ = item.popitem()
-            f.write(f'\tMSG_KEY_{key.upper()} = {i},\n')
+    out.write('#ifndef MSG_KEY_H_\n')
+    out.write('#define MSG_KEY_H_\n\n')
+    out.write('/* This file has been generated using the script gen-msg-key.py */\n\n')
+    out.write('#ifdef __cplusplus\n')
+    out.write('extern "C" {\n')
+    out.write('#endif\n\n')
+    out.write('enum msg_key {\n')
 
-        f.write('};\n\n')
-        f.write('#ifdef __cplusplus\n')
-        f.write('}\n')
-        f.write('#endif\n\n')
+    for i, item in enumerate(decoder):
+        key, _ = item.popitem()
+        out.write(f'\tMSG_KEY_{key.upper()} = {i},\n')
 
-        f.write('#endif /* MSG_KEY_H_ */\n')
+    out.write('};\n\n')
+    out.write('#ifdef __cplusplus\n')
+    out.write('}\n')
+    out.write('#endif\n\n')
+
+    out.write('#endif /* MSG_KEY_H_ */\n')
+
+    if len(sys.argv) == 3:
+        inp.close()
+        out.close()
+
 
 if __name__ == '__main__':
     main()

@@ -440,7 +440,7 @@ EXTRACT_PACKAGE        = NO
 # included in the documentation.
 # The default value is: NO.
 
-EXTRACT_STATIC         = NO
+EXTRACT_STATIC         = YES
 
 # If the EXTRACT_LOCAL_CLASSES tag is set to YES, classes (and structs) defined
 # locally in source files will be included in the documentation. If set to NO,
@@ -1172,8 +1172,8 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = doc/doxygen-awesome-css/doxygen-awesome.css \
-	doc/doxygen-awesome-css/doxygen-awesome-sidebar-only.css \
+HTML_EXTRA_STYLESHEET  = ../doxygen-awesome-css/doxygen-awesome.css \
+	../doxygen-awesome-css/doxygen-awesome-sidebar-only.css \
 	doc/custom.css
 HTML_COLORSTYLE = LIGHT
 
