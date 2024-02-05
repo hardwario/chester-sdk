@@ -9,6 +9,9 @@ manifest:
       repo-path: ncs.git
       revision: v2.5-chester-branch
       import: true
+    - name: doxygen-awesome-css
+      url: https://github.com/jothepro/doxygen-awesome-css
+      revision: main
   self:
     path: chester
     west-commands: scripts/west-commands.yml

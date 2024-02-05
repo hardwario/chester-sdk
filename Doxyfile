@@ -1172,8 +1172,8 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = doc/doxygen-awesome-css/doxygen-awesome.css \
-	doc/doxygen-awesome-css/doxygen-awesome-sidebar-only.css \
+HTML_EXTRA_STYLESHEET  = ../doxygen-awesome-css/doxygen-awesome.css \
+	../doxygen-awesome-css/doxygen-awesome-sidebar-only.css \
 	doc/custom.css
 HTML_COLORSTYLE = LIGHT
 
