@@ -7,5 +7,6 @@ var ctr__b1_8h =
       [ "CTR_B1_OUTPUT_WM_ON", "ctr__b1_8h.html#a40805ad4bf2a6a3a7364456491b2fc22a0beb93861aaf1dd3b577fc934653cb62", null ],
       [ "CTR_B1_OUTPUT_ANT_1", "ctr__b1_8h.html#a40805ad4bf2a6a3a7364456491b2fc22a5c1341e53b5444a4b638aa7b02d02784", null ],
       [ "CTR_B1_OUTPUT_ANT_2", "ctr__b1_8h.html#a40805ad4bf2a6a3a7364456491b2fc22a8e43b377e829d5eef630f3bf2108367b", null ]
-    ] ]
+    ] ],
+    [ "ctr_b1_set_output", "ctr__b1_8h.html#a9410a09730ba38be036d9e9590073724", null ]
 ];

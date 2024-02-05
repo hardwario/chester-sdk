@@ -10,5 +10,7 @@ var ctr__a1_8h =
     [ "ctr_a1_relay", "ctr__a1_8h.html#a4a99c7e16e260d998b4f75c2803a4c46", [
       [ "CTR_A1_RELAY_1", "ctr__a1_8h.html#a4a99c7e16e260d998b4f75c2803a4c46a34cc827facfb10b02d36f2447179df1e", null ],
       [ "CTR_A1_RELAY_2", "ctr__a1_8h.html#a4a99c7e16e260d998b4f75c2803a4c46a2f530a8f5ada03f79376cbe76142d8ab", null ]
-    ] ]
+    ] ],
+    [ "ctr_a1_set_led", "ctr__a1_8h.html#a98354785f931d1f3ccb0536c15c5e3a8", null ],
+    [ "ctr_a1_set_relay", "ctr__a1_8h.html#a4ae192f42d5d593ab6af17573ed817b4", null ]
 ];

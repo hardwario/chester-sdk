@@ -97,7 +97,8 @@ $(document).ready(function(){initNavTree('ds28e17_8h.html',''); initResizable();
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#typedef-members">Typedefs</a> &#124;
-<a href="#enum-members">Enumerations</a>  </div>
+<a href="#enum-members">Enumerations</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ds28e17.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -147,6 +148,21 @@ Enumerations</h2></td></tr>
 , <a class="el" href="ds28e17_8h.html#a62fb297b7f0ab9d512807340cd88adc5acb1f96268e6760fe910c3c14a42b6d1e">DS28E17_I2C_SPEED_900_KHZ</a> = 2
  }</td></tr>
 <tr class="separator:a62fb297b7f0ab9d512807340cd88adc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a00b31c470165586c2fe408d35818c9da"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ds28e17_8h.html#a00b31c470165586c2fe408d35818c9da">ds28e17_set_w1_config</a> (const struct device *dev, struct w1_slave_config config)</td></tr>
+<tr class="separator:a00b31c470165586c2fe408d35818c9da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac75e372b888387d804038d2e59c5d762"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ds28e17_8h.html#ac75e372b888387d804038d2e59c5d762">ds28e17_i2c_write</a> (const struct device *dev, uint8_t dev_addr, const uint8_t *write_buf, size_t write_len)</td></tr>
+<tr class="separator:ac75e372b888387d804038d2e59c5d762"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a561892d610ed81b1c88c22acd34cf6a8"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ds28e17_8h.html#a561892d610ed81b1c88c22acd34cf6a8">ds28e17_i2c_read</a> (const struct device *dev, uint8_t dev_addr, uint8_t *read_buf, size_t read_len)</td></tr>
+<tr class="separator:a561892d610ed81b1c88c22acd34cf6a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa026e3d545be3ace69d9e82cadf42192"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ds28e17_8h.html#aa026e3d545be3ace69d9e82cadf42192">ds28e17_i2c_write_read</a> (const struct device *dev, uint8_t dev_addr, const uint8_t *write_buf, size_t write_len, uint8_t *read_buf, size_t read_len)</td></tr>
+<tr class="separator:aa026e3d545be3ace69d9e82cadf42192"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f45a173f573bf25fb3902a61ce1b733"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ds28e17_8h.html#a3f45a173f573bf25fb3902a61ce1b733">ds28e17_write_config</a> (const struct device *dev, enum <a class="el" href="ds28e17_8h.html#a62fb297b7f0ab9d512807340cd88adc5">ds28e17_i2c_speed</a> i2c_speed)</td></tr>
+<tr class="separator:a3f45a173f573bf25fb3902a61ce1b733"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0764dc9b4d06b5e2d920127c3f5e888a"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ds28e17_8h.html#a0764dc9b4d06b5e2d920127c3f5e888a">ds28e17_enable_sleep</a> (const struct device *dev)</td></tr>
+<tr class="separator:a0764dc9b4d06b5e2d920127c3f5e888a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a id="a15034d6208917da458ef05ed41d9bf14" name="a15034d6208917da458ef05ed41d9bf14"></a>
@@ -250,6 +266,261 @@ Enumerations</h2></td></tr>
 <tr><td class="fieldname"><a id="a62fb297b7f0ab9d512807340cd88adc5a1797ecf0b6c0df61977e6a4bac57575a" name="a62fb297b7f0ab9d512807340cd88adc5a1797ecf0b6c0df61977e6a4bac57575a"></a>DS28E17_I2C_SPEED_400_KHZ&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a62fb297b7f0ab9d512807340cd88adc5acb1f96268e6760fe910c3c14a42b6d1e" name="a62fb297b7f0ab9d512807340cd88adc5acb1f96268e6760fe910c3c14a42b6d1e"></a>DS28E17_I2C_SPEED_900_KHZ&#160;</td><td class="fielddoc"></td></tr>
 </table>
+
+</div>
+</div>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="a0764dc9b4d06b5e2d920127c3f5e888a" name="a0764dc9b4d06b5e2d920127c3f5e888a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0764dc9b4d06b5e2d920127c3f5e888a">&#9670;&#160;</a></span>ds28e17_enable_sleep()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ds28e17_enable_sleep </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a561892d610ed81b1c88c22acd34cf6a8" name="a561892d610ed81b1c88c22acd34cf6a8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a561892d610ed81b1c88c22acd34cf6a8">&#9670;&#160;</a></span>ds28e17_i2c_read()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ds28e17_i2c_read </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint8_t&#160;</td>
+          <td class="paramname"><em>dev_addr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint8_t *&#160;</td>
+          <td class="paramname"><em>read_buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>read_len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ac75e372b888387d804038d2e59c5d762" name="ac75e372b888387d804038d2e59c5d762"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac75e372b888387d804038d2e59c5d762">&#9670;&#160;</a></span>ds28e17_i2c_write()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ds28e17_i2c_write </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint8_t&#160;</td>
+          <td class="paramname"><em>dev_addr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const uint8_t *&#160;</td>
+          <td class="paramname"><em>write_buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>write_len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aa026e3d545be3ace69d9e82cadf42192" name="aa026e3d545be3ace69d9e82cadf42192"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa026e3d545be3ace69d9e82cadf42192">&#9670;&#160;</a></span>ds28e17_i2c_write_read()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ds28e17_i2c_write_read </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint8_t&#160;</td>
+          <td class="paramname"><em>dev_addr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const uint8_t *&#160;</td>
+          <td class="paramname"><em>write_buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>write_len</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint8_t *&#160;</td>
+          <td class="paramname"><em>read_buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>read_len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a00b31c470165586c2fe408d35818c9da" name="a00b31c470165586c2fe408d35818c9da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a00b31c470165586c2fe408d35818c9da">&#9670;&#160;</a></span>ds28e17_set_w1_config()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ds28e17_set_w1_config </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">struct w1_slave_config&#160;</td>
+          <td class="paramname"><em>config</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3f45a173f573bf25fb3902a61ce1b733" name="a3f45a173f573bf25fb3902a61ce1b733"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3f45a173f573bf25fb3902a61ce1b733">&#9670;&#160;</a></span>ds28e17_write_config()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ds28e17_write_config </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">enum <a class="el" href="ds28e17_8h.html#a62fb297b7f0ab9d512807340cd88adc5">ds28e17_i2c_speed</a>&#160;</td>
+          <td class="paramname"><em>i2c_speed</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>

@@ -15,5 +15,9 @@ var ctr__x4_8h =
       [ "CTR_X4_OUTPUT_2", "ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082a1146369634934c1fb5f09e6f721f3c47", null ],
       [ "CTR_X4_OUTPUT_3", "ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082a6b181648bfc1f8ae8879783962b0b085", null ],
       [ "CTR_X4_OUTPUT_4", "ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082a3d600a4039295a2c7d7127c903ea8eb4", null ]
-    ] ]
+    ] ],
+    [ "ctr_x4_get_line_present", "ctr__x4_8h.html#ad6baf71300ca3302c86636b70d95b387", null ],
+    [ "ctr_x4_get_line_voltage", "ctr__x4_8h.html#aa16be7a6cf8e4ded124168f489e72fde", null ],
+    [ "ctr_x4_set_handler", "ctr__x4_8h.html#aff5b0970bbf325d018867891142796a9", null ],
+    [ "ctr_x4_set_output", "ctr__x4_8h.html#ab924ea8b4a4018cb2fd338aee3b3d331", null ]
 ];

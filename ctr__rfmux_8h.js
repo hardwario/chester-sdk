@@ -14,5 +14,9 @@ var ctr__rfmux_8h =
       [ "CTR_RFMUX_INTERFACE_NONE", "ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77a91627c09e91a7a380a913fb8f0819a46", null ],
       [ "CTR_RFMUX_INTERFACE_LTE", "ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77a655349cf98b06cbd3bd9657e24d7408e", null ],
       [ "CTR_RFMUX_INTERFACE_LRW", "ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77a7040b9fff1400f0064da1e3364d07a13", null ]
-    ] ]
+    ] ],
+    [ "ctr_rfmux_acquire", "ctr__rfmux_8h.html#a95b19113136818018564c893208c4412", null ],
+    [ "ctr_rfmux_release", "ctr__rfmux_8h.html#a6d49c8db6d3f8130032346772bb4ef70", null ],
+    [ "ctr_rfmux_set_antenna", "ctr__rfmux_8h.html#af3846d6df3b20865794ced1319c13381", null ],
+    [ "ctr_rfmux_set_interface", "ctr__rfmux_8h.html#a43fb9c027c8928eebf5a9202633928ec", null ]
 ];

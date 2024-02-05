@@ -47,7 +47,6 @@ var annotated_dup =
     [ "ctr_s1_status", "structctr__s1__status.html", "structctr__s1__status" ],
     [ "ctr_w1", "structctr__w1.html", "structctr__w1" ],
     [ "ctr_wdog_channel", "structctr__wdog__channel.html", "structctr__wdog__channel" ],
-    [ "ctr_x0_driver_api", "structctr__x0__driver__api.html", "structctr__x0__driver__api" ],
     [ "ctr_x10_driver_api", "structctr__x10__driver__api.html", "structctr__x10__driver__api" ],
     [ "ctr_x3_driver_api", "structctr__x3__driver__api.html", "structctr__x3__driver__api" ],
     [ "ctr_x4_driver_api", "structctr__x4__driver__api.html", "structctr__x4__driver__api" ],

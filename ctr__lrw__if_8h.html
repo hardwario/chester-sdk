@@ -96,7 +96,8 @@ $(document).ready(function(){initNavTree('ctr__lrw__if_8h.html',''); initResizab
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#typedef-members">Typedefs</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ctr_lrw_if.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -134,6 +135,19 @@ Typedefs</h2></td></tr>
 <tr class="separator:a4cec8d5e570d2602a0ec18758442b874"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9cf8e2859b0b33c91e7d6242c5c69b8b"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lrw__if_8h.html#a9cf8e2859b0b33c91e7d6242c5c69b8b">ctr_lrw_if_api_send</a>) (const struct device *dev, const char *fmt, va_list ap)</td></tr>
 <tr class="separator:a9cf8e2859b0b33c91e7d6242c5c69b8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:ab945ee0c54e7d6fea98088e843d70e1e"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lrw__if_8h.html#ab945ee0c54e7d6fea98088e843d70e1e">ctr_lrw_if_init</a> (const struct device *dev, <a class="el" href="ctr__lrw__if_8h.html#a21164a47b18c1ae6adc2e73994789d30">ctr_lrw_recv_cb</a> recv_cb)</td></tr>
+<tr class="separator:ab945ee0c54e7d6fea98088e843d70e1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a939206eb6d46e9bdb56bc81f8aab278e"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lrw__if_8h.html#a939206eb6d46e9bdb56bc81f8aab278e">ctr_lrw_if_reset</a> (const struct device *dev)</td></tr>
+<tr class="separator:a939206eb6d46e9bdb56bc81f8aab278e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa521847a9ad65c47b254157c7b902924"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lrw__if_8h.html#aa521847a9ad65c47b254157c7b902924">ctr_lrw_if_enable</a> (const struct device *dev)</td></tr>
+<tr class="separator:aa521847a9ad65c47b254157c7b902924"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa89c0dda787cf4b545bc6629f39d6fe4"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lrw__if_8h.html#aa89c0dda787cf4b545bc6629f39d6fe4">ctr_lrw_if_disable</a> (const struct device *dev)</td></tr>
+<tr class="separator:aa89c0dda787cf4b545bc6629f39d6fe4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1955425578326620b0d759b19deec47"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lrw__if_8h.html#af1955425578326620b0d759b19deec47">ctr_lrw_if_send</a> (const struct device *dev, const char *fmt, va_list ap)</td></tr>
+<tr class="separator:af1955425578326620b0d759b19deec47"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a id="a4cec8d5e570d2602a0ec18758442b874" name="a4cec8d5e570d2602a0ec18758442b874"></a>
@@ -216,6 +230,163 @@ Typedefs</h2></td></tr>
           <td class="memname">typedef void(* ctr_lrw_recv_cb) (const char *s)</td>
         </tr>
       </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="aa89c0dda787cf4b545bc6629f39d6fe4" name="aa89c0dda787cf4b545bc6629f39d6fe4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa89c0dda787cf4b545bc6629f39d6fe4">&#9670;&#160;</a></span>ctr_lrw_if_disable()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ctr_lrw_if_disable </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aa521847a9ad65c47b254157c7b902924" name="aa521847a9ad65c47b254157c7b902924"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa521847a9ad65c47b254157c7b902924">&#9670;&#160;</a></span>ctr_lrw_if_enable()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ctr_lrw_if_enable </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ab945ee0c54e7d6fea98088e843d70e1e" name="ab945ee0c54e7d6fea98088e843d70e1e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab945ee0c54e7d6fea98088e843d70e1e">&#9670;&#160;</a></span>ctr_lrw_if_init()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ctr_lrw_if_init </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="ctr__lrw__if_8h.html#a21164a47b18c1ae6adc2e73994789d30">ctr_lrw_recv_cb</a>&#160;</td>
+          <td class="paramname"><em>recv_cb</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a939206eb6d46e9bdb56bc81f8aab278e" name="a939206eb6d46e9bdb56bc81f8aab278e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a939206eb6d46e9bdb56bc81f8aab278e">&#9670;&#160;</a></span>ctr_lrw_if_reset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ctr_lrw_if_reset </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af1955425578326620b0d759b19deec47" name="af1955425578326620b0d759b19deec47"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af1955425578326620b0d759b19deec47">&#9670;&#160;</a></span>ctr_lrw_if_send()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ctr_lrw_if_send </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>fmt</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">va_list&#160;</td>
+          <td class="paramname"><em>ap</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>

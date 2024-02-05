@@ -6,5 +6,6 @@ var ctr__led_8h =
       [ "CTR_LED_CHANNEL_Y", "ctr__led_8h.html#a5de51735ccd24a14ba037f6d1ae9393da99bcb6ccbef92891e18106230d46f5d3", null ],
       [ "CTR_LED_CHANNEL_EXT", "ctr__led_8h.html#a5de51735ccd24a14ba037f6d1ae9393dae64c19745b76a98df9dca64718febae5", null ],
       [ "CTR_LED_CHANNEL_LOAD", "ctr__led_8h.html#a5de51735ccd24a14ba037f6d1ae9393da449b68ce91278ce5789800dafaca9459", null ]
-    ] ]
+    ] ],
+    [ "ctr_led_set", "ctr__led_8h.html#a32bec2142a6226d1909e30cd7f1cb84a", null ]
 ];

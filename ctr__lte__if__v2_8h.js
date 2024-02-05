@@ -24,5 +24,21 @@ var ctr__lte__if__v2_8h =
       [ "CTR_LTE_IF_V2_EVENT_RX_LINE", "ctr__lte__if__v2_8h.html#aac264638523826e7f0474e44a9060b0bafed60b776d4496a3674dcd4a370a687d", null ],
       [ "CTR_LTE_IF_V2_EVENT_RX_DATA", "ctr__lte__if__v2_8h.html#aac264638523826e7f0474e44a9060b0ba93abe25a9a0a1396bbe9f0daec71dc52", null ],
       [ "CTR_LTE_IF_V2_EVENT_RX_LOSS", "ctr__lte__if__v2_8h.html#aac264638523826e7f0474e44a9060b0baeff1f4f180e6c81fef147a284f338c2e", null ]
-    ] ]
+    ] ],
+    [ "ctr_lte_if_v2_disable_uart", "ctr__lte__if__v2_8h.html#aae8e7897fa236393ebc62cefbccc998f", null ],
+    [ "ctr_lte_if_v2_enable_uart", "ctr__lte__if__v2_8h.html#ae415e3da42f109ec1209db66d1259b4a", null ],
+    [ "ctr_lte_if_v2_enter_data_mode", "ctr__lte__if__v2_8h.html#a62cf36dce60c229ddadf4861c11857fe", null ],
+    [ "ctr_lte_if_v2_enter_dialog", "ctr__lte__if__v2_8h.html#abf0b03944991b258fe2fdc7867200f5f", null ],
+    [ "ctr_lte_if_v2_exit_data_mode", "ctr__lte__if__v2_8h.html#aedf0d342172ee2402dceffbf9557360c", null ],
+    [ "ctr_lte_if_v2_exit_dialog", "ctr__lte__if__v2_8h.html#a9e7c839aeefeacf101e2d78a3d6a2dd4", null ],
+    [ "ctr_lte_if_v2_free_line", "ctr__lte__if__v2_8h.html#ad076f2154b9d3411e430efb4c7a36b29", null ],
+    [ "ctr_lte_if_v2_lock", "ctr__lte__if__v2_8h.html#ac4d1930e7be5d531378be857ab9e8e9d", null ],
+    [ "ctr_lte_if_v2_recv_data", "ctr__lte__if__v2_8h.html#ab230bdce60676837ebefed05d2993f8e", null ],
+    [ "ctr_lte_if_v2_recv_line", "ctr__lte__if__v2_8h.html#a0872ee1db6fab7a720085eb11a06e3e9", null ],
+    [ "ctr_lte_if_v2_reset", "ctr__lte__if__v2_8h.html#a77aabdf51022c811cc9fa42228abfa47", null ],
+    [ "ctr_lte_if_v2_send_data", "ctr__lte__if__v2_8h.html#a6081ef590c4bd8c9658ce57dc5eb56cf", null ],
+    [ "ctr_lte_if_v2_send_line", "ctr__lte__if__v2_8h.html#a79f8b70e63fcd183e93e9bb948be86db", null ],
+    [ "ctr_lte_if_v2_set_callback", "ctr__lte__if__v2_8h.html#a502cc353549ba82bb0997a8835a81a0e", null ],
+    [ "ctr_lte_if_v2_unlock", "ctr__lte__if__v2_8h.html#a8be203aed693727c983770d59aaaabd1", null ],
+    [ "ctr_lte_if_v2_wake_up", "ctr__lte__if__v2_8h.html#a90fd908303ce387d6cc16b8df8bd7b09", null ]
 ];

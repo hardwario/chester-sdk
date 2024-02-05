@@ -110,5 +110,19 @@ var ctr__z_8h =
       [ "CTR_Z_LED_PATTERN_4_HZ_1_1", "ctr__z_8h.html#a0b308ceb928c537823f0827be6ac1474a2395459a76a452e50bf82534d31255bc", null ],
       [ "CTR_Z_LED_PATTERN_8_HZ_1_1", "ctr__z_8h.html#a0b308ceb928c537823f0827be6ac1474a39b6f1ff11182b2a674328c9f2fe029c", null ],
       [ "CTR_Z_LED_PATTERN_ON", "ctr__z_8h.html#a0b308ceb928c537823f0827be6ac1474a7ce6e791873a361d21336d57f62564d1", null ]
-    ] ]
+    ] ],
+    [ "ctr_z_apply", "ctr__z_8h.html#af4ee3492163536b7c33b3ff39d258354", null ],
+    [ "ctr_z_enable_interrupts", "ctr__z_8h.html#a1f82c048b42e644ba2a7b0f597d23b72", null ],
+    [ "ctr_z_get_fw_version", "ctr__z_8h.html#ad51302b30d1d9642361129970c232a34", null ],
+    [ "ctr_z_get_hw_revision", "ctr__z_8h.html#adc16252b95ae47caac16d114e4f8ad14", null ],
+    [ "ctr_z_get_hw_variant", "ctr__z_8h.html#adbb3a9075755976f0bacf67fdf7d5eea", null ],
+    [ "ctr_z_get_product_name", "ctr__z_8h.html#a0f05abcb2407611bc9aa84452bdabfc9", null ],
+    [ "ctr_z_get_serial_number", "ctr__z_8h.html#a9c6361d8d5a2e216ea2d98f9e55059b9", null ],
+    [ "ctr_z_get_status", "ctr__z_8h.html#ad857fac74ef13beffc61b5fc202ef14c", null ],
+    [ "ctr_z_get_vbat_mv", "ctr__z_8h.html#a71444401d6fe55f77d0bb7303760c7b3", null ],
+    [ "ctr_z_get_vdc_mv", "ctr__z_8h.html#ab4df3fbcbdbc9714b5a31d1348ef0c9a", null ],
+    [ "ctr_z_get_vendor_name", "ctr__z_8h.html#aa55c1d2cd1ed990b863a0b6264725e4b", null ],
+    [ "ctr_z_set_buzzer", "ctr__z_8h.html#a0fea397b3f439ad1efb9d09689810cf2", null ],
+    [ "ctr_z_set_handler", "ctr__z_8h.html#aaf089b110827e944382b61d07bce0907", null ],
+    [ "ctr_z_set_led", "ctr__z_8h.html#a233a00e2a1a657b396f8b86cb59c7a17", null ]
 ];

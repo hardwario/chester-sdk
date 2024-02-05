@@ -96,8 +96,8 @@ $(document).ready(function(){initNavTree('ctr__x0_8h.html',''); initResizable();
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
-<a href="#typedef-members">Typedefs</a> &#124;
-<a href="#enum-members">Enumerations</a>  </div>
+<a href="#enum-members">Enumerations</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ctr_x0.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -116,110 +116,37 @@ Include dependency graph for ctr_x0.h:</div>
 </div>
 <p><a href="ctr__x0_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
-Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__x0__driver__api.html">ctr_x0_driver_api</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a268826cece72928f2cb2acfba6d8ea35"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x0_8h.html#a268826cece72928f2cb2acfba6d8ea35">ctr_x0_api_set_mode</a>) (const struct device *dev, enum <a class="el" href="ctr__x0_8h.html#a5af18acb72649a99133adf7608d695a7">ctr_x0_channel</a> channel, enum <a class="el" href="ctr__x0_8h.html#a0042652a5d88388cc6680891db23f4c6">ctr_x0_mode</a> mode)</td></tr>
-<tr class="separator:a268826cece72928f2cb2acfba6d8ea35"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af960227dfe4e2eaf820300713d7bebee"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x0_8h.html#af960227dfe4e2eaf820300713d7bebee">ctr_x0_api_get_spec</a>) (const struct device *dev, enum <a class="el" href="ctr__x0_8h.html#a5af18acb72649a99133adf7608d695a7">ctr_x0_channel</a> channel, const struct gpio_dt_spec **spec)</td></tr>
-<tr class="separator:af960227dfe4e2eaf820300713d7bebee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:a5af18acb72649a99133adf7608d695a7"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x0_8h.html#a5af18acb72649a99133adf7608d695a7">ctr_x0_channel</a> { <a class="el" href="ctr__x0_8h.html#a5af18acb72649a99133adf7608d695a7a97e5d19d3205955503cb073aa5871b64">CTR_X0_CHANNEL_1</a> = 0
-, <a class="el" href="ctr__x0_8h.html#a5af18acb72649a99133adf7608d695a7a6cae5915bd496fe205a815ccb56ee879">CTR_X0_CHANNEL_2</a> = 1
-, <a class="el" href="ctr__x0_8h.html#a5af18acb72649a99133adf7608d695a7a1e225e0eb7aa1c7acd63c21665bb1822">CTR_X0_CHANNEL_3</a> = 2
-, <a class="el" href="ctr__x0_8h.html#a5af18acb72649a99133adf7608d695a7a7a2e097a74e7c4f0c3d5ae7874cc1cd7">CTR_X0_CHANNEL_4</a> = 3
+<tr class="memitem:ga5af18acb72649a99133adf7608d695a7"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x0.html#ga5af18acb72649a99133adf7608d695a7">ctr_x0_channel</a> { <a class="el" href="group__ctr__x0.html#gga5af18acb72649a99133adf7608d695a7a97e5d19d3205955503cb073aa5871b64">CTR_X0_CHANNEL_1</a> = 0
+, <a class="el" href="group__ctr__x0.html#gga5af18acb72649a99133adf7608d695a7a6cae5915bd496fe205a815ccb56ee879">CTR_X0_CHANNEL_2</a> = 1
+, <a class="el" href="group__ctr__x0.html#gga5af18acb72649a99133adf7608d695a7a1e225e0eb7aa1c7acd63c21665bb1822">CTR_X0_CHANNEL_3</a> = 2
+, <a class="el" href="group__ctr__x0.html#gga5af18acb72649a99133adf7608d695a7a7a2e097a74e7c4f0c3d5ae7874cc1cd7">CTR_X0_CHANNEL_4</a> = 3
  }</td></tr>
-<tr class="separator:a5af18acb72649a99133adf7608d695a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0042652a5d88388cc6680891db23f4c6"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x0_8h.html#a0042652a5d88388cc6680891db23f4c6">ctr_x0_mode</a> { <br />
-&#160;&#160;<a class="el" href="ctr__x0_8h.html#a0042652a5d88388cc6680891db23f4c6ab872a5ac55c454e0100f27c27823f38d">CTR_X0_MODE_DEFAULT</a> = 0
-, <a class="el" href="ctr__x0_8h.html#a0042652a5d88388cc6680891db23f4c6a876dc9e438fd7c0809ee23bf6e8db282">CTR_X0_MODE_NPN_INPUT</a> = 1
-, <a class="el" href="ctr__x0_8h.html#a0042652a5d88388cc6680891db23f4c6a95a0cf0285fad779d33f7a82247e97ba">CTR_X0_MODE_PNP_INPUT</a> = 2
-, <a class="el" href="ctr__x0_8h.html#a0042652a5d88388cc6680891db23f4c6a36e7d965ebb8b67eb6a35c2c4d063a6f">CTR_X0_MODE_AI_INPUT</a> = 3
+<tr class="memdesc:ga5af18acb72649a99133adf7608d695a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channels.  <a href="group__ctr__x0.html#ga5af18acb72649a99133adf7608d695a7">More...</a><br /></td></tr>
+<tr class="separator:ga5af18acb72649a99133adf7608d695a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0042652a5d88388cc6680891db23f4c6"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x0.html#ga0042652a5d88388cc6680891db23f4c6">ctr_x0_mode</a> { <br />
+&#160;&#160;<a class="el" href="group__ctr__x0.html#gga0042652a5d88388cc6680891db23f4c6ab872a5ac55c454e0100f27c27823f38d">CTR_X0_MODE_DEFAULT</a> = 0
+, <a class="el" href="group__ctr__x0.html#gga0042652a5d88388cc6680891db23f4c6a876dc9e438fd7c0809ee23bf6e8db282">CTR_X0_MODE_NPN_INPUT</a> = 1
+, <a class="el" href="group__ctr__x0.html#gga0042652a5d88388cc6680891db23f4c6a95a0cf0285fad779d33f7a82247e97ba">CTR_X0_MODE_PNP_INPUT</a> = 2
+, <a class="el" href="group__ctr__x0.html#gga0042652a5d88388cc6680891db23f4c6a36e7d965ebb8b67eb6a35c2c4d063a6f">CTR_X0_MODE_AI_INPUT</a> = 3
 , <br />
-&#160;&#160;<a class="el" href="ctr__x0_8h.html#a0042652a5d88388cc6680891db23f4c6a6327c412f8158a644bcc659931bab52b">CTR_X0_MODE_CL_INPUT</a> = 4
-, <a class="el" href="ctr__x0_8h.html#a0042652a5d88388cc6680891db23f4c6a40df4807509af1d391e73f0c4230b69b">CTR_X0_MODE_PWR_SOURCE</a> = 5
+&#160;&#160;<a class="el" href="group__ctr__x0.html#gga0042652a5d88388cc6680891db23f4c6a6327c412f8158a644bcc659931bab52b">CTR_X0_MODE_CL_INPUT</a> = 4
+, <a class="el" href="group__ctr__x0.html#gga0042652a5d88388cc6680891db23f4c6a40df4807509af1d391e73f0c4230b69b">CTR_X0_MODE_PWR_SOURCE</a> = 5
 <br />
  }</td></tr>
-<tr class="separator:a0042652a5d88388cc6680891db23f4c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memdesc:ga0042652a5d88388cc6680891db23f4c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Modes.  <a href="group__ctr__x0.html#ga0042652a5d88388cc6680891db23f4c6">More...</a><br /></td></tr>
+<tr class="separator:ga0042652a5d88388cc6680891db23f4c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:gab7700f4ccde3408a650d58f13e05beed"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x0.html#gab7700f4ccde3408a650d58f13e05beed">ctr_x0_set_mode</a> (const struct device *dev, enum <a class="el" href="group__ctr__x0.html#ga5af18acb72649a99133adf7608d695a7">ctr_x0_channel</a> channel, enum <a class="el" href="group__ctr__x0.html#ga0042652a5d88388cc6680891db23f4c6">ctr_x0_mode</a> mode)</td></tr>
+<tr class="memdesc:gab7700f4ccde3408a650d58f13e05beed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set mode.  <a href="group__ctr__x0.html#gab7700f4ccde3408a650d58f13e05beed">More...</a><br /></td></tr>
+<tr class="separator:gab7700f4ccde3408a650d58f13e05beed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3c3346057306e07187f8e29ffcf7c454"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x0.html#ga3c3346057306e07187f8e29ffcf7c454">ctr_x0_get_spec</a> (const struct device *dev, enum <a class="el" href="group__ctr__x0.html#ga5af18acb72649a99133adf7608d695a7">ctr_x0_channel</a> channel, const struct gpio_dt_spec **spec)</td></tr>
+<tr class="memdesc:ga3c3346057306e07187f8e29ffcf7c454"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get channel's GPIO device tree spec.  <a href="group__ctr__x0.html#ga3c3346057306e07187f8e29ffcf7c454">More...</a><br /></td></tr>
+<tr class="separator:ga3c3346057306e07187f8e29ffcf7c454"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a id="af960227dfe4e2eaf820300713d7bebee" name="af960227dfe4e2eaf820300713d7bebee"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af960227dfe4e2eaf820300713d7bebee">&#9670;&#160;</a></span>ctr_x0_api_get_spec</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_x0_api_get_spec) (const struct device *dev, enum <a class="el" href="ctr__x0_8h.html#a5af18acb72649a99133adf7608d695a7">ctr_x0_channel</a> channel, const struct gpio_dt_spec **spec)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a268826cece72928f2cb2acfba6d8ea35" name="a268826cece72928f2cb2acfba6d8ea35"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a268826cece72928f2cb2acfba6d8ea35">&#9670;&#160;</a></span>ctr_x0_api_set_mode</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_x0_api_set_mode) (const struct device *dev, enum <a class="el" href="ctr__x0_8h.html#a5af18acb72649a99133adf7608d695a7">ctr_x0_channel</a> channel, enum <a class="el" href="ctr__x0_8h.html#a0042652a5d88388cc6680891db23f4c6">ctr_x0_mode</a> mode)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Enumeration Type Documentation</h2>
-<a id="a5af18acb72649a99133adf7608d695a7" name="a5af18acb72649a99133adf7608d695a7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5af18acb72649a99133adf7608d695a7">&#9670;&#160;</a></span>ctr_x0_channel</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="ctr__x0_8h.html#a5af18acb72649a99133adf7608d695a7">ctr_x0_channel</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a5af18acb72649a99133adf7608d695a7a97e5d19d3205955503cb073aa5871b64" name="a5af18acb72649a99133adf7608d695a7a97e5d19d3205955503cb073aa5871b64"></a>CTR_X0_CHANNEL_1&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a5af18acb72649a99133adf7608d695a7a6cae5915bd496fe205a815ccb56ee879" name="a5af18acb72649a99133adf7608d695a7a6cae5915bd496fe205a815ccb56ee879"></a>CTR_X0_CHANNEL_2&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a5af18acb72649a99133adf7608d695a7a1e225e0eb7aa1c7acd63c21665bb1822" name="a5af18acb72649a99133adf7608d695a7a1e225e0eb7aa1c7acd63c21665bb1822"></a>CTR_X0_CHANNEL_3&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a5af18acb72649a99133adf7608d695a7a7a2e097a74e7c4f0c3d5ae7874cc1cd7" name="a5af18acb72649a99133adf7608d695a7a7a2e097a74e7c4f0c3d5ae7874cc1cd7"></a>CTR_X0_CHANNEL_4&#160;</td><td class="fielddoc"></td></tr>
-</table>
-
-</div>
-</div>
-<a id="a0042652a5d88388cc6680891db23f4c6" name="a0042652a5d88388cc6680891db23f4c6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0042652a5d88388cc6680891db23f4c6">&#9670;&#160;</a></span>ctr_x0_mode</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="ctr__x0_8h.html#a0042652a5d88388cc6680891db23f4c6">ctr_x0_mode</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a0042652a5d88388cc6680891db23f4c6ab872a5ac55c454e0100f27c27823f38d" name="a0042652a5d88388cc6680891db23f4c6ab872a5ac55c454e0100f27c27823f38d"></a>CTR_X0_MODE_DEFAULT&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a0042652a5d88388cc6680891db23f4c6a876dc9e438fd7c0809ee23bf6e8db282" name="a0042652a5d88388cc6680891db23f4c6a876dc9e438fd7c0809ee23bf6e8db282"></a>CTR_X0_MODE_NPN_INPUT&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a0042652a5d88388cc6680891db23f4c6a95a0cf0285fad779d33f7a82247e97ba" name="a0042652a5d88388cc6680891db23f4c6a95a0cf0285fad779d33f7a82247e97ba"></a>CTR_X0_MODE_PNP_INPUT&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a0042652a5d88388cc6680891db23f4c6a36e7d965ebb8b67eb6a35c2c4d063a6f" name="a0042652a5d88388cc6680891db23f4c6a36e7d965ebb8b67eb6a35c2c4d063a6f"></a>CTR_X0_MODE_AI_INPUT&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a0042652a5d88388cc6680891db23f4c6a6327c412f8158a644bcc659931bab52b" name="a0042652a5d88388cc6680891db23f4c6a6327c412f8158a644bcc659931bab52b"></a>CTR_X0_MODE_CL_INPUT&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a0042652a5d88388cc6680891db23f4c6a40df4807509af1d391e73f0c4230b69b" name="a0042652a5d88388cc6680891db23f4c6a40df4807509af1d391e73f0c4230b69b"></a>CTR_X0_MODE_PWR_SOURCE&#160;</td><td class="fielddoc"></td></tr>
-</table>
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

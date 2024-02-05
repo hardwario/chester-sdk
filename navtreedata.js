@@ -25,6 +25,7 @@
 var NAVTREE =
 [
   [ "CHESTER SDK", "index.html", [
+    [ "Modules", "modules.html", "modules" ],
     [ "Data Structures", "annotated.html", [
       [ "Data Structures", "annotated.html", "annotated_dup" ],
       [ "Data Structure Index", "classes.html", null ],
@@ -37,7 +38,7 @@ var NAVTREE =
       [ "File List", "files.html", "files_dup" ],
       [ "Globals", "globals.html", [
         [ "All", "globals.html", "globals_dup" ],
-        [ "Functions", "globals_func.html", null ],
+        [ "Functions", "globals_func.html", "globals_func" ],
         [ "Typedefs", "globals_type.html", null ],
         [ "Enumerations", "globals_enum.html", null ],
         [ "Enumerator", "globals_eval.html", "globals_eval" ],
@@ -50,10 +51,10 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"ctr__lte__if_8h.html",
-"ctr__x3_8h.html#a93d2a472ef27caed121dc4bbd0c2f6f4af476e0cb5a1b5ba332b3fbbfae3bc367",
-"structctr__edge.html#af74edd87e6e3a5379fd929c8ddecfb57",
-"unionctr__gnss__event__data.html"
+"ctr__lte_8h.html#a3ff96b3f48420fa17e05c84513dce072a83fa1b3fd6491c5f6161cfc536ca36a8",
+"ctr__s1_8h.html#af7e13846d2a2104326bab976a4bae58ea01f164a9a264bd4a7f94647fc968823b",
+"functions_m.html",
+"structctr__s1__driver__api.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

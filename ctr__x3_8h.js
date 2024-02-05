@@ -6,5 +6,7 @@ var ctr__x3_8h =
     [ "ctr_x3_channel", "ctr__x3_8h.html#a93d2a472ef27caed121dc4bbd0c2f6f4", [
       [ "CTR_X3_CHANNEL_1", "ctr__x3_8h.html#a93d2a472ef27caed121dc4bbd0c2f6f4a78c36568dbe6287a7d89206361d70499", null ],
       [ "CTR_X3_CHANNEL_2", "ctr__x3_8h.html#a93d2a472ef27caed121dc4bbd0c2f6f4af476e0cb5a1b5ba332b3fbbfae3bc367", null ]
-    ] ]
+    ] ],
+    [ "ctr_x3_measure", "ctr__x3_8h.html#a34ec4735e3644d74ff19385bb49fdce6", null ],
+    [ "ctr_x3_set_power", "ctr__x3_8h.html#a7ce67eea25f5fc26d74605d36b0a2c54", null ]
 ];

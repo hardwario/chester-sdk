@@ -12,7 +12,14 @@ var searchData=
   ['people_5fcounter_5fapi_5fset_5fpower_5foff_5fdelay_9',['people_counter_api_set_power_off_delay',['../people__counter_8h.html#a577b84c2766d3a306ef15a6be4e029dc',1,'people_counter.h']]],
   ['people_5fcounter_5fapi_5fset_5fstay_5ftimeout_10',['people_counter_api_set_stay_timeout',['../people__counter_8h.html#a9f827c906700147fdbabbd21e0eac4d6',1,'people_counter.h']]],
   ['people_5fcounter_5fdriver_5fapi_11',['people_counter_driver_api',['../structpeople__counter__driver__api.html',1,'']]],
-  ['people_5fcounter_5fmeasurement_12',['people_counter_measurement',['../structpeople__counter__measurement.html',1,'']]],
-  ['plmn_13',['plmn',['../structctr__lte__eval.html#a87c8093de6fa51769de9b3ca58b08957',1,'ctr_lte_eval']]],
-  ['port_14',['port',['../structctr__lte__send__opts.html#acbfb2cfc465201e49ef6f176c4f9f678',1,'ctr_lte_send_opts::port()'],['../structctr__lrw__send__opts.html#a07c55012aa3d9cc0c5144688051c7c41',1,'ctr_lrw_send_opts::port()']]]
+  ['people_5fcounter_5fget_5fadult_5fborder_12',['people_counter_get_adult_border',['../people__counter_8h.html#abf8b50288063b451bc01c5bbe8108a81',1,'people_counter.h']]],
+  ['people_5fcounter_5fget_5fpower_5foff_5fdelay_13',['people_counter_get_power_off_delay',['../people__counter_8h.html#a06bc7467999973635932fe1a48e0abad',1,'people_counter.h']]],
+  ['people_5fcounter_5fget_5fstay_5ftimeout_14',['people_counter_get_stay_timeout',['../people__counter_8h.html#afd3630abec400f3955e2ff7cc49f6b98',1,'people_counter.h']]],
+  ['people_5fcounter_5fmeasurement_15',['people_counter_measurement',['../structpeople__counter__measurement.html',1,'']]],
+  ['people_5fcounter_5fread_5fmeasurement_16',['people_counter_read_measurement',['../people__counter_8h.html#a332a0091984e33bb781566f5119b9333',1,'people_counter.h']]],
+  ['people_5fcounter_5fset_5fadult_5fborder_17',['people_counter_set_adult_border',['../people__counter_8h.html#a95aa21e9d04b34f771e6cbb9347a7249',1,'people_counter.h']]],
+  ['people_5fcounter_5fset_5fpower_5foff_5fdelay_18',['people_counter_set_power_off_delay',['../people__counter_8h.html#a8cc8a2b0a5c36aea3b0e7be6f6dd5f00',1,'people_counter.h']]],
+  ['people_5fcounter_5fset_5fstay_5ftimeout_19',['people_counter_set_stay_timeout',['../people__counter_8h.html#a6dca1f227cd3116588ef8de5b52d6e4c',1,'people_counter.h']]],
+  ['plmn_20',['plmn',['../structctr__lte__eval.html#a87c8093de6fa51769de9b3ca58b08957',1,'ctr_lte_eval']]],
+  ['port_21',['port',['../structctr__lte__send__opts.html#acbfb2cfc465201e49ef6f176c4f9f678',1,'ctr_lte_send_opts::port()'],['../structctr__lrw__send__opts.html#a07c55012aa3d9cc0c5144688051c7c41',1,'ctr_lrw_send_opts::port()']]]
 ];

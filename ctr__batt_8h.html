@@ -97,7 +97,8 @@ $(document).ready(function(){initNavTree('ctr__batt_8h.html',''); initResizable(
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#typedef-members">Typedefs</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ctr_batt.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -138,6 +139,19 @@ Typedefs</h2></td></tr>
 <tr class="separator:a97be422d4e6f04da54db8a717686e4fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af7c6218d5a867f9fce7816906adf941b"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__batt_8h.html#af7c6218d5a867f9fce7816906adf941b">ctr_batt_api_unload</a>) (const struct device *dev)</td></tr>
 <tr class="separator:af7c6218d5a867f9fce7816906adf941b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:ae8a9acd98b0dcf21d41961274501c8d0"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__batt_8h.html#ae8a9acd98b0dcf21d41961274501c8d0">ctr_batt_get_rest_voltage_mv</a> (const struct device *dev, int *rest_mv, int delay_ms)</td></tr>
+<tr class="separator:ae8a9acd98b0dcf21d41961274501c8d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac9b85cc544e40392cc9eadac9c5cbb8b"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__batt_8h.html#ac9b85cc544e40392cc9eadac9c5cbb8b">ctr_batt_get_load_voltage_mv</a> (const struct device *dev, int *load_mv, int delay_ms)</td></tr>
+<tr class="separator:ac9b85cc544e40392cc9eadac9c5cbb8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9612224d2256fa5717acc6f76765b250"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__batt_8h.html#a9612224d2256fa5717acc6f76765b250">ctr_batt_get_load_current_ma</a> (const struct device *dev, int *current_ma, int load_mv)</td></tr>
+<tr class="separator:a9612224d2256fa5717acc6f76765b250"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59b22153115bc5f04c1225dd34ce61da"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__batt_8h.html#a59b22153115bc5f04c1225dd34ce61da">ctr_batt_load</a> (const struct device *dev)</td></tr>
+<tr class="separator:a59b22153115bc5f04c1225dd34ce61da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae20d5845b135ca482d67c792658513a3"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__batt_8h.html#ae20d5845b135ca482d67c792658513a3">ctr_batt_unload</a> (const struct device *dev)</td></tr>
+<tr class="separator:ae20d5845b135ca482d67c792658513a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="ac680d15dcca910d9c81d61138dc311d6" name="ac680d15dcca910d9c81d61138dc311d6"></a>
@@ -235,6 +249,185 @@ Typedefs</h2></td></tr>
           <td class="memname">typedef int(* ctr_batt_api_unload) (const struct device *dev)</td>
         </tr>
       </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="a9612224d2256fa5717acc6f76765b250" name="a9612224d2256fa5717acc6f76765b250"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9612224d2256fa5717acc6f76765b250">&#9670;&#160;</a></span>ctr_batt_get_load_current_ma()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void ctr_batt_get_load_current_ma </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int *&#160;</td>
+          <td class="paramname"><em>current_ma</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>load_mv</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ac9b85cc544e40392cc9eadac9c5cbb8b" name="ac9b85cc544e40392cc9eadac9c5cbb8b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac9b85cc544e40392cc9eadac9c5cbb8b">&#9670;&#160;</a></span>ctr_batt_get_load_voltage_mv()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ctr_batt_get_load_voltage_mv </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int *&#160;</td>
+          <td class="paramname"><em>load_mv</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>delay_ms</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae8a9acd98b0dcf21d41961274501c8d0" name="ae8a9acd98b0dcf21d41961274501c8d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae8a9acd98b0dcf21d41961274501c8d0">&#9670;&#160;</a></span>ctr_batt_get_rest_voltage_mv()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ctr_batt_get_rest_voltage_mv </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int *&#160;</td>
+          <td class="paramname"><em>rest_mv</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>delay_ms</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a59b22153115bc5f04c1225dd34ce61da" name="a59b22153115bc5f04c1225dd34ce61da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a59b22153115bc5f04c1225dd34ce61da">&#9670;&#160;</a></span>ctr_batt_load()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ctr_batt_load </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae20d5845b135ca482d67c792658513a3" name="ae20d5845b135ca482d67c792658513a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae20d5845b135ca482d67c792658513a3">&#9670;&#160;</a></span>ctr_batt_unload()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int ctr_batt_unload </td>
+          <td>(</td>
+          <td class="paramtype">const struct device *&#160;</td>
+          <td class="paramname"><em>dev</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>

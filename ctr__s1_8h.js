@@ -119,5 +119,27 @@ var ctr__s1_8h =
       [ "CTR_S1_PIR_SENSITIVITY_MEDIUM", "ctr__s1_8h.html#a52263a891f2232f0a48ce1106bede491a1e2ba0a3e1e29b4bb76078a79861b9df", null ],
       [ "CTR_S1_PIR_SENSITIVITY_HIGH", "ctr__s1_8h.html#a52263a891f2232f0a48ce1106bede491ae6b9e32f233a9604a6c86ac73bcaac82", null ],
       [ "CTR_S1_PIR_SENSITIVITY_VERY_HIGH", "ctr__s1_8h.html#a52263a891f2232f0a48ce1106bede491a1fc402bdfecb7fad80db16f4ab4347f8", null ]
-    ] ]
+    ] ],
+    [ "ctr_s1_apply", "ctr__s1_8h.html#a008ed336faf2027f96afa839e9b778e9", null ],
+    [ "ctr_s1_calib_tgt_co2_conc", "ctr__s1_8h.html#a55e31017577e2191f58310400cea355d", null ],
+    [ "ctr_s1_enable_interrupts", "ctr__s1_8h.html#a374cbd3056ace3fb275d0e2d74f6eb92", null ],
+    [ "ctr_s1_get_fw_version", "ctr__s1_8h.html#ac72d655ac54277380cebbe1a7d6fabe4", null ],
+    [ "ctr_s1_get_hw_revision", "ctr__s1_8h.html#aaed681effd9d3737f8f9414456a5b2d9", null ],
+    [ "ctr_s1_get_hw_variant", "ctr__s1_8h.html#a142b5ffbd49c6ced96c36a44809a1fab", null ],
+    [ "ctr_s1_get_product_name", "ctr__s1_8h.html#a2d4795ddaff76c3e23afedd84afd409a", null ],
+    [ "ctr_s1_get_serial_number", "ctr__s1_8h.html#ae47d2028f5dbac2eba041f838038811c", null ],
+    [ "ctr_s1_get_status", "ctr__s1_8h.html#a4cd4efb9eb3e1a4cd7a6c484e489cba5", null ],
+    [ "ctr_s1_get_vendor_name", "ctr__s1_8h.html#a1e5e42309b01a783c9dfe987bd74439c", null ],
+    [ "ctr_s1_read_altitude", "ctr__s1_8h.html#a3284e31515cc93dcd1bf2e72534244f7", null ],
+    [ "ctr_s1_read_co2_conc", "ctr__s1_8h.html#ae6af0dfa6841ac7d7e4ead797035618c", null ],
+    [ "ctr_s1_read_humidity", "ctr__s1_8h.html#a22ec873019190e4fdc08d892a76b6c36", null ],
+    [ "ctr_s1_read_illuminance", "ctr__s1_8h.html#a06815009cd6a19f80283660c48840967", null ],
+    [ "ctr_s1_read_motion_count", "ctr__s1_8h.html#a94d58e62efa5b80958af172877fbe6dd", null ],
+    [ "ctr_s1_read_pressure", "ctr__s1_8h.html#a81f29d12ab2f9639d9271e106c2c3226", null ],
+    [ "ctr_s1_read_temperature", "ctr__s1_8h.html#a531697c42f1eb3685341bbfd748e058e", null ],
+    [ "ctr_s1_set_buzzer", "ctr__s1_8h.html#a08b589e91457f49152c9be7039343cb2", null ],
+    [ "ctr_s1_set_handler", "ctr__s1_8h.html#a84340dad345734b7aad6b42f8c4683ca", null ],
+    [ "ctr_s1_set_led", "ctr__s1_8h.html#ace0dec1cf15b5ac9656039dba44c699a", null ],
+    [ "ctr_s1_set_motion_blind_time", "ctr__s1_8h.html#aefb62c5c15f5f7190a48fae2c6b524cf", null ],
+    [ "ctr_s1_set_motion_sensitivity", "ctr__s1_8h.html#a8d55163025c314bcca1bb6114a36d999", null ]
 ];
