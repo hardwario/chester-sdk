@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2023 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
+/ {
+	ctr_s3: ctr_s3 {
+		compatible = "hardwario,ctr-s3";
+		status = "okay";
+		left-si-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		left-dl-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		right-si-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		right-dl-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+	};
+};

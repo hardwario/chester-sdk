@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_S3
+	bool "HARDWARIO CHESTER-S3 (Dual PIR Detector) Driver"
+	select GPIO
+	select NRFX_PWM0
+	select NRFX_PWM1
+
+if CTR_S3
+
+module = CTR_S3
+module-str = ctr_s3
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_S3_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	help
+	  Device driver initialization priority.
+
+endif # CTR_S3
