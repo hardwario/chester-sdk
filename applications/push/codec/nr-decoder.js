@@ -89,7 +89,7 @@ function decode(buffer) {
 
         data.button_x = {};
 
-        data.button_x.press_count = buffer.readInt16LE(offset);
+        data.button_x.press_count = buffer.readUInt16LE(offset);
         offset += 2;
 
         data.button_x.hold_count = buffer.readUInt16LE(offset);
@@ -97,15 +97,15 @@ function decode(buffer) {
 
         data.button_1 = {};
 
-        data.button_1.press_count = buffer.readInt16LE(offset);
+        data.button_1.press_count = buffer.readUInt16LE(offset);
         offset += 2;
 
-        data.button_1.hold_count = buffer.readInt16LE(offset);
+        data.button_1.hold_count = buffer.readUInt16LE(offset);
         offset += 2;
 
         data.button_2 = {};
 
-        data.button_2.press_count = buffer.readInt16LE(offset);
+        data.button_2.press_count = buffer.readUInt16LE(offset);
         offset += 2;
 
         data.button_2.hold_count = buffer.readUInt16LE(offset);
@@ -113,21 +113,21 @@ function decode(buffer) {
 
         data.button_3 = {};
 
-        data.button_3.press_count = buffer.readInt16LE(offset);
+        data.button_3.press_count = buffer.readUInt16LE(offset);
         offset += 2;
 
-        data.button_3.hold_count = buffer.readInt16LE(offset);
+        data.button_3.hold_count = buffer.readUInt16LE(offset);
         offset += 2;
 
         data.button_4 = {};
 
-        data.button_4.press_count = buffer.readInt16LE(offset);
+        data.button_4.press_count = buffer.readUInt16LE(offset);
         offset += 2;
 
-        data.button_4.hold_count = buffer.readInt16LE(offset);
+        data.button_4.hold_count = buffer.readUInt16LE(offset);
         offset += 2;
 
-        let events = buffer.readInt16LE(offset);
+        let events = buffer.readUInt16LE(offset);
         offset += 2;
 
         data.button_x.press_event = (events & 0x0001) !== 0;
