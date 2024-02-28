@@ -347,17 +347,12 @@
 
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000c000 DT_SIZE_K(412)>;
+			reg = <0x0000c000 DT_SIZE_K(472)>;
 		};
 
-		slot1_partition: partition@73000 {
+		slot1_partition: partition@82000 {
 			label = "image-1";
-			reg = <0x00073000 DT_SIZE_K(412)>;
-		};
-
-		scratch_partition: partition@da000 {
-			label = "image-scratch";
-			reg = <0x000da000 DT_SIZE_K(120)>;
+			reg = <0x00082000 DT_SIZE_K(472)>;
 		};
 
 		storage_partition: partition@f8000 {
