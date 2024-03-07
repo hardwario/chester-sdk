@@ -5,7 +5,7 @@
  */
 
 / {
-	led_rgy {
+	gpio_leds: gpio_leds {
 		compatible = "gpio-leds";
 
 		led_r: led_r {
