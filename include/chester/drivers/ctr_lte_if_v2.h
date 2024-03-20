@@ -20,6 +20,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_lte_if_v2 ctr_lte_if_v2
+ * @{
+ */
+
 enum ctr_lte_if_v2_event {
 	CTR_LTE_IF_V2_EVENT_RESET = 0,
 	CTR_LTE_IF_V2_EVENT_INDICATE = 1,
@@ -31,25 +36,41 @@ enum ctr_lte_if_v2_event {
 typedef void (*ctr_lte_if_v2_user_cb)(const struct device *dev, enum ctr_lte_if_v2_event event,
 				      void *user_data);
 
+/** @private */
 typedef int (*ctr_lte_if_v2_api_set_callback)(const struct device *dev,
 					      ctr_lte_if_v2_user_cb user_cb, void *user_data);
+/** @private */
 typedef void (*ctr_lte_if_v2_api_lock)(const struct device *dev);
+/** @private */
 typedef void (*ctr_lte_if_v2_api_unlock)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_reset)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_wake_up)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_enable_uart)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_disable_uart)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_enter_dialog)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_exit_dialog)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_enter_data_mode)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_exit_data_mode)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_send_line)(const struct device *dev, k_timeout_t timeout,
 					   const char *format, va_list ap);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_recv_line)(const struct device *dev, k_timeout_t timeout,
 					   char **line);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_free_line)(const struct device *dev, char *line);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_send_data)(const struct device *dev, k_timeout_t timeout,
 					   const void *buf, size_t len);
+/** @private */
 typedef int (*ctr_lte_if_v2_api_recv_data)(const struct device *dev, k_timeout_t timeout, void *buf,
 					   size_t size, size_t *len);
 
@@ -211,6 +232,8 @@ static inline int ctr_lte_if_v2_recv_data(const struct device *dev, k_timeout_t 
 
 	return api->recv_data(dev, timeout, buf, size, len);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

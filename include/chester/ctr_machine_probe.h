@@ -15,6 +15,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_machine_probe ctr_machine_probe
+ * @{
+ */
+
 int ctr_machine_probe_scan(void);
 int ctr_machine_probe_get_count(void);
 int ctr_machine_probe_read_thermometer(int index, uint64_t *serial_number, float *temperature);
@@ -28,6 +33,8 @@ int ctr_machine_probe_enable_tilt_alert(int index, uint64_t *serial_number, int 
 					int duration);
 int ctr_machine_probe_disable_tilt_alert(int index, uint64_t *serial_number);
 int ctr_machine_probe_get_tilt_alert(int index, uint64_t *serial_number, bool *is_active);
+
+/** @} */
 
 #ifdef __cplusplus
 }

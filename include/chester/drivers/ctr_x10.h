@@ -17,19 +17,30 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_x10 ctr_x10
+ * @{
+ */
+
 enum ctr_x10_event {
 	CTR_X10_EVENT_LINE_CONNECTED = 0,
 	CTR_X10_EVENT_LINE_DISCONNECTED = 1,
 };
 
+/** @private */
 typedef void (*ctr_x10_user_cb)(const struct device *dev, enum ctr_x10_event event,
 				void *user_data);
+/** @private */
 typedef int (*ctr_x10_api_set_handler)(const struct device *dev, ctr_x10_user_cb callback,
 				       void *user_data);
+/** @private */
 typedef int (*ctr_x10_api_get_line_voltage)(const struct device *dev, int *line_voltage_mv);
+/** @private */
 typedef int (*ctr_x10_api_get_line_present)(const struct device *dev, bool *is_line_present);
+/** @private */
 typedef int (*ctr_x10_api_get_battery_voltage)(const struct device *dev, int *battery_voltage_mv);
 
+/** @private */
 struct ctr_x10_driver_api {
 	ctr_x10_api_set_handler set_handler;
 	ctr_x10_api_get_line_voltage get_line_voltage;
@@ -65,6 +76,8 @@ static inline int ctr_x10_get_battery_voltage(const struct device *dev, int *bat
 
 	return api->get_battery_voltage(dev, battery_voltage_mv);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

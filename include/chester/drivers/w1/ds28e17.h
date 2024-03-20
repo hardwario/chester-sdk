@@ -19,23 +19,35 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ds28e17 ds28e17
+ * @{
+ */
+
 enum ds28e17_i2c_speed {
 	DS28E17_I2C_SPEED_100_KHZ = 0,
 	DS28E17_I2C_SPEED_400_KHZ = 1,
 	DS28E17_I2C_SPEED_900_KHZ = 2,
 };
 
+/** @private */
 typedef int (*ds28e17_api_set_w1_config)(const struct device *dev, struct w1_slave_config config);
+/** @private */
 typedef int (*ds28e17_api_i2c_write)(const struct device *dev, uint8_t dev_addr,
 				     const uint8_t *write_buf, size_t write_len);
+/** @private */
 typedef int (*ds28e17_api_i2c_read)(const struct device *dev, uint8_t dev_addr, uint8_t *read_buf,
 				    size_t read_len);
+/** @private */
 typedef int (*ds28e17_api_i2c_write_read)(const struct device *dev, uint8_t dev_addr,
 					  const uint8_t *write_buf, size_t write_len,
 					  uint8_t *read_buf, size_t read_len);
+/** @private */
 typedef int (*ds28e17_api_write_config)(const struct device *dev, enum ds28e17_i2c_speed i2c_speed);
+/** @private */
 typedef int (*ds28e17_api_enable_sleep)(const struct device *dev);
 
+/** @private */
 struct ds28e17_driver_api {
 	ds28e17_api_set_w1_config set_w1_config;
 	ds28e17_api_i2c_write i2c_write;
@@ -90,6 +102,8 @@ static inline int ds28e17_enable_sleep(const struct device *dev)
 
 	return api->enable_sleep(dev);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -17,11 +17,20 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup m8 m8
+ * @{
+ */
+
+/** @private */
 typedef int (*m8_api_set_main_power)(const struct device *dev, bool on);
+/** @private */
 typedef int (*m8_api_set_bckp_power)(const struct device *dev, bool on);
+/** @private */
 typedef int (*m8_api_read_buffer)(const struct device *dev, void *buf, size_t buf_size,
 				  size_t *bytes_read);
 
+/** @private */
 struct m8_driver_api {
 	m8_api_set_main_power set_main_power;
 	m8_api_set_bckp_power set_bckp_power;
@@ -49,6 +58,8 @@ static inline int m8_read_buffer(const struct device *dev, void *buf, size_t buf
 
 	return api->read_buffer(dev, buf, buf_size, bytes_read);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

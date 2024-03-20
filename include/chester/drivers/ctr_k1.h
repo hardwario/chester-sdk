@@ -19,6 +19,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_k1 ctr_k1
+ * @{
+ */
+
 /* clang-format off */
 #define CTR_K1_CHANNEL_SINGLE_ENDED(ch) ((ch) - 1)
 #define CTR_K1_CHANNEL_DIFFERENTIAL(ch) ((ch) - 1 + CTR_K1_CHANNEL_1_DIFFERENTIAL)
@@ -49,13 +54,16 @@ struct ctr_k1_result {
 	float rms;
 };
 
+/** @private */
 typedef int (*ctr_k1_api_set_power)(const struct device *dev, enum ctr_k1_channel channel,
 				    bool is_enabled);
+/** @private */
 typedef int (*ctr_k1_api_measure)(const struct device *dev, const enum ctr_k1_channel channels[],
 				  size_t channels_count,
 				  const struct ctr_k1_calibration calibrations[],
 				  struct ctr_k1_result results[]);
 
+/** @private */
 struct ctr_k1_driver_api {
 	ctr_k1_api_set_power set_power;
 	ctr_k1_api_measure measure;
@@ -78,6 +86,8 @@ static inline int ctr_k1_measure(const struct device *dev, const enum ctr_k1_cha
 
 	return api->measure(dev, channels, channels_count, calibrations, results);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

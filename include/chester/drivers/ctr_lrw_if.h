@@ -16,14 +16,25 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_lrw_if ctr_lrw_if
+ * @{
+ */
+
 typedef void (*ctr_lrw_recv_cb)(const char *s);
 
+/** @private */
 typedef int (*ctr_lrw_if_api_init)(const struct device *dev, ctr_lrw_recv_cb recv_cb);
+/** @private */
 typedef int (*ctr_lrw_if_api_reset)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lrw_if_api_enable)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lrw_if_api_disable)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lrw_if_api_send)(const struct device *dev, const char *fmt, va_list ap);
 
+/** @private */
 struct ctr_lrw_if_driver_api {
 	ctr_lrw_if_api_init init;
 	ctr_lrw_if_api_reset reset;
@@ -66,6 +77,8 @@ static inline int ctr_lrw_if_send(const struct device *dev, const char *fmt, va_
 
 	return api->send(dev, fmt, ap);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

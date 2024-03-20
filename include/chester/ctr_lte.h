@@ -16,6 +16,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_lte ctr_lte
+ * @{
+ */
+
 enum ctr_lte_event {
 	CTR_LTE_EVENT_FAILURE = -1,
 	CTR_LTE_EVENT_START_OK = 0,
@@ -120,6 +125,8 @@ int ctr_lte_attach(int *corr_id);
 int ctr_lte_detach(int *corr_id);
 int ctr_lte_eval(int *corr_id);
 int ctr_lte_send(const struct ctr_lte_send_opts *opts, const void *buf, size_t len, int *corr_id);
+
+/** @} */
 
 #ifdef __cplusplus
 }

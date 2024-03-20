@@ -16,6 +16,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_lrw ctr_lrw
+ * @{
+ */
+
 enum ctr_lrw_event {
 	CTR_LRW_EVENT_FAILURE = -1,
 	CTR_LRW_EVENT_START_OK = 0,
@@ -77,6 +82,8 @@ int ctr_lrw_init(ctr_lrw_event_cb callback, void *param);
 int ctr_lrw_start(int *corr_id);
 int ctr_lrw_join(int *corr_id);
 int ctr_lrw_send(const struct ctr_lrw_send_opts *opts, const void *buf, size_t len, int *corr_id);
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -11,7 +11,14 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_hygro ctr_hygro
+ * @{
+ */
+
 int ctr_hygro_read(float *temperature, float *humidity);
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -14,9 +14,16 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_soil_sensor ctr_soil_sensor
+ * @{
+ */
+
 int ctr_soil_sensor_scan(void);
 int ctr_soil_sensor_get_count(void);
 int ctr_soil_sensor_read(int index, uint64_t *serial_number, float *temperature, int *moisture);
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -17,6 +17,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup people_counter people_counter
+ * @{
+ */
+
 struct people_counter_measurement {
 	uint16_t motion_counter;
 	uint16_t pass_counter_adult;
@@ -28,15 +33,23 @@ struct people_counter_measurement {
 	uint32_t consumed_energy;
 };
 
+/** @private */
 typedef int (*people_counter_api_read_measurement)(const struct device *dev,
 						   struct people_counter_measurement *measurement);
+/** @private */
 typedef int (*people_counter_api_get_power_off_delay)(const struct device *dev, int *value);
+/** @private */
 typedef int (*people_counter_api_get_stay_timeout)(const struct device *dev, int *value);
+/** @private */
 typedef int (*people_counter_api_get_adult_border)(const struct device *dev, int *value);
+/** @private */
 typedef int (*people_counter_api_set_power_off_delay)(const struct device *dev, int value);
+/** @private */
 typedef int (*people_counter_api_set_stay_timeout)(const struct device *dev, int value);
+/** @private */
 typedef int (*people_counter_api_set_adult_border)(const struct device *dev, int value);
 
+/** @private */
 struct people_counter_driver_api {
 	people_counter_api_read_measurement read_measurement;
 	people_counter_api_get_power_off_delay get_power_off_delay;
@@ -103,6 +116,8 @@ static inline int people_counter_set_adult_border(const struct device *dev, int 
 
 	return api->set_adult_border(dev, value);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

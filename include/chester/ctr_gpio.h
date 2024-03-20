@@ -11,6 +11,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_gpio ctr_gpio
+ * @{
+ */
+
 enum ctr_gpio_channel {
 	CTR_GPIO_CHANNEL_A0 = 0,
 	CTR_GPIO_CHANNEL_A1 = 1,
@@ -34,6 +39,8 @@ enum ctr_gpio_mode {
 int ctr_gpio_set_mode(enum ctr_gpio_channel channel, enum ctr_gpio_mode mode);
 int ctr_gpio_read(enum ctr_gpio_channel channel, int *value);
 int ctr_gpio_write(enum ctr_gpio_channel channel, int value);
+
+/** @} */
 
 #ifdef __cplusplus
 }

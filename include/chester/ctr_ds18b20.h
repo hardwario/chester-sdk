@@ -14,9 +14,16 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_ds18b20 ctr_ds18b20
+ * @{
+ */
+
 int ctr_ds18b20_scan(void);
 int ctr_ds18b20_get_count(void);
 int ctr_ds18b20_read(int index, uint64_t *serial_number, float *temperature);
+
+/** @} */
 
 #ifdef __cplusplus
 }

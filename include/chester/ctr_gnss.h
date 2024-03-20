@@ -14,6 +14,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_gnss ctr_gnss
+ * @{
+ */
+
 enum ctr_gnss_event {
 	CTR_GNSS_EVENT_FAILURE = -1,
 	CTR_GNSS_EVENT_START_OK = 0,
@@ -61,6 +66,8 @@ typedef void (*ctr_gnss_user_cb)(enum ctr_gnss_event event, union ctr_gnss_event
 int ctr_gnss_set_handler(ctr_gnss_user_cb user_cb, void *user_data);
 int ctr_gnss_start(int *corr_id);
 int ctr_gnss_stop(bool keep_bckp_domain, int *corr_id);
+
+/** @} */
 
 #ifdef __cplusplus
 }

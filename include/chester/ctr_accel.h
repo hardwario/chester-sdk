@@ -11,7 +11,14 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_accel ctr_accel
+ * @{
+ */
+
 int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientation);
+
+/** @} */
 
 #ifdef __cplusplus
 }

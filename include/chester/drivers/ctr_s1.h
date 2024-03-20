@@ -19,6 +19,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_s1 ctr_s1
+ * @{
+ */
+
 enum ctr_s1_buzzer_command {
 	CTR_S1_BUZZER_COMMAND_NONE = 0,
 	CTR_S1_BUZZER_COMMAND_1X_1_16 = 1,
@@ -136,35 +141,59 @@ struct ctr_s1_status {
 	bool button_pressed;
 };
 
+/** @private */
 typedef void (*ctr_s1_user_cb)(const struct device *dev, enum ctr_s1_event event, void *user_data);
+/** @private */
 typedef int (*ctr_s1_api_set_handler)(const struct device *dev, ctr_s1_user_cb callback,
 				      void *user_data);
+/** @private */
 typedef int (*ctr_s1_api_enable_interrupts)(const struct device *dev);
+/** @private */
 typedef int (*ctr_s1_api_apply)(const struct device *dev);
+/** @private */
 typedef int (*ctr_s1_api_get_status)(const struct device *dev, struct ctr_s1_status *status);
+/** @private */
 typedef int (*ctr_s1_api_get_serial_number)(const struct device *dev, uint32_t *serial_number);
+/** @private */
 typedef int (*ctr_s1_api_get_hw_revision)(const struct device *dev, uint16_t *hw_revision);
+/** @private */
 typedef int (*ctr_s1_api_get_hw_variant)(const struct device *dev, uint32_t *hw_variant);
+/** @private */
 typedef int (*ctr_s1_api_get_fw_version)(const struct device *dev, uint32_t *fw_version);
+/** @private */
 typedef int (*ctr_s1_api_get_vendor_name)(const struct device *dev, char *buf, size_t buf_size);
+/** @private */
 typedef int (*ctr_s1_api_get_product_name)(const struct device *dev, char *buf, size_t buf_size);
+/** @private */
 typedef int (*ctr_s1_api_set_buzzer)(const struct device *dev,
 				     const struct ctr_s1_buzzer_param *param);
+/** @private */
 typedef int (*ctr_s1_api_set_led)(const struct device *dev, enum ctr_s1_led_channel channel,
 				  const struct ctr_s1_led_param *param);
+/** @private */
 typedef int (*ctr_s1_api_set_motion_sensitivity)(const struct device *dev,
 						 enum ctr_s1_motion_sensitivity motion_sensitivity);
+/** @private */
 typedef int (*ctr_s1_api_set_motion_blind_time)(const struct device *dev,
 						enum ctr_s1_motion_blind_time motion_blind_time);
+/** @private */
 typedef int (*ctr_s1_api_read_motion_count)(const struct device *dev, int *motion_count);
+/** @private */
 typedef int (*ctr_s1_api_read_temperature)(const struct device *dev, float *temperature);
+/** @private */
 typedef int (*ctr_s1_api_read_humidity)(const struct device *dev, float *humidity);
+/** @private */
 typedef int (*ctr_s1_api_read_illuminance)(const struct device *dev, float *illuminance);
+/** @private */
 typedef int (*ctr_s1_api_read_altitude)(const struct device *dev, float *altitude);
+/** @private */
 typedef int (*ctr_s1_api_read_pressure)(const struct device *dev, float *pressure);
+/** @private */
 typedef int (*ctr_s1_api_read_co2_conc)(const struct device *dev, float *co2_conc);
+/** @private */
 typedef int (*ctr_s1_api_calib_tgt_co2_conc)(const struct device *dev, float tgt_co2_conc);
 
+/** @private */
 struct ctr_s1_driver_api {
 	ctr_s1_api_set_handler set_handler;
 	ctr_s1_api_enable_interrupts enable_interrupts;
@@ -348,6 +377,8 @@ static inline int ctr_s1_calib_tgt_co2_conc(const struct device *dev, float tgt_
 
 	return api->calib_tgt_co2_conc(dev, tgt_co2_conc);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

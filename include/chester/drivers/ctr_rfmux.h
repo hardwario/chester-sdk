@@ -14,6 +14,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_rfmux ctr_rfmux
+ * @{
+ */
+
 enum ctr_rfmux_interface {
 	CTR_RFMUX_INTERFACE_NONE = 0,
 	CTR_RFMUX_INTERFACE_LTE = 1,
@@ -26,12 +31,17 @@ enum ctr_rfmux_antenna {
 	CTR_RFMUX_ANTENNA_EXT = 2,
 };
 
+/** @private */
 typedef int (*ctr_rfmux_api_acquire)(const struct device *dev);
+/** @private */
 typedef int (*ctr_rfmux_api_release)(const struct device *dev);
+/** @private */
 typedef int (*ctr_rfmux_api_set_interface)(const struct device *dev,
 					   enum ctr_rfmux_interface interface);
+/** @private */
 typedef int (*ctr_rfmux_api_set_antenna)(const struct device *dev, enum ctr_rfmux_antenna antenna);
 
+/** @private */
 struct ctr_rfmux_driver_api {
 	ctr_rfmux_api_acquire acquire;
 	ctr_rfmux_api_release release;
@@ -67,6 +77,8 @@ static inline int ctr_rfmux_set_antenna(const struct device *dev, enum ctr_rfmux
 
 	return api->set_antenna(dev, antenna);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

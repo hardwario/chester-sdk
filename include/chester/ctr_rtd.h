@@ -11,6 +11,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_rtd ctr_rtd
+ * @{
+ */
+
 enum ctr_rtd_channel {
 	CTR_RTD_CHANNEL_A1 = 0,
 	CTR_RTD_CHANNEL_A2 = 1,
@@ -24,6 +29,8 @@ enum ctr_rtd_type {
 };
 
 int ctr_rtd_read(enum ctr_rtd_channel channel, enum ctr_rtd_type type, float *temperature);
+
+/** @} */
 
 #ifdef __cplusplus
 }

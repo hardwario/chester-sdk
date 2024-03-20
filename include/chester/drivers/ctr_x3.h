@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_x3 ctr_x3
+ * @{
+ */
+
 enum ctr_x3_channel {
 	CTR_X3_CHANNEL_1 = 0,
 	CTR_X3_CHANNEL_2 = 1,
@@ -48,6 +53,8 @@ static inline int ctr_x3_measure(const struct device *dev, enum ctr_x3_channel c
 
 	return api->measure(dev, channel, result);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

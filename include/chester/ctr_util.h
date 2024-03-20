@@ -15,8 +15,15 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_util ctr_util
+ * @{
+ */
+
 int ctr_buf2hex(const void *src, size_t src_size, char *dst, size_t dst_size, bool upper);
 int ctr_hex2buf(const char *src, void *dst, size_t dst_size, bool allow_spaces);
+
+/** @} */
 
 #ifdef __cplusplus
 }

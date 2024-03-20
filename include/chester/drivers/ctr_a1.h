@@ -17,6 +17,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_a1 ctr_a1
+ * @{
+ */
+
 enum ctr_a1_relay {
 	CTR_A1_RELAY_1 = 0,
 	CTR_A1_RELAY_2 = 1,
@@ -27,9 +32,12 @@ enum ctr_a1_led {
 	CTR_A1_LED_2 = 1,
 };
 
+/** @private */
 typedef int (*ctr_a1_api_set_relay)(const struct device *dev, enum ctr_a1_relay relay, bool is_on);
+/** @private */
 typedef int (*ctr_a1_api_set_led)(const struct device *dev, enum ctr_a1_led led, bool is_on);
 
+/** @private */
 struct ctr_a1_driver_api {
 	ctr_a1_api_set_relay set_relay;
 	ctr_a1_api_set_led set_led;
@@ -48,6 +56,8 @@ static inline int ctr_a1_set_led(const struct device *dev, enum ctr_a1_led led, 
 
 	return api->set_led(dev, led, is_on);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

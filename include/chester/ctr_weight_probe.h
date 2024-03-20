@@ -14,9 +14,16 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_weight_probe ctr_weight_probe
+ * @{
+ */
+
 int ctr_weight_probe_scan(void);
 int ctr_weight_probe_get_count(void);
 int ctr_weight_probe_read(int index, uint64_t *serial_number, int32_t *result);
+
+/** @} */
 
 #ifdef __cplusplus
 }

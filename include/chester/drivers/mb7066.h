@@ -14,8 +14,15 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup mb7066 mb7066
+ * @{
+ */
+
+/** @private */
 typedef int (*mb7066_api_measure)(const struct device *dev, float *value);
 
+/** @private */
 struct mb7066_driver_api {
 	mb7066_api_measure measure;
 };
@@ -25,6 +32,8 @@ static inline int mb7066_measure(const struct device *dev, float *value)
 	const struct mb7066_driver_api *api = dev->api;
 	return api->measure(dev, value);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

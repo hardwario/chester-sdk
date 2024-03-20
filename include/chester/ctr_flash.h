@@ -11,8 +11,15 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_flash ctr_flash
+ * @{
+ */
+
 int ctr_flash_acquire(void);
 int ctr_flash_release(void);
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_edge ctr_edge
+ * @{
+ */
+
 enum ctr_edge_event {
 	CTR_EDGE_EVENT_INACTIVE = 0,
 	CTR_EDGE_EVENT_ACTIVE = 1,
@@ -53,6 +58,8 @@ int ctr_edge_set_active_duration(struct ctr_edge *edge, int msec);
 int ctr_edge_set_inactive_duration(struct ctr_edge *edge, int msec);
 int ctr_edge_watch(struct ctr_edge *edge);
 int ctr_edge_unwatch(struct ctr_edge *edge);
+
+/** @} */
 
 #ifdef __cplusplus
 }

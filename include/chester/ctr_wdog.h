@@ -14,6 +14,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_wdog ctr_wdog
+ * @{
+ */
+
 struct ctr_wdog_channel {
 	int id;
 };
@@ -48,6 +53,8 @@ static inline int ctr_wdog_feed(struct ctr_wdog_channel *channel)
 }
 
 #endif /* defined(CONFIG_CTR_WDOG) */
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_x4 ctr_x4
+ * @{
+ */
+
 enum ctr_x4_event {
 	CTR_X4_EVENT_LINE_CONNECTED = 0,
 	CTR_X4_EVENT_LINE_DISCONNECTED = 1,
@@ -30,14 +35,20 @@ enum ctr_x4_output {
 	CTR_X4_OUTPUT_4 = 3,
 };
 
+/** @private */
 typedef void (*ctr_x4_user_cb)(const struct device *dev, enum ctr_x4_event event, void *user_data);
+/** @private */
 typedef int (*ctr_x4_api_set_handler)(const struct device *dev, ctr_x4_user_cb callback,
 				      void *user_data);
+/** @private */
 typedef int (*ctr_x4_api_set_output)(const struct device *dev, enum ctr_x4_output output,
 				     bool is_on);
+/** @private */
 typedef int (*ctr_x4_api_get_line_voltage)(const struct device *dev, int *line_voltage_mv);
+/** @private */
 typedef int (*ctr_x4_api_get_line_present)(const struct device *dev, bool *is_line_present);
 
+/** @private */
 struct ctr_x4_driver_api {
 	ctr_x4_api_set_handler set_handler;
 	ctr_x4_api_set_output set_output;
@@ -73,6 +84,8 @@ static inline int ctr_x4_get_line_present(const struct device *dev, bool *is_lin
 
 	return api->get_line_present(dev, is_line_present);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

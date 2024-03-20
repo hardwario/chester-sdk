@@ -16,6 +16,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_led
+ * @{
+ */
+
 enum ctr_led_channel {
 	CTR_LED_CHANNEL_R = 0,
 	CTR_LED_CHANNEL_G = 1,
@@ -32,6 +37,8 @@ static inline int ctr_led_set(enum ctr_led_channel channel, bool is_on)
 		return led_off(DEVICE_DT_GET(DT_NODELABEL(gpio_leds)), channel);
 	}
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

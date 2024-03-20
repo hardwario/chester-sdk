@@ -17,15 +17,26 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_batt ctr_batt
+ * @{
+ */
+
+/** @private */
 typedef int (*ctr_batt_api_get_rest_voltage_mv)(const struct device *dev, int *rest_mv,
 						int delay_ms);
+/** @private */
 typedef int (*ctr_batt_api_get_load_voltage_mv)(const struct device *dev, int *load_mv,
 						int delay_ms);
+/** @private */
 typedef void (*ctr_batt_api_get_load_current_ma)(const struct device *dev, int *current_ma,
 						 int load_mv);
+/** @private */
 typedef int (*ctr_batt_api_load)(const struct device *dev);
+/** @private */
 typedef int (*ctr_batt_api_unload)(const struct device *dev);
 
+/** @private */
 struct ctr_batt_driver_api {
 	ctr_batt_api_get_rest_voltage_mv get_rest_voltage_mv;
 	ctr_batt_api_get_load_voltage_mv get_load_voltage_mv;
@@ -69,6 +80,8 @@ static inline int ctr_batt_unload(const struct device *dev)
 
 	return api->unload(dev);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

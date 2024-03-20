@@ -15,11 +15,20 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_meteo ctr_meteo
+ * @{
+ */
+
+/** @private */
 typedef int (*ctr_meteo_api_get_rainfall_and_clear)(const struct device *dev, float *rainfall_mm);
+/** @private */
 typedef int (*ctr_meteo_api_get_wind_speed_and_clear)(const struct device *dev,
 						      float *wind_speed_mps);
+/** @private */
 typedef int (*ctr_meteo_api_get_wind_direction)(const struct device *dev, float *direction);
 
+/** @private */
 struct ctr_meteo_driver_api {
 	ctr_meteo_api_get_rainfall_and_clear get_rainfall_and_clear;
 	ctr_meteo_api_get_wind_speed_and_clear get_wind_speed_and_clear;
@@ -47,6 +56,8 @@ static inline int ctr_meteo_get_wind_direction(const struct device *dev, float *
 
 	return api->get_wind_direction(dev, direction);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

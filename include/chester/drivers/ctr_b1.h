@@ -15,6 +15,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_b1 ctr_b1
+ * @{
+ */
+
 enum ctr_b1_output {
 	CTR_B1_OUTPUT_WM_RESET = 0,
 	CTR_B1_OUTPUT_WM_ON = 1,
@@ -22,9 +27,11 @@ enum ctr_b1_output {
 	CTR_B1_OUTPUT_ANT_2 = 3,
 };
 
+/** @private */
 typedef int (*ctr_b1_api_set_output)(const struct device *dev, enum ctr_b1_output output,
 				     int value);
 
+/** @private */
 struct ctr_b1_driver_api {
 	ctr_b1_api_set_output set_output;
 };
@@ -35,6 +42,8 @@ static inline int ctr_b1_set_output(const struct device *dev, enum ctr_b1_output
 
 	return api->set_output(dev, output, value);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

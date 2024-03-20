@@ -19,6 +19,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_x7 ctr_x7
+ * @{
+ */
+
 struct ctr_x7_calibration {
 	float x0;
 	float y0;
@@ -31,11 +36,14 @@ struct ctr_x7_result {
 	float rms;
 };
 
+/** @private */
 typedef int (*ctr_x7_api_set_power)(const struct device *dev, bool is_enabled);
+/** @private */
 typedef int (*ctr_x7_api_measure)(const struct device *dev,
 				  const struct ctr_x7_calibration calibrations[2],
 				  struct ctr_x7_result results[2]);
 
+/** @private */
 struct ctr_x7_driver_api {
 	ctr_x7_api_set_power set_power;
 	ctr_x7_api_measure measure;
@@ -56,6 +64,8 @@ static inline int ctr_x7_measure(const struct device *dev,
 
 	return api->measure(dev, calibrations, results);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_rtc ctr_rtc
+ * @{
+ */
+
 struct ctr_rtc_tm {
 	/* Year in the Anno Domini calendar (e.g. 2022) */
 	int year;
@@ -46,6 +51,8 @@ int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm);
 int ctr_rtc_get_ts(int64_t *ts);
 int ctr_rtc_set_ts(int64_t ts);
 int ctr_rtc_wait_set(k_timeout_t timeout);
+
+/** @} */
 
 #ifdef __cplusplus
 }

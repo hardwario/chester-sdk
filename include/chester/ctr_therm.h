@@ -11,7 +11,14 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_therm ctr_therm
+ * @{
+ */
+
 int ctr_therm_read(float *temperature);
+
+/** @} */
 
 #ifdef __cplusplus
 }

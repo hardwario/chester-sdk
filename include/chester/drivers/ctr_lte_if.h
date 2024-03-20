@@ -18,16 +18,29 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_lte_if ctr_lte_if
+ * @{
+ */
+
 typedef void (*ctr_lte_recv_cb)(const char *s);
 
+/** @private */
 typedef int (*ctr_lte_if_api_init)(const struct device *dev, ctr_lte_recv_cb recv_cb);
+/** @private */
 typedef int (*ctr_lte_if_api_reset)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_api_wakeup)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_api_enable)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_api_disable)(const struct device *dev);
+/** @private */
 typedef int (*ctr_lte_if_api_send)(const struct device *dev, const char *fmt, va_list ap);
+/** @private */
 typedef int (*ctr_lte_if_api_send_raw)(const struct device *dev, const void *buf, size_t len);
 
+/** @private */
 struct ctr_lte_if_driver_api {
 	ctr_lte_if_api_init init;
 	ctr_lte_if_api_reset reset;
@@ -86,6 +99,8 @@ static inline int ctr_lte_if_send_raw(const struct device *dev, const void *buf,
 
 	return api->send_raw(dev, buf, len);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -11,7 +11,14 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_signal ctr_signal
+ * @{
+ */
+
 int ctr_signal_measure(double *avg, double *rms);
+
+/** @} */
 
 #ifdef __cplusplus
 }

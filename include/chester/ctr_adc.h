@@ -14,8 +14,13 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ctr_adc ctr_adc
+ * @{
+ */
+
 /* Default ADC gain is 1/6 */
-#define CTR_ADC_MILLIVOLTS(_sample)	   (((uint32_t)(_sample)) * 600 * 6 / 4095)
+#define CTR_ADC_MILLIVOLTS(_sample)        (((uint32_t)(_sample)) * 600 * 6 / 4095)
 #define CTR_ADC_MILLIVOLTS_GAIN_1(_sample) (((uint32_t)(_sample)) * 600 * 1 / 4095)
 
 /* X0 contains 100kΩ and 10kΩ voltage divider when PD is enabled */
@@ -41,6 +46,8 @@ enum ctr_adc_channel {
 
 int ctr_adc_init(enum ctr_adc_channel channel);
 int ctr_adc_read(enum ctr_adc_channel channel, uint16_t *sample);
+
+/** @} */
 
 #ifdef __cplusplus
 }
