@@ -1,0 +1,154 @@
+name: Build
+
+on:
+  push:
+      paths-ignore:
+        - '**/README.md'
+        - '.*'
+      branches-ignore:
+        - 'gh-pages'
+  workflow_dispatch:
+
+jobs:
+  # ------------------------
+  prepare:
+    runs-on: ubuntu-latest
+    container:
+      image: hardwario/nrf-connect-sdk-build:v2.5.0-2
+    outputs:
+      short_sha: ${{ steps.short-sha.outputs.short-sha }}
+      samples: ${{ steps.generate-matrix.outputs.samples }}
+      applications: ${{ steps.generate-matrix.outputs.applications }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          path: 'chester-sdk/chester'
+      - name: cache
+        id: cache-chester-sdk
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-chester-sdk
+        with:
+          key: chester-sdk-${{ hashFiles('chester-sdk/chester/west.yml') }}
+          restore-keys: chester-sdk-${{ hashFiles('chester-sdk/chester/west.yml') }}
+          path: |
+            chester-sdk/.west
+            chester-sdk/bootloader
+            chester-sdk/doxygen-awesome-css
+            chester-sdk/modules
+            chester-sdk/nrf
+            chester-sdk/nrfxlib
+            chester-sdk/test
+            chester-sdk/tools
+            chester-sdk/zephyr
+      - name: west init and update
+        if: steps.cache-chester-sdk.outputs.cache-hit != 'true'
+        run: |
+          cd chester-sdk
+          west init -l --mf west.yml chester
+          west update --narrow
+          west config build.board chester_nrf52840
+      - name: short_sha
+        id: short-sha
+        run: |
+          SHORT_SHA=$(git -C chester-sdk/chester rev-parse --short HEAD)
+          echo short-sha=${SHORT_SHA} >> $GITHUB_OUTPUT
+      - name: Generate Matrix
+        id: generate-matrix
+        working-directory: ./chester-sdk/chester
+        run: |
+          SAMPLES=$(python3 .github/gen-matrix.py samples)
+          echo $SAMPLES
+          echo samples=${SAMPLES} >> $GITHUB_OUTPUT
+          APPLICATIONS=$(python3 .github/gen-matrix.py applications)
+          echo $APPLICATIONS
+          echo applications=${APPLICATIONS} >> $GITHUB_OUTPUT
+
+  # ------------------------
+  build-sample:
+    runs-on: ubuntu-latest
+    container:
+      image: hardwario/nrf-connect-sdk-build:v2.5.0-2
+    needs:
+      - prepare
+    continue-on-error: true
+    strategy:
+      matrix:
+        sample: ${{ fromJSON(needs.prepare.outputs.samples) }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          path: 'chester-sdk/chester'
+      - name: restore cache with chester-sdk
+        id: cache-chester-sdk
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: cache-chester-sdk
+        with:
+          fail-on-cache-miss: true
+          key: chester-sdk-${{ hashFiles('chester-sdk/chester/west.yml') }}
+          path: |
+            chester-sdk/.west
+            chester-sdk/bootloader
+            chester-sdk/doxygen-awesome-css
+            chester-sdk/modules
+            chester-sdk/nrf
+            chester-sdk/nrfxlib
+            chester-sdk/test
+            chester-sdk/tools
+            chester-sdk/zephyr
+      - name: build
+        run: |
+          cd chester-sdk/chester/samples/${{ matrix.sample }}
+          west build
+  # ------------------------
+  build-app:
+    runs-on: ubuntu-latest
+    container:
+      image: hardwario/nrf-connect-sdk-build:v2.5.0-2
+    needs:
+      - prepare
+    continue-on-error: true
+    strategy:
+      matrix:
+        application: ${{ fromJSON(needs.prepare.outputs.applications) }}
+        exclude:
+          - application: _legacy
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          path: 'chester-sdk/chester'
+      - name: gen build command
+        id: build-command
+        working-directory: ./chester-sdk/chester
+        run: |
+          APP_PATH=$(python3 .github/gen-applications.py ${{ matrix.application }} path)
+          echo $APP_PATH
+          echo app_path=${APP_PATH} >> $GITHUB_OUTPUT
+          BUILD_CMD=$(python3 .github/gen-applications.py ${{ matrix.application }} cmd)
+          echo $BUILD_CMD
+          echo build_cmd=${BUILD_CMD} >> $GITHUB_OUTPUT
+      - name: restore cache with chester-sdk
+        id: cache-chester-sdk
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: cache-chester-sdk
+        with:
+          fail-on-cache-miss: true
+          key: chester-sdk-${{ hashFiles('chester-sdk/chester/west.yml') }}
+          path: |
+            chester-sdk/.west
+            chester-sdk/bootloader
+            chester-sdk/doxygen-awesome-css
+            chester-sdk/modules
+            chester-sdk/nrf
+            chester-sdk/nrfxlib
+            chester-sdk/test
+            chester-sdk/tools
+            chester-sdk/zephyr
+      - name: build
+        working-directory: ${{ steps.build-command.outputs.app_path }}
+        run: ${{ steps.build-command.outputs.build_cmd }}

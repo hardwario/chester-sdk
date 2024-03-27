@@ -1,0 +1,178 @@
+#
+# Copyright (c) 2024 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+---
+
+###### Clime ######
+-
+  name: CHESTER Clime
+  fw_bundle: com.hardwario.chester.app.clime
+  fw_name: hio-chester-clime
+  fw_version: v2.3.0
+  shields: ctr_lrw ctr_lte ctr_s2
+
+-
+  name: CHESTER Clime Z
+  fw_bundle: com.hardwario.chester.app.clime.z
+  fw_name: hio-chester-clime-z
+  fw_version: v2.3.0
+  shields: ctr_lrw ctr_lte ctr_s2 ctr_z
+  remark: Support for CHESTER-Z
+
+-
+  name: CHESTER Clime IAQ
+  fw_bundle: com.hardwario.chester.app.clime.iaq
+  fw_name: hio-chester-clime-iaq
+  fw_version: v2.3.0
+  shields: ctr_lrw ctr_lte ctr_s1
+
+-
+  name: CHESTER Clime 1W
+  fw_bundle: com.hardwario.chester.app.clime.1w
+  fw_name: hio-chester-clime-1w
+  fw_version: v2.3.0
+  shields: ctr_lrw ctr_lte ctr_ds18b20
+
+-
+  name: CHESTER Clime 1WH
+  fw_bundle: com.hardwario.chester.app.clime.1wh
+  fw_name: hio-chester-clime-1wh
+  fw_version: v2.3.0
+  shields: ctr_lrw ctr_lte ctr_ds18b20 ctr_s2
+  remark: Support for CHESTER-S2, 1-Wire
+
+-
+  name: CHESTER Clime RTD
+  fw_bundle: com.hardwario.chester.app.clime.rtd
+  fw_name: hio-chester-clime-rtd
+  fw_version: v2.3.0
+  shields: ctr_lrw ctr_lte ctr_rtd_a
+
+###### Push ######
+-
+  name: CHESTER Push
+  fw_bundle: com.hardwario.chester.app.push
+  fw_name: hio-chester-push
+  fw_version: v2.3.0
+  shields: ctr_lrw ctr_lte ctr_s2
+
+-
+  name: CHESTER Push FM
+  fw_bundle: com.hardwario.chester.app.push.fm
+  fw_name: hio-chester-push-fm
+  fw_version: v2.3.0
+  shields: ctr_lrw ctr_lte ctr_s2
+  extra_args: -DCONFIG_APP_FLIP_MODE=y
+
+###### Counter ######
+-
+  name: CHESTER Counter
+  fw_bundle: com.hardwario.chester.app.counter
+  fw_name: hio-chester-counter
+  fw_version: v2.3.0
+  shields: ctr_lte ctr_x0_a
+
+-
+  name: CHESTER Counter Z
+  fw_bundle: com.hardwario.chester.app.counter.z
+  fw_name: hio-chester-counter-z
+  fw_version: v2.3.0
+  shields: ctr_lte ctr_x0_a ctr_z
+  remark: Support for CHESTER-Z
+
+###### Input ######
+-
+  name: CHESTER Input
+  fw_bundle: com.hardwario.chester.app.input
+  fw_name: hio-chester-input
+  fw_version: v2.3.0
+  shields: ctr_ds18b20 ctr_lte ctr_x0_a
+  remark: Support for 1-Wire
+
+-
+  name: CHESTER Input Z
+  fw_bundle: com.hardwario.chester.app.input.z
+  fw_name: hio-chester-input-z
+  fw_version: v2.3.0
+  shields: ctr_ds18b20 ctr_lte ctr_x0_a ctr_z
+  remark: Support for CHESTER-Z, 1-Wire
+
+-
+  name: CHESTER Input ZH
+  fw_bundle: com.hardwario.chester.app.input.zh
+  fw_name: hio-chester-input-zh
+  fw_version: v2.3.0
+  shields: ctr_ds18b20 ctr_lte ctr_x0_a ctr_z ctr_s2
+  remark: Support for CHESTER-Z, 1-Wire, S2
+
+###### Current ######
+-
+  name: CHESTER Current
+  fw_bundle: com.hardwario.chester.app.current
+  fw_name: hio-chester-current
+  fw_version: v2.3.0
+  shields: ctr_k1 ctr_lrw ctr_lte
+
+-
+  name: CHESTER Current Z
+  fw_bundle: com.hardwario.chester.app.current.z
+  fw_name: hio-chester-current-z
+  fw_version: v2.3.0
+  shields: ctr_k1 ctr_lrw ctr_lte ctr_z
+  remark: Support for CHESTER-Z
+
+- name: CHESTER Current 1W
+  fw_bundle: com.hardwario.chester.app.current.1w
+  fw_name: hio-chester-current-1w
+  fw_version: v2.3.0
+  shields: ctr_k1 ctr_lrw ctr_lte ctr_ds18b20
+  remark: Support for 1-Wire
+
+###### Scale ######
+-
+  name: CHESTER Scale
+  fw_bundle: com.hardwario.chester.app.scale
+  fw_name: hio-chester-scale
+  fw_version: v2.3.0
+  shields: ctr_lte ctr_x3_a
+
+-
+  name: CHESTER Scale Z
+  fw_bundle: com.hardwario.chester.app.scale.z
+  fw_name: hio-chester-scale-z
+  fw_version: v2.3.0
+  shields: ctr_lte ctr_x3_a ctr_z
+  remark: Support for CHESTER-Z
+
+### CHESTER Meteo ######
+-
+  name: CHESTER Meteo
+  fw_bundle: com.hardwario.chester.app.meteo
+  fw_name: hio-chester-meteo
+  fw_version: v2.3.0
+  shields: ctr_barometer_tag ctr_ds18b20 ctr_lte ctr_s2 ctr_meteo_a ctr_soil_sensor
+
+- name: CHESTER Meteo Z
+  fw_bundle: com.hardwario.chester.app.meteo.z
+  fw_name: hio-chester-meteo-z
+  fw_version: v2.3.0
+  shields: ctr_barometer_tag ctr_ds18b20 ctr_lte ctr_s2 ctr_meteo_a ctr_soil_sensor ctr_z
+  remark: Support for CHESTER-Z
+
+### CHESTER Range ######
+-
+  name: CHESTER Range
+  fw_bundle: com.hardwario.chester.app.range
+  fw_name: hio-chester-range
+  fw_version: v2.3.0
+  shields: ctr_ds18b20 ctr_lte ctr_mb7066_a
+
+-
+  name: CHESTER Range Z
+  fw_bundle: com.hardwario.chester.app.range.z
+  fw_name: hio-chester-range-z
+  fw_version: v2.3.0
+  shields: ctr_ds18b20 ctr_lte ctr_mb7066_a ctr_z
+  remark: Support for CHESTER-Z
