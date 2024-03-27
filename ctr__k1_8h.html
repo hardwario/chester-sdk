@@ -97,7 +97,6 @@ $(document).ready(function(){initNavTree('ctr__k1_8h.html',''); initResizable();
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ctr_k1.h File Reference</div></div>
@@ -128,254 +127,39 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__k1__result.html">ctr_k1_result</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__k1__driver__api.html">ctr_k1_driver_api</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:aa285f6073da0192be545d7ecc22b1628"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__k1_8h.html#aa285f6073da0192be545d7ecc22b1628">CTR_K1_CHANNEL_SINGLE_ENDED</a>(ch)&#160;&#160;&#160;((ch) - 1)</td></tr>
-<tr class="separator:aa285f6073da0192be545d7ecc22b1628"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a70055b2df79742b767cdf226936d6dc2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__k1_8h.html#a70055b2df79742b767cdf226936d6dc2">CTR_K1_CHANNEL_DIFFERENTIAL</a>(ch)&#160;&#160;&#160;((ch) - 1 + <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a>)</td></tr>
-<tr class="separator:a70055b2df79742b767cdf226936d6dc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae8ddeee4a96a6402bb569abaa102c00a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__k1_8h.html#ae8ddeee4a96a6402bb569abaa102c00a">CTR_K1_CHANNEL_IDX</a>(ch)&#160;&#160;&#160;	((ch) &gt;= <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a> ? (ch) - <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a> : (ch))</td></tr>
-<tr class="separator:ae8ddeee4a96a6402bb569abaa102c00a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:aa9d5ab80132124285d0e97afeddcb70b"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__k1_8h.html#aa9d5ab80132124285d0e97afeddcb70b">ctr_k1_api_set_power</a>) (const struct device *dev, enum <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channel, bool is_enabled)</td></tr>
-<tr class="separator:aa9d5ab80132124285d0e97afeddcb70b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f0adbc8914e85928c2bc210b4323f3d"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__k1_8h.html#a9f0adbc8914e85928c2bc210b4323f3d">ctr_k1_api_measure</a>) (const struct device *dev, const enum <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channels[], size_t channels_count, const struct <a class="el" href="structctr__k1__calibration.html">ctr_k1_calibration</a> calibrations[], struct <a class="el" href="structctr__k1__result.html">ctr_k1_result</a> results[])</td></tr>
-<tr class="separator:a9f0adbc8914e85928c2bc210b4323f3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa285f6073da0192be545d7ecc22b1628"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__k1.html#gaa285f6073da0192be545d7ecc22b1628">CTR_K1_CHANNEL_SINGLE_ENDED</a>(ch)&#160;&#160;&#160;((ch) - 1)</td></tr>
+<tr class="separator:gaa285f6073da0192be545d7ecc22b1628"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga70055b2df79742b767cdf226936d6dc2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__k1.html#ga70055b2df79742b767cdf226936d6dc2">CTR_K1_CHANNEL_DIFFERENTIAL</a>(ch)&#160;&#160;&#160;((ch) - 1 + <a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a>)</td></tr>
+<tr class="separator:ga70055b2df79742b767cdf226936d6dc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae8ddeee4a96a6402bb569abaa102c00a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__k1.html#gae8ddeee4a96a6402bb569abaa102c00a">CTR_K1_CHANNEL_IDX</a>(ch)&#160;&#160;&#160;	((ch) &gt;= <a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a> ? (ch) - <a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a> : (ch))</td></tr>
+<tr class="separator:gae8ddeee4a96a6402bb569abaa102c00a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:a697216bcaca3b22cd906cd26f03b9247"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> { <br />
-&#160;&#160;<a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247ad73b5c56329661173cb35b1aa372e781">CTR_K1_CHANNEL_1_SINGLE_ENDED</a> = 0
-, <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247a8600fb213c0d32dca71042f81d0d5c9f">CTR_K1_CHANNEL_2_SINGLE_ENDED</a> = 1
-, <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247a4dfd4b30e546494c5709c5c353cc540f">CTR_K1_CHANNEL_3_SINGLE_ENDED</a> = 2
-, <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247a590c9a7b4a7b28978ee265b82671c857">CTR_K1_CHANNEL_4_SINGLE_ENDED</a> = 3
+<tr class="memitem:ga697216bcaca3b22cd906cd26f03b9247"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__k1.html#ga697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> { <br />
+&#160;&#160;<a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247ad73b5c56329661173cb35b1aa372e781">CTR_K1_CHANNEL_1_SINGLE_ENDED</a> = 0
+, <a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247a8600fb213c0d32dca71042f81d0d5c9f">CTR_K1_CHANNEL_2_SINGLE_ENDED</a> = 1
+, <a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247a4dfd4b30e546494c5709c5c353cc540f">CTR_K1_CHANNEL_3_SINGLE_ENDED</a> = 2
+, <a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247a590c9a7b4a7b28978ee265b82671c857">CTR_K1_CHANNEL_4_SINGLE_ENDED</a> = 3
 , <br />
-&#160;&#160;<a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a> = 4
-, <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247a623b3377eb9c8316a8151953d57c8803">CTR_K1_CHANNEL_2_DIFFERENTIAL</a> = 5
-, <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247a8812042305dd9c517d6106c082f9a82a">CTR_K1_CHANNEL_3_DIFFERENTIAL</a> = 6
-, <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247a8afd60295596df694c2600b77d1bc8a6">CTR_K1_CHANNEL_4_DIFFERENTIAL</a> = 7
+&#160;&#160;<a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a> = 4
+, <a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247a623b3377eb9c8316a8151953d57c8803">CTR_K1_CHANNEL_2_DIFFERENTIAL</a> = 5
+, <a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247a8812042305dd9c517d6106c082f9a82a">CTR_K1_CHANNEL_3_DIFFERENTIAL</a> = 6
+, <a class="el" href="group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247a8afd60295596df694c2600b77d1bc8a6">CTR_K1_CHANNEL_4_DIFFERENTIAL</a> = 7
 <br />
  }</td></tr>
-<tr class="separator:a697216bcaca3b22cd906cd26f03b9247"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ga697216bcaca3b22cd906cd26f03b9247"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:af632a5d8c5f475d7ef8639bb8ed996c5"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__k1_8h.html#af632a5d8c5f475d7ef8639bb8ed996c5">ctr_k1_set_power</a> (const struct device *dev, enum <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channel, bool is_enabled)</td></tr>
-<tr class="separator:af632a5d8c5f475d7ef8639bb8ed996c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a347b856eb86e78a0bfa11930bd1bf253"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__k1_8h.html#a347b856eb86e78a0bfa11930bd1bf253">ctr_k1_measure</a> (const struct device *dev, const enum <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channels[], size_t channels_count, const struct <a class="el" href="structctr__k1__calibration.html">ctr_k1_calibration</a> calibrations[], struct <a class="el" href="structctr__k1__result.html">ctr_k1_result</a> results[])</td></tr>
-<tr class="separator:a347b856eb86e78a0bfa11930bd1bf253"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf632a5d8c5f475d7ef8639bb8ed996c5"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__k1.html#gaf632a5d8c5f475d7ef8639bb8ed996c5">ctr_k1_set_power</a> (const struct device *dev, enum <a class="el" href="group__ctr__k1.html#ga697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channel, bool is_enabled)</td></tr>
+<tr class="separator:gaf632a5d8c5f475d7ef8639bb8ed996c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga347b856eb86e78a0bfa11930bd1bf253"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__k1.html#ga347b856eb86e78a0bfa11930bd1bf253">ctr_k1_measure</a> (const struct device *dev, const enum <a class="el" href="group__ctr__k1.html#ga697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channels[], size_t channels_count, const struct <a class="el" href="structctr__k1__calibration.html">ctr_k1_calibration</a> calibrations[], struct <a class="el" href="structctr__k1__result.html">ctr_k1_result</a> results[])</td></tr>
+<tr class="separator:ga347b856eb86e78a0bfa11930bd1bf253"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="a70055b2df79742b767cdf226936d6dc2" name="a70055b2df79742b767cdf226936d6dc2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a70055b2df79742b767cdf226936d6dc2">&#9670;&#160;</a></span>CTR_K1_CHANNEL_DIFFERENTIAL</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define CTR_K1_CHANNEL_DIFFERENTIAL</td>
-          <td>(</td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname">ch</td><td>)</td>
-          <td>&#160;&#160;&#160;((ch) - 1 + <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a>)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ae8ddeee4a96a6402bb569abaa102c00a" name="ae8ddeee4a96a6402bb569abaa102c00a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae8ddeee4a96a6402bb569abaa102c00a">&#9670;&#160;</a></span>CTR_K1_CHANNEL_IDX</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define CTR_K1_CHANNEL_IDX</td>
-          <td>(</td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname">ch</td><td>)</td>
-          <td>&#160;&#160;&#160;	((ch) &gt;= <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a> ? (ch) - <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb">CTR_K1_CHANNEL_1_DIFFERENTIAL</a> : (ch))</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa285f6073da0192be545d7ecc22b1628" name="aa285f6073da0192be545d7ecc22b1628"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa285f6073da0192be545d7ecc22b1628">&#9670;&#160;</a></span>CTR_K1_CHANNEL_SINGLE_ENDED</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define CTR_K1_CHANNEL_SINGLE_ENDED</td>
-          <td>(</td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname">ch</td><td>)</td>
-          <td>&#160;&#160;&#160;((ch) - 1)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a id="a9f0adbc8914e85928c2bc210b4323f3d" name="a9f0adbc8914e85928c2bc210b4323f3d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9f0adbc8914e85928c2bc210b4323f3d">&#9670;&#160;</a></span>ctr_k1_api_measure</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_k1_api_measure) (const struct device *dev, const enum <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channels[], size_t channels_count, const struct <a class="el" href="structctr__k1__calibration.html">ctr_k1_calibration</a> calibrations[], struct <a class="el" href="structctr__k1__result.html">ctr_k1_result</a> results[])</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa9d5ab80132124285d0e97afeddcb70b" name="aa9d5ab80132124285d0e97afeddcb70b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa9d5ab80132124285d0e97afeddcb70b">&#9670;&#160;</a></span>ctr_k1_api_set_power</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_k1_api_set_power) (const struct device *dev, enum <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channel, bool is_enabled)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Enumeration Type Documentation</h2>
-<a id="a697216bcaca3b22cd906cd26f03b9247" name="a697216bcaca3b22cd906cd26f03b9247"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a697216bcaca3b22cd906cd26f03b9247">&#9670;&#160;</a></span>ctr_k1_channel</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a697216bcaca3b22cd906cd26f03b9247ad73b5c56329661173cb35b1aa372e781" name="a697216bcaca3b22cd906cd26f03b9247ad73b5c56329661173cb35b1aa372e781"></a>CTR_K1_CHANNEL_1_SINGLE_ENDED&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a697216bcaca3b22cd906cd26f03b9247a8600fb213c0d32dca71042f81d0d5c9f" name="a697216bcaca3b22cd906cd26f03b9247a8600fb213c0d32dca71042f81d0d5c9f"></a>CTR_K1_CHANNEL_2_SINGLE_ENDED&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a697216bcaca3b22cd906cd26f03b9247a4dfd4b30e546494c5709c5c353cc540f" name="a697216bcaca3b22cd906cd26f03b9247a4dfd4b30e546494c5709c5c353cc540f"></a>CTR_K1_CHANNEL_3_SINGLE_ENDED&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a697216bcaca3b22cd906cd26f03b9247a590c9a7b4a7b28978ee265b82671c857" name="a697216bcaca3b22cd906cd26f03b9247a590c9a7b4a7b28978ee265b82671c857"></a>CTR_K1_CHANNEL_4_SINGLE_ENDED&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb" name="a697216bcaca3b22cd906cd26f03b9247ac55052a74a18d77c79cb415f6d74abbb"></a>CTR_K1_CHANNEL_1_DIFFERENTIAL&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a697216bcaca3b22cd906cd26f03b9247a623b3377eb9c8316a8151953d57c8803" name="a697216bcaca3b22cd906cd26f03b9247a623b3377eb9c8316a8151953d57c8803"></a>CTR_K1_CHANNEL_2_DIFFERENTIAL&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a697216bcaca3b22cd906cd26f03b9247a8812042305dd9c517d6106c082f9a82a" name="a697216bcaca3b22cd906cd26f03b9247a8812042305dd9c517d6106c082f9a82a"></a>CTR_K1_CHANNEL_3_DIFFERENTIAL&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a697216bcaca3b22cd906cd26f03b9247a8afd60295596df694c2600b77d1bc8a6" name="a697216bcaca3b22cd906cd26f03b9247a8afd60295596df694c2600b77d1bc8a6"></a>CTR_K1_CHANNEL_4_DIFFERENTIAL&#160;</td><td class="fielddoc"></td></tr>
-</table>
-
-</div>
-</div>
-<h2 class="groupheader">Function Documentation</h2>
-<a id="a347b856eb86e78a0bfa11930bd1bf253" name="a347b856eb86e78a0bfa11930bd1bf253"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a347b856eb86e78a0bfa11930bd1bf253">&#9670;&#160;</a></span>ctr_k1_measure()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_k1_measure </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const enum <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a>&#160;</td>
-          <td class="paramname"><em>channels</em>[], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>channels_count</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const struct <a class="el" href="structctr__k1__calibration.html">ctr_k1_calibration</a>&#160;</td>
-          <td class="paramname"><em>calibrations</em>[], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">struct <a class="el" href="structctr__k1__result.html">ctr_k1_result</a>&#160;</td>
-          <td class="paramname"><em>results</em>[]&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="af632a5d8c5f475d7ef8639bb8ed996c5" name="af632a5d8c5f475d7ef8639bb8ed996c5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af632a5d8c5f475d7ef8639bb8ed996c5">&#9670;&#160;</a></span>ctr_k1_set_power()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_k1_set_power </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">enum <a class="el" href="ctr__k1_8h.html#a697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a>&#160;</td>
-          <td class="paramname"><em>channel</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>is_enabled</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

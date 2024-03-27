@@ -7,7 +7,7 @@ var dir_14bc92f4b96c8519b376567118ac28b3 =
     [ "ctr_k1.h", "ctr__k1_8h.html", "ctr__k1_8h" ],
     [ "ctr_lrw_if.h", "ctr__lrw__if_8h.html", "ctr__lrw__if_8h" ],
     [ "ctr_lte_if.h", "ctr__lte__if_8h.html", "ctr__lte__if_8h" ],
-    [ "ctr_lte_if_v2.h", "ctr__lte__if__v2_8h.html", "ctr__lte__if__v2_8h" ],
+    [ "ctr_lte_link.h", "ctr__lte__link_8h.html", "ctr__lte__link_8h" ],
     [ "ctr_meteo.h", "ctr__meteo_8h.html", "ctr__meteo_8h" ],
     [ "ctr_rfmux.h", "ctr__rfmux_8h.html", "ctr__rfmux_8h" ],
     [ "ctr_s1.h", "ctr__s1_8h.html", "ctr__s1_8h" ],

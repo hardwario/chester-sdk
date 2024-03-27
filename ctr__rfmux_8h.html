@@ -96,7 +96,6 @@ $(document).ready(function(){initNavTree('ctr__rfmux_8h.html',''); initResizable
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
-<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ctr_rfmux.h File Reference</div></div>
@@ -115,267 +114,30 @@ Include dependency graph for ctr_rfmux.h:</div>
 </div>
 <p><a href="ctr__rfmux_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
-Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__rfmux__driver__api.html">ctr_rfmux_driver_api</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a0e33aaf96792fe6dadebc2d0e43264c6"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__rfmux_8h.html#a0e33aaf96792fe6dadebc2d0e43264c6">ctr_rfmux_api_acquire</a>) (const struct device *dev)</td></tr>
-<tr class="separator:a0e33aaf96792fe6dadebc2d0e43264c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a398f130aaf8ca01c7cb3b8b55427df"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__rfmux_8h.html#a9a398f130aaf8ca01c7cb3b8b55427df">ctr_rfmux_api_release</a>) (const struct device *dev)</td></tr>
-<tr class="separator:a9a398f130aaf8ca01c7cb3b8b55427df"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c82a010517e4ddcfdb1fb05e658606c"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__rfmux_8h.html#a2c82a010517e4ddcfdb1fb05e658606c">ctr_rfmux_api_set_interface</a>) (const struct device *dev, enum <a class="el" href="ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77">ctr_rfmux_interface</a> interface)</td></tr>
-<tr class="separator:a2c82a010517e4ddcfdb1fb05e658606c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad2c5b127012c577d573dc11b6e4cebda"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__rfmux_8h.html#ad2c5b127012c577d573dc11b6e4cebda">ctr_rfmux_api_set_antenna</a>) (const struct device *dev, enum <a class="el" href="ctr__rfmux_8h.html#a9d202b7d4713a4e8f6cfa677ca5a6b97">ctr_rfmux_antenna</a> antenna)</td></tr>
-<tr class="separator:ad2c5b127012c577d573dc11b6e4cebda"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:a0428e0d1461168d7ec06994c98d6ab77"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77">ctr_rfmux_interface</a> { <a class="el" href="ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77a91627c09e91a7a380a913fb8f0819a46">CTR_RFMUX_INTERFACE_NONE</a> = 0
-, <a class="el" href="ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77a655349cf98b06cbd3bd9657e24d7408e">CTR_RFMUX_INTERFACE_LTE</a> = 1
-, <a class="el" href="ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77a7040b9fff1400f0064da1e3364d07a13">CTR_RFMUX_INTERFACE_LRW</a> = 2
+<tr class="memitem:ga0428e0d1461168d7ec06994c98d6ab77"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rfmux.html#ga0428e0d1461168d7ec06994c98d6ab77">ctr_rfmux_interface</a> { <a class="el" href="group__ctr__rfmux.html#gga0428e0d1461168d7ec06994c98d6ab77a91627c09e91a7a380a913fb8f0819a46">CTR_RFMUX_INTERFACE_NONE</a> = 0
+, <a class="el" href="group__ctr__rfmux.html#gga0428e0d1461168d7ec06994c98d6ab77a655349cf98b06cbd3bd9657e24d7408e">CTR_RFMUX_INTERFACE_LTE</a> = 1
+, <a class="el" href="group__ctr__rfmux.html#gga0428e0d1461168d7ec06994c98d6ab77a7040b9fff1400f0064da1e3364d07a13">CTR_RFMUX_INTERFACE_LRW</a> = 2
  }</td></tr>
-<tr class="separator:a0428e0d1461168d7ec06994c98d6ab77"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d202b7d4713a4e8f6cfa677ca5a6b97"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__rfmux_8h.html#a9d202b7d4713a4e8f6cfa677ca5a6b97">ctr_rfmux_antenna</a> { <a class="el" href="ctr__rfmux_8h.html#a9d202b7d4713a4e8f6cfa677ca5a6b97aa391ae347d10a043c1a71b5d5d1b585f">CTR_RFMUX_ANTENNA_NONE</a> = 0
-, <a class="el" href="ctr__rfmux_8h.html#a9d202b7d4713a4e8f6cfa677ca5a6b97ae2547341499a8534e00d75ecf610adbc">CTR_RFMUX_ANTENNA_INT</a> = 1
-, <a class="el" href="ctr__rfmux_8h.html#a9d202b7d4713a4e8f6cfa677ca5a6b97a829a2b99d151d1f826dd8c3a2cabe6f2">CTR_RFMUX_ANTENNA_EXT</a> = 2
+<tr class="separator:ga0428e0d1461168d7ec06994c98d6ab77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga9d202b7d4713a4e8f6cfa677ca5a6b97"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rfmux.html#ga9d202b7d4713a4e8f6cfa677ca5a6b97">ctr_rfmux_antenna</a> { <a class="el" href="group__ctr__rfmux.html#gga9d202b7d4713a4e8f6cfa677ca5a6b97aa391ae347d10a043c1a71b5d5d1b585f">CTR_RFMUX_ANTENNA_NONE</a> = 0
+, <a class="el" href="group__ctr__rfmux.html#gga9d202b7d4713a4e8f6cfa677ca5a6b97ae2547341499a8534e00d75ecf610adbc">CTR_RFMUX_ANTENNA_INT</a> = 1
+, <a class="el" href="group__ctr__rfmux.html#gga9d202b7d4713a4e8f6cfa677ca5a6b97a829a2b99d151d1f826dd8c3a2cabe6f2">CTR_RFMUX_ANTENNA_EXT</a> = 2
  }</td></tr>
-<tr class="separator:a9d202b7d4713a4e8f6cfa677ca5a6b97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ga9d202b7d4713a4e8f6cfa677ca5a6b97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a95b19113136818018564c893208c4412"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__rfmux_8h.html#a95b19113136818018564c893208c4412">ctr_rfmux_acquire</a> (const struct device *dev)</td></tr>
-<tr class="separator:a95b19113136818018564c893208c4412"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6d49c8db6d3f8130032346772bb4ef70"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__rfmux_8h.html#a6d49c8db6d3f8130032346772bb4ef70">ctr_rfmux_release</a> (const struct device *dev)</td></tr>
-<tr class="separator:a6d49c8db6d3f8130032346772bb4ef70"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a43fb9c027c8928eebf5a9202633928ec"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__rfmux_8h.html#a43fb9c027c8928eebf5a9202633928ec">ctr_rfmux_set_interface</a> (const struct device *dev, enum <a class="el" href="ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77">ctr_rfmux_interface</a> interface)</td></tr>
-<tr class="separator:a43fb9c027c8928eebf5a9202633928ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3846d6df3b20865794ced1319c13381"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__rfmux_8h.html#af3846d6df3b20865794ced1319c13381">ctr_rfmux_set_antenna</a> (const struct device *dev, enum <a class="el" href="ctr__rfmux_8h.html#a9d202b7d4713a4e8f6cfa677ca5a6b97">ctr_rfmux_antenna</a> antenna)</td></tr>
-<tr class="separator:af3846d6df3b20865794ced1319c13381"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga95b19113136818018564c893208c4412"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rfmux.html#ga95b19113136818018564c893208c4412">ctr_rfmux_acquire</a> (const struct device *dev)</td></tr>
+<tr class="separator:ga95b19113136818018564c893208c4412"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6d49c8db6d3f8130032346772bb4ef70"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rfmux.html#ga6d49c8db6d3f8130032346772bb4ef70">ctr_rfmux_release</a> (const struct device *dev)</td></tr>
+<tr class="separator:ga6d49c8db6d3f8130032346772bb4ef70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga43fb9c027c8928eebf5a9202633928ec"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rfmux.html#ga43fb9c027c8928eebf5a9202633928ec">ctr_rfmux_set_interface</a> (const struct device *dev, enum <a class="el" href="group__ctr__rfmux.html#ga0428e0d1461168d7ec06994c98d6ab77">ctr_rfmux_interface</a> interface)</td></tr>
+<tr class="separator:ga43fb9c027c8928eebf5a9202633928ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf3846d6df3b20865794ced1319c13381"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rfmux.html#gaf3846d6df3b20865794ced1319c13381">ctr_rfmux_set_antenna</a> (const struct device *dev, enum <a class="el" href="group__ctr__rfmux.html#ga9d202b7d4713a4e8f6cfa677ca5a6b97">ctr_rfmux_antenna</a> antenna)</td></tr>
+<tr class="separator:gaf3846d6df3b20865794ced1319c13381"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a id="a0e33aaf96792fe6dadebc2d0e43264c6" name="a0e33aaf96792fe6dadebc2d0e43264c6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0e33aaf96792fe6dadebc2d0e43264c6">&#9670;&#160;</a></span>ctr_rfmux_api_acquire</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_rfmux_api_acquire) (const struct device *dev)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a9a398f130aaf8ca01c7cb3b8b55427df" name="a9a398f130aaf8ca01c7cb3b8b55427df"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9a398f130aaf8ca01c7cb3b8b55427df">&#9670;&#160;</a></span>ctr_rfmux_api_release</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_rfmux_api_release) (const struct device *dev)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ad2c5b127012c577d573dc11b6e4cebda" name="ad2c5b127012c577d573dc11b6e4cebda"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad2c5b127012c577d573dc11b6e4cebda">&#9670;&#160;</a></span>ctr_rfmux_api_set_antenna</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_rfmux_api_set_antenna) (const struct device *dev, enum <a class="el" href="ctr__rfmux_8h.html#a9d202b7d4713a4e8f6cfa677ca5a6b97">ctr_rfmux_antenna</a> antenna)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a2c82a010517e4ddcfdb1fb05e658606c" name="a2c82a010517e4ddcfdb1fb05e658606c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c82a010517e4ddcfdb1fb05e658606c">&#9670;&#160;</a></span>ctr_rfmux_api_set_interface</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_rfmux_api_set_interface) (const struct device *dev, enum <a class="el" href="ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77">ctr_rfmux_interface</a> interface)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Enumeration Type Documentation</h2>
-<a id="a9d202b7d4713a4e8f6cfa677ca5a6b97" name="a9d202b7d4713a4e8f6cfa677ca5a6b97"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9d202b7d4713a4e8f6cfa677ca5a6b97">&#9670;&#160;</a></span>ctr_rfmux_antenna</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="ctr__rfmux_8h.html#a9d202b7d4713a4e8f6cfa677ca5a6b97">ctr_rfmux_antenna</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a9d202b7d4713a4e8f6cfa677ca5a6b97aa391ae347d10a043c1a71b5d5d1b585f" name="a9d202b7d4713a4e8f6cfa677ca5a6b97aa391ae347d10a043c1a71b5d5d1b585f"></a>CTR_RFMUX_ANTENNA_NONE&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a9d202b7d4713a4e8f6cfa677ca5a6b97ae2547341499a8534e00d75ecf610adbc" name="a9d202b7d4713a4e8f6cfa677ca5a6b97ae2547341499a8534e00d75ecf610adbc"></a>CTR_RFMUX_ANTENNA_INT&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a9d202b7d4713a4e8f6cfa677ca5a6b97a829a2b99d151d1f826dd8c3a2cabe6f2" name="a9d202b7d4713a4e8f6cfa677ca5a6b97a829a2b99d151d1f826dd8c3a2cabe6f2"></a>CTR_RFMUX_ANTENNA_EXT&#160;</td><td class="fielddoc"></td></tr>
-</table>
-
-</div>
-</div>
-<a id="a0428e0d1461168d7ec06994c98d6ab77" name="a0428e0d1461168d7ec06994c98d6ab77"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0428e0d1461168d7ec06994c98d6ab77">&#9670;&#160;</a></span>ctr_rfmux_interface</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77">ctr_rfmux_interface</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a0428e0d1461168d7ec06994c98d6ab77a91627c09e91a7a380a913fb8f0819a46" name="a0428e0d1461168d7ec06994c98d6ab77a91627c09e91a7a380a913fb8f0819a46"></a>CTR_RFMUX_INTERFACE_NONE&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a0428e0d1461168d7ec06994c98d6ab77a655349cf98b06cbd3bd9657e24d7408e" name="a0428e0d1461168d7ec06994c98d6ab77a655349cf98b06cbd3bd9657e24d7408e"></a>CTR_RFMUX_INTERFACE_LTE&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a0428e0d1461168d7ec06994c98d6ab77a7040b9fff1400f0064da1e3364d07a13" name="a0428e0d1461168d7ec06994c98d6ab77a7040b9fff1400f0064da1e3364d07a13"></a>CTR_RFMUX_INTERFACE_LRW&#160;</td><td class="fielddoc"></td></tr>
-</table>
-
-</div>
-</div>
-<h2 class="groupheader">Function Documentation</h2>
-<a id="a95b19113136818018564c893208c4412" name="a95b19113136818018564c893208c4412"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a95b19113136818018564c893208c4412">&#9670;&#160;</a></span>ctr_rfmux_acquire()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_rfmux_acquire </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a6d49c8db6d3f8130032346772bb4ef70" name="a6d49c8db6d3f8130032346772bb4ef70"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6d49c8db6d3f8130032346772bb4ef70">&#9670;&#160;</a></span>ctr_rfmux_release()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_rfmux_release </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="af3846d6df3b20865794ced1319c13381" name="af3846d6df3b20865794ced1319c13381"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af3846d6df3b20865794ced1319c13381">&#9670;&#160;</a></span>ctr_rfmux_set_antenna()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_rfmux_set_antenna </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">enum <a class="el" href="ctr__rfmux_8h.html#a9d202b7d4713a4e8f6cfa677ca5a6b97">ctr_rfmux_antenna</a>&#160;</td>
-          <td class="paramname"><em>antenna</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a43fb9c027c8928eebf5a9202633928ec" name="a43fb9c027c8928eebf5a9202633928ec"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a43fb9c027c8928eebf5a9202633928ec">&#9670;&#160;</a></span>ctr_rfmux_set_interface()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_rfmux_set_interface </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">enum <a class="el" href="ctr__rfmux_8h.html#a0428e0d1461168d7ec06994c98d6ab77">ctr_rfmux_interface</a>&#160;</td>
-          <td class="paramname"><em>interface</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

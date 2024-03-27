@@ -1,25 +1,4 @@
 var searchData=
 [
-  ['get_5fadult_5fborder_0',['get_adult_border',['../structpeople__counter__driver__api.html#aba559ae71ffe669aa30006ffde8c76d7',1,'people_counter_driver_api']]],
-  ['get_5fbattery_5fvoltage_1',['get_battery_voltage',['../structctr__x10__driver__api.html#a597a2a7d9ba8e17abd0ae34e29295887',1,'ctr_x10_driver_api']]],
-  ['get_5ffw_5fversion_2',['get_fw_version',['../structctr__s1__driver__api.html#ab5b25ab307869c45ffd1550eb9369192',1,'ctr_s1_driver_api::get_fw_version()'],['../structctr__z__driver__api.html#afed155275f4e27834405a4f489dc404b',1,'ctr_z_driver_api::get_fw_version()']]],
-  ['get_5fhw_5frevision_3',['get_hw_revision',['../structctr__s1__driver__api.html#af4cc7ea857c38f56255c96c623eec409',1,'ctr_s1_driver_api::get_hw_revision()'],['../structctr__z__driver__api.html#ad21b21f0b3ebddf0b0b3bf86c149d127',1,'ctr_z_driver_api::get_hw_revision()']]],
-  ['get_5fhw_5fvariant_4',['get_hw_variant',['../structctr__s1__driver__api.html#a7493c38dd54138d65bfb9788c1208456',1,'ctr_s1_driver_api::get_hw_variant()'],['../structctr__z__driver__api.html#a7a985fbd0eca70d06ff120f9f4f0191d',1,'ctr_z_driver_api::get_hw_variant()']]],
-  ['get_5fline_5fpresent_5',['get_line_present',['../structctr__x10__driver__api.html#ac417afcb9010db12f16af24acaf8bda2',1,'ctr_x10_driver_api::get_line_present()'],['../structctr__x4__driver__api.html#af0543aa1c9b54da47aaa7a0f538d041a',1,'ctr_x4_driver_api::get_line_present()']]],
-  ['get_5fline_5fvoltage_6',['get_line_voltage',['../structctr__x10__driver__api.html#af69237a5afac853f6e29947bcfd23db4',1,'ctr_x10_driver_api::get_line_voltage()'],['../structctr__x4__driver__api.html#aa9ef1f6238d171dad17e5c4d4af422cd',1,'ctr_x4_driver_api::get_line_voltage()']]],
-  ['get_5fload_5fcurrent_5fma_7',['get_load_current_ma',['../structctr__batt__driver__api.html#a92d954d289f05ba1cd4ffd261c20954e',1,'ctr_batt_driver_api']]],
-  ['get_5fload_5fvoltage_5fmv_8',['get_load_voltage_mv',['../structctr__batt__driver__api.html#ad9b155182bf92194d350309cbfd938cd',1,'ctr_batt_driver_api']]],
-  ['get_5fpower_5foff_5fdelay_9',['get_power_off_delay',['../structpeople__counter__driver__api.html#a1557a21e5d0cf7dd0297c3f3ead8f4ab',1,'people_counter_driver_api']]],
-  ['get_5fproduct_5fname_10',['get_product_name',['../structctr__s1__driver__api.html#a35b51b1259ba63daaae3c2bcd4ebd7e8',1,'ctr_s1_driver_api::get_product_name()'],['../structctr__z__driver__api.html#a4861c5b792fbbc100d59f713ccb562b5',1,'ctr_z_driver_api::get_product_name()']]],
-  ['get_5frainfall_5fand_5fclear_11',['get_rainfall_and_clear',['../structctr__meteo__driver__api.html#a26e063d440bb7b47c84088bcdd71e250',1,'ctr_meteo_driver_api']]],
-  ['get_5frest_5fvoltage_5fmv_12',['get_rest_voltage_mv',['../structctr__batt__driver__api.html#a9bf1303545e6ec188ec3200fe5e5d160',1,'ctr_batt_driver_api']]],
-  ['get_5fserial_5fnumber_13',['get_serial_number',['../structctr__s1__driver__api.html#a02c6e40eead9c807c64a63ea05877fc9',1,'ctr_s1_driver_api::get_serial_number()'],['../structctr__z__driver__api.html#a5135bde1e55e698ae0bbd46a0c610de1',1,'ctr_z_driver_api::get_serial_number()']]],
-  ['get_5fstatus_14',['get_status',['../structctr__s1__driver__api.html#a1148c5c0c8d3c571cc63b536a53e3d17',1,'ctr_s1_driver_api::get_status()'],['../structctr__z__driver__api.html#a325c6c153f952d93c4e4e36840132e98',1,'ctr_z_driver_api::get_status()']]],
-  ['get_5fstay_5ftimeout_15',['get_stay_timeout',['../structpeople__counter__driver__api.html#a0ff376e2db21b41190ddd8786203d17f',1,'people_counter_driver_api']]],
-  ['get_5fvbat_5fmv_16',['get_vbat_mv',['../structctr__z__driver__api.html#a89964655ed13f12f552072e4196ac7aa',1,'ctr_z_driver_api']]],
-  ['get_5fvdc_5fmv_17',['get_vdc_mv',['../structctr__z__driver__api.html#aa5589c18f7aafb14120cafeec7ca9635',1,'ctr_z_driver_api']]],
-  ['get_5fvendor_5fname_18',['get_vendor_name',['../structctr__s1__driver__api.html#a04507a96e1b42c141dda023445a1a5e9',1,'ctr_s1_driver_api::get_vendor_name()'],['../structctr__z__driver__api.html#a31283b8ea52242f5d57d48c8217a89ff',1,'ctr_z_driver_api::get_vendor_name()']]],
-  ['get_5fwind_5fdirection_19',['get_wind_direction',['../structctr__meteo__driver__api.html#ad1a1e17e439f2d423043cf5c8c2c078c',1,'ctr_meteo_driver_api']]],
-  ['get_5fwind_5fspeed_5fand_5fclear_20',['get_wind_speed_and_clear',['../structctr__meteo__driver__api.html#a8fda4635afb72681a154406096c221e9',1,'ctr_meteo_driver_api']]],
-  ['gpio_5fcb_21',['gpio_cb',['../structctr__edge.html#af6f71e57058504cde448598fa5cb77c5',1,'ctr_edge']]]
+  ['gpio_5fcb_0',['gpio_cb',['../structctr__edge.html#af6f71e57058504cde448598fa5cb77c5',1,'ctr_edge']]]
 ];

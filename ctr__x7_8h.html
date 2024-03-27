@@ -96,7 +96,6 @@ $(document).ready(function(){initNavTree('ctr__x7_8h.html',''); initResizable();
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
-<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ctr_x7.h File Reference</div></div>
 </div><!--header-->
@@ -126,131 +125,14 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__x7__result.html">ctr_x7_result</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__x7__driver__api.html">ctr_x7_driver_api</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a6033181f83f9fb7f1aa735e4dcb55dd6"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x7_8h.html#a6033181f83f9fb7f1aa735e4dcb55dd6">ctr_x7_api_set_power</a>) (const struct device *dev, bool is_enabled)</td></tr>
-<tr class="separator:a6033181f83f9fb7f1aa735e4dcb55dd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac5a45f9e192f406b036bc12176d2dc6a"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x7_8h.html#ac5a45f9e192f406b036bc12176d2dc6a">ctr_x7_api_measure</a>) (const struct device *dev, const struct <a class="el" href="structctr__x7__calibration.html">ctr_x7_calibration</a> calibrations[2], struct <a class="el" href="structctr__x7__result.html">ctr_x7_result</a> results[2])</td></tr>
-<tr class="separator:ac5a45f9e192f406b036bc12176d2dc6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a5fe1698cf53db73a322573934c62d46f"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x7_8h.html#a5fe1698cf53db73a322573934c62d46f">ctr_x7_set_power</a> (const struct device *dev, bool is_enabled)</td></tr>
-<tr class="separator:a5fe1698cf53db73a322573934c62d46f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a06aad29f28e900f4b0adb889fbb944a0"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x7_8h.html#a06aad29f28e900f4b0adb889fbb944a0">ctr_x7_measure</a> (const struct device *dev, const struct <a class="el" href="structctr__x7__calibration.html">ctr_x7_calibration</a> calibrations[2], struct <a class="el" href="structctr__x7__result.html">ctr_x7_result</a> results[2])</td></tr>
-<tr class="separator:a06aad29f28e900f4b0adb889fbb944a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5fe1698cf53db73a322573934c62d46f"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x7.html#ga5fe1698cf53db73a322573934c62d46f">ctr_x7_set_power</a> (const struct device *dev, bool is_enabled)</td></tr>
+<tr class="separator:ga5fe1698cf53db73a322573934c62d46f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga06aad29f28e900f4b0adb889fbb944a0"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x7.html#ga06aad29f28e900f4b0adb889fbb944a0">ctr_x7_measure</a> (const struct device *dev, const struct <a class="el" href="structctr__x7__calibration.html">ctr_x7_calibration</a> calibrations[2], struct <a class="el" href="structctr__x7__result.html">ctr_x7_result</a> results[2])</td></tr>
+<tr class="separator:ga06aad29f28e900f4b0adb889fbb944a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a id="ac5a45f9e192f406b036bc12176d2dc6a" name="ac5a45f9e192f406b036bc12176d2dc6a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac5a45f9e192f406b036bc12176d2dc6a">&#9670;&#160;</a></span>ctr_x7_api_measure</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_x7_api_measure) (const struct device *dev, const struct <a class="el" href="structctr__x7__calibration.html">ctr_x7_calibration</a> calibrations[2], struct <a class="el" href="structctr__x7__result.html">ctr_x7_result</a> results[2])</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a6033181f83f9fb7f1aa735e4dcb55dd6" name="a6033181f83f9fb7f1aa735e4dcb55dd6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6033181f83f9fb7f1aa735e4dcb55dd6">&#9670;&#160;</a></span>ctr_x7_api_set_power</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_x7_api_set_power) (const struct device *dev, bool is_enabled)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Function Documentation</h2>
-<a id="a06aad29f28e900f4b0adb889fbb944a0" name="a06aad29f28e900f4b0adb889fbb944a0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a06aad29f28e900f4b0adb889fbb944a0">&#9670;&#160;</a></span>ctr_x7_measure()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_x7_measure </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const struct <a class="el" href="structctr__x7__calibration.html">ctr_x7_calibration</a>&#160;</td>
-          <td class="paramname"><em>calibrations</em>[2], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">struct <a class="el" href="structctr__x7__result.html">ctr_x7_result</a>&#160;</td>
-          <td class="paramname"><em>results</em>[2]&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a5fe1698cf53db73a322573934c62d46f" name="a5fe1698cf53db73a322573934c62d46f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5fe1698cf53db73a322573934c62d46f">&#9670;&#160;</a></span>ctr_x7_set_power()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_x7_set_power </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>is_enabled</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

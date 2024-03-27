@@ -113,27 +113,24 @@ $(document).ready(function(){initNavTree('mb7066_8h_source.html',''); initResiza
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno"><a class="line" href="mb7066_8h.html#a6b00f734a7571518ed484769912aca73">   17</a></span><span class="keyword">typedef</span> int (*<a class="code hl_typedef" href="mb7066_8h.html#a6b00f734a7571518ed484769912aca73">mb7066_api_measure</a>)(<span class="keyword">const</span> <span class="keyword">struct </span>device *dev, <span class="keywordtype">float</span> *value);</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="structmb7066__driver__api.html">   19</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structmb7066__driver__api.html">mb7066_driver_api</a> {</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno"><a class="line" href="structmb7066__driver__api.html#aa68bebd27979a1a7bcc36b1e01802b49">   20</a></span>    <a class="code hl_typedef" href="mb7066_8h.html#a6b00f734a7571518ed484769912aca73">mb7066_api_measure</a> <a class="code hl_variable" href="structmb7066__driver__api.html#aa68bebd27979a1a7bcc36b1e01802b49">measure</a>;</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>};</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="mb7066_8h.html#a38635b7a426fd827c567cd881c51e0cf">   23</a></span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code hl_function" href="mb7066_8h.html#a38635b7a426fd827c567cd881c51e0cf">mb7066_measure</a>(<span class="keyword">const</span> <span class="keyword">struct</span> device *dev, <span class="keywordtype">float</span> *value)</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>{</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    <span class="keyword">const</span> <span class="keyword">struct </span><a class="code hl_struct" href="structmb7066__driver__api.html">mb7066_driver_api</a> *api = dev-&gt;api;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    <span class="keywordflow">return</span> api-&gt;<a class="code hl_variable" href="structmb7066__driver__api.html#aa68bebd27979a1a7bcc36b1e01802b49">measure</a>(dev, value);</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>}</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>}</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#endif</span></div>
-<div class="ttc" id="amb7066_8h_html_a38635b7a426fd827c567cd881c51e0cf"><div class="ttname"><a href="mb7066_8h.html#a38635b7a426fd827c567cd881c51e0cf">mb7066_measure</a></div><div class="ttdeci">static int mb7066_measure(const struct device *dev, float *value)</div><div class="ttdef"><b>Definition:</b> mb7066.h:23</div></div>
-<div class="ttc" id="amb7066_8h_html_a6b00f734a7571518ed484769912aca73"><div class="ttname"><a href="mb7066_8h.html#a6b00f734a7571518ed484769912aca73">mb7066_api_measure</a></div><div class="ttdeci">int(* mb7066_api_measure)(const struct device *dev, float *value)</div><div class="ttdef"><b>Definition:</b> mb7066.h:17</div></div>
-<div class="ttc" id="astructmb7066__driver__api_html"><div class="ttname"><a href="structmb7066__driver__api.html">mb7066_driver_api</a></div><div class="ttdef"><b>Definition:</b> mb7066.h:19</div></div>
-<div class="ttc" id="astructmb7066__driver__api_html_aa68bebd27979a1a7bcc36b1e01802b49"><div class="ttname"><a href="structmb7066__driver__api.html#aa68bebd27979a1a7bcc36b1e01802b49">mb7066_driver_api::measure</a></div><div class="ttdeci">mb7066_api_measure measure</div><div class="ttdef"><b>Definition:</b> mb7066.h:20</div></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">typedef</span> int (*mb7066_api_measure)(<span class="keyword">const</span> <span class="keyword">struct </span>device *dev, <span class="keywordtype">float</span> *value);</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">struct </span>mb7066_driver_api {</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    mb7066_api_measure measure;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>};</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno"><a class="line" href="group__mb7066.html#ga38635b7a426fd827c567cd881c51e0cf">   30</a></span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code hl_function" href="group__mb7066.html#ga38635b7a426fd827c567cd881c51e0cf">mb7066_measure</a>(<span class="keyword">const</span> <span class="keyword">struct</span> device *dev, <span class="keywordtype">float</span> *value)</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>{</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    <span class="keyword">const</span> <span class="keyword">struct </span>mb7066_driver_api *api = dev-&gt;api;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    <span class="keywordflow">return</span> api-&gt;measure(dev, value);</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>}</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>}</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="preprocessor">#endif</span></div>
+<div class="ttc" id="agroup__mb7066_html_ga38635b7a426fd827c567cd881c51e0cf"><div class="ttname"><a href="group__mb7066.html#ga38635b7a426fd827c567cd881c51e0cf">mb7066_measure</a></div><div class="ttdeci">static int mb7066_measure(const struct device *dev, float *value)</div><div class="ttdef"><b>Definition:</b> mb7066.h:30</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

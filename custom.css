@@ -1,10 +1,22 @@
 @media (prefers-color-scheme: dark) {
-    html:not(.light-mode) {
-	--primary-color: rgba(227, 4, 39, 1);
-	--primary-dark-color: rgb(33, 175, 144);
-	--primary-light-color: rgb(70, 203, 174);
-	--page-background-color: #1b1b1b;
-	--fragment-background: rgb(37, 37, 50);
-    }
+	html:not(.light-mode) {
+		--primary-color: #e30427;
+		--primary-dark-color: rgb(33, 175, 144);
+		--primary-light-color: rgb(70, 203, 174);
+		--page-background-color: #252532;
+		--page-foreground-color: #f2faff;
+		--side-nav-background: #202026;
+		--fragment-background: #303040;
+		--side-nav-arrow-opacity: 1;
+		--side-nav-arrow-hover-opacity: 0.2;
+	}
+
+	#projectbrief {
+		display: none;
+	}
+
+	#projectname {
+		display: none;
+	}
 }
 

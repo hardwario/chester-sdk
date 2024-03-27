@@ -96,7 +96,6 @@ $(document).ready(function(){initNavTree('ctr__x4_8h.html',''); initResizable();
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
-<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ctr_x4.h File Reference</div></div>
@@ -119,315 +118,30 @@ Include dependency graph for ctr_x4.h:</div>
 </div>
 <p><a href="ctr__x4_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
-Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__x4__driver__api.html">ctr_x4_driver_api</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a859a3ddb97a5cd530b8cc892d3e92a3f"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#a859a3ddb97a5cd530b8cc892d3e92a3f">ctr_x4_user_cb</a>) (const struct device *dev, enum <a class="el" href="ctr__x4_8h.html#a14e75174a2315a39b444f49d548cb40c">ctr_x4_event</a> event, void *user_data)</td></tr>
-<tr class="separator:a859a3ddb97a5cd530b8cc892d3e92a3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1668fadfd8ac1fb966a857852b3b19ad"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#a1668fadfd8ac1fb966a857852b3b19ad">ctr_x4_api_set_handler</a>) (const struct device *dev, <a class="el" href="ctr__x4_8h.html#a859a3ddb97a5cd530b8cc892d3e92a3f">ctr_x4_user_cb</a> callback, void *user_data)</td></tr>
-<tr class="separator:a1668fadfd8ac1fb966a857852b3b19ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5c2ebf885c1bfdf85add89dbfe67daa5"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#a5c2ebf885c1bfdf85add89dbfe67daa5">ctr_x4_api_set_output</a>) (const struct device *dev, enum <a class="el" href="ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082">ctr_x4_output</a> output, bool is_on)</td></tr>
-<tr class="separator:a5c2ebf885c1bfdf85add89dbfe67daa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa60da8a9a239325ede4ff647105cb80e"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#aa60da8a9a239325ede4ff647105cb80e">ctr_x4_api_get_line_voltage</a>) (const struct device *dev, int *line_voltage_mv)</td></tr>
-<tr class="separator:aa60da8a9a239325ede4ff647105cb80e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1f3ad211bc6e235e5978005167f336e2"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#a1f3ad211bc6e235e5978005167f336e2">ctr_x4_api_get_line_present</a>) (const struct device *dev, bool *is_line_present)</td></tr>
-<tr class="separator:a1f3ad211bc6e235e5978005167f336e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:a14e75174a2315a39b444f49d548cb40c"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#a14e75174a2315a39b444f49d548cb40c">ctr_x4_event</a> { <a class="el" href="ctr__x4_8h.html#a14e75174a2315a39b444f49d548cb40cae9d25e3144ce9deaa398118c6f1b6b91">CTR_X4_EVENT_LINE_CONNECTED</a> = 0
-, <a class="el" href="ctr__x4_8h.html#a14e75174a2315a39b444f49d548cb40ca6bb878302d9ed53e04231b32573e4b06">CTR_X4_EVENT_LINE_DISCONNECTED</a> = 1
+<tr class="memitem:ga14e75174a2315a39b444f49d548cb40c"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#ga14e75174a2315a39b444f49d548cb40c">ctr_x4_event</a> { <a class="el" href="group__ctr__x4.html#gga14e75174a2315a39b444f49d548cb40cae9d25e3144ce9deaa398118c6f1b6b91">CTR_X4_EVENT_LINE_CONNECTED</a> = 0
+, <a class="el" href="group__ctr__x4.html#gga14e75174a2315a39b444f49d548cb40ca6bb878302d9ed53e04231b32573e4b06">CTR_X4_EVENT_LINE_DISCONNECTED</a> = 1
  }</td></tr>
-<tr class="separator:a14e75174a2315a39b444f49d548cb40c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a86e282f4ec4b1f78f9a04f4368ef0082"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082">ctr_x4_output</a> { <a class="el" href="ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082a3341a6576fcc42a7387aef99e1605579">CTR_X4_OUTPUT_1</a> = 0
-, <a class="el" href="ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082a1146369634934c1fb5f09e6f721f3c47">CTR_X4_OUTPUT_2</a> = 1
-, <a class="el" href="ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082a6b181648bfc1f8ae8879783962b0b085">CTR_X4_OUTPUT_3</a> = 2
-, <a class="el" href="ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082a3d600a4039295a2c7d7127c903ea8eb4">CTR_X4_OUTPUT_4</a> = 3
+<tr class="separator:ga14e75174a2315a39b444f49d548cb40c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga86e282f4ec4b1f78f9a04f4368ef0082"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#ga86e282f4ec4b1f78f9a04f4368ef0082">ctr_x4_output</a> { <a class="el" href="group__ctr__x4.html#gga86e282f4ec4b1f78f9a04f4368ef0082a3341a6576fcc42a7387aef99e1605579">CTR_X4_OUTPUT_1</a> = 0
+, <a class="el" href="group__ctr__x4.html#gga86e282f4ec4b1f78f9a04f4368ef0082a1146369634934c1fb5f09e6f721f3c47">CTR_X4_OUTPUT_2</a> = 1
+, <a class="el" href="group__ctr__x4.html#gga86e282f4ec4b1f78f9a04f4368ef0082a6b181648bfc1f8ae8879783962b0b085">CTR_X4_OUTPUT_3</a> = 2
+, <a class="el" href="group__ctr__x4.html#gga86e282f4ec4b1f78f9a04f4368ef0082a3d600a4039295a2c7d7127c903ea8eb4">CTR_X4_OUTPUT_4</a> = 3
  }</td></tr>
-<tr class="separator:a86e282f4ec4b1f78f9a04f4368ef0082"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ga86e282f4ec4b1f78f9a04f4368ef0082"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:aff5b0970bbf325d018867891142796a9"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#aff5b0970bbf325d018867891142796a9">ctr_x4_set_handler</a> (const struct device *dev, <a class="el" href="ctr__x4_8h.html#a859a3ddb97a5cd530b8cc892d3e92a3f">ctr_x4_user_cb</a> user_cb, void *user_data)</td></tr>
-<tr class="separator:aff5b0970bbf325d018867891142796a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab924ea8b4a4018cb2fd338aee3b3d331"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#ab924ea8b4a4018cb2fd338aee3b3d331">ctr_x4_set_output</a> (const struct device *dev, enum <a class="el" href="ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082">ctr_x4_output</a> output, bool is_on)</td></tr>
-<tr class="separator:ab924ea8b4a4018cb2fd338aee3b3d331"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa16be7a6cf8e4ded124168f489e72fde"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#aa16be7a6cf8e4ded124168f489e72fde">ctr_x4_get_line_voltage</a> (const struct device *dev, int *line_voltage_mv)</td></tr>
-<tr class="separator:aa16be7a6cf8e4ded124168f489e72fde"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad6baf71300ca3302c86636b70d95b387"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__x4_8h.html#ad6baf71300ca3302c86636b70d95b387">ctr_x4_get_line_present</a> (const struct device *dev, bool *is_line_present)</td></tr>
-<tr class="separator:ad6baf71300ca3302c86636b70d95b387"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaff5b0970bbf325d018867891142796a9"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#gaff5b0970bbf325d018867891142796a9">ctr_x4_set_handler</a> (const struct device *dev, ctr_x4_user_cb user_cb, void *user_data)</td></tr>
+<tr class="separator:gaff5b0970bbf325d018867891142796a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab924ea8b4a4018cb2fd338aee3b3d331"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#gab924ea8b4a4018cb2fd338aee3b3d331">ctr_x4_set_output</a> (const struct device *dev, enum <a class="el" href="group__ctr__x4.html#ga86e282f4ec4b1f78f9a04f4368ef0082">ctr_x4_output</a> output, bool is_on)</td></tr>
+<tr class="separator:gab924ea8b4a4018cb2fd338aee3b3d331"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa16be7a6cf8e4ded124168f489e72fde"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#gaa16be7a6cf8e4ded124168f489e72fde">ctr_x4_get_line_voltage</a> (const struct device *dev, int *line_voltage_mv)</td></tr>
+<tr class="separator:gaa16be7a6cf8e4ded124168f489e72fde"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad6baf71300ca3302c86636b70d95b387"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#gad6baf71300ca3302c86636b70d95b387">ctr_x4_get_line_present</a> (const struct device *dev, bool *is_line_present)</td></tr>
+<tr class="separator:gad6baf71300ca3302c86636b70d95b387"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Typedef Documentation</h2>
-<a id="a1f3ad211bc6e235e5978005167f336e2" name="a1f3ad211bc6e235e5978005167f336e2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1f3ad211bc6e235e5978005167f336e2">&#9670;&#160;</a></span>ctr_x4_api_get_line_present</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_x4_api_get_line_present) (const struct device *dev, bool *is_line_present)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa60da8a9a239325ede4ff647105cb80e" name="aa60da8a9a239325ede4ff647105cb80e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa60da8a9a239325ede4ff647105cb80e">&#9670;&#160;</a></span>ctr_x4_api_get_line_voltage</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_x4_api_get_line_voltage) (const struct device *dev, int *line_voltage_mv)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a1668fadfd8ac1fb966a857852b3b19ad" name="a1668fadfd8ac1fb966a857852b3b19ad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1668fadfd8ac1fb966a857852b3b19ad">&#9670;&#160;</a></span>ctr_x4_api_set_handler</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_x4_api_set_handler) (const struct device *dev, <a class="el" href="ctr__x4_8h.html#a859a3ddb97a5cd530b8cc892d3e92a3f">ctr_x4_user_cb</a> callback, void *user_data)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a5c2ebf885c1bfdf85add89dbfe67daa5" name="a5c2ebf885c1bfdf85add89dbfe67daa5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5c2ebf885c1bfdf85add89dbfe67daa5">&#9670;&#160;</a></span>ctr_x4_api_set_output</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef int(* ctr_x4_api_set_output) (const struct device *dev, enum <a class="el" href="ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082">ctr_x4_output</a> output, bool is_on)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a859a3ddb97a5cd530b8cc892d3e92a3f" name="a859a3ddb97a5cd530b8cc892d3e92a3f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a859a3ddb97a5cd530b8cc892d3e92a3f">&#9670;&#160;</a></span>ctr_x4_user_cb</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef void(* ctr_x4_user_cb) (const struct device *dev, enum <a class="el" href="ctr__x4_8h.html#a14e75174a2315a39b444f49d548cb40c">ctr_x4_event</a> event, void *user_data)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Enumeration Type Documentation</h2>
-<a id="a14e75174a2315a39b444f49d548cb40c" name="a14e75174a2315a39b444f49d548cb40c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a14e75174a2315a39b444f49d548cb40c">&#9670;&#160;</a></span>ctr_x4_event</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="ctr__x4_8h.html#a14e75174a2315a39b444f49d548cb40c">ctr_x4_event</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a14e75174a2315a39b444f49d548cb40cae9d25e3144ce9deaa398118c6f1b6b91" name="a14e75174a2315a39b444f49d548cb40cae9d25e3144ce9deaa398118c6f1b6b91"></a>CTR_X4_EVENT_LINE_CONNECTED&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a14e75174a2315a39b444f49d548cb40ca6bb878302d9ed53e04231b32573e4b06" name="a14e75174a2315a39b444f49d548cb40ca6bb878302d9ed53e04231b32573e4b06"></a>CTR_X4_EVENT_LINE_DISCONNECTED&#160;</td><td class="fielddoc"></td></tr>
-</table>
-
-</div>
-</div>
-<a id="a86e282f4ec4b1f78f9a04f4368ef0082" name="a86e282f4ec4b1f78f9a04f4368ef0082"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a86e282f4ec4b1f78f9a04f4368ef0082">&#9670;&#160;</a></span>ctr_x4_output</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082">ctr_x4_output</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a86e282f4ec4b1f78f9a04f4368ef0082a3341a6576fcc42a7387aef99e1605579" name="a86e282f4ec4b1f78f9a04f4368ef0082a3341a6576fcc42a7387aef99e1605579"></a>CTR_X4_OUTPUT_1&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a86e282f4ec4b1f78f9a04f4368ef0082a1146369634934c1fb5f09e6f721f3c47" name="a86e282f4ec4b1f78f9a04f4368ef0082a1146369634934c1fb5f09e6f721f3c47"></a>CTR_X4_OUTPUT_2&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a86e282f4ec4b1f78f9a04f4368ef0082a6b181648bfc1f8ae8879783962b0b085" name="a86e282f4ec4b1f78f9a04f4368ef0082a6b181648bfc1f8ae8879783962b0b085"></a>CTR_X4_OUTPUT_3&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a86e282f4ec4b1f78f9a04f4368ef0082a3d600a4039295a2c7d7127c903ea8eb4" name="a86e282f4ec4b1f78f9a04f4368ef0082a3d600a4039295a2c7d7127c903ea8eb4"></a>CTR_X4_OUTPUT_4&#160;</td><td class="fielddoc"></td></tr>
-</table>
-
-</div>
-</div>
-<h2 class="groupheader">Function Documentation</h2>
-<a id="ad6baf71300ca3302c86636b70d95b387" name="ad6baf71300ca3302c86636b70d95b387"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad6baf71300ca3302c86636b70d95b387">&#9670;&#160;</a></span>ctr_x4_get_line_present()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_x4_get_line_present </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool *&#160;</td>
-          <td class="paramname"><em>is_line_present</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa16be7a6cf8e4ded124168f489e72fde" name="aa16be7a6cf8e4ded124168f489e72fde"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa16be7a6cf8e4ded124168f489e72fde">&#9670;&#160;</a></span>ctr_x4_get_line_voltage()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_x4_get_line_voltage </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int *&#160;</td>
-          <td class="paramname"><em>line_voltage_mv</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aff5b0970bbf325d018867891142796a9" name="aff5b0970bbf325d018867891142796a9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff5b0970bbf325d018867891142796a9">&#9670;&#160;</a></span>ctr_x4_set_handler()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_x4_set_handler </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="ctr__x4_8h.html#a859a3ddb97a5cd530b8cc892d3e92a3f">ctr_x4_user_cb</a>&#160;</td>
-          <td class="paramname"><em>user_cb</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>user_data</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ab924ea8b4a4018cb2fd338aee3b3d331" name="ab924ea8b4a4018cb2fd338aee3b3d331"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab924ea8b4a4018cb2fd338aee3b3d331">&#9670;&#160;</a></span>ctr_x4_set_output()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static int ctr_x4_set_output </td>
-          <td>(</td>
-          <td class="paramtype">const struct device *&#160;</td>
-          <td class="paramname"><em>dev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">enum <a class="el" href="ctr__x4_8h.html#a86e282f4ec4b1f78f9a04f4368ef0082">ctr_x4_output</a>&#160;</td>
-          <td class="paramname"><em>output</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>is_on</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

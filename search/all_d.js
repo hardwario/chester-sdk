@@ -1,19 +1,14 @@
 var searchData=
 [
-  ['read_5faltitude_0',['read_altitude',['../structctr__s1__driver__api.html#ac716aaecf75441fc5ee762600419c236',1,'ctr_s1_driver_api']]],
-  ['read_5fbuffer_1',['read_buffer',['../structm8__driver__api.html#a8b627a15a33b353242cbb15c8b288b5f',1,'m8_driver_api']]],
-  ['read_5fco2_5fconc_2',['read_co2_conc',['../structctr__s1__driver__api.html#a3e15a0c65d5580ddb952bf9c7fb96f29',1,'ctr_s1_driver_api']]],
-  ['read_5fhumidity_3',['read_humidity',['../structctr__s1__driver__api.html#aa8a361ce30f218548b113ec64bc68a48',1,'ctr_s1_driver_api']]],
-  ['read_5filluminance_4',['read_illuminance',['../structctr__s1__driver__api.html#afbb441ebc4bff09270e1325e1a94f168',1,'ctr_s1_driver_api']]],
-  ['read_5fmeasurement_5',['read_measurement',['../structpeople__counter__driver__api.html#a7f23a94dd28983d8aff68da437ea0c87',1,'people_counter_driver_api']]],
-  ['read_5fmotion_5fcount_6',['read_motion_count',['../structctr__s1__driver__api.html#ae0aeabffa192823805251f39598b1a5b',1,'ctr_s1_driver_api']]],
-  ['read_5fpressure_7',['read_pressure',['../structctr__s1__driver__api.html#a62f830d86fcb363c70caf2b385623431',1,'ctr_s1_driver_api']]],
-  ['read_5ftemperature_8',['read_temperature',['../structctr__s1__driver__api.html#a0eac797cd27a415d2cceadbf31f34df9',1,'ctr_s1_driver_api']]],
-  ['recv_5fdata_9',['recv_data',['../structctr__lte__if__v2__driver__api.html#ac54c9b04c05e8827f475c40e758d6755',1,'ctr_lte_if_v2_driver_api']]],
-  ['recv_5fline_10',['recv_line',['../structctr__lte__if__v2__driver__api.html#a75c8fe3553d1aed288deaabff343e34a',1,'ctr_lte_if_v2_driver_api']]],
-  ['release_11',['release',['../structctr__rfmux__driver__api.html#a4882a825a0f01baf9e88e0cb0fcaef27',1,'ctr_rfmux_driver_api']]],
-  ['reset_12',['reset',['../structctr__lrw__if__driver__api.html#ab04e07daa7c4e42e0dafd2117fd28e31',1,'ctr_lrw_if_driver_api::reset()'],['../structctr__lte__if__driver__api.html#ad69071d19ad2565443363bbee52bb7cf',1,'ctr_lte_if_driver_api::reset()'],['../structctr__lte__if__v2__driver__api.html#a3d7cbc088b3ad267f4c7cb967b7144ef',1,'ctr_lte_if_v2_driver_api::reset()']]],
-  ['rms_13',['rms',['../structctr__k1__result.html#a8c92b3f41d1fed2f343aef88ac0501f4',1,'ctr_k1_result::rms()'],['../structctr__x7__result.html#af36202c056e484295a76ba403122d371',1,'ctr_x7_result::rms()']]],
-  ['rsrp_14',['rsrp',['../structctr__lte__eval.html#a9c5a3714752b3b94cc7b522479798d39',1,'ctr_lte_eval']]],
-  ['rsrq_15',['rsrq',['../structctr__lte__eval.html#a090d0a4e71615bad29cf0fd8933fead4',1,'ctr_lte_eval']]]
+  ['recv_0',['recv',['../unionctr__cloud__event__data.html#ab82114bde347f2db56a8aecf4d4ee98e',1,'ctr_cloud_event_data']]],
+  ['recv_5fbuf_1',['recv_buf',['../structctr__lte__v2__send__recv__param.html#a6b943f8e328e355d533e53e1e2905443',1,'ctr_lte_v2_send_recv_param']]],
+  ['recv_5fdata_2',['recv_data',['../structctr__lte__link__driver__api.html#a1f7995f4d1c11b79c871956004f022c0',1,'ctr_lte_link_driver_api']]],
+  ['recv_5fduration_3',['recv_duration',['../structctr__lte__v2__send__recv__param.html#a636cef3b05192a9609c18a783206e459',1,'ctr_lte_v2_send_recv_param']]],
+  ['recv_5flen_4',['recv_len',['../structctr__lte__v2__send__recv__param.html#acac7c5e1b392dfbc15acf58b3827f552',1,'ctr_lte_v2_send_recv_param']]],
+  ['recv_5fline_5',['recv_line',['../structctr__lte__link__driver__api.html#aa590be00e3997debaedfd06436c9eaad',1,'ctr_lte_link_driver_api']]],
+  ['recv_5fsize_6',['recv_size',['../structctr__lte__v2__send__recv__param.html#a651f61df2b09e8ec920219ab52e8fe78',1,'ctr_lte_v2_send_recv_param']]],
+  ['reset_7',['reset',['../structctr__lte__link__driver__api.html#ac2d023f5844d381d2ce182e4ce4a0dad',1,'ctr_lte_link_driver_api']]],
+  ['rms_8',['rms',['../structctr__k1__result.html#a8c92b3f41d1fed2f343aef88ac0501f4',1,'ctr_k1_result::rms()'],['../structctr__x7__result.html#af36202c056e484295a76ba403122d371',1,'ctr_x7_result::rms()']]],
+  ['rsrp_9',['rsrp',['../structctr__lte__eval.html#a9c5a3714752b3b94cc7b522479798d39',1,'ctr_lte_eval::rsrp()'],['../structctr__lte__v2__conn__param.html#a9c9a007d477bc71c95e654a91e47bc1d',1,'ctr_lte_v2_conn_param::rsrp()']]],
+  ['rsrq_10',['rsrq',['../structctr__lte__eval.html#a090d0a4e71615bad29cf0fd8933fead4',1,'ctr_lte_eval::rsrq()'],['../structctr__lte__v2__conn__param.html#afee49014603a91f6f78fc16b61e36241',1,'ctr_lte_v2_conn_param::rsrq()']]]
 ];
