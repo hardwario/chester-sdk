@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+menu "Application"
+
+config APP_REPORT_JITTER
+	bool "Add random time jitter to report transfers"
+	default y
+	select ENTROPY_GENERATOR
+
+config APP_TAMPER
+	bool "Enable tamper functionality"
+	default y
+	select CTR_EDGE
+
+endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu

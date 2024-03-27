@@ -15,3 +15,8 @@ west-commands:
       - name: check-ret-log
         class: CheckRetLog
         help: check LOG messages consistency
+  - file: scripts/west_commands/gen-codec.py
+    commands:
+      - name: gen-codec
+        class: GenerateCodec
+        help: generate codec

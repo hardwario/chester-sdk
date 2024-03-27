@@ -201,8 +201,9 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 {
 	int ret;
 
-	if (chan != CTR_BUTTON_CHANNEL_INT)
+	if (chan != CTR_BUTTON_CHANNEL_INT) {
 		return;
+	}
 
 	if (ev == CTR_BUTTON_EVENT_CLICK) {
 		for (int i = 0; i < val; i++) {

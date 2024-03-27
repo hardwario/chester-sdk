@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_CLOUD
+	bool "CTR_CLOUD"
+	depends on SHIELD_CTR_LTE_V2
+	select CTR_BUF
+	select CTR_INFO
+	select CTR_RTC
+	select EVENTS
+	select TINYCRYPT_SHA256
+	select TINYCRYPT
+	select ZCBOR
+	select ZCBOR_STOP_ON_ERROR
+	select SHELL
+	select SHELL_BACKEND_DUMMY
+
+if CTR_CLOUD
+
+module = CTR_CLOUD
+module-str = CHESTER CLOUD Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config SHELL_BACKEND_DUMMY_BUF_SIZE
+	int "SHELL_BACKEND_DUMMY_BUF_SIZE"
+	default 8192
+
+endif # CTR_CLOUD

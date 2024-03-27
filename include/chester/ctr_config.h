@@ -24,8 +24,8 @@ extern "C" {
 
 typedef int (*ctr_config_show_cb)(const struct shell *shell, size_t argc, char **argv);
 
-int ctr_config_save(void);
-int ctr_config_reset(void);
+int ctr_config_save(bool reboot);
+int ctr_config_reset(bool reboot);
 void ctr_config_append_show(const char *name, ctr_config_show_cb cb);
 
 /** @} */

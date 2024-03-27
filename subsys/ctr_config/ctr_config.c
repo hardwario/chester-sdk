@@ -8,6 +8,7 @@
 #include <chester/ctr_config.h>
 
 /* Zephyr includes */
+#include <zephyr/fs/fs.h>
 #include <zephyr/fs/nvs.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -31,7 +32,7 @@ struct show_item {
 
 static sys_slist_t m_show_list = SYS_SLIST_STATIC_INIT(&m_show_list);
 
-static int save(void)
+static int save(bool reboot)
 {
 	int ret;
 
@@ -41,15 +42,39 @@ static int save(void)
 		return ret;
 	}
 
-	sys_reboot(SYS_REBOOT_COLD);
+	if (reboot) {
+		sys_reboot(SYS_REBOOT_COLD);
+	}
 
 	return 0;
 }
 
-static int reset(void)
+static int reset(bool reboot)
 {
 	int ret;
 
+#if defined(CONFIG_SETTINGS_FILE)
+	/* Settings in external FLASH as a LittleFS file */
+	ret = fs_unlink(CONFIG_SETTINGS_FILE_PATH);
+	if (ret) {
+		LOG_WRN("Call `fs_unlink` failed: %d", ret);
+	}
+
+	/* Needs to be static so it is zero-ed */
+	static struct fs_file_t file;
+	ret = fs_open(&file, CONFIG_SETTINGS_FILE_PATH, FS_O_CREATE);
+	if (ret) {
+		LOG_ERR("Call `fs_open` failed: %d", ret);
+		return ret;
+	}
+
+	ret = fs_close(&file);
+	if (ret) {
+		LOG_ERR("Call `fs_close` failed: %d", ret);
+		return ret;
+	}
+#else
+	/* Settings in the internal FLASH partition */
 	const struct flash_area *fa;
 	ret = flash_area_open(FIXED_PARTITION_ID(storage_partition), &fa);
 	if (ret) {
@@ -64,17 +89,20 @@ static int reset(void)
 	}
 
 	flash_area_close(fa);
+#endif /* defined(CONFIG_SETTINGS_FILE) */
 
-	sys_reboot(SYS_REBOOT_COLD);
+	if (reboot) {
+		sys_reboot(SYS_REBOOT_COLD);
+	}
 
 	return 0;
 }
 
-int ctr_config_save(void)
+int ctr_config_save(bool reboot)
 {
 	int ret;
 
-	ret = save();
+	ret = save(reboot);
 	if (ret) {
 		LOG_ERR("Call `save` failed: %d", ret);
 		return ret;
@@ -83,11 +111,11 @@ int ctr_config_save(void)
 	return 0;
 }
 
-int ctr_config_reset(void)
+int ctr_config_reset(bool reboot)
 {
 	int ret;
 
-	ret = reset();
+	ret = reset(reboot);
 	if (ret) {
 		LOG_ERR("Call `reset` failed: %d", ret);
 		return ret;
@@ -143,7 +171,7 @@ static int cmd_save(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	ret = save();
+	ret = save(true);
 	if (ret) {
 		LOG_ERR("Call `save` failed: %d", ret);
 		shell_error(shell, "command failed");
@@ -157,7 +185,7 @@ static int cmd_reset(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
-	ret = reset();
+	ret = reset(true);
 	if (ret) {
 		LOG_ERR("Call `reset` failed: %d", ret);
 		shell_error(shell, "command failed");

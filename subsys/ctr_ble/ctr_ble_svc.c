@@ -57,13 +57,13 @@ static ssize_t write_command(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 	if (type == COMMAND_CONFIG_SAVE && len == 1) {
 		LOG_INF("Command `CONFIG SAVE`");
-		ctr_config_save();
+		ctr_config_save(true);
 		return len;
 	}
 
 	if (type == COMMAND_CONFIG_RESET && len == 1) {
 		LOG_INF("Command `CONFIG RESET`");
-		ctr_config_reset();
+		ctr_config_reset(true);
 		return len;
 	}
 

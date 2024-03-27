@@ -1,0 +1,12 @@
+version: 2
+type: encoder
+name: com.hardwario.chester.app.demo
+schema:
+  - led_r:
+    - $type: int
+  - led_g:
+    - $type: int
+  - led_y:
+    - $type: int
+  - led_load:
+    - $type: int

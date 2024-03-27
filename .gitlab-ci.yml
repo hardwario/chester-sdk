@@ -16,6 +16,7 @@ build:
     - west init -l --mf west.yml chester
     - west update
     - west config build.board chester_nrf52840
+    - ./zephyr/scripts/twister --testsuite-root chester/tests -c -i
     - |
       for sample in chester/samples/*/
       do

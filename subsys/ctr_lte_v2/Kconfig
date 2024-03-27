@@ -1,0 +1,47 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_LTE_V2
+	bool "CTR_LTE_V2"
+	select CTR_CONFIG
+	select CTR_LTE_LINK
+	select CTR_RFMUX
+	select CTR_SHELL
+	select CTR_UTIL
+	select PM_DEVICE
+	select REQUIRES_FULL_LIBC
+	select RING_BUFFER
+
+if CTR_LTE_V2
+
+config CTR_LTE_V2_INIT_PRIORITY
+	int "CTR_LTE_V2_INIT_PRIORITY"
+	default 99
+
+config CTR_LTE_V2_CONFIG_INIT_PRIORITY
+	int "CTR_LTE_V2_CONFIG_INIT_PRIORITY"
+	default 98
+
+config CTR_LTE_V2_CLKSYNC
+	bool "CTR_LTE_V2_CLKSYNC"
+
+config CTR_LTE_V2_THREAD_STACK_SIZE
+	int "CTR_LTE_V2_THREAD_STACK_SIZE"
+	default 4096
+
+config CTR_LTE_V2_THREAD_PRIORITY
+	int "CTR_LTE_V2_THREAD_PRIORITY"
+	default 10
+
+config HEAP_MEM_POOL_SIZE
+	int "HEAP_MEM_POOL_SIZE"
+	default 8192
+
+module = CTR_LTE_V2
+module-str = CHESTER LTE Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_LTE_V2

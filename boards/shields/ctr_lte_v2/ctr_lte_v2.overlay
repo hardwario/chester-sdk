@@ -1,0 +1,16 @@
+/ {
+	chosen {
+		ctr,lte_link = &ctr_lte_link;
+	};
+};
+
+&uart0 {
+	status = "okay";
+
+	ctr_lte_link: ctr_lte_link {
+		compatible = "hardwario,ctr-lte-link";
+		status = "okay";
+		reset-gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		wakeup-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
+};

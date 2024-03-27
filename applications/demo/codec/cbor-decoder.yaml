@@ -1,0 +1,32 @@
+version: 2
+type: decoder
+name: com.hardwario.chester.app.demo
+schema:
+  - message:
+    - sequence:
+    - timestamp:
+  - system:
+    - uptime:
+    - voltage_rest:
+      - $div: 1000
+      - $fpp: 2
+    - voltage_load:
+      - $div: 1000
+      - $fpp: 2
+    - current_load:
+  - thermometer:
+    - temperature:
+      - $div: 100
+      - $fpp: 2
+  - accelerometer:
+    - acceleration_x:
+      - $div: 1000
+      - $fpp: 2
+    - acceleration_y:
+      - $div: 1000
+      - $fpp: 2
+    - acceleration_z:
+      - $div: 1000
+      - $fpp: 2
+    - orientation:
+  - buffer:

@@ -50,6 +50,8 @@ LOG_MODULE_REGISTER(ctr_info, CONFIG_CTR_INFO_LOG_LEVEL);
 #define HW_REVISION_OFFSET 0x33
 #define HW_REVISION_LENGTH 7
 
+#define FW_BUNDLE_LENGTH 128
+
 #define FW_NAME_LENGTH 65
 
 #define FW_VERSION_LENGTH 17
@@ -191,6 +193,24 @@ int ctr_info_get_hw_revision(char **hw_revision)
 	}
 
 	*hw_revision = m_hw_revision;
+
+	return 0;
+}
+
+int ctr_info_get_fw_bundle(char **fw_bundle)
+{
+#if defined(FW_BUNDLE)
+	int ret;
+	static char buf[FW_BUNDLE_LENGTH];
+	ret = snprintf(buf, sizeof(buf), "%s", STRINGIFY(FW_BUNDLE));
+	if (ret != strlen(buf)) {
+		return -ENOSPC;
+	}
+
+	*fw_bundle = buf;
+#else
+	*fw_bundle = "(unset)";
+#endif
 
 	return 0;
 }
