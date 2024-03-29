@@ -104,7 +104,7 @@ static int ctr_batt_get_rest_voltage_mv_(const struct device *dev, int *rest_mv,
 
 	ret = adc_raw_to_millivolts(adc_ref_internal(get_config(dev)->adc_dev),
 				    get_config(dev)->adc_channel_cfg.gain,
-				    get_data(dev)->adc_sequence.resolution, &u);
+				    get_data(dev)->adc_sequence.resolution - 1, &u);
 	if (ret) {
 		LOG_ERR("Call `adc_raw_to_millivolts` failed: %d", ret);
 		return ret;
@@ -189,7 +189,7 @@ static int ctr_batt_get_load_voltage_mv_(const struct device *dev, int *load_mv,
 
 	ret = adc_raw_to_millivolts(adc_ref_internal(get_config(dev)->adc_dev),
 				    get_config(dev)->adc_channel_cfg.gain,
-				    get_data(dev)->adc_sequence.resolution, &u);
+				    get_data(dev)->adc_sequence.resolution - 1, &u);
 	if (ret) {
 		LOG_ERR("Call `adc_raw_to_millivolts` failed: %d", ret);
 		return ret;
