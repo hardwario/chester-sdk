@@ -370,6 +370,18 @@ int app_cbor_encode(zcbor_state_t *zs)
 			if (!is_valid) {
 				zcbor_nil_put(zs, NULL);
 			} else {
+				zcbor_uint32_put(zs, measurement->pass_counter_left);
+			}
+
+			if (!is_valid) {
+				zcbor_nil_put(zs, NULL);
+			} else {
+				zcbor_uint32_put(zs, measurement->pass_counter_right);
+			}
+
+			if (!is_valid) {
+				zcbor_nil_put(zs, NULL);
+			} else {
 				zcbor_uint32_put(zs, measurement->pass_counter_adult);
 			}
 

@@ -31,6 +31,8 @@
 - people_measurements:
   - tso:
     - motion_counter:
+    - pass_counter_left:
+    - pass_counter_right:
     - pass_counter_adult:
     - pass_counter_child:
     - stay_counter_adult:

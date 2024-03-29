@@ -33,7 +33,7 @@
 LOG_MODULE_REGISTER(app_measure, LOG_LEVEL_DBG);
 
 #define MAX_REPETITIONS 5
-#define MAX_DIFFERENCE	100
+#define MAX_DIFFERENCE  100
 
 K_MUTEX_DEFINE(g_app_measure_weight_lock);
 
@@ -344,6 +344,8 @@ int app_measure_people(void)
 
 	} else {
 		LOG_INF("Motion counter: %u", measurement.motion_counter);
+		LOG_INF("Pass counter (left): %u", measurement.pass_counter_left);
+		LOG_INF("Pass counter (right): %u", measurement.pass_counter_right);
 		LOG_INF("Pass counter (adult): %u", measurement.pass_counter_adult);
 		LOG_INF("Pass counter (child): %u", measurement.pass_counter_child);
 		LOG_INF("Stay counter (adult): %u", measurement.stay_counter_adult);
