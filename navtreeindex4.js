@@ -1,11 +1,13 @@
 var NAVTREEINDEX4 =
 {
-"structpeople__counter__measurement.html#a0dde8a143310ed846e099ea143dedc12":[0,43,0,6],
+"structpeople__counter__measurement.html#a0dde8a143310ed846e099ea143dedc12":[0,43,0,8],
+"structpeople__counter__measurement.html#a3cc2ad834c4bbd32aab3434d1d28a323":[0,43,0,5],
 "structpeople__counter__measurement.html#a55a1b2b7e0f1aa3a12839ba0af30e3db":[0,43,0,0],
 "structpeople__counter__measurement.html#a624ec0b29244164356e308544a09fbcb":[0,43,0,1],
-"structpeople__counter__measurement.html#aade02c0ddec9e8b70713d709b59f4133":[0,43,0,4],
-"structpeople__counter__measurement.html#ac0bfeed71de83bf94a2e74c8a4c6e9fd":[0,43,0,5],
-"structpeople__counter__measurement.html#ae879a2392b1886567dede346126320e6":[0,43,0,7],
+"structpeople__counter__measurement.html#a6ed4ad6b991454435bc3b35ca4a2f544":[0,43,0,4],
+"structpeople__counter__measurement.html#aade02c0ddec9e8b70713d709b59f4133":[0,43,0,6],
+"structpeople__counter__measurement.html#ac0bfeed71de83bf94a2e74c8a4c6e9fd":[0,43,0,7],
+"structpeople__counter__measurement.html#ae879a2392b1886567dede346126320e6":[0,43,0,9],
 "structpeople__counter__measurement.html#af98549695cc3c563554d76d4fcac8a64":[0,43,0,2],
 "unionctr__cloud__event__data.html":[1,0,1],
 "unionctr__cloud__event__data.html#ab82114bde347f2db56a8aecf4d4ee98e":[1,0,1,0],
