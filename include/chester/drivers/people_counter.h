@@ -31,6 +31,8 @@ struct people_counter_measurement {
 	uint16_t total_time_adult;
 	uint16_t total_time_child;
 	uint32_t consumed_energy;
+	uint16_t pass_counter_left;
+	uint16_t pass_counter_right;
 };
 
 /** @private */

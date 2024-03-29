@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "people_counter_reg.h"
-
 /* CHESTER includes */
 #include <chester/drivers/people_counter.h>
 
@@ -77,7 +75,7 @@ static int people_counter_read_measurement_(const struct device *dev,
 	int ret;
 
 	uint8_t reg = 0;
-	uint8_t buf[18];
+	uint8_t buf[24];
 	ret = i2c_write_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, &reg, 1, buf,
 			     sizeof(buf));
 	if (ret) {
@@ -93,6 +91,8 @@ static int people_counter_read_measurement_(const struct device *dev,
 	measurement->total_time_adult = sys_get_le16(&buf[10]);
 	measurement->total_time_child = sys_get_le16(&buf[12]);
 	measurement->consumed_energy = sys_get_le32(&buf[14]);
+	measurement->pass_counter_left = sys_get_le16(&buf[18]);
+	measurement->pass_counter_right = sys_get_le16(&buf[22]);
 
 	return 0;
 }
