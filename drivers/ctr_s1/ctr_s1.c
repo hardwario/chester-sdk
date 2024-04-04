@@ -800,11 +800,17 @@ static void work_handler(struct k_work *work)
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	uint16_t reg_irq0;
-	ret = read(data->dev, REG_IRQ0, &reg_irq0);
-	if (ret) {
-		k_mutex_unlock(&data->lock);
-		LOG_ERR("Call `read` failed: %d", ret);
+	uint16_t reg_irq0 = 0;
+
+	/* Repeat read in case of I2C error */
+	for (int i = 0; i < 8; i++) {
+		ret = read(data->dev, REG_IRQ0, &reg_irq0);
+		if (ret) {
+			k_mutex_unlock(&data->lock);
+			LOG_ERR("Call `read` failed: %d", ret);
+			continue;
+		}
+		break;
 	}
 
 	ret = write(data->dev, REG_IRQ0, reg_irq0);
