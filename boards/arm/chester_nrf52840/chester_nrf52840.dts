@@ -67,7 +67,7 @@
 		};
 
 		led_load: led_load {
-			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 5 GPIO_OPEN_SOURCE>;
 			status = "disabled";
 		};
 	};
