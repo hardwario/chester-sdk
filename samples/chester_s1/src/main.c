@@ -56,7 +56,7 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 		struct ctr_s1_led_param param_led = {
 			.brightness = CTR_S1_LED_BRIGHTNESS_HIGH,
 			.command = CTR_S1_LED_COMMAND_1X_1_1,
-			.pattern = CTR_S1_LED_PATTERN_NONE,
+			.pattern = CTR_S1_LED_PATTERN_OFF,
 		};
 
 		ret = ctr_s1_set_led(dev, CTR_S1_LED_CHANNEL_B, &param_led);
@@ -67,7 +67,7 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 
 		struct ctr_s1_buzzer_param param_buzzer = {
 			.command = CTR_S1_BUZZER_COMMAND_1X_1_1,
-			.pattern = CTR_S1_BUZZER_PATTERN_NONE,
+			.pattern = CTR_S1_BUZZER_PATTERN_OFF,
 		};
 
 		ret = ctr_s1_set_buzzer(dev, &param_buzzer);
