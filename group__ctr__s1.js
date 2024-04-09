@@ -25,13 +25,14 @@ var group__ctr__s1 =
       [ "CTR_S1_BUZZER_COMMAND_1X_2_1", "group__ctr__s1.html#ggaefcbe2cb5bfb67d990e254f61d172511a57157dc2439b15a65272259b7658a6a0", null ]
     ] ],
     [ "ctr_s1_buzzer_pattern", "group__ctr__s1.html#ga5f6f7f84691932f77e87fcdd46ea3fbb", [
-      [ "CTR_S1_BUZZER_PATTERN_NONE", "group__ctr__s1.html#gga5f6f7f84691932f77e87fcdd46ea3fbba17911e65dd40432022d8d1ad4bce9f02", null ],
+      [ "CTR_S1_BUZZER_PATTERN_OFF", "group__ctr__s1.html#gga5f6f7f84691932f77e87fcdd46ea3fbbae8625c77d8047eb8d2c6160e9be7b812", null ],
       [ "CTR_S1_BUZZER_PATTERN_1_HZ_1_1", "group__ctr__s1.html#gga5f6f7f84691932f77e87fcdd46ea3fbbab0de6b58dd315014d93565b6c40661a4", null ],
       [ "CTR_S1_BUZZER_PATTERN_1_HZ_1_7", "group__ctr__s1.html#gga5f6f7f84691932f77e87fcdd46ea3fbbaa239dfec92840461c8ca13f1d6748822", null ],
       [ "CTR_S1_BUZZER_PATTERN_2_HZ_1_1", "group__ctr__s1.html#gga5f6f7f84691932f77e87fcdd46ea3fbbabd592b9d96da4aca5d67dc4961ace8e5", null ],
       [ "CTR_S1_BUZZER_PATTERN_2_HZ_1_3", "group__ctr__s1.html#gga5f6f7f84691932f77e87fcdd46ea3fbbabaf504fa12889f69d90bd9df25b38d9b", null ],
       [ "CTR_S1_BUZZER_PATTERN_4_HZ_1_1", "group__ctr__s1.html#gga5f6f7f84691932f77e87fcdd46ea3fbba6c196b19ce204fa974ef056adfab59e8", null ],
-      [ "CTR_S1_BUZZER_PATTERN_8_HZ_1_1", "group__ctr__s1.html#gga5f6f7f84691932f77e87fcdd46ea3fbba81df3ef894e432685fede8bb764a08e7", null ]
+      [ "CTR_S1_BUZZER_PATTERN_8_HZ_1_1", "group__ctr__s1.html#gga5f6f7f84691932f77e87fcdd46ea3fbba81df3ef894e432685fede8bb764a08e7", null ],
+      [ "CTR_S1_BUZZER_PATTERN_ON", "group__ctr__s1.html#gga5f6f7f84691932f77e87fcdd46ea3fbba1890f652da93f59c6c41eaf1c016a485", null ]
     ] ],
     [ "ctr_s1_event", "group__ctr__s1.html#ga057c9c304d4f0e61874cd1aab5a8744e", [
       [ "CTR_S1_EVENT_DEVICE_RESET", "group__ctr__s1.html#gga057c9c304d4f0e61874cd1aab5a8744ea77f8611bf398496afe3ee6bcb64c1354", null ],
@@ -50,7 +51,7 @@ var group__ctr__s1 =
       [ "CTR_S1_EVENT_BUTTON_RELEASED", "group__ctr__s1.html#gga057c9c304d4f0e61874cd1aab5a8744ea0415d0faa515c6c7444aa78a6a06933c", null ]
     ] ],
     [ "ctr_s1_led_brightness", "group__ctr__s1.html#ga74019edefb23aa3b42fe329b4a0bdcbd", [
-      [ "CTR_S1_LED_BRIGHTNESS_NONE", "group__ctr__s1.html#gga74019edefb23aa3b42fe329b4a0bdcbdaf627756a71db2201cdc450e52a8373ce", null ],
+      [ "CTR_S1_LED_BRIGHTNESS_OFF", "group__ctr__s1.html#gga74019edefb23aa3b42fe329b4a0bdcbdac01ec2c6699d9d2ce58d7f9c50a558fd", null ],
       [ "CTR_S1_LED_BRIGHTNESS_LOW", "group__ctr__s1.html#gga74019edefb23aa3b42fe329b4a0bdcbdaf13310c6a80f9169ed4b9f223e87bc74", null ],
       [ "CTR_S1_LED_BRIGHTNESS_MEDIUM", "group__ctr__s1.html#gga74019edefb23aa3b42fe329b4a0bdcbda3e1484e603777b0f2243e77710728957", null ],
       [ "CTR_S1_LED_BRIGHTNESS_HIGH", "group__ctr__s1.html#gga74019edefb23aa3b42fe329b4a0bdcbdacd52431030aad41ab49a4b685301dfa3", null ]
@@ -73,13 +74,14 @@ var group__ctr__s1 =
       [ "CTR_S1_LED_COMMAND_1X_2_1", "group__ctr__s1.html#ggaf7e13846d2a2104326bab976a4bae58ea3558b6a435466b2d8ffe565a86ad75e1", null ]
     ] ],
     [ "ctr_s1_led_pattern", "group__ctr__s1.html#gaa0ed4c2f6392f2473bfd8c66f2eaeb6a", [
-      [ "CTR_S1_LED_PATTERN_NONE", "group__ctr__s1.html#ggaa0ed4c2f6392f2473bfd8c66f2eaeb6aa969ad4d43558b6057b11788a6ed90646", null ],
+      [ "CTR_S1_LED_PATTERN_OFF", "group__ctr__s1.html#ggaa0ed4c2f6392f2473bfd8c66f2eaeb6aae553e570774a55f8f239e774010b72d9", null ],
       [ "CTR_S1_LED_PATTERN_1_HZ_1_1", "group__ctr__s1.html#ggaa0ed4c2f6392f2473bfd8c66f2eaeb6aaa760dfadaf640b513abdaade69c61c08", null ],
       [ "CTR_S1_LED_PATTERN_1_HZ_1_7", "group__ctr__s1.html#ggaa0ed4c2f6392f2473bfd8c66f2eaeb6aa467bbc78bbd12603957420936921beb5", null ],
       [ "CTR_S1_LED_PATTERN_2_HZ_1_1", "group__ctr__s1.html#ggaa0ed4c2f6392f2473bfd8c66f2eaeb6aa538d5a000ec44d5cb7a26b876652cec5", null ],
       [ "CTR_S1_LED_PATTERN_2_HZ_1_3", "group__ctr__s1.html#ggaa0ed4c2f6392f2473bfd8c66f2eaeb6aa2c6501db8d775908e2bbc54be5c6044d", null ],
       [ "CTR_S1_LED_PATTERN_4_HZ_1_1", "group__ctr__s1.html#ggaa0ed4c2f6392f2473bfd8c66f2eaeb6aa6174dd3096aebb49d0afe3bffab64b41", null ],
-      [ "CTR_S1_LED_PATTERN_8_HZ_1_1", "group__ctr__s1.html#ggaa0ed4c2f6392f2473bfd8c66f2eaeb6aa9ffe15289f9a0521aaed34629a6c87a6", null ]
+      [ "CTR_S1_LED_PATTERN_8_HZ_1_1", "group__ctr__s1.html#ggaa0ed4c2f6392f2473bfd8c66f2eaeb6aa9ffe15289f9a0521aaed34629a6c87a6", null ],
+      [ "CTR_S1_LED_PATTERN_ON", "group__ctr__s1.html#ggaa0ed4c2f6392f2473bfd8c66f2eaeb6aadd1b432b1efdd3619f9227deca8d0bb7", null ]
     ] ],
     [ "ctr_s1_motion_blind_time", "group__ctr__s1.html#ga101641b5bb5a5370cf1e7bfc38f816a7", [
       [ "CTR_S1_PIR_BLIND_TIME_0_5S", "group__ctr__s1.html#gga101641b5bb5a5370cf1e7bfc38f816a7aa366a9d8b815247eb5458daca09291cd", null ],
