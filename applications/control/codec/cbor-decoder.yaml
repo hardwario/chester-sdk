@@ -1,0 +1,170 @@
+version: 2
+type: decoder
+name: com.hardwario.chester.control
+schema:
+  - message:
+    - version:
+    - sequence:
+    - timestamp:
+  - attribute:
+    - vendor_name:
+    - product_name:
+    - hw_variant:
+    - hw_revision:
+    - fw_version:
+    - serial_number:
+  - system:
+    - uptime:
+    - voltage_rest:
+      - $div: 1000
+      - $fpp: 2
+    - voltage_load:
+      - $div: 1000
+      - $fpp: 2
+    - current_load:
+  - backup:
+    - line_voltage:
+      - $div: 1000
+      - $fpp: 2
+    - batt_voltage:
+      - $div: 1000
+      - $fpp: 2
+    - state:
+      - $enum:
+        - "disconnected"
+        - "connected"
+    - events:
+  - network:
+    - imei:
+    - imsi:
+    - parameter:
+      - eest:
+      - ecl:
+      - rsrp:
+      - rsrq:
+      - snr:
+      - plmn:
+      - cid:
+      - band:
+      - earfcn:
+  - thermometer:
+    - temperature:
+      - $div: 100
+      - $fpp: 2
+  - accelerometer:
+    - accel_x:
+      - $div: 1000
+      - $fpp: 2
+    - accel_y:
+      - $div: 1000
+      - $fpp: 2
+    - accel_z:
+      - $div: 1000
+      - $fpp: 2
+    - orientation:
+  - trigger:
+    - channel:
+    - state:
+      - $enum:
+        - "inactive"
+        - "active"
+    - events:
+      - $tso:
+        - type:
+          - $enum:
+            - "deactivated"
+            - "activated"
+  - counter:
+    - channel:
+    - value:
+    - delta:
+    - measurements:
+      - $tsp:
+        - value:
+  - voltage:
+    - channel:
+    - measurements_div:
+      - $key: "measurements"
+      - $tsp:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
+          - $div: 100
+          - $fpp: 2
+  - current:
+    - channel:
+    - measurements_div:
+      - $key: "measurements"
+      - $tsp:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
+          - $div: 100
+          - $fpp: 2
+  - hygrometer:
+    - temperature:
+        - measurements_div:
+          - $key: "measurements"
+          - $tsp:
+            - min:
+              - $div: 100
+              - $fpp: 2
+            - max:
+              - $div: 100
+              - $fpp: 2
+            - avg:
+              - $div: 100
+              - $fpp: 2
+            - mdn:
+              - $div: 100
+              - $fpp: 2
+    - humidity:
+        - measurements_div:
+          - $key: "measurements"
+          - $tsp:
+            - min:
+              - $div: 100
+              - $fpp: 2
+            - max:
+              - $div: 100
+              - $fpp: 2
+            - avg:
+              - $div: 100
+              - $fpp: 2
+            - mdn:
+              - $div: 100
+              - $fpp: 2
+  - w1_thermometers:
+    - serial_number:
+    - measurements_div:
+      - $key: "measurements"
+      - $tsp:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
+          - $div: 100
+          - $fpp: 2
+
+
+

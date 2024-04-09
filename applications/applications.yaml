@@ -176,3 +176,11 @@
   fw_version: v2.3.0
   shields: ctr_ds18b20 ctr_lte ctr_mb7066_a ctr_z
   remark: Support for CHESTER-Z
+
+### CHESTER Control ######
+-
+  name: CHESTER Control
+  fw_bundle: com.hardwario.chester.app.control
+  fw_name: hio-chester-control
+  fw_version: v2.3.0
+  shields: ctr_lte_v2 ctr_x0_a ctr_x4_b

@@ -1,0 +1,12 @@
+version: 2
+type: encoder
+name: com.hardwario.chester.control
+schema:
+  - output_1_state:
+    - $type: int
+  - output_2_state:
+    - $type: int
+  - output_3_state:
+    - $type: int
+  - output_4_state:
+    - $type: int

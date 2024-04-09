@@ -1,0 +1,9 @@
+{
+    "body": [
+        "app config scan-timeout 666",
+        "app config address count 1",
+        "app config address add 81763000"
+    ],
+    "device_id": "...",
+    "type": "config"
+}
