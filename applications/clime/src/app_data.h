@@ -18,13 +18,13 @@
 #include <zephyr/kernel.h>
 
 #define APP_DATA_MAX_MEASUREMENTS  32
-#define APP_DATA_MAX_SAMPLES	   32
+#define APP_DATA_MAX_SAMPLES       32
 #define APP_DATA_MAX_TAMPER_EVENTS 32
 #define APP_DATA_MAX_BACKUP_EVENTS 32
 #define APP_DATA_MAX_HYGRO_EVENTS  32
 
 #if defined(CONFIG_SHIELD_CTR_DS18B20)
-#define APP_DATA_W1_THERM_COUNT	      10
+#define APP_DATA_W1_THERM_COUNT       10
 #define APP_DATA_W1_THERM_MAX_SAMPLES 128
 #endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
 
@@ -77,7 +77,7 @@ struct app_data_aggreg {
 };
 
 #if defined(CONFIG_SHIELD_CTR_S1)
-struct app_data_iaq_measurement {
+struct app_data_iaq_sensors_measurement {
 	struct app_data_aggreg temperature;
 	struct app_data_aggreg humidity;
 	struct app_data_aggreg illuminance;
@@ -85,12 +85,14 @@ struct app_data_iaq_measurement {
 	struct app_data_aggreg pressure;
 	struct app_data_aggreg co2_conc;
 
-	int press_count;
 	int motion_count;
 };
 
-struct app_data_iaq {
-	atomic_t press_count;
+struct app_data_iaq_button_measurement {
+	int press_count;
+};
+
+struct app_data_iaq_sensors {
 	atomic_t motion_count;
 
 	int sample_count;
@@ -102,10 +104,25 @@ struct app_data_iaq {
 	float samples_co2_conc[APP_DATA_MAX_SAMPLES];
 
 	int measurement_count;
-	struct app_data_iaq_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct app_data_iaq_sensors_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	int64_t timestamp;
 };
+
+struct app_data_iaq_button {
+	atomic_t press_count;
+
+	int measurement_count;
+	struct app_data_iaq_button_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	int64_t timestamp;
+};
+
+struct app_data_iaq {
+	struct app_data_iaq_sensors sensors;
+	struct app_data_iaq_button button;
+};
+
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
 
 #if defined(CONFIG_SHIELD_CTR_S2)

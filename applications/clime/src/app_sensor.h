@@ -14,7 +14,8 @@ extern "C" {
 int app_sensor_sample(void);
 
 int app_sensor_iaq_sample(void);
-int app_sensor_iaq_aggreg(void);
+int app_sensor_iaq_sensors_aggreg(void);
+int app_sensor_iaq_button_aggreg(void);
 int app_sensor_iaq_clear(void);
 
 int app_sensor_hygro_sample(void);

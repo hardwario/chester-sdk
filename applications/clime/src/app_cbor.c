@@ -445,6 +445,9 @@ static int encode(zcbor_state_t *zs)
 #if defined(CONFIG_SHIELD_CTR_S1)
 	zcbor_uint32_put(zs, MSG_KEY_IAQ_SENSOR);
 	{
+		struct app_data_iaq_sensors *sensors = &g_app_data.iaq.sensors;
+		struct app_data_iaq_button *button = &g_app_data.iaq.button;
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
@@ -455,12 +458,11 @@ static int encode(zcbor_state_t *zs)
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint64_put(zs, sensors->timestamp);
 				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
 
-				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
-					put_sample_mul(zs,
-						       &g_app_data.iaq.measurements[i].temperature,
+				for (int i = 0; i < sensors->measurement_count; i++) {
+					put_sample_mul(zs, &sensors->measurements[i].temperature,
 						       100.f);
 				}
 
@@ -477,10 +479,10 @@ static int encode(zcbor_state_t *zs)
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint64_put(zs, sensors->timestamp);
 				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
-				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
-					put_sample_mul(zs, &g_app_data.iaq.measurements[i].humidity,
+				for (int i = 0; i < sensors->measurement_count; i++) {
+					put_sample_mul(zs, &sensors->measurements[i].humidity,
 						       100.f);
 				}
 
@@ -497,11 +499,11 @@ static int encode(zcbor_state_t *zs)
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint64_put(zs, sensors->timestamp);
 				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
 
-				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
-					put_sample(zs, &g_app_data.iaq.measurements[i].illuminance);
+				for (int i = 0; i < sensors->measurement_count; i++) {
+					put_sample(zs, &sensors->measurements[i].illuminance);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -517,11 +519,11 @@ static int encode(zcbor_state_t *zs)
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint64_put(zs, sensors->timestamp);
 				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
 
-				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
-					put_sample(zs, &g_app_data.iaq.measurements[i].altitude);
+				for (int i = 0; i < sensors->measurement_count; i++) {
+					put_sample(zs, &sensors->measurements[i].altitude);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -537,11 +539,11 @@ static int encode(zcbor_state_t *zs)
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint64_put(zs, sensors->timestamp);
 				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
 
-				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
-					put_sample(zs, &g_app_data.iaq.measurements[i].pressure);
+				for (int i = 0; i < sensors->measurement_count; i++) {
+					put_sample(zs, &sensors->measurements[i].pressure);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -557,11 +559,11 @@ static int encode(zcbor_state_t *zs)
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint64_put(zs, sensors->timestamp);
 				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
 
-				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
-					put_sample(zs, &g_app_data.iaq.measurements[i].co2_conc);
+				for (int i = 0; i < sensors->measurement_count; i++) {
+					put_sample(zs, &sensors->measurements[i].co2_conc);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -577,12 +579,11 @@ static int encode(zcbor_state_t *zs)
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint64_put(zs, sensors->timestamp);
 				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
 
-				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
-					zcbor_int32_put(
-						zs, g_app_data.iaq.measurements[i].motion_count);
+				for (int i = 0; i < sensors->measurement_count; i++) {
+					zcbor_int32_put(zs, sensors->measurements[i].motion_count);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -598,12 +599,11 @@ static int encode(zcbor_state_t *zs)
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-				zcbor_uint64_put(zs, g_app_data.iaq.timestamp);
+				zcbor_uint64_put(zs, button->timestamp);
 				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
 
-				for (int i = 0; i < g_app_data.iaq.measurement_count; i++) {
-					zcbor_int32_put(zs,
-							g_app_data.iaq.measurements[i].press_count);
+				for (int i = 0; i < button->measurement_count; i++) {
+					zcbor_int32_put(zs, button->measurements[i].press_count);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);

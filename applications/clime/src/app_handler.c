@@ -10,6 +10,7 @@
 #include "app_handler.h"
 #include "app_init.h"
 #include "app_send.h"
+#include "app_sensor.h"
 #include "app_work.h"
 
 /* CHESTER includes */
@@ -203,7 +204,7 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 	case CTR_S1_EVENT_BUTTON_PRESSED:
 		LOG_INF("Event `CTR_S1_EVENT_BUTTON_PRESSED`");
 
-		atomic_inc(&g_app_data.iaq.press_count);
+		atomic_inc(&g_app_data.iaq.button.press_count);
 
 		struct ctr_s1_led_param param_led = {
 			.brightness = CTR_S1_LED_BRIGHTNESS_HIGH,
@@ -234,6 +235,8 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 			k_oops();
 		}
 
+		app_sensor_iaq_button_aggreg();
+
 		app_work_send();
 
 		break;
@@ -253,7 +256,7 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 	case CTR_S1_EVENT_MOTION_DETECTED:
 		LOG_INF("Event `CTR_S1_EVENT_MOTION_DETECTED`");
 
-		atomic_inc(&g_app_data.iaq.motion_count);
+		atomic_inc(&g_app_data.iaq.sensors.motion_count);
 
 		int motion_count;
 		ret = ctr_s1_read_motion_count(dev, &motion_count);
@@ -341,8 +344,9 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 {
 	int ret;
 
-	if (chan != CTR_BUTTON_CHANNEL_INT)
+	if (chan != CTR_BUTTON_CHANNEL_INT) {
 		return;
+	}
 
 	if (ev == CTR_BUTTON_EVENT_CLICK) {
 		for (int i = 0; i < val; i++) {

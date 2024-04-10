@@ -135,8 +135,10 @@ int app_sensor_iaq_sample(void)
 	float pressure;
 	float co2_conc;
 
-	if (g_app_data.iaq.sample_count < APP_DATA_MAX_SAMPLES) {
-		int i = g_app_data.iaq.sample_count;
+	struct app_data_iaq_sensors *sensors = &g_app_data.iaq.sensors;
+
+	if (sensors->sample_count < APP_DATA_MAX_SAMPLES) {
+		int i = sensors->sample_count;
 		ret = ctr_s1_read_temperature(dev, &temperature);
 		if (ret) {
 			temperature = NAN;
@@ -186,16 +188,16 @@ int app_sensor_iaq_sample(void)
 		}
 
 		app_data_lock();
-		g_app_data.iaq.samples_temperature[i] = temperature;
-		g_app_data.iaq.samples_humidity[i] = humidity;
-		g_app_data.iaq.samples_illuminance[i] = illuminance;
-		g_app_data.iaq.samples_altitude[i] = altitude;
-		g_app_data.iaq.samples_pressure[i] = pressure;
-		g_app_data.iaq.samples_co2_conc[i] = co2_conc;
-		g_app_data.iaq.sample_count++;
+		sensors->samples_temperature[i] = temperature;
+		sensors->samples_humidity[i] = humidity;
+		sensors->samples_illuminance[i] = illuminance;
+		sensors->samples_altitude[i] = altitude;
+		sensors->samples_pressure[i] = pressure;
+		sensors->samples_co2_conc[i] = co2_conc;
+		sensors->sample_count++;
 		app_data_unlock();
 
-		LOG_INF("Sample count: %d", g_app_data.iaq.sample_count);
+		LOG_INF("Sample count: %d", sensors->sample_count);
 	} else {
 		LOG_WRN("Sample buffer full");
 		return -ENOSPC;
@@ -204,15 +206,15 @@ int app_sensor_iaq_sample(void)
 	return 0;
 }
 
-int app_sensor_iaq_aggreg(void)
+int app_sensor_iaq_sensors_aggreg(void)
 {
 	int ret;
-	struct app_data_iaq *iaq = &g_app_data.iaq;
+	struct app_data_iaq_sensors *sensors = &g_app_data.iaq.sensors;
 
 	app_data_lock();
 
-	if (iaq->measurement_count == 0) {
-		ret = ctr_rtc_get_ts(&iaq->timestamp);
+	if (sensors->measurement_count == 0) {
+		ret = ctr_rtc_get_ts(&sensors->timestamp);
 		if (ret) {
 			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
 			app_data_unlock();
@@ -220,32 +222,71 @@ int app_sensor_iaq_aggreg(void)
 		}
 	}
 
-	if (iaq->measurement_count < APP_DATA_MAX_MEASUREMENTS) {
-		struct app_data_iaq_measurement *measurement =
-			&iaq->measurements[iaq->measurement_count];
+	if (sensors->measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+		struct app_data_iaq_sensors_measurement *measurement =
+			&sensors->measurements[sensors->measurement_count];
 
-		aggreg_sample(iaq->samples_temperature, iaq->sample_count,
+		aggreg_sample(sensors->samples_temperature, sensors->sample_count,
 			      &measurement->temperature);
-		aggreg_sample(iaq->samples_humidity, iaq->sample_count, &measurement->humidity);
-		aggreg_sample(iaq->samples_illuminance, iaq->sample_count,
+		aggreg_sample(sensors->samples_humidity, sensors->sample_count,
+			      &measurement->humidity);
+		aggreg_sample(sensors->samples_illuminance, sensors->sample_count,
 			      &measurement->illuminance);
-		aggreg_sample(iaq->samples_altitude, iaq->sample_count, &measurement->altitude);
-		aggreg_sample(iaq->samples_pressure, iaq->sample_count, &measurement->pressure);
-		aggreg_sample(iaq->samples_co2_conc, iaq->sample_count, &measurement->co2_conc);
+		aggreg_sample(sensors->samples_altitude, sensors->sample_count,
+			      &measurement->altitude);
+		aggreg_sample(sensors->samples_pressure, sensors->sample_count,
+			      &measurement->pressure);
+		aggreg_sample(sensors->samples_co2_conc, sensors->sample_count,
+			      &measurement->co2_conc);
 
-		measurement->press_count = iaq->press_count;
-		measurement->motion_count = iaq->motion_count;
+		measurement->motion_count = sensors->motion_count;
 
-		iaq->measurement_count++;
+		sensors->measurement_count++;
 
-		LOG_WRN("Measurement count: %d", iaq->measurement_count);
+		LOG_WRN("Measurement count: %d", sensors->measurement_count);
 	} else {
 		LOG_WRN("Measurement buffer full");
 		app_data_unlock();
 		return -ENOSPC;
 	}
 
-	iaq->sample_count = 0;
+	sensors->sample_count = 0;
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_iaq_button_aggreg(void)
+{
+	int ret;
+	struct app_data_iaq_button *button = &g_app_data.iaq.button;
+
+	app_data_lock();
+
+	if (button->measurement_count == 0) {
+		ret = ctr_rtc_get_ts(&button->timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			app_data_unlock();
+			return ret;
+		}
+	}
+
+	if (button->measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+		struct app_data_iaq_button_measurement *measurement =
+			&button->measurements[button->measurement_count];
+
+		measurement->press_count = button->press_count;
+
+		button->measurement_count++;
+
+		LOG_WRN("Measurement count: %d", button->measurement_count);
+	} else {
+		LOG_WRN("Measurement buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
 
 	app_data_unlock();
 
@@ -255,7 +296,8 @@ int app_sensor_iaq_aggreg(void)
 int app_sensor_iaq_clear(void)
 {
 	app_data_lock();
-	g_app_data.iaq.measurement_count = 0;
+	g_app_data.iaq.sensors.measurement_count = 0;
+	g_app_data.iaq.button.measurement_count = 0;
 	app_data_unlock();
 
 	return 0;

@@ -25,7 +25,7 @@
 LOG_MODULE_REGISTER(app_work, LOG_LEVEL_DBG);
 
 #define WORK_Q_STACK_SIZE 4096
-#define WORK_Q_PRIORITY	  K_LOWEST_APPLICATION_THREAD_PRIO
+#define WORK_Q_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
 
 static struct k_work_q m_work_q;
 static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);
@@ -181,9 +181,9 @@ static void iaq_aggreg_work_handler(struct k_work *work)
 {
 	int ret;
 
-	ret = app_sensor_iaq_aggreg();
+	ret = app_sensor_iaq_sensors_aggreg();
 	if (ret) {
-		LOG_ERR("Call `app_sensor_iaq_aggreg` failed: %d", ret);
+		LOG_ERR("Call `app_sensor_iaq_sensors_aggreg` failed: %d", ret);
 	}
 }
 
