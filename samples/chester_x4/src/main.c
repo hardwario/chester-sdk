@@ -64,14 +64,24 @@ int main(void)
 
 		LOG_INF("Line voltage: %d mV", line_voltage_mv);
 
-		bool is_line_present;
-		ret = ctr_x4_get_line_present(dev, &is_line_present);
+		enum ctr_x4_line_state line_state;
+		ret = ctr_x4_get_line_state(dev, &line_state);
 		if (ret) {
-			LOG_ERR("Call `ctr_x4_get_line_present` failed: %d", ret);
+			LOG_ERR("Call `ctr_x4_get_line_state` failed: %d", ret);
 			k_oops();
 		}
 
-		LOG_INF("Line present: %s", is_line_present ? "true" : "false");
+		switch (line_state) {
+		case CTR_X4_LINE_STATE_UNKNOWN:
+			LOG_INF("Line state: unknown");
+			break;
+		case CTR_X4_LINE_STATE_CONNECTED:
+			LOG_INF("Line state: connected");
+			break;
+		case CTR_X4_LINE_STATE_DISCONNECTED:
+			LOG_INF("Line state: disconnected");
+			break;
+		}
 
 		ret = ctr_x4_set_output(dev, CTR_X4_OUTPUT_1, true);
 		if (ret) {

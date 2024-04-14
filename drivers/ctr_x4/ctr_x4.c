@@ -48,7 +48,7 @@ struct ctr_x4_data {
 	int16_t adc_buf[1];
 	ctr_x4_user_cb user_cb;
 	void *user_data;
-	bool is_line_present;
+	enum ctr_x4_line_state line_state;
 };
 
 static inline const struct ctr_x4_config *get_config(const struct device *dev)
@@ -138,10 +138,10 @@ static int ctr_x4_get_line_voltage_(const struct device *dev, int *line_voltage_
 	return 0;
 }
 
-static int ctr_x4_get_line_present_(const struct device *dev, bool *is_line_present)
+static int ctr_x4_get_line_state_(const struct device *dev, enum ctr_x4_line_state *line_state)
 {
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
-	*is_line_present = get_data(dev)->is_line_present;
+	*line_state = get_data(dev)->line_state;
 	k_mutex_unlock(&get_data(dev)->lock);
 
 	return 0;
@@ -168,19 +168,23 @@ static void work_handler(struct k_work *work)
 	}
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+	enum ctr_x4_line_state line_state = get_data(dev)->line_state;
 
-	if (get_data(dev)->is_line_present) {
+	if (line_state == CTR_X4_LINE_STATE_CONNECTED || line_state == CTR_X4_LINE_STATE_UNKNOWN) {
 		if (voltage_mv < get_config(dev)->line_threshold_min) {
-			get_data(dev)->is_line_present = false;
+			get_data(dev)->line_state = CTR_X4_LINE_STATE_DISCONNECTED;
 
 			if (get_data(dev)->user_cb) {
 				get_data(dev)->user_cb(dev, CTR_X4_EVENT_LINE_DISCONNECTED,
 						       get_data(dev)->user_data);
 			}
 		}
-	} else {
+	}
+
+	if (line_state == CTR_X4_LINE_STATE_DISCONNECTED ||
+	    line_state == CTR_X4_LINE_STATE_UNKNOWN) {
 		if (voltage_mv > get_config(dev)->line_threshold_max) {
-			get_data(dev)->is_line_present = true;
+			get_data(dev)->line_state = CTR_X4_LINE_STATE_CONNECTED;
 
 			if (get_data(dev)->user_cb) {
 				get_data(dev)->user_cb(dev, CTR_X4_EVENT_LINE_CONNECTED,
@@ -248,15 +252,6 @@ static int ctr_x4_init(const struct device *dev)
 	k_timer_start(&get_data(dev)->timer, K_MSEC(get_config(dev)->line_measurement_interval),
 		      K_MSEC(get_config(dev)->line_measurement_interval));
 
-	int line_voltage_mv;
-	ret = ctr_x4_get_line_voltage(dev, &line_voltage_mv);
-	if (ret) {
-		LOG_ERR("Call `ctr_x4_get_line_voltage` failed: %d", ret);
-		return ret;
-	}
-
-	get_data(dev)->is_line_present = line_voltage_mv > get_config(dev)->line_threshold_min;
-
 	return 0;
 }
 
@@ -264,7 +259,7 @@ static const struct ctr_x4_driver_api ctr_x4_driver_api = {
 	.set_handler = ctr_x4_set_handler_,
 	.set_output = ctr_x4_set_output_,
 	.get_line_voltage = ctr_x4_get_line_voltage_,
-	.get_line_present = ctr_x4_get_line_present_,
+	.get_line_state = ctr_x4_get_line_state_,
 };
 
 #define CTR_X4_INIT(n)                                                                             \
