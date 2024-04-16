@@ -42,15 +42,22 @@ static struct app_config m_app_config_interim = {
 	.interval_aggreg = 300,
 	.interval_report = 1800,
 
-#if defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_S1)
+	.iaq_led_thr_warning = 800.f,
+	.iaq_led_thr_alarm = 1600.f,
+	.iaq_led_hst = 50.f,
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+
+#if defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 	.event_report_delay = 1,
 	.event_report_rate = 30,
-#endif /* defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) ||                         \
+	  defined(CONFIG_SHIELD_CTR_X10) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 	.backup_report_connected = true,
 	.backup_report_disconnected = true,
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 };
 
 static void print_app_config_mode(const struct shell *shell)
@@ -218,9 +225,9 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 {
 	print_app_config_mode(shell);
 
-#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)	print_##_name_u(shell);
+#define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help)   print_##_name_u(shell);
 #define CONFIG_PARAM_FLOAT(_name_d, _name_u, _min, _max, _help) print_##_name_u(shell);
-#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help)		print_##_name_u(shell);
+#define CONFIG_PARAM_BOOL(_name_d, _name_u, _help)              print_##_name_u(shell);
 
 	CONFIG_PARAM_LIST()
 

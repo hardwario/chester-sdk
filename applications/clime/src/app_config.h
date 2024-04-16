@@ -31,6 +31,12 @@ struct app_config {
 	int interval_aggreg;
 	int interval_report;
 
+#if defined(CONFIG_SHIELD_CTR_S1)
+	float iaq_led_thr_warning;
+	float iaq_led_thr_alarm;
+	float iaq_led_hst;
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+
 #if defined(CONFIG_SHIELD_CTR_S2)
 	bool hygro_t_alarm_hi_report;
 	bool hygro_t_alarm_lo_report;
@@ -40,15 +46,16 @@ struct app_config {
 	float hygro_t_alarm_lo_hst;
 #endif /* defined(CONFIG_SHIELD_CTR_S2) */
 
-#if defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 	int event_report_delay;
 	int event_report_rate;
-#endif /* defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) ||                         \
+	  defined(CONFIG_SHIELD_CTR_X10) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 	bool backup_report_connected;
 	bool backup_report_disconnected;
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 };
 
 extern struct app_config g_app_config;
@@ -59,6 +66,15 @@ extern struct app_config g_app_config;
 	CONFIG_PARAM_INT(interval-sample, interval_sample, 1, 86400, "Get/Set sample interval in seconds (format: <1-86400>).") \
 	CONFIG_PARAM_INT(interval-aggreg, interval_aggreg, 1, 86400, "Get/Set aggregate interval in seconds (format: <1-86400>).") \
 	CONFIG_PARAM_INT(interval-report, interval_report, 30, 86400, "Get/Set report interval in seconds (format: <30-86400>).")
+
+#if defined(CONFIG_SHIELD_CTR_S1)
+#define CONFIG_PARAM_LIST_CTR_S1() \
+	CONFIG_PARAM_FLOAT(iaq-led-thr-warning, iaq_led_thr_warning, -40.f, 5000.f, "Get/Set IAQ LED warning threshold (format: <-40.0..5000.0>).") \
+	CONFIG_PARAM_FLOAT(iaq-led-thr-alarm, iaq_led_thr_alarm, -40.f, 5000.f, "Get/Set IAQ LED alarm threshold (format: <-40.0..5000.0>).") \
+	CONFIG_PARAM_FLOAT(iaq-led-hst, iaq_led_hst, 0.f, 1000.f, "Get/Set IAQ LED hysteresis (format: <0.0..1000.0>).")
+#else
+#define CONFIG_PARAM_LIST_CTR_S1()
+#endif
 
 #if defined(CONFIG_SHIELD_CTR_S2)
 #define CONFIG_PARAM_LIST_CTR_S2() \
@@ -72,26 +88,27 @@ extern struct app_config g_app_config;
 #define CONFIG_PARAM_LIST_CTR_S2()
 #endif
 
-#if defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 #define CONFIG_PARAM_LIST_CTR_S2_Z() \
 	CONFIG_PARAM_INT(event-report-delay, event_report_delay, 1, 86400, "Get/Set event report delay in seconds (format: <1-86400>).") \
 	CONFIG_PARAM_INT(event-report-rate, event_report_rate, 1, 3600, "Get/Set event report rate in reports per hour (format: <1-3600>).")
 #else
 #define CONFIG_PARAM_LIST_CTR_S2_Z()
-#endif /* defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 #define CONFIG_PARAM_LIST_CTR_Z() \
 	CONFIG_PARAM_BOOL(backup-report-connected, backup_report_connected, "Get/Set report when backup is active (format: true, false).") \
 	CONFIG_PARAM_BOOL(backup-report-disconnected, backup_report_disconnected, "Get/Set report when backup is inactive (format: true, false).")
 #else
 #define CONFIG_PARAM_LIST_CTR_Z()
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 
 /* clang-format on */
 
 #define CONFIG_PARAM_LIST()                                                                        \
 	CONFIG_PARAM_LIST_COMMON()                                                                 \
+	CONFIG_PARAM_LIST_CTR_S1()                                                                 \
 	CONFIG_PARAM_LIST_CTR_S2()                                                                 \
 	CONFIG_PARAM_LIST_CTR_S2_Z()                                                               \
 	CONFIG_PARAM_LIST_CTR_Z()

@@ -236,7 +236,7 @@ static int encode(zcbor_state_t *zs)
 	}
 #endif /* defined(CONFIG_APP_TAMPER) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 	zcbor_uint32_put(zs, MSG_KEY_BACKUP);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -288,7 +288,7 @@ static int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 
 	zcbor_uint32_put(zs, MSG_KEY_NETWORK);
 	{

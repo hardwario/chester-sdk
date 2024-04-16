@@ -57,9 +57,9 @@ static void send_work_handler(struct k_work *work)
 	app_tamper_clear();
 #endif /* defined(CONFIG_APP_TAMPER) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 	app_backup_clear();
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 
 #if defined(CONFIG_SHIELD_CTR_S1)
 	app_sensor_iaq_clear();
@@ -100,12 +100,12 @@ static void sample_work_handler(struct k_work *work)
 {
 	int ret;
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 	ret = app_backup_sample();
 	if (ret) {
 		LOG_ERR("Call `app_backup_sample` failed: %d", ret);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 
 	ret = app_sensor_sample();
 	if (ret) {
@@ -411,7 +411,7 @@ static K_TIMER_DEFINE(m_soil_sensor_aggreg_timer, soil_sensor_aggreg_timer_handl
 
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 
 static void backup_work_handler(struct k_work *work)
 {
@@ -435,7 +435,7 @@ void app_work_backup_update(void)
 	}
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 
 int app_work_init(void)
 {
@@ -544,7 +544,7 @@ void app_work_send(void)
 	k_timer_start(&m_send_timer, K_NO_WAIT, K_FOREVER);
 }
 
-#if defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 static atomic_t m_report_rate_hourly_counter = 0;
 static atomic_t m_report_rate_timer_is_active = false;
 static atomic_t m_report_delay_timer_is_active = false;
@@ -589,4 +589,5 @@ void app_work_send_with_rate_limit(void)
 	}
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_S2) || defined(CONFIG_SHIELD_CTR_Z) ||                         \
+	  defined(CONFIG_SHIELD_CTR_X10) */

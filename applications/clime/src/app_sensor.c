@@ -195,6 +195,8 @@ int app_sensor_iaq_sample(void)
 		sensors->samples_pressure[i] = pressure;
 		sensors->samples_co2_conc[i] = co2_conc;
 		sensors->sample_count++;
+
+		sensors->last_co2_conc = co2_conc;
 		app_data_unlock();
 
 		LOG_INF("Sample count: %d", sensors->sample_count);

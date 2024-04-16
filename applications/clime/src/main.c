@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+#include "app_config.h"
+#include "app_iaq.h"
 #include "app_init.h"
 
 /* CHESTER includes */
@@ -42,9 +44,20 @@ int main(void)
 			k_oops();
 		}
 
-		ctr_led_set(CTR_LED_CHANNEL_G, true);
-		k_sleep(K_MSEC(30));
-		ctr_led_set(CTR_LED_CHANNEL_G, false);
+#if defined(CONFIG_SHIELD_CTR_S1)
+		app_iaq_led_task();
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+
+		/* Blink yellow when LTE/LRW mode not configured*/
+		if (g_app_config.mode == APP_CONFIG_MODE_NONE) {
+			ctr_led_set(CTR_LED_CHANNEL_Y, true);
+			k_sleep(K_MSEC(30));
+			ctr_led_set(CTR_LED_CHANNEL_Y, false);
+		} else {
+			ctr_led_set(CTR_LED_CHANNEL_G, true);
+			k_sleep(K_MSEC(30));
+			ctr_led_set(CTR_LED_CHANNEL_G, false);
+		}
 
 		k_sleep(K_SECONDS(5));
 	}

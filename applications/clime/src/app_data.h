@@ -54,7 +54,7 @@ struct app_data_tamper {
 };
 #endif /* defined(CONFIG_APP_TAMPER) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 struct app_data_backup_event {
 	int64_t timestamp;
 	bool connected;
@@ -67,7 +67,7 @@ struct app_data_backup {
 	int event_count;
 	struct app_data_backup_event events[APP_DATA_MAX_BACKUP_EVENTS];
 };
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 
 struct app_data_aggreg {
 	float min;
@@ -94,6 +94,7 @@ struct app_data_iaq_button_measurement {
 
 struct app_data_iaq_sensors {
 	atomic_t motion_count;
+	float last_co2_conc;
 
 	int sample_count;
 	float samples_temperature[APP_DATA_MAX_SAMPLES];
@@ -253,9 +254,9 @@ struct app_data {
 	struct app_data_tamper tamper;
 #endif /* defined(CONFIG_APP_TAMPER) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
 	struct app_data_backup backup;
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 
 #if defined(CONFIG_SHIELD_CTR_S1)
 	struct app_data_iaq iaq;

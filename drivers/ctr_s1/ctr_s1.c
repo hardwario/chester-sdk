@@ -68,7 +68,6 @@ static inline struct ctr_s1_data *get_data(const struct device *dev)
 static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 {
 	int ret;
-	uint16_t buf;
 
 	if (!device_is_ready(get_config(dev)->i2c_dev)) {
 		LOG_ERR("Device not ready");
@@ -76,6 +75,7 @@ static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 	}
 
 	for (int i = 0; i < 8; i++) {
+		uint16_t buf;
 		ret = i2c_write_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, &reg, 1,
 				     &buf, 2);
 		if (!ret) {
@@ -87,6 +87,7 @@ static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 	}
 
 	LOG_ERR("Call `i2c_write_read` failed: %d", ret);
+
 	return ret;
 }
 
@@ -114,6 +115,7 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 	}
 
 	LOG_ERR("Call `i2c_write` failed: %d", ret);
+
 	return ret;
 }
 

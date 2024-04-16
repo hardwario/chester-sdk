@@ -209,7 +209,7 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 		struct ctr_s1_led_param param_led = {
 			.brightness = CTR_S1_LED_BRIGHTNESS_HIGH,
 			.command = CTR_S1_LED_COMMAND_1X_1_1,
-			.pattern = CTR_S1_LED_PATTERN_NONE,
+			.pattern = CTR_S1_LED_PATTERN_OFF,
 		};
 
 		ret = ctr_s1_set_led(dev, CTR_S1_LED_CHANNEL_B, &param_led);
@@ -220,7 +220,7 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 
 		struct ctr_s1_buzzer_param param_buzzer = {
 			.command = CTR_S1_BUZZER_COMMAND_1X_1_1,
-			.pattern = CTR_S1_BUZZER_PATTERN_NONE,
+			.pattern = CTR_S1_BUZZER_PATTERN_OFF,
 		};
 
 		ret = ctr_s1_set_buzzer(dev, &param_buzzer);
@@ -274,61 +274,6 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 	}
 }
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
-
-#if defined(CONFIG_SHIELD_CTR_Z)
-
-void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, void *param)
-{
-	int ret;
-
-	if (backup_event != CTR_Z_EVENT_DC_CONNECTED &&
-	    backup_event != CTR_Z_EVENT_DC_DISCONNECTED) {
-		return;
-	}
-
-	struct app_data_backup *backup = &g_app_data.backup;
-
-	app_work_backup_update();
-
-	app_data_lock();
-
-	backup->line_present = backup_event == CTR_Z_EVENT_DC_CONNECTED;
-
-	if (backup->event_count < APP_DATA_MAX_BACKUP_EVENTS) {
-		struct app_data_backup_event *event = &backup->events[backup->event_count];
-
-		ret = ctr_rtc_get_ts(&event->timestamp);
-		if (ret) {
-			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
-			app_data_unlock();
-			return;
-		}
-
-		event->connected = backup->line_present;
-		backup->event_count++;
-
-		LOG_INF("Event count: %d", backup->event_count);
-	} else {
-		LOG_WRN("Measurement full");
-		app_data_unlock();
-		return;
-	}
-
-	LOG_INF("Backup: %d", (int)backup->line_present);
-
-	if (g_app_config.backup_report_connected && backup_event == CTR_Z_EVENT_DC_CONNECTED) {
-		app_work_send_with_rate_limit();
-	}
-
-	if (g_app_config.backup_report_disconnected &&
-	    backup_event == CTR_Z_EVENT_DC_DISCONNECTED) {
-		app_work_send_with_rate_limit();
-	}
-
-	app_data_unlock();
-}
-
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 #if defined(CONFIG_CTR_BUTTON)
 
