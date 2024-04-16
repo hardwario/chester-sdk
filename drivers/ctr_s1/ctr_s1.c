@@ -68,21 +68,26 @@ static inline struct ctr_s1_data *get_data(const struct device *dev)
 static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 {
 	int ret;
+	uint16_t buf;
 
 	if (!device_is_ready(get_config(dev)->i2c_dev)) {
 		LOG_ERR("Device not ready");
 		return -ENODEV;
 	}
 
-	ret = i2c_write_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, &reg, 1, data, 2);
-	if (ret) {
-		LOG_ERR("Call `i2c_write_read` failed: %d", ret);
-		return ret;
+	for (int i = 0; i < 8; i++) {
+		ret = i2c_write_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, &reg, 1,
+				     &buf, 2);
+		if (!ret) {
+			*data = sys_be16_to_cpu(buf);
+			return ret;
+		}
+
+		LOG_WRN("Call `i2c_write_read` failed: %d", ret);
 	}
 
-	*data = sys_be16_to_cpu(*data);
-
-	return 0;
+	LOG_ERR("Call `i2c_write_read` failed: %d", ret);
+	return ret;
 }
 
 static int write(const struct device *dev, uint8_t reg, uint16_t data)
@@ -97,13 +102,19 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 	uint8_t buf[3] = {reg};
 	sys_put_be16(data, &buf[1]);
 
-	ret = i2c_write(get_config(dev)->i2c_dev, buf, sizeof(buf), get_config(dev)->i2c_addr);
-	if (ret) {
-		LOG_ERR("Call `i2c_write` failed: %d", ret);
-		return ret;
+	for (int i = 0; i < 8; i++) {
+		ret = i2c_write(get_config(dev)->i2c_dev, buf, sizeof(buf),
+				get_config(dev)->i2c_addr);
+
+		if (!ret) {
+			return ret;
+		}
+
+		LOG_WRN("Call `i2c_write_read` failed: %d", ret);
 	}
 
-	return 0;
+	LOG_ERR("Call `i2c_write` failed: %d", ret);
+	return ret;
 }
 
 static int ctr_s1_set_handler_(const struct device *dev, ctr_s1_user_cb user_cb, void *user_data)
@@ -802,15 +813,10 @@ static void work_handler(struct k_work *work)
 
 	uint16_t reg_irq0 = 0;
 
-	/* Repeat read in case of I2C error */
-	for (int i = 0; i < 8; i++) {
-		ret = read(data->dev, REG_IRQ0, &reg_irq0);
-		if (ret) {
-			k_mutex_unlock(&data->lock);
-			LOG_ERR("Call `read` failed: %d", ret);
-			continue;
-		}
-		break;
+	ret = read(data->dev, REG_IRQ0, &reg_irq0);
+	if (ret) {
+		k_mutex_unlock(&data->lock);
+		LOG_ERR("Call `read` failed: %d", ret);
 	}
 
 	ret = write(data->dev, REG_IRQ0, reg_irq0);
@@ -920,7 +926,8 @@ static int ctr_s1_init(const struct device *dev)
 		INIT_REGISTER(REG_IRQ0, BIT_MASK(16));
 		INIT_REGISTER(REG_IRQ1, BIT_MASK(16));
 
-		/* Apply indicator reset, enable alert pin and enable auto-beep (if configured) */
+		/* Apply indicator reset, enable alert pin and enable auto-beep (if
+		 * configured) */
 		ret = write(dev, REG_CONTROL,
 			    BIT(0) | (get_config(dev)->auto_beep ? BIT(1) : 0) | BIT(15));
 		if (ret) {
