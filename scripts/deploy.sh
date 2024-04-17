@@ -51,7 +51,7 @@ deploy_clime() {
     # Build CHESTER Clime IAQ
     #
     cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lrw ctr_lte ctr_s2)*/, "set(SHIELD ctr_lrw ctr_lte ctr_s1)"); print }' CMakeLists.txt
+    gawk -i inplace '{ gsub(/set\(SHIELD ctr_lrw ctr_lte ctr_s2)*/, "set(SHIELD ctr_lrw ctr_lte ctr_s1 ctr_x10)"); print }' CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Clime IAQ" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-clime-iaq" --version $FW_VERSION
