@@ -56,24 +56,26 @@ static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 		return -ENODEV;
 	}
 
-	ret = i2c_write_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, &reg, 1, data, 2);
-	if (ret) {
-		LOG_ERR("Call `i2c_write_read` failed: %d", ret);
-		return ret;
+	for (int i = 0; i < 8; i++) {
+		uint16_t buf;
+		ret = i2c_write_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, &reg, 1,
+				     &buf, 2);
+		if (!ret) {
+			*data = sys_be16_to_cpu(buf);
+			return ret;
+		}
+
+		LOG_WRN("Call `i2c_write_read` failed: %d", ret);
 	}
 
-	*data = sys_be16_to_cpu(*data);
+	LOG_ERR("Call `i2c_write_read` failed: %d", ret);
 
-	LOG_DBG("Register: 0x%02x Data: 0x%04x", reg, *data);
-
-	return 0;
+	return ret;
 }
 
 static int write(const struct device *dev, uint8_t reg, uint16_t data)
 {
 	int ret;
-
-	LOG_DBG("Register: 0x%02x Data: 0x%04x", reg, data);
 
 	if (!device_is_ready(get_config(dev)->i2c_dev)) {
 		LOG_ERR("Device not ready");
@@ -83,13 +85,20 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 	uint8_t buf[3] = {reg};
 	sys_put_be16(data, &buf[1]);
 
-	ret = i2c_write(get_config(dev)->i2c_dev, buf, sizeof(buf), get_config(dev)->i2c_addr);
-	if (ret) {
-		LOG_ERR("Call `i2c_write` failed: %d", ret);
-		return ret;
+	for (int i = 0; i < 8; i++) {
+		ret = i2c_write(get_config(dev)->i2c_dev, buf, sizeof(buf),
+				get_config(dev)->i2c_addr);
+
+		if (!ret) {
+			return ret;
+		}
+
+		LOG_WRN("Call `i2c_write` failed: %d", ret);
 	}
 
-	return 0;
+	LOG_ERR("Call `i2c_write` failed: %d", ret);
+
+	return ret;
 }
 
 static int ctr_z_set_handler_(const struct device *dev, ctr_z_user_cb user_cb, void *user_data)
@@ -379,7 +388,7 @@ static void work_handler(struct k_work *work)
 	struct ctr_z_data *data = CONTAINER_OF(work, struct ctr_z_data, work);
 	const struct ctr_z_config *config = get_config(data->dev);
 
-	uint16_t reg_irq0;
+	uint16_t reg_irq0 = 0;
 	ret = read(data->dev, REG_IRQ0, &reg_irq0);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
@@ -390,7 +399,7 @@ static void work_handler(struct k_work *work)
 		LOG_ERR("Call `write` failed: %d", ret);
 	}
 
-	uint16_t reg_irq1;
+	uint16_t reg_irq1 = 0;
 	ret = read(data->dev, REG_IRQ1, &reg_irq1);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
