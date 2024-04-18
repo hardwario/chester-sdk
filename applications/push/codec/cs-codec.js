@@ -1,7 +1,7 @@
 var cursor = 0;
 var buffer;
 
-// Chirpstack v3
+// ChirpStack v3
 function Decode(port, bytes, variables)
 {
 	var data = {};
@@ -50,9 +50,9 @@ function Decode(port, bytes, variables)
 	}
 
 	if ((header & 0x08) !== 0) {
-		data.backup = {}
+		data.backup = {};
 
-			      data.backup.line_voltage = u16();
+		data.backup.line_voltage = u16();
 		data.backup.battery_voltage = u16();
 		data.backup.backup_state = u8() !== 0 ? "connected" : "disconnected";
 
@@ -108,7 +108,7 @@ function Decode(port, bytes, variables)
 	return data;
 }
 
-// Chirpstack v4 compatibility wrapper
+// ChirpStack v4 compatibility wrapper
 function decodeUplink(input)
 {
 	return {data : Decode(input.fPort, input.bytes, input.variables)};
@@ -174,7 +174,7 @@ function s32()
 	return value;
 }
 
-if (true) {
+if (false) {
 	var buf = Buffer.from("D9sSXRIvASEH+EoaDQEAAAAAHAARABgACgAOAAQABgAEAAAA", 'base64')
 	console.log(Decode(1, buf, 0));
 }
