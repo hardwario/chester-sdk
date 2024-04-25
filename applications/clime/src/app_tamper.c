@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(app_tamper, LOG_LEVEL_DBG);
 #define ON_TIME	 K_MSEC(30)
 #define OFF_TIME K_MSEC(1000)
 
+#if defined(CONFIG_APP_TAMPER)
+
 static const struct gpio_dt_spec m_tamper_spec =
 	GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), tamper_gpios);
 
@@ -196,3 +198,5 @@ int app_tamper_clear(void)
 
 	return 0;
 }
+
+#endif /* defined(CONFIG_APP_TAMPER) */
