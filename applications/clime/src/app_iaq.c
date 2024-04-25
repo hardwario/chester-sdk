@@ -6,6 +6,7 @@
 
 #include "app_config.h"
 #include "app_data.h"
+#include "app_iaq.h"
 
 /* CHESTER includes */
 #include <chester/drivers/ctr_s1.h>
@@ -25,6 +26,8 @@
 #include <stdint.h>
 
 LOG_MODULE_REGISTER(app_iaq, LOG_LEVEL_DBG);
+
+#if defined(CONFIG_SHIELD_CTR_S1)
 
 static const struct device *dev_s1 = DEVICE_DT_GET(DT_NODELABEL(ctr_s1));
 
@@ -182,3 +185,5 @@ int app_iaq_led_task(void)
 
 	return 0;
 }
+
+#endif /* defined(CONFIG_SHIELD_CTR_S1) */
