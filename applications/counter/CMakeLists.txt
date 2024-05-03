@@ -18,7 +18,7 @@ add_custom_command(
     MAIN_DEPENDENCY ../codec/cbor-decoder.yaml
 )
 
-target_sources_ifdef(CONFIG_APP_TAMPER app PRIVATE src/app_tamper.c)
+target_sources(app PRIVATE src/app_tamper.c)
 target_sources(app PRIVATE src/app_backup.c)
 target_sources(app PRIVATE src/app_cbor.c)
 target_sources(app PRIVATE src/app_config.c)
