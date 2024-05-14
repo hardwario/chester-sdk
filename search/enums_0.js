@@ -36,13 +36,14 @@ var searchData=
   ['ctr_5fx10_5fevent_33',['ctr_x10_event',['../group__ctr__x10.html#ga88b069e1c410fad12509bdb8ee10cf5d',1,'ctr_x10.h']]],
   ['ctr_5fx3_5fchannel_34',['ctr_x3_channel',['../group__ctr__x3.html#ga93d2a472ef27caed121dc4bbd0c2f6f4',1,'ctr_x3.h']]],
   ['ctr_5fx4_5fevent_35',['ctr_x4_event',['../group__ctr__x4.html#ga14e75174a2315a39b444f49d548cb40c',1,'ctr_x4.h']]],
-  ['ctr_5fx4_5foutput_36',['ctr_x4_output',['../group__ctr__x4.html#ga86e282f4ec4b1f78f9a04f4368ef0082',1,'ctr_x4.h']]],
-  ['ctr_5fx9_5foutput_37',['ctr_x9_output',['../group__ctr__x9.html#ga8c0eb69bc594e660083bf99df92a0101',1,'ctr_x9.h']]],
-  ['ctr_5fz_5fbuzzer_5fcommand_38',['ctr_z_buzzer_command',['../group__ctr__z.html#ga09eb42583a51ab732356c74a1c808e20',1,'ctr_z.h']]],
-  ['ctr_5fz_5fbuzzer_5fpattern_39',['ctr_z_buzzer_pattern',['../group__ctr__z.html#ga3f3a6ff1a1b8409cab762f0ad6d691ca',1,'ctr_z.h']]],
-  ['ctr_5fz_5fevent_40',['ctr_z_event',['../group__ctr__z.html#ga463c3f8a1698d9dd64761bb86299b998',1,'ctr_z.h']]],
-  ['ctr_5fz_5fled_5fbrightness_41',['ctr_z_led_brightness',['../group__ctr__z.html#gab13c054998b0b4b372468330fbab4f30',1,'ctr_z.h']]],
-  ['ctr_5fz_5fled_5fchannel_42',['ctr_z_led_channel',['../group__ctr__z.html#ga8d80575129b3895482e48030dbda5c73',1,'ctr_z.h']]],
-  ['ctr_5fz_5fled_5fcommand_43',['ctr_z_led_command',['../group__ctr__z.html#ga1be5ac01700fc5f77e2d4acdd8b4183b',1,'ctr_z.h']]],
-  ['ctr_5fz_5fled_5fpattern_44',['ctr_z_led_pattern',['../group__ctr__z.html#ga0b308ceb928c537823f0827be6ac1474',1,'ctr_z.h']]]
+  ['ctr_5fx4_5fline_5fstate_36',['ctr_x4_line_state',['../group__ctr__x4.html#gafc85679fd557f6bac16e146f666156a4',1,'ctr_x4.h']]],
+  ['ctr_5fx4_5foutput_37',['ctr_x4_output',['../group__ctr__x4.html#ga86e282f4ec4b1f78f9a04f4368ef0082',1,'ctr_x4.h']]],
+  ['ctr_5fx9_5foutput_38',['ctr_x9_output',['../group__ctr__x9.html#ga8c0eb69bc594e660083bf99df92a0101',1,'ctr_x9.h']]],
+  ['ctr_5fz_5fbuzzer_5fcommand_39',['ctr_z_buzzer_command',['../group__ctr__z.html#ga09eb42583a51ab732356c74a1c808e20',1,'ctr_z.h']]],
+  ['ctr_5fz_5fbuzzer_5fpattern_40',['ctr_z_buzzer_pattern',['../group__ctr__z.html#ga3f3a6ff1a1b8409cab762f0ad6d691ca',1,'ctr_z.h']]],
+  ['ctr_5fz_5fevent_41',['ctr_z_event',['../group__ctr__z.html#ga463c3f8a1698d9dd64761bb86299b998',1,'ctr_z.h']]],
+  ['ctr_5fz_5fled_5fbrightness_42',['ctr_z_led_brightness',['../group__ctr__z.html#gab13c054998b0b4b372468330fbab4f30',1,'ctr_z.h']]],
+  ['ctr_5fz_5fled_5fchannel_43',['ctr_z_led_channel',['../group__ctr__z.html#ga8d80575129b3895482e48030dbda5c73',1,'ctr_z.h']]],
+  ['ctr_5fz_5fled_5fcommand_44',['ctr_z_led_command',['../group__ctr__z.html#ga1be5ac01700fc5f77e2d4acdd8b4183b',1,'ctr_z.h']]],
+  ['ctr_5fz_5fled_5fpattern_45',['ctr_z_led_pattern',['../group__ctr__z.html#ga0b308ceb928c537823f0827be6ac1474',1,'ctr_z.h']]]
 ];

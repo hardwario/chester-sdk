@@ -1,5 +1,9 @@
 var NAVTREEINDEX4 =
 {
+"structctr__z__status.html#a65582e2bdbec880e05911a2422b2a01f":[0,40,2,1],
+"structctr__z__status.html#a8998e82eaf4cffb1d9f58759484a2e7b":[0,40,2,3],
+"structctr__z__status.html#a8a16bb1115e3636ea18d5015247935c1":[0,40,2,2],
+"structctr__z__status.html#ae901a03f751e5761cda602c14f9c846f":[0,40,2,5],
 "structpeople__counter__measurement.html":[0,43,0],
 "structpeople__counter__measurement.html#a00e83157fb1407b307f32ea26f2d500b":[0,43,0,3],
 "structpeople__counter__measurement.html#a0dde8a143310ed846e099ea143dedc12":[0,43,0,8],

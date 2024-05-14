@@ -214,7 +214,7 @@ var searchData=
   ['ctr_5fx10_5fset_5fhandler_211',['ctr_x10_set_handler',['../group__ctr__x10.html#ga831320e6daa5647b2ac5f98306154d5d',1,'ctr_x10.h']]],
   ['ctr_5fx3_5fmeasure_212',['ctr_x3_measure',['../group__ctr__x3.html#ga34ec4735e3644d74ff19385bb49fdce6',1,'ctr_x3.h']]],
   ['ctr_5fx3_5fset_5fpower_213',['ctr_x3_set_power',['../group__ctr__x3.html#ga7ce67eea25f5fc26d74605d36b0a2c54',1,'ctr_x3.h']]],
-  ['ctr_5fx4_5fget_5fline_5fpresent_214',['ctr_x4_get_line_present',['../group__ctr__x4.html#gad6baf71300ca3302c86636b70d95b387',1,'ctr_x4.h']]],
+  ['ctr_5fx4_5fget_5fline_5fstate_214',['ctr_x4_get_line_state',['../group__ctr__x4.html#ga44a4ca782c64c2e87767cda9b23220f1',1,'ctr_x4.h']]],
   ['ctr_5fx4_5fget_5fline_5fvoltage_215',['ctr_x4_get_line_voltage',['../group__ctr__x4.html#gaa16be7a6cf8e4ded124168f489e72fde',1,'ctr_x4.h']]],
   ['ctr_5fx4_5fset_5fhandler_216',['ctr_x4_set_handler',['../group__ctr__x4.html#gaff5b0970bbf325d018867891142796a9',1,'ctr_x4.h']]],
   ['ctr_5fx4_5fset_5foutput_217',['ctr_x4_set_output',['../group__ctr__x4.html#gab924ea8b4a4018cb2fd338aee3b3d331',1,'ctr_x4.h']]],

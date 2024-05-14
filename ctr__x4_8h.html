@@ -130,6 +130,11 @@ Enumerations</h2></td></tr>
 , <a class="el" href="group__ctr__x4.html#gga86e282f4ec4b1f78f9a04f4368ef0082a3d600a4039295a2c7d7127c903ea8eb4">CTR_X4_OUTPUT_4</a> = 3
  }</td></tr>
 <tr class="separator:ga86e282f4ec4b1f78f9a04f4368ef0082"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gafc85679fd557f6bac16e146f666156a4"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#gafc85679fd557f6bac16e146f666156a4">ctr_x4_line_state</a> { <a class="el" href="group__ctr__x4.html#ggafc85679fd557f6bac16e146f666156a4a3e96f7706f3ebcc189cc4bd9abbfd449">CTR_X4_LINE_STATE_UNKNOWN</a> = 0
+, <a class="el" href="group__ctr__x4.html#ggafc85679fd557f6bac16e146f666156a4a0a42c2449020ef0a11cfedc41174f709">CTR_X4_LINE_STATE_DISCONNECTED</a> = 1
+, <a class="el" href="group__ctr__x4.html#ggafc85679fd557f6bac16e146f666156a4a944d4e82a490bf49df8e3362a0af0b15">CTR_X4_LINE_STATE_CONNECTED</a> = 2
+ }</td></tr>
+<tr class="separator:gafc85679fd557f6bac16e146f666156a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -139,8 +144,8 @@ Functions</h2></td></tr>
 <tr class="separator:gab924ea8b4a4018cb2fd338aee3b3d331"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa16be7a6cf8e4ded124168f489e72fde"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#gaa16be7a6cf8e4ded124168f489e72fde">ctr_x4_get_line_voltage</a> (const struct device *dev, int *line_voltage_mv)</td></tr>
 <tr class="separator:gaa16be7a6cf8e4ded124168f489e72fde"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad6baf71300ca3302c86636b70d95b387"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#gad6baf71300ca3302c86636b70d95b387">ctr_x4_get_line_present</a> (const struct device *dev, bool *is_line_present)</td></tr>
-<tr class="separator:gad6baf71300ca3302c86636b70d95b387"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga44a4ca782c64c2e87767cda9b23220f1"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#ga44a4ca782c64c2e87767cda9b23220f1">ctr_x4_get_line_state</a> (const struct device *dev, enum <a class="el" href="group__ctr__x4.html#gafc85679fd557f6bac16e146f666156a4">ctr_x4_line_state</a> *line_state)</td></tr>
+<tr class="separator:ga44a4ca782c64c2e87767cda9b23220f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->
