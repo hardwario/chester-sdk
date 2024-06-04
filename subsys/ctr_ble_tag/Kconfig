@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_BLE_TAG
+    bool "CTR_BLE_TAG"
+    select BT
+    select CRC
+    select CTR_CONFIG
+    select CTR_INFO
+    select CTR_SHELL
+    select CTR_UTIL
+
+if CTR_BLE_TAG
+
+module = CTR_BLE_TAG
+module-str = CHESTER BLE Tag Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_BLE_TAG

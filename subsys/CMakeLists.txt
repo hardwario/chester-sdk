@@ -7,6 +7,7 @@
 add_subdirectory_ifdef(CONFIG_CTR_ACCEL ctr_accel)
 add_subdirectory_ifdef(CONFIG_CTR_ADC ctr_adc)
 add_subdirectory_ifdef(CONFIG_CTR_BLE ctr_ble)
+add_subdirectory_ifdef(CONFIG_CTR_BLE_TAG ctr_ble_tag)
 add_subdirectory_ifdef(CONFIG_CTR_BUTTON ctr_button)
 add_subdirectory_ifdef(CONFIG_CTR_CLOUD ctr_cloud)
 add_subdirectory_ifdef(CONFIG_CTR_CONFIG ctr_config)
