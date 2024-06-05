@@ -5,3 +5,4 @@ doc/html
 doc/latex
 scripts/west_commands/__pycache__/*.pyc
 twister-out*
+.vscode/*
