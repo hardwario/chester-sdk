@@ -43,7 +43,7 @@ static int compose_lrw(struct ctr_buf *buf)
 
 	app_data_lock();
 
-	uint8_t header = 0;
+	uint16_t header = 0;
 
 	/* Flag BATT */
 	if (IS_ENABLED(CONFIG_CTR_BATT)) {
@@ -80,7 +80,16 @@ static int compose_lrw(struct ctr_buf *buf)
 		header |= BIT(6);
 	}
 
+	if (IS_ENABLED(CONFIG_CTR_BLE_TAG)) {
+		header |= BIT(7);
+		header |= BIT(8);
+	}
+
 	ret |= ctr_buf_append_u8(buf, header);
+
+	if (header & BIT(7)) {
+		ret |= ctr_buf_append_u8(buf, 0xffff & (header >> 8));
+	}
 
 	/* Field BATT */
 	if (header & BIT(0)) {
@@ -199,6 +208,45 @@ static int compose_lrw(struct ctr_buf *buf)
 		}
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
+#if defined(CONFIG_CTR_BLE_TAG)
+	/* Field BLE_TAG */
+	if (header & BIT(8)) {
+		float temperature[CTR_BLE_TAG_COUNT];
+		float humidity[CTR_BLE_TAG_COUNT];
+
+		int count = 0;
+
+		for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+			struct app_data_ble_tag_sensor *tag = &g_app_data.ble_tag.sensor[i];
+
+			if (ctr_ble_tag_is_addr_empty(tag->addr)) {
+				continue;
+			}
+
+			temperature[count] = tag->last_sample_temperature;
+			humidity[count] = tag->last_sample_humidity;
+			count++;
+		}
+
+		ret |= ctr_buf_append_u8(buf, count);
+
+		for (size_t i = 0; i < count; i++) {
+			if (isnan(temperature[i])) {
+				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
+			} else {
+				ret |= ctr_buf_append_s16_le(buf, temperature[i] * 100.f);
+			}
+
+			if (isnan(humidity[i])) {
+				ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
+			} else {
+				ret |= ctr_buf_append_u8(buf, humidity[i] * 2.f);
+			}
+		}
+	}
+
+#endif /* defined(CONFIG_CTR_BLE_TAG) */
 
 	app_data_unlock();
 

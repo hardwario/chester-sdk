@@ -16,6 +16,12 @@ function decode(buffer) {
     let header = buffer.readUInt8(0);
     offset += 1;
 
+    if (header & 0x80) {
+        let header_higher = u8() << 8;
+        header = header_higher + header;
+        offset += 1;
+    }
+
     if ((header & 0x01) !== 0) {
         data.voltage_rest = buffer.readUInt16LE(offset);
         offset += 2;
@@ -128,6 +134,36 @@ function decode(buffer) {
         offset += 1;
 
         data.dc_line = (line != 0);
+    }
+
+    if ((header & 0x0100) !== 0) {
+        data.ble_tags = [];
+
+        let count = u8();
+
+        for (var i = 0; i < count; i++) {
+            let tag = {};
+
+            let t = s16();
+            let h = u8();
+
+            if (t === 0x7fff) {
+                t = null;
+            } else {
+                t = t / 100;
+            }
+
+            if (h === 0xff) {
+                h = null;
+            } else {
+                h = h / 2;
+            }
+
+            tag.temperature = t;
+            tag.humidity = h;
+
+            data.ble_tags.push(tag);
+        }
     }
 
     return data;

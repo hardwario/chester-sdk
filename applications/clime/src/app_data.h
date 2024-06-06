@@ -8,6 +8,7 @@
 #define APP_DATA_H_
 
 /* CHESTER includes */
+#include <chester/ctr_ble_tag.h>
 #include <chester/ctr_lte.h>
 
 /* Standard includes */
@@ -240,6 +241,40 @@ struct app_data_soil_sensor {
 
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
 
+#if defined(CONFIG_CTR_BLE_TAG)
+
+struct app_data_ble_tag_measurement {
+	struct app_data_aggreg temperature;
+	struct app_data_aggreg humidity;
+};
+
+struct app_data_ble_tag_sensor {
+	uint8_t addr[BT_ADDR_SIZE];
+
+	int rssi;
+	float voltage;
+
+	float last_sample_temperature;
+	float last_sample_humidity;
+
+	int sample_count;
+	float samples_temperature[APP_DATA_MAX_SAMPLES];
+	float samples_humidity[APP_DATA_MAX_SAMPLES];
+
+	int measurement_count;
+	struct app_data_ble_tag_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+};
+
+struct app_data_ble_tag {
+	struct app_data_ble_tag_sensor sensor[CTR_BLE_TAG_COUNT];
+
+	int64_t timestamp;
+	atomic_t sample;
+	atomic_t aggreg;
+};
+
+#endif /* defined(CONFIG_CTR_BLE_TAG) */
+
 struct app_data {
 	float system_voltage_rest;
 	float system_voltage_load;
@@ -277,6 +312,10 @@ struct app_data {
 #if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
 	struct app_data_soil_sensor soil_sensor;
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
+#if defined(CONFIG_CTR_BLE_TAG)
+	struct app_data_ble_tag ble_tag;
+#endif /* defined(CONFIG_CTR_BLE_TAG) */
 };
 
 extern struct app_data g_app_data;

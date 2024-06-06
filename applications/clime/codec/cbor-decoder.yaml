@@ -133,3 +133,9 @@
     - active
 - soil_sensors:
 - moisture:
+- ble_tags:
+- addr:
+- rssi:
+- voltage:
+  - div: 100
+  - fpp: 2

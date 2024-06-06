@@ -12,6 +12,7 @@
 /* CHESTER includes */
 #include <chester/ctr_info.h>
 #include <chester/ctr_rtc.h>
+#include <chester/ctr_util.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -836,6 +837,96 @@ static int encode(zcbor_state_t *zs)
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
+#if defined(CONFIG_CTR_BLE_TAG)
+
+	zcbor_int32_put(zs, MSG_KEY_BLE_TAGS);
+	{
+		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+			struct app_data_ble_tag_sensor *sensor = &g_app_data.ble_tag.sensor[i];
+
+			if (ctr_ble_tag_is_addr_empty(sensor->addr)) {
+				continue;
+			}
+
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			{
+
+				zcbor_uint32_put(zs, MSG_KEY_ADDR);
+				{
+					char addr_str[BT_ADDR_SIZE * 2 + 1] = {0};
+					ctr_buf2hex(sensor->addr, BT_ADDR_SIZE, addr_str,
+						    BT_ADDR_SIZE * 2 + 1, false);
+					zcbor_tstr_put_lit(zs, addr_str);
+				}
+
+				zcbor_uint32_put(zs, MSG_KEY_RSSI);
+				zcbor_int32_put(zs, sensor->rssi);
+
+				zcbor_uint32_put(zs, MSG_KEY_VOLTAGE);
+				{
+					zcbor_uint32_put(zs, sensor->voltage * 100.f);
+				}
+
+				zcbor_uint32_put(zs, MSG_KEY_TEMPERATURE);
+				{
+					zcbor_map_start_encode(zs,
+							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						zcbor_uint64_put(zs, g_app_data.ble_tag.timestamp);
+						zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+						for (int j = 0; j < sensor->measurement_count;
+						     j++) {
+							put_sample_mul(zs,
+								       &sensor->measurements[j]
+										.temperature,
+								       100.f);
+						}
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+
+				zcbor_int32_put(zs, MSG_KEY_HUMIDITY);
+				{
+					zcbor_map_start_encode(zs,
+							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint32_put(zs, MSG_KEY_MEASUREMENTS_DIV);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						zcbor_uint64_put(zs, g_app_data.ble_tag.timestamp);
+						zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+						for (int j = 0; j < sensor->measurement_count;
+						     j++) {
+							put_sample_mul(
+								zs,
+								&sensor->measurements[j].humidity,
+								100.f);
+						}
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+
+#endif /* defined(CONFIG_CTR_BLE_TAG) */
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 

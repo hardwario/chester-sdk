@@ -80,6 +80,10 @@ static void send_work_handler(struct k_work *work)
 #if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
 	app_sensor_soil_sensor_clear();
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
+#if defined(CONFIG_CTR_BLE_TAG)
+	app_sensor_ble_tag_clear();
+#endif /* defined(CONFIG_CTR_BLE_TAG) */
 }
 
 static K_WORK_DEFINE(m_send_work, send_work_handler);
@@ -437,6 +441,58 @@ void app_work_backup_update(void)
 
 #endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
 
+#if defined(CONFIG_CTR_BLE_TAG)
+
+static void ble_tag_sample_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_ble_tag_sample();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_ble_tag_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_ble_tag_sample_work, ble_tag_sample_work_handler);
+
+static void ble_tag_sample_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_ble_tag_sample_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_ble_tag_sample_timer, ble_tag_sample_timer_handler, NULL);
+
+static void ble_tag_aggreg_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_ble_tag_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_ble_tag_aggreg` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_ble_tag_aggreg_work, ble_tag_aggreg_work_handler);
+
+static void ble_tag_aggreg_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_ble_tag_aggreg_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_ble_tag_aggreg_timer, ble_tag_aggreg_timer_handler, NULL);
+
+#endif /* defined(CONFIG_CTR_BLE_TAG) */
+
 int app_work_init(void)
 {
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
@@ -483,6 +539,13 @@ int app_work_init(void)
 		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
 
+#if defined(CONFIG_CTR_BLE_TAG)
+	k_timer_start(&m_ble_tag_sample_timer, K_SECONDS(g_app_config.interval_sample),
+		      K_SECONDS(g_app_config.interval_sample));
+	k_timer_start(&m_ble_tag_aggreg_timer, K_SECONDS(g_app_config.interval_aggreg),
+		      K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(CONFIG_CTR_BLE_TAG) */
+
 	return 0;
 }
 
@@ -511,6 +574,8 @@ void app_work_sample(void)
 	k_timer_start(&m_soil_sensor_sample_timer, K_NO_WAIT,
 		      K_SECONDS(g_app_config.interval_sample));
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
+	k_timer_start(&m_ble_tag_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
 }
 
 void app_work_aggreg(void)
@@ -537,6 +602,8 @@ void app_work_aggreg(void)
 	k_timer_start(&m_soil_sensor_aggreg_timer, K_NO_WAIT,
 		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+
+	k_timer_start(&m_ble_tag_aggreg_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_aggreg));
 }
 
 void app_work_send(void)

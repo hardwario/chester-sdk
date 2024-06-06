@@ -50,6 +50,14 @@ struct app_data g_app_data = {
 		},
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 
+#if defined(CONFIG_CTR_BLE_TAG)
+	.ble_tag.sensor[0 ... CTR_BLE_TAG_COUNT - 1] =
+		{
+			.last_sample_temperature = NAN,
+			.last_sample_humidity = NAN,
+		},
+#endif /* defined(CONFIG_CTR_BLE_TAG) */
+
 };
 
 static K_MUTEX_DEFINE(m_lock);
