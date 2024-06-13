@@ -197,6 +197,11 @@ int app_sensor_iaq_sample(void)
 		sensors->sample_count++;
 
 		sensors->last_co2_conc = co2_conc;
+		sensors->last_temperature = temperature;
+		sensors->last_humidity = humidity;
+		sensors->last_illuminance = illuminance;
+		sensors->last_altitude = altitude;
+		sensors->last_pressure = pressure;
 		app_data_unlock();
 
 		LOG_INF("Sample count: %d", sensors->sample_count);

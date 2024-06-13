@@ -18,6 +18,9 @@ add_custom_command(
     MAIN_DEPENDENCY ../codec/cbor-decoder.yaml
 )
 
+if(CONFIG_CTR_S1)
+    target_sources(app PRIVATE src/app_iaq.c)
+endif()
 target_sources(app PRIVATE src/app_tamper.c)
 target_sources(app PRIVATE src/app_backup.c)
 target_sources(app PRIVATE src/app_cbor.c)
