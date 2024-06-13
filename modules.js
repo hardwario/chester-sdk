@@ -2,6 +2,7 @@ var modules =
 [
     [ "ctr_accel", "group__ctr__accel.html", "group__ctr__accel" ],
     [ "ctr_adc", "group__ctr__adc.html", "group__ctr__adc" ],
+    [ "ctr_ble_tag", "group__ctr__ble__tag.html", "group__ctr__ble__tag" ],
     [ "ctr_buf", "group__ctr__buf.html", "group__ctr__buf" ],
     [ "ctr_button", "group__ctr__button.html", "group__ctr__button" ],
     [ "ctr_config", "group__ctr__config.html", "group__ctr__config" ],

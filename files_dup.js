@@ -3,6 +3,7 @@ var files_dup =
     [ "drivers", "dir_14bc92f4b96c8519b376567118ac28b3.html", "dir_14bc92f4b96c8519b376567118ac28b3" ],
     [ "ctr_accel.h", "ctr__accel_8h.html", "ctr__accel_8h" ],
     [ "ctr_adc.h", "ctr__adc_8h.html", "ctr__adc_8h" ],
+    [ "ctr_ble_tag.h", "ctr__ble__tag_8h.html", "ctr__ble__tag_8h" ],
     [ "ctr_buf.h", "ctr__buf_8h.html", "ctr__buf_8h" ],
     [ "ctr_button.h", "ctr__button_8h.html", "ctr__button_8h" ],
     [ "ctr_cloud.h", "ctr__cloud_8h.html", "ctr__cloud_8h" ],
