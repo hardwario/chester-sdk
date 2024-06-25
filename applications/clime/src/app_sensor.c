@@ -812,8 +812,12 @@ int app_sensor_ble_tag_sample(void)
 			app_data_lock();
 			struct app_data_ble_tag_sensor *sensor = &g_app_data.ble_tag.sensor[i];
 			memcpy(sensor->addr, addr, BT_ADDR_SIZE);
-			sensor->rssi = rssi;
-			sensor->voltage = voltage;
+			if (rssi != INT_MAX) {
+				sensor->rssi = rssi;
+			}
+			if (voltage != NAN) {
+				sensor->voltage = voltage;
+			}
 			sensor->last_sample_temperature = temperature;
 			sensor->last_sample_humidity = humidity;
 			sensor->samples_temperature[sensor->sample_count] = temperature;

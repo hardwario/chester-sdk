@@ -577,6 +577,67 @@ static int cmd_config_clear_tags(const struct shell *shell, size_t argc, char **
 	return 0;
 }
 
+static int cmd_config_scan(const struct shell *shell, size_t argc, char **argv)
+{
+	shell_print(shell, "scanning...");
+
+	k_sem_take(&m_scan_sem, K_FOREVER);
+
+	struct bt_le_scan_param scan_params = m_scan_params;
+
+	int ret = bt_le_scan_start(&scan_params, scan_cb);
+	if (ret) {
+		LOG_ERR("Call `bt_le_scan_start` failed (err %d)", ret);
+		k_sem_give(&m_scan_sem);
+		return ret;
+	}
+
+	k_sleep(K_SECONDS(CTR_BLE_TAG_ENROLL_TIMEOUT_SEC));
+
+	ret = bt_le_scan_stop();
+	if (ret) {
+		LOG_ERR("Call `bt_le_scan_stop` failed (err %d)", ret);
+		k_sem_give(&m_scan_sem);
+		return ret;
+	}
+
+	k_sem_give(&m_scan_sem);
+
+	shell_print(shell, "scan finished");
+
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		uint8_t addr[BT_ADDR_SIZE];
+		int rssi;
+		float voltage;
+		float temperature;
+		float humidity;
+		bool valid;
+
+		ret = ctr_ble_tag_read(i, addr, &rssi, &voltage, &temperature, &humidity, &valid);
+		if (ret) {
+			continue;
+		}
+
+		if (valid) {
+			char addr_str[BT_ADDR_SIZE * 2 + 1];
+
+			ret = ctr_buf2hex(addr, BT_ADDR_SIZE, addr_str, sizeof(addr_str), true);
+			if (ret < 0) {
+				LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
+				return ret;
+			}
+
+			shell_print(shell,
+				    "tag index %d: addr: %s / rssi: %d dBm / voltage: %.2f V / "
+				    "temperature: %.2f C / "
+				    "humidity: %.2f %%",
+				    i, addr_str, rssi, voltage, temperature, humidity);
+		}
+	}
+
+	return 0;
+}
+
 static int cmd_config_enroll(const struct shell *shell, size_t argc, char **argv)
 {
 	k_sem_take(&m_scan_sem, K_FOREVER);
@@ -645,10 +706,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_tag_config_devices,
 
 	SHELL_CMD_ARG(add, NULL, "Add a device.", cmd_config_add_tag, 2, 0),
-	SHELL_CMD_ARG(enroll, NULL, "Enroll a device.", cmd_config_enroll, 1, 0),
+	SHELL_CMD_ARG(enroll, NULL, "Enroll a device nearby (10 seconds).", cmd_config_enroll, 1, 0),
 	SHELL_CMD_ARG(list, NULL, "List all devices.", cmd_config_list_tags, 1, 0),
 	SHELL_CMD_ARG(remove, NULL, "Remove a device.", cmd_config_remove_tag, 2, 0),
 	SHELL_CMD_ARG(clear, NULL, "Clear all devices.", cmd_config_clear_tags, 1, 0),
+	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (10 seconds).", cmd_config_scan, 1, 0),
 
 	SHELL_SUBCMD_SET_END
 );
@@ -683,7 +745,7 @@ static void start_scan_work_handler(struct k_work *work)
 {
 	k_sem_take(&m_scan_sem, K_FOREVER);
 
-	int ret = bt_le_scan_start(BT_LE_SCAN_ACTIVE, scan_cb);
+	int ret = bt_le_scan_start(&m_scan_params, scan_cb);
 	if (ret) {
 		LOG_ERR("Call `bt_le_scan_start` failed: %d", ret);
 		k_sem_give(&m_scan_sem);
@@ -742,7 +804,7 @@ static int init(void)
 		return ret;
 	}
 
-	m_scan_params.type = BT_HCI_LE_SCAN_ACTIVE;
+	m_scan_params.type = BT_LE_SCAN_TYPE_ACTIVE;
 	m_scan_params.options = BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST;
 	m_scan_params.interval = CTR_BLE_TAG_SCAN_MAX_TIME;
 	m_scan_params.window = CTR_BLE_TAG_SCAN_MAX_TIME;
@@ -754,14 +816,14 @@ static int init(void)
 	}
 
 	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
-		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[i])) {
+		if (!ctr_ble_tag_is_addr_empty(m_config_interim.addr[i])) {
 			bt_addr_le_t addr = {
 				.type = BT_ADDR_LE_PUBLIC,
 			};
 
 			memcpy(addr.a.val, m_config_interim.addr[i], BT_ADDR_SIZE);
 
-			ret = bt_le_filter_accept_list_add(&addr);
+			ret = bt_le_filter_accept_list_add((const bt_addr_le_t *)&addr);
 			if (ret) {
 				LOG_ERR("Call `bt_le_filter_accept_list_add` failed: %d", ret);
 				return ret;
