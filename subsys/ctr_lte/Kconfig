@@ -29,6 +29,10 @@ config CTR_LTE_THREAD_PRIORITY
 	int "CTR_LTE_THREAD_PRIORITY"
 	default 10
 
+config CTR_LTE_CONNECTIVITY_CHECK
+	bool "CTR_LTE_CONNECTIVITY_CHECK"
+	default n
+
 module = CTR_LTE
 module-str = CHESTER LTE Subsystem
 source "subsys/logging/Kconfig.template.log_config"

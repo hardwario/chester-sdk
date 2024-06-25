@@ -38,8 +38,8 @@ LOG_MODULE_REGISTER(ctr_lte, CONFIG_CTR_LTE_LOG_LEVEL);
 
 #define SETTINGS_PFX "lte"
 
-#define XSLEEP_PAUSE	  K_MSEC(100)
-#define BOOT_TIMEOUT	  K_SECONDS(5)
+#define XSLEEP_PAUSE      K_MSEC(100)
+#define BOOT_TIMEOUT      K_SECONDS(5)
 #define BOOT_RETRY_COUNT  3
 #define BOOT_RETRY_DELAY  K_SECONDS(10)
 #define SETUP_RETRY_COUNT 1
@@ -992,6 +992,93 @@ static int eval(int retries, k_timeout_t delay, struct ctr_lte_eval *eval)
 	return err;
 }
 
+#if defined(CONFIG_CTR_LTE_CONNECTIVITY_CHECK)
+
+static int check_functional_mode(void)
+{
+	int ret;
+	char buf[16];
+
+	ret = ctr_lte_talk_at_cfun_read(buf, sizeof(buf));
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cfun_read` failed: %d", ret);
+		return ret;
+	}
+
+	if (strcmp(buf, "+CFUN: 1") != 0) {
+		return -ENOTCONN;
+	}
+
+	return 0;
+}
+
+static int check_network_registration_status(void)
+{
+	int ret;
+	char buf[128];
+	ret = ctr_lte_talk_at_cereg_read(buf, sizeof(buf));
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cereg_read` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("cereg buf: %s", buf);
+
+	if (strncmp(buf, "+CEREG: ", 8) != 0) {
+		LOG_ERR("Unexpected response");
+		return -ENOTCONN;
+	}
+
+	if (buf[8] == '0') {
+		LOG_ERR("CEREG unsubscribe unsolicited result codes");
+		return -ENOTCONN;
+	}
+
+	if (buf[10] != '1' && buf[10] != '5') {
+		return -ENOTCONN;
+	}
+
+	return 0;
+}
+
+static int check_pdn_is_active(void)
+{
+	int ret;
+	char buf[32];
+
+	ret = ctr_lte_talk_at_cgatt_read(buf, sizeof(buf));
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cgatt_read` failed: %d", ret);
+		return ret;
+	}
+
+	if (strcmp(buf, "+CGATT: 1") != 0) {
+		return -ENOTCONN;
+	}
+
+	return 0;
+}
+
+static int check_pdn_connections(void)
+{
+	int ret;
+	char buf[32];
+
+	ret = ctr_lte_talk_at_cgact_read(buf, sizeof(buf));
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_lte_talk_at_cgact_read` failed: %d", ret);
+		return ret;
+	}
+
+	if (strcmp(buf, "+CGACT: 0,1") != 0) {
+		return -ENOTCONN;
+	}
+
+	return 0;
+}
+
+#endif
+
 static int send_once(const struct send_msgq_data *data)
 {
 	int ret;
@@ -1002,6 +1089,34 @@ static int send_once(const struct send_msgq_data *data)
 		LOG_ERR("Call `wake_up` failed: %d", ret);
 		return ret;
 	}
+
+#if defined(CONFIG_CTR_LTE_CONNECTIVITY_CHECK)
+
+	ret = check_functional_mode();
+	if (ret) {
+		LOG_ERR("Call `check_functional_mode` failed: %d", ret);
+		return ret;
+	}
+
+	ret = check_network_registration_status();
+	if (ret) {
+		LOG_ERR("Call `check_network_registration_status` failed: %d", ret);
+		return ret;
+	}
+
+	ret = check_pdn_is_active();
+	if (ret) {
+		LOG_ERR("Call `check_pdn_is_active` failed: %d", ret);
+		return ret;
+	}
+
+	ret = check_pdn_connections();
+	if (ret) {
+		LOG_ERR("Call `check_pdn_connections` failed: %d", ret);
+		return ret;
+	}
+
+#endif
 
 	ret = ctr_lte_talk_at_xsocketopt(1, 50, NULL);
 

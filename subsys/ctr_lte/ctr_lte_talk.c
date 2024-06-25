@@ -24,7 +24,7 @@
 
 LOG_MODULE_REGISTER(ctr_lte_talk, CONFIG_CTR_LTE_LOG_LEVEL);
 
-#define SEND_GUARD_TIME	   K_MSEC(50)
+#define SEND_GUARD_TIME    K_MSEC(50)
 #define RESPONSE_TIMEOUT_S K_SECONDS(3)
 #define RESPONSE_TIMEOUT_L K_SECONDS(30)
 
@@ -265,7 +265,7 @@ static void release_response(struct response *response)
 
 	struct response_item *item;
 
-	SYS_SLIST_FOR_EACH_CONTAINER (&response->list, item, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&response->list, item, node) {
 		if (item->s != NULL) {
 			k_free(item->s);
 		}
@@ -384,7 +384,7 @@ static int talk_cmd_response_ok(k_timeout_t timeout, response_cb cb, void *p1, v
 		int idx = 0;
 		struct response_item *item;
 
-		SYS_SLIST_FOR_EACH_CONTAINER (&response.list, item, node) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&response.list, item, node) {
 			ret = cb(idx++, response.count, item->s, p1, p2, p3);
 			if (ret < 0) {
 				LOG_ERR("Call `cb` failed: %d", ret);
@@ -1317,3 +1317,142 @@ int ctr_lte_talk_at_xtime(int p1)
 
 	return 0;
 }
+
+#if defined(CONFIG_CTR_LTE_CONNECTIVITY_CHECK)
+
+static int at_cfun_read_response_handler(int idx, int count, const char *s, void *p1, void *p2,
+					 void *p3)
+{
+	char *p = p1;
+	size_t *size = p2;
+
+	if (idx == 0 && count == 1) {
+		if (strlen(s) >= *size) {
+			return -ENOBUFS;
+		}
+
+		strcpy(p, s);
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_cfun_read(char *buf, size_t size)
+{
+	int ret;
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_cfun_read_response_handler, buf, &size,
+				   NULL, "AT+CFUN?");
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int at_cereg_read_response_handler(int idx, int count, const char *s, void *p1, void *p2,
+					  void *p3)
+{
+	char *p = p1;
+	size_t *size = p2;
+
+	if (idx == 0 && count == 1) {
+		if (strlen(s) >= *size) {
+			return -ENOBUFS;
+		}
+
+		strcpy(p, s);
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_cereg_read(char *buf, size_t size)
+{
+	int ret;
+
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_cereg_read_response_handler, buf, &size,
+				   NULL, "AT+CEREG?");
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int at_cgatt_read_response_handler(int idx, int count, const char *s, void *p1, void *p2,
+					  void *p3)
+{
+	char *p = p1;
+	size_t *size = p2;
+
+	if (idx == 0 && count == 1) {
+		if (strlen(s) >= *size) {
+			return -ENOBUFS;
+		}
+
+		strcpy(p, s);
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_cgatt_read(char *buf, size_t size)
+{
+	int ret;
+
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_cgatt_read_response_handler, buf, &size,
+				   NULL, "AT+CGATT?");
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int at_cgact_read_response_handler(int idx, int count, const char *s, void *p1, void *p2,
+					  void *p3)
+{
+	char *p = p1;
+	size_t *size = p2;
+
+	if (idx == 0 && count == 1) {
+		if (strlen(s) >= *size) {
+			return -ENOBUFS;
+		}
+
+		strcpy(p, s);
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+int ctr_lte_talk_at_cgact_read(char *buf, size_t size)
+{
+	int ret;
+
+	ret = talk_cmd_response_ok(RESPONSE_TIMEOUT_S, at_cgact_read_response_handler, buf, &size,
+				   NULL, "AT+CGACT?");
+
+	if (ret < 0) {
+		LOG_ERR("Call `talk_cmd_response_ok` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_CTR_LTE_CONNECTIVITY_CHECK */

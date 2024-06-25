@@ -65,6 +65,12 @@ int ctr_lte_talk_at_xsleep(int p1);
 int ctr_lte_talk_at_xsocket(int p1, int *p2, int *p3, char *buf, size_t size);
 int ctr_lte_talk_at_xsystemmode(int p1, int p2, int p3, int p4);
 int ctr_lte_talk_at_xtime(int p1);
+#if defined(CONFIG_CTR_LTE_CONNECTIVITY_CHECK)
+int ctr_lte_talk_at_cfun_read(char *buf, size_t size);
+int ctr_lte_talk_at_cereg_read(char *buf, size_t size);
+int ctr_lte_talk_at_cgatt_read(char *buf, size_t size);
+int ctr_lte_talk_at_cgact_read(char *buf, size_t size);
+#endif
 
 #ifdef __cplusplus
 }
