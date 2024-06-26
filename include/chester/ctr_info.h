@@ -19,6 +19,11 @@ extern "C" {
  * @{
  */
 
+enum ctr_info_product_family {
+	CTR_INFO_PRODUCT_FAMILY_CHESTER_M = 0x00b,
+	CTR_INFO_PRODUCT_FAMILY_CHESTER_U1 = 0x00d,
+};
+
 int ctr_info_get_vendor_name(char **vendor_name);
 int ctr_info_get_product_name(char **product_name);
 int ctr_info_get_hw_variant(char **hw_variant);
@@ -32,6 +37,7 @@ int ctr_info_get_claim_token(char **claim_token);
 int ctr_info_get_ble_devaddr(char **ble_devaddr);
 int ctr_info_get_ble_devaddr_uint64(uint64_t *ble_devaddr);
 int ctr_info_get_ble_passkey(char **ble_passkey);
+int ctr_info_get_product_family(enum ctr_info_product_family *product_family);
 
 /** @} */
 

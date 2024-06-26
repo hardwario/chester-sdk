@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(ctr_info, CONFIG_CTR_INFO_LOG_LEVEL);
 
 #define SIGNATURE_OFFSET 0x00
 #define SIGNATURE_LENGTH 4
-#define SIGNATURE_VALUE	 0xbabecafe
+#define SIGNATURE_VALUE  0xbabecafe
 
 #define VERSION_OFFSET 0x04
 #define VERSION_LENGTH 1
@@ -78,6 +78,7 @@ static char m_product_name[PRODUCT_NAME_LENGTH];
 static char m_hw_variant[HW_VARIANT_LENGTH];
 static char m_hw_revision[HW_REVISION_LENGTH];
 static char m_serial_number[SERIAL_NUMBER_LENGTH];
+static uint32_t m_serial_number_uint32;
 static char m_claim_token[CLAIM_TOKEN_LENGTH];
 static char m_ble_passkey[BLE_PASSKEY_LENGTH];
 static uint32_t m_crc;
@@ -137,6 +138,7 @@ static int load_uicr_customer(void)
 
 	/* Load serial number */
 	memcpy(m_serial_number, uicr_customer + SERIAL_NUMBER_OFFSET, sizeof(m_serial_number));
+	m_serial_number_uint32 = strtoul(m_serial_number, NULL, 10);
 
 	/* Load claim token */
 	memcpy(m_claim_token, uicr_customer + CLAIM_TOKEN_OFFSET, sizeof(m_claim_token));
@@ -270,7 +272,7 @@ int ctr_info_get_serial_number_uint32(uint32_t *serial_number)
 		return -EIO;
 	}
 
-	*serial_number = strtoul(m_serial_number, NULL, 10);
+	*serial_number = m_serial_number_uint32;
 
 	return 0;
 }
@@ -333,6 +335,22 @@ int ctr_info_get_ble_passkey(char **ble_passkey)
 	}
 
 	*ble_passkey = m_ble_passkey;
+
+	return 0;
+}
+
+int ctr_info_get_product_family(enum ctr_info_product_family *product_family)
+{
+	if (!m_uicr_customer_valid) {
+		return -EIO;
+	}
+
+	if ((m_serial_number_uint32 & 0x80000000) == 0) {
+		return -EFAULT;
+	}
+
+	*product_family =
+		(enum ctr_info_product_family)((m_serial_number_uint32 & 0x3FF00000) >> 20);
 
 	return 0;
 }
