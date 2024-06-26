@@ -1,5 +1,9 @@
 var ctr__info_8h =
 [
+    [ "ctr_info_product_family", "group__ctr__info.html#ga58bfe4e6a0c79f1db9c59dbed1775b84", [
+      [ "CTR_INFO_PRODUCT_FAMILY_CHESTER_M", "group__ctr__info.html#gga58bfe4e6a0c79f1db9c59dbed1775b84aaef9766d955b72ce56b2886aff61f578", null ],
+      [ "CTR_INFO_PRODUCT_FAMILY_CHESTER_U1", "group__ctr__info.html#gga58bfe4e6a0c79f1db9c59dbed1775b84a08f68b0500bab8f2a63c1ba7bbd957ba", null ]
+    ] ],
     [ "ctr_info_get_ble_devaddr", "group__ctr__info.html#gab17b8102ee67afea2cf046f494939243", null ],
     [ "ctr_info_get_ble_devaddr_uint64", "group__ctr__info.html#ga5c19b3c12fc75f611e9e140e1ab247c4", null ],
     [ "ctr_info_get_ble_passkey", "group__ctr__info.html#gaa13eb49aac8b6734e77b21bda630a466", null ],
@@ -9,6 +13,7 @@ var ctr__info_8h =
     [ "ctr_info_get_fw_version", "group__ctr__info.html#ga3a17ca632a2a1c93775c7096486125b5", null ],
     [ "ctr_info_get_hw_revision", "group__ctr__info.html#gaec7f2145b12837d0ef0de56f3b18252a", null ],
     [ "ctr_info_get_hw_variant", "group__ctr__info.html#gaf481f62cc6c82e6761d18d81851aa212", null ],
+    [ "ctr_info_get_product_family", "group__ctr__info.html#ga1275d119f4d414bd955606cdebbc68ee", null ],
     [ "ctr_info_get_product_name", "group__ctr__info.html#gacfeba060148a1785beeb9aa5e6eb6837", null ],
     [ "ctr_info_get_serial_number", "group__ctr__info.html#ga29a803bab4b2e14edd8350bd0fe2e808", null ],
     [ "ctr_info_get_serial_number_uint32", "group__ctr__info.html#gaf1dfc3f5b4735c4b1a1ceb3fcc4708e3", null ],

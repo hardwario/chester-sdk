@@ -95,11 +95,19 @@ $(document).ready(function(){initNavTree('group__ctr__info.html',''); initResiza
 
 <div class="header">
   <div class="summary">
+<a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ctr_info</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:ga58bfe4e6a0c79f1db9c59dbed1775b84"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__info.html#ga58bfe4e6a0c79f1db9c59dbed1775b84">ctr_info_product_family</a> { <a class="el" href="group__ctr__info.html#gga58bfe4e6a0c79f1db9c59dbed1775b84aaef9766d955b72ce56b2886aff61f578">CTR_INFO_PRODUCT_FAMILY_CHESTER_M</a> = 0x00b
+, <a class="el" href="group__ctr__info.html#gga58bfe4e6a0c79f1db9c59dbed1775b84a08f68b0500bab8f2a63c1ba7bbd957ba">CTR_INFO_PRODUCT_FAMILY_CHESTER_U1</a> = 0x00d
+ }</td></tr>
+<tr class="separator:ga58bfe4e6a0c79f1db9c59dbed1775b84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ga82fe1bd3f4990be5ddf1a1a07d57ad26"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__info.html#ga82fe1bd3f4990be5ddf1a1a07d57ad26">ctr_info_get_vendor_name</a> (char **vendor_name)</td></tr>
@@ -128,8 +136,29 @@ Functions</h2></td></tr>
 <tr class="separator:ga5c19b3c12fc75f611e9e140e1ab247c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa13eb49aac8b6734e77b21bda630a466"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__info.html#gaa13eb49aac8b6734e77b21bda630a466">ctr_info_get_ble_passkey</a> (char **ble_passkey)</td></tr>
 <tr class="separator:gaa13eb49aac8b6734e77b21bda630a466"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1275d119f4d414bd955606cdebbc68ee"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__info.html#ga1275d119f4d414bd955606cdebbc68ee">ctr_info_get_product_family</a> (enum <a class="el" href="group__ctr__info.html#ga58bfe4e6a0c79f1db9c59dbed1775b84">ctr_info_product_family</a> *product_family)</td></tr>
+<tr class="separator:ga1275d119f4d414bd955606cdebbc68ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="ga58bfe4e6a0c79f1db9c59dbed1775b84" name="ga58bfe4e6a0c79f1db9c59dbed1775b84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga58bfe4e6a0c79f1db9c59dbed1775b84">&#9670;&#160;</a></span>ctr_info_product_family</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="group__ctr__info.html#ga58bfe4e6a0c79f1db9c59dbed1775b84">ctr_info_product_family</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="gga58bfe4e6a0c79f1db9c59dbed1775b84aaef9766d955b72ce56b2886aff61f578" name="gga58bfe4e6a0c79f1db9c59dbed1775b84aaef9766d955b72ce56b2886aff61f578"></a>CTR_INFO_PRODUCT_FAMILY_CHESTER_M&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="gga58bfe4e6a0c79f1db9c59dbed1775b84a08f68b0500bab8f2a63c1ba7bbd957ba" name="gga58bfe4e6a0c79f1db9c59dbed1775b84a08f68b0500bab8f2a63c1ba7bbd957ba"></a>CTR_INFO_PRODUCT_FAMILY_CHESTER_U1&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="gab17b8102ee67afea2cf046f494939243" name="gab17b8102ee67afea2cf046f494939243"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gab17b8102ee67afea2cf046f494939243">&#9670;&#160;</a></span>ctr_info_get_ble_devaddr()</h2>
@@ -286,6 +315,24 @@ Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype">char **&#160;</td>
           <td class="paramname"><em>hw_variant</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga1275d119f4d414bd955606cdebbc68ee" name="ga1275d119f4d414bd955606cdebbc68ee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga1275d119f4d414bd955606cdebbc68ee">&#9670;&#160;</a></span>ctr_info_get_product_family()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_info_get_product_family </td>
+          <td>(</td>
+          <td class="paramtype">enum <a class="el" href="group__ctr__info.html#ga58bfe4e6a0c79f1db9c59dbed1775b84">ctr_info_product_family</a> *&#160;</td>
+          <td class="paramname"><em>product_family</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
