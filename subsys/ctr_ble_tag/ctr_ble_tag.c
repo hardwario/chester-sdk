@@ -579,6 +579,11 @@ static int cmd_config_clear_tags(const struct shell *shell, size_t argc, char **
 
 static int cmd_config_scan(const struct shell *shell, size_t argc, char **argv)
 {
+	if (!m_config.enabled) {
+		shell_error(shell, "tag subsystem is disabled");
+		return -EINVAL;
+	}
+
 	shell_print(shell, "scanning...");
 
 	k_sem_take(&m_scan_sem, K_FOREVER);
@@ -640,6 +645,11 @@ static int cmd_config_scan(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_config_enroll(const struct shell *shell, size_t argc, char **argv)
 {
+	if (!m_config.enabled) {
+		shell_error(shell, "tag subsystem is disabled");
+		return -EINVAL;
+	}
+
 	k_sem_take(&m_scan_sem, K_FOREVER);
 
 	shell_print(shell, "enrolling...");
