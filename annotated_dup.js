@@ -5,6 +5,7 @@ var annotated_dup =
     [ "ctr_cloud_event_data_recv", "structctr__cloud__event__data__recv.html", "structctr__cloud__event__data__recv" ],
     [ "ctr_cloud_options", "structctr__cloud__options.html", "structctr__cloud__options" ],
     [ "ctr_cloud_session", "structctr__cloud__session.html", "structctr__cloud__session" ],
+    [ "ctr_config_item", "structctr__config__item.html", "structctr__config__item" ],
     [ "ctr_edge", "structctr__edge.html", "structctr__edge" ],
     [ "ctr_gnss_data_start_err", "structctr__gnss__data__start__err.html", "structctr__gnss__data__start__err" ],
     [ "ctr_gnss_data_start_ok", "structctr__gnss__data__start__ok.html", "structctr__gnss__data__start__ok" ],
