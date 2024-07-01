@@ -1,0 +1,278 @@
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+/*
+	{%- if data['project']['company'] %}
+ * Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+ * 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+ * {{data['project']['license'] }}
+	{%- endif %}
+ */
+{% raw %}
+{% endraw %}
+{%- endif -%}
+
+#include "app_cbor.h"
+#include "app_codec.h"
+#include "app_config.h"
+#include "app_data.h"
+
+/* CHESTER includes */
+#include <chester/ctr_info.h>
+#include <chester/ctr_lte_v2.h>
+#include <chester/ctr_rtc.h>
+
+/* Zephyr includes */
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
+#include <zcbor_common.h>
+#include <zcbor_decode.h>
+#include <zcbor_encode.h>
+
+/* Standard includes */
+#include <errno.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+{%- macro encode_items(zs, items, prefix='', indent='') %}
+    {%- for item in items -%}
+        {% for key, sub_items in item.items() %}
+	{{ indent }}/* ### Preserved code "{{key}}" (begin) */
+
+    {{ indent }}zcbor_uint32_put(zs, CODEC_KEY_E_{{ prefix + key | upper }});
+    {{ indent }}{
+    	{{ indent }}zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+                {%- for sub_sub_items in sub_items %}
+                    {%- for sub_key, value in sub_sub_items.items() %}
+                {%- if value != none and value[0]['measurements_div'] -%}
+                            {{ encode_items(zs, [sub_sub_items], prefix=(prefix + key) | upper + '__', indent=indent+'\t') }}
+                {%- else %}
+		
+        {{ indent }}zcbor_uint32_put(zs, CODEC_KEY_E_{{ prefix + key | upper }}__{{ sub_key | upper }});
+		
+		{#- FLOAT #}
+					{%- if value != none and value[0]['$div'] %}
+
+		{{ indent }}/* Filled in by Project Generator */ 
+		{{ indent }}# if 0
+		{{ indent }}if (isnan(g_app_data.{{key}}_{{sub_key}})) {
+			{{ indent }}zcbor_nil_put(zs, NULL); 
+		{{ indent }}} else {
+			{{ indent }}zcbor_int32_put(zs, g_app_data.{{prefix}}_{{sub_key}} * {{value[0]['$div']}}.f); 
+		{{ indent }}}
+		{{ indent }}# else
+		{{ indent }}zcbor_nil_put(zs, NULL);
+		{{ indent }}#endif
+
+		{#- ENUM #}
+                    {%- elif value != none and value[0]['$enum'] %}
+
+		{{ indent }}/* Filled in by Project Generator */ 
+		{{ indent }}# if 0
+        {{ indent }}/*zcbor_uint32_put(zs, {{key}}->{{key}}_{{sub_key}}_active ? 1 : 0);*/
+		{{ indent }}# else
+		{{ indent }}zcbor_nil_put(zs, NULL); 
+		{{ indent }}# endif
+
+		{#- KEY #}
+                    {%- elif value != none and value[0]['$key'] %}
+		{{ indent }}{
+			{{ indent }}zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			
+			{{ indent }}/* Filled in by Project Generator */ 
+			{{ indent }}/* TSP - Times series period */
+			{{ indent }}zcbor_uint64_put(zs, 1714731120); /* timestamp in seconds */
+			{{ indent }}zcbor_uint32_put(zs, 1); /* period in seconds */
+
+			{{ indent }}for (int j = 0; j < 3; j++) {
+				{{ indent }}zcbor_uint32_put(zs, j * 100.f); /* samples min */
+				{{ indent }}zcbor_uint32_put(zs, j * 100.f); /* samples max */
+				{{ indent }}zcbor_uint32_put(zs, j * 100.f); /* samples avg */
+				{{ indent }}zcbor_uint32_put(zs, j * 100.f); /* samples mdn */
+			{{ indent }}}
+
+			{{ indent }}zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		{{ indent }}}
+
+		{#- DEFAULT NULL #}
+					{%- elif value == none %}
+
+		{{ indent }}/* Filled in by Project Generator */ 
+		{{ indent }}zcbor_nil_put(zs, NULL); 
+
+		{#- TSO #}
+					{%- elif value != none and value[0]['$tso'] %}
+		{{ indent }}{
+			{{ indent }}zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			{{ indent }}/* Filled in by Project Generator */ 
+			{{ indent }}/* TSO - Times series offset */
+			{{ indent }}zcbor_uint64_put(zs, 1714731120); /* timestamp in seconds */
+
+			{{ indent }}for (int j = 0; j < 3; j++) {
+					{{ indent }}zcbor_uint32_put(zs, j);         /* offset in seconds */
+					{{ indent }}zcbor_uint32_put(zs, j * 100.f); /* samples min */
+			{{ indent }} }
+			{{ indent }}zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		{{ indent }}}
+
+
+		{#- TSP #}
+					{%- elif value != none and value[0]['$tsp'] %}
+		{{ indent }}{
+			{{ indent }}zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			{{ indent }}// Filled in by Project Generator 
+			{{ indent }}/* TSP - Times series period */
+			{{ indent }}zcbor_uint64_put(zs, 1714731120); /* timestamp in seconds */
+			{{ indent }}zcbor_uint32_put(zs, 1); /* period in seconds */
+
+			{{ indent }}for (int j = 0; j < 3; j++) {
+				{{ indent }}zcbor_uint32_put(zs, j * 100.f); /* samples min */
+				{{ indent }}zcbor_uint32_put(zs, j * 100.f); /* samples max */
+				{{ indent }}zcbor_uint32_put(zs, j * 100.f); /* samples avg */
+				{{ indent }}zcbor_uint32_put(zs, j * 100.f); /* samples mdn */
+			{{ indent }}}
+
+			{{ indent }}zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		{{ indent }}}
+	
+		{#- PARAMETER #}
+					{%- elif sub_key == 'parameter' %}
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			k_mutex_lock(&g_app_data_lte_eval_mut, K_FOREVER);
+			{%- for param in value %}
+				{% for key, val in param.items() %}
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__{{key | upper}});
+
+			{{ indent }}/* Filled in by Project Generator */ 
+			zcbor_nil_put(zs, NULL); 
+			/*if (g_app_data_lte_eval_valid) {
+				zcbor_int32_put(zs, g_app_data_lte_eval.{{key}});
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}*/
+				{%- endfor%}
+			{%- endfor%}
+
+			g_app_data_lte_eval_valid = false;
+
+			k_mutex_unlock(&g_app_data_lte_eval_mut);
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+					{%- else %}
+                    	{%- endif %}
+                    		{%- endif %}
+                    {%- endfor %}
+                {%- endfor %}
+
+        {{ indent }}zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+    {{ indent }}}
+
+	{{ indent }}/* ^^^ Preserved code "{{key}}" (end) */ 
+        {% endfor %}
+    {%- endfor %}
+{%- endmacro %}
+
+LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
+
+static int encode(zcbor_state_t *zs)
+{
+	int ret;
+
+	zs->constant_state->stop_on_error = true;
+
+	zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	{{ encode_items(zs, data['decoder']['schema']) }}
+
+    zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		if (!zcbor_check_error(zs)) {
+			LOG_ERR("Encoding failed: %d", zcbor_pop_error(zs));
+			return -EFAULT;
+		}
+
+		return 0;
+}
+
+int decode(zcbor_state_t *zs, struct app_cbor_received *received)
+{
+	memset(received, 0, sizeof(struct app_cbor_received));
+
+	if (!zcbor_map_start_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	uint32_t key;
+	bool ok;
+
+	/* ### Preserved code "while" (begin) */
+	while (1) {
+		if (!zcbor_uint32_decode(zs, &key)) {
+			break;
+		}
+		
+		switch (key) {
+		
+		/* Filled in by Project Generator */ 
+		{%- for key in data['encoder']['schema']%}
+			{%- for sub , value in key.items()%}
+		case CODEC_KEY_D_{{sub | upper}}:
+			ok = zcbor_int32_decode(zs, &received->{{sub}});
+			received->has_{{sub}} = true;
+			break;
+		{%- endfor %}
+		{%- endfor %}
+		}
+		if (!ok) {
+			LOG_ERR("Encoding failed: %d", zcbor_peek_error(zs));
+			return -EBADMSG;
+		}
+	}
+	/* ^^^ Preserved code "while" (end) */ 
+	
+	if (!zcbor_map_end_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+int app_cbor_encode(zcbor_state_t *zs)
+{
+	int ret;
+
+	app_data_lock();
+
+	ret = encode(zs);
+	if (ret) {
+		LOG_ERR("Call `encode` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_cbor_decode(zcbor_state_t *zs, struct app_cbor_received *received)
+{
+	int ret;
+	ret = decode(zs, received);
+	if (ret) {
+		LOG_ERR("Call `decode` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}

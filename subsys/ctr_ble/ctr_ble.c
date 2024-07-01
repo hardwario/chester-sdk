@@ -43,6 +43,11 @@ struct config {
 static struct config m_config_interim;
 static struct config m_config;
 
+static const struct ctr_config_item m_config_items[] = {
+	CTR_CONFIG_ITEM_STRING("passkey", m_config_interim.passkey,
+			       "BLE passkey (empty or 6 digits)", ""),
+};
+
 /* clang-format off */
 #define ADV_OPT                                                                                    \
 	BT_LE_ADV_OPT_CONNECTABLE |                                                                \
@@ -226,94 +231,36 @@ static struct bt_conn_auth_info_cb auth_info_cb = {
 	.pairing_failed = auth_pairing_failed,
 };
 
+static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
+{
+	for (int i = 0; i < ARRAY_SIZE(m_config_items); i++) {
+		ctr_config_show_item(shell, &m_config_items[i]);
+	}
+
+	return 0;
+}
+
+static int cmd_config(const struct shell *shell, size_t argc, char **argv)
+{
+	return ctr_config_cmd_config(m_config_items, ARRAY_SIZE(m_config_items), shell, argc, argv);
+}
+
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
-	int ret;
-	const char *next;
-
-#define SETTINGS_SET(_key, _var, _size)                                                            \
-	do {                                                                                       \
-		if (settings_name_steq(key, _key, &next) && !next) {                               \
-			if (len != _size) {                                                        \
-				return -EINVAL;                                                    \
-			}                                                                          \
-			ret = read_cb(cb_arg, _var, len);                                          \
-			if (ret < 0) {                                                             \
-				LOG_ERR("Call `read_cb` failed: %d", ret);                         \
-				return ret;                                                        \
-			}                                                                          \
-			return 0;                                                                  \
-		}                                                                                  \
-	} while (0)
-
-	SETTINGS_SET("passkey", m_config_interim.passkey, sizeof(m_config_interim.passkey));
-
-#undef SETTINGS_SET
-
-	return -ENOENT;
+	return ctr_config_h_set(m_config_items, ARRAY_SIZE(m_config_items), key, len, read_cb,
+				cb_arg);
 }
 
 static int h_commit(void)
 {
 	LOG_DBG("Loaded settings in full");
-	memcpy(&m_config, &m_config_interim, sizeof(m_config));
+	memcpy(&m_config, &m_config_interim, sizeof(struct config));
 	return 0;
 }
 
 static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len))
 {
-#define EXPORT_FUNC(_key, _var, _size)                                                             \
-	do {                                                                                       \
-		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
-	} while (0)
-
-	EXPORT_FUNC("passkey", m_config_interim.passkey, sizeof(m_config_interim.passkey));
-
-#undef EXPORT_FUNC
-
-	return 0;
-}
-
-static void print_passkey(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config passkey %s", m_config_interim.passkey);
-}
-
-static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
-{
-	print_passkey(shell);
-
-	return 0;
-}
-
-static int cmd_config_passkey(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_passkey(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len && len != 6) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		strcpy(m_config_interim.passkey, argv[1]);
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
+	return ctr_config_h_export(m_config_items, ARRAY_SIZE(m_config_items), export_func);
 }
 
 static int print_help(const struct shell *shell, size_t argc, char **argv)
@@ -332,25 +279,11 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 /* clang-format off */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_ble_config,
-
-	SHELL_CMD_ARG(show, NULL,
-	              "List current configuration.",
-	              cmd_config_show, 1, 0),
-
-	SHELL_CMD_ARG(passkey, NULL,
-	              "Get/Set BLE passkey (format: <empty or 6 digits).",
-	              cmd_config_passkey, 1, 1),
-
-	SHELL_SUBCMD_SET_END
-);
-
-SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_ble,
 
-	SHELL_CMD_ARG(config, &sub_ble_config,
+	SHELL_CMD_ARG(config, NULL,
 	              "Configuration commands.",
-	              print_help, 1, 0),
+	              cmd_config, 1, 3),
 
 	SHELL_SUBCMD_SET_END
 );
@@ -364,6 +297,10 @@ static int init(void)
 	int ret;
 
 	LOG_INF("System initialization");
+
+	for (int i = 0; i < ARRAY_SIZE(m_config_items); i++) {
+		ctr_config_init_item(&m_config_items[i]);
+	}
 
 	static struct settings_handler sh = {
 		.name = SETTINGS_PFX,

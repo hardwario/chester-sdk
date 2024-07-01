@@ -1,0 +1,653 @@
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+#
+	{%- if data['project']['company'] %}
+# Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+# 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+# {{data['project']['license'] }}
+	{%- endif %}
+#
+{% raw %}
+{% endraw %}
+{%- endif -%}
+menu "Application"
+{%- raw %}
+{% endraw %}
+{%- for feature in data['features'] %}
+{#- A1 #} 
+	{%- if feature == 'hardware-chester-a1' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_A1
+	bool "Enable SHIELD_CTR_A1"
+	default y 
+
+config CTR_A1
+	default y
+
+config GPIO
+	default y
+
+config GPIO_PCA953X
+	default y
+
+config I2C
+	default y
+	{%- endif -%}
+
+{#- B1 #} 
+	{%- if feature == 'hardware-chester-b1' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_B1
+	bool "Enable SHIELD_CTR_B1"
+	default y 
+
+config CTR_B1
+	default y
+
+config GPIO
+	default y
+
+config GPIO_PCA953X
+	default y
+
+config I2C
+	default y
+	{%- endif -%}
+
+{#- BAROMETER_TAG #} 
+	{%- if feature == 'hardware-chester-barometer-tag' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_BAROMETER_TAG
+	bool "Enable SHIELD_CTR_BAROMETER_TAG"
+	default y 
+
+config I2C
+	default y
+
+config SENSOR
+	default y
+
+config MPL3115A2
+	default y
+	{%- endif -%}
+
+{#- C1 #} 
+	{%- if feature == 'hardware-chester-c1' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_C1
+	bool "Enable SHIELD_CTR_C1"
+	default y 
+
+config GPIO
+	default y
+
+config GPIO_PCA953X
+	default y
+
+config I2C
+	default y
+	{%- endif -%}
+
+{#- C2 #} 
+	{%- if feature == 'hardware-chester-c2' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_C2
+	bool "Enable SHIELD_CTR_C2"
+	default y 
+
+config GPIO
+	default y
+
+config GPIO_PCA953X
+	default y
+
+config I2C
+	default y
+	{%- endif -%}
+
+{#- DS18B20 #} 
+	{%- if feature == 'subsystem-ds18b20' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_DS18B20
+	bool "Enable SHIELD_CTR_DS18B20"
+	default y 
+
+config CTR_DS18B20
+	default y
+	{%- endif -%}
+
+{#- GNSS #} 
+	{%- if feature == 'subsystem-gnss' %}
+# {{ feature | upper }}#
+config SHIELD_CTR_GNSS
+	bool "Enable SHIELD_CTR_GNSS"
+	default y 
+
+config CTR_GNSS
+	default y
+	{%- endif -%}
+
+{#- K1 #} 
+	{%- if feature == 'hardware-chester-k1' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_K1
+	bool "Enable SHIELD_CTR_K1"
+	default y 
+
+config CTR_K1
+	default y
+	{%- endif -%}
+
+{#- LRW #} 
+	{%- if feature == 'subsystem-lrw' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_LRW
+	bool "Enable SHIELD_CTR_LRW"
+	default y 
+
+config CTR_LRW
+	default y
+	{%- endif -%}
+
+{#- LTE #} 
+	{%- if feature == 'subsystem-lte' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_LTE
+	bool "Enable SHIELD_CTR_LTE"
+	default y 
+
+config CTR_LTE
+	default y
+	{%- endif -%}
+
+{#- LTE-V2 #} 
+	{%- if feature == 'subsystem-lte-v2' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_LTE_V2
+	bool "Enable SHIELD_CTR_LTE_V2"
+	default y 
+
+config CTR_LTE_V2
+	default y
+	{%- endif -%} 
+
+{#- MACHINE_PROBE #} 
+	{%- if feature == 'subsystem-machine-probe' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_MACHINE_PROBE
+	bool "Enable SHIELD_CTR_MACHINE_PROBE"
+	default y 
+
+config CTR_MACHINE_PROBE
+	default y
+	{%- endif -%}
+
+{#- MB7066_A #} 
+	{%- if feature == 'hardware-chester-mb7066-a' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_A
+	bool "Enable SHIELD_CTR_MB7066_A"
+	default y 
+
+config CTR_X0
+	default y
+
+config MB7066
+	default y
+	{%- endif -%}
+
+{#- MB7066_B #} 
+	{%- if feature == 'hardware-chester-mb7066-b' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_MB7066_B
+	bool "Enable SHIELD_CTR_MB7066_B"
+	default y 
+
+config CTR_X0
+	default y
+
+config MB7066
+	default y
+	{%- endif -%}
+
+{#- METEO_A #} 
+	{%- if feature == 'hardware-chester-meteo-a' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_A
+	bool "Enable SHIELD_CTR_METEO_A"
+	default y 
+
+config SHIELD_CTR_X0_A
+	bool "Enable SHIELD_CTR_X0_A"
+	default y 
+
+config CTR_METEO
+	default y
+
+config CTR_X0
+	default y
+	{%- endif -%}
+
+{#- METEO_B #} 
+	{%- if feature == 'hardware-chester-meteo-b' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_METEO_B
+	bool "Enable SHIELD_CTR_METEO_B"
+	default y 
+
+config SHIELD_CTR_X0_B
+	bool "Enable SHIELD_CTR_X0_A"
+	default y 
+
+config CTR_METEO
+	default y
+
+config CTR_X0
+	default y
+	{%- endif -%}
+
+{#- RTD_A #} 
+	{%- if feature == 'hardware-chester-rtd-a' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_A
+	bool "Enable SHIELD_CTR_RTD_A"
+	default y 
+
+config CTR_X3
+	default y
+
+config CTR_RTD
+	default y
+	{%- endif -%}
+
+{#- RTD_B #} 
+	{%- if feature == 'hardware-chester-rtd-b' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_RTD_B
+	bool "Enable SHIELD_CTR_RTD_B"
+	default y 
+
+config CTR_X3
+	default y
+
+config CTR_RTD
+	default y
+	{%- endif -%}
+
+{#- S1 #} 
+	{%- if feature == 'hardware-chester-s1' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_S1
+	bool "Enable SHIELD_CTR_S1"
+	default y 
+
+config CTR_S1
+	default y
+
+config I2C
+	default y
+	{%- endif -%}
+
+{#- S2 #} 
+	{%- if feature == 'hardware-chester-s2' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_S2
+	bool "Enable SHIELD_CTR_S2"
+	default y 
+
+config CTR_HYGRO
+	default y
+	{%- endif -%}
+
+{#- SOIL_SENSOR #} 
+	{%- if feature == 'subsystem-soil-sensor' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_SOIL_SENSOR
+	bool "Enable SHIELD_CTR_SOIL_SENSOR"
+	default y 
+
+config CTR_SOIL_SENSOR
+	default y
+	{%- endif -%}	
+
+{#- WEIGHT_PROBE #} 
+	{%- if feature == 'subsystem-weight-probe' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_WEIGHT_PROBE
+	bool "Enable SHIELD_CTR_WEIGHT_PROBE"
+	default y 
+
+config CTR_WEIGHT_PROBE
+	default y
+	{%- endif -%}	
+	
+{#- X0A #} 
+	{%- if feature == 'hardware-chester-x0-a' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X0_A
+	bool "Enable SHIELD_CTR_X0_A"
+	default y 
+
+config CTR_X0
+	default y
+	{%- endif -%}
+
+{#- X0B #} 
+	{%- if feature == 'hardware-chester-x0-b' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X0_B
+	bool "Enable SHIELD_CTR_X0_B"
+	default y 
+
+config CTR_X0
+	default y
+	{%- endif -%}
+
+{#- X2A #} 
+	{%- if feature == 'hardware-chester-x2-a' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X2_A
+	bool "Enable SHIELD_CTR_X2_A"
+	default y 
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_SC16IS7XX
+	default y
+	{%- endif -%}
+
+{#- X2B #} 
+	{%- if feature == 'hardware-chester-x2-b' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X2_B
+	bool "Enable SHIELD_CTR_X2_B"
+	default y 
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_SC16IS7XX
+	default y
+	{%- endif -%}
+
+{#- X2_MODBUS_A #} 
+	{%- if feature == 'hardware-chester-x2-modbus-a' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X2_MODBUS_A
+	bool "Enable SHIELD_X2_MODBUS_A"
+	default y
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config MODBUS
+	default y
+
+config MODBUS_BUFFER_SIZE
+	default 64
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_0_INTERRUPT_DRIVEN
+	default n
+
+config UART_ASYNC_API
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+config UART_LINE_CTRL
+	default n
+
+config UART_SC16IS7XX
+	default y
+
+config I2C
+	default y  
+{%- endif -%}
+
+{#- X2_MODBUS_B #} 
+	{%- if feature == 'hardware-chester-x2-modbus-b' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X2_MODBUS_B
+	bool "Enable SHIELD_X2_MODBUS_B"
+	default y
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config MODBUS
+	default y
+
+config MODBUS_BUFFER_SIZE
+	default 64
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_0_INTERRUPT_DRIVEN
+	default n
+
+config UART_ASYNC_API
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+config UART_LINE_CTRL
+	default n
+
+config UART_SC16IS7XX
+	default y
+{%- endif -%}
+
+{#- X3_A #} 
+	{%- if feature == 'hardware-chester-x3-a' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_CTR_X3_A
+	bool "Enable SHIELD_CTR_X3_A"
+	default y 
+
+config CTR_X3
+	default y
+	{%- endif -%}
+
+{#- X3_B #} 
+	{%- if feature == 'hardware-chester-x3-b' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X3_B
+	bool "Enable SHIELD_CTR_X3_B"
+	default y 
+
+config CTR_X3
+	default y
+	{%- endif -%}
+
+{#- X4_A #} 
+	{%- if feature == 'hardware-chester-x4-a' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_CTR_X4_A
+	bool "Enable SHIELD_CTR_X4_A"
+	default y 
+
+config CTR_X4
+	default y
+	{%- endif -%}
+
+{#- X4_B #} 
+	{%- if feature == 'hardware-chester-x4-b' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X4_B
+	bool "Enable SHIELD_CTR_X4_B"
+	default y 
+
+config CTR_X4
+	default y
+	{%- endif -%}
+
+{#- X7_A #} 
+	{%- if feature == 'hardware-chester-x7-a' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_CTR_X7_A
+	bool "Enable SHIELD_CTR_X7_A"
+	default y 
+
+config CTR_X7
+	default y
+	{%- endif -%}
+
+{#- X7_B #} 
+	{%- if feature == 'hardware-chester-x7-b' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X7_B
+	bool "Enable SHIELD_CTR_X7_B"
+	default y 
+
+config CTR_X7
+	default y
+	{%- endif -%}
+
+{#- X9_A #} 
+	{%- if feature == 'hardware-chester-x9-a' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_CTR_X9_A
+	bool "Enable SHIELD_CTR_X9_A"
+	default y 
+
+config CTR_X9
+	default y
+	{%- endif -%}
+
+{#- X9_B #} 
+	{%- if feature == 'hardware-chester-x9-b' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X9_B
+	bool "Enable SHIELD_CTR_X9_B"
+	default y 
+
+config CTR_X9
+	default y
+	{%- endif -%}
+
+{#- X10 #} 
+	{%- if feature == 'hardware-chester-x10' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_X10
+	bool "Enable SHIELD_CTR_X10"
+	default y 
+
+config CTR_X10
+	default y
+	{%- endif -%}
+
+{#- Z #} 
+	{%- if feature == 'hardware-chester-z' %}
+# {{ feature | upper }} 
+config SHIELD_CTR_Z
+	bool "Enable SHIELD_CTR_Z"
+	default y 
+
+config CTR_Z
+	default y
+
+config I2C
+	default y
+	{%- endif -%}
+
+{#- PEOPLE_COUTER #} 
+	{%- if feature == 'hardware-chester-people-counter' %}
+# {{ feature | upper }} 
+config SHIELD_PEOPLE_COUNTER
+	bool "Enable SHIELD_PEOPLE_COUNTER"
+	default y
+
+config PEOPLE_COUNTER
+	default y
+
+config I2C
+	default y  
+{%- endif -%}
+
+{#- APP TAMPER #} 
+	{%- if feature == 'chester-app-tamper' %}
+# {{ feature | upper }} 
+config APP_TAMPER
+	bool "Enable tamper functionality"
+	default y 
+	select CTR_EDGE
+	{%- endif -%}
+
+{#- APP REPORT JITTER #} 
+	{%- if feature == 'chester-app-report-jitter' %}
+# {{ feature | upper }} 
+config APP_REPORT_JITTER
+	bool "Add random time jitter to report transfers"
+	default y 
+	select ENTROPY_GENERATOR
+	{%- endif -%}   
+
+{#- APP LAMBRECHT #} 
+	{%- if feature == 'chester-app-lambrecht' %}
+# {{ feature | upper }} 
+config APP_LAMBRECHT
+	bool "Enable Modbus weather station from Lambrecht meteo"
+	default y
+	depends on SHIELD_CTR_X2_MODBUS_A
+{%- endif -%}
+
+{#- APP FLIP_MODE #} 
+	{%- if feature == 'chester-app-flip-mode' %}
+# {{ feature | upper }} 
+config APP_FLIP_MODE
+	bool "Enable SHIELD_APP_FLIP_MODE"
+	default y
+{%- endif -%}
+{%endfor%}
+
+# ### Preserved code "k_config" (begin)
+# ^^^ Preserved code "k_config" (end)
+
+endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
+{%- raw %}
+{% endraw%}

@@ -1,0 +1,191 @@
+{#- GLOBAL VARIABLES #}
+{%- set variant_name_lower = data['project']['variant']|lower -%}
+{%- set config_mode = [] -%}
+{%- if ('subsystem_lte' in data['features'] and 'subsystem_lrw' in data['features'])  or ('subsystem_lte' not in data['features'] and 'subsystem_lrw' not in data['features']) -%}
+	{%- do config_mode.append('NONE') %}
+{%- elif 'subsystem_lte' in data['features'] and 'subsystem_lrw' not in data['features'] %}
+	{%- do config_mode.append('LTE') %}
+{%- elif 'subsystem_lte' not in data['features'] and 'subsystem_lrw' in data['features'] %}
+	{%- do config_mode.append('LRW') %}
+{%- endif %}
+
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+/*
+	{%- if data['project']['company'] %}
+ * Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+ * 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+ * {{data['project']['license'] }}
+	{%- endif %}
+ */
+{% raw %}
+{% endraw %}
+{%- endif -%}
+
+#ifndef APP_CONFIG_H_
+#define APP_CONFIG_H_
+
+/* Zephyr includes */
+#include <zephyr/shell/shell.h>
+
+/* Standard includes */
+#include <stdbool.h>
+#include <stddef.h>
+
+/* ### Preserved code "includes" (begin) */
+/* ^^^ Preserved code "includes" (end) */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+{# White line #}
+{#- K1 #}
+{%- for feature in data['features'] %}
+	{%- if feature == 'hardware_chester_k1' %}
+#define APP_CONFIG_CHANNEL_COUNT 4  
+	{% endif %}
+{%- endfor %}
+
+{#- MODE LTE-LRW #}
+{%- if config_mode %}
+enum app_config_mode {
+	APP_CONFIG_MODE_NONE = 0,
+	APP_CONFIG_MODE_LTE = 1,
+	APP_CONFIG_MODE_LRW = 2,
+};
+{% endif -%}
+
+{#- MODE ENUM #}
+{%- for parameter in data['parameters'] %}
+	{%- set domain = parameter.domain | default('app')%}
+	{%- set var = parameter.var | default(parameter.name | replace('-','_')) %}
+    {%- if parameter['type'] == 'enum' %}
+		{%- if parameter['depends_on'] %}
+#if {{ parameter['depends_on'] }}
+		{% endif %}
+enum {{domain}}_config_{{ var }} {
+		{%- for mode in parameter['valueset'] %}  
+	{{domain | upper}}_CONFIG_{{ var | upper }}_{{ mode | upper }} = {{ loop.index0 }},
+     	{%- endfor %}		
+};
+		{% if parameter['depends_on'] %}
+#endif /* {{ parameter['depends_on'] }} */
+		{%- endif %}
+    {% endif -%}
+{%- endfor %}	
+
+{#- STRUCT #} 
+{%- if data and data_dependency %}
+struct app_config {
+{%- for dep , params in data_dependency['parameters'].items() %}
+	{%- if dep != 'no_dependency' %}
+	
+#if {{ dep }}
+	{%- endif %}
+	{%- for param in params -%}
+		{%- set domain = param.domain | default('app')%}
+ 		{%- set var = param.var | default(param.name | replace('-','_')) %}
+
+	{#- STRING #}
+		{%- if param['type'] == 'string'  %}
+	char {{ var }} [{{(param['default']|length)+1}}];
+
+	{#- ARRAY #}
+		{%- elif param['type'].split('[')[0] == 'array'%}
+	{{param['type'].split('[')[1][0:-1]}} {{ var }}[{{param['len']}}];
+
+	{#- ENUM #}
+	{%- elif param['type'] == 'enum' %}
+		{%- if not param['related'] %}
+			{%- for mode in param['valueset'] %}  
+	enum {{domain}}_config_{{ var }} {{ var }}_{{ loop.index }};
+			{%- endfor %}
+		{%- else %}
+			{%- for related in param['related'] %} 
+	enum {{domain}}_config_{{ var }} {{ related }}_{{ var }};
+			{%- endfor %}	
+		{%- endif %}
+
+	{#- OTHERS #}
+	{%- elif param['type'] != 'enum' %}
+	{{ param['type'] }} {{ var }};
+	{%- endif %}
+
+	{%- endfor %}
+	{%- if dep != 'no_dependency' %}
+#endif /* {{dep}} */
+	{%- endif -%}	
+{%- endfor %}
+
+{#- MODE LTE-LRW #}
+{%- if config_mode %}
+
+	enum app_config_mode mode;
+{%- endif %}
+
+	/* ### Preserved code "struct variables" (begin) */
+	/* ^^^ Preserved code "struct variables" (end) */
+
+};
+{% endif %}
+extern struct app_config g_app_config;
+{% raw %}
+/* ### Preserved code "variables" (begin) */
+/* ^^^ Preserved code "variables" (end) */
+{% endraw %}
+
+{#- MODE LTE-LRW #}
+{%- if config_mode %}
+int app_config_cmd_config_mode(const struct shell *shell, size_t argc, char **argv);
+{%- endif %}
+
+{#- OTHERS #}
+int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv);
+{%- for dep , params in data_dependency['parameters'].items() %}
+	{%- if dep != 'no_dependency' %}
+
+#if {{ dep }}
+	{%- endif %}
+{%- for parameter in params %}
+	{%- set domain = parameter.domain | default('app')%}
+	{%- set var = parameter.var | default(parameter.name | replace('-','_')) %}
+{%- if parameter['type'] == 'bool' or parameter['type'] == 'int' or parameter['type'] == 'float' or parameter['type'].split('[')[0] == 'array' or parameter['type'] == 'string' %}
+int {{ domain }}_config_cmd_config_{{ var }}(const struct shell *shell, size_t argc, char **argv);
+{%- endif %}
+
+{#- ENUM #}
+{%- if parameter['type'] == 'enum' and parameter['related']%}
+	{%- for related in parameter['related'] %}
+int {{ domain }}_config_cmd_config_{{ related }}_{{ var }}(const struct shell *shell, size_t argc, char **argv);
+	{%- endfor %}
+{%- else %}
+	{%- for mode in parameter['valueset'] %}
+int {{ domain }}_config_cmd_config_{{ var }}_{{ loop.index }}(const struct shell *shell, size_t argc, char **argv);
+	{%- endfor %}
+	{%- endif %}
+{%- endfor %}
+	{%- if dep != 'no_dependency' %}
+#endif /* {{dep}} */
+	{%- endif -%}
+{%- endfor %}
+
+{#- VARIANT CURRENT#}
+{%- if variant_name_lower.split(' ')[0] == 'current' %}
+int app_config_get_interval_report(void);
+int app_config_set_interval_report(int value);
+{%- endif %}
+
+/* ### Preserved code "functions" (begin) */
+/* ^^^ Preserved code "functions" (end) */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* APP_CONFIG_H_ */
+{%- raw %}
+{% endraw%}

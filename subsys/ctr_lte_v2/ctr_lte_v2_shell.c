@@ -277,72 +277,6 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 /* clang-format off */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_lte_config,
-
-	SHELL_CMD_ARG(show, NULL,
-	              "List current configuration.",
-	              ctr_lte_v2_config_cmd_show, 1, 0),
-
-	SHELL_CMD_ARG(test, NULL,
-	              "Get/Set LTE test mode.",
-	              ctr_lte_v2_config_cmd_test, 1, 1),
-
-	SHELL_CMD_ARG(modemtrace, NULL,
-	              "Get/Set LTE modemtrace.",
-	              ctr_lte_v2_config_cmd_modemtrace, 1, 1),
-
-        SHELL_CMD_ARG(antenna, NULL,
-	              "Get/Set LTE antenna (format: <int|ext>).",
-	              ctr_lte_v2_config_cmd_antenna, 1, 1),
-
-	SHELL_CMD_ARG(nb-iot-mode, NULL,
-	              "Get/Set NB-IoT mode (format: <true|false>).",
-	              ctr_lte_v2_config_cmd_nb_iot_mode, 1, 1),
-
-	SHELL_CMD_ARG(lte-m-mode, NULL,
-	              "Get/Set LTE-M mode (format: <true|false>).",
-	              ctr_lte_v2_config_cmd_lte_m_mode, 1, 1),
-
-	SHELL_CMD_ARG(autoconn, NULL,
-	              "Get/Set auto-connect feature (format: <true|false>).",
-	              ctr_lte_v2_config_cmd_autoconn, 1, 1),
-
-	SHELL_CMD_ARG(plmnid, NULL,
-	              "Get/Set network PLMN ID (format: <5-6 digits>).",
-	              ctr_lte_v2_config_cmd_plmnid, 1, 1),
-
-	SHELL_CMD_ARG(clksync, NULL,
-	              "Get/Set clock synchronization (format: <true|false>).",
-	              ctr_lte_v2_config_cmd_clksync, 1, 1),
-
-	SHELL_CMD_ARG(apn, NULL,
-	              "Get/Set network APN (format: <empty or up to 63 octets>.",
-	              ctr_lte_v2_config_cmd_apn, 1, 1),
-
-        SHELL_CMD_ARG(auth, NULL,
-	              "Get/Set authentication protocol (format: <none|pap|chap>).",
-	              ctr_lte_v2_config_cmd_auth, 1, 1),
-
-	SHELL_CMD_ARG(username, NULL,
-	              "Get/Set username (format: <empty or up to 32 characters>.",
-	              ctr_lte_v2_config_cmd_username, 1, 1),
-
-	SHELL_CMD_ARG(password, NULL,
-	              "Get/Set password (format: <empty or up to 32 characters>.",
-	              ctr_lte_v2_config_cmd_password, 1, 1),
-
-	SHELL_CMD_ARG(addr, NULL,
-	              "Get/Set default IP address (format: a.b.c.d).",
-	              ctr_lte_v2_config_cmd_addr, 1, 1),
-
-	SHELL_CMD_ARG(port, NULL,
-	              "Get/Set default UDP port (format: <1-5 digits>).",
-	              ctr_lte_v2_config_cmd_port, 1, 1),
-
-	SHELL_SUBCMD_SET_END
-);
-
-SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lte_test,
 
 	SHELL_CMD_ARG(uart, NULL,
@@ -367,9 +301,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lte,
 
-	SHELL_CMD_ARG(config, &sub_lte_config,
+	SHELL_CMD_ARG(config, NULL,
 	              "Configuration commands.",
-	              print_help, 1, 0),
+	              ctr_lte_v2_config_cmd, 1, 3),
 
 	SHELL_CMD_ARG(prepare, NULL,
 	              "Prepare modem.",

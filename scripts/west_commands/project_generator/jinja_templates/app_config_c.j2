@@ -1,0 +1,864 @@
+{#- GLOBAL VARIABLES #}
+{%- set variant_name_lower = data['project']['variant']|lower -%}
+{%- set config_mode = [] -%}
+{%- if ('subsystem_lte' in data['features'] and 'subsystem_lrw' in data['features'])  or ('subsystem_lte' not in data['features'] and 'subsystem_lrw' not in data['features'])-%}
+	{%- do config_mode.append('NONE') %}
+{%- elif 'subsystem_lte' in data['features'] and 'subsystem_lrw' not in data['features'] %}
+	{%- do config_mode.append('LTE') %}
+{%- elif 'subsystem_lte' not in data['features'] and 'subsystem_lrw' in data['features'] %}
+	{%- do config_mode.append('LRW') %}
+{%- endif %}
+
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+/*
+	{%- if data['project']['company'] %}
+ * Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+ * 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+ * {{data['project']['license'] }}
+	{%- endif %}
+ */
+{% raw %}
+{% endraw %}
+{%- endif -%}
+
+#include "app_config.h"
+
+/* CHESTER includes */
+#include <chester/ctr_config.h>
+
+/* Zephyr includes */
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/shell/shell.h>
+
+/* Standard includes */
+#include <ctype.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+/* ### Preserved code "includes" (begin) */
+/* ^^^ Preserved code "includes" (end) */
+
+LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
+
+#define SETTINGS_PFX "app-{{ setting_pfx }}"
+
+struct app_config g_app_config;
+
+{#- ENUM #}
+{%- for parameter in data['parameters'] %}
+	{%- set domain = parameter.domain | default('app')%}
+    {%- set var = parameter.var | default(parameter.name | replace('-','_')) %}
+    {%- if parameter['type'] == 'enum' %}
+	
+char *{{domain}}_config_enum_{{ var }}[] = {
+        {%- for mode in parameter['valueset'] -%}
+    "{{ mode }}"{% if not loop.last %}, {% endif %}
+        {%- endfor -%}
+};
+    {%- endif -%}
+{%- endfor %}
+
+{#- STRUCT #}
+{% if data and data_dependency %}
+static struct app_config m_app_config_interim = {
+{%- for dep , params in data_dependency['parameters'].items() %}
+	{%- if dep != 'no_dependency' %}
+
+#if {{ dep }}
+	{%- endif %}
+	{%- for param in params -%}
+		{%- set domain = param.domain | default('app')%}
+		{%- set var = param.var | default(param.name | replace('-','_')) %}
+	{%- if param['type'].split('[')[0] != 'array' %}
+
+	{#- STRING #}
+	{%- if param['type'] == 'string' %}
+	.{{ var }} = "{{ param['default'] }}",
+
+	{#- BOOL #}
+	{%- elif param['type'] == 'bool' %}
+		{%- if param['default'] != none %}
+	.{{ var }} = {{ param['default'] | lower }},
+		{%- else %}
+	.{{ var }} = NULL,
+		{%- endif -%}
+
+	{#- FLOAT #}
+	{%- elif param['type'] == 'float' %}
+		{%- if param['default'] != none %}
+	.{{ var }} = {{ param['default'] }},
+		{%- else %}
+	.{{ var }} = NAN,
+		{%- endif -%}
+	
+	{#- ENUM #}
+	{%- elif param['type'] == 'enum' %}
+		{%- if not param['related'] -%}
+			{%- for mode in param['valueset'] %}  
+	.{{ var }}_{{ loop.index }} = {{ domain | upper }}_CONFIG_{{ var | upper}}_{{ mode | upper }},
+			{%- endfor %}
+		{%- else %}
+			{%- for related in param['related'] %} 
+	.{{ related }}_{{ var}} = {{ domain | upper }}_CONFIG_{{ var | upper}}_{{ param ['default'] | upper }},	
+			{%- endfor %}
+	{%- endif -%}
+
+	{#- OTHERS #}
+	{%- else %}
+	.{{ var }} = {{ param['default'] }},
+	{%- endif -%}
+	{%- else%}
+		{%- if param['type'].split('[')[1][0:-1] == 'bool'%}
+			{%- if param['default'] == none%}
+	.{{ var }} = { {% for _ in range(param['len']) %}false{% if not loop.last %}, {% endif %}{% endfor %} },
+			{%- else %}
+	.{{ var }} = { {% for _ in range(param['len']) %}{{param['default'][_] | lower}}{% if not loop.last %}, {% endif %}{% endfor %} },
+			{%- endif%}
+		{%- else%}
+			{%- if param['default'] == none%}
+	.{{ var }} = { {% for _ in range(param['len']) %}0{% if not loop.last %}, {% endif %}{% endfor %} },
+			{%- else %}
+	.{{ var }} = { {% for _ in range(param['len']) %}{{param['default'][_]}}{% if not loop.last %}, {% endif %}{% endfor %} },
+			{%- endif%}
+		{%- endif%}
+	
+	{%- endif -%}
+{%- endfor %}
+	{%- if dep != 'no_dependency' %}
+#endif /* {{dep}} */
+	{%- endif -%}
+
+{%- endfor %}
+{#- MODE LTE-LRW #}
+{%- if config_mode %}
+
+#if defined(FEATURE_SUBSYSTEM_LTE) || defined(FEATURE_SUBSYSTEM_LRW)
+	.mode = APP_CONFIG_MODE_{{config_mode[0]}},
+#endif /* defined(FEATURE_SUBSYSTEM_LTE) || defined(FEATURE_SUBSYSTEM_LRW) */
+{%- endif %}
+	{%- raw %}
+
+	/* ### Preserved code "struct variables" (begin) */
+	/* ^^^ Preserved code "struct variables" (end) */
+	{%- endraw %}
+};
+{%- endif %}
+
+{%- raw %}
+
+/* ### Preserved code "variables" (begin) */
+/* ^^^ Preserved code "variables" (end) */
+{%- endraw %}
+
+{#- MODE LTE-LRW #}
+{%- if config_mode %}
+
+#if defined(FEATURE_SUBSYSTEM_LTE) || defined(FEATURE_SUBSYSTEM_LRW)
+
+static void print_app_config_mode(const struct shell *shell)
+{
+	const char *mode;
+	switch (m_app_config_interim.mode) {
+	case APP_CONFIG_MODE_NONE:
+		mode = "none";
+		break;
+	case APP_CONFIG_MODE_LTE:
+		mode = "lte";
+		break;
+	case APP_CONFIG_MODE_LRW:
+		mode = "lrw";
+		break;
+	default:
+		mode = "(unknown)";
+		break;
+	}
+
+	shell_print(shell, "app config mode %s", mode);
+}
+
+int app_config_cmd_config_mode(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		print_app_config_mode(shell);
+		return 0;
+	}
+
+	if (argc == 2) {
+		if (!strcmp("none", argv[1])) {
+			m_app_config_interim.mode = APP_CONFIG_MODE_NONE;
+			return 0;
+		}
+
+		if (!strcmp("lte", argv[1])) {
+			m_app_config_interim.mode = APP_CONFIG_MODE_LTE;
+			return 0;
+		}
+
+		if (!strcmp("lrw", argv[1])) {
+			m_app_config_interim.mode = APP_CONFIG_MODE_LRW;
+			return 0;
+		}
+
+		shell_error(shell, "invalid option");
+
+		return -EINVAL;
+	}
+
+	shell_help(shell);
+
+	return -EINVAL;
+}
+
+#endif /* defined(FEATURE_SUBSYSTEM_LTE) || defined(FEATURE_SUBSYSTEM_LRW) */
+{%- endif -%}
+
+{#- VARIANT CURRENT #}
+{%- if variant_name_lower.split(' ')[0] == 'current' %}
+
+int app_config_get_interval_report(void)
+{
+	return m_app_config_interim.interval_report;
+}
+
+int app_config_set_interval_report(int value)
+{
+	if (value < 30 || value > 86400) {
+		return -ERANGE;
+	}
+
+	m_app_config_interim.interval_report = value;
+
+	return 0;
+}
+{%- endif %}
+{% for parameter in data['parameters'] -%}
+	{%- set domain = parameter.domain | default('app')%}
+	{%- if parameter['depends_on'] %}
+#if {{ parameter['depends_on'] }}
+	{# DEPENDS_ON #}
+	{%- endif %}
+	{%- set var = parameter.var | default(parameter.name | replace('-','_')) %}
+{#- BOOL TYPE #}
+{%- if parameter['type'] == 'bool' %}
+static void print_{{ var }}(const struct shell *shell)
+{                                   
+{%- raw -%}
+{% endraw %}
+	shell_print(shell, "{{domain}} config {{ parameter['name'] }}  %s",
+			m_app_config_interim.{{ var }} ? "true" : "false");                      
+{%- raw -%}
+{% endraw %}
+}
+
+int {{domain}}_config_cmd_config_{{ var }}(const struct shell *shell, size_t argc, char **argv)
+{
+{%- raw -%}
+{% endraw %}
+	if (argc == 1) {
+		print_{{ var }}(shell);                                                    
+		return 0;
+	}
+	if (argc == 2) {
+		bool is_false = !strcmp(argv[1], "false");
+		bool is_true = !strcmp(argv[1], "true");
+		if (is_false) {
+			m_app_config_interim.{{ var }} = false;
+		} else if (is_true) {
+			m_app_config_interim.{{ var }} = true;
+		} else {
+			shell_error(shell, "invalid format");
+			return -EINVAL;
+		}
+		return 0;
+	}
+	shell_help(shell);
+	return -EINVAL;
+}
+{%- endif -%}
+
+{#- INT TYPE #}
+{%- if parameter['type'] == 'int' %}
+static void print_{{ var }}(const struct shell *shell)
+{                               
+{%- raw -%}
+{% endraw %}
+	shell_print(shell, "{{domain}} config {{ parameter['name'] }}  %d",
+			m_app_config_interim.{{ var }});
+{%- raw -%}
+{% endraw %}
+}
+
+int {{domain}}_config_cmd_config_{{ var }}(const struct shell *shell, size_t argc, char **argv)
+{ 
+{%- raw -%}
+{% endraw %}
+	if (argc == 1) {
+		print_{{ var }}(shell);
+		return 0;
+	}
+	if (argc == 2) {
+		size_t len = strlen(argv[1]);
+		for (size_t i = 0; i < len; i++) {
+			if (!isdigit((int)argv[1][i])) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+		}
+		long value = strtol(argv[1], NULL, 10);
+		if (value < {{ parameter['min'] }} || value > {{ parameter['max'] }}) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+		m_app_config_interim.{{ var }} = (int)value;
+		return 0;
+	}
+	shell_help(shell);
+	return -EINVAL;
+}
+{%- endif -%}
+
+{#- FLOAT TYPE #}
+{%- if parameter['type'] == 'float' %}
+static void print_{{ var }}(const struct shell *shell)
+{                                  
+{%- raw -%}
+{% endraw %}
+	shell_print(shell, "{{domain}} config {{ parameter['name'] }} %.1f",
+			m_app_config_interim.{{ var }});
+{%- raw -%}
+{% endraw %}
+}
+
+int {{domain}}_config_cmd_config_{{ var }}(const struct shell *shell, size_t argc, char **argv)
+{
+{%- raw -%}
+{% endraw %}
+	if (argc == 1) {
+		print_{{ var }}(shell);
+		return 0;
+	}
+	if (argc == 2) {
+		float value;
+		int ret = sscanf(argv[1], "%f", &value);
+		if (ret != 1) {
+			shell_error(shell, "invalid value");
+			return -EINVAL;
+		}
+		if (value < {{ parameter['min'] }} || value > {{ parameter['max'] }}) 
+		{
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+		m_app_config_interim.{{ var }} = value;
+		return 0;
+	}
+	shell_help(shell);
+	return -EINVAL;
+}
+{%- endif -%}
+
+{#- STRING TYPE #}
+{%- if parameter['type'] == 'string' %}
+static void print_{{ var }}(const struct shell *shell)
+{                                  
+{%- raw -%}
+{% endraw %}
+	shell_print(shell, "{{domain}} config {{ parameter['name'] }} %.1f",
+			m_app_config_interim.{{ var }});
+{%- raw -%}
+{% endraw %}
+}
+
+int {{domain}}_config_cmd_config_{{ var }}(const struct shell *shell, size_t argc, char **argv)
+{
+{%- raw -%}
+{% endraw %}
+	if (argc == 1) {
+		print_{{ var }}(shell);
+		return 0;
+	}
+	if (argc == 2) {
+			size_t len = strlen(argv[1]);
+
+			if (len >= sizeof(m_app_config_interim.{{ var }})) {
+				shell_error(shell, "invalid format");
+				return -EINVAL;
+			}
+
+			for (size_t i = 0; i < len; i++) {
+				char c = argv[1][i];
+				if (!isalnum((int)c) && c != '-' && c != '.') {
+					shell_error(shell, "invalid format");
+					return -EINVAL;
+				}
+			}
+
+			strcpy(m_app_config_interim.{{ var }}, argv[1]);
+			return 0;
+		}
+	shell_help(shell);
+	return -EINVAL;
+}
+{%- endif -%}
+
+{#- ARRAY[BOOL] TYPE #}
+{%- if parameter['type'].split('[')[0] == 'array' and parameter['type'].split('[')[1][0:-1] == 'bool'%}
+static void print_{{ var }}(const struct shell *shell, int channel)
+{                                  
+{%- raw -%}
+{% endraw %}
+	int ch = channel;
+
+	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : {{ parameter['len'] }}); i++) {
+		shell_print(shell, "{{domain}} config {{ parameter['name'] }} %d %s", i + 1,
+				m_app_config_interim.{{ var }}[i] ? "true" : "false");
+	}
+{%- raw -%}
+{% endraw %}
+}
+
+int {{domain}}_config_cmd_config_{{ var }}(const struct shell *shell, size_t argc, char **argv)
+{
+	int channel;
+
+	if (argc >= 2) {
+		unsigned long ch = strtoul(argv[1], NULL, 10);
+
+		if (ch < 0 || ch > {{ parameter['len'] }}) {
+			shell_error(shell, "invalid channel index");
+			return -EINVAL;
+		}
+
+		channel = ch;
+	}
+
+	if (argc == 2) {
+		print_{{ var }}(shell, channel);
+		return 0;
+	}
+
+	if (argc == 3 && strcmp(argv[2], "true") == 0) {
+		int ch = channel;
+
+		for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : {{ parameter['len'] }});
+			 i++) {
+			m_app_config_interim.{{ var }}[i] = true;
+		}
+
+		return 0;
+	}
+
+	if (argc == 3 && strcmp(argv[2], "false") == 0) {
+		int ch = channel;
+
+		for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : {{ parameter['len'] }});
+			 i++) {
+			m_app_config_interim.{{ var }}[i] = false;
+		}
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+{%- endif -%}
+
+{#- ARRAY[INT] TYPE #}
+{%- if parameter['type'].split('[')[0] == 'array' and parameter['type'].split('[')[1][0:-1] == 'int'%}
+static void print_{{ var }}(const struct shell *shell, int channel)
+{                                  
+{%- raw -%}
+{% endraw %}
+	int ch = channel;
+
+	for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : {{ parameter['len'] }}); i++) {
+		shell_print(shell, "{{domain}} config {{ parameter['name'] }} %d %d", i + 1,
+				m_app_config_interim.{{ var }}[i]);
+	}
+{%- raw -%}
+{% endraw %}
+}
+
+int {{domain}}_config_cmd_config_{{ var }}(const struct shell *shell, size_t argc, char **argv)
+{
+	int channel;
+
+	if (argc >= 2) {
+		unsigned long ch = strtoul(argv[1], NULL, 10);
+
+		if (ch < 0 || ch > {{ parameter['len'] }}) {
+			shell_error(shell, "invalid channel index");
+			return -EINVAL;
+		}
+
+		channel = ch;
+	}
+
+	if (argc == 2) {
+		print_{{ var }}(shell, channel);
+		return 0;
+	}
+
+	if (argc == 3) {
+		long long val = strtoll(argv[2], NULL, 10);
+		if (val < {{parameter['min']}} || val > {{parameter['max']}}) {
+			shell_error(shell, "invalid range");
+			return -EINVAL;
+		}
+
+		int ch = channel;
+
+		for (int i = ch != 0 ? ch - 1 : 0; i < (ch != 0 ? ch : {{ parameter['len'] }});
+			 i++) {
+			m_app_config_interim.{{ var }}[i] = val;
+		}
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+{%- endif -%}
+
+{#- ENUM TYPE #}
+{%- if parameter['type'] == 'enum' and parameter['related'] -%}
+{%- for related in parameter['related'] %}
+static void print_{{ related }}_{{ var }}(const struct shell *shell)                                     
+{                                                                                          
+	shell_print(shell, "{{domain}} config {{related}}-{{ parameter['name'] }} %s",                                   
+			{{domain}}_config_enum_{{ var }}[m_app_config_interim.{{ related }}_{{ var }}]);                                 
+} 
+
+int {{domain}}_config_cmd_config_{{ related }}_{{ var }}(const struct shell *shell, size_t argc, char **argv)   
+{                                                                                          
+	if (argc == 1) {                                                                   
+		print_{{ related }}_{{ var }}(shell);                                                    
+		return 0;                                                                  
+	}                                                                                  
+	if (argc == 2) {                                                                   
+		int value = -1;                                                            
+		for (size_t i = 0; i < {{ parameter['related'] | length }} ; i++) {                                      
+			if (strcmp(argv[1],{{domain}}_config_enum_{{ var }}[i]) == 0) {                             
+				value = i;                                                 
+				break;                                                     
+			}                                                                  
+		}                                                                          
+		if (value < 0) {                                                           
+			shell_error(shell, "invalid range");                               
+			return -EINVAL;                                                    
+		}                                                                          
+		m_app_config_interim.{{ related }}_{{ var }} = value;                                      
+		return 0;                                                                  
+	}                                                                                  
+	shell_help(shell);                                                                 
+	return -EINVAL;                                                                    
+}
+{%- endfor %}
+{%- else %}
+	{%- for mode in parameter['valueset'] %}
+static void print_{{ var }}_{{ loop.index }}(const struct shell *shell)                                     
+{                                                                                          
+	shell_print(shell, "{{domain}} config {{mode}}-{{ parameter['name'] }} %s",                                   
+			{{domain}}_config_enum_{{ var }}[m_app_config_interim.{{ var }}_{{ loop.index }}]);                                 
+}  
+
+int {{domain}}_config_cmd_config_{{ var }}_{{ loop.index }}(const struct shell *shell, size_t argc, char **argv)   
+{                                                                                          
+	if (argc == 1) {                                                                   
+		print_{{ var }}_{{ loop.index }}(shell);                                                    
+		return 0;                                                                  
+	}                                                                                  
+	if (argc == 2) {                                                                   
+		int value = -1;                                                            
+		for (size_t i = 0; i < {{ parameter['valueset'] | length }} ; i++) {                                      
+			if (strcmp(argv[1],{{domain}}_config_enum_{{ var }}[i]) == 0) {                             
+				value = i;                                                 
+				break;                                                     
+			}                                                                  
+		}                                                                          
+		if (value < 0) {                                                           
+			shell_error(shell, "invalid range");                               
+			return -EINVAL;                                                    
+		}                                                                          
+		m_app_config_interim.{{ var }}_{{ loop.index }} = value;                                      
+		return 0;                                                                  
+	}                                                                                  
+	shell_help(shell);                                                                 
+	return -EINVAL;                                                                    
+}
+	{%- endfor %}
+{%- endif %}
+	{%- if parameter['depends_on'] %}
+
+#endif /* {{parameter['depends_on']}} */
+	{%- endif %}
+{% endfor -%}
+
+{#- CONFIG SHOW #}
+int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
+{   
+{%-if config_mode%}
+#if defined(FEATURE_SUBSYSTEM_LTE) || defined(FEATURE_SUBSYSTEM_LRW)
+	print_app_config_mode(shell);
+#endif /* defined(FEATURE_SUBSYSTEM_LTE) || defined(FEATURE_SUBSYSTEM_LRW) */
+{%- endif %}
+{%- for dep , params in data_dependency['parameters'].items() %}
+	{%- if dep != 'no_dependency' %}
+#if {{ dep }}
+	{%- endif %}
+	{%- for parameter in params %}
+		{%- set var = parameter.var | default(parameter.name | replace('-','_')) %}
+	{%- if parameter['type'].split('[')[0] == 'array' %}
+	print_{{ var }}(shell, 0);
+	{%- elif parameter['type'] == 'enum' and parameter['related']%}
+		{%- for related in parameter['related'] %}
+	print_{{ related }}_{{ var }}(shell);
+		{%- endfor %}
+	{%- elif parameter['type'] == 'enum' and not parameter['related']%}
+		{%- for mode in parameter['valueset'] %}
+	print_{{ var }}_{{ loop.index }}(shell);
+		{%- endfor %}
+	{%- else %}
+	print_{{ var }}(shell);
+	{%- endif -%}
+{%- endfor %}
+	{%- if dep != 'no_dependency' %}
+#endif /* {{dep}} */
+		{%- endif %}
+	{%- endfor %}
+	
+	return 0;
+}
+{% raw %}
+/* ### Preserved code "functions 1" (begin) */
+/* ^^^ Preserved code "functions 1" (end) */
+{% endraw %}
+{#- H_COMMIT #}
+static int h_commit(void)
+{
+	LOG_DBG("Loaded settings in full");
+	memcpy(&g_app_config, &m_app_config_interim, sizeof(g_app_config));
+
+	return 0;
+}
+{# H_SET #}
+static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg) 
+{
+	int ret;
+	const char *next;
+	{# LTE - LRW MODE #}
+	{%- if config_mode %}
+	if (settings_name_steq(key, "mode", &next) && !next) {
+		if (len != sizeof(m_app_config_interim.mode)) {
+			return -EINVAL;
+		}
+		ret = read_cb(cb_arg, &m_app_config_interim.mode, len);
+		if (ret < 0) {
+			LOG_ERR("Call `read_cb` failed: %d", ret);
+			return ret;
+		}
+		return 0;
+	}
+	{% endif -%}
+
+{%- for dep , params in data_dependency['parameters'].items() %}
+	{%- if dep != 'no_dependency' %}
+#if {{ dep }}
+{# DEPENDS_ON #}
+	{%- endif %}
+{%- for parameter in params %}
+	{%- set var = parameter.var | default(parameter.name | replace('-','_')) %}
+
+{#- BOOL | FLOAT | INT | STRING #}
+{%- if parameter['type'] == 'bool' or parameter['type'] == 'float' or parameter['type'] == 'int' or parameter['type'] == 'string'%}
+	if (settings_name_steq(key, "{{ parameter['name'] }}", &next) && !next) {
+		if (len != sizeof(m_app_config_interim.{{ var }})) {
+			return -EINVAL;
+		}
+		ret = read_cb(cb_arg, &m_app_config_interim.{{ var }}, len);
+		if (ret < 0) {
+			LOG_ERR("Call `read_cb` failed: %d", ret);
+			return ret;
+		}
+		return 0;
+	}
+{% endif %}
+
+{#- ARRAY #}
+{%- if parameter['type'] == 'array[int]' or parameter['type'] == 'array[bool]' %}
+{%- for i in range(parameter['len'])%}
+	if (settings_name_steq(key, "{{parameter['name'].split('-')[0]}}-{{i}}-{{parameter['name'].split('-')[1:] | join('-')}}", &next) && !next) {
+		if (len != sizeof(m_app_config_interim.{{ var }}[{{i}}])) {
+			return -EINVAL;
+		}
+		ret = read_cb(cb_arg, &m_app_config_interim.{{ var}}[{{i}}], len);
+		if (ret < 0) {
+			LOG_ERR("Call `read_cb` failed: %d", ret);
+			return ret;
+		}
+		return 0;
+	}    
+{% endfor %}
+{%- endif %}
+
+{#-ENUM #}
+{%- if parameter['type'] == 'enum' and parameter['related'] %}
+{%- for related in parameter['related'] %}
+	if (settings_name_steq(key, "{{related}}-{{parameter['name']}}", &next) && !next) {
+		if (len != sizeof(m_app_config_interim.{{related}}_{{var}})) {
+			return -EINVAL;
+		}
+		ret = read_cb(cb_arg, &m_app_config_interim.{{related}}_{{var}}, len);
+		if (ret < 0) {
+			LOG_ERR("Call `read_cb` failed: %d", ret);
+			return ret;
+		}
+		return 0;
+	}    
+{% endfor %}
+{%- else %}
+{%- for mode in parameter['valueset'] %}
+	if (settings_name_steq(key, "{{ parameter['name'] }}-{{loop.index}}", &next) && !next) {
+		if (len != sizeof(m_app_config_interim.{{ var }}_{{loop.index}})) {
+			return -EINVAL;
+		}
+		ret = read_cb(cb_arg, &m_app_config_interim.{{ var }}_{{loop.index}}, len);
+		if (ret < 0) {
+			LOG_ERR("Call `read_cb` failed: %d", ret);
+			return ret;
+		}
+		return 0;
+	}    
+{% endfor %}
+{%- endif %}
+
+{%- endfor %}
+	{%- if dep != 'no_dependency' %}
+#endif /* {{dep}} */
+	{% endif %}
+{%- endfor %}
+	/* ### Preserved code "functions 2" (begin) */
+	/* ^^^ Preserved code "functions 2" (end) */
+
+	return 0;
+}
+{# H_EXPORT #}
+static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len))
+{
+	int ret;
+	{#- LTE - LRW MODE #}
+	{%- if config_mode %}
+
+	ret = export_func("{{setting_pfx}}/mode", &m_app_config_interim.mode,
+					  sizeof( m_app_config_interim.mode));
+	if (ret < 0) {
+		return ret;
+	}
+	{%-endif%}
+{%- for dep , params in data_dependency['parameters'].items() %}
+	{%- if dep != 'no_dependency' %}
+#if {{ dep }}
+	{%- endif %}
+{% for parameter in params -%}
+	{%- set var = parameter.var | default(parameter.name | replace('-','_')) %}
+
+{#- BOOL | FLOAT | INT | STRING #}
+{%- if parameter['type'] == 'bool' or parameter['type'] == 'float' or parameter['type'] == 'int'or parameter['type'] == 'string' %}
+	ret = export_func("{{setting_pfx}}/{{parameter['name']}}", &m_app_config_interim.{{var}},
+					  sizeof( m_app_config_interim.{{var}}));
+	if (ret < 0) {
+		return ret;
+	}
+{% endif -%}
+
+{#- ARRAY #}
+{%- if parameter['type'] == 'array[bool]' or parameter['type'] == 'array[int]' %}
+	{%- for i in range(parameter['len']) %}
+	ret = export_func("{{setting_pfx}}/{{parameter['name'].split('-')[0]}}-{{i}}-{{parameter['name'].split('-')[1:] | join('-')}}", &m_app_config_interim.{{var}}[{{i}}],
+					  sizeof( m_app_config_interim.{{var}}[{{i}}]));
+	if (ret < 0) {
+		return ret;
+	}
+	{% endfor %}
+{%- endif -%}
+
+{#- ENUM #}
+{%- if parameter['type'] == 'enum' and parameter['related'] %}
+{%- for related in parameter['related'] %}
+	ret = export_func("{{setting_pfx}}/{{related}}-{{ parameter['name'] }}", &m_app_config_interim.{{related}}_{{ var }},
+					  sizeof( m_app_config_interim.{{related}}_{{ var }}));
+	if (ret < 0) {
+		return ret;
+	}
+{% endfor %}
+{%- else %}
+{%- for mode in parameter['valueset'] %}
+	ret = export_func("{{setting_pfx}}/{{ parameter['name'] }}-{{ loop.index }}", &m_app_config_interim.{{ var }}_{{ loop.index }},
+					  sizeof( m_app_config_interim.{{ var }}_{{ loop.index }}));
+	if (ret < 0) {
+		return ret;
+	}
+{% endfor %}
+{%- endif %}
+{%- endfor %}
+	{%- if dep != 'no_dependency' %}
+#endif /* {{dep}} */
+	{% endif %}
+{%- endfor %}
+	/* ### Preserved code "functions 3" (begin) */
+	/* ^^^ Preserved code "functions 3" (end) */
+
+	return 0;
+}
+{# INIT #}
+static int init(void) 
+{
+	int ret;
+
+	LOG_INF("System initialization");
+
+	static struct settings_handler sh = {
+		.name = SETTINGS_PFX,
+		.h_set = h_set,
+		.h_commit = h_commit,
+		.h_export = h_export,
+	};
+
+	ret = settings_register(&sh);
+
+	if (ret < 0) {
+		LOG_ERR("Call `settings_register` failed: %d", ret);
+		return ret;
+	}
+
+	ret = settings_load_subtree(SETTINGS_PFX);
+
+	if (ret < 0) {
+		LOG_ERR("Call `settings_load_subtree` failed: %d", ret);
+		return ret;
+	}
+
+	ctr_config_append_show(SETTINGS_PFX, app_config_cmd_config_show);
+
+	/* ### Preserved code "functions 4" (begin) */
+	/* ^^^ Preserved code "functions 4" (end) */
+
+	return 0;
+}
+
+SYS_INIT(init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+{%- raw %}
+{% endraw%}

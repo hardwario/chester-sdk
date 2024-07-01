@@ -1,0 +1,217 @@
+{#- GLOBAL VARIABLES #}
+{%- set variant_name_lower = data['project']['variant']|lower -%}
+{%- set config_mode = [] -%}
+{%- set array_mode = ['none'] -%}
+{%- if 'subsystem-lte' in data['features'] and 'subsystem-lrw' in data['features'] -%}
+    {%- do config_mode.append('NONE') %}
+    {%- do array_mode.append('lte') %}
+    {%- do array_mode.append('lrw') %}
+{%- elif 'subsystem-lte' in data['features'] and 'subsystem-lrw' not in data['features'] -%}
+    {%- do config_mode.append('LTE') %}
+    {%- do array_mode.append('lte') %}
+{%- elif 'subsystem-lte' not in data['features'] and 'subsystem-lrw' in data['features'] -%}
+    {%- do config_mode.append('LRW') %}
+    {%- do array_mode.append('lrw') %}
+{%- else -%}
+    {%- do config_mode.append('NONE') %}
+{%- endif -%}
+
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+/*
+	{%- if data['project']['company'] %}
+ * Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+ * 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+ * {{data['project']['license'] }}
+	{%- endif %}
+ */
+{% raw %}
+{% endraw %}
+{%- endif -%}
+
+#include "app_config.h"
+
+/* CHESTER includes */
+#include <chester/ctr_config.h>
+
+/* Zephyr includes */
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/shell/shell.h>
+
+/* Standard includes */
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* ### Preserved code "includes" (begin) */
+/* ^^^ Preserved code "includes" (end) */
+
+LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
+
+#define SETTINGS_PFX "app-{{ setting_pfx }}"
+
+struct app_config g_app_config;
+
+static struct app_config m_config_interim;
+
+/* clang-format off */
+const struct ctr_config_item items[] = {
+{%- for dep , params in data_dependency['parameters'].items() %}
+	{%- if dep != 'no_dependency' %}
+
+#if {{ dep }}
+	{%- endif %}
+	{%- for param in params -%}
+		{%- set domain = param.domain | default('app')%}
+		{%- set var = param.var | default(param.name | replace('-','_')) %}
+	{%- if param['type'].split('[')[0] != 'array' %}
+	{#- STRING #}
+	{%- if param['type'] == 'string' %}
+	CTR_CONFIG_ITEM_STRING("{{ param['name'] }}", m_config_interim.{{ var }}, "{{param['help']}}", "{{param['default']}}"),
+
+	{#- BOOL #}
+	{%- elif param['type'] == 'bool' %}
+	CTR_CONFIG_ITEM_BOOL("{{ param['name'] }}", m_config_interim.{{ var }}, "{{param['help']}}.", {{param['default'] | default('false', true) | lower}}),
+
+	{#- FLOAT #}
+	{%- elif param['type'] == 'float' %}
+	CTR_CONFIG_ITEM_FLOAT("{{ param['name'] }}", m_config_interim.{{ var }}, {{'%.1ff' | format(param['min'])}}, {{'%.1ff' | format(param['max'])}}, "{{param['help']}}.", {{'%.1ff' | format(param['default'])| default('0.0f', true)}}),
+
+	{#- ENUM  #}
+	{%- elif param['type'] == 'enum'%}
+		{%- if '{}' in param['name'] and not param['related']%}
+			{%- for val in param['valueset'] %}
+	CTR_CONFIG_ITEM_ENUM("{{ param['name'] | replace('{}', loop.index )}}", m_config_interim.{{param['name'] | replace('-','_') | replace('{}', loop.index)}}, ((const char*[]){ {%- for e_var in param['valueset'] %}"{{e_var}}"{% if not loop.last %}, {% endif %}{% endfor -%} }), "Get/Set {{ param['name'] | replace('{}', loop.index )}}", APP_CONFIG_{{ var | replace('{}', '') | upper}}{{val|  upper}}),
+			{%- endfor -%}
+		{% elif param['related'] %}
+			{%- for related in param['related'] %}
+	CTR_CONFIG_ITEM_ENUM("{{ related['name'] }}-{{ param['name'] }}", m_config_interim.{{related['name'] | replace('-','_')}}_{{var}}, ((const char*[]){ {%- for e_var in param['valueset'] %}"{{e_var}}"{% if not loop.last %}, {% endif %}{% endfor -%} }), "{{ related['help']}}", APP_CONFIG_{{ var | upper}}_{{related['default'] |  upper}}),
+			{%- endfor -%}
+		{%- else %}
+		{{log.wrn("Enum wrongly defined. Check the documentation.")}}
+	{% endif %}
+
+	{#- INT #}
+	{%- elif param['type'] == 'int' %}
+	CTR_CONFIG_ITEM_INT("{{ param['name'] }}", m_config_interim.{{ var }}, {{param['min']}}, {{param['max']}}, "{{param['help']}}.", {{param['default']}}),
+	{%- endif -%}
+	{%- else%}
+	{#- ARRAY[BOOL] #}
+		{%- if param['type'].split('[')[1][0:-1] == 'bool' %}
+			{%- for i in range(param['len'])%}
+	CTR_CONFIG_ITEM_BOOL("{{ param['name'] }}-{{i}}", m_config_interim.{{ var }}[{{i}}], "{{param['help']}}.", {{param['default'][i] | default('false', true) | lower}}),
+			{%- endfor %}
+
+	{#- ARRAY[INT] #}
+		{%- elif param['type'].split('[')[1][0:-1] == 'int' %}
+			{%- for i in range(param['len'])%}
+	CTR_CONFIG_ITEM_INT("{{ param['name'] }}-{{i}}", m_config_interim.{{ var }}[{{i}}], {{param['min']}}, {{param['max']}}, "{{param['help']}}.", {{param['default'][i] | default('0', true)}}),
+			{%- endfor %}
+
+	{#- ARRAY[FLOAT] #}
+		{%- elif param['type'].split('[')[1][0:-1] == 'float' %}
+			{%- for i in range(param['len'])%}
+	CTR_CONFIG_ITEM_FLOAT("{{ param['name'] }}-{{i}}", m_config_interim.{{ var }}[{{i}}], {{'%.1ff' | format(param['min'])}}, {{'%.1ff' | format(param['max'])}}, "{{param['help']}}.", {{ ('%.1f' | format(param['default'][i] | default(0.0))) + 'f' }}),
+			{%- endfor %}
+		{%- endif%}
+	{%- endif -%}
+{%- endfor %}
+	{%- if dep != 'no_dependency' %}
+#endif /* {{dep}} */
+	{%- endif -%}
+
+{%- endfor %}
+{#- MODE LTE-LRW #}
+{%- if config_mode %}
+
+#if defined(FEATURE_SUBSYSTEM_LTE) || defined(FEATURE_SUBSYSTEM_LRW)
+	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){ {%- for mode in array_mode %}"{{mode}}"{% if not loop.last %}, {% endif %}{% endfor -%} }), "Set communication mode", APP_CONFIG_MODE_{{config_mode[0]}}),
+#endif /* defined(FEATURE_SUBSYSTEM_LTE) || defined(FEATURE_SUBSYSTEM_LRW) */
+{%- endif %}
+
+/* ### Preserved code "config" (begin) */
+/* ^^^ Preserved code "config" (end) */
+
+};
+/* clang-format on */
+
+/* ### Preserved code "function" (begin) */
+/* ^^^ Preserved code "function" (end) */
+
+int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
+{
+	for (int i = 0; i < ARRAY_SIZE(items); i++) {
+		ctr_config_show_item(shell, &items[i]);
+	}
+
+	return 0;
+}
+
+int app_config_cmd_config(const struct shell *shell, size_t argc, char **argv)
+{
+	return ctr_config_cmd_config(items, ARRAY_SIZE(items), shell, argc, argv);
+}
+
+static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
+{
+	return ctr_config_h_set(items, ARRAY_SIZE(items), key, len, read_cb, cb_arg);
+}
+
+static int h_commit(void)
+{
+	LOG_DBG("Loaded settings in full");
+	memcpy(&g_app_config, &m_config_interim, sizeof(g_app_config));
+	return 0;
+}
+
+static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len))
+{
+	return ctr_config_h_export(items, ARRAY_SIZE(items), export_func);
+}
+
+static int init(void)
+{
+	int ret;
+
+	LOG_INF("System initialization");
+
+	for (int i = 0; i < ARRAY_SIZE(items); i++) {
+		ctr_config_init_item(&items[i]);
+	}
+
+	static struct settings_handler sh = {
+		.name = SETTINGS_PFX,
+		.h_set = h_set,
+		.h_commit = h_commit,
+		.h_export = h_export,
+	};
+
+	ret = settings_register(&sh);
+	if (ret) {
+		LOG_ERR("Call `settings_register` failed: %d", ret);
+		return ret;
+	}
+
+	ret = settings_load_subtree(SETTINGS_PFX);
+	if (ret) {
+		LOG_ERR("Call `settings_load_subtree` failed: %d", ret);
+		return ret;
+	}
+	
+	/* ### Preserved code "init" (begin) */
+	/* ^^^ Preserved code "init" (end) */
+
+	ctr_config_append_show(SETTINGS_PFX, app_config_cmd_config_show);
+
+	return 0;
+}
+
+SYS_INIT(init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

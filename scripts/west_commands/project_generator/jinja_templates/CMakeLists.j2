@@ -1,0 +1,49 @@
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+#
+	{%- if data['project']['company'] %}
+# Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+# 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+#  {{data['project']['license'] }}
+	{%- endif %}
+#
+{% raw %}
+{% endraw %}
+{%- endif -%}
+cmake_minimum_required(VERSION 3.20.0)
+
+set(ENV{FW_BUNDLE} "{{data['project']['fw_bundle']}}")
+set(ENV{FW_VERSION} "{{data['project']['fw_version']}}")
+set(ENV{FW_NAME} "{{data['project']['fw_name']}}")
+
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+project({{ project_name }})
+{%- if 'subsystem_lte' in data['features']%}
+
+add_custom_command(
+    COMMAND ../../../scripts/gen-msg-key.py ../codec/cbor-decoder.yaml ../src/msg_key.h
+    OUTPUT ../src/msg_key.h
+    MAIN_DEPENDENCY ../codec/cbor-decoder.yaml
+)
+{%- endif %}
+{% for file in sources %}
+	{%- if file != 'app_ble_svc.c'%}
+target_sources(app PRIVATE src/{{ file }})
+	{%- endif %}
+	{%- if file == 'app_ble_svc.c' %}    
+target_sources_ifdef(CONFIG_CTR_BLE app PRIVATE src/app_ble_svc.c)
+	{%- endif%}
+{%- endfor %}
+
+target_precompile_headers(app PRIVATE src/feature.h)
+target_precompile_headers(app PRIVATE src/variant.h)
+
+# ### Preserved code "cmake" (begin)
+# ^^^ Preserved code "cmake" (end)
+{%- raw %}
+{% endraw%}

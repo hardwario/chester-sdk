@@ -1,0 +1,826 @@
+{#- COPYRIGHT AND LICENSE -#}
+{%- if data['project']['company'] or data['project']['license'] -%}
+/*
+	{%- if data['project']['company'] %}
+ * Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+ * 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+ * {{data['project']['license'] }}
+	{%- endif %}
+ */
+{%- raw %}
+{% endraw %}
+{%- endif -%}
+{%- for feature in data['features'] %}
+{#- A1 #} 
+	{%- if feature == 'hardware-chester-a1' %}
+/* {{ feature | upper }} */
+/ {
+	ctr_a1: ctr_a1 {
+		compatible = "hardwario,ctr-a1";
+		status = "okay";
+		relay1-gpios = <&ctr_a1_tca9534a 0 GPIO_ACTIVE_HIGH>;
+		relay2-gpios = <&ctr_a1_tca9534a 1 GPIO_ACTIVE_HIGH>;
+		led1-gpios = <&ctr_a1_tca9534a 5 GPIO_ACTIVE_HIGH>;
+		led2-gpios = <&ctr_a1_tca9534a 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c0 {
+	ctr_a1_tca9534a: ctr_a1_tca9534a@3a {
+		compatible = "ti,tca9538";
+		status = "okay";
+		reg = <0x3a>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+	};
+};
+	{%- endif -%}
+{#- B1 #} 
+	{%- if feature == 'hardware-chester-b1' %}
+/* {{ feature | upper }} */
+/ {
+	led_rgy {
+		compatible = "gpio-leds";
+
+		led_r: led_r {
+			gpios = <&ctr_b1_tca9534a 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_g: led_g {
+			gpios = <&ctr_b1_tca9534a 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led_y: led_y {
+			gpios = <&ctr_b1_tca9534a 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	ctr_b1: ctr_b1 {
+		compatible = "hardwario,ctr-b1";
+		status = "okay";
+		wm-reset-gpios = <&ctr_b1_tca9534a 0 GPIO_ACTIVE_HIGH>;
+		wm-on-gpios = <&ctr_b1_tca9534a 2 GPIO_ACTIVE_HIGH>;
+		ant-1-gpios = <&ctr_b1_tca9534a 3 GPIO_ACTIVE_HIGH>;
+		ant-2-gpios = <&ctr_b1_tca9534a 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c0 {
+	ctr_b1_tca9534a: ctr_b1_tca9534a@3e {
+		compatible = "ti,tca9538";
+		status = "okay";
+		reg = <0x3e>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+	};
+
+	ctr_b1_sc16is740: ctr_b1_sc16is740@4e {
+		compatible = "nxp,sc16is7xx";
+		status = "disabled";
+		reg = <0x4e>;
+		clock-frequency = <14745600>;
+		prescaler = <1>;
+		irq-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&ctr_b1_tca9534a 1 GPIO_ACTIVE_LOW>;
+	};
+};
+	{%- endif -%}
+
+{#- BAROMETER_TAG #} 
+	{%- if feature == 'hardware-chester-barometer-tag' %}
+/* {{ feature | upper }}   */
+&ctr_barometer_tag {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- C1 #} 
+	{%- if feature == 'hardware-chester-c1' %}
+/* {{ feature | upper }}   */
+/ {
+	led_rgy {
+		compatible = "gpio-leds";
+
+		led_r: led_r {
+			gpios = <&ctr_c1_tca9534a 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_g: led_g {
+			gpios = <&ctr_c1_tca9534a 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led_y: led_y {
+			gpios = <&ctr_c1_tca9534a 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&i2c0 {
+	ctr_c1_tca9534a: ctr_c1_tca9534a@3e {
+		compatible = "ti,tca9538";
+		status = "okay";
+		reg = <0x3e>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+	};
+};
+	{%- endif -%}
+
+{#- C2 #} 
+	{%- if feature == 'hardware-chester-c2' %}
+/* {{ feature | upper }}   */
+&led_r {
+	gpios = <&ctr_c2_tca9534a 5 GPIO_ACTIVE_LOW>;
+};
+
+&led_g {
+	gpios = <&ctr_c2_tca9534a 6 GPIO_ACTIVE_LOW>;
+};
+
+&led_y {
+	gpios = <&ctr_c2_tca9534a 7 GPIO_ACTIVE_LOW>;
+};
+
+&i2c0 {
+	ctr_c2_tca9534a: ctr_c2_tca9534a@3e {
+		compatible = "ti,tca9538";
+		status = "okay";
+		reg = <0x3e>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+	};
+};
+	{%- endif -%}
+
+{#- DS18B20 #} 
+	{%- if feature == 'subsystem-ds18b20' %}
+/* {{ feature | upper }}  */
+&ds2484 {
+	ds18b20_0: ds18b20_0 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_1: ds18b20_1 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_2: ds18b20_2 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_3: ds18b20_3 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_4: ds18b20_4 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_5: ds18b20_5 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_6: ds18b20_6 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_7: ds18b20_7 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_8: ds18b20_8 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_9: ds18b20_9 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+};
+	{%- endif -%}
+
+{#- GNSS #} 
+	{%- if feature == 'hardware-chester-gnss' %}
+/* {{ feature | upper }}  */
+&m8 {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- K1 #} 
+	{%- if feature == 'hardware-chester-k1' %}
+/* {{ feature | upper }}  */
+/ {
+	ctr_k1: ctr_k1 {
+		compatible = "hardwario,ctr-k1";
+		status = "okay";
+		on1-gpios = <&ctr_k1_tca9534a 0 GPIO_ACTIVE_HIGH>;
+		on2-gpios = <&ctr_k1_tca9534a 1 GPIO_ACTIVE_HIGH>;
+		on3-gpios = <&ctr_k1_tca9534a 2 GPIO_ACTIVE_HIGH>;
+		on4-gpios = <&ctr_k1_tca9534a 3 GPIO_ACTIVE_HIGH>;
+		en-gpios = <&ctr_k1_tca9534a 4 GPIO_ACTIVE_HIGH>;
+		nc1-gpios = <&ctr_k1_tca9534a 5 GPIO_ACTIVE_HIGH>;
+		nc2-gpios = <&ctr_k1_tca9534a 6 GPIO_ACTIVE_HIGH>;
+		nc3-gpios = <&ctr_k1_tca9534a 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c0 {
+	ctr_k1_tca9534a: ctr_k1_tca9534a@3d {
+		compatible = "ti,tca9538";
+		status = "okay";
+		reg = <0x3d>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+	};
+};
+	{%- endif -%}
+
+{#- LRW #} 
+	{%- if feature == 'subsystem-lrw' %}
+/* {{ feature | upper }}   */
+&ctr_lrw_if {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- LTE #} 
+	{%- if feature == 'subsystem-lte' %}
+/* {{ feature | upper }}  */
+&ctr_lte_if {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- LTE_V2 #} 
+	{%- if feature == 'subsystem-lte-v2' %}
+/* {{ feature | upper }}  */
+/ {
+	chosen {
+		ctr,lte_link = &ctr_lte_link;
+	};
+};
+
+&uart0 {
+	status = "okay";
+
+	ctr_lte_link: ctr_lte_link {
+		compatible = "hardwario,ctr-lte-link";
+		status = "okay";
+		reset-gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		wakeup-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- MACHINE_PROBE #} 
+	{%- if feature == 'hardware-chester-machine-probe' %}
+/* {{ feature | upper }}  */
+&ds2484 {
+	ctr_machine_probe_0: ctr_machine_probe_0 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_machine_probe_1: ctr_machine_probe_1 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_machine_probe_2: ctr_machine_probe_2 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_machine_probe_3: ctr_machine_probe_3 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_machine_probe_4: ctr_machine_probe_4 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_machine_probe_5: ctr_machine_probe_5 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_machine_probe_6: ctr_machine_probe_6 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_machine_probe_7: ctr_machine_probe_7 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_machine_probe_8: ctr_machine_probe_8 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_machine_probe_9: ctr_machine_probe_9 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+};
+	{%- endif -%}
+
+{#- MB7066_A #} 
+	{%- if feature == 'hardware-chester-mb7066-a' %}
+/* {{ feature | upper }}  */
+&ctr_x0_a {
+	status = "okay";
+	mb7066: mb7066 {
+		compatible = "maxbotix,mb7066";
+		status = "okay";
+		pin-chan = <2>;
+		power-chan = <1>;
+	};
+};
+
+&ctr_x0_pcal6416a_a {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- MB7066_B #} 
+	{%- if feature == 'hardware-chester-mb7066-b' %}
+/* {{ feature | upper }}  */
+&ctr_x0_b {
+	status = "okay";
+	mb7066: mb7066 {
+		compatible = "maxbotix,mb7066";
+		status = "okay";
+		pin-chan = <2>;
+		power-chan = <1>;
+	};
+};
+
+&ctr_x0_pcal6416a_b {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- METEO_A #} 
+	{%- if feature == 'hardware-chester-meteo-a' %}
+/* {{ feature | upper }}  */
+&ctr_x0_a {
+	status = "okay";
+
+	ctr_meteo_a: ctr_meteo_a {
+		compatible = "hardwario,ctr-meteo";
+		slot = "A";
+		status = "okay";
+	};
+};
+
+&ctr_x0_pcal6416a_a {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- METEO_B #} 
+	{%- if feature == 'hardware-chester-meteo-b' %}
+/* {{ feature | upper }}  */
+&ctr_x0_b {
+	status = "okay";
+
+	ctr_meteo_b: ctr_meteo_b {
+		compatible = "hardwario,ctr-meteo";
+		slot = "B";
+		status = "okay";
+	};
+};
+
+&ctr_x0_pcal6416a_b {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- RTD_A #} 
+	{%- if feature == 'hardware-chester-rtd-a' %}
+/* {{ feature | upper }}  */
+&ctr_x3_a {
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_a1 {
+	vref = <1>;
+	idac = <6>;
+	i1mux = <4>;
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_a2 {
+	vref = <1>;
+	idac = <6>;
+	i1mux = <4>;
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- RTD_B #} 
+	{%- if feature == 'hardware-chester-rtd-b' %}
+/* {{ feature | upper }}  */
+&ctr_x3_b {
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_b1 {
+	vref = <1>;
+	idac = <6>;
+	i1mux = <4>;
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_b2 {
+	vref = <1>;
+	idac = <6>;
+	i1mux = <4>;
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- S1 #} 
+	{%- if feature == 'hardware-chester-s1' %}
+/* {{ feature | upper }}  */
+&ctr_s1 {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- S2 #} 
+	{%- if feature == 'hardware-chester-s2' %}
+/* {{ feature | upper }}  */
+&sht30_ext {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- SOIL_SENSOR #} 
+	{%- if feature == 'subsystem-soil-sensor' %}
+/* {{ feature | upper }}  */
+&ds2484 {
+	ctr_soil_sensor_0: ctr_soil_sensor_0 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_1: ctr_soil_sensor_1 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_2: ctr_soil_sensor_2 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_3: ctr_soil_sensor_3 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_4: ctr_soil_sensor_4 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_5: ctr_soil_sensor_5 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_6: ctr_soil_sensor_6 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_7: ctr_soil_sensor_7 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_8: ctr_soil_sensor_8 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_9: ctr_soil_sensor_9 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+};
+	{%- endif -%}	
+
+{#- WEIGHT_PROBE #} 
+	{%- if feature == 'hardware-chester-weight-probe' %}
+/* {{ feature | upper }}  */
+&ds2484 {
+	ctr_weight_probe_0: ctr_weight_probe_0 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_1: ctr_weight_probe_1 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_2: ctr_weight_probe_2 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_3: ctr_weight_probe_3 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_4: ctr_weight_probe_4 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_5: ctr_weight_probe_5 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_6: ctr_weight_probe_6 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_7: ctr_weight_probe_7 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_8: ctr_weight_probe_8 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_weight_probe_9: ctr_weight_probe_9 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+};
+	{%- endif -%}	
+	
+{#- X0A #} 
+	{%- if feature == 'hardware-chester-x0-a' %}
+/* {{ feature | upper }}  */
+&ctr_x0_a {
+	status = "okay";
+};
+
+&ctr_x0_pcal6416a_a {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- X0B #} 
+	{%- if feature == 'hardware-chester-x0-b' %}
+/* {{ feature | upper }}  */
+&ctr_x0_b {
+	status = "okay";
+};
+
+&ctr_x0_pcal6416a_b {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- X2A #} 
+	{%- if feature == 'hardware-chester-x2-a' %}
+/* {{ feature | upper }}  */
+&ctr_x2_sc16is740_a {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- X2B #} 
+	{%- if feature == 'hardware-chester-x2-b' %}
+/* {{ feature | upper }}  */
+&ctr_x2_sc16is740_b {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- X2_MODBUS_A #} 
+	{%- if feature == 'hardware-chester-x2-modbus-a' %}
+/* {{ feature | upper }}  */
+&ctr_x2_sc16is740_a {
+	status = "okay";
+	rts-control;
+
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		status = "okay";
+		de-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		re-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+	};
+};
+{%- endif -%}
+
+{#- X2_MODBUS_B #} 
+	{%- if feature == 'hardware-chester-x2-modbus-b' %}
+/* {{ feature | upper }}  */
+&ctr_x2_sc16is740_b {
+	status = "okay";
+	rts-control;
+
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		status = "okay";
+		de-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		re-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+	};
+};
+{%- endif -%}
+
+{#- X3_A #} 
+	{%- if feature == 'hardware-chester-x3-a' %}
+/* {{ feature | upper }}  */
+&ctr_x3_a {
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_a1 {
+	status = "okay";
+	gain = <7>;
+	vref = <1>;
+};
+
+&ctr_x3_ads122c04_a2 {
+	status = "okay";
+	gain = <7>;
+	vref = <1>;
+};
+	{%- endif -%}
+
+{#- X3_B #} 
+	{%- if feature == 'hardware-chester-x3-b' %}
+/* {{ feature | upper }}  */
+&ctr_x3_b {
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_b1 {
+	status = "okay";
+	gain = <7>;
+	vref = <1>;
+};
+
+&ctr_x3_ads122c04_b2 {
+	status = "okay";
+	gain = <7>;
+	vref = <1>;
+};
+	{%- endif -%}
+
+{#- X4_A #} 
+	{%- if feature == 'hardware-chester-x4-a' %}
+/* {{ feature | upper }}  */
+&ctr_x4_a {
+	status = "okay";
+};
+
+&ctr_x4_tla2021 {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- X4_B #} 
+	{%- if feature == 'hardware-chester-x4-b' %}
+/* {{ feature | upper }}  */
+&ctr_x4_b {
+	status = "okay";
+};
+
+&ctr_x4_tla2021 {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- X7_A #} 
+	{%- if feature == 'hardware-chester-x7-a' %}
+/* {{ feature | upper }}  */
+/ {
+	ctr_x7_a: ctr_x7_a {
+		compatible = "hardwario,ctr-x7";
+		status = "okay";
+		en-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+	};
+};
+	{%- endif -%}
+
+{#- X7_B #} 
+	{%- if feature == 'hardware-chester-x7-b' %}
+/* {{ feature | upper }}  */
+/ {
+	ctr_x7_b: ctr_x7_b {
+		compatible = "hardwario,ctr-x7";
+		status = "okay";
+		en-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+	{%- endif -%}
+
+{#- X9_A #} 
+	{%- if feature == 'hardware-chester-x9-a' %}
+/* {{ feature | upper }}  */
+/ {
+	ctr_x9_a: ctr_x9_a {
+		compatible = "hardwario,ctr-x9";
+		status = "okay";
+		output1-gpios = <&gpio0 3 0>;
+		output2-gpios = <&gpio0 29 0>;
+		output3-gpios = <&gpio0 2 0>;
+		output4-gpios = <&gpio0 31 0>;
+	};
+};
+	{%- endif -%}
+
+{#- X9_B #} 
+	{%- if feature == 'hardware-chester-x9-b' %}
+/* {{ feature | upper }}  */
+/ {
+	ctr_x9_b: ctr_x9_b {
+		compatible = "hardwario,ctr-x9";
+		status = "okay";
+		output1-gpios = <&gpio0 28 0>;
+		output2-gpios = <&gpio0 30 0>;
+		output3-gpios = <&gpio0 4 0>;
+		output4-gpios = <&gpio0 5 0>;
+	};
+};
+	{%- endif -%}
+
+{#- X10 #} 
+	{%- if feature == 'hardware-chester-x10' %}
+/* {{ feature | upper }}  */
+&ctr_x10 {
+	status = "okay";
+};
+
+&ctr_x10_tla2024 {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- Z #} 
+	{%- if feature == 'hardware-chester-z' %}
+/* {{ feature | upper }}  */
+&ctr_z {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- PEOPLE_COUTER #} 
+	{%- if feature == 'hardware-chester-people-counter' %}
+/* {{ feature | upper }}  */
+&i2c0 {
+	people_counter: people_counter@7f {
+		compatible = "adastra,people-counter";
+		status = "okay";
+		reg = <0x7f>;
+	};
+}; 
+	{%- endif -%}
+
+{#- APP TAMPER #} 
+	{%- if feature == 'chester-app-tamper' %}
+/* {{ feature | upper }}  */
+/ {
+	zephyr,user {
+		tamper-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+	};
+};
+	{%- endif -%}
+
+{%- endfor %}
+
+/* ### Preserved code "overlay" (begin) */
+/* ^^^ Preserved code "overlay" (end) */
+{%- raw %}
+{% endraw%}

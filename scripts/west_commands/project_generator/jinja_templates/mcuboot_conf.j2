@@ -1,0 +1,18 @@
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+#
+	{%- if data['project']['company'] %}
+# Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+# 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+# {{data['project']['license'] }}
+	{%- endif %}
+#
+{% raw %}
+{% endraw %}
+{%- endif -%}
+
+CONFIG_MULTITHREADING=y

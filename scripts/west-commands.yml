@@ -20,3 +20,23 @@ west-commands:
       - name: gen-codec
         class: GenerateCodec
         help: generate codec
+  - file: scripts/west_commands/project_generator/project_generator_west.py
+    commands:
+      - name: chester-init
+        class: ProjectInit
+        help: initialize Hardwario Project Application
+  - file: scripts/west_commands/project_generator/project_generator_west.py
+    commands:
+      - name: chester-update
+        class: ProjectUpdate
+        help: update Hardwario Project Application
+  - file: scripts/west_commands/project_generator/project_generator_west.py
+    commands:
+      - name: chester-cbor
+        class: ProjectCbor
+        help: create/update CBOR to Hardwario Project Application
+  - file: scripts/west_commands/project_generator/project_generator_west.py
+    commands:
+      - name: chester-create
+        class: ProjectCreate
+        help: create Hardwario Project Application

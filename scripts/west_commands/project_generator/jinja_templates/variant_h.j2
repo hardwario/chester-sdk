@@ -1,0 +1,33 @@
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+/*
+	{%- if data['project']['company'] %}
+ * Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+ * 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+ * {{data['project']['license'] }}
+	{%- endif %}
+ */
+{% raw %}
+{% endraw %}
+{%- endif -%}
+
+#ifndef VARIANT_H_
+#define VARIANT_H_
+{% set variant_found = [] -%}
+{%- for variant in data['variants'] -%}
+    {%- if (data['project']['variant'] | upper ) == ( variant['name'] | upper )| replace('CHESTER ','') %}
+#define VARIANT_{{variant['name'] | upper | replace(' ', '_') | replace('CHESTER_','')}} 1
+        {% do variant_found.append(1) %}
+    {%- endif %}
+{%- endfor %}
+{%- if not variant_found %}
+#define VARIANT_{{data['project']['variant'] | upper | replace(' ', '_') | replace('CHESTER_','')}} 1
+    {{ log.wrn('The requested variant is not part of the default CHESTER variants or is unspecified. This is a CUSTOM project')}}
+{%- endif %}
+#endif /* VARIANT_H_ */
+
+

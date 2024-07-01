@@ -794,9 +794,8 @@ cfun_1:
 
 	char at_cmd[32 + 1] = {0};
 	char ar_response[64] = {0};
-	snprintf(at_cmd, sizeof(at_cmd), "AT#XCONNECT=\"%u.%u.%u.%u\",%u",
-		 g_ctr_lte_v2_config.addr[0], g_ctr_lte_v2_config.addr[1],
-		 g_ctr_lte_v2_config.addr[2], g_ctr_lte_v2_config.addr[3],
+	snprintf(at_cmd, sizeof(at_cmd), "AT#XCONNECT=\"%s\",%u",
+		 g_ctr_lte_v2_config.addr,
 		 g_ctr_lte_v2_config.port);
 
 	ret = ctr_lte_v2_talk_at_cmd_with_resp(&m_talk, at_cmd, ar_response, sizeof(ar_response));

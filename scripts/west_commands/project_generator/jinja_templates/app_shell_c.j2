@@ -1,0 +1,278 @@
+{#- GLOBAL VARIABLES #}
+{%- set variant_name_lower = (data['project']['variant']|lower).split()[0] %}
+
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+/*
+	{%- if data['project']['company'] %}
+ * Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+ * 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+ * {{data['project']['license'] }}
+	{%- endif %}
+ */
+{% raw %}
+{% endraw %}
+{%- endif -%}
+#include "app_config.h"
+{%- if data['commands'] and not variant_name_lower == 'scale' %}
+#include "app_work.h"
+{%- endif %}
+{%- if variant_name_lower == 'scale' %}
+#include "app_measure.h"
+#include "app_send.h"
+{%- endif %}
+
+/* Zephyr includes */
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
+
+/* Standard includes */
+#include <errno.h>
+#include <stdlib.h>
+
+/* ### Preserved code "includes" (begin) */
+/* ^^^ Preserved code "includes" (end) */
+{% raw %}
+LOG_MODULE_REGISTER(app_shell, LOG_LEVEL_INF);
+{% endraw %}
+
+{#- SCALE VARIANT #}
+{%- if variant_name_lower == 'scale' or variant_name_lower == 'scale z'%}
+#if defined(VARIANT_SCALE) || defined(VARIANT_SCALE_Z)
+static int cmd_measure(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	k_timer_start(&g_app_measure_weight_timer, K_NO_WAIT, K_FOREVER);
+
+
+{%- if 'hardwario_chester_people_counter' in data['features']%}
+#if defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
+	k_timer_start(&g_app_measure_people_timer, K_NO_WAIT, K_FOREVER);
+#endif /* defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER) */
+{%- endif %}
+
+	return 0;
+}
+#endif /* defined(VARIANT_SCALE) || defined(VARIANT_SCALE_Z) */
+{% endif %}
+
+{#- METEO VARIANT #}
+{%- if variant_name_lower == 'meteo' or variant_name_lower == 'meteo z' %}
+#if defined(VARIANT_METEO) || defined(VARIANT_METEO_Z) 
+static int cmd_read(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+	 
+#if defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG)
+	shell_print(shell, "Barometer");
+	ret = shell_execute_cmd(shell, "mpl3115a2 read");
+	if (ret) {
+		LOG_ERR("Call `shell_execute_cmd` failed: %d", ret);
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_A)
+	shell_print(shell, "Meteo");
+	ret = shell_execute_cmd(shell, "meteo read ctr_meteo_a");
+	if (ret) {
+		LOG_ERR("Call `shell_execute_cmd` failed: %d", ret);
+	}
+#endif /*  */
+
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_B)
+	shell_print(shell, "Meteo");
+	ret = shell_execute_cmd(shell, "meteo read ctr_meteo_b");
+	if (ret) {
+		LOG_ERR("Call `shell_execute_cmd` failed: %d", ret);
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_B) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_S2)
+	shell_print(shell, "Humidity");
+	ret = shell_execute_cmd(shell, "hygro read");
+	if (ret) {
+		LOG_ERR("Call `shell_execute_cmd` failed: %d", ret);
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
+
+	return 0;
+}
+#endif /* defined(VARIANT_METEO) || defined(VARIANT_METEO_Z) */
+{% endif %}
+
+{#- COMMANDS #}
+{%- for command in data['commands']%}
+{%- if command['depends_on'] %}
+#if {{ command['depends_on'] }}
+{%+ endif %}
+static int cmd_{{command['name']}}(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	{{command['callback']}};
+
+	return 0;
+}
+{%- if command['depends_on'] %}
+
+#endif /* {{dep}} */
+{%- endif %}
+{% endfor %}
+static int print_help(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	shell_help(shell);
+	return 0;
+}
+
+/* clang-format off */
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_app_config,
+   
+	SHELL_CMD_ARG(show, NULL,
+				  "List current configuration.",
+				  app_config_cmd_config_show, 1, 0),
+{%- for dep , params in data_dependency['parameters'].items() -%}
+	{%- if dep != 'no_dependency' %}
+#if {{ dep }}
+	{%- endif -%}
+{% for parameter in params %}
+	{%- set domain = parameter.domain | default('app')%}
+    {%- set var = parameter.var | default(parameter.name | replace('-','_')) %}
+
+    {#- BOOL AND ARRAY[BOOL] #}
+    {%- if parameter.type == 'bool' or parameter.type == 'array[bool]' %}
+
+	SHELL_CMD_ARG({{ parameter.name }}, NULL,
+				  "{{ parameter.help }} [true|false].",
+				  {{ domain }}_config_cmd_config_{{ var }}, 1, 1),
+	{%- endif -%}
+	
+    {#- STRING #}
+    {%- if parameter.type == 'string' %}
+
+	SHELL_CMD_ARG({{ parameter.name }}, NULL,
+				  "{{ parameter.help }}.",
+				  {{ domain }}_config_cmd_config_{{ var }}, 1, 1),
+	{%- endif -%}
+
+    {#- ENUM RELATED #}
+    {%- if parameter.type == 'enum' and parameter.related %}
+        {%- for related in parameter['related'] %}
+
+	SHELL_CMD_ARG({{ related }}-{{ parameter.name }}, NULL,
+				  "{{ parameter.help.replace('<related>', related) }} {{parameter.valueset}}.",
+				  {{ domain }}_config_cmd_config_{{ related }}_{{ var }}, 1, 1),
+        {%- endfor -%}
+	{%- endif -%}
+
+	{#- ENUM DEFAULT #}
+    {%- if parameter.type == 'enum' and not parameter.related %}
+        {%- for mode in parameter['valueset'] %}
+
+	SHELL_CMD_ARG({{ parameter.name }}-{{ loop.index }}, NULL,
+				  "{{ parameter.help }} {{parameter.valueset}}.",
+				  {{ domain }}_config_cmd_config_{{ var }}_{{ loop.index }}, 1, 1),
+
+        {%- endfor -%}
+	{%- endif -%}
+
+    {#- OTHERS #}
+    {%- if parameter.type == 'int' or parameter.type == 'float' or parameter.type == 'array[int]' %}
+
+	SHELL_CMD_ARG({{ parameter.name }}, NULL,
+				  "{{ parameter.help }} [{{parameter.min}}..{{parameter.max}}].",
+				  {{ domain }}_config_cmd_config_{{ var }}, 1, 1),
+    {%- endif -%}
+{% endfor %}
+	{%- if dep != 'no_dependency' %}
+
+#endif /* {{dep}} */
+	{%- endif %}	
+{% endfor %}
+
+{#- LTE-LRW MODE #}
+#if defined(FEATURE_LTE) && defined(FEATURE_LRW)
+
+	SHELL_CMD_ARG(mode, NULL,
+				  "Get/Set communication mode (None/LTE/LoRaWAN) ('none', 'lte', 'lrw').",
+				  app_config_cmd_config_mode, 1, 1),
+
+#endif
+
+	/* ### Preserved code "functions 1" (begin) */
+	/* ^^^ Preserved code "functions 1" (end) */
+
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_app,
+
+	SHELL_CMD_ARG(config, &sub_app_config, "Configuration commands.",
+				  print_help, 1, 0),
+		
+	SHELL_SUBCMD_SET_END
+
+	/* ### Preserved code "functions 2" (begin) */
+	/* ^^^ Preserved code "functions 2" (end) */
+);
+
+SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
+
+{#- COMMANDS #}
+{% for command in data['commands'] %}
+{%- if command['depends_on'] %}
+#if {{ command['depends_on'] }}
+{%- endif %}
+SHELL_CMD_REGISTER({{ command.name }}, NULL,"{{ command.help }}", cmd_{{ command.name }});
+{%- if command['depends_on'] %}
+#endif
+{%- endif %}
+{%- endfor %}
+
+{#- SCALE VARIANT #}
+{%- if variant_name_lower == 'scale' %}
+SHELL_CMD_REGISTER(measure, NULL, "Start measurement immediately.", cmd_measure);
+{% endif %}
+
+{#- METEO VARIANT #}
+{%- if variant_name_lower == 'meteo' or variant_name_lower == 'meteo z' %}
+
+#if defined(VARIANT_METEO) || defined(VARIANT_METEO_Z) 
+SHELL_CMD_REGISTER(sensors_read, NULL, "Read sensors and print values to shell.", cmd_read);
+#endif /* defined(VARIANT_METEO) || defined(VARIANT_METEO_Z) */
+{%- endif %}
+
+/* ### Preserved code "functions 3" (begin) */
+/* ^^^ Preserved code "functions 3" (end) */
+
+/* clang-format on */
+{%- raw %}
+{% endraw%}

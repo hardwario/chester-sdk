@@ -1,0 +1,66 @@
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+/*
+	{%- if data['project']['company'] %}
+ * Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+ * 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+ * {{data['project']['license'] }}
+	{%- endif %}
+ */
+{% raw %}
+{% endraw %}
+{%- endif -%}
+
+#ifndef APP_DATA_H_
+#define APP_DATA_H_
+
+/* CHESTER includes */
+#include <chester/ctr_lte.h>
+
+/* Zephyr includes */
+#include <zephyr/kernel.h>
+
+/* Standard includes */
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define APP_DATA_MAX_BACKUP_EVENTS 32
+#define APP_DATA_MAX_BUTTON_EVENTS 8
+
+struct app_data {
+	float therm_temperature;
+#if defined(FEATURE_SUBSYSTEM_BATT)
+	float system_voltage_rest;
+	float system_voltage_load;
+	float system_current_load;
+#endif /* defined(FEATURE_SUBSYSTEM_BATT) */
+#if defined(FEATURE_SUBSYSTEM_ACCEL)
+	float accel_acceleration_x;
+	float accel_acceleration_y;
+	float accel_acceleration_z;
+	int accel_orientation;
+#endif /* defined(FEATURE_SUBSYSTEM_ACCEL) */
+};
+
+extern struct app_data g_app_data;
+
+/* TODO Delete */
+extern struct k_mutex g_app_data_lte_eval_mut;
+extern bool g_app_data_lte_eval_valid;
+extern struct ctr_lte_eval g_app_data_lte_eval;
+
+void app_data_lock(void);
+void app_data_unlock(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* APP_DATA_H_ */

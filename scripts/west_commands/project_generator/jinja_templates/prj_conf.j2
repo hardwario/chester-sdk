@@ -1,0 +1,85 @@
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+#
+	{%- if data['project']['company'] %}
+# Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+# 
+	{%- endif %}
+	{%- if data['project']['license'] %}
+# {{data['project']['license'] }}
+	{%- endif %}
+#
+{% raw %}
+{% endraw %}
+{%- endif -%}
+{%- macro render_config(key, value) %}
+{{ key }}={{ value }}
+{%- endmacro -%}
+{%- set feature_configs = {
+    'subsystem-shell': 'CONFIG_CTR_SHELL=y',
+    'subsystem-adc': 'CONFIG_CTR_ADC=y',
+    'subsystem-accel': 'CONFIG_CTR_ACCEL=y',
+    'subsystem-batt': 'CONFIG_CTR_BATT=y',
+    'subsystem-buf': 'CONFIG_CTR_BUF=y',
+    'subsystem-ble': 'CONFIG_CTR_BLE=y',
+    'subsystem-ble-tag':'CONFIG_CTR_BLE_TAG=y',
+    'subsystem-bluetooth': 'CONFIG_CTR_BLE=y',
+    'subsystem-button': 'CONFIG_CTR_BUTTON=y',
+    'subsystem-cbprintf-fp-support': 'CONFIG_CBPRINTF_FP_SUPPORT=y',
+    'subsystem-config': 'CONFIG_CTR_CONFIG=y',
+    'subsystem-cloud': 'CONFIG_CTR_CLOUD=y',
+    'subsystem-defaults': 'CONFIG_CTR_DEFAULTS=y',
+    'subsystem-ds18b20': 'CONFIG_CTR_DS18B20=y',
+    'subsystem-edge': 'CONFIG_CTR_EDGE=y',
+    'subsystem-entropy-generator': 'CONFIG_ENTROPY_GENERATOR=y',
+    'subsystem-flash': 'CONFIG_CTR_FLASH=y',
+    'subsystem-gnss': 'CONFIG_CTR_GNSS=y',
+    'subsystem-gpio': 'CONFIG_CTR_GPIO=y',
+    'subsystem-hygro': 'CONFIG_CTR_HYGRO=y',
+    'subsystem-info': 'CONFIG_CTR_INFO=y',
+    'subsystem-led': 'CONFIG_CTR_LED=y',
+    'subsystem-log': 'CONFIG_CTR_LOG=y',
+    'subsystem-lte': 'CONFIG_CTR_LTE_CLKSYNC=y',
+    'subsystem-lte-v2': 'CONFIG_CTR_LTE_V2=y',
+    'subsystem-lrw': 'CONFIG_CTR_LRW=y',
+    'subsystem-machine-probe': 'CONFIG_CTR_MACHINE_PROBE=y',
+    'subsystem-mb7066-a': 'CONFIG_MB7066_TIMER4=y\nCONFIG_MB7066_SAMPLE_COUNT=1',
+    'subsystem-mb7066-b': 'CONFIG_MB7066_TIMER4=y\nCONFIG_MB7066_SAMPLE_COUNT=1',
+    'subsystem-rtc': 'CONFIG_CTR_RTC=y',
+    'subsystem-rtd': 'CONFIG_CTR_RTD=y',
+    'subsystem-settings': 'CONFIG_SETTINGS=y',
+    'subsystem-signal': 'CONFIG_CTR_SIGNAL=y',
+    'subsystem-soil-sensor': 'CONFIG_CTR_SOIL_SENSOR=y',
+    'subsystem-test': 'CONFIG_CTR_TEST=y',
+    'subsystem-therm': 'CONFIG_CTR_THERM=y',
+    'subsystem-tinycrypt-sha256': 'CONFIG_TINYCRYPT_SHA256=y',
+    'subsystem-tinycrypt': 'CONFIG_TINYCRYPT=y',
+    'subsystem-wdog': 'CONFIG_CTR_WDOG=y',
+    'subsystem-w1': 'CONFIG_CTR_W1=y',
+    'subsystem-zcbor': 'CONFIG_ZCBOR=y\nCONFIG_ZCBOR_STOP_ON_ERROR=y',
+    'subsystem-bt-filter-accept-list': 'CONFIG_BT_FILTER_ACCEPT_LIST=y',
+    'subsystem-bt-observer': 'CONFIG_BT_OBSERVER=y',
+} -%}
+# Configurations
+{%- for feature in data['features'] %}
+{%- if feature not in feature_configs and feature.startswith('subsystem-') %}
+    {{log.err(feature)}}
+# {{feature}} <-- unknown
+{%- elif feature in feature_configs %}
+{{ feature_configs.get(feature, '') }}
+{%- endif %}
+{%- endfor %}
+{%- if data['extras'] %}
+# Extra configurations
+{%- for extra in data['extras'] %}
+{{ extra }}
+{%- endfor %}
+{%- endif %}
+
+# ### Preserved code "config" (begin)
+# ^^^ Preserved code "config" (end)
+{% raw %}
+{% endraw %}
+

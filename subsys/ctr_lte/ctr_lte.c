@@ -142,7 +142,7 @@ struct config {
 	enum auth auth;
 	char username[32 + 1];
 	char password[32 + 1];
-	uint8_t addr[4];
+	char addr[15 + 1];
 	int port;
 };
 
@@ -160,11 +160,40 @@ static struct config m_config_interim = {
 	.plmnid = "23003",
 	.apn = "hardwario.com",
 	.auth = AUTH_NONE,
-	.addr = {192, 168, 168, 1},
+	.addr = "192.168.168.1",
 	.port = 10000,
 };
 
 static struct config m_config;
+
+static const char *m_enum_antenna_items[] = {"int", "ext"};
+static const char *m_enum_auth_items[] = {"none", "pap", "chap"};
+
+static const struct ctr_config_item m_config_items[] = {
+	CTR_CONFIG_ITEM_BOOL("test", m_config_interim.test, "LTE test mode", false),
+	CTR_CONFIG_ITEM_ENUM("antenna", m_config_interim.antenna, m_enum_antenna_items,
+			     "antenna mode", ANTENNA_INT),
+	CTR_CONFIG_ITEM_BOOL("nb-iot-mode", m_config_interim.nb_iot_mode, "NB-IoT mode", true),
+	CTR_CONFIG_ITEM_BOOL("lte-m-mode", m_config_interim.lte_m_mode, "LTE-M mode", false),
+	CTR_CONFIG_ITEM_BOOL("autoconn", m_config_interim.autoconn, "auto-connect feature", false),
+	CTR_CONFIG_ITEM_STRING("plmnid", m_config_interim.plmnid,
+			       "network PLMN ID (format: 5-6 digits)", "23003"),
+	CTR_CONFIG_ITEM_BOOL("clksync", m_config_interim.clksync, "clock synchronization",
+#if defined(CONFIG_CTR_LTE_CLKSYNC)
+			     true
+#else
+			     false
+#endif
+			     ),
+	CTR_CONFIG_ITEM_STRING("apn", m_config_interim.apn, "network APN", "hardwario.com"),
+	CTR_CONFIG_ITEM_ENUM("auth", m_config_interim.auth, m_enum_auth_items,
+			     "authentication protocol", AUTH_NONE),
+	CTR_CONFIG_ITEM_STRING("username", m_config_interim.username, "username", ""),
+	CTR_CONFIG_ITEM_STRING("password", m_config_interim.password, "password", ""),
+	CTR_CONFIG_ITEM_STRING("addr", m_config_interim.addr, "default IP address",
+			       "192.168.168.1"),
+	CTR_CONFIG_ITEM_INT("port", m_config_interim.port, 1, 65536, "default UDP port", 10000),
+};
 
 static struct k_poll_signal m_boot_sig;
 static struct k_poll_signal m_sim_card_sig;
@@ -1128,8 +1157,7 @@ static int send_once(const struct send_msgq_data *data)
 	char addr[15 + 1];
 
 	if (data->addr[0] == 0 && data->addr[1] == 0 && data->addr[2] == 0 && data->addr[3] == 0) {
-		snprintf(addr, sizeof(addr), "%u.%u.%u.%u", m_config.addr[0], m_config.addr[1],
-			 m_config.addr[2], m_config.addr[3]);
+		strcpy(addr, m_config.addr);
 	} else {
 		snprintf(addr, sizeof(addr), "%u.%u.%u.%u", data->addr[0], data->addr[1],
 			 data->addr[2], data->addr[3]);
@@ -1560,533 +1588,36 @@ static void dispatcher_thread(void)
 K_THREAD_DEFINE(ctr_lte, CONFIG_CTR_LTE_THREAD_STACK_SIZE, dispatcher_thread, NULL, NULL, NULL,
 		CONFIG_CTR_LTE_THREAD_PRIORITY, 0, 0);
 
+static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
+{
+	for (int i = 0; i < ARRAY_SIZE(m_config_items); i++) {
+		ctr_config_show_item(shell, &m_config_items[i]);
+	}
+
+	return 0;
+}
+
+int cmd_config(const struct shell *shell, size_t argc, char **argv)
+{
+	return ctr_config_cmd_config(m_config_items, ARRAY_SIZE(m_config_items), shell, argc, argv);
+}
+
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
-	int ret;
-	const char *next;
-
-#define SETTINGS_SET(_key, _var, _size)                                                            \
-	do {                                                                                       \
-		if (settings_name_steq(key, _key, &next) && !next) {                               \
-			if (len != _size) {                                                        \
-				return -EINVAL;                                                    \
-			}                                                                          \
-                                                                                                   \
-			ret = read_cb(cb_arg, _var, len);                                          \
-                                                                                                   \
-			if (ret < 0) {                                                             \
-				LOG_ERR("Call `read_cb` failed: %d", ret);                         \
-				return ret;                                                        \
-			}                                                                          \
-                                                                                                   \
-			return 0;                                                                  \
-		}                                                                                  \
-	} while (0)
-
-	SETTINGS_SET("test", &m_config_interim.test, sizeof(m_config_interim.test));
-	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
-	SETTINGS_SET("nb-iot-mode", &m_config_interim.nb_iot_mode,
-		     sizeof(m_config_interim.nb_iot_mode));
-	SETTINGS_SET("lte-m-mode", &m_config_interim.lte_m_mode,
-		     sizeof(m_config_interim.lte_m_mode));
-	SETTINGS_SET("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
-	SETTINGS_SET("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
-	SETTINGS_SET("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
-	SETTINGS_SET("apn", m_config_interim.apn, sizeof(m_config_interim.apn));
-	SETTINGS_SET("auth", &m_config_interim.auth, sizeof(m_config_interim.auth));
-	SETTINGS_SET("username", m_config_interim.username, sizeof(m_config_interim.username));
-	SETTINGS_SET("password", m_config_interim.password, sizeof(m_config_interim.password));
-	SETTINGS_SET("addr", m_config_interim.addr, sizeof(m_config_interim.addr));
-	SETTINGS_SET("port", &m_config_interim.port, sizeof(m_config_interim.port));
-
-#undef SETTINGS_SET
-
-	return -ENOENT;
+	return ctr_config_h_set(m_config_items, ARRAY_SIZE(m_config_items), key, len, read_cb,
+				cb_arg);
 }
 
 static int h_commit(void)
 {
 	LOG_DBG("Loaded settings in full");
-	memcpy(&m_config, &m_config_interim, sizeof(m_config));
+	memcpy(&m_config, &m_config_interim, sizeof(struct config));
 	return 0;
 }
 
 static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len))
 {
-#define EXPORT_FUNC(_key, _var, _size)                                                             \
-	do {                                                                                       \
-		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
-	} while (0)
-
-	EXPORT_FUNC("test", &m_config_interim.test, sizeof(m_config_interim.test));
-	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
-	EXPORT_FUNC("nb-iot-mode", &m_config_interim.nb_iot_mode,
-		    sizeof(m_config_interim.nb_iot_mode));
-	EXPORT_FUNC("lte-m-mode", &m_config_interim.lte_m_mode,
-		    sizeof(m_config_interim.lte_m_mode));
-	EXPORT_FUNC("autoconn", &m_config_interim.autoconn, sizeof(m_config_interim.autoconn));
-	EXPORT_FUNC("plmnid", m_config_interim.plmnid, sizeof(m_config_interim.plmnid));
-	EXPORT_FUNC("clksync", &m_config_interim.clksync, sizeof(m_config_interim.clksync));
-	EXPORT_FUNC("apn", m_config_interim.apn, sizeof(m_config_interim.apn));
-	EXPORT_FUNC("auth", &m_config_interim.auth, sizeof(m_config_interim.auth));
-	EXPORT_FUNC("username", m_config_interim.username, sizeof(m_config_interim.username));
-	EXPORT_FUNC("password", m_config_interim.password, sizeof(m_config_interim.password));
-	EXPORT_FUNC("addr", m_config_interim.addr, sizeof(m_config_interim.addr));
-	EXPORT_FUNC("port", &m_config_interim.port, sizeof(m_config_interim.port));
-
-#undef EXPORT_FUNC
-
-	return 0;
-}
-
-static void print_test(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config test %s",
-		    m_config_interim.test ? "true" : "false");
-}
-
-static void print_antenna(const struct shell *shell)
-{
-	switch (m_config_interim.antenna) {
-	case ANTENNA_INT:
-		shell_print(shell, SETTINGS_PFX " config antenna int");
-		break;
-	case ANTENNA_EXT:
-		shell_print(shell, SETTINGS_PFX " config antenna ext");
-		break;
-	default:
-		shell_print(shell, SETTINGS_PFX " config antenna (unknown)");
-	}
-}
-
-static void print_nb_iot_mode(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config nb-iot-mode %s",
-		    m_config_interim.nb_iot_mode ? "true" : "false");
-}
-
-static void print_lte_m_mode(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config lte-m-mode %s",
-		    m_config_interim.lte_m_mode ? "true" : "false");
-}
-
-static void print_autoconn(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config autoconn %s",
-		    m_config_interim.autoconn ? "true" : "false");
-}
-
-static void print_plmnid(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config plmnid %s", m_config_interim.plmnid);
-}
-
-static void print_clksync(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config clksync %s",
-		    m_config_interim.clksync ? "true" : "false");
-}
-
-static void print_apn(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config apn %s", m_config_interim.apn);
-}
-
-static void print_auth(const struct shell *shell)
-{
-	switch (m_config_interim.auth) {
-	case AUTH_NONE:
-		shell_print(shell, SETTINGS_PFX " config auth none");
-		break;
-	case AUTH_CHAP:
-		shell_print(shell, SETTINGS_PFX " config auth chap");
-		break;
-	case AUTH_PAP:
-		shell_print(shell, SETTINGS_PFX " config auth pap");
-		break;
-	default:
-		shell_print(shell, SETTINGS_PFX " config auth (unknown)");
-	}
-}
-
-static void print_username(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config username %s", m_config_interim.username);
-}
-
-static void print_password(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config password %s", m_config_interim.password);
-}
-
-static void print_addr(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config addr %u.%u.%u.%u", m_config_interim.addr[0],
-		    m_config_interim.addr[1], m_config_interim.addr[2], m_config_interim.addr[3]);
-}
-
-static void print_port(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config port %d", m_config_interim.port);
-}
-
-static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
-{
-	print_test(shell);
-	print_antenna(shell);
-	print_nb_iot_mode(shell);
-	print_lte_m_mode(shell);
-	print_autoconn(shell);
-	print_plmnid(shell);
-	print_clksync(shell);
-	print_apn(shell);
-	print_auth(shell);
-	print_username(shell);
-	print_password(shell);
-	print_addr(shell);
-	print_port(shell);
-
-	return 0;
-}
-
-static int cmd_config_test(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_test(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "true") == 0) {
-		m_config_interim.test = true;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "false") == 0) {
-		m_config_interim.test = false;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_antenna(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_antenna(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "int") == 0) {
-		m_config_interim.antenna = ANTENNA_INT;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "ext") == 0) {
-		m_config_interim.antenna = ANTENNA_EXT;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_nb_iot_mode(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_nb_iot_mode(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "true") == 0) {
-		m_config_interim.nb_iot_mode = true;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "false") == 0) {
-		m_config_interim.nb_iot_mode = false;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_lte_m_mode(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_lte_m_mode(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "true") == 0) {
-		m_config_interim.lte_m_mode = true;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "false") == 0) {
-		m_config_interim.lte_m_mode = false;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_autoconn(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_autoconn(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "true") == 0) {
-		m_config_interim.autoconn = true;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "false") == 0) {
-		m_config_interim.autoconn = false;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_plmnid(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_plmnid(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len != 5 && len != 6) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		strcpy(m_config_interim.plmnid, argv[1]);
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_clksync(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_clksync(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "true") == 0) {
-		m_config_interim.clksync = true;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "false") == 0) {
-		m_config_interim.clksync = false;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_apn(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_apn(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len >= sizeof(m_config_interim.apn)) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			char c = argv[1][i];
-			if (!isalnum((int)c) && c != '-' && c != '.') {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		strcpy(m_config_interim.apn, argv[1]);
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_auth(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_auth(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "none") == 0) {
-		m_config_interim.auth = AUTH_NONE;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "pap") == 0) {
-		m_config_interim.auth = AUTH_PAP;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "chap") == 0) {
-		m_config_interim.auth = AUTH_CHAP;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_username(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_username(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len >= sizeof(m_config_interim.username)) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		strcpy(m_config_interim.username, argv[1]);
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_password(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_password(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len >= sizeof(m_config_interim.password)) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		strcpy(m_config_interim.password, argv[1]);
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_addr(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc == 1) {
-		print_addr(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len > 15) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		unsigned int addr[4];
-
-		ret = sscanf(argv[1], "%u.%u.%u.%u", &addr[0], &addr[1], &addr[2], &addr[3]);
-		if (ret != 4) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		if ((addr[0] < 0 || addr[0] > 255) || (addr[1] < 0 || addr[1] > 255) ||
-		    (addr[2] < 0 || addr[2] > 255) || (addr[3] < 0 || addr[3] > 255)) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_config_interim.addr[0] = addr[0];
-		m_config_interim.addr[1] = addr[1];
-		m_config_interim.addr[2] = addr[2];
-		m_config_interim.addr[3] = addr[3];
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_port(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_port(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len < 1 || len > 5) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			if (!isdigit((int)argv[1][i])) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		int port = strtol(argv[1], NULL, 10);
-
-		if (port < 0 || port > 65535) {
-			shell_error(shell, "invalid range");
-			return -EINVAL;
-		}
-
-		m_config_interim.port = port;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
+	return ctr_config_h_export(m_config_items, ARRAY_SIZE(m_config_items), export_func);
 }
 
 int ctr_lte_set_event_cb(ctr_lte_event_cb cb, void *user_data)
@@ -2561,68 +2092,6 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 /* clang-format off */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_lte_config,
-
-	SHELL_CMD_ARG(show, NULL,
-	              "List current configuration.",
-	              cmd_config_show, 1, 0),
-
-	SHELL_CMD_ARG(test, NULL,
-	              "Get/Set LTE test mode.",
-	              cmd_config_test, 1, 1),
-
-        SHELL_CMD_ARG(antenna, NULL,
-	              "Get/Set LTE antenna (format: <int|ext>).",
-	              cmd_config_antenna, 1, 1),
-
-	SHELL_CMD_ARG(nb-iot-mode, NULL,
-	              "Get/Set NB-IoT mode (format: <true|false>).",
-	              cmd_config_nb_iot_mode, 1, 1),
-
-	SHELL_CMD_ARG(lte-m-mode, NULL,
-	              "Get/Set LTE-M mode (format: <true|false>).",
-	              cmd_config_lte_m_mode, 1, 1),
-
-	SHELL_CMD_ARG(autoconn, NULL,
-	              "Get/Set auto-connect feature (format: <true|false>).",
-	              cmd_config_autoconn, 1, 1),
-
-	SHELL_CMD_ARG(plmnid, NULL,
-	              "Get/Set network PLMN ID (format: <5-6 digits>).",
-	              cmd_config_plmnid, 1, 1),
-
-	SHELL_CMD_ARG(clksync, NULL,
-	              "Get/Set clock synchronization (format: <true|false>).",
-	              cmd_config_clksync, 1, 1),
-
-	SHELL_CMD_ARG(apn, NULL,
-	              "Get/Set network APN (format: <empty or up to 63 octets>.",
-	              cmd_config_apn, 1, 1),
-
-        SHELL_CMD_ARG(auth, NULL,
-	              "Get/Set authentication protocol (format: <none|pap|chap>).",
-	              cmd_config_auth, 1, 1),
-
-	SHELL_CMD_ARG(username, NULL,
-	              "Get/Set username (format: <empty or up to 32 characters>.",
-	              cmd_config_username, 1, 1),
-
-	SHELL_CMD_ARG(password, NULL,
-	              "Get/Set password (format: <empty or up to 32 characters>.",
-	              cmd_config_password, 1, 1),
-
-	SHELL_CMD_ARG(addr, NULL,
-	              "Get/Set default IP address (format: a.b.c.d).",
-	              cmd_config_addr, 1, 1),
-
-	SHELL_CMD_ARG(port, NULL,
-	              "Get/Set default UDP port (format: <1-5 digits>).",
-	              cmd_config_port, 1, 1),
-
-	SHELL_SUBCMD_SET_END
-);
-
-SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lte_test,
 
 	SHELL_CMD_ARG(uart, NULL,
@@ -2647,9 +2116,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lte,
 
-	SHELL_CMD_ARG(config, &sub_lte_config,
-	              "Configuration commands.",
-	              print_help, 1, 0),
+   SHELL_CMD_ARG(config, NULL, "Configuration commands.",
+		 cmd_config, 1, 3),
 
 	SHELL_CMD_ARG(start, NULL,
 	              "Start interface.", cmd_start, 1, 0),
@@ -2691,6 +2159,10 @@ static int init(void)
 	k_poll_signal_init(&m_sim_card_sig);
 	k_poll_signal_init(&m_time_sig);
 	k_poll_signal_init(&m_attach_sig);
+
+	for (int i = 0; i < ARRAY_SIZE(m_config_items); i++) {
+		ctr_config_init_item(&m_config_items[i]);
+	}
 
 	static struct settings_handler sh = {
 		.name = SETTINGS_PFX,

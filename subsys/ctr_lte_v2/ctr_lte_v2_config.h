@@ -42,7 +42,7 @@ struct ctr_lte_v2_config {
 	enum ctr_lte_v2_config_auth auth;
 	char username[32 + 1];
 	char password[32 + 1];
-	uint8_t addr[4];
+	char addr[15 + 1];
 	int port;
 	bool modemtrace;
 };
@@ -50,20 +50,7 @@ struct ctr_lte_v2_config {
 extern struct ctr_lte_v2_config g_ctr_lte_v2_config;
 
 int ctr_lte_v2_config_cmd_show(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_test(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_modemtrace(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_antenna(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_nb_iot_mode(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_lte_m_mode(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_autoconn(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_plmnid(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_clksync(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_apn(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_auth(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_username(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_password(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_addr(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_config_cmd_port(const struct shell *shell, size_t argc, char **argv);
+int ctr_lte_v2_config_cmd(const struct shell *shell, size_t argc, char **argv);
 
 #ifdef __cplusplus
 }

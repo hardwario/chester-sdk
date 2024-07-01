@@ -19,8 +19,11 @@
 #include <zephyr/sys/reboot.h>
 
 /* Standard includes */
+#include <ctype.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 LOG_MODULE_REGISTER(ctr_config, CONFIG_CTR_CONFIG_LOG_LEVEL);
 
@@ -138,10 +141,336 @@ void ctr_config_append_show(const char *name, ctr_config_show_cb cb)
 	sys_slist_append(&m_show_list, &item->node);
 }
 
+int ctr_config_show_item(const struct shell *shell, const struct ctr_config_item *item)
+{
+	char mod[32];
+	{ // truncate anything after - from the module name
+		mod[31] = 0;
+		strncpy(mod, item->module, sizeof(mod) - 1);
+		char *s;
+		if ((s = strstr(mod, "-")) != NULL) {
+			*s = 0;
+		}
+	}
+
+	switch (item->type) {
+	case CTR_CONFIG_TYPE_INT:
+		shell_print(shell, "%s config %s %d", mod, item->name, *(int *)item->variable);
+		break;
+
+	case CTR_CONFIG_TYPE_FLOAT:
+		shell_print(shell, "%s config %s %.2f", mod, item->name, *(float *)item->variable);
+		break;
+
+	case CTR_CONFIG_TYPE_BOOL:
+		shell_print(shell, "%s config %s %s", mod, item->name,
+			    *(bool *)item->variable ? "true" : "false");
+		break;
+
+	case CTR_CONFIG_TYPE_ENUM: {
+		int32_t val = 0;
+		memcpy(&val, item->variable, item->size);
+
+		shell_print(shell, "%s config %s %s", mod, item->name, item->enums[val]);
+		break;
+	}
+	case CTR_CONFIG_TYPE_STRING:
+		shell_print(shell, "%s config %s %s", mod, item->name, (char *)item->variable);
+		break;
+	}
+
+	return 0;
+}
+
+int ctr_config_help_item(const struct shell *shell, const struct ctr_config_item *item)
+{
+	switch (item->type) {
+	case CTR_CONFIG_TYPE_INT:
+		shell_print(shell, "  %-18s:%s <%d~%d>", item->name, item->help, item->min,
+			    item->max);
+		break;
+
+	case CTR_CONFIG_TYPE_FLOAT:
+		shell_print(shell, "  %-18s:%s <%.2f~%.2f>", item->name, item->help,
+			    (float)item->min, (float)item->max);
+		break;
+
+	case CTR_CONFIG_TYPE_BOOL:
+		shell_print(shell, "  %-18s:%s <true/false>", item->name, item->help);
+		break;
+
+	case CTR_CONFIG_TYPE_ENUM:
+		shell_print(shell, "  %-18s:%s", item->name, item->help);
+		for (int i = 0; i < item->max; i++) {
+			shell_print(shell, "                     - %s", item->enums[i]);
+		}
+		break;
+	case CTR_CONFIG_TYPE_STRING:
+		shell_print(shell, "  %-18s:%s", item->name, item->help);
+		break;
+	}
+
+	return 0;
+}
+
+static int parse_int(const struct shell *shell, char *argv, const struct ctr_config_item *item)
+{
+	for (size_t i = 0; i < strlen(argv); i++) {
+		if (!isdigit((int)argv[i])) {
+			shell_error(shell, "Invalid format");
+			ctr_config_help_item(shell, item);
+			return -EINVAL;
+		}
+	}
+
+	long value = strtol(argv, NULL, 10);
+	if (value < item->min || value > item->max) {
+		shell_error(shell, "Invalid range");
+		ctr_config_help_item(shell, item);
+		return -EINVAL;
+	}
+
+	*((int *)item->variable) = (int)value;
+
+	return 0;
+}
+
+static int parse_float(const struct shell *shell, char *argv, const struct ctr_config_item *item)
+{
+	float value;
+	int ret = sscanf(argv, "%f", &value);
+
+	if (ret != 1) {
+		shell_error(shell, "Invalid value");
+		ctr_config_help_item(shell, item);
+		return -EINVAL;
+	}
+
+	if (value < item->min || value > item->max) {
+		shell_error(shell, "Invalid range");
+		ctr_config_help_item(shell, item);
+		return -EINVAL;
+	}
+
+	*((float *)item->variable) = value;
+
+	return 0;
+}
+
+static int parse_bool(const struct shell *shell, char *argv, const struct ctr_config_item *item)
+{
+	bool is_false = !strcmp(argv, "false");
+	bool is_true = !strcmp(argv, "true");
+
+	if (is_false) {
+		*((bool *)item->variable) = false;
+	} else if (is_true) {
+		*((bool *)item->variable) = true;
+	} else {
+		shell_error(shell, "invalid format");
+		ctr_config_help_item(shell, item);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int parse_enum(const struct shell *shell, char *argv, const struct ctr_config_item *item)
+{
+	int value = -1;
+
+	for (size_t i = 0; i < item->max; i++) {
+		if (strcmp(argv, item->enums[i]) == 0) {
+			value = i;
+			break;
+		}
+	}
+
+	if (value < 0) {
+		shell_error(shell, "invalid option");
+		ctr_config_help_item(shell, item);
+		return -EINVAL;
+	}
+
+	memcpy(item->variable, &value, item->size);
+
+	return 0;
+}
+
+static int parse_string(const struct shell *shell, char *argv, const struct ctr_config_item *item)
+{
+	if (strlen(argv) + 1 > item->size) {
+		shell_error(shell, "value too long");
+		ctr_config_help_item(shell, item);
+		return -EINVAL;
+	}
+
+	strcpy(item->variable, argv);
+
+	return 0;
+}
+
+int ctr_config_parse_item(const struct shell *shell, char *argv, const struct ctr_config_item *item)
+{
+	switch (item->type) {
+	case CTR_CONFIG_TYPE_INT:
+		return parse_int(shell, argv, item);
+	case CTR_CONFIG_TYPE_FLOAT:
+		return parse_float(shell, argv, item);
+	case CTR_CONFIG_TYPE_BOOL:
+		return parse_bool(shell, argv, item);
+	case CTR_CONFIG_TYPE_ENUM:
+		return parse_enum(shell, argv, item);
+	case CTR_CONFIG_TYPE_STRING:
+		return parse_string(shell, argv, item);
+	}
+
+	return -EINVAL;
+}
+
+int ctr_config_init_item(const struct ctr_config_item *item)
+{
+	switch (item->type) {
+	case CTR_CONFIG_TYPE_INT:
+		*(int *)item->variable = item->default_int;
+		break;
+	case CTR_CONFIG_TYPE_FLOAT:
+		*(float *)item->variable = item->default_float;
+		break;
+	case CTR_CONFIG_TYPE_BOOL:
+		*(bool *)item->variable = item->default_bool;
+		break;
+	case CTR_CONFIG_TYPE_ENUM:
+		memcpy(item->variable, &item->default_enum, item->size);
+		break;
+	case CTR_CONFIG_TYPE_STRING:
+		strcpy(item->variable, item->default_string);
+		break;
+	}
+
+	return 0;
+}
+
+int ctr_config_cmd_config(const struct ctr_config_item *items, int nitems,
+			  const struct shell *shell, size_t argc, char **argv)
+{
+	/* No parameter name, print help */
+	if (argc == 1) {
+		for (int i = 0; i < nitems; i++) {
+			ctr_config_help_item(shell, &items[i]);
+		}
+
+		return 0;
+	}
+
+	/* Print parameter(s) */
+	else if (argc == 2) {
+		bool found_any = false;
+		bool has_wildcard = argv[1][strlen(argv[1]) - 1] == '*';
+
+		if (strcmp(argv[1], "show") == 0) {
+			for (int i = 0; i < nitems; i++) {
+				ctr_config_show_item(shell, &items[i]);
+			}
+
+			return 0;
+		}
+
+		for (int i = 0; i < nitems; i++) {
+			if ((!has_wildcard && strcmp(argv[1], items[i].name) == 0) ||
+			    (has_wildcard &&
+			     strncmp(argv[1], items[i].name, strlen(argv[1]) - 1) == 0)) {
+				ctr_config_show_item(shell, &items[i]);
+				found_any = true;
+			}
+		}
+
+		/* Print help item list if not found any item */
+		if (!found_any) {
+			for (int i = 0; i < nitems; i++) {
+				ctr_config_help_item(shell, &items[i]);
+			}
+
+			return 0;
+		}
+	}
+
+	/* Write parameter(s) */
+	else if (argc == 3) {
+		bool found_any = false;
+		bool has_wildcard = argv[1][strlen(argv[1]) - 1] == '*';
+
+		for (int i = 0; i < nitems; i++) {
+
+			if ((!has_wildcard && strcmp(argv[1], items[i].name) == 0) ||
+			    (has_wildcard &&
+			     strncmp(argv[1], items[i].name, strlen(argv[1]) - 1) == 0)) {
+
+				found_any = true;
+
+				ctr_config_parse_item(shell, argv[2], &items[i]);
+			}
+		}
+
+		/* Print help item list if not found any item */
+		if (!found_any) {
+			for (int i = 0; i < nitems; i++) {
+				ctr_config_help_item(shell, &items[i]);
+			}
+
+			return 0;
+		}
+	}
+
+	return 0;
+}
+
+int ctr_config_h_set(const struct ctr_config_item *items, int nitems, const char *key, size_t len,
+		     settings_read_cb read_cb, void *cb_arg)
+{
+	int ret;
+	const char *next;
+
+	for (int i = 0; i < nitems; i++) {
+		if (settings_name_steq(key, items[i].name, &next) && !next) {
+			if (len != items[i].size) {
+				return -EINVAL;
+			}
+			ret = read_cb(cb_arg, items[i].variable, len);
+			if (ret < 0) {
+				LOG_ERR("Call `read_cb` failed: %d", ret);
+				return ret;
+			}
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
+int ctr_config_h_export(const struct ctr_config_item *items, int nitems,
+			int (*export_func)(const char *name, const void *val, size_t val_len))
+{
+	int ret;
+
+	static char name_concat[64];
+
+	for (int i = 0; i < nitems; i++) {
+		snprintf(name_concat, sizeof(name_concat), "%s/%s", items[i].module, items[i].name);
+		ret = export_func(name_concat, items[i].variable, items[i].size);
+		if (ret) {
+			LOG_ERR("Call `export_func` failed: %d", ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static int cmd_modules(const struct shell *shell, size_t argc, char **argv)
 {
 	struct show_item *item;
-	SYS_SLIST_FOR_EACH_CONTAINER (&m_show_list, item, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&m_show_list, item, node) {
 		shell_print(shell, "%s", item->name);
 	}
 
@@ -153,7 +482,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 	int ret;
 
 	struct show_item *item;
-	SYS_SLIST_FOR_EACH_CONTAINER (&m_show_list, item, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&m_show_list, item, node) {
 		if (item->cb != NULL) {
 			ret = item->cb(shell, argc, argv);
 			if (ret) {

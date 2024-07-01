@@ -1,0 +1,41 @@
+version: 1
+project:
+  variant: Template
+  company: 2024 HARDWARIO a.s.
+  license: 'SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause'
+  fw_name: CHESTER BLE LTE 
+  fw_bundle: 
+  fw_version: v1.0.0
+features: 
+- subsystem-accel
+- subsystem-batt
+- subsystem-bluetooth
+- subsystem-buf
+- subsystem-defaults
+- subsystem-info
+- subsystem-led
+- subsystem-log
+- subsystem-lte
+- subsystem-rtc
+- subsystem-shell
+- subsystem-therm
+- subsystem-tinycrypt
+- subsystem-tinycrypt-sha256
+- subsystem-wdog
+- subsystem-zcbor
+parameters:
+- name: interval-sample
+  type: int
+  min: 1
+  max: 86400
+  default: 60
+  help: 'Get/Set sample interval in seconds'
+- name: interval-report
+  type: int
+  min: 30
+  max: 86400
+  default: 1800
+  help: 'Get/Set report interval in seconds'
+commands:
+extras:
+- CONFIG_ADC_TLA2021_INIT_PRIORITY=60

@@ -37,10 +37,10 @@ LOG_MODULE_REGISTER(ctr_lrw, CONFIG_CTR_LRW_LOG_LEVEL);
 #define BOOT_RETRY_DELAY     K_SECONDS(10)
 #define SETUP_RETRY_COUNT    3
 #define SETUP_RETRY_DELAY    K_SECONDS(10)
-#define JOIN_TIMEOUT	     K_SECONDS(120)
+#define JOIN_TIMEOUT         K_SECONDS(120)
 #define JOIN_RETRY_COUNT     3
 #define JOIN_RETRY_DELAY     K_SECONDS(30)
-#define SEND_TIMEOUT	     K_SECONDS(120)
+#define SEND_TIMEOUT         K_SECONDS(120)
 #define SEND_RETRY_COUNT     3
 #define SEND_RETRY_DELAY     K_SECONDS(30)
 #define REQ_INTRA_DELAY_MSEC 8000
@@ -142,6 +142,45 @@ static struct config m_config_interim = {
 };
 
 static struct config m_config;
+
+static const char *m_enum_antenna_items[] = {"int", "ext"};
+static const char *m_enum_band_items[] = {
+	"AS923", "AU915", "EU868", "KR920", "IN865", "US915",
+};
+static const char *m_enum_class_items[] = {"A", "C"};
+static const char *m_enum_mode_items[] = {"apb", "otaa"};
+static const char *m_enum_nwk_items[] = {"private", "public"};
+
+static const struct ctr_config_item m_config_items[] = {
+	CTR_CONFIG_ITEM_BOOL("test", m_config_interim.test, "LRW test mode", false),
+	CTR_CONFIG_ITEM_ENUM("antenna", m_config_interim.antenna, m_enum_antenna_items,
+			     "antenna mode", ANTENNA_INT),
+	CTR_CONFIG_ITEM_ENUM("band", m_config_interim.band, m_enum_band_items, "radio band",
+			     BAND_EU868),
+	CTR_CONFIG_ITEM_STRING("chmask", m_config_interim.chmask,
+			       "channel mask (format: <N hexadecimal digits>)", ""),
+	CTR_CONFIG_ITEM_ENUM("class", m_config_interim.class, m_enum_class_items, "device class",
+			     CLASS_A),
+	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, m_enum_mode_items, "operation mode",
+			     MODE_OTAA),
+	CTR_CONFIG_ITEM_ENUM("nwk", m_config_interim.nwk, m_enum_nwk_items, "network type",
+			     NWK_PUBLIC),
+	CTR_CONFIG_ITEM_BOOL("adr", m_config_interim.adr, "adaptive data rate", true),
+	CTR_CONFIG_ITEM_INT("datarate", m_config_interim.datarate, 1, 15, "data rate", 0),
+	CTR_CONFIG_ITEM_BOOL("dutycycle", m_config_interim.dutycycle, "duty cycle", true),
+	CTR_CONFIG_ITEM_STRING("devaddr", m_config_interim.devaddr,
+			       "DevAddr (format: <8 hexadecimal digits>)", ""),
+	CTR_CONFIG_ITEM_STRING("deveui", m_config_interim.deveui,
+			       "DevEUI (format: <16 hexadecimal digits>)", ""),
+	CTR_CONFIG_ITEM_STRING("joineui", m_config_interim.joineui,
+			       "JoinEUI (format: <16 hexadecimal digits>)", ""),
+	CTR_CONFIG_ITEM_STRING("appkey", m_config_interim.appkey,
+			       "AppKey (format: <32 hexadecimal digits>)", ""),
+	CTR_CONFIG_ITEM_STRING("nwkskey", m_config_interim.nwkskey,
+			       "NwkSKey (format: <32 hexadecimal digits>)", ""),
+	CTR_CONFIG_ITEM_STRING("appskey", m_config_interim.appskey,
+			       "AppSKey (format: <32 hexadecimal digits>)", ""),
+};
 
 static struct k_poll_signal m_boot_sig;
 static struct k_poll_signal m_join_sig;
@@ -1086,640 +1125,36 @@ int ctr_lrw_send(const struct ctr_lrw_send_opts *opts, const void *buf, size_t l
 	return 0;
 }
 
+static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
+{
+	for (int i = 0; i < ARRAY_SIZE(m_config_items); i++) {
+		ctr_config_show_item(shell, &m_config_items[i]);
+	}
+
+	return 0;
+}
+
+static int cmd_config(const struct shell *shell, size_t argc, char **argv)
+{
+	return ctr_config_cmd_config(m_config_items, ARRAY_SIZE(m_config_items), shell, argc, argv);
+}
+
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
-	int ret;
-	const char *next;
-
-#define SETTINGS_SET(_key, _var, _size)                                                            \
-	do {                                                                                       \
-		if (settings_name_steq(key, _key, &next) && !next) {                               \
-			if (len != _size) {                                                        \
-				return -EINVAL;                                                    \
-			}                                                                          \
-                                                                                                   \
-			ret = read_cb(cb_arg, _var, len);                                          \
-                                                                                                   \
-			if (ret < 0) {                                                             \
-				LOG_ERR("Call `read_cb` failed: %d", ret);                         \
-				return ret;                                                        \
-			}                                                                          \
-                                                                                                   \
-			return 0;                                                                  \
-		}                                                                                  \
-	} while (0)
-
-	SETTINGS_SET("test", &m_config_interim.test, sizeof(m_config_interim.test));
-	SETTINGS_SET("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
-	SETTINGS_SET("band", &m_config_interim.band, sizeof(m_config_interim.band));
-	SETTINGS_SET("chmask", m_config_interim.chmask, sizeof(m_config_interim.chmask));
-	SETTINGS_SET("class", &m_config_interim.class, sizeof(m_config_interim.class));
-	SETTINGS_SET("mode", &m_config_interim.mode, sizeof(m_config_interim.mode));
-	SETTINGS_SET("nwk", &m_config_interim.nwk, sizeof(m_config_interim.nwk));
-	SETTINGS_SET("adr", &m_config_interim.adr, sizeof(m_config_interim.adr));
-	SETTINGS_SET("datarate", &m_config_interim.datarate, sizeof(m_config_interim.datarate));
-	SETTINGS_SET("dutycycle", &m_config_interim.dutycycle, sizeof(m_config_interim.dutycycle));
-	SETTINGS_SET("devaddr", m_config_interim.devaddr, sizeof(m_config_interim.devaddr));
-	SETTINGS_SET("deveui", m_config_interim.deveui, sizeof(m_config_interim.deveui));
-	SETTINGS_SET("joineui", m_config_interim.joineui, sizeof(m_config_interim.joineui));
-	SETTINGS_SET("appkey", m_config_interim.appkey, sizeof(m_config_interim.appkey));
-	SETTINGS_SET("nwkskey", m_config_interim.nwkskey, sizeof(m_config_interim.nwkskey));
-	SETTINGS_SET("appskey", m_config_interim.appskey, sizeof(m_config_interim.appskey));
-
-#undef SETTINGS_SET
-
-	return -ENOENT;
+	return ctr_config_h_set(m_config_items, ARRAY_SIZE(m_config_items), key, len, read_cb,
+				cb_arg);
 }
 
 static int h_commit(void)
 {
 	LOG_DBG("Loaded settings in full");
-	memcpy(&m_config, &m_config_interim, sizeof(m_config));
+	memcpy(&m_config, &m_config_interim, sizeof(struct config));
 	return 0;
 }
 
 static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len))
 {
-#define EXPORT_FUNC(_key, _var, _size)                                                             \
-	do {                                                                                       \
-		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
-	} while (0)
-
-	EXPORT_FUNC("test", &m_config_interim.test, sizeof(m_config_interim.test));
-	EXPORT_FUNC("antenna", &m_config_interim.antenna, sizeof(m_config_interim.antenna));
-	EXPORT_FUNC("band", &m_config_interim.band, sizeof(m_config_interim.band));
-	EXPORT_FUNC("chmask", m_config_interim.chmask, sizeof(m_config_interim.chmask));
-	EXPORT_FUNC("class", &m_config_interim.class, sizeof(m_config_interim.class));
-	EXPORT_FUNC("mode", &m_config_interim.mode, sizeof(m_config_interim.mode));
-	EXPORT_FUNC("nwk", &m_config_interim.nwk, sizeof(m_config_interim.nwk));
-	EXPORT_FUNC("adr", &m_config_interim.adr, sizeof(m_config_interim.adr));
-	EXPORT_FUNC("datarate", &m_config_interim.datarate, sizeof(m_config_interim.datarate));
-	EXPORT_FUNC("dutycycle", &m_config_interim.dutycycle, sizeof(m_config_interim.dutycycle));
-	EXPORT_FUNC("devaddr", m_config_interim.devaddr, sizeof(m_config_interim.devaddr));
-	EXPORT_FUNC("deveui", m_config_interim.deveui, sizeof(m_config_interim.deveui));
-	EXPORT_FUNC("joineui", m_config_interim.joineui, sizeof(m_config_interim.joineui));
-	EXPORT_FUNC("appkey", m_config_interim.appkey, sizeof(m_config_interim.appkey));
-	EXPORT_FUNC("nwkskey", m_config_interim.nwkskey, sizeof(m_config_interim.nwkskey));
-	EXPORT_FUNC("appskey", m_config_interim.appskey, sizeof(m_config_interim.appskey));
-
-#undef EXPORT_FUNC
-
-	return 0;
-}
-
-static void print_test(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config test %s",
-		    m_config_interim.test ? "true" : "false");
-}
-
-static void print_antenna(const struct shell *shell)
-{
-	switch (m_config_interim.antenna) {
-	case ANTENNA_INT:
-		shell_print(shell, SETTINGS_PFX " config antenna int");
-		break;
-	case ANTENNA_EXT:
-		shell_print(shell, SETTINGS_PFX " config antenna ext");
-		break;
-	default:
-		shell_print(shell, SETTINGS_PFX " config antenna (unknown)");
-	}
-}
-
-static void print_band(const struct shell *shell)
-{
-	switch (m_config_interim.band) {
-	case BAND_AS923:
-		shell_print(shell, SETTINGS_PFX " config band as923");
-		break;
-	case BAND_AU915:
-		shell_print(shell, SETTINGS_PFX " config band au915");
-		break;
-	case BAND_EU868:
-		shell_print(shell, SETTINGS_PFX " config band eu868");
-		break;
-	case BAND_KR920:
-		shell_print(shell, SETTINGS_PFX " config band kr920");
-		break;
-	case BAND_IN865:
-		shell_print(shell, SETTINGS_PFX " config band in865");
-		break;
-	case BAND_US915:
-		shell_print(shell, SETTINGS_PFX " config band us915");
-		break;
-	default:
-		shell_print(shell, SETTINGS_PFX " config band (unknown)");
-	}
-}
-
-static void print_chmask(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config chmask %s", m_config_interim.chmask);
-}
-
-static void print_class(const struct shell *shell)
-{
-	switch (m_config_interim.class) {
-	case CLASS_A:
-		shell_print(shell, SETTINGS_PFX " config class a");
-		break;
-	case CLASS_C:
-		shell_print(shell, SETTINGS_PFX " config class c");
-		break;
-	default:
-		shell_print(shell, SETTINGS_PFX " config class (unknown)");
-	}
-}
-
-static void print_mode(const struct shell *shell)
-{
-	switch (m_config_interim.mode) {
-	case MODE_ABP:
-		shell_print(shell, SETTINGS_PFX " config mode abp");
-		break;
-	case MODE_OTAA:
-		shell_print(shell, SETTINGS_PFX " config mode otaa");
-		break;
-	default:
-		shell_print(shell, SETTINGS_PFX " config mode (unknown)");
-	}
-}
-
-static void print_nwk(const struct shell *shell)
-{
-	switch (m_config_interim.nwk) {
-	case NWK_PRIVATE:
-		shell_print(shell, SETTINGS_PFX " config nwk private");
-		break;
-	case NWK_PUBLIC:
-		shell_print(shell, SETTINGS_PFX " config nwk public");
-		break;
-	default:
-		shell_print(shell, SETTINGS_PFX " config nwk (unknown)");
-	}
-}
-
-static void print_adr(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config adr %s", m_config_interim.adr ? "true" : "false");
-}
-
-static void print_datarate(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config datarate %d", m_config_interim.datarate);
-}
-
-static void print_dutycycle(const struct shell *shell)
-{
-	shell_print(shell, SETTINGS_PFX " config dutycycle %s",
-		    m_config_interim.dutycycle ? "true" : "false");
-}
-
-static void print_devaddr(const struct shell *shell)
-{
-	char buf[sizeof(m_config_interim.devaddr) * 2 + 1];
-
-	if (ctr_buf2hex(m_config_interim.devaddr, sizeof(m_config_interim.devaddr), buf,
-			sizeof(buf), false) >= 0) {
-		shell_print(shell, SETTINGS_PFX " config devaddr %s", buf);
-	}
-}
-
-static void print_deveui(const struct shell *shell)
-{
-	char buf[sizeof(m_config_interim.deveui) * 2 + 1];
-
-	if (ctr_buf2hex(m_config_interim.deveui, sizeof(m_config_interim.deveui), buf, sizeof(buf),
-			false) >= 0) {
-		shell_print(shell, SETTINGS_PFX " config deveui %s", buf);
-	}
-}
-
-static void print_joineui(const struct shell *shell)
-{
-	char buf[sizeof(m_config_interim.joineui) * 2 + 1];
-
-	if (ctr_buf2hex(m_config_interim.joineui, sizeof(m_config_interim.joineui), buf,
-			sizeof(buf), false) >= 0) {
-		shell_print(shell, SETTINGS_PFX " config joineui %s", buf);
-	}
-}
-
-static void print_appkey(const struct shell *shell)
-{
-	char buf[sizeof(m_config_interim.appkey) * 2 + 1];
-
-	if (ctr_buf2hex(m_config_interim.appkey, sizeof(m_config_interim.appkey), buf, sizeof(buf),
-			false) >= 0) {
-		shell_print(shell, SETTINGS_PFX " config appkey %s", buf);
-	}
-}
-
-static void print_nwkskey(const struct shell *shell)
-{
-	char buf[sizeof(m_config_interim.nwkskey) * 2 + 1];
-
-	if (ctr_buf2hex(m_config_interim.nwkskey, sizeof(m_config_interim.nwkskey), buf,
-			sizeof(buf), false) >= 0) {
-		shell_print(shell, SETTINGS_PFX " config nwkskey %s", buf);
-	}
-}
-
-static void print_appskey(const struct shell *shell)
-{
-	char buf[sizeof(m_config_interim.appskey) * 2 + 1];
-
-	if (ctr_buf2hex(m_config_interim.appskey, sizeof(m_config_interim.appskey), buf,
-			sizeof(buf), false) >= 0) {
-		shell_print(shell, SETTINGS_PFX " config appskey %s", buf);
-	}
-}
-
-static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
-{
-	print_test(shell);
-	print_antenna(shell);
-	print_band(shell);
-	print_chmask(shell);
-	print_class(shell);
-	print_mode(shell);
-	print_nwk(shell);
-	print_adr(shell);
-	print_datarate(shell);
-	print_dutycycle(shell);
-	print_devaddr(shell);
-	print_deveui(shell);
-	print_joineui(shell);
-	print_appkey(shell);
-	print_nwkskey(shell);
-	print_appskey(shell);
-
-	return 0;
-}
-
-static int cmd_config_test(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_test(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "true") == 0) {
-		m_config_interim.test = true;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "false") == 0) {
-		m_config_interim.test = false;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_antenna(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_antenna(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "int") == 0) {
-		m_config_interim.antenna = ANTENNA_INT;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "ext") == 0) {
-		m_config_interim.antenna = ANTENNA_EXT;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_band(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_band(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "as923") == 0) {
-		m_config_interim.band = BAND_AS923;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "au915") == 0) {
-		m_config_interim.band = BAND_AU915;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "eu868") == 0) {
-		m_config_interim.band = BAND_EU868;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "kr920") == 0) {
-		m_config_interim.band = BAND_KR920;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "in865") == 0) {
-		m_config_interim.band = BAND_IN865;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "us915") == 0) {
-		m_config_interim.band = BAND_US915;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_chmask(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_chmask(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		size_t len = strlen(argv[1]);
-
-		if (len >= sizeof(m_config_interim.chmask)) {
-			shell_error(shell, "invalid format");
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < len; i++) {
-			char c = argv[1][i];
-
-			if ((c < '0' || c > '9') && (c < 'a' || c > 'f')) {
-				shell_error(shell, "invalid format");
-				return -EINVAL;
-			}
-		}
-
-		strcpy(m_config_interim.chmask, argv[1]);
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_class(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_class(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "a") == 0) {
-		m_config_interim.class = CLASS_A;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "c") == 0) {
-		m_config_interim.class = CLASS_C;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_mode(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_mode(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "otaa") == 0) {
-		m_config_interim.mode = MODE_OTAA;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "abp") == 0) {
-		m_config_interim.mode = MODE_ABP;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_nwk(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_nwk(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "private") == 0) {
-		m_config_interim.nwk = NWK_PRIVATE;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "public") == 0) {
-		m_config_interim.nwk = NWK_PUBLIC;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_adr(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_adr(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "true") == 0) {
-		m_config_interim.adr = true;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "false") == 0) {
-		m_config_interim.adr = false;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_datarate(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_datarate(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		if ((strlen(argv[1]) == 1 && isdigit((int)argv[1][0])) ||
-		    (strlen(argv[1]) == 2 && isdigit((int)argv[1][0]) &&
-		     isdigit((int)argv[1][1]))) {
-			int datarate = atoi(argv[1]);
-
-			if (datarate >= 0 && datarate <= 15) {
-				m_config_interim.datarate = datarate;
-				return 0;
-			}
-		}
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_dutycycle(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_dutycycle(shell);
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "true") == 0) {
-		m_config_interim.dutycycle = true;
-		return 0;
-	}
-
-	if (argc == 2 && strcmp(argv[1], "false") == 0) {
-		m_config_interim.dutycycle = false;
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_devaddr(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_devaddr(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		int ret = ctr_hex2buf(argv[1], m_config_interim.devaddr,
-				      sizeof(m_config_interim.devaddr), true);
-
-		if (ret == sizeof(m_config_interim.devaddr)) {
-			return 0;
-		}
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_deveui(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_deveui(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		int ret = ctr_hex2buf(argv[1], m_config_interim.deveui,
-				      sizeof(m_config_interim.deveui), true);
-
-		if (ret == sizeof(m_config_interim.deveui)) {
-			return 0;
-		}
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_joineui(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_joineui(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		int ret = ctr_hex2buf(argv[1], m_config_interim.joineui,
-				      sizeof(m_config_interim.joineui), true);
-
-		if (ret >= 0) {
-			return 0;
-		}
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_appkey(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_appkey(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		int ret = ctr_hex2buf(argv[1], m_config_interim.appkey,
-				      sizeof(m_config_interim.appkey), true);
-
-		if (ret >= 0) {
-			return 0;
-		}
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_nwkskey(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_nwkskey(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		int ret = ctr_hex2buf(argv[1], m_config_interim.nwkskey,
-				      sizeof(m_config_interim.nwkskey), true);
-
-		if (ret >= 0) {
-			return 0;
-		}
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-static int cmd_config_appskey(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_appskey(shell);
-		return 0;
-	}
-
-	if (argc == 2) {
-		int ret = ctr_hex2buf(argv[1], m_config_interim.appskey,
-				      sizeof(m_config_interim.appskey), true);
-
-		if (ret >= 0) {
-			return 0;
-		}
-	}
-
-	shell_help(shell);
-	return -EINVAL;
+	return ctr_config_h_export(m_config_items, ARRAY_SIZE(m_config_items), export_func);
 }
 
 static int cmd_start(const struct shell *shell, size_t argc, char **argv)
@@ -1865,42 +1300,7 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_lrw_config,
-	SHELL_CMD_ARG(show, NULL, "List current configuration.", cmd_config_show, 1, 0),
-	SHELL_CMD_ARG(test, NULL, "Get/Set LoRaWAN test mode.", cmd_config_test, 1, 1),
-	SHELL_CMD_ARG(antenna, NULL, "Get/Set LoRaWAN antenna (format: <int|ext>).",
-		      cmd_config_antenna, 1, 1),
-	SHELL_CMD_ARG(band, NULL,
-		      "Get/Set radio band"
-		      " (format: <as923|au915|eu868|kr920|in865|us915>).",
-		      cmd_config_band, 1, 1),
-	SHELL_CMD_ARG(chmask, NULL, "Get/Set channel mask (format: <N hexadecimal digits>). ",
-		      cmd_config_chmask, 1, 1),
-	SHELL_CMD_ARG(class, NULL, "Get/Set device class (format: <a|c>).", cmd_config_class, 1, 1),
-	SHELL_CMD_ARG(mode, NULL, "Get/Set operation mode (format: <abp|otaa>).", cmd_config_mode,
-		      1, 1),
-	SHELL_CMD_ARG(nwk, NULL, "Get/Set network type (format: <private|public>).", cmd_config_nwk,
-		      1, 1),
-	SHELL_CMD_ARG(adr, NULL, "Get/Set adaptive data rate (format: <true|false>).",
-		      cmd_config_adr, 1, 1),
-	SHELL_CMD_ARG(datarate, NULL, "Get/Set data rate (format: <number 1-15>).",
-		      cmd_config_datarate, 1, 1),
-	SHELL_CMD_ARG(dutycycle, NULL, "Get/Set duty cycle (format: <true|false>).",
-		      cmd_config_dutycycle, 1, 1),
-	SHELL_CMD_ARG(devaddr, NULL, "Get/Set DevAddr (format: <8 hexadecimal digits>).",
-		      cmd_config_devaddr, 1, 1),
-	SHELL_CMD_ARG(deveui, NULL, "Get/Set DevEUI (format: <16 hexadecimal digits>).",
-		      cmd_config_deveui, 1, 1),
-	SHELL_CMD_ARG(joineui, NULL, "Get/Set JoinEUI (format: <16 hexadecimal digits>).",
-		      cmd_config_joineui, 1, 1),
-	SHELL_CMD_ARG(appkey, NULL, "Get/Set AppKey (format: <32 hexadecimal digits>).",
-		      cmd_config_appkey, 1, 1),
-	SHELL_CMD_ARG(nwkskey, NULL, "Get/Set NwkSKey (format: <32 hexadecimal digits>).",
-		      cmd_config_nwkskey, 1, 1),
-	SHELL_CMD_ARG(appskey, NULL, "Get/Set AppSKey (format: <32 hexadecimal digits>).",
-		      cmd_config_appskey, 1, 1),
-	SHELL_SUBCMD_SET_END);
+/* clang-format off */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lrw_test,
@@ -1911,8 +1311,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_lrw,
-			       SHELL_CMD_ARG(config, &sub_lrw_config, "Configuration commands.",
-					     print_help, 1, 0),
+			       SHELL_CMD_ARG(config, NULL, "Configuration commands.",
+					     cmd_config, 1, 3),
 			       SHELL_CMD_ARG(start, NULL, "Start interface.", cmd_start, 1, 0),
 			       SHELL_CMD_ARG(join, NULL, "Join network.", cmd_join, 1, 0),
 			       SHELL_CMD_ARG(test, &sub_lrw_test, "Test commands.", print_help, 1,
@@ -1920,6 +1320,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_lrw,
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(lrw, &sub_lrw, "LoRaWAN commands.", print_help);
+
+/* clang-format on */
 
 static int init(void)
 {
@@ -1930,6 +1332,10 @@ static int init(void)
 	k_poll_signal_init(&m_boot_sig);
 	k_poll_signal_init(&m_join_sig);
 	k_poll_signal_init(&m_send_sig);
+
+	for (int i = 0; i < ARRAY_SIZE(m_config_items); i++) {
+		ctr_config_init_item(&m_config_items[i]);
+	}
 
 	static struct settings_handler sh = {
 		.name = SETTINGS_PFX,
