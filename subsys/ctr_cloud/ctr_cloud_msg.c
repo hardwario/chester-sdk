@@ -183,7 +183,11 @@ int ctr_cloud_msg_pack_create_session(struct ctr_buf *buf)
 	zcbor_tstr_put_term(zs, ble_passkey);
 
 	uint64_t imei;
-	ctr_lte_v2_get_imei(&imei);
+	ret = ctr_lte_v2_get_imei(&imei);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_get_imei` failed: %d", ret);
+		return ret;
+	}
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_LTE_IMEI);
 	zcbor_uint64_put(zs, imei);

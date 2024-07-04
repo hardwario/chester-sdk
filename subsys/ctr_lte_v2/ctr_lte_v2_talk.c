@@ -25,11 +25,10 @@
 
 LOG_MODULE_REGISTER(ctr_lte_v2_talk, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 
-#define SEND_GUARD_TIME          K_MSEC(50)
 #define SEND_TIMEOUT             K_SECONDS(1)
 #define RESPONSE_TIMEOUT_S       K_SECONDS(3)
 #define RESPONSE_TIMEOUT_L       K_SECONDS(30)
-#define RESPONSE_TIMEOUT_CONEVAL K_SECONDS(5)
+#define RESPONSE_TIMEOUT_CONEVAL K_SECONDS(30)
 
 #define DIALOG_PROLOG bool in_dialog = false;
 
@@ -90,7 +89,6 @@ LOG_MODULE_REGISTER(ctr_lte_v2_talk, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 
 #define DIALOG_SEND_LINE(...)                                                                      \
 	do {                                                                                       \
-		k_sleep(SEND_GUARD_TIME);                                                          \
 		int ret = ctr_lte_link_send_line(talk->dev, SEND_TIMEOUT, __VA_ARGS__);            \
 		if (ret) {                                                                         \
 			LOG_ERR("Call `ctr_lte_link_send_line` failed: %d", ret);                  \

@@ -14,7 +14,6 @@
 #include <chester/ctr_buf.h>
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_info.h>
-#include <chester/ctr_lte_v2.h>
 #include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
@@ -183,53 +182,6 @@ static int process_downlink(struct ctr_buf *buf, struct ctr_buf *upbuf)
 		LOG_ERR("Unknown downlink type: %d", type);
 		break;
 	}
-
-	return 0;
-}
-
-static int lte_attach(void)
-{
-	int ret;
-	int res = 0;
-
-	k_mutex_lock(&m_lock, K_FOREVER);
-
-	ret = ctr_lte_v2_attach();
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_attach` failed: %d", ret);
-		k_mutex_unlock(&m_lock);
-		res = ret;
-		goto exit;
-	}
-
-exit:
-	ret = ctr_lte_v2_stop();
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_stop` failed: %d", ret);
-		k_mutex_unlock(&m_lock);
-		res = res ? res : ret;
-		return ret;
-	}
-
-	k_mutex_unlock(&m_lock);
-
-	return res;
-}
-
-static int lte_detach(void)
-{
-	int ret;
-
-	k_mutex_lock(&m_lock, K_FOREVER);
-
-	ret = ctr_lte_v2_detach();
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_detach` failed: %d", ret);
-		k_mutex_unlock(&m_lock);
-		return ret;
-	}
-
-	k_mutex_unlock(&m_lock);
 
 	return 0;
 }
@@ -585,22 +537,14 @@ static void init_work_handler(struct k_work *work)
 	ctr_buf_reset(&m_transfer_buf);
 
 	for (;;) {
-		// k_sleep(K_SECONDS(5));
 
-		LOG_INF("Running LTE ATTACH");
-
-		ret = lte_attach();
-		if (ret) {
-			LOG_ERR("Call `lte_attach` failed: %d", ret);
-			goto error;
-		}
+		ctr_cloud_transfer_wait_for_ready(K_FOREVER);
 
 		LOG_INF("Running CREATE SESSION");
-
 		ret = create_session();
 		if (ret) {
 			LOG_ERR("Call `create_session` failed: %d", ret);
-			goto error;
+			continue;
 		}
 
 		LOG_INF("Running UPLOAD ENCODER");
@@ -608,7 +552,7 @@ static void init_work_handler(struct k_work *work)
 		ret = upload_decoder();
 		if (ret) {
 			LOG_ERR("Call `upload_decoder` failed: %d", ret);
-			goto error;
+			continue;
 		}
 
 		LOG_INF("Running UPLOAD ENCODER");
@@ -617,7 +561,7 @@ static void init_work_handler(struct k_work *work)
 
 		if (ret) {
 			LOG_ERR("Call `upload_encoder` failed: %d", ret);
-			goto error;
+			continue;
 		}
 
 		LOG_INF("Running UPLOAD CONFIG");
@@ -633,12 +577,6 @@ static void init_work_handler(struct k_work *work)
 #endif
 
 		break;
-	error:
-		ret = lte_detach();
-		if (ret) {
-			LOG_ERR("Call `lte_detach` failed: %d", ret);
-			goto error;
-		}
 	}
 
 	k_mutex_unlock(&m_lock);

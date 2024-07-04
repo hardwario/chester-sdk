@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(ctr_lte_link, CONFIG_CTR_LTE_LINK_LOG_LEVEL);
 #define RESET_PAUSE   K_SECONDS(3)
 #define WAKE_UP_DELAY K_MSEC(100)
 #define WAKE_UP_PAUSE K_MSEC(100)
+#define TX_GUARD_TIME K_MSEC(10)
 
 #define TX_LINE_PREFIX ""
 #define TX_LINE_SUFFIX "\r\n"
@@ -75,6 +76,7 @@ struct ctr_lte_link_data {
 	struct k_pipe rx_pipe;
 	struct k_sem rx_disabled_sem;
 	struct k_sem tx_finished_sem;
+	k_timepoint_t tx_timepoint;
 	struct k_work rx_loss_work;
 	struct k_work rx_receive_work;
 	struct k_work rx_restart_work;
@@ -630,7 +632,7 @@ static int ctr_lte_link_disable_uart_(const struct device *dev)
 
 static int ctr_lte_link_enter_data_mode_(const struct device *dev)
 {
-	LOG_INF("Enter data mode");
+	LOG_DBG("Enter data mode");
 
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
@@ -654,7 +656,7 @@ static int ctr_lte_link_enter_data_mode_(const struct device *dev)
 
 static int ctr_lte_link_exit_data_mode_(const struct device *dev)
 {
-	LOG_INF("Exit data mode");
+	LOG_DBG("Exit data mode");
 
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
@@ -678,7 +680,7 @@ static int ctr_lte_link_exit_data_mode_(const struct device *dev)
 
 static int ctr_lte_link_enter_dialog_(const struct device *dev)
 {
-	LOG_INF("Enter dialog");
+	LOG_DBG("Enter dialog");
 
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
@@ -700,7 +702,7 @@ static int ctr_lte_link_enter_dialog_(const struct device *dev)
 
 static int ctr_lte_link_exit_dialog_(const struct device *dev)
 {
-	LOG_INF("Exit dialog");
+	LOG_DBG("Exit dialog");
 
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
@@ -770,6 +772,10 @@ static int ctr_lte_link_send_line_(const struct device *dev, k_timeout_t timeout
 
 	strcat(get_data(dev)->tx_line_buf, TX_LINE_SUFFIX);
 
+	if (!sys_timepoint_expired(get_data(dev)->tx_timepoint)) {
+		k_sleep(sys_timepoint_timeout(get_data(dev)->tx_timepoint));
+	}
+
 	ret = uart_tx(get_config(dev)->uart_dev, get_data(dev)->tx_line_buf,
 		      strlen(get_data(dev)->tx_line_buf), SYS_FOREVER_US);
 	if (ret) {
@@ -784,6 +790,8 @@ static int ctr_lte_link_send_line_(const struct device *dev, k_timeout_t timeout
 		k_mutex_unlock(&get_data(dev)->lock);
 		return ret;
 	}
+
+	get_data(dev)->tx_timepoint = sys_timepoint_calc(TX_GUARD_TIME);
 
 	k_mutex_unlock(&get_data(dev)->lock);
 
@@ -800,10 +808,10 @@ static int ctr_lte_link_recv_line_(const struct device *dev, k_timeout_t timeout
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	if (!get_data(dev)->enabled) {
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EBUSY;
-	}
+	// if (!get_data(dev)->enabled) {
+	// 	k_mutex_unlock(&get_data(dev)->lock);
+	// 	return -EBUSY;
+	// }
 
 	if (get_data(dev)->in_data_mode) {
 		k_mutex_unlock(&get_data(dev)->lock);
@@ -850,10 +858,10 @@ static int ctr_lte_link_free_line_(const struct device *dev, char *line)
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	if (!get_data(dev)->enabled) {
-		k_mutex_unlock(&get_data(dev)->lock);
-		return -EBUSY;
-	}
+	// if (!get_data(dev)->enabled) {
+	// 	k_mutex_unlock(&get_data(dev)->lock);
+	// 	return -EBUSY;
+	// }
 
 	k_heap_free(&get_data(dev)->rx_heap, line);
 	LOG_DBG("Released from heap: %p", (void *)line);

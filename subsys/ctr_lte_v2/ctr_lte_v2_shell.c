@@ -25,50 +25,6 @@
 
 LOG_MODULE_REGISTER(ctr_lte_v2_shell, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 
-static int cmd_prepare(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc > 1) {
-		shell_error(shell, "command not found: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	ret = ctr_lte_v2_prepare();
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_prepare` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	shell_print(shell, "command succeeded");
-
-	return 0;
-}
-
-static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc > 1) {
-		shell_error(shell, "command not found: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	ret = ctr_lte_v2_attach();
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_attach` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	shell_print(shell, "command succeeded");
-
-	return 0;
-}
-
 static int cmd_imei(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
@@ -179,14 +135,6 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	bool prepared;
-	ret = ctr_lte_v2_is_prepared(&prepared);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_is_prepared` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
 	bool attached;
 	ret = ctr_lte_v2_is_attached(&attached);
 	if (ret) {
@@ -195,7 +143,6 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	shell_print(shell, "prepared: %s", prepared ? "yes" : "no");
 	shell_print(shell, "attached: %s", attached ? "yes" : "no");
 
 	struct ctr_lte_v2_cereg_param cereg_param;
@@ -261,6 +208,37 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_metrics(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	struct ctr_lte_v2_metrics metrics;
+	ret = ctr_lte_v2_get_metrics(&metrics);
+	if (ret) {
+		shell_error(shell, "ctr_lte_v2_get_metrics failed: %d", ret);
+		return ret;
+	}
+
+	shell_print(shell, "uplink messages: %u", metrics.uplink_count);
+	shell_print(shell, "uplink bytes: %u", metrics.uplink_bytes);
+	shell_print(shell, "uplink errors: %u", metrics.uplink_errors);
+	shell_print(shell, "uplink last ts: %lld", metrics.uplink_last_ts);
+	shell_print(shell, "downlink messages: %u", metrics.downlink_count);
+	shell_print(shell, "downlink bytes: %u", metrics.downlink_bytes);
+	shell_print(shell, "downlink errors: %u", metrics.downlink_errors);
+	shell_print(shell, "downlink last ts: %lld", metrics.downlink_last_ts);
+
+	shell_print(shell, "command succeeded");
+
+	return 0;
+}
+
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -305,14 +283,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "Configuration commands.",
 	              ctr_lte_v2_config_cmd, 1, 3),
 
-	SHELL_CMD_ARG(prepare, NULL,
-	              "Prepare modem.",
-		      cmd_prepare, 1, 0),
-
-	SHELL_CMD_ARG(attach, NULL,
-	              "Attach to network.",
-	              cmd_attach, 1, 0),
-
 	SHELL_CMD_ARG(imei, NULL,
 	              "Get modem IMEI.",
 	              cmd_imei, 1, 0),
@@ -332,6 +302,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(state, NULL,
 	              "Get LTE state.",
 	              cmd_state, 1, 0),
+
+	SHELL_CMD_ARG(metrics, NULL,
+		     "Get LTE metrics.",
+	              cmd_metrics, 1, 0),
 
 	SHELL_CMD_ARG(test, &sub_lte_test,
 	              "Test commands.",

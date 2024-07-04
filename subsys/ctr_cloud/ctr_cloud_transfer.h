@@ -14,6 +14,9 @@
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
 
+/* Zephyr includes */
+#include <zephyr/kernel.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,6 +39,7 @@ struct ctr_cloud_transfer_metrics {
 };
 
 int ctr_cloud_transfer_init(uint32_t serial_number, uint8_t token[16]);
+int ctr_cloud_transfer_wait_for_ready(k_timeout_t timeout);
 int ctr_cloud_transfer_reset_metrics(void);
 int ctr_cloud_transfer_get_metrics(struct ctr_cloud_transfer_metrics *metrics);
 int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink);

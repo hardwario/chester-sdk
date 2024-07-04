@@ -49,6 +49,7 @@ struct ctr_lte_v2_config {
 
 extern struct ctr_lte_v2_config g_ctr_lte_v2_config;
 
+int ctr_lte_v2_config_init();
 int ctr_lte_v2_config_cmd_show(const struct shell *shell, size_t argc, char **argv);
 int ctr_lte_v2_config_cmd(const struct shell *shell, size_t argc, char **argv);
 

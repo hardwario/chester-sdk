@@ -54,11 +54,13 @@ static int send_recv(struct ctr_buf *send_buf, struct ctr_buf *recv_buf, bool ra
 	size_t recv_len;
 
 	struct ctr_lte_v2_send_recv_param param = {
+		.rai = rai,
 		.send_buf = ctr_buf_get_mem(send_buf),
 		.send_len = ctr_buf_get_used(send_buf),
 		.recv_buf = NULL,
 		.recv_size = 0,
 		.recv_len = &recv_len,
+		.timeout = K_FOREVER,
 	};
 
 	if (recv_buf) {
@@ -67,7 +69,7 @@ static int send_recv(struct ctr_buf *send_buf, struct ctr_buf *recv_buf, bool ra
 		param.recv_size = ctr_buf_get_free(recv_buf);
 	}
 
-	ret = ctr_lte_v2_send_recv(&param, rai);
+	ret = ctr_lte_v2_send_recv(&param);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_send_recv` failed: %d", ret);
 		return ret;
@@ -105,8 +107,24 @@ int ctr_cloud_transfer_init(uint32_t serial_number, uint8_t token[16])
 
 	ctr_cloud_transfer_reset_metrics();
 
+	ctr_lte_v2_enable();
+
 	return 0;
 }
+
+int ctr_cloud_transfer_wait_for_ready(k_timeout_t timeout)
+{
+	int ret;
+
+	ret = ctr_lte_v2_wait_for_connected(timeout);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_wait_for_connected` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_cloud_transfer_reset_metrics(void)
 {
 	k_mutex_lock(&m_lock_metrics, K_FOREVER);
@@ -139,13 +157,6 @@ int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink)
 
 	if (has_downlink != NULL) {
 		*has_downlink = false;
-	}
-
-	ret = ctr_lte_v2_start();
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_start` failed: %d", ret);
-		res = ret;
-		goto exit;
 	}
 
 restart:
@@ -217,7 +228,7 @@ restart:
 			goto exit;
 		}
 
-		LOG_DBG("Received packet Sequence: %u %s len: %u", m_pck_recv.sequence,
+		LOG_INF("Received packet Sequence: %u %s len: %u", m_pck_recv.sequence,
 			ctr_cloud_packet_flags_to_str(m_pck_recv.flags), m_pck_recv.data_len);
 
 		if (m_pck_recv.serial_number != m_pck_send.serial_number) {
@@ -264,28 +275,11 @@ restart:
 
 	} while (len);
 
-	LOG_INF("Wait on modem sleep");
-
-	ret = ctr_lte_v2_wait_on_modem_sleep(MODEM_SLEEP_DELAY);
-	if (ret) {
-		LOG_WRN("Call `ctr_lte_v2_wait_on_modem_sleep` failed: %d", ret);
-	}
-
 exit:
-	ret = ctr_lte_v2_stop();
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_stop` failed: %d", ret);
-		res = res ? res : ret;
-	}
-
 	if (res) {
 		LOG_ERR("Transfer uplink failed: %d reset sequence", res);
 		m_sequence = 0;
 		m_last_recv_sequence = 0;
-		ret = ctr_lte_v2_detach();
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_detach` failed: %d", ret);
-		}
 	}
 
 	k_mutex_lock(&m_lock_metrics, K_FOREVER);
@@ -316,13 +310,6 @@ int ctr_cloud_transfer_downlink(struct ctr_buf *buf, bool *has_downlink)
 	*has_downlink = false;
 
 	size_t buf_used = ctr_buf_get_used(buf);
-
-	ret = ctr_lte_v2_start();
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_start` failed: %d", ret);
-		res = ret;
-		goto exit;
-	}
 
 restart:
 
@@ -372,15 +359,6 @@ restart:
 			goto exit;
 		}
 
-		if (rai) {
-			LOG_INF("Wait on modem sleep");
-
-			ret = ctr_lte_v2_wait_on_modem_sleep(MODEM_SLEEP_DELAY);
-			if (ret) {
-				LOG_WRN("Call `ctr_lte_v2_wait_on_modem_sleep` failed: %d", ret);
-			}
-		}
-
 		ret = ctr_cloud_packet_unpack(&m_pck_recv, m_token, &m_recv_buf);
 		if (ret) {
 			LOG_ERR("Call `ctr_cloud_packet_unpack` failed: %d", ret);
@@ -388,7 +366,7 @@ restart:
 			goto exit;
 		}
 
-		LOG_DBG("Received packet Sequence: %u %s len: %u", m_pck_recv.sequence,
+		LOG_INF("Received packet Sequence: %u %s len: %u", m_pck_recv.sequence,
 			ctr_cloud_packet_flags_to_str(m_pck_recv.flags), m_pck_recv.data_len);
 
 		if (m_pck_recv.serial_number != m_pck_send.serial_number) {
@@ -446,28 +424,12 @@ restart:
 
 	} while (true);
 
-	LOG_INF("Wait on modem sleep");
-
-	ret = ctr_lte_v2_wait_on_modem_sleep(MODEM_SLEEP_DELAY);
-	if (ret) {
-		LOG_WRN("Call `ctr_lte_v2_wait_on_modem_sleep` failed: %d", ret);
-	}
-
 exit:
-	ret = ctr_lte_v2_stop();
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_stop` failed: %d", ret);
-		res = res ? res : ret;
-	}
 
 	if (res) {
 		LOG_ERR("Transfer downlink failed: %d reset sequence", res);
 		m_sequence = 0;
 		m_last_recv_sequence = 0;
-		ret = ctr_lte_v2_detach();
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_detach` failed: %d", ret);
-		}
 	}
 
 	k_mutex_lock(&m_lock_metrics, K_FOREVER);

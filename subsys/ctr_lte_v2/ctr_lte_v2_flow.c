@@ -14,6 +14,7 @@
 #include <chester/ctr_lte_v2.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_util.h>
+#include <chester/ctr_info.h>
 #include <chester/drivers/ctr_lte_link.h>
 #include <chester/drivers/ctr_rfmux.h>
 
@@ -25,6 +26,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/net/socket_ncs.h>
 
 /* Standard includes */
 #include <errno.h>
@@ -36,15 +38,12 @@
 
 LOG_MODULE_REGISTER(ctr_lte_v2_flow, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 
-#define XSLEEP_PAUSE           K_MSEC(100)
-#define BOOT_TIMEOUT           K_SECONDS(5)
-#define BOOT_RETRY_COUNT       3
-#define BOOT_RETRY_DELAY       K_SECONDS(10)
-#define SEND_CSCON_1_TIMEOUT   K_SECONDS(30)
-#define SEND_CSCON_0_TIMEOUT   K_SECONDS(30)
-#define SIMDETECTED_TIMEOUT    K_SECONDS(10)
-#define XRECVFROM_TIMEOUT_SEC  5
-#define MDMEV_RESET_LOOP_DELAY K_MINUTES(32)
+#define XSLEEP_PAUSE         K_MSEC(100)
+#define BOOT_TIMEOUT         K_SECONDS(5)
+#define SEND_CSCON_1_TIMEOUT K_SECONDS(30)
+#define SEND_CSCON_0_TIMEOUT K_SECONDS(30)
+
+#define XRECVFROM_TIMEOUT_SEC 5
 
 static struct ctr_lte_v2_talk m_talk;
 
@@ -59,11 +58,11 @@ static K_SEM_DEFINE(m_time_sem, 0, 1);
 #define EVENT_XMODEMSLEEP      BIT(2)
 #define EVENT_SIMDETECTED      BIT(3)
 #define EVENT_MDMEV_RESET_LOOP BIT(4)
-#define EVENT_ATTACHED         BIT(5)
 
 static K_EVENT_DEFINE(m_flow_events);
 
 static atomic_t m_started;
+static ctr_lte_v2_flow_event_delegate_cb m_event_delegate_cb;
 
 static int enable(void)
 {
@@ -109,16 +108,15 @@ static void process_urc(const char *line)
 {
 	LOG_INF("URC: %s", line);
 
-	k_event_clear(&m_flow_events, EVENT_XMODEMSLEEP);
-
 	if (!strcmp(line, "Ready")) {
-		k_sem_give(&m_ready_sem);
+		m_event_delegate_cb(CTR_LTE_V2_EVENT_READY);
 
 	} else if (!strcmp(line, "%XSIM: 1")) {
-		k_event_post(&m_flow_events, EVENT_SIMDETECTED);
+		m_event_delegate_cb(CTR_LTE_V2_EVENT_SIMDETECTED);
 
 	} else if (!strncmp(line, "%XTIME:", 7)) {
-		k_sem_give(&m_time_sem);
+		// k_sem_give(&m_time_sem);
+		m_event_delegate_cb(CTR_LTE_V2_EVENT_XTIME);
 
 	} else if (!strncmp(line, "+CEREG: ", 8)) {
 		int ret;
@@ -130,30 +128,25 @@ static void process_urc(const char *line)
 			return;
 		}
 
+		ctr_lte_v2_state_set_cereg_param(&cereg_param);
+
 		if (cereg_param.stat == CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME ||
 		    cereg_param.stat == CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING) {
-			k_event_post(&m_flow_events, EVENT_ATTACHED);
+			m_event_delegate_cb(CTR_LTE_V2_EVENT_REGISTERED);
 		} else {
-			k_event_clear(&m_flow_events, EVENT_ATTACHED);
+			m_event_delegate_cb(CTR_LTE_V2_EVENT_DEREGISTERED);
 		}
-
-		ctr_lte_v2_state_set_cereg_param(&cereg_param);
 
 	} else if (!strncmp(line, "%MDMEV: ", 8)) {
 		if (!strncmp(&line[8], "RESET LOOP", 10)) {
 			LOG_WRN("Modem reset loop detected");
-			k_event_post(&m_flow_events, EVENT_MDMEV_RESET_LOOP);
-		} else {
-			k_event_clear(&m_flow_events, EVENT_MDMEV_RESET_LOOP);
+			m_event_delegate_cb(CTR_LTE_V2_EVENT_RESET_LOOP);
 		}
-
 	} else if (!strncmp(line, "+CSCON: 0", 9)) {
-		k_event_clear(&m_flow_events, EVENT_CSCON_1);
-		k_event_post(&m_flow_events, EVENT_CSCON_0);
+		m_event_delegate_cb(CTR_LTE_V2_EVENT_CSCON_0);
 
 	} else if (!strncmp(line, "+CSCON: 1", 9)) {
-		k_event_clear(&m_flow_events, EVENT_CSCON_0);
-		k_event_post(&m_flow_events, EVENT_CSCON_1);
+		m_event_delegate_cb(CTR_LTE_V2_EVENT_CSCON_1);
 
 	} else if (!strncmp(line, "%XMODEMSLEEP: ", 14)) {
 		int ret, p1, p2;
@@ -163,7 +156,18 @@ static void process_urc(const char *line)
 			return;
 		}
 		if (p2 > 0) {
-			k_event_post(&m_flow_events, EVENT_XMODEMSLEEP);
+			m_event_delegate_cb(CTR_LTE_V2_EVENT_XMODMSLEEEP);
+		}
+	} else if (!strncmp(line, "#XGPS: ", 7)) {
+		if (strcmp(&line[7], "1,0") != 0 && strcmp(&line[7], "1,1") != 0) {
+			struct ctr_lte_v2_gnss_update update;
+			int ret = ctr_lte_v2_parse_urc_xgps(&line[7], &update);
+			if (ret) {
+				LOG_WRN("Call `ctr_lte_v2_parse_urc_xgps` failed: %d", ret);
+				return;
+			}
+			ctr_lte_v2_state_set_gnss_update(&update);
+			m_event_delegate_cb(CTR_LTE_V2_EVENT_XGPS);
 		}
 	}
 }
@@ -181,7 +185,7 @@ static void ctr_lte_link_event_handler(const struct device *dev, enum ctr_lte_li
 
 	switch (event) {
 	case CTR_LTE_LINK_EVENT_RX_LINE:
-		LOG_INF("Event `CTR_LTE_LINK_EVENT_RX_LINE`");
+		// LOG_DBG("Event `CTR_LTE_LINK_EVENT_RX_LINE`");
 		for (;;) {
 			char *line;
 			ret = ctr_lte_link_recv_line(dev, K_NO_WAIT, &line);
@@ -203,37 +207,11 @@ static void ctr_lte_link_event_handler(const struct device *dev, enum ctr_lte_li
 		}
 		break;
 	case CTR_LTE_LINK_EVENT_RX_DATA:
-		LOG_INF("Event `CTR_LTE_LINK_EVENT_RX_DATA`");
+		// LOG_DBG("Event `CTR_LTE_LINK_EVENT_RX_DATA`");
 		break;
 	default:
 		LOG_WRN("Unknown event: %d", event);
 	}
-}
-
-static int wake_up(void)
-{
-	int ret;
-
-	k_sem_reset(&m_ready_sem);
-
-	ret = ctr_lte_link_wake_up(dev_lte_if);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_link_wake_up` failed: %d", ret);
-		return ret;
-	}
-
-	ret = k_sem_take(&m_ready_sem, BOOT_TIMEOUT);
-	if (ret == -EAGAIN) {
-		LOG_WRN("Boot message timed out");
-		return -ETIMEDOUT;
-	}
-
-	if (ret) {
-		LOG_ERR("Call `k_sem_take` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
 }
 
 static void str_remove_trailin_quotes(char *str)
@@ -245,11 +223,12 @@ static void str_remove_trailin_quotes(char *str)
 	}
 }
 
-static int prepare_once(void)
+int ctr_lte_v2_flow_prepare(void)
 {
 	int ret;
 
-	k_event_clear(&m_flow_events, EVENT_SIMDETECTED);
+	// enum ctr_info_product_family product_family;
+	// ctr_info_get_product_family(&product_family);
 
 	ret = ctr_lte_v2_talk_at(&m_talk);
 	if (ret) {
@@ -342,8 +321,13 @@ static int prepare_once(void)
 		return ret;
 	}
 
+	int gnss_enable = 0;
+#if defined(CONFIG_CTR_LTE_V2_GNSS)
+	gnss_enable = 1;
+#endif
 	ret = ctr_lte_v2_talk_at_xsystemmode(&m_talk, g_ctr_lte_v2_config.lte_m_mode ? 1 : 0,
-					     g_ctr_lte_v2_config.nb_iot_mode ? 1 : 0, 0, 0);
+					     g_ctr_lte_v2_config.nb_iot_mode ? 1 : 0, gnss_enable,
+					     0);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_xsystemmode` failed: %d", ret);
 		return ret;
@@ -480,6 +464,10 @@ static int prepare_once(void)
 		return ret;
 	}
 
+	if (gnss_enable) {
+		ctr_lte_v2_talk_at_cmd(&m_talk, "AT%XCOEX0=1,1,1565,1586");
+	}
+
 	ret = ctr_lte_v2_talk_at_cscon(&m_talk, 1);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_cscon` failed: %d", ret);
@@ -528,96 +516,22 @@ static int prepare_once(void)
 	return 0;
 }
 
-static int prepare(int retries, k_timeout_t delay)
-{
-	int ret;
-	int res = 0;
-
-	LOG_INF("Operation PREPARE started");
-
-	while (retries--) {
-		ret = prepare_once();
-		if (ret) {
-			LOG_WRN("Call `prepare_once` failed: %d", ret);
-			res = res ? res : ret;
-		} else {
-			LOG_INF("Operation PREPARE succeeded");
-			return 0;
-		}
-
-		if (retries) {
-			ret = ctr_lte_v2_flow_stop();
-			if (ret) {
-				LOG_ERR("Call `ctr_lte_v2_flow_stop` failed: %d", ret);
-				res = res ? res : ret;
-			}
-
-			k_sleep(delay);
-
-			ret = ctr_lte_v2_flow_start();
-			if (ret) {
-				LOG_ERR("Call `ctr_lte_v2_flow_start` failed: %d", ret);
-				res = res ? res : ret;
-			}
-
-			LOG_WRN("Repeating PREPARE operation (retries left: %d)", retries);
-		}
-	}
-
-	LOG_ERR("Operation PREPARE failed");
-
-	return res;
-}
-
-int ctr_lte_v2_flow_attach(k_timeout_t timeout)
+int ctr_lte_v2_flow_cfun(int cfun)
 {
 	int ret;
 
-	LOG_INF("Try to attach with timeout %lld s",
-		k_ticks_to_ms_floor64(timeout.ticks) / MSEC_PER_SEC);
-
-	k_sem_reset(&m_time_sem);
-
-cfun_1:
-	k_event_clear(&m_flow_events, EVENT_ATTACHED | EVENT_MDMEV_RESET_LOOP);
-
-	ret = ctr_lte_v2_talk_at_cfun(&m_talk, 1);
+	ret = ctr_lte_v2_talk_at_cfun(&m_talk, cfun);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_cfun` failed: %d", ret);
 		return ret;
 	}
 
-	if (k_event_wait(&m_flow_events, EVENT_SIMDETECTED, false, SIMDETECTED_TIMEOUT) == 0) {
-		LOG_WRN("SIM card detection timed out");
-		return -ETIMEDOUT;
-	}
+	return 0;
+}
 
-	// test FPLMN (forbidden network) list on a SIM
-	char crsm_144[32];
-	ret = ctr_lte_v2_talk_crsm_176(&m_talk, crsm_144, sizeof(crsm_144));
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_talk_at_crsm_176` failed: %d", ret);
-		return ret;
-	}
-	if (strcmp(crsm_144, "\"FFFFFFFFFFFFFFFFFFFFFFFF\"")) {
-		LOG_WRN("Found forbidden network(s) - erasing");
-
-		// FPLMN erase
-		ret = ctr_lte_v2_talk_crsm_214(&m_talk);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_talk_crsm_214` failed: %d", ret);
-			return ret;
-		}
-
-		ret = ctr_lte_v2_talk_at_cfun(&m_talk, 4);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_talk_at_cfun` failed: %d", ret);
-			return ret;
-		}
-
-		goto cfun_1;
-	}
-
+int ctr_lte_v2_flow_siminfo(void)
+{
+	int ret;
 	char cimi[64] = {0};
 	uint64_t imsi, imsi_test = 0;
 
@@ -658,50 +572,57 @@ cfun_1:
 
 	ctr_lte_v2_state_set_iccid(iccid);
 
-	uint32_t evt = k_event_wait(&m_flow_events, (EVENT_ATTACHED | EVENT_MDMEV_RESET_LOOP),
-				    false, timeout);
+	return 0;
+}
 
-	LOG_INF("k_event_wait: %d", evt);
+int ctr_lte_v2_flow_open_socket(void)
+{
+	int ret;
 
-	if (evt == 0) {
-		LOG_WRN("Network registration timed out");
-		return -ETIMEDOUT;
+	// 	LOG_INF("Try to attach with timeout %lld s",
+	// 		k_ticks_to_ms_floor64(timeout.ticks) / MSEC_PER_SEC);
 
-	} else if ((evt & EVENT_MDMEV_RESET_LOOP) != 0) {
-		LOG_WRN("Modem reset loop detected");
+	// 	k_sem_reset(&m_time_sem);
 
-		ret = ctr_lte_v2_talk_at_cfun(&m_talk, 4);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_talk_at_cfun` failed: %d", ret);
-			return ret;
-		}
+	// cfun_1:
+	// 	k_event_clear(&m_flow_events, EVENT_ATTACHED | EVENT_MDMEV_RESET_LOOP);
 
-		k_sleep(K_SECONDS(5));
+	// 	// ret = ctr_lte_v2_talk_at_cfun(&m_talk, 1);
+	// 	// if (ret) {
+	// 	// 	LOG_ERR("Call `ctr_lte_v2_talk_at_cfun` failed: %d", ret);
+	// 	// 	return ret;
+	// 	// }
 
-		ret = ctr_lte_v2_flow_stop();
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_flow_stop` failed: %d", ret);
-			return ret;
-		}
+	// 	if (k_event_wait(&m_flow_events, EVENT_SIMDETECTED, false, SIMDETECTED_TIMEOUT) ==
+	// 0) { 		LOG_WRN("SIM card detection timed out"); 		return
+	// -ETIMEDOUT;
+	// 	}
 
-		k_sleep(MDMEV_RESET_LOOP_DELAY);
+	// 	// test FPLMN (forbidden network) list on a SIM
+	// 	char crsm_144[32];
+	// 	ret = ctr_lte_v2_talk_crsm_176(&m_talk, crsm_144, sizeof(crsm_144));
+	// 	if (ret) {
+	// 		LOG_ERR("Call `ctr_lte_talk_at_crsm_176` failed: %d", ret);
+	// 		return ret;
+	// 	}
+	// 	if (strcmp(crsm_144, "\"FFFFFFFFFFFFFFFFFFFFFFFF\"")) {
+	// 		LOG_WRN("Found forbidden network(s) - erasing");
 
-		ret = ctr_lte_v2_flow_start();
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_flow_start` failed: %d", ret);
-			return ret;
-		}
+	// 		// FPLMN erase
+	// 		ret = ctr_lte_v2_talk_crsm_214(&m_talk);
+	// 		if (ret) {
+	// 			LOG_ERR("Call `ctr_lte_v2_talk_crsm_214` failed: %d", ret);
+	// 			return ret;
+	// 		}
 
-		ret = ctr_lte_v2_talk_at_cfun(&m_talk, 0);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_talk_at_cfun` failed: %d", ret);
-			return ret;
-		}
+	// 		ret = ctr_lte_v2_talk_at_cfun(&m_talk, 4);
+	// 		if (ret) {
+	// 			LOG_ERR("Call `ctr_lte_v2_talk_at_cfun` failed: %d", ret);
+	// 			return ret;
+	// 		}
 
-		k_sleep(K_SECONDS(5));
-
-		return -EAGAIN;
-	}
+	// 		goto cfun_1;
+	// 	}
 
 	char cops[64];
 	ret = ctr_lte_v2_talk_at_cops_q(&m_talk, cops, sizeof(cops));
@@ -714,7 +635,7 @@ cfun_1:
 
 	ctr_lte_v2_talk_at_cmd(&m_talk, "AT%XCBAND");
 	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CEINFO?");
-	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CGDCONT?");
+	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CGDCONT?"); // TODO: check ip
 
 	if (g_ctr_lte_v2_config.clksync) {
 		/* TODO Constant to #define */
@@ -773,24 +694,18 @@ cfun_1:
 
 	LOG_INF("XSOCKET: %s", xsocket);
 
-	int handle, type, protocol;
-	ret = ctr_lte_v2_parse_xsocket_set(xsocket, &handle, &type, &protocol);
+	struct xsocket_set_param xsocket_param;
+	ret = ctr_lte_v2_parse_xsocket_set(xsocket, &xsocket_param);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_parse_xsocket_set` failed: %d", ret);
 		return ret;
 	}
 
-	if (type != 2 || protocol != 17) {
-		LOG_ERR("Unexpected socket type or protocol");
+	if (xsocket_param.type != XSOCKET_TYPE_DGRAM ||
+	    xsocket_param.protocol != XSOCKET_PROTOCOL_UDP) {
+		LOG_ERR("Unexpected socket response: %s", xsocket);
 		return -ENOTCONN;
 	}
-
-	struct ctr_lte_v2_conn_param conn_param;
-	ret = ctr_lte_v2_flow_coneval(&conn_param);
-	if (ret) {
-		LOG_WRN("Call `ctr_lte_v2_flow_coneval` failed: %d", ret);
-	}
-	ctr_lte_v2_state_set_conn_param(&conn_param);
 
 	char at_cmd[32 + 1] = {0};
 	char ar_response[64] = {0};
@@ -812,23 +727,121 @@ cfun_1:
 	return 0;
 }
 
-static int send_recv_once(const struct ctr_lte_v2_send_recv_param *param, bool rai)
+int ctr_lte_v2_flow_check(void)
 {
 	int ret;
-	int64_t stime, reftime, send_duration, recv_duration, total_duration = 0;
-	size_t recv_len;
 
-	stime = k_uptime_get();
+	char resp[128] = {0};
 
-	if (rai) {
-		ret = ctr_lte_v2_talk_at_xsocketopt(&m_talk, 1, param->recv_buf ? 52 : 51, NULL);
+	// Check functional mode
+	ret = ctr_lte_v2_talk_at_cmd_with_resp_prefix(&m_talk, "AT+CFUN?", resp, sizeof(resp),
+						      "+CFUN: ");
+
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cmd_with_resp_prefix` AT+CFUN? failed: %d", ret);
+		return ret;
+	}
+
+	if (strcmp(resp, "1") != 0) {
+		LOG_ERR("Unexpected CFUN response: %s", resp);
+		return -ENOTCONN;
+	}
+
+	// Check network registration status
+	ret = ctr_lte_v2_talk_at_cmd_with_resp_prefix(&m_talk, "AT+CEREG?", resp, sizeof(resp),
+						      "+CEREG: ");
+
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cmd_with_resp_prefix` AT+CEREG? failed: %d", ret);
+		return ret;
+	}
+
+	if (resp[0] == '0') {
+		LOG_ERR("CEREG unsubscribe unsolicited result codes");
+		return -ENOTCONN;
+	}
+
+	struct ctr_lte_v2_cereg_param cereg_param;
+
+	ret = ctr_lte_v2_parse_urc_cereg(resp + 2, &cereg_param);
+	if (ret) {
+		LOG_WRN("Call `ctr_lte_v2_parse_urc_cereg` failed: %d", ret);
+		return ret;
+	}
+
+	ctr_lte_v2_state_set_cereg_param(&cereg_param);
+
+	if (cereg_param.stat != CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME &&
+	    cereg_param.stat != CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING) {
+		LOG_ERR("Unexpected CEREG response: %s", resp);
+		return -ENOTCONN;
+	}
+
+	// Check if PDN is active
+	ret = ctr_lte_v2_talk_at_cmd_with_resp_prefix(&m_talk, "AT+CGATT?", resp, sizeof(resp),
+						      "+CGATT: ");
+
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cmd_with_resp_prefix` AT+CGATT? failed: %d", ret);
+		return ret;
+	}
+
+	if (strcmp(resp, "1") != 0) {
+		LOG_ERR("Unexpected CGATT response: %s", resp);
+		return -ENOTCONN;
+	}
+
+	// Check PDN connections
+	ret = ctr_lte_v2_talk_at_cmd_with_resp_prefix(&m_talk, "AT+CGACT?", resp, sizeof(resp),
+						      "+CGACT: ");
+
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cmd_with_resp_prefix` AT+CGACT? failed: %d", ret);
+		return ret;
+	}
+
+	if (strcmp(resp, "0,1") != 0) {
+		LOG_ERR("Unexpected CGACT response: %s", resp);
+		return -ENOTCONN;
+	}
+
+	// Check socket
+	ret = ctr_lte_v2_talk_at_cmd_with_resp_prefix(&m_talk, "AT#XSOCKET?", resp, sizeof(resp),
+						      "#XSOCKET: ");
+
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cmd_with_resp_prefix` AT#XSOCKET failed: %d",
+			ret);
+		return ret;
+	}
+
+	struct xsocket_get_param xsocket_param;
+	ret = ctr_lte_v2_parse_xsocket_get(resp, &xsocket_param);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_parse_xsocket_get` failed: %d", ret);
+		return ret;
+	}
+
+	if (xsocket_param.type != XSOCKET_TYPE_DGRAM && xsocket_param.role != XSOCKET_ROLE_CLIENT) {
+		LOG_ERR("Unexpected XSOCKET response: %s", resp);
+		return -ENOTCONN;
+	}
+
+	return 0;
+}
+
+int ctr_lte_v2_flow_send(const struct ctr_lte_v2_send_recv_param *param)
+{
+	int ret;
+
+	if (param->rai) {
+		ret = ctr_lte_v2_talk_at_xsocketopt(
+			&m_talk, 1, param->recv_buf ? SO_RAI_ONE_RESP : SO_RAI_LAST, NULL);
 		if (ret) {
 			LOG_ERR("Call `ctr_lte_v2_talk_at_xsocketopt` failed: %d", ret);
 			return ret;
 		}
 	}
-
-	reftime = k_uptime_get();
 
 	ret = ctr_lte_v2_talk_at_xsend(&m_talk, param->send_buf, param->send_len);
 	if (ret) {
@@ -836,71 +849,74 @@ static int send_recv_once(const struct ctr_lte_v2_send_recv_param *param, bool r
 		return ret;
 	}
 
-	if (k_event_wait(&m_flow_events, EVENT_CSCON_1, false, SEND_CSCON_1_TIMEOUT) == 0) {
-		LOG_ERR("Timed out while waiting for: CSCON 1");
-		return -ETIMEDOUT;
-	}
-
-	send_duration = k_uptime_delta(&reftime);
-
-	if (param->recv_buf) {
-		ret = ctr_lte_v2_talk_at_xrecv(&m_talk, XRECVFROM_TIMEOUT_SEC, param->recv_buf,
-					       param->recv_size, &recv_len);
-
+	if (param->rai && !param->recv_buf) { // RAI and no receive buffer
+		ret = ctr_lte_v2_talk_at_xsocketopt(&m_talk, 1, SO_RAI_NO_DATA, NULL);
 		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_talk_at_xrecv` failed: %d", ret);
-			return ret;
+			LOG_WRN("Call `ctr_lte_v2_talk_at_xsocketopt 1,50` failed: %d", ret);
 		}
-		if (param->recv_len != NULL) {
-			*param->recv_len = recv_len;
-		}
-		recv_duration = k_uptime_delta(&reftime);
-	} else {
-		recv_duration = 0;
 	}
 
-	if (rai) {
-		ret = ctr_lte_v2_talk_at_xsocketopt(&m_talk, 1, 50, NULL);
+	return 0;
+}
+
+int ctr_lte_v2_flow_recv(const struct ctr_lte_v2_send_recv_param *param)
+{
+	if (!param->recv_buf || !param->recv_size || !param->recv_len) {
+		return -EINVAL;
+	}
+
+	int ret;
+
+	ret = ctr_lte_v2_talk_at_xrecv(&m_talk, XRECVFROM_TIMEOUT_SEC, param->recv_buf,
+				       param->recv_size, param->recv_len);
+
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_xrecv` failed: %d", ret);
+		return ret;
+	}
+
+	if (param->rai) {
+		ret = ctr_lte_v2_talk_at_xsocketopt(&m_talk, 1, SO_RAI_NO_DATA, NULL);
 		if (ret) {
 			LOG_WRN("Call `ctr_lte_v2_talk_at_xsocketopt 1,50` failed: %d", ret);
 		}
 
-		if (k_event_wait(&m_flow_events, EVENT_CSCON_0, false, SEND_CSCON_0_TIMEOUT) == 0) {
-			LOG_WRN("Timed out while waiting for: CSCON 0");
+		// if (k_event_wait(&m_flow_events, EVENT_CSCON_0, false, SEND_CSCON_0_TIMEOUT) ==
+		// 0) { 	LOG_WRN("Timed out while waiting for: CSCON 0");
 
-		} else {
-			struct ctr_lte_v2_conn_param conn_param;
+		// } else {
+		// 	struct ctr_lte_v2_conn_param conn_param;
 
-			ret = ctr_lte_v2_flow_coneval(&conn_param);
-			if (ret) {
-				LOG_WRN("Call `ctr_lte_v2_flow_coneval` failed: %d", ret);
-			} else {
-				ctr_lte_v2_state_set_conn_param(&conn_param);
-			}
-		}
+		// 	ret = ctr_lte_v2_flow_coneval(&conn_param);
+		// 	if (ret) {
+		// 		LOG_WRN("Call `ctr_lte_v2_flow_coneval` failed: %d", ret);
+		// 	} else {
+		// 		ctr_lte_v2_state_set_conn_param(&conn_param);
+		// 	}
+		// }
 	}
 
-	total_duration = k_uptime_get() - stime;
+	// total_duration = k_uptime_get() - stime;
 
-	if (param->recv_buf) {
-		LOG_DBG("Send: len: %d B duration: %lld ms, Recv: len: %d B duration: %lld ms, "
-			"Total: %lld "
-			"ms",
-			param->send_len, send_duration, recv_len, recv_duration, total_duration);
-	} else {
-		LOG_DBG("Send: len: %d B duration: %lld ms, Total: %lld ms", param->send_len,
-			send_duration, total_duration);
-	}
+	// if (param->recv_buf) {
+	// 	LOG_DBG("Send: len: %d B duration: %lld ms, Recv: len: %d B duration: %lld ms, "
+	// 		"Total: %lld "
+	// 		"ms",
+	// 		param->send_len, send_duration, recv_len, recv_duration, total_duration);
+	// } else {
+	// 	LOG_DBG("Send: len: %d B duration: %lld ms, Total: %lld ms", param->send_len,
+	// 		send_duration, total_duration);
+	// }
 
-	if (param->send_duration != NULL) {
-		*param->send_duration = send_duration;
-	}
-	if (param->recv_duration != NULL) {
-		*param->recv_duration = recv_duration;
-	}
-	if (param->total_duration != NULL) {
-		*param->total_duration = total_duration;
-	}
+	// if (param->send_duration != NULL) {
+	// 	*param->send_duration = send_duration;
+	// }
+	// if (param->recv_duration != NULL) {
+	// 	*param->recv_duration = recv_duration;
+	// }
+	// if (param->total_duration != NULL) {
+	// 	*param->total_duration = total_duration;
+	// }
 
 	return 0;
 }
@@ -932,9 +948,9 @@ int ctr_lte_v2_flow_start(void)
 		return ret;
 	}
 
-	ret = wake_up();
+	ret = ctr_lte_link_wake_up(dev_lte_if);
 	if (ret) {
-		LOG_ERR("Call `wake_up` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_link_wake_up` failed: %d", ret);
 		return ret;
 	}
 
@@ -971,148 +987,100 @@ int ctr_lte_v2_flow_stop(void)
 	return 0;
 }
 
-int ctr_lte_v2_flow_wait_on_modem_sleep(k_timeout_t delay)
-{
-
-	if (k_event_wait_all(&m_flow_events, (EVENT_CSCON_0 | EVENT_XMODEMSLEEP), false, delay)) {
-		return 0;
-	}
-
-	return -ETIMEDOUT;
-}
-
-int ctr_lte_v2_flow_prepare(int retries, k_timeout_t delay)
+int ctr_lte_v2_flow_rfmux_acquire(void)
 {
 	int ret;
-
-	static bool initialized;
-
-	if (!initialized) {
-		ret = ctr_rfmux_acquire(dev_rfmux);
-		if (ret) {
-			LOG_ERR("Call `ctr_rfmux_acquire` failed: %d", ret);
-			return ret;
-		}
-
-		enum ctr_rfmux_antenna antenna;
-
-		if (g_ctr_lte_v2_config.antenna == CTR_LTE_V2_CONFIG_ANTENNA_EXT) {
-			antenna = CTR_RFMUX_ANTENNA_EXT;
-		} else {
-			antenna = CTR_RFMUX_ANTENNA_INT;
-		}
-
-		ret = ctr_rfmux_set_antenna(dev_rfmux, antenna);
-		if (ret) {
-			LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
-			return ret;
-		}
-
-		ret = ctr_rfmux_set_interface(dev_rfmux, CTR_RFMUX_INTERFACE_LTE);
-		if (ret) {
-			LOG_ERR("Call `ctr_rfmux_set_interface` failed: %d", ret);
-			return ret;
-		}
-
-		initialized = true;
-	}
-
-	ret = prepare(retries, delay);
+	ret = ctr_rfmux_acquire(dev_rfmux);
 	if (ret) {
-		LOG_ERR("Call `prepare` failed: %d", ret);
+		LOG_ERR("Call `ctr_rfmux_acquire` failed: %d", ret);
 		return ret;
 	}
 
+	enum ctr_rfmux_antenna antenna;
+
+	if (g_ctr_lte_v2_config.antenna == CTR_LTE_V2_CONFIG_ANTENNA_EXT) {
+		antenna = CTR_RFMUX_ANTENNA_EXT;
+	} else {
+		antenna = CTR_RFMUX_ANTENNA_INT;
+	}
+
+	ret = ctr_rfmux_set_antenna(dev_rfmux, antenna);
+	if (ret) {
+		LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_rfmux_set_interface(dev_rfmux, CTR_RFMUX_INTERFACE_LTE);
+	if (ret) {
+		LOG_ERR("Call `ctr_rfmux_set_interface` failed: %d", ret);
+		return ret;
+	}
 	return 0;
 }
 
-int ctr_lte_v2_flow_send_recv(int retries, k_timeout_t delay,
-			      const struct ctr_lte_v2_send_recv_param *param, bool rai)
+int ctr_lte_v2_flow_rfmux_release(void)
 {
 	int ret;
-	int res = 0;
 
-	LOG_INF("Operation SEND/RECV started");
-
-	while (retries--) {
-		ret = send_recv_once(param, rai);
-		if (ret) {
-			LOG_WRN("Call `send_recv_once` failed: %d", ret);
-			res = res ? res : ret;
-		} else {
-			LOG_INF("Operation SEND/RECV succeeded");
-			return 0;
-		}
-
-		if (retries) {
-			ret = ctr_lte_v2_flow_stop();
-			if (ret) {
-				LOG_ERR("Call `ctr_lte_v2_flow_stop` failed: %d", ret);
-				res = res ? res : ret;
-			}
-
-			k_sleep(delay);
-
-			ret = ctr_lte_v2_flow_start();
-			if (ret) {
-				LOG_ERR("Call `ctr_lte_v2_flow_start` failed: %d", ret);
-				res = res ? res : ret;
-			}
-
-			LOG_WRN("Repeating SEND/RECV operation (retries left: %d)", retries);
-		}
+	ret = ctr_rfmux_set_interface(dev_rfmux, CTR_RFMUX_INTERFACE_NONE);
+	if (ret) {
+		LOG_ERR("Call `ctr_rfmux_set_interface` failed: %d", ret);
+		return ret;
 	}
 
-	LOG_ERR("Operation SEND/RECV failed");
+	ret = ctr_rfmux_set_antenna(dev_rfmux, CTR_RFMUX_ANTENNA_NONE);
+	if (ret) {
+		LOG_ERR("Call `ctr_rfmux_set_antenna` failed: %d", ret);
+		return ret;
+	}
 
-	return res;
+	ret = ctr_rfmux_release(dev_rfmux);
+	if (ret) {
+		LOG_ERR("Call `ctr_rfmux_release` failed: %d", ret);
+		return ret;
+	}
+	return 0;
 }
 
-int ctr_lte_v2_flow_coneval(struct ctr_lte_v2_conn_param *param)
+int ctr_lte_v2_flow_coneval(void)
 {
 	int ret;
 
-	param->valid = false;
+	char buf[128] = {0};
 
-	char coneval[128];
-	ret = ctr_lte_v2_talk_at_coneval(&m_talk, coneval, sizeof(coneval));
+	ret = ctr_lte_v2_talk_at_coneval(&m_talk, buf, sizeof(buf));
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_coneval` failed: %d", ret);
 		return ret;
 	}
 
-	LOG_INF("CONEVAL: %s", coneval);
+	struct ctr_lte_v2_conn_param conn_param;
 
-	long result;
-	long energy_estimate;
-	long rsrp;
-	long rsrq;
-	long snr;
-	int cid;
-	char plmn[6 + 1];
-	long earfcn;
-	long band;
-	long ce_level;
+	ret = ctr_lte_v2_parse_coneval(buf, &conn_param);
 
-	ret = ctr_lte_v2_parse_urc_coneval(coneval, &result, NULL, &energy_estimate, &rsrp, &rsrq,
-					   &snr, &cid, plmn, sizeof(plmn), NULL, &earfcn, &band,
-					   NULL, &ce_level, NULL, NULL, NULL, NULL);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_parse_urc_coneval` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_parse_coneval` failed: %d", ret);
 		return ret;
 	}
 
-	if (!result) {
-		param->eest = energy_estimate;
-		param->ecl = ce_level;
-		param->rsrp = rsrp - 140;
-		param->rsrq = (rsrq - 39) / 2;
-		param->snr = snr - 24;
-		param->plmn = strtol(plmn, NULL, 10);
-		param->cid = cid;
-		param->band = band;
-		param->earfcn = earfcn;
-		param->valid = true;
+	if (conn_param.result != 0) {
+		LOG_WRN("Connection evaluation: %s",
+			ctr_lte_v2_coneval_result_str(conn_param.result));
+	}
+
+	ctr_lte_v2_state_set_conn_param(&conn_param);
+
+	return 0;
+}
+
+int ctr_lte_v2_flow_cmd(const char *s)
+{
+	int ret;
+
+	ret = ctr_lte_v2_talk_(&m_talk, s);
+	if (ret) {
+		LOG_ERR("Call `lte_talk_` failed: %d", ret);
+		return ret;
 	}
 
 	return 0;
@@ -1252,11 +1220,9 @@ int ctr_lte_v2_flow_cmd_trace(const struct shell *shell, size_t argc, char **arg
 	return 0;
 }
 
-static int init()
+int ctr_lte_v2_flow_init(ctr_lte_v2_flow_event_delegate_cb cb)
 {
 	int ret;
-
-	LOG_INF("System initialization");
 
 	ret = ctr_lte_v2_talk_init(&m_talk, dev_lte_if);
 	if (ret) {
@@ -1283,7 +1249,7 @@ static int init()
 		return ret;
 	}
 
+	m_event_delegate_cb = cb;
+
 	return 0;
 }
-
-SYS_INIT(init, APPLICATION, CONFIG_CTR_LTE_V2_INIT_PRIORITY);

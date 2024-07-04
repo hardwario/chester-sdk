@@ -20,6 +20,7 @@ char *ctr_lte_v2_tok_sep(const char *s);
 char *ctr_lte_v2_tok_end(const char *s);
 char *ctr_lte_v2_tok_str(const char *s, bool *def, char *str, size_t size);
 char *ctr_lte_v2_tok_num(const char *s, bool *def, long *num);
+char *ctr_lte_v2_tok_float(const char *s, bool *def, float *num);
 
 #ifdef __cplusplus
 }

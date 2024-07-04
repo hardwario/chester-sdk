@@ -17,16 +17,33 @@
 extern "C" {
 #endif
 
+struct xsocket_set_param {
+	int handle;
+	int type;
+	int protocol;
+};
+
+struct xsocket_get_param {
+	int handle;
+	int family;
+	int role;
+	int type;
+	int cid;
+};
+
+#define XSOCKET_PROTOCOL_UDP 17
+#define XSOCKET_TYPE_DGRAM   2
+#define XSOCKET_ROLE_CLIENT  0
+#define XSOCKET_FAMILY_IPV4  1
+
 int ctr_lte_v2_parse_cclk(const char *s, int *year, int *month, int *day, int *hours, int *minutes,
 			  int *seconds);
-int ctr_lte_v2_parse_xsocket_set(const char *s, int *handle, int *type, int *protocol);
+int ctr_lte_v2_parse_xsocket_set(const char *s, struct xsocket_set_param *param);
+int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param);
 int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *param);
 int ctr_lte_v2_parse_urc_xmodemsleep(const char *s, int *p1, int *p2);
-int ctr_lte_v2_parse_urc_coneval(const char *s, long *result, long *rrc_state,
-				 long *energy_estimate, long *rsrp, long *rsrq, long *snr, int *cid,
-				 char *plmn, size_t plmn_size, long *phys_cell_id, long *earfcn,
-				 long *band, long *tau_triggered, long *ce_level, long *tx_power,
-				 long *tx_repetitions, long *rx_repetitions, long *dl_pathloss);
+int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param);
+int ctr_lte_v2_parse_urc_xgps(const char *s, struct ctr_lte_v2_gnss_update *update);
 
 #ifdef __cplusplus
 }

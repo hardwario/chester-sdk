@@ -94,7 +94,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	return ctr_config_h_export(m_config_items, ARRAY_SIZE(m_config_items), export_func);
 }
 
-static int init()
+int ctr_lte_v2_config_init()
 {
 	int ret;
 
@@ -127,5 +127,3 @@ static int init()
 
 	return 0;
 }
-
-SYS_INIT(init, APPLICATION, CONFIG_CTR_LTE_V2_CONFIG_INIT_PRIORITY);

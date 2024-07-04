@@ -7,12 +7,18 @@
 config CTR_GNSS
 	bool "CTR_GNSS"
 	select CBPRINTF_FP_SUPPORT if CTR_GNSS_LOG_LEVEL_DBG
-	select GNSS
-	select GNSS_M8
-	select I2C
+	select GNSS if SHIELD_CTR_GNSS
+	select GNSS_M8 if SHIELD_CTR_GNSS
+	select I2C if SHIELD_CTR_GNSS
 	select REQUIRES_FULL_LIBC
+	select CTR_INFO
+	depends on SHIELD_CTR_GNSS || CTR_LTE_V2_GNSS
 
 if CTR_GNSS
+
+config CTR_GNSS_M8
+	bool "CTR_GNSS_M8"
+	default y if SHIELD_CTR_GNSS
 
 config CTR_GNSS_INIT_PRIORITY
 	int "Initialization priority"
@@ -25,6 +31,10 @@ config CTR_GNSS_THREAD_PRIORITY
 config CTR_GNSS_THREAD_STACK_SIZE
 	int "CTR_GNSS_THREAD_STACK_SIZE"
 	default 2048
+
+config CTR_GNSS_SHELL
+	bool "CTR_GNSS_SHELL"
+	default y
 
 module = CTR_GNSS
 module-str = CHESTER GNSS Subsystem

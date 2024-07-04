@@ -5,9 +5,12 @@
  */
 
 #include "minmea.h"
+#include "ctr_gnss_m8.h"
 
 /* CHESTER includes */
 #include <chester/ctr_gnss.h>
+#include <chester/ctr_lte_v2.h>
+#include <chester/ctr_info.h>
 #include <chester/drivers/m8.h>
 
 /* Zephyr includes */
@@ -49,72 +52,65 @@ struct cmd_msgq_item {
 	union cmd_msgq_data data;
 };
 
-static const struct device *m_m8_dev = DEVICE_DT_GET(DT_NODELABEL(m8));
 static ctr_gnss_user_cb m_user_cb;
 static void *m_user_data;
 static atomic_t m_corr_id;
 static bool m_running;
-static char m_line_buf[256];
-static size_t m_line_len;
-static bool m_line_clipped;
 
 K_MSGQ_DEFINE_STATIC(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
+#if defined(CONFIG_CTR_LTE_V2_GNSS)
+K_MSGQ_DEFINE_STATIC(m_lte_v2_msgq, sizeof(struct ctr_lte_v2_gnss_update), 2, 1);
+static void lte_v2_gnss_handler(const struct ctr_lte_v2_gnss_update *update, void *user_data)
+{
+	int ret = k_msgq_put(&m_lte_v2_msgq, update, K_NO_WAIT);
+	if (ret) {
+		LOG_ERR("Call `k_msgq_put` failed: %d", ret);
+	}
+}
+#endif
 
 static int process_req_start(const struct cmd_msgq_item *item)
 {
 	int ret;
+	enum ctr_info_product_family product_family;
 
-	if (!device_is_ready(m_m8_dev)) {
-		LOG_ERR("Device `M8` not ready");
-		return -EINVAL;
-	}
-
-	ret = m8_set_main_power(m_m8_dev, true);
+	ret = ctr_info_get_product_family(&product_family);
 	if (ret) {
-		LOG_ERR("Call `m8_set_main_power` failed: %d", ret);
-		return -EIO;
+		LOG_ERR("Call `ctr_info_get_product_family` failed: %d", ret);
+		return ret;
 	}
 
-	ret = m8_set_bckp_power(m_m8_dev, true);
-	if (ret) {
-		LOG_ERR("Call `m8_set_bckp_power` failed: %d", ret);
-		return -EIO;
+#if defined(CONFIG_CTR_GNSS_M8)
+	if (product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_M) {
+		ctr_gnss_m8_set_handler(m_user_cb, m_user_data);
+		return ctr_gnss_m8_start();
 	}
+#endif
 
-	m_line_len = 0;
-	m_line_clipped = false;
+#if defined(CONFIG_CTR_LTE_V2_GNSS)
+	if (product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_U1) {
+		ctr_lte_v2_gnss_set_handler(lte_v2_gnss_handler, NULL);
+		return ctr_lte_v2_gnss_set_enable(true);
+	}
+#endif
+	LOG_ERR("Unsupported product family: 0x%03x", product_family);
 
-	k_sleep(K_SECONDS(1));
-
-	return 0;
+	return -ENOTSUP;
 }
 
 static int process_req_stop(const struct cmd_msgq_item *item)
 {
-	int ret;
+	int ret = -ENOTSUP;
 
-	if (!device_is_ready(m_m8_dev)) {
-		LOG_ERR("Device `M8` not ready");
-		return -EINVAL;
-	}
+#if defined(CONFIG_CTR_GNSS_M8)
+	ret = ctr_gnss_m8_stop(item->data.stop.keep_bckp_domain);
+#endif
 
-	ret = m8_set_main_power(m_m8_dev, false);
-	if (ret) {
-		LOG_ERR("Call `m8_set_main_power` failed: %d", ret);
-		return -EIO;
-	}
+#if defined(CONFIG_CTR_LTE_V2_GNSS)
+	ret = ctr_lte_v2_gnss_set_enable(false);
+#endif
 
-	if (!item->data.stop.keep_bckp_domain) {
-		ret = m8_set_bckp_power(m_m8_dev, false);
-		if (ret) {
-			LOG_ERR("Call `m8_set_bckp_power` failed: %d", ret);
-			return -EIO;
-		}
-	}
-
-	k_sleep(K_SECONDS(1));
-
-	return 0;
+	return ret;
 }
 
 static void process_cmd_msgq(void)
@@ -140,8 +136,8 @@ static void process_cmd_msgq(void)
 			LOG_WRN("No reason for START operation - ignoring");
 
 		} else {
-			ret = process_req_start(&item);
 
+			ret = process_req_start(&item);
 			union ctr_gnss_event_data data = {0};
 
 			if (ret) {
@@ -195,94 +191,34 @@ static void process_cmd_msgq(void)
 	}
 }
 
-static void parse_nmea(const char *line)
-{
-	enum minmea_sentence_id sentence_id = minmea_sentence_id(line, true);
-
-	if (sentence_id == MINMEA_SENTENCE_GGA) {
-		struct minmea_sentence_gga frame;
-
-		if (minmea_parse_gga(&frame, line)) {
-			union ctr_gnss_event_data data = {0};
-
-			data.update.fix_quality = frame.fix_quality;
-			data.update.satellites_tracked = frame.satellites_tracked;
-			data.update.latitude = minmea_tocoord(&frame.latitude);
-			data.update.longitude = minmea_tocoord(&frame.longitude);
-			data.update.altitude = minmea_tofloat(&frame.altitude);
-
-			LOG_DBG("Fix quality: %d", data.update.fix_quality);
-			LOG_DBG("Satellites tracked: %d", data.update.satellites_tracked);
-			LOG_DBG("Latitude: %.7f", data.update.latitude);
-			LOG_DBG("Longitude: %.7f", data.update.longitude);
-			LOG_DBG("Altitude: %.1f", data.update.altitude);
-
-			if (m_user_cb) {
-				m_user_cb(CTR_GNSS_EVENT_UPDATE, &data, m_user_data);
-			}
-		}
-	}
-}
-
-static void ingest_nmea(uint8_t *buf, size_t len)
-{
-	for (size_t i = 0; i < len; i++) {
-		char c = buf[i];
-
-		if (c == '\r' || c == '\n') {
-			if (m_line_len > 0) {
-				if (!m_line_clipped) {
-					LOG_DBG("Read line: %s", m_line_buf);
-					parse_nmea(m_line_buf);
-
-				} else {
-					LOG_WRN("Line was clipped (ignoring)");
-				}
-
-				m_line_len = 0;
-				m_line_clipped = false;
-			}
-
-		} else {
-			if (m_line_len < sizeof(m_line_buf) - 2) {
-				m_line_buf[m_line_len++] = c;
-				m_line_buf[m_line_len + 1] = '\0';
-
-			} else {
-				m_line_clipped = true;
-			}
-		}
-	}
-}
-
 static void dispatcher_thread(void)
 {
-	int ret;
-
 	for (;;) {
-		if (m_running && device_is_ready(m_m8_dev)) {
-			uint8_t buf[64];
-			size_t bytes_read;
+		if (m_running) {
+			int ret;
 
-			for (;;) {
-				ret = m8_read_buffer(m_m8_dev, buf, sizeof(buf), &bytes_read);
-				if (ret) {
-					LOG_ERR("Call `m8_read_buffer` failed: %d", ret);
-
-					if (m_user_cb) {
-						m_user_cb(CTR_GNSS_EVENT_FAILURE, NULL,
-							  m_user_data);
-					}
-				}
-
-				if (!bytes_read) {
-					break;
-				}
-
-				ingest_nmea(buf, bytes_read);
-
-				k_sleep(K_MSEC(20));
+#if defined(CONFIG_CTR_GNSS_M8)
+			ret = ctr_gnss_m8_process_data();
+			if (ret) {
+				LOG_ERR("Call `ctr_gnss_m8_process_data` failed: %d", ret);
 			}
+#endif
+
+#if defined(CONFIG_CTR_LTE_V2_GNSS)
+			struct ctr_lte_v2_gnss_update update;
+			ret = k_msgq_get(&m_lte_v2_msgq, &update, K_MSEC(100));
+			if (!ret) {
+				union ctr_gnss_event_data data = {0};
+				data.update.fix_quality = -1;
+				data.update.satellites_tracked = -1;
+				data.update.latitude = update.latitude;
+				data.update.longitude = update.longitude;
+				data.update.altitude = update.altitude;
+				if (m_user_cb) {
+					m_user_cb(CTR_GNSS_EVENT_UPDATE, &data, m_user_data);
+				}
+			}
+#endif
 		}
 
 		process_cmd_msgq();
@@ -348,82 +284,3 @@ int ctr_gnss_stop(bool keep_bckp_domain, int *corr_id)
 
 	return 0;
 }
-
-static int cmd_start(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc > 1) {
-		shell_error(shell, "command not found: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	int corr_id;
-	ret = ctr_gnss_start(&corr_id);
-	if (ret) {
-		LOG_ERR("Call `ctr_gnss_start` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	shell_print(shell, "correlation id: %d", corr_id);
-
-	return 0;
-}
-
-static int cmd_stop(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc > 1) {
-		shell_error(shell, "command not found: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	int corr_id;
-	ret = ctr_gnss_stop(false, &corr_id);
-	if (ret) {
-		LOG_ERR("Call `ctr_gnss_stop` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	shell_print(shell, "correlation id: %d", corr_id);
-
-	return 0;
-}
-
-static int print_help(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc > 1) {
-		shell_error(shell, "command not found: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	shell_help(shell);
-
-	return 0;
-}
-
-/* clang-format off */
-
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_gnss,
-
-	SHELL_CMD_ARG(start, NULL,
-	              "Start receiver.",
-	              cmd_start, 1, 0),
-
-	SHELL_CMD_ARG(stop, NULL,
-	              "Stop receiver.",
-	              cmd_stop, 1, 0),
-
-        SHELL_SUBCMD_SET_END
-);
-
-SHELL_CMD_REGISTER(gnss, &sub_gnss, "GNSS commands.", print_help);
-
-/* clang-format on */

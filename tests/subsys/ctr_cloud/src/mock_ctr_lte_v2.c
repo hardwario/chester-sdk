@@ -8,7 +8,22 @@
 #include <chester/ctr_lte_v2.h>
 #include <ctr_cloud_packet.h>
 
-static bool is_started = false;
+static bool is_enabled = false;
+
+int ctr_lte_v2_enable(void)
+{
+	is_enabled = true;
+	return 0;
+}
+
+int ctr_lte_v2_wait_for_connected(k_timeout_t timeout)
+{
+	if (!is_enabled) {
+		return -1;
+	}
+
+	return 0;
+}
 
 int ctr_lte_v2_get_imei(uint64_t *imei)
 {
@@ -25,38 +40,6 @@ int ctr_lte_v2_get_imsi(uint64_t *imsi)
 int ctr_lte_v2_get_modem_fw_version(char **version)
 {
 	*version = "v1.5.0";
-	return 0;
-}
-
-int ctr_lte_v2_start(void)
-{
-	is_started = true;
-	return 0;
-}
-
-int ctr_lte_v2_stop(void)
-{
-	is_started = false;
-	return 0;
-}
-
-int ctr_lte_v2_wait_on_modem_sleep(k_timeout_t delay)
-{
-	return 0;
-}
-
-int ctr_lte_v2_prepare(void)
-{
-	return 0;
-}
-
-int ctr_lte_v2_attach(void)
-{
-	return 0;
-}
-
-int ctr_lte_v2_detach(void)
-{
 	return 0;
 }
 
@@ -83,7 +66,7 @@ void mock_ctr_lte_v2_set_send_recv(char **list, int size)
 	mock_com.list = list;
 }
 
-int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param, bool rai)
+int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param)
 {
 	printf("mock: ctr_lte_v2_send_recv %d\n", mock_com.index);
 
@@ -116,7 +99,7 @@ int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param, bool ra
 int ctr_lte_v2_get_conn_param(struct ctr_lte_v2_conn_param *param)
 {
 	param->valid = true;
-	param->eest = 11;
+	param->result = 0;
 	param->ecl = 12;
 	param->rsrp = 13;
 	param->rsrq = 14;

@@ -154,3 +154,51 @@ char *ctr_lte_v2_tok_num(const char *s, bool *def, long *num)
 
 	return p;
 }
+
+char *ctr_lte_v2_tok_float(const char *s, bool *def, float *num)
+{
+	if (!num) {
+		return NULL;
+	}
+
+	*num = 0;
+	*def = false;
+
+	char *p = (char *)s;
+
+	if (*p == '\0' || *p == ',') {
+		return p;
+	}
+
+	if (isdigit((int)*p) == 0 && *p != '-') {
+		return NULL;
+	}
+
+	p++;
+
+	while (*p != '\0' && *p != ',') {
+		if (isdigit((int)*p) == 0 && *p != '.') {
+			return NULL;
+		}
+
+		p++;
+	}
+
+	if (def != NULL) {
+		*def = true;
+	}
+
+	char buf[11 + 1] = {0};
+
+	size_t len = p - s;
+
+	if (len >= sizeof(buf)) {
+		return NULL;
+	}
+
+	strncpy(buf, s, len);
+
+	*num = strtof(s, &p);
+
+	return p;
+}

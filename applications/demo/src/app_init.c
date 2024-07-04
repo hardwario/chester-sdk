@@ -85,7 +85,7 @@ int app_init(void)
 		LOG_ERR("Call `ctr_cloud_set_callback` failed: %d", ret);
 	}
 
-	ret = ctr_cloud_set_poll_interval(K_SECONDS(30));
+	ret = ctr_cloud_set_poll_interval(K_SECONDS(2 * 60));
 	if (ret) {
 		LOG_ERR("Call `ctr_cloud_set_pull_interval` failed: %d", ret);
 		return ret;

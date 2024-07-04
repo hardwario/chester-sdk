@@ -11,6 +11,7 @@ config CTR_LTE_V2
 	select CTR_RFMUX
 	select CTR_SHELL
 	select CTR_UTIL
+	select CTR_INFO
 	select PM_DEVICE
 	select REQUIRES_FULL_LIBC
 	select RING_BUFFER
@@ -20,10 +21,6 @@ if CTR_LTE_V2
 config CTR_LTE_V2_INIT_PRIORITY
 	int "CTR_LTE_V2_INIT_PRIORITY"
 	default 99
-
-config CTR_LTE_V2_CONFIG_INIT_PRIORITY
-	int "CTR_LTE_V2_CONFIG_INIT_PRIORITY"
-	default 98
 
 config CTR_LTE_V2_CLKSYNC
 	bool "CTR_LTE_V2_CLKSYNC"
@@ -36,9 +33,13 @@ config CTR_LTE_V2_THREAD_PRIORITY
 	int "CTR_LTE_V2_THREAD_PRIORITY"
 	default 10
 
+config CTR_LTE_V2_GNSS
+	bool "CTR_LTE_V2_GNSS"
+
 config HEAP_MEM_POOL_SIZE
 	int "HEAP_MEM_POOL_SIZE"
 	default 8192
+
 
 module = CTR_LTE_V2
 module-str = CHESTER LTE Subsystem
