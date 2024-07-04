@@ -39,6 +39,8 @@ var annotated_dup =
     [ "ctr_lte_send_opts", "structctr__lte__send__opts.html", "structctr__lte__send__opts" ],
     [ "ctr_lte_v2_cereg_param", "structctr__lte__v2__cereg__param.html", "structctr__lte__v2__cereg__param" ],
     [ "ctr_lte_v2_conn_param", "structctr__lte__v2__conn__param.html", "structctr__lte__v2__conn__param" ],
+    [ "ctr_lte_v2_gnss_update", "structctr__lte__v2__gnss__update.html", "structctr__lte__v2__gnss__update" ],
+    [ "ctr_lte_v2_metrics", "structctr__lte__v2__metrics.html", "structctr__lte__v2__metrics" ],
     [ "ctr_lte_v2_send_recv_param", "structctr__lte__v2__send__recv__param.html", "structctr__lte__v2__send__recv__param" ],
     [ "ctr_rtc_tm", "structctr__rtc__tm.html", "structctr__rtc__tm" ],
     [ "ctr_s1_buzzer_param", "structctr__s1__buzzer__param.html", "structctr__s1__buzzer__param" ],

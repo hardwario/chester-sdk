@@ -2,5 +2,9 @@ var searchData=
 [
   ['unlock_0',['unlock',['../structctr__lte__link__driver__api.html#adca5021df679131bb7e9956b6c0e2ffb',1,'ctr_lte_link_driver_api']]],
   ['update_1',['update',['../unionctr__gnss__event__data.html#a7ba9a3a59131788b845fbd395f90f834',1,'ctr_gnss_event_data']]],
-  ['user_5fdata_2',['user_data',['../structctr__edge.html#a50878edcb20924d5db155a71e7116cf3',1,'ctr_edge']]]
+  ['uplink_5fbytes_2',['uplink_bytes',['../structctr__lte__v2__metrics.html#a68e702246b2646496d2084bf787612f7',1,'ctr_lte_v2_metrics']]],
+  ['uplink_5fcount_3',['uplink_count',['../structctr__lte__v2__metrics.html#ad85e58cb14ddaac1dbcbe9fb1a246323',1,'ctr_lte_v2_metrics']]],
+  ['uplink_5ferrors_4',['uplink_errors',['../structctr__lte__v2__metrics.html#a6b9ac25443f0cda96d2d0e1de7901d0e',1,'ctr_lte_v2_metrics']]],
+  ['uplink_5flast_5fts_5',['uplink_last_ts',['../structctr__lte__v2__metrics.html#a03569780af74079a9600e9781d1a885e',1,'ctr_lte_v2_metrics']]],
+  ['user_5fdata_6',['user_data',['../structctr__edge.html#a50878edcb20924d5db155a71e7116cf3',1,'ctr_edge']]]
 ];

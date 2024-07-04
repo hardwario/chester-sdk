@@ -96,6 +96,7 @@ $(document).ready(function(){initNavTree('ctr__lte__v2_8h.html',''); initResizab
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
+<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ctr_lte_v2.h File Reference</div></div>
@@ -128,6 +129,15 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__send__recv__param.html">ctr_lte_v2_send_recv_param</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__metrics.html">ctr_lte_v2_metrics</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__gnss__update.html">ctr_lte_v2_gnss_update</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a23e314c4091371dd233d7443a941a049"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a23e314c4091371dd233d7443a941a049">ctr_lte_v2_gnss_cb</a>) (const struct <a class="el" href="structctr__lte__v2__gnss__update.html">ctr_lte_v2_gnss_update</a> *update, void *user_data)</td></tr>
+<tr class="separator:a23e314c4091371dd233d7443a941a049"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -151,6 +161,12 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a9a4dd2eefd353bf31c17bc4367c60b5a"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a9a4dd2eefd353bf31c17bc4367c60b5a">ctr_lte_v2_enable</a> (void)</td></tr>
+<tr class="separator:a9a4dd2eefd353bf31c17bc4367c60b5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfb35b18305a8f77c790e8fb58def117"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#acfb35b18305a8f77c790e8fb58def117">ctr_lte_v2_wait_for_connected</a> (k_timeout_t timeout)</td></tr>
+<tr class="separator:acfb35b18305a8f77c790e8fb58def117"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a85941ee750c49c5ce74c0b981f8273"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a9a85941ee750c49c5ce74c0b981f8273">ctr_lte_v2_send_recv</a> (const struct <a class="el" href="structctr__lte__v2__send__recv__param.html">ctr_lte_v2_send_recv_param</a> *param)</td></tr>
+<tr class="separator:a9a85941ee750c49c5ce74c0b981f8273"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab28432793e6f6a169ad5254f847160f0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#ab28432793e6f6a169ad5254f847160f0">ctr_lte_v2_get_imei</a> (uint64_t *imei)</td></tr>
 <tr class="separator:ab28432793e6f6a169ad5254f847160f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad17e7b2b42a62e519f2d3d1ced4498af"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#ad17e7b2b42a62e519f2d3d1ced4498af">ctr_lte_v2_get_imsi</a> (uint64_t *imsi)</td></tr>
@@ -159,31 +175,32 @@ Functions</h2></td></tr>
 <tr class="separator:a682e48d53179f1a18eeee3d18cf567ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b41e1b25f51b8c3607b8277f3886480"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a8b41e1b25f51b8c3607b8277f3886480">ctr_lte_v2_get_modem_fw_version</a> (char **version)</td></tr>
 <tr class="separator:a8b41e1b25f51b8c3607b8277f3886480"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a66931b8f5c7793ec9d2b09abb6b083db"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a66931b8f5c7793ec9d2b09abb6b083db">ctr_lte_v2_is_prepared</a> (bool *prepared)</td></tr>
-<tr class="separator:a66931b8f5c7793ec9d2b09abb6b083db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a221f50b3e0ae35346bb9309d40b464f2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a221f50b3e0ae35346bb9309d40b464f2">ctr_lte_v2_is_attached</a> (bool *attached)</td></tr>
-<tr class="separator:a221f50b3e0ae35346bb9309d40b464f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac63052ba9fa193ac8321a7a11d6d46d9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#ac63052ba9fa193ac8321a7a11d6d46d9">ctr_lte_v2_start</a> (void)</td></tr>
-<tr class="separator:ac63052ba9fa193ac8321a7a11d6d46d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af0588f6325e1ac11d88b49803a9dc5c0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#af0588f6325e1ac11d88b49803a9dc5c0">ctr_lte_v2_stop</a> (void)</td></tr>
-<tr class="separator:af0588f6325e1ac11d88b49803a9dc5c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e03285d381ff3733a6ae60a6fde4d9b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a7e03285d381ff3733a6ae60a6fde4d9b">ctr_lte_v2_wait_on_modem_sleep</a> (k_timeout_t delay)</td></tr>
-<tr class="separator:a7e03285d381ff3733a6ae60a6fde4d9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa57b8d134dc585bee08f01e3c07f4c97"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#aa57b8d134dc585bee08f01e3c07f4c97">ctr_lte_v2_prepare</a> (void)</td></tr>
-<tr class="separator:aa57b8d134dc585bee08f01e3c07f4c97"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af39cfd2400867ee03135ca7b3e176f25"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#af39cfd2400867ee03135ca7b3e176f25">ctr_lte_v2_attach</a> (void)</td></tr>
-<tr class="separator:af39cfd2400867ee03135ca7b3e176f25"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afb0274abf1bbf2e4686bb4bba6f2f66e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#afb0274abf1bbf2e4686bb4bba6f2f66e">ctr_lte_v2_detach</a> (void)</td></tr>
-<tr class="separator:afb0274abf1bbf2e4686bb4bba6f2f66e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac0745ed0acec96be4bede11735397984"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#ac0745ed0acec96be4bede11735397984">ctr_lte_v2_send_recv</a> (const struct <a class="el" href="structctr__lte__v2__send__recv__param.html">ctr_lte_v2_send_recv_param</a> *param, bool rai)</td></tr>
-<tr class="separator:ac0745ed0acec96be4bede11735397984"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acb1ed423deb4519cb7c4e78cae3733fd"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#acb1ed423deb4519cb7c4e78cae3733fd">ctr_lte_v2_eval_conn</a> (void)</td></tr>
-<tr class="separator:acb1ed423deb4519cb7c4e78cae3733fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9861ebd72de329f1ef4eec4dba2c70f1"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a9861ebd72de329f1ef4eec4dba2c70f1">ctr_lte_v2_get_conn_param</a> (struct <a class="el" href="structctr__lte__v2__conn__param.html">ctr_lte_v2_conn_param</a> *param)</td></tr>
 <tr class="separator:a9861ebd72de329f1ef4eec4dba2c70f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8ebc16fca4e81b3b98a7c9e2b67bf5a4"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a8ebc16fca4e81b3b98a7c9e2b67bf5a4">ctr_lte_v2_get_cereg_param</a> (struct <a class="el" href="structctr__lte__v2__cereg__param.html">ctr_lte_v2_cereg_param</a> *param)</td></tr>
 <tr class="separator:a8ebc16fca4e81b3b98a7c9e2b67bf5a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ec2416f749cf174bb4c68068fba25b0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a8ec2416f749cf174bb4c68068fba25b0">ctr_lte_v2_get_metrics</a> (struct <a class="el" href="structctr__lte__v2__metrics.html">ctr_lte_v2_metrics</a> *metrics)</td></tr>
+<tr class="separator:a8ec2416f749cf174bb4c68068fba25b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a98ee155d5381fb585b5b05c957354a10"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a98ee155d5381fb585b5b05c957354a10">ctr_lte_v2_coneval_result_str</a> (int result)</td></tr>
+<tr class="separator:a98ee155d5381fb585b5b05c957354a10"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a221f50b3e0ae35346bb9309d40b464f2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__lte__v2_8h.html#a221f50b3e0ae35346bb9309d40b464f2">ctr_lte_v2_is_attached</a> (bool *attached)</td></tr>
+<tr class="separator:a221f50b3e0ae35346bb9309d40b464f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a id="a23e314c4091371dd233d7443a941a049" name="a23e314c4091371dd233d7443a941a049"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a23e314c4091371dd233d7443a941a049">&#9670;&#160;</a></span>ctr_lte_v2_gnss_cb</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef void(* ctr_lte_v2_gnss_cb) (const struct <a class="el" href="structctr__lte__v2__gnss__update.html">ctr_lte_v2_gnss_update</a> *update, void *user_data)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="a36c152e447cf2947877e44eab9692de0" name="a36c152e447cf2947877e44eab9692de0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a36c152e447cf2947877e44eab9692de0">&#9670;&#160;</a></span>ctr_lte_v2_cereg_param_act</h2>
@@ -228,17 +245,17 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="af39cfd2400867ee03135ca7b3e176f25" name="af39cfd2400867ee03135ca7b3e176f25"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af39cfd2400867ee03135ca7b3e176f25">&#9670;&#160;</a></span>ctr_lte_v2_attach()</h2>
+<a id="a98ee155d5381fb585b5b05c957354a10" name="a98ee155d5381fb585b5b05c957354a10"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a98ee155d5381fb585b5b05c957354a10">&#9670;&#160;</a></span>ctr_lte_v2_coneval_result_str()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int ctr_lte_v2_attach </td>
+          <td class="memname">const char * ctr_lte_v2_coneval_result_str </td>
           <td>(</td>
-          <td class="paramtype">void&#160;</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>result</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -246,32 +263,14 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="afb0274abf1bbf2e4686bb4bba6f2f66e" name="afb0274abf1bbf2e4686bb4bba6f2f66e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afb0274abf1bbf2e4686bb4bba6f2f66e">&#9670;&#160;</a></span>ctr_lte_v2_detach()</h2>
+<a id="a9a4dd2eefd353bf31c17bc4367c60b5a" name="a9a4dd2eefd353bf31c17bc4367c60b5a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9a4dd2eefd353bf31c17bc4367c60b5a">&#9670;&#160;</a></span>ctr_lte_v2_enable()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int ctr_lte_v2_detach </td>
-          <td>(</td>
-          <td class="paramtype">void&#160;</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="acb1ed423deb4519cb7c4e78cae3733fd" name="acb1ed423deb4519cb7c4e78cae3733fd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acb1ed423deb4519cb7c4e78cae3733fd">&#9670;&#160;</a></span>ctr_lte_v2_eval_conn()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int ctr_lte_v2_eval_conn </td>
+          <td class="memname">int ctr_lte_v2_enable </td>
           <td>(</td>
           <td class="paramtype">void&#160;</td>
           <td class="paramname"></td><td>)</td>
@@ -372,6 +371,24 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a8ec2416f749cf174bb4c68068fba25b0" name="a8ec2416f749cf174bb4c68068fba25b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8ec2416f749cf174bb4c68068fba25b0">&#9670;&#160;</a></span>ctr_lte_v2_get_metrics()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_get_metrics </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structctr__lte__v2__metrics.html">ctr_lte_v2_metrics</a> *&#160;</td>
+          <td class="paramname"><em>metrics</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a8b41e1b25f51b8c3607b8277f3886480" name="a8b41e1b25f51b8c3607b8277f3886480"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8b41e1b25f51b8c3607b8277f3886480">&#9670;&#160;</a></span>ctr_lte_v2_get_modem_fw_version()</h2>
 
@@ -408,44 +425,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a66931b8f5c7793ec9d2b09abb6b083db" name="a66931b8f5c7793ec9d2b09abb6b083db"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a66931b8f5c7793ec9d2b09abb6b083db">&#9670;&#160;</a></span>ctr_lte_v2_is_prepared()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int ctr_lte_v2_is_prepared </td>
-          <td>(</td>
-          <td class="paramtype">bool *&#160;</td>
-          <td class="paramname"><em>prepared</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa57b8d134dc585bee08f01e3c07f4c97" name="aa57b8d134dc585bee08f01e3c07f4c97"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa57b8d134dc585bee08f01e3c07f4c97">&#9670;&#160;</a></span>ctr_lte_v2_prepare()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int ctr_lte_v2_prepare </td>
-          <td>(</td>
-          <td class="paramtype">void&#160;</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ac0745ed0acec96be4bede11735397984" name="ac0745ed0acec96be4bede11735397984"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac0745ed0acec96be4bede11735397984">&#9670;&#160;</a></span>ctr_lte_v2_send_recv()</h2>
+<a id="a9a85941ee750c49c5ce74c0b981f8273" name="a9a85941ee750c49c5ce74c0b981f8273"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9a85941ee750c49c5ce74c0b981f8273">&#9670;&#160;</a></span>ctr_lte_v2_send_recv()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -454,35 +435,7 @@ Functions</h2></td></tr>
           <td class="memname">int ctr_lte_v2_send_recv </td>
           <td>(</td>
           <td class="paramtype">const struct <a class="el" href="structctr__lte__v2__send__recv__param.html">ctr_lte_v2_send_recv_param</a> *&#160;</td>
-          <td class="paramname"><em>param</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>rai</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ac63052ba9fa193ac8321a7a11d6d46d9" name="ac63052ba9fa193ac8321a7a11d6d46d9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac63052ba9fa193ac8321a7a11d6d46d9">&#9670;&#160;</a></span>ctr_lte_v2_start()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int ctr_lte_v2_start </td>
-          <td>(</td>
-          <td class="paramtype">void&#160;</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramname"><em>param</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -490,35 +443,17 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="af0588f6325e1ac11d88b49803a9dc5c0" name="af0588f6325e1ac11d88b49803a9dc5c0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af0588f6325e1ac11d88b49803a9dc5c0">&#9670;&#160;</a></span>ctr_lte_v2_stop()</h2>
+<a id="acfb35b18305a8f77c790e8fb58def117" name="acfb35b18305a8f77c790e8fb58def117"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acfb35b18305a8f77c790e8fb58def117">&#9670;&#160;</a></span>ctr_lte_v2_wait_for_connected()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int ctr_lte_v2_stop </td>
-          <td>(</td>
-          <td class="paramtype">void&#160;</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a7e03285d381ff3733a6ae60a6fde4d9b" name="a7e03285d381ff3733a6ae60a6fde4d9b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e03285d381ff3733a6ae60a6fde4d9b">&#9670;&#160;</a></span>ctr_lte_v2_wait_on_modem_sleep()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int ctr_lte_v2_wait_on_modem_sleep </td>
+          <td class="memname">int ctr_lte_v2_wait_for_connected </td>
           <td>(</td>
           <td class="paramtype">k_timeout_t&#160;</td>
-          <td class="paramname"><em>delay</em></td><td>)</td>
+          <td class="paramname"><em>timeout</em></td><td>)</td>
           <td></td>
         </tr>
       </table>

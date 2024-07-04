@@ -104,6 +104,8 @@ $(document).ready(function(){initNavTree('structctr__lte__v2__send__recv__param.
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Data Fields</h2></td></tr>
+<tr class="memitem:a16cc41d0dd4030b254d76b0b41937881"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__send__recv__param.html#a16cc41d0dd4030b254d76b0b41937881">rai</a></td></tr>
+<tr class="separator:a16cc41d0dd4030b254d76b0b41937881"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa3e984cd200d79c7509f0f8f3011cb32"><td class="memItemLeft" align="right" valign="top">const void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__send__recv__param.html#aa3e984cd200d79c7509f0f8f3011cb32">send_buf</a></td></tr>
 <tr class="separator:aa3e984cd200d79c7509f0f8f3011cb32"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae7aeddb6cc68da9707c030e5c77cd246"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__send__recv__param.html#ae7aeddb6cc68da9707c030e5c77cd246">send_len</a></td></tr>
@@ -114,14 +116,24 @@ Data Fields</h2></td></tr>
 <tr class="separator:a651f61df2b09e8ec920219ab52e8fe78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acac7c5e1b392dfbc15acf58b3827f552"><td class="memItemLeft" align="right" valign="top">size_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__send__recv__param.html#acac7c5e1b392dfbc15acf58b3827f552">recv_len</a></td></tr>
 <tr class="separator:acac7c5e1b392dfbc15acf58b3827f552"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af158c93ea2659221e5059faab3c8fe55"><td class="memItemLeft" align="right" valign="top">int64_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__send__recv__param.html#af158c93ea2659221e5059faab3c8fe55">send_duration</a></td></tr>
-<tr class="separator:af158c93ea2659221e5059faab3c8fe55"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a636cef3b05192a9609c18a783206e459"><td class="memItemLeft" align="right" valign="top">int64_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__send__recv__param.html#a636cef3b05192a9609c18a783206e459">recv_duration</a></td></tr>
-<tr class="separator:a636cef3b05192a9609c18a783206e459"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aef1de2fa042a2084a893ccd708b50ac5"><td class="memItemLeft" align="right" valign="top">int64_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__send__recv__param.html#aef1de2fa042a2084a893ccd708b50ac5">total_duration</a></td></tr>
-<tr class="separator:aef1de2fa042a2084a893ccd708b50ac5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa15707a6209e097aca5928d0fdc67587"><td class="memItemLeft" align="right" valign="top">k_timeout_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__send__recv__param.html#aa15707a6209e097aca5928d0fdc67587">timeout</a></td></tr>
+<tr class="separator:aa15707a6209e097aca5928d0fdc67587"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
+<a id="a16cc41d0dd4030b254d76b0b41937881" name="a16cc41d0dd4030b254d76b0b41937881"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a16cc41d0dd4030b254d76b0b41937881">&#9670;&#160;</a></span>rai</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ctr_lte_v2_send_recv_param::rai</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a6b943f8e328e355d533e53e1e2905443" name="a6b943f8e328e355d533e53e1e2905443"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6b943f8e328e355d533e53e1e2905443">&#9670;&#160;</a></span>recv_buf</h2>
 
@@ -130,20 +142,6 @@ Data Fields</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">void* ctr_lte_v2_send_recv_param::recv_buf</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a636cef3b05192a9609c18a783206e459" name="a636cef3b05192a9609c18a783206e459"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a636cef3b05192a9609c18a783206e459">&#9670;&#160;</a></span>recv_duration</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int64_t* ctr_lte_v2_send_recv_param::recv_duration</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -192,20 +190,6 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a id="af158c93ea2659221e5059faab3c8fe55" name="af158c93ea2659221e5059faab3c8fe55"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af158c93ea2659221e5059faab3c8fe55">&#9670;&#160;</a></span>send_duration</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int64_t* ctr_lte_v2_send_recv_param::send_duration</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="ae7aeddb6cc68da9707c030e5c77cd246" name="ae7aeddb6cc68da9707c030e5c77cd246"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae7aeddb6cc68da9707c030e5c77cd246">&#9670;&#160;</a></span>send_len</h2>
 
@@ -220,14 +204,14 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a id="aef1de2fa042a2084a893ccd708b50ac5" name="aef1de2fa042a2084a893ccd708b50ac5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aef1de2fa042a2084a893ccd708b50ac5">&#9670;&#160;</a></span>total_duration</h2>
+<a id="aa15707a6209e097aca5928d0fdc67587" name="aa15707a6209e097aca5928d0fdc67587"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa15707a6209e097aca5928d0fdc67587">&#9670;&#160;</a></span>timeout</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int64_t* ctr_lte_v2_send_recv_param::total_duration</td>
+          <td class="memname">k_timeout_t ctr_lte_v2_send_recv_param::timeout</td>
         </tr>
       </table>
 </div><div class="memdoc">
