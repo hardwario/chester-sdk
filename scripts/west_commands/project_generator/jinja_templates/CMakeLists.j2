@@ -23,21 +23,29 @@ set(ENV{FW_NAME} "{{data['project']['fw_name']}}")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project({{ project_name }})
-{%- if 'subsystem_lte' in data['features']%}
+{%- if 'subsystem-lte' in data['features']%}
 
 add_custom_command(
     COMMAND ../../../scripts/gen-msg-key.py ../codec/cbor-decoder.yaml ../src/msg_key.h
     OUTPUT ../src/msg_key.h
     MAIN_DEPENDENCY ../codec/cbor-decoder.yaml
 )
+
+{%- endif %}
+
+{%- if 'subsystem-lte-v2' in data['features']%}
+
+add_custom_command(
+    COMMAND west gen-codec -d ../codec/cbor-decoder.yaml -e ../codec/cbor-encoder.yaml -o ../src/app_codec.h
+    OUTPUT ../src/app_codec.h
+    DEPENDS ../codec/cbor-decoder.yaml ../codec/cbor-encoder.yaml
+)
+
 {%- endif %}
 {% for file in sources %}
-	{%- if file != 'app_ble_svc.c'%}
+	{%- if file %}
 target_sources(app PRIVATE src/{{ file }})
 	{%- endif %}
-	{%- if file == 'app_ble_svc.c' %}    
-target_sources_ifdef(CONFIG_CTR_BLE app PRIVATE src/app_ble_svc.c)
-	{%- endif%}
 {%- endfor %}
 
 target_precompile_headers(app PRIVATE src/feature.h)

@@ -40,6 +40,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+/* ### Preserved code "functions" (begin) */
+/* ^^^ Preserved code "functions" (end) */
+
 {%- macro encode_items(zs, items, prefix='', indent='') %}
     {%- for item in items -%}
         {% for key, sub_items in item.items() %}
@@ -203,6 +207,7 @@ static int encode(zcbor_state_t *zs)
 
 		return 0;
 }
+{%- if data['encoder']%}
 
 int decode(zcbor_state_t *zs, struct app_cbor_received *received)
 {
@@ -247,6 +252,8 @@ int decode(zcbor_state_t *zs, struct app_cbor_received *received)
 	return 0;
 }
 
+{%- endif %}
+
 int app_cbor_encode(zcbor_state_t *zs)
 {
 	int ret;
@@ -265,6 +272,8 @@ int app_cbor_encode(zcbor_state_t *zs)
 	return 0;
 }
 
+{%- if data['encoder']%}
+
 int app_cbor_decode(zcbor_state_t *zs, struct app_cbor_received *received)
 {
 	int ret;
@@ -276,3 +285,5 @@ int app_cbor_decode(zcbor_state_t *zs, struct app_cbor_received *received)
 
 	return 0;
 }
+
+{%- endif %}

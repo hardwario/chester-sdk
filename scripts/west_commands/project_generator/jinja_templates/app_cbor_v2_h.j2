@@ -26,6 +26,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+{%- if data['encoder'] %}
 
 struct app_cbor_received {
 {%- for key in data['encoder']['schema']%}
@@ -35,9 +36,12 @@ int32_t {{sub}};
     {%- endfor %}
 {%- endfor %}
 };
+{%- endif %}
 
 int app_cbor_encode(zcbor_state_t *zs);
+{%- if data['encoder'] %}
 int app_cbor_decode(zcbor_state_t *zs, struct app_cbor_received *received);
+{%- endif %}
 
 #ifdef __cplusplus
 }

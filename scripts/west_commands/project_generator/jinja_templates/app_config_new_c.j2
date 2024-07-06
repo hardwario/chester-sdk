@@ -1,15 +1,27 @@
 {#- GLOBAL VARIABLES #}
 {%- set variant_name_lower = data['project']['variant']|lower -%}
+
+{#- COM MODES #}
 {%- set config_mode = [] -%}
 {%- set array_mode = ['none'] -%}
-{%- if 'subsystem-lte' in data['features'] and 'subsystem-lrw' in data['features'] -%}
+
+{%- set has_lte = 'subsystem-lte' in data['features'] -%}
+{%- set has_lte_v2 = 'subsystem-lte-v2' in data['features'] -%}
+{%- set has_lrw = 'subsystem-lrw' in data['features'] -%}
+
+{%- if has_lte and has_lrw -%}
     {%- do config_mode.append('NONE') %}
-    {%- do array_mode.append('lte') %}
-    {%- do array_mode.append('lrw') %}
-{%- elif 'subsystem-lte' in data['features'] and 'subsystem-lrw' not in data['features'] -%}
+    {%- do array_mode.extend(['lte', 'lrw']) %}
+{%- elif has_lte_v2 and has_lrw -%}
+ 	{%- do config_mode.append('NONE') %}
+    {%- do array_mode.extend(['lte-v2', 'lrw']) %}
+{%- elif has_lte -%}
     {%- do config_mode.append('LTE') %}
     {%- do array_mode.append('lte') %}
-{%- elif 'subsystem-lte' not in data['features'] and 'subsystem-lrw' in data['features'] -%}
+{%- elif has_lte_v2 -%}
+    {%- do config_mode.append('LTE_V2') %}
+    {%- do array_mode.append('lte-v2') %}
+{%- elif has_lrw -%}
     {%- do config_mode.append('LRW') %}
     {%- do array_mode.append('lrw') %}
 {%- else -%}

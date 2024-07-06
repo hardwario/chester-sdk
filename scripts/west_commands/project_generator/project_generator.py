@@ -473,7 +473,7 @@ class ProjectGenerator:
             for root, dirs, files in os.walk(src_dir):
                 # Collect sources
                 for file in files:
-                    if file.endswith(".c") or file == "msg_key.h":
+                    if file.endswith(".c") or file == "msg_key.h" or file == "app_codec.h":
                         file_path = os.path.relpath(os.path.join(root, file), src_dir)
                         sources.append(file_path)
             # Render the template with data
@@ -524,9 +524,18 @@ class ProjectGenerator:
             apps_dir = os.path.join(self.app_dir, name)
             yaml_dir = apps_dir
         try:
-            with open(yaml_dir, "r") as stream:
-                data = yaml.safe_load(stream)
-                return data
+            if ext != "cbor-encoder.yaml":
+                with open(yaml_dir, "r") as stream:
+                    data = yaml.safe_load(stream)
+                    return data
+            else:
+                try:
+                    with open(yaml_dir, "r") as stream:
+                        data = yaml.safe_load(stream)
+                        return data
+                except:    
+                    log.wrn('The cbor-encoder.yaml file was not found in the project folder.')          
+                    return None
 
         except Exception as e:
             log.err(f"The {ext} file was not found in the project folder. Error: {e}")
