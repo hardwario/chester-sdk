@@ -64,19 +64,18 @@ extern "C" {
 {# White line #}
 {#- K1 #}
 {%- for feature in data['features'] %}
-	{%- if feature == 'hardware_chester_k1' %}
+	{%- if feature == 'hardware-chester-k1' %}
 #define APP_CONFIG_CHANNEL_COUNT 4  
 	{% endif %}
 {%- endfor %}
 
 {#- MODE LTE-LRW #}
-{%- if config_mode %}
 enum app_config_mode {
 	{%- for mode in array_mode %}
 	APP_CONFIG_MODE_{{ mode | upper }} = {{loop.index0}},
 	{%- endfor %}
 };
-{% endif -%}
+{# wline #}
 
 {#- MODE ENUM #}
 {%- for parameter in data['parameters'] %}

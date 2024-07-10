@@ -142,15 +142,11 @@ const struct ctr_config_item items[] = {
 
 {%- endfor %}
 {#- MODE LTE-LRW #}
-{%- if config_mode %}
 
-#if defined(FEATURE_SUBSYSTEM_LTE) || defined(FEATURE_SUBSYSTEM_LRW)
 	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){ {%- for mode in array_mode %}"{{mode}}"{% if not loop.last %}, {% endif %}{% endfor -%} }), "Set communication mode", APP_CONFIG_MODE_{{config_mode[0]}}),
-#endif /* defined(FEATURE_SUBSYSTEM_LTE) || defined(FEATURE_SUBSYSTEM_LRW) */
-{%- endif %}
 
-/* ### Preserved code "config" (begin) */
-/* ^^^ Preserved code "config" (end) */
+	/* ### Preserved code "config" (begin) */
+	/* ^^^ Preserved code "config" (end) */
 
 };
 /* clang-format on */

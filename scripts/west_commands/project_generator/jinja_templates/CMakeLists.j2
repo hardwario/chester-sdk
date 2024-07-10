@@ -38,7 +38,7 @@ add_custom_command(
 add_custom_command(
     COMMAND west gen-codec -d ../codec/cbor-decoder.yaml -e ../codec/cbor-encoder.yaml -o ../src/app_codec.h
     OUTPUT ../src/app_codec.h
-    DEPENDS ../codec/cbor-decoder.yaml ../codec/cbor-encoder.yaml
+    DEPENDS ../codec/cbor-decoder.yaml 
 )
 
 {%- endif %}
