@@ -1,0 +1,40 @@
+
+/ {
+
+	uart1: uart_1 {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <0>;
+		rx-fifo-size = <256>;
+		tx-fifo-size = <256>;
+	};
+
+	ctr_rfmux: ctr_rfmux {
+		compatible = "hardwario,ctr-rfmux";
+		rf-lte-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		rf-lrw-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		rf-int-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		rf-ext-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+	};
+
+	uart2: uart_2 {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <0>;
+		rx-fifo-size = <256>;
+		tx-fifo-size = <256>;
+
+		ctr_lte_link: ctr_lte_link {
+			compatible = "hardwario,ctr-lte-link";
+			status = "okay";
+			reset-gpios = <&gpio0 7 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+			wakeup-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		};
+	};
+};
+
+/ {
+	chosen {
+		ctr,lte_link = &ctr_lte_link;
+	};
+};
