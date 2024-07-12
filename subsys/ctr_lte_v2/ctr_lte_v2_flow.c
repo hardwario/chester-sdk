@@ -529,7 +529,7 @@ int ctr_lte_v2_flow_cfun(int cfun)
 	return 0;
 }
 
-int ctr_lte_v2_flow_siminfo(void)
+int ctr_lte_v2_flow_sim_info(void)
 {
 	int ret;
 	char cimi[64] = {0};
@@ -575,54 +575,50 @@ int ctr_lte_v2_flow_siminfo(void)
 	return 0;
 }
 
+int ctr_lte_v2_flow_sim_fplmn(bool *ok)
+{
+	int ret;
+	// test FPLMN (forbidden network) list on a SIM
+	char crsm_144[32];
+	*ok = false;
+	ret = ctr_lte_v2_talk_crsm_176(&m_talk, crsm_144, sizeof(crsm_144));
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_talk_at_crsm_176` failed: %d", ret);
+		return ret;
+	}
+	if (strcmp(crsm_144, "\"FFFFFFFFFFFFFFFFFFFFFFFF\"")) {
+		LOG_WRN("Found forbidden network(s) - erasing");
+
+		// FPLMN erase
+		ret = ctr_lte_v2_talk_crsm_214(&m_talk);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_talk_crsm_214` failed: %d", ret);
+			return ret;
+		}
+
+		ret = ctr_lte_v2_talk_at_cfun(&m_talk, 4);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_talk_at_cfun: 4` failed: %d", ret);
+			return ret;
+		}
+
+		k_sleep(K_MSEC(100));
+
+		ret = ctr_lte_v2_talk_at_cfun(&m_talk, 1);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_talk_at_cfun: 1` failed: %d", ret);
+			return ret;
+		}
+	} else {
+		*ok = true;
+	}
+
+	return 0;
+}
+
 int ctr_lte_v2_flow_open_socket(void)
 {
 	int ret;
-
-	// 	LOG_INF("Try to attach with timeout %lld s",
-	// 		k_ticks_to_ms_floor64(timeout.ticks) / MSEC_PER_SEC);
-
-	// 	k_sem_reset(&m_time_sem);
-
-	// cfun_1:
-	// 	k_event_clear(&m_flow_events, EVENT_ATTACHED | EVENT_MDMEV_RESET_LOOP);
-
-	// 	// ret = ctr_lte_v2_talk_at_cfun(&m_talk, 1);
-	// 	// if (ret) {
-	// 	// 	LOG_ERR("Call `ctr_lte_v2_talk_at_cfun` failed: %d", ret);
-	// 	// 	return ret;
-	// 	// }
-
-	// 	if (k_event_wait(&m_flow_events, EVENT_SIMDETECTED, false, SIMDETECTED_TIMEOUT) ==
-	// 0) { 		LOG_WRN("SIM card detection timed out"); 		return
-	// -ETIMEDOUT;
-	// 	}
-
-	// 	// test FPLMN (forbidden network) list on a SIM
-	// 	char crsm_144[32];
-	// 	ret = ctr_lte_v2_talk_crsm_176(&m_talk, crsm_144, sizeof(crsm_144));
-	// 	if (ret) {
-	// 		LOG_ERR("Call `ctr_lte_talk_at_crsm_176` failed: %d", ret);
-	// 		return ret;
-	// 	}
-	// 	if (strcmp(crsm_144, "\"FFFFFFFFFFFFFFFFFFFFFFFF\"")) {
-	// 		LOG_WRN("Found forbidden network(s) - erasing");
-
-	// 		// FPLMN erase
-	// 		ret = ctr_lte_v2_talk_crsm_214(&m_talk);
-	// 		if (ret) {
-	// 			LOG_ERR("Call `ctr_lte_v2_talk_crsm_214` failed: %d", ret);
-	// 			return ret;
-	// 		}
-
-	// 		ret = ctr_lte_v2_talk_at_cfun(&m_talk, 4);
-	// 		if (ret) {
-	// 			LOG_ERR("Call `ctr_lte_v2_talk_at_cfun` failed: %d", ret);
-	// 			return ret;
-	// 		}
-
-	// 		goto cfun_1;
-	// 	}
 
 	char cops[64];
 	ret = ctr_lte_v2_talk_at_cops_q(&m_talk, cops, sizeof(cops));
@@ -709,8 +705,7 @@ int ctr_lte_v2_flow_open_socket(void)
 
 	char at_cmd[32 + 1] = {0};
 	char ar_response[64] = {0};
-	snprintf(at_cmd, sizeof(at_cmd), "AT#XCONNECT=\"%s\",%u",
-		 g_ctr_lte_v2_config.addr,
+	snprintf(at_cmd, sizeof(at_cmd), "AT#XCONNECT=\"%s\",%u", g_ctr_lte_v2_config.addr,
 		 g_ctr_lte_v2_config.port);
 
 	ret = ctr_lte_v2_talk_at_cmd_with_resp(&m_talk, at_cmd, ar_response, sizeof(ar_response));

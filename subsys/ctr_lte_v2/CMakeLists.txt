@@ -7,7 +7,7 @@
 zephyr_library()
 
 zephyr_library_sources(ctr_lte_v2_config.c)
-zephyr_library_sources(ctr_lte_v2_shell.c)
+zephyr_library_sources_ifdef(CONFIG_CTR_SHELL ctr_lte_v2_shell.c)
 zephyr_library_sources(ctr_lte_v2_flow.c)
 zephyr_library_sources(ctr_lte_v2_parse.c)
 zephyr_library_sources(ctr_lte_v2_state.c)

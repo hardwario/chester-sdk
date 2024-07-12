@@ -6,10 +6,10 @@
 
 config CTR_LTE_V2
 	bool "CTR_LTE_V2"
+	depends on SHIELD_CTR_LTE_V2
 	select CTR_CONFIG
 	select CTR_LTE_LINK
 	select CTR_RFMUX
-	select CTR_SHELL
 	select CTR_UTIL
 	select CTR_INFO
 	select PM_DEVICE

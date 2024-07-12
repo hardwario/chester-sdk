@@ -587,12 +587,20 @@ static int prepare_event_handler(enum ctr_lte_v2_event event)
 	switch (event) {
 	case CTR_LTE_V2_EVENT_SIMDETECTED:
 		stop_timer();
-		int ret = ctr_lte_v2_flow_siminfo();
+		int ret = ctr_lte_v2_flow_sim_info();
 		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_flow_siminfo` failed: %d", ret);
+			LOG_ERR("Call `ctr_lte_v2_flow_sim_info` failed: %d", ret);
 			return ret;
 		}
-		enter_state(CTR_LTE_V2_STATE_ATTACH);
+		bool ok;
+		ret = ctr_lte_v2_flow_sim_fplmn(&ok);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_flow_sim_fplmn` failed: %d", ret);
+			return ret;
+		}
+		if (ok) {
+			enter_state(CTR_LTE_V2_STATE_ATTACH);
+		}
 		break;
 	case CTR_LTE_V2_EVENT_RESET_LOOP:
 		enter_state(CTR_LTE_V2_STATE_RESET_LOOP);

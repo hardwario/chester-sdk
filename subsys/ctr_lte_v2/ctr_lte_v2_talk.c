@@ -150,7 +150,7 @@ LOG_MODULE_REGISTER(ctr_lte_v2_talk, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 				DIALOG_ABORT(-ETIMEDOUT);                                          \
 			}                                                                          \
 			char *line;                                                                \
-			DIALOG_RECV_LINE(timeout, &line);                                          \
+			DIALOG_RECV_LINE(sys_timepoint_timeout(end), &line);                       \
 			if (!line) {                                                               \
 				continue;                                                          \
 			}                                                                          \
