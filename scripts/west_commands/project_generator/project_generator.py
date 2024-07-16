@@ -120,6 +120,18 @@ class ProjectGenerator:
             log.err(f"No variant found in your project.yaml. Error: {e}")
             sys.exit(1)
 
+    def get_available_variants(self):
+        # Setup data
+        data = self.yaml_source(self.prj_folder_name, "app", "project.yaml")
+        # Validade yaml
+        self.validate_yaml(data)
+        if self.file_status["yaml_error"]:
+            raise ValueError()
+        if "variants" in data:
+            return data["variants"]
+        else:
+            return ["None"]
+
     def validate_yaml(self, data_yaml):
         parameter = data_yaml["parameters"]
         # PARAMETERS
@@ -839,14 +851,14 @@ class ProjectGenerator:
                 {
                     "dir": "src",
                     "name": "app_config.c",
-                    "template": "app_config_new_c.j2",
+                    "template": "app_config_c.j2",
                 },
                 {
                     "dir": "src",
                     "name": "app_config.h",
-                    "template": "app_config_new_h.j2",
+                    "template": "app_config_h.j2",
                 },
-                {"dir": "src", "name": "app_shell.c", "template": "app_shell_new_c.j2"},
+                {"dir": "src", "name": "app_shell.c", "template": "app_shell_c.j2"},
                 {"dir": "", "name": "prj.conf", "template": "prj_conf.j2"},
                 {"dir": "", "name": "app.overlay", "template": "app_overlay.j2"},
                 {"dir": "src", "name": "feature.h", "template": "feature_h.j2"},

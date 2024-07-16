@@ -56,24 +56,42 @@ class ProjectUpdate(WestCommand):
             default=os.path.basename(os.getcwd()),
         )
         parser.add_argument("--variant", help="Variant of the project")
+        parser.add_argument(
+            "--list", action="store_true", help="List available templates"
+        )
         return parser
 
     def do_run(self, args, unknown_args):
         topdir = get_west_workspace_root()
-        try:
+        if args.list:
             project_generator = ProjectGenerator(topdir, prj_folder_name=args.name)
-            if project_generator.update(variant=args.variant):
+            variants = project_generator.get_available_variants()
+            log.inf("List of available variants:", colorize=True)
+            for variant in variants:
+                if variant != "None":
+                    variant = (
+                        variant["name"]
+                        .replace("CHESTER ", "")
+                        .replace(" ", "-")
+                        .lower()
+                    )
+                log.msg(f"• {variant}", color=colorama.Fore.LIGHTWHITE_EX)
+            return
+        else:
+            try:
+                project_generator = ProjectGenerator(topdir, prj_folder_name=args.name)
+                if project_generator.update(variant=args.variant):
+                    project_generator.logs_print()
+                    log.msg(
+                        "★ Project successfully updated.",
+                        color=colorama.Fore.LIGHTWHITE_EX,
+                    )
+                else:
+                    project_generator.logs_print()
+                    log.err("⊗ Project unsuccessfully updated.")
+            except Exception as e:
                 project_generator.logs_print()
-                log.msg(
-                    "★ Project successfully updated.",
-                    color=colorama.Fore.LIGHTWHITE_EX,
-                )
-            else:
-                project_generator.logs_print()
-                log.err("⊗ Project unsuccessfully updated.")
-        except Exception as e:
-            project_generator.logs_print()
-            log.err(f"⊗ Project unsuccessfully updated. Error: {e}")
+                log.err(f"⊗ Project unsuccessfully updated. Error: {e}")
 
 
 class ProjectInit(WestCommand):
