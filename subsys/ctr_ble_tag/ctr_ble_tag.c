@@ -59,6 +59,9 @@ struct ble_tag_data {
 static struct ble_tag_data tag_data[CTR_BLE_TAG_COUNT];
 K_MUTEX_DEFINE(tag_data_lock);
 
+static uint8_t m_scan_tag_mask, m_scan_tag_flags;
+static bool m_scan_early_stop;
+
 static volatile bool m_enrolling = false;
 static char m_enroll_addr_str[BT_ADDR_SIZE * 2 + 1];
 
@@ -210,6 +213,18 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 
 			LOG_INF("Enrolled: %s", m_enroll_addr_str);
 			k_sem_give(&m_has_enrolled_sem);
+		}
+
+		m_scan_tag_flags |= BIT(i);
+
+		if (!m_enrolling && m_scan_tag_flags == m_scan_tag_mask) {
+			ret = bt_le_scan_stop();
+			if (ret) {
+				LOG_ERR("Call `bt_le_scan_stop` failed: %d", ret);
+				k_sem_give(&m_scan_sem);
+			}
+
+			m_scan_early_stop = true;
 		}
 
 		tag_data[i].rssi = rssi;
@@ -492,6 +507,9 @@ static int cmd_config_add_tag(const struct shell *shell, size_t argc, char **arg
 	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
 		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[i])) {
 			memcpy(m_config_interim.addr[i], addr, BT_ADDR_SIZE);
+
+			m_scan_tag_mask |= BIT(i);
+
 			return 0;
 		} else if (memcmp(m_config_interim.addr[i], addr, BT_ADDR_SIZE) == 0) {
 			shell_error(shell, "tag addr %s: already exists", argv[1]);
@@ -535,6 +553,9 @@ static int cmd_config_remove_tag(const struct shell *shell, size_t argc, char **
 			if (memcmp(m_config_interim.addr[i], addr, BT_ADDR_SIZE) == 0) {
 				memset(m_config_interim.addr[i], 0, BT_ADDR_SIZE);
 				shell_print(shell, "tag addr: %s removed", argv[1]);
+
+				m_scan_tag_mask &= ~BIT(i);
+
 				return 0;
 			}
 		}
@@ -557,6 +578,8 @@ static int cmd_config_remove_tag(const struct shell *shell, size_t argc, char **
 		memset(m_config_interim.addr[index], 0, BT_ADDR_SIZE);
 		shell_print(shell, "tag index: %d removed", index);
 
+		m_scan_tag_mask &= ~BIT(index);
+
 		return 0;
 	}
 }
@@ -573,6 +596,8 @@ static int cmd_config_clear_tags(const struct shell *shell, size_t argc, char **
 	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
 		memset(m_config_interim.addr[i], 0, BT_ADDR_SIZE);
 	}
+
+	m_scan_tag_mask = 0;
 
 	return 0;
 }
@@ -762,18 +787,26 @@ static void start_scan_work_handler(struct k_work *work)
 		return;
 	}
 
+	m_scan_tag_flags = 0;
+
 	k_work_schedule_for_queue(&m_scan_work_q, &m_stop_scan_work,
 				  K_SECONDS(m_config.scan_duration));
 }
 
 static void stop_scan_work_handler(struct k_work *work)
 {
-	int ret = bt_le_scan_stop();
-	if (ret) {
-		LOG_ERR("Call `bt_le_scan_stop` failed: %d", ret);
-		k_sem_give(&m_scan_sem);
-		return;
+	int ret;
+
+	if (!m_scan_early_stop) {
+		ret = bt_le_scan_stop();
+		if (ret) {
+			LOG_ERR("Call `bt_le_scan_stop` failed: %d", ret);
+			k_sem_give(&m_scan_sem);
+			return;
+		}
 	}
+
+	m_scan_early_stop = false;
 
 	k_work_schedule_for_queue(&m_scan_work_q, &m_start_scan_work,
 				  K_SECONDS(m_config.scan_interval - m_config.scan_duration));
@@ -838,6 +871,8 @@ static int init(void)
 				LOG_ERR("Call `bt_le_filter_accept_list_add` failed: %d", ret);
 				return ret;
 			}
+
+			m_scan_tag_mask |= BIT(i);
 		}
 	}
 
