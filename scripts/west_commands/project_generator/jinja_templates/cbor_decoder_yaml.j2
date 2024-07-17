@@ -1,66 +1,42 @@
-- acceleration_x:
-  - div: 1000
-  - fpp: 2
-- acceleration_y:
-  - div: 1000
-  - fpp: 2
-- acceleration_z:
-  - div: 1000
-  - fpp: 2
-- accelerometer:
-- attribute:
-- backup:
-- band:
-- system:
-- battery:
-- cid:
-- current_load:
-- earfcn:
-- ecl:
-- eest:
-- frame:
-- message:
-- fw_name:
-- fw_version:
-- hw_revision:
-- hw_variant:
-- imei:
-- imsi:
-- line:
-- network:
-- orientation:
-- parameter:
-- plmn:
-- present:
-- product_name:
-- protocol:
-- version:
-- rsrp:
-- rsrq:
-- sequence:
-- serial_number:
-- snr:
-- state:
-- temperature:
-  - div: 100
-  - fpp: 2
-- thermometer:
-- timestamp:
-- uptime:
-- vendor_name:
-- line_voltage:
-  - div: 1000
-  - fpp: 2
-- batt_voltage:
-  - div: 1000
-  - fpp: 2
-- voltage:
-  - div: 1000
-  - fpp: 2
-- voltage_load:
-  - div: 1000
-  - fpp: 2
-- voltage_rest:
-  - div: 1000
-  - fpp: 2
-
+version: 2
+type: decoder
+name: com.hardwario.chester.app.{{data['project']['variant'] | lower | replace(' ', '.')}}
+schema:
+  - message:
+    - version:
+    - sequence:
+    - timestamp:
+  - attribute:
+    - vendor_name:
+    - product_name:
+    - hw_variant:
+    - hw_revision:
+    - fw_version:
+    - serial_number:
+  - system:
+    - uptime:
+    - voltage_load:
+      - $div: 1000
+      - $fpp: 2
+    - voltage_rest:
+      - $div: 1000
+      - $fpp: 2
+    - current_load:
+  - network:
+    - imei:
+    - imsi:
+  - thermometer:
+    - temperature:
+      - $div: 100
+      - $fpp: 2
+  - accelerometer:
+    - accel_x:
+      - $div: 1000
+      - $fpp: 2
+    - accel_y:
+      - $div: 1000
+      - $fpp: 2
+    - accel_z:
+      - $div: 1000
+      - $fpp: 2
+    - orientation:

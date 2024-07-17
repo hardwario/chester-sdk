@@ -16,7 +16,8 @@ features:
 - subsystem-led
 - subsystem-log
 - subsystem-lrw
-- subsystem-lte
+- subsystem-lte-v2
+- subsystem-cloud
 - subsystem-rtc
 - subsystem-shell
 - subsystem-therm
@@ -37,6 +38,12 @@ parameters:
   max: 86400
   default: 1800
   help: 'Get/Set report interval in seconds'
+- name: interval-poll
+  type: int
+  min: 0
+  max: 86400
+  default: 0
+  help: "Get/Set poll interval in seconds (disabled if 0)"
 commands:
 extras:
 - CONFIG_ADC_TLA2021_INIT_PRIORITY=60

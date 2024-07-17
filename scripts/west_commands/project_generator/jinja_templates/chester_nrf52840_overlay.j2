@@ -15,20 +15,8 @@
 {% endraw %}
 {%- endif -%}
 
-#ifndef APP_INIT_H_
-#define APP_INIT_H_
-
-/* Zephyr includes */
-#include <zephyr/kernel.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int app_init(void);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* APP_INIT_H_ */
+ / {
+	chosen {
+		nordic,pm-ext-flash = &spi_flash0;
+	};
+};

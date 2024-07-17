@@ -59,27 +59,30 @@ class ProjectUpdate(WestCommand):
         parser.add_argument(
             "--list", action="store_true", help="List available templates"
         )
+        parser.add_argument("--version", help="Specify firmware version")
         return parser
 
     def do_run(self, args, unknown_args):
         topdir = get_west_workspace_root()
         if args.list:
-            project_generator = ProjectGenerator(topdir, prj_folder_name=args.name)
+            project_generator = ProjectGenerator(
+                topdir, prj_folder_name=args.name, version=args.version
+            )
             variants = project_generator.get_available_variants()
             log.inf("List of available variants:", colorize=True)
             for variant in variants:
                 if variant != "None":
-                    variant = (
-                        variant["name"]
-                        .replace("CHESTER ", "")
-                        .replace(" ", "-")
-                        .lower()
-                    )
-                log.msg(f"• {variant}", color=colorama.Fore.LIGHTWHITE_EX)
+                    variant_ = variant["name"].replace(" ", "-").lower()
+                log.msg(
+                    f"• {variant_} or '{variant['name']}' ",
+                    color=colorama.Fore.LIGHTWHITE_EX,
+                )
             return
         else:
             try:
-                project_generator = ProjectGenerator(topdir, prj_folder_name=args.name)
+                project_generator = ProjectGenerator(
+                    topdir, prj_folder_name=args.name, version=args.version
+                )
                 if project_generator.update(variant=args.variant):
                     project_generator.logs_print()
                     log.msg(
@@ -190,10 +193,12 @@ class ProjectCreate(WestCommand):
     def do_run(self, args, unknown_args):
         topdir = get_west_workspace_root()
         try:
-            project_generator = ProjectGenerator(topdir, prj_folder_name=args.name)
-            if project_generator.create_scratch(
-                variant=args.variant
-            ) and project_generator.update(variant=args.variant):
+            project_generator = ProjectGenerator(
+                topdir, prj_folder_name=args.name, version=None
+            )
+            if project_generator.update(
+                variant=None
+            ) and project_generator.create_scratch(variant=None):
                 project_generator.logs_print()
                 log.msg(
                     "★ Project successfully created from scratch.",

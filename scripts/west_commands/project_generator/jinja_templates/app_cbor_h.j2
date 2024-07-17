@@ -21,13 +21,17 @@
 /* Zephyr includes */
 #include <zephyr/kernel.h>
 
+#if defined(FEATURE_SUBSYSTEM_LTE_V2)
 #include <zcbor_common.h>
+#endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if defined(FEATURE_SUBSYSTEM_LTE_V2)
 int app_cbor_encode(zcbor_state_t *zs);
+#endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
 
 #ifdef __cplusplus
 }

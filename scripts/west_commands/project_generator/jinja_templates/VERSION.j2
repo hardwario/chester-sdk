@@ -1,0 +1,9 @@
+{%- set parts = data['project']['fw_version'][1:].split('.') %}
+{%- set major = parts[0] | int %}
+{%- set minor = parts[1] | int %}
+{%- set patchlevel = parts[2] | int -%}
+VERSION_MAJOR = {{ major }}
+VERSION_MINOR = {{ minor }}
+PATCHLEVEL = {{ patchlevel }}
+VERSION_TWEAK = 0
+EXTRAVERSION = dev

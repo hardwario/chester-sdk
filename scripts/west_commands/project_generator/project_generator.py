@@ -15,10 +15,11 @@ import colorama
 
 
 class ProjectGenerator:
-    def __init__(self, topdir, prj_folder_name):
+    def __init__(self, topdir, prj_folder_name, version="1.0.0"):
         self.topdir = topdir
         self.project_name = ""
         self.prj_folder_name = prj_folder_name
+        self.fw_version = version
         self.dir = self.check_vendor()
         self.app_dir = os.path.join(self.dir, "applications")
         self.prj_dir = os.path.join(self.app_dir, self.prj_folder_name)
@@ -84,9 +85,10 @@ class ProjectGenerator:
             project_data["project"]["variant"] = variant.replace("-", " ")
             corr = False
             for app_variant in project_data["variants"]:
-                if app_variant["name"].replace(
-                    "CHESTER ", ""
-                ).upper() == variant.upper().replace("-", " "):
+                if (
+                    app_variant["name"].upper() == variant.upper()
+                    or app_variant["name"].replace(" ", "-").upper() == variant.upper()
+                ):
                     corr = True
                     # Log
                     self.log["Variant"] = (
@@ -681,6 +683,10 @@ class ProjectGenerator:
         for key in ["Variant", "Template"]:
             if self.log.get(key):
                 log.msg(f"{key}: {self.log[key]} ", color=colorama.Fore.LIGHTWHITE_EX)
+        log.msg(
+            f"Version: v{self.fw_version.replace('v','')}",
+            color=colorama.Fore.LIGHTWHITE_EX,
+        )
         log.msg(f"Path: {self.prj_dir}", color=colorama.Fore.LIGHTWHITE_EX)
 
         # Successful creation log information
@@ -793,20 +799,29 @@ class ProjectGenerator:
                 {"dir": "src", "name": "app_work.h", "template": "app_work_h.j2"},
                 {"dir": "src", "name": "app_cbor.c", "template": "app_cbor_c.j2"},
                 {"dir": "src", "name": "app_cbor.h", "template": "app_cbor_h.j2"},
+                {"dir": "src", "name": "app_codec.h", "template": "app_codec_h.j2"},
                 {
                     "dir": "child_image",
                     "name": "mcuboot.conf",
                     "template": "mcuboot_conf.j2",
                 },
                 {
+                    "dir": "child_image/boards",
+                    "name": "chester_nrf52840.overlay",
+                    "template": "chester_nrf52840_overlay.j2",
+                },
+                {
                     "dir": "codec",
                     "name": "cbor-decoder.yaml",
                     "template": "cbor_decoder_yaml.j2",
                 },
-                {"dir": "src", "name": "msg_key.h", "template": "msg_key.j2"},
                 {"dir": "src", "name": "main.c", "template": "main_c.j2"},
             ]
-
+            # Corner case to templates without cloud enabled
+            if "subsystem-cloud" in data["features"]:
+                files_to_generate.append(
+                    {"dir": "", "name": "pm_static.yml", "template": "pm_static_yml.j2"}
+                )
             # Generate each file
             for file_info in files_to_generate:
                 self.generate_file(
@@ -845,6 +860,14 @@ class ProjectGenerator:
         if self.file_status["yaml_error"]:
             raise ValueError()
 
+        # Handle fw VERSION
+        if self.fw_version != None:
+            data["project"]["fw_version"] = self.fw_version
+            log.wrn(
+                f"Ignoring project.yaml 'fw_version', using version {self.fw_version} from command line."
+            )
+        else:
+            self.fw_version = data["project"]["fw_version"]
         try:
             # List of files to generate
             files_to_generate = [
@@ -864,6 +887,7 @@ class ProjectGenerator:
                 {"dir": "src", "name": "feature.h", "template": "feature_h.j2"},
                 {"dir": "src", "name": "variant.h", "template": "variant_h.j2"},
                 {"dir": "", "name": "Kconfig", "template": "k_config.j2"},
+                {"dir": "", "name": "VERSION", "template": "VERSION.j2"},
             ]
 
             # Generate each file

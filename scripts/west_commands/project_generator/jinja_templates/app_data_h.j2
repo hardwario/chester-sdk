@@ -18,9 +18,6 @@
 #ifndef APP_DATA_H_
 #define APP_DATA_H_
 
-/* CHESTER includes */
-#include <chester/ctr_lte.h>
-
 /* Zephyr includes */
 #include <zephyr/kernel.h>
 
@@ -30,9 +27,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define APP_DATA_MAX_BACKUP_EVENTS 32
-#define APP_DATA_MAX_BUTTON_EVENTS 8
 
 struct app_data {
 	float therm_temperature;
@@ -50,11 +44,6 @@ struct app_data {
 };
 
 extern struct app_data g_app_data;
-
-/* TODO Delete */
-extern struct k_mutex g_app_data_lte_eval_mut;
-extern bool g_app_data_lte_eval_valid;
-extern struct ctr_lte_eval g_app_data_lte_eval;
 
 void app_data_lock(void);
 void app_data_unlock(void);

@@ -61,6 +61,26 @@
     'subsystem-zcbor': 'CONFIG_ZCBOR=y\nCONFIG_ZCBOR_STOP_ON_ERROR=y',
     'subsystem-bt-filter-accept-list': 'CONFIG_BT_FILTER_ACCEPT_LIST=y',
     'subsystem-bt-observer': 'CONFIG_BT_OBSERVER=y',
+    'subsystem-cloud': 'CONFIG_CTR_CLOUD=y
+CONFIG_SETTINGS_SHELL=y
+CONFIG_IMG_MANAGER=y
+CONFIG_BOOTLOADER_MCUBOOT=y
+CONFIG_PM_PARTITION_SIZE_SETTINGS_STORAGE=0x8000
+CONFIG_PM_OVERRIDE_EXTERNAL_DRIVER_CHECK=y
+CONFIG_SPI=y
+CONFIG_DFU_TARGET=y
+CONFIG_DFU_TARGET_STREAM=y
+CONFIG_DFU_TARGET_MCUBOOT=y
+CONFIG_DFU_TARGET_LOG_LEVEL_DBG=y
+CONFIG_STREAM_FLASH_ERASE=y
+CONFIG_STREAM_FLASH=y
+CONFIG_FILE_SYSTEM=y
+CONFIG_FILE_SYSTEM_LITTLEFS=y
+CONFIG_FILE_SYSTEM_MKFS=y
+CONFIG_FILE_SYSTEM_SHELL=y
+CONFIG_SETTINGS_FILE=y
+CONFIG_SETTINGS_FILE_PATH="/lfs1/settings/run"
+CONFIG_PM_PARTITION_REGION_LITTLEFS_EXTERNAL=y',
 } -%}
 # Configurations
 {%- for feature in data['features'] %}
@@ -68,6 +88,7 @@
     {{log.err(feature)}}
 # {{feature}} <-- unknown
 {%- elif feature in feature_configs %}
+# {{ feature | upper }} 
 {{ feature_configs.get(feature, '') }}
 {%- endif %}
 {%- endfor %}
