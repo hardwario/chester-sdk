@@ -5,6 +5,7 @@
  */
 
 #include "app_backup.h"
+#include "app_codec.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_handler.h"
@@ -14,10 +15,10 @@
 
 /* CHESTER includes */
 #include <chester/ctr_button.h>
+#include <chester/ctr_cloud.h>
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
-#include <chester/ctr_lte.h>
 #include <chester/ctr_soil_sensor.h>
 #include <chester/ctr_wdog.h>
 #include <chester/drivers/ctr_s1.h>
@@ -73,6 +74,10 @@ int init_chester_x4(void)
 int app_init(void)
 {
 	int ret;
+
+#if defined(CONFIG_SHIELD_CTR_LTE_V2)
+	CODEC_CLOUD_OPTIONS_STATIC(copt);
+#endif /* defined(CONFIG_SHIELD_CTR_LTE_V2) */
 
 	ctr_led_set(CTR_LED_CHANNEL_R, true);
 
@@ -160,39 +165,46 @@ int app_init(void)
 		break;
 #endif /* defined(CONFIG_SHIELD_CTR_LRW) */
 
-#if defined(CONFIG_SHIELD_CTR_LTE)
+#if defined(CONFIG_SHIELD_CTR_LTE_V2)
 	case APP_CONFIG_MODE_LTE:
-		ret = ctr_lte_set_event_cb(app_handler_lte, NULL);
+
+		ret = ctr_cloud_init(&copt);
 		if (ret) {
-			LOG_ERR("Call `ctr_lte_set_event_cb` failed: %d", ret);
+			LOG_ERR("Call `ctr_cloud_init` failed: %d", ret);
 			return ret;
 		}
 
-		ret = ctr_lte_start(NULL);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_start` failed: %d", ret);
-			return ret;
+		if (g_app_config.interval_poll) {
+			ret = ctr_cloud_set_poll_interval(K_SECONDS(g_app_config.interval_poll));
+			if (ret) {
+				LOG_ERR("Call `ctr_cloud_set_poll_interval` failed: %d", ret);
+				return ret;
+			}
 		}
 
-		for (;;) {
+		while (true) {
+			ret = ctr_cloud_wait_initialized(K_SECONDS(60));
+			if (!ret) {
+				break;
+			} else {
+				if (ret == -ETIMEDOUT) {
+					LOG_INF("Waiting for cloud initialization");
+				} else {
+					LOG_ERR("Call `ctr_cloud_wait_initialized` failed: %d",
+						ret);
+					return ret;
+				}
+			}
+
 			ret = ctr_wdog_feed(&g_app_wdog_channel);
 			if (ret) {
 				LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
 				return ret;
 			}
-
-			ret = k_sem_take(&g_app_init_sem, K_SECONDS(1));
-			if (ret == -EAGAIN) {
-				continue;
-			} else if (ret) {
-				LOG_ERR("Call `k_sem_take` failed: %d", ret);
-				return ret;
-			}
-
-			break;
 		}
+
 		break;
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
+#endif /* defined(CONFIG_SHIELD_CTR_LTE_V2) */
 
 	default:
 		break;

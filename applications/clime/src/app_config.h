@@ -30,6 +30,7 @@ struct app_config {
 	int interval_sample;
 	int interval_aggreg;
 	int interval_report;
+	int interval_poll;
 
 #if defined(CONFIG_SHIELD_CTR_S1)
 	float iaq_led_thr_warning;
@@ -65,7 +66,8 @@ extern struct app_config g_app_config;
 #define CONFIG_PARAM_LIST_COMMON() \
 	CONFIG_PARAM_INT(interval-sample, interval_sample, 1, 86400, "Get/Set sample interval in seconds (format: <1-86400>).") \
 	CONFIG_PARAM_INT(interval-aggreg, interval_aggreg, 1, 86400, "Get/Set aggregate interval in seconds (format: <1-86400>).") \
-	CONFIG_PARAM_INT(interval-report, interval_report, 30, 86400, "Get/Set report interval in seconds (format: <30-86400>).")
+	CONFIG_PARAM_INT(interval-report, interval_report, 30, 86400, "Get/Set report interval in seconds (format: <30-86400>).") \
+	CONFIG_PARAM_INT(interval-poll, interval_poll, 30, 86400, "Get/Set poll interval in seconds (format: <30-86400>).")
 
 #if defined(CONFIG_SHIELD_CTR_S1)
 #define CONFIG_PARAM_LIST_CTR_S1() \

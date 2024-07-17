@@ -6,7 +6,6 @@
 
 #include "app_config.h"
 #include "app_data.h"
-#include "app_send.h"
 #include "app_sensor.h"
 #include "app_work.h"
 

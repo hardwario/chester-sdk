@@ -30,9 +30,9 @@ LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 struct app_config g_app_config;
 
 static struct app_config m_app_config_interim = {
-#if defined(CONFIG_SHIELD_CTR_LTE) && !defined(CONFIG_SHIELD_CTR_LRW)
+#if defined(CONFIG_SHIELD_CTR_LTE_V2) && !defined(CONFIG_SHIELD_CTR_LRW)
 	.mode = APP_CONFIG_MODE_LTE,
-#elif defined(CONFIG_SHIELD_CTR_LRW) && !defined(CONFIG_SHIELD_CTR_LTE)
+#elif defined(CONFIG_SHIELD_CTR_LRW) && !defined(CONFIG_SHIELD_CTR_LTE_V2)
 	.mode = APP_CONFIG_MODE_LRW,
 #else
 	.mode = APP_CONFIG_MODE_NONE,
@@ -41,6 +41,7 @@ static struct app_config m_app_config_interim = {
 	.interval_sample = 60,
 	.interval_aggreg = 300,
 	.interval_report = 1800,
+	.interval_poll = 0,
 
 #if defined(CONFIG_SHIELD_CTR_S1)
 	.iaq_led_thr_warning = 800.f,

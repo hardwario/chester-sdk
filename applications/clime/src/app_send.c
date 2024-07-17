@@ -13,7 +13,6 @@
 #include <chester/ctr_buf.h>
 #include <chester/ctr_info.h>
 #include <chester/ctr_lrw.h>
-#include <chester/ctr_lte.h>
 #include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
@@ -259,92 +258,6 @@ static int compose_lrw(struct ctr_buf *buf)
 
 #endif /* defined(CONFIG_SHIELD_CTR_LRW) */
 
-#if defined(CONFIG_SHIELD_CTR_LTE)
-
-static int compose_lte(struct ctr_buf *buf)
-{
-	int ret;
-
-	ctr_buf_reset(buf);
-	ret = ctr_buf_seek(buf, 8);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
-		return ret;
-	}
-
-	uint32_t serial_number;
-	ret = ctr_info_get_serial_number_uint32(&serial_number);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_serial_number_uint32` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_append_u32_le(buf, serial_number);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u32_le` failed: %d", ret);
-		return ret;
-	}
-
-	zcbor_state_t zs[8];
-	zcbor_new_state(zs, ARRAY_SIZE(zs), ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf), 0);
-
-	ret = app_cbor_encode(zs);
-	if (ret) {
-		LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
-		return ret;
-	}
-
-	size_t len = zs[0].payload_mut - ctr_buf_get_mem(buf);
-
-	struct tc_sha256_state_struct s;
-	ret = tc_sha256_init(&s);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_init` failed: %d", ret);
-		return ret;
-	}
-
-	ret = tc_sha256_update(&s, ctr_buf_get_mem(buf) + 8, len - 8);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_update` failed: %d", ret);
-		return ret;
-	}
-
-	uint8_t digest[32];
-	ret = tc_sha256_final(digest, &s);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_final` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_seek(buf, 0);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_append_u16_le(buf, len);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u16_le` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_append_mem(buf, digest, 6);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_mem` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_seek(buf, len);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
-
 int app_send(void)
 {
 	int ret;
@@ -352,10 +265,6 @@ int app_send(void)
 #if defined(CONFIG_SHIELD_CTR_LRW)
 	CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
 #endif /* defined(CONFIG_SHIELD_CTR_LRW) */
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
-	CTR_BUF_DEFINE_STATIC(lte_buf, 1024);
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 	switch (g_app_config.mode) {
 
@@ -376,31 +285,6 @@ int app_send(void)
 		}
 		break;
 #endif /* defined(CONFIG_SHIELD_CTR_LRW) */
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
-	case APP_CONFIG_MODE_LTE:
-		ret = compose_lte(&lte_buf);
-		if (ret) {
-			LOG_ERR("Call `compose_lte` failed: %d", ret);
-			return ret;
-		}
-
-		ret = ctr_lte_eval(NULL);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_eval` failed: %d", ret);
-			return ret;
-		}
-
-		struct ctr_lte_send_opts lte_opts = CTR_LTE_SEND_OPTS_DEFAULTS;
-		lte_opts.port = 5000;
-		ret = ctr_lte_send(&lte_opts, ctr_buf_get_mem(&lte_buf), ctr_buf_get_used(&lte_buf),
-				   NULL);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
-			return ret;
-		}
-		break;
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
 
 	default:
 		break;

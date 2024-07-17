@@ -320,11 +320,6 @@ struct app_data {
 
 extern struct app_data g_app_data;
 
-/* TODO Delete */
-extern struct k_mutex g_app_data_lte_eval_mut;
-extern bool g_app_data_lte_eval_valid;
-extern struct ctr_lte_eval g_app_data_lte_eval;
-
 void app_data_lock(void);
 void app_data_unlock(void);
 
