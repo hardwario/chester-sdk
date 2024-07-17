@@ -145,9 +145,9 @@ static struct config m_config;
 
 static const char *m_enum_antenna_items[] = {"int", "ext"};
 static const char *m_enum_band_items[] = {
-	"AS923", "AU915", "EU868", "KR920", "IN865", "US915",
+	"AS923", "AU915", "", "", "", "EU868", "KR920", "IN865", "US915",
 };
-static const char *m_enum_class_items[] = {"A", "C"};
+static const char *m_enum_class_items[] = {"A", "", "C"};
 static const char *m_enum_mode_items[] = {"apb", "otaa"};
 static const char *m_enum_nwk_items[] = {"private", "public"};
 

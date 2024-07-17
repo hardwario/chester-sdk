@@ -202,7 +202,9 @@ int ctr_config_help_item(const struct shell *shell, const struct ctr_config_item
 	case CTR_CONFIG_TYPE_ENUM:
 		shell_print(shell, "  %-18s:%s", item->name, item->help);
 		for (int i = 0; i < item->max; i++) {
-			shell_print(shell, "                     - %s", item->enums[i]);
+			if (strlen(item->enums[i])) {
+				shell_print(shell, "                     - %s", item->enums[i]);
+			}
 		}
 		break;
 	case CTR_CONFIG_TYPE_STRING:
