@@ -1,0 +1,15 @@
+/ {
+	chosen {
+		ctr,lrw_link = &ctr_lrw_link;
+	};
+};
+
+&uart1 {
+	status = "okay";
+
+	ctr_lrw_link: ctr_lrw_link {
+		compatible = "hardwario,ctr-lrw-link";
+		status = "okay";
+		reset-gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
+};

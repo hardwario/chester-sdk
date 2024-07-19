@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2024 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_LRW_LINK
+	bool "CHESTER LRW Interface Driver"
+	select NRFX_TIMER2
+	select PIPES
+	select POLL
+	select SERIAL
+	select UART_1_NRF_HW_ASYNC
+	select UART_ASYNC_API
+
+if CTR_LRW_LINK
+
+module = CTR_LRW_LINK
+module-str = CHESTER LRW Interface Driver
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CTR_LRW_LINK
+
+config UART_1_NRF_HW_ASYNC_TIMER
+	default 2 if CTR_LRW_LINK
