@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['x0_0',['x0',['../structctr__k1__calibration.html#a07315054d43c7f9d64e65f45a9f07d01',1,'ctr_k1_calibration::x0()'],['../structctr__x7__calibration.html#a0c9a82b93f409ec5f6cefc70d1e9ac40',1,'ctr_x7_calibration::x0()']]],
-  ['x1_1',['x1',['../structctr__k1__calibration.html#af432096be417f5536918cba8a9c54543',1,'ctr_k1_calibration::x1()'],['../structctr__x7__calibration.html#af704403b0964de41fc1a7638623431d9',1,'ctr_x7_calibration::x1()']]]
+  ['valid_0',['valid',['../structctr__lte__v2__conn__param.html#a10c162618e966d95907b32113ba8c634',1,'ctr_lte_v2_conn_param::valid()'],['../structctr__lte__v2__cereg__param.html#a6a41363100a596028e2b02e693fc05e2',1,'ctr_lte_v2_cereg_param::valid()']]],
+  ['variable_1',['variable',['../structctr__config__item.html#a07ad8a3b2bb67201cb8b5eca2d57d8cc',1,'ctr_config_item']]]
 ];

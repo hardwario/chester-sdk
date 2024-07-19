@@ -17,6 +17,7 @@ var files_dup =
     [ "ctr_info.h", "ctr__info_8h.html", "ctr__info_8h" ],
     [ "ctr_led.h", "ctr__led_8h.html", "ctr__led_8h" ],
     [ "ctr_lrw.h", "ctr__lrw_8h.html", "ctr__lrw_8h" ],
+    [ "ctr_lrw_v2.h", "ctr__lrw__v2_8h.html", "ctr__lrw__v2_8h" ],
     [ "ctr_lte.h", "ctr__lte_8h.html", "ctr__lte_8h" ],
     [ "ctr_lte_v2.h", "ctr__lte__v2_8h.html", "ctr__lte__v2_8h" ],
     [ "ctr_machine_probe.h", "ctr__machine__probe_8h.html", "ctr__machine__probe_8h" ],

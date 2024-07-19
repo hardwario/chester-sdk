@@ -22,6 +22,8 @@ var annotated_dup =
     [ "ctr_lrw_data_start_err", "structctr__lrw__data__start__err.html", "structctr__lrw__data__start__err" ],
     [ "ctr_lrw_data_start_ok", "structctr__lrw__data__start__ok.html", "structctr__lrw__data__start__ok" ],
     [ "ctr_lrw_event_data", "unionctr__lrw__event__data.html", "unionctr__lrw__event__data" ],
+    [ "ctr_lrw_link_data", "structctr__lrw__link__data.html", "structctr__lrw__link__data" ],
+    [ "ctr_lrw_link_driver_api", "structctr__lrw__link__driver__api.html", "structctr__lrw__link__driver__api" ],
     [ "ctr_lrw_send_opts", "structctr__lrw__send__opts.html", "structctr__lrw__send__opts" ],
     [ "ctr_lte_data_attach_err", "structctr__lte__data__attach__err.html", "structctr__lte__data__attach__err" ],
     [ "ctr_lte_data_attach_ok", "structctr__lte__data__attach__ok.html", "structctr__lte__data__attach__ok" ],
@@ -54,5 +56,6 @@ var annotated_dup =
     [ "ctr_z_buzzer_param", "structctr__z__buzzer__param.html", "structctr__z__buzzer__param" ],
     [ "ctr_z_led_param", "structctr__z__led__param.html", "structctr__z__led__param" ],
     [ "ctr_z_status", "structctr__z__status.html", "structctr__z__status" ],
-    [ "people_counter_measurement", "structpeople__counter__measurement.html", "structpeople__counter__measurement" ]
+    [ "people_counter_measurement", "structpeople__counter__measurement.html", "structpeople__counter__measurement" ],
+    [ "send_msgq_data", "structsend__msgq__data.html", "structsend__msgq__data" ]
 ];
