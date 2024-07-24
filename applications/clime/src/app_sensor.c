@@ -791,6 +791,10 @@ int app_sensor_ble_tag_sample(void)
 	int ret;
 
 	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		struct app_data_ble_tag_sensor *sensor = &g_app_data.ble_tag.sensor[i];
+		sensor->rssi = INT_MAX;
+		sensor->voltage = NAN;
+
 		if (g_app_data.ble_tag.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
 			uint8_t addr[BT_ADDR_SIZE];
 			int rssi;
@@ -809,7 +813,6 @@ int app_sensor_ble_tag_sample(void)
 			}
 
 			app_data_lock();
-			struct app_data_ble_tag_sensor *sensor = &g_app_data.ble_tag.sensor[i];
 			memcpy(sensor->addr, addr, BT_ADDR_SIZE);
 			if (rssi != INT_MAX) {
 				sensor->rssi = rssi;
@@ -829,7 +832,6 @@ int app_sensor_ble_tag_sample(void)
 			LOG_WRN("Sample buffer full");
 			return -ENOSPC;
 		}
-		app_data_unlock();
 	}
 
 	return 0;
