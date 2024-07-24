@@ -42,7 +42,7 @@ struct config {
 static struct config m_config_interim = {
 	.enabled = false,
 	.scan_interval = 300,
-	.scan_duration = 5,
+	.scan_duration = 10,
 };
 
 static struct config m_config;
