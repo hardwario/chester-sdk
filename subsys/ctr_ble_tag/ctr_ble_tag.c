@@ -624,11 +624,13 @@ static int cmd_config_scan(const struct shell *shell, size_t argc, char **argv)
 
 	k_sleep(K_SECONDS(CTR_BLE_TAG_ENROLL_TIMEOUT_SEC));
 
-	ret = bt_le_scan_stop();
-	if (ret) {
-		LOG_ERR("Call `bt_le_scan_stop` failed (err %d)", ret);
-		k_sem_give(&m_scan_sem);
-		return ret;
+	if (!m_scan_early_stop) {
+		ret = bt_le_scan_stop();
+		if (ret) {
+			LOG_ERR("Call `bt_le_scan_stop` failed (err %d)", ret);
+			k_sem_give(&m_scan_sem);
+			return ret;
+		}
 	}
 
 	k_sem_give(&m_scan_sem);
