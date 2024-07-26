@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #ifndef APP_LAMBRECHT_H_
 #define APP_LAMBRECHT_H_
 

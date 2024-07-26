@@ -1,17 +1,18 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
 #include "app_config.h"
 #include "app_data.h"
+#include "app_work.h"
 #include "app_lambrecht.h"
-#include "app_send.h"
 #include "app_sensor.h"
 
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
+#include <chester/ctr_ble_tag.h>
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_hygro.h>
 #include <chester/ctr_rtc.h>
@@ -118,7 +119,7 @@ int app_sensor_sample(void)
 	return 0;
 }
 
-#if defined(CONFIG_SHIELD_CTR_METEO_A) || defined(CONFIG_SHIELD_CTR_METEO_B)
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)
 
 static int meteo_sample_wind_direction(void)
 {
@@ -426,9 +427,10 @@ int app_sensor_meteo_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_METEO_A) || defined(CONFIG_SHIELD_CTR_METEO_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)   \
+	*/
 
-#if defined(CONFIG_SHIELD_CTR_BAROMETER_TAG)
+#if defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG)
 
 int app_sensor_barometer_sample(void)
 {
@@ -524,36 +526,123 @@ int app_sensor_barometer_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_BAROMETER_TAG) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if defined(FEATURE_HARDWARE_CHESTER_S2)
+
+static void append_hygro_event(enum app_data_hygro_event_type type, float value)
+{
+	int ret;
+	struct app_data_hygro *hygro = &g_app_data.hygro;
+
+	if (hygro->event_count < APP_DATA_MAX_HYGRO_EVENTS) {
+		struct app_data_hygro_event *event = &hygro->events[hygro->event_count];
+
+		ret = ctr_rtc_get_ts(&event->timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			return;
+		}
+
+		event->type = type;
+		event->value = value;
+		hygro->event_count++;
+
+		LOG_INF("Event count: %d", hygro->event_count);
+	} else {
+		LOG_WRN("Measurement full");
+	}
+}
+
+static void check_hygro_temperature(float temperature)
+{
+	struct app_data_hygro *hygro = &g_app_data.hygro;
+
+	bool report_hi_deactivated = false;
+	bool report_hi_activated = false;
+
+	float thr_hi = g_app_config.hygro_t_alarm_hi_thr;
+	float hst_hi = g_app_config.hygro_t_alarm_hi_hst;
+
+	if (hygro->alarm_hi_active) {
+		if (temperature < thr_hi - hst_hi / 2.f) {
+			hygro->alarm_hi_active = false;
+			report_hi_deactivated = true;
+		}
+	} else {
+		if (temperature > thr_hi + hst_hi / 2.f) {
+			hygro->alarm_hi_active = true;
+			report_hi_activated = true;
+		}
+	}
+
+	if (g_app_config.hygro_t_alarm_hi_report && report_hi_deactivated) {
+		append_hygro_event(APP_DATA_HYGRO_EVENT_TYPE_ALARM_HI_DEACTIVATED, temperature);
+		app_work_send_with_rate_limit();
+	}
+
+	if (g_app_config.hygro_t_alarm_hi_report && report_hi_activated) {
+		append_hygro_event(APP_DATA_HYGRO_EVENT_TYPE_ALARM_HI_ACTIVATED, temperature);
+		app_work_send_with_rate_limit();
+	}
+
+	bool report_lo_deactivated = false;
+	bool report_lo_activated = false;
+
+	float thr_lo = g_app_config.hygro_t_alarm_lo_thr;
+	float hst_lo = g_app_config.hygro_t_alarm_lo_hst;
+
+	if (hygro->alarm_lo_active) {
+		if (temperature > thr_lo + hst_lo / 2.f) {
+			hygro->alarm_lo_active = false;
+			report_lo_deactivated = true;
+		}
+	} else {
+		if (temperature < thr_lo - hst_lo / 2.f) {
+			hygro->alarm_lo_active = true;
+			report_lo_activated = true;
+		}
+	}
+
+	if (g_app_config.hygro_t_alarm_lo_report && report_lo_deactivated) {
+		append_hygro_event(APP_DATA_HYGRO_EVENT_TYPE_ALARM_LO_DEACTIVATED, temperature);
+		app_work_send_with_rate_limit();
+	}
+
+	if (g_app_config.hygro_t_alarm_lo_report && report_lo_activated) {
+		append_hygro_event(APP_DATA_HYGRO_EVENT_TYPE_ALARM_LO_ACTIVATED, temperature);
+		app_work_send_with_rate_limit();
+	}
+}
 
 int app_sensor_hygro_sample(void)
 {
 	int ret;
 
+	float temperature;
+	float humidity;
+
 	if (g_app_data.hygro.sample_count < APP_DATA_MAX_SAMPLES) {
-		float temperature;
-		float humidity;
 		ret = ctr_hygro_read(&temperature, &humidity);
 		if (ret) {
 			LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);
-			return ret;
+			temperature = NAN;
+			humidity = NAN;
+		} else {
+			LOG_INF("Hygro: Temperature: %.2f °C", temperature);
+			LOG_INF("Hygro: Humidity: %.2f %% RH", humidity);
 		}
 
-		LOG_INF("Temperature: %.2f °C", temperature);
-		LOG_INF("Humidity: %.2f %% RH", humidity);
-
 		app_data_lock();
-
+		g_app_data.hygro.last_sample_temperature = temperature;
+		g_app_data.hygro.last_sample_humidity = humidity;
 		g_app_data.hygro.samples_temperature[g_app_data.hygro.sample_count] = temperature;
 		g_app_data.hygro.samples_humidity[g_app_data.hygro.sample_count] = humidity;
 		g_app_data.hygro.sample_count++;
-
+		check_hygro_temperature(temperature);
 		app_data_unlock();
 
 		LOG_INF("Sample count: %d", g_app_data.hygro.sample_count);
-
 	} else {
 		LOG_WRN("Sample buffer full");
 		return -ENOSPC;
@@ -606,17 +695,16 @@ int app_sensor_hygro_aggreg(void)
 int app_sensor_hygro_clear(void)
 {
 	app_data_lock();
-
 	g_app_data.hygro.measurement_count = 0;
-
+	g_app_data.hygro.event_count = 0;
 	app_data_unlock();
 
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
 
 int app_sensor_w1_therm_sample(void)
 {
@@ -713,9 +801,9 @@ int app_sensor_w1_therm_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 
 int app_sensor_soil_sensor_sample(void)
 {
@@ -818,9 +906,113 @@ int app_sensor_soil_sensor_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_APP_LAMBRECHT)
+#if defined(CONFIG_CTR_BLE_TAG)
+int app_sensor_ble_tag_sample(void)
+{
+	int ret;
+
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		if (g_app_data.ble_tag.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
+			uint8_t addr[BT_ADDR_SIZE];
+			int rssi;
+			float voltage;
+			float temperature;
+			float humidity;
+			bool valid;
+
+			ret = ctr_ble_tag_read(i, addr, &rssi, &voltage, &temperature, &humidity,
+					       &valid);
+			if (ret && ret != -ENOENT) {
+				LOG_ERR("Call `ctr_ble_tag_read` failed: %d", ret);
+				continue;
+			} else if (ret == -ENOENT) {
+				continue;
+			}
+
+			app_data_lock();
+			struct app_data_ble_tag_sensor *sensor = &g_app_data.ble_tag.sensor[i];
+			memcpy(sensor->addr, addr, BT_ADDR_SIZE);
+			sensor->rssi = rssi;
+			sensor->voltage = voltage;
+			sensor->last_sample_temperature = temperature;
+			sensor->last_sample_humidity = humidity;
+			sensor->samples_temperature[sensor->sample_count] = temperature;
+			sensor->samples_humidity[sensor->sample_count] = humidity;
+			sensor->sample_count++;
+
+			LOG_INF("Sample count: %d", sensor->sample_count);
+			app_data_unlock();
+		} else {
+			LOG_WRN("Sample buffer full");
+			return -ENOSPC;
+		}
+		app_data_unlock();
+	}
+
+	return 0;
+}
+
+int app_sensor_ble_tag_aggreg(void)
+{
+	int ret;
+
+	struct app_data_ble_tag *ble_tag = &g_app_data.ble_tag;
+
+	app_data_lock();
+
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		if (ble_tag->sensor[i].measurement_count == 0) {
+			ret = ctr_rtc_get_ts(&ble_tag->timestamp);
+			if (ret) {
+				LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+				app_data_unlock();
+				return ret;
+			}
+		}
+
+		if (ble_tag->sensor[i].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+			struct app_data_ble_tag_measurement *measurement =
+				&ble_tag->sensor[i]
+					 .measurements[ble_tag->sensor[i].measurement_count];
+
+			aggreg_sample(ble_tag->sensor[i].samples_temperature,
+				      ble_tag->sensor[i].sample_count, &measurement->temperature);
+
+			aggreg_sample(ble_tag->sensor[i].samples_humidity,
+				      ble_tag->sensor[i].sample_count, &measurement->humidity);
+
+			ble_tag->sensor[i].measurement_count++;
+
+		} else {
+			LOG_WRN("Measurement buffer full");
+			app_data_unlock();
+			return -ENOSPC;
+		}
+
+		ble_tag->sensor[i].sample_count = 0;
+	}
+
+	return 0;
+}
+
+int app_sensor_ble_tag_clear(void)
+{
+	app_data_lock();
+
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		g_app_data.ble_tag.sensor[i].measurement_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_CTR_BLE_TAG) */
+
+#if defined(FEATURE_CHESTER_APP_LAMBRECHT)
 
 static int lambrecht_sample_wind_speed(void)
 {
@@ -1218,4 +1410,4 @@ int app_sensor_lambrecht_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_APP_LAMBRECHT) */
+#endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */

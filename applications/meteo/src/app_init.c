@@ -1,21 +1,24 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+#include "app_codec.h"
+#include "app_config.h"
 #include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
 #include "app_lambrecht.h"
 #include "app_work.h"
+#include "feature.h"
 
 /* CHESTER includes */
 #include <chester/ctr_button.h>
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_edge.h>
 #include <chester/ctr_led.h>
-#include <chester/ctr_lte.h>
+#include <chester/ctr_cloud.h>
 #include <chester/ctr_soil_sensor.h>
 #include <chester/ctr_wdog.h>
 #include <chester/drivers/ctr_s1.h>
@@ -37,13 +40,9 @@
 
 LOG_MODULE_REGISTER(app_init, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_LTE)
-K_SEM_DEFINE(g_app_init_sem, 0, 1);
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
-
 struct ctr_wdog_channel g_app_wdog_channel;
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 
 static int init_chester_z(void)
 {
@@ -125,7 +124,7 @@ static int init_chester_z(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 int app_init(void)
 {
@@ -151,69 +150,78 @@ int app_init(void)
 		return ret;
 	}
 
-#if defined(CONFIG_CTR_BUTTON)
+#if defined(FEATURE_SUBSYSTEM_BUTTON)
 	ret = ctr_button_set_event_cb(app_handler_ctr_button, NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_button_set_event_cb` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_CTR_BUTTON) */
+#endif /* defined(FEATURE_SUBSYSTEM_BUTTON) */
 
-#if defined(CONFIG_APP_LAMBRECHT)
+#if defined(FEATURE_CHESTER_APP_LAMBRECHT)
 	ret = app_lambrecht_init();
 	if (ret) {
 		LOG_ERR("Call `app_lambrecht_init` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_APP_LAMBRECHT) */
+#endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
 	ret = ctr_ds18b20_scan();
 	if (ret) {
 		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 	ret = ctr_soil_sensor_scan();
 	if (ret) {
 		LOG_ERR("Call `ctr_soil_sensor_scan` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_SHIELD_CTR_LTE)
-	ret = ctr_lte_set_event_cb(app_handler_lte, NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_set_event_cb` failed: %d", ret);
-		return ret;
-	}
+#if defined(FEATURE_SUBSYSTEM_CLOUD)
+	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
+		CODEC_CLOUD_OPTIONS_STATIC(copt);
 
-	ret = ctr_lte_start(NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_start` failed: %d", ret);
-		return ret;
-	}
-
-	for (;;) {
-		ret = ctr_wdog_feed(&g_app_wdog_channel);
+		ret = ctr_cloud_init(&copt);
 		if (ret) {
-			LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
+			LOG_ERR("Call `ctr_cloud_init` failed: %d", ret);
 			return ret;
 		}
 
-		ret = k_sem_take(&g_app_init_sem, K_SECONDS(1));
-		if (ret == -EAGAIN) {
-			continue;
-		} else if (ret) {
-			LOG_ERR("Call `k_sem_take` failed: %d", ret);
-			return ret;
+		if (g_app_config.interval_poll > 0) {
+			ret = ctr_cloud_set_poll_interval(K_SECONDS(g_app_config.interval_poll));
+			if (ret) {
+				LOG_ERR("Call `ctr_cloud_set_pull_interval` failed: %d", ret);
+				return ret;
+			}
 		}
 
-		break;
+		while (true) {
+			ret = ctr_cloud_wait_initialized(K_SECONDS(60));
+			if (!ret) {
+				break;
+			} else {
+				if (ret == -ETIMEDOUT) {
+					LOG_INF("Waiting for cloud initialization");
+				} else {
+					LOG_ERR("Call `ctr_cloud_wait_initialized` failed: %d",
+						ret);
+					return ret;
+				}
+			}
+
+			ret = ctr_wdog_feed(&g_app_wdog_channel);
+			if (ret) {
+				LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
+				return ret;
+			}
+		}
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
+#endif /* defined(FEATURE_SUBSYSTEM_CLOUD) */
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
 
@@ -223,13 +231,13 @@ int app_init(void)
 		return ret;
 	}
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 	ret = init_chester_z();
 	if (ret) {
 		LOG_ERR("Call `init_chester_z` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 	return 0;
 }

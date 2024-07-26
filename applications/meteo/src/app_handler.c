@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -29,122 +29,13 @@
 
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 static atomic_t m_report_rate_hourly_counter = 0;
 static atomic_t m_report_rate_timer_is_active = false;
 static atomic_t m_report_delay_timer_is_active = false;
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_LTE)
-
-static void start(void)
-{
-	int ret;
-
-	ret = ctr_lte_start(NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_start` failed: %d", ret);
-		k_oops();
-	}
-}
-
-static void attach(void)
-{
-	int ret;
-
-	ret = ctr_lte_attach(NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_attach` failed: %d", ret);
-		k_oops();
-	}
-}
-
-void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, void *param)
-{
-	switch (event) {
-	case CTR_LTE_EVENT_FAILURE:
-		LOG_ERR("Event `CTR_LTE_EVENT_FAILURE`");
-		start();
-		break;
-
-	case CTR_LTE_EVENT_START_OK:
-		LOG_INF("Event `CTR_LTE_EVENT_START_OK`");
-		attach();
-		break;
-
-	case CTR_LTE_EVENT_START_ERR:
-		LOG_ERR("Event `CTR_LTE_EVENT_START_ERR`");
-		start();
-		break;
-
-	case CTR_LTE_EVENT_ATTACH_OK:
-		LOG_INF("Event `CTR_LTE_EVENT_ATTACH_OK`");
-		k_sem_give(&g_app_init_sem);
-		break;
-
-	case CTR_LTE_EVENT_ATTACH_ERR:
-		LOG_ERR("Event `CTR_LTE_EVENT_ATTACH_ERR`");
-		start();
-		break;
-
-	case CTR_LTE_EVENT_DETACH_OK:
-		LOG_INF("Event `CTR_LTE_EVENT_DETACH_OK`");
-		break;
-
-	case CTR_LTE_EVENT_DETACH_ERR:
-		LOG_ERR("Event `CTR_LTE_EVENT_DETACH_ERR`");
-		start();
-		break;
-
-	case CTR_LTE_EVENT_EVAL_OK:
-		LOG_INF("Event `CTR_LTE_EVENT_EVAL_OK`");
-
-		struct ctr_lte_eval *eval = &data->eval_ok.eval;
-
-		LOG_DBG("EEST: %d", eval->eest);
-		LOG_DBG("ECL: %d", eval->ecl);
-		LOG_DBG("RSRP: %d", eval->rsrp);
-		LOG_DBG("RSRQ: %d", eval->rsrq);
-		LOG_DBG("SNR: %d", eval->snr);
-		LOG_DBG("PLMN: %d", eval->plmn);
-		LOG_DBG("CID: %d", eval->cid);
-		LOG_DBG("BAND: %d", eval->band);
-		LOG_DBG("EARFCN: %d", eval->earfcn);
-
-		k_mutex_lock(&g_app_data_lte_eval_mut, K_FOREVER);
-		memcpy(&g_app_data_lte_eval, &data->eval_ok.eval, sizeof(g_app_data_lte_eval));
-		g_app_data_lte_eval_valid = true;
-		k_mutex_unlock(&g_app_data_lte_eval_mut);
-
-		break;
-
-	case CTR_LTE_EVENT_EVAL_ERR:
-		LOG_ERR("Event `CTR_LTE_EVENT_EVAL_ERR`");
-
-		k_mutex_lock(&g_app_data_lte_eval_mut, K_FOREVER);
-		g_app_data_lte_eval_valid = false;
-		k_mutex_unlock(&g_app_data_lte_eval_mut);
-
-		break;
-
-	case CTR_LTE_EVENT_SEND_OK:
-		LOG_INF("Event `CTR_LTE_EVENT_SEND_OK`");
-		break;
-
-	case CTR_LTE_EVENT_SEND_ERR:
-		LOG_ERR("Event `CTR_LTE_EVENT_SEND_ERR`");
-		start();
-		break;
-
-	default:
-		LOG_WRN("Unknown event: %d", event);
-		return;
-	}
-}
-
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
-
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 
 static void report_delay_timer_handler(struct k_timer *timer)
 {
@@ -186,9 +77,9 @@ static void send_with_rate_limit(void)
 	}
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 
 void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, void *param)
 {
@@ -241,9 +132,9 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, 
 	app_data_unlock();
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-#if defined(CONFIG_CTR_BUTTON)
+#if defined(FEATURE_SUBSYSTEM_BUTTON)
 
 static void app_load_timer_handler(struct k_timer *timer)
 {
@@ -305,4 +196,4 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 	}
 }
 
-#endif /* defined(CONFIG_CTR_BUTTON) */
+#endif /* defined(FEATURE_SUBSYSTEM_BUTTON) */

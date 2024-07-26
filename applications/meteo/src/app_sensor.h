@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -32,6 +32,10 @@ int app_sensor_w1_therm_clear(void);
 int app_sensor_soil_sensor_sample(void);
 int app_sensor_soil_sensor_aggreg(void);
 int app_sensor_soil_sensor_clear(void);
+
+int app_sensor_ble_tag_sample(void);
+int app_sensor_ble_tag_aggreg(void);
+int app_sensor_ble_tag_clear(void);
 
 int app_sensor_lambrecht_sample(void);
 int app_sensor_lambrecht_aggreg(void);

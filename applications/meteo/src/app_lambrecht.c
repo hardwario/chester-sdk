@@ -1,4 +1,10 @@
-#if defined(CONFIG_APP_LAMBRECHT)
+/*
+ * Copyright (c) 2024 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
+#if defined(FEATURE_CHESTER_APP_LAMBRECHT)
 
 #include "app_lambrecht.h"
 
@@ -251,4 +257,4 @@ int app_lambrecht_read_illuminance(float *out)
 	return 0;
 }
 
-#endif /* defined(CONFIG_APP_LAMBRECHT) */
+#endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */

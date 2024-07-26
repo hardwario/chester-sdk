@@ -1,14 +1,69 @@
 #
-# Copyright (c) 2023 HARDWARIO a.s.
+# Copyright (c) 2024 HARDWARIO a.s.
 #
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
 menu "Application"
 
-config APP_LAMBRECHT
-	bool "Enable Modbus weather station from Lambrecht meteo"
-	depends on SHIELD_CTR_X2_MODBUS_A
+# HARDWARE-CHESTER-BAROMETER-TAG 
+config SHIELD_CTR_BAROMETER_TAG
+	bool "Enable SHIELD_CTR_BAROMETER_TAG"
+	default y 
+
+config I2C
+	default y
+
+config SENSOR
+	default y
+
+config MPL3115A2
+	default y
+# HARDWARE-CHESTER-METEO-A 
+config SHIELD_CTR_A
+	bool "Enable SHIELD_CTR_METEO_A"
+	default y 
+
+config SHIELD_CTR_X0_A
+	bool "Enable SHIELD_CTR_X0_A"
+	default y 
+
+config CTR_METEO
+	default y
+
+config CTR_X0
+	default y
+# HARDWARE-CHESTER-S2 
+config SHIELD_CTR_S2
+	bool "Enable SHIELD_CTR_S2"
+	default y 
+
+config CTR_HYGRO
+	default y
+# SUBSYSTEM-DS18B20 
+config SHIELD_CTR_DS18B20
+	bool "Enable SHIELD_CTR_DS18B20"
+	default y 
+
+config CTR_DS18B20
+	default y
+# SUBSYSTEM-LTE-V2 
+config SHIELD_CTR_LTE_V2
+	bool "Enable SHIELD_CTR_LTE_V2"
+	default y 
+
+config CTR_LTE_V2
+	default y
+# SUBSYSTEM-SOIL-SENSOR 
+config SHIELD_CTR_SOIL_SENSOR
+	bool "Enable SHIELD_CTR_SOIL_SENSOR"
+	default y 
+
+config CTR_SOIL_SENSOR
+	default y
+
+# ### Preserved code "k_config" (begin)
+# ^^^ Preserved code "k_config" (end)
 
 endmenu
 
