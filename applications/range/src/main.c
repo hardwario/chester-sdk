@@ -5,6 +5,7 @@
  */
 
 #include "app_init.h"
+#include "app_config.h"
 
 /* CHESTER includes */
 #include <chester/ctr_led.h>
@@ -42,9 +43,15 @@ int main(void)
 			k_oops();
 		}
 
-		ctr_led_set(CTR_LED_CHANNEL_G, true);
-		k_sleep(K_MSEC(30));
-		ctr_led_set(CTR_LED_CHANNEL_G, false);
+		if (g_app_config.mode == APP_CONFIG_MODE_NONE) {
+			ctr_led_set(CTR_LED_CHANNEL_Y, true);
+			k_sleep(K_MSEC(30));
+			ctr_led_set(CTR_LED_CHANNEL_Y, false);
+		} else {
+			ctr_led_set(CTR_LED_CHANNEL_G, true);
+			k_sleep(K_MSEC(30));
+			ctr_led_set(CTR_LED_CHANNEL_G, false);
+		}
 
 		k_sleep(K_SECONDS(5));
 	}

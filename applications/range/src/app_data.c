@@ -5,7 +5,6 @@
  */
 
 #include "app_data.h"
-#include "msg_key.h"
 
 /* CHESTER includes */
 #include <chester/ctr_lte.h>

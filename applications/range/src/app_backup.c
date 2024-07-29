@@ -6,6 +6,7 @@
 
 #include "app_backup.h"
 #include "app_data.h"
+#include "feature.h"
 
 /* CHESTER includes */
 #include <chester/drivers/ctr_z.h>
@@ -23,7 +24,7 @@
 
 LOG_MODULE_REGISTER(app_backup, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 
 int app_backup_sample(void)
 {
@@ -91,4 +92,4 @@ int app_backup_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */

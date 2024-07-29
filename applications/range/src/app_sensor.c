@@ -8,6 +8,7 @@
 #include "app_data.h"
 #include "app_sensor.h"
 #include "app_work.h"
+#include "feature.h"
 
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
@@ -111,7 +112,7 @@ int app_sensor_sample(void)
 	return ret;
 }
 
-#if defined(CONFIG_SHIELD_CTR_MB7066_A) || defined(CONFIG_SHIELD_CTR_MB7066_B)
+#if defined(FEATURE_HARDWARE_CHESTER_MB7066_A) || defined(FEATURE_HARDWARE_CHESTER_MB7066_B)
 int app_sensor_sonar_sample(void)
 {
 	int ret;
@@ -181,9 +182,10 @@ int app_sensor_sonar_clear(void)
 
 	return 0;
 }
-#endif /* defined(CONFIG_SHIELD_CTR_MB7066_A) || defined(CONFIG_SHIELD_CTR_MB7066_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_MB7066_A) || defined(FEATURE_HARDWARE_CHESTER_MB7066_B) \
+	*/
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if defined(FEATURE_HARDWARE_CHESTER_S2)
 
 static void append_hygro_event(enum app_data_hygro_event_type type, float value)
 {
@@ -355,9 +357,9 @@ int app_sensor_hygro_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
 
 int app_sensor_w1_therm_sample(void)
 {
@@ -450,4 +452,4 @@ int app_sensor_w1_therm_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
