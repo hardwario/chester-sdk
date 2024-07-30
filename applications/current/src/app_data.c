@@ -1,11 +1,10 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
 #include "app_data.h"
-#include "msg_key.h"
 
 /* CHESTER includes */
 #include <chester/ctr_lte.h>
@@ -27,20 +26,28 @@ struct app_data g_app_data = {
 	.accel_orientation = INT_MAX,
 	.therm_temperature = NAN,
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 	.backup =
 		{
 			.line_voltage = NAN,
 			.battery_voltage = NAN,
 		},
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
 	.w1_therm.sensor[0 ... APP_DATA_W1_THERM_COUNT - 1] =
 		{
 			.last_sample_temperature = NAN,
 		},
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+	.ble_tag.sensor[0 ... CTR_BLE_TAG_COUNT - 1] =
+		{
+			.last_sample_temperature = NAN,
+			.last_sample_humidity = NAN,
+		},
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 };
 
 static K_MUTEX_DEFINE(m_lock);
@@ -55,6 +62,3 @@ void app_data_unlock(void)
 	k_mutex_unlock(&m_lock);
 }
 
-K_MUTEX_DEFINE(g_app_data_lte_eval_mut);
-bool g_app_data_lte_eval_valid;
-struct ctr_lte_eval g_app_data_lte_eval;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -16,9 +16,9 @@ void app_work_aggreg(void);
 void app_work_sample(void);
 void app_work_send(void);
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 void app_work_backup_update(void);
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #ifdef __cplusplus
 }

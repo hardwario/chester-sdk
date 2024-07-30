@@ -1,0 +1,149 @@
+/*
+ * Copyright (c) 2024 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
+/* HARDWARE-CHESTER-K1  */
+/ {
+	ctr_k1: ctr_k1 {
+		compatible = "hardwario,ctr-k1";
+		status = "okay";
+		on1-gpios = <&ctr_k1_tca9534a 0 GPIO_ACTIVE_HIGH>;
+		on2-gpios = <&ctr_k1_tca9534a 1 GPIO_ACTIVE_HIGH>;
+		on3-gpios = <&ctr_k1_tca9534a 2 GPIO_ACTIVE_HIGH>;
+		on4-gpios = <&ctr_k1_tca9534a 3 GPIO_ACTIVE_HIGH>;
+		en-gpios = <&ctr_k1_tca9534a 4 GPIO_ACTIVE_HIGH>;
+		nc1-gpios = <&ctr_k1_tca9534a 5 GPIO_ACTIVE_HIGH>;
+		nc2-gpios = <&ctr_k1_tca9534a 6 GPIO_ACTIVE_HIGH>;
+		nc3-gpios = <&ctr_k1_tca9534a 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c0 {
+	ctr_k1_tca9534a: ctr_k1_tca9534a@3d {
+		compatible = "ti,tca9538";
+		status = "okay";
+		reg = <0x3d>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+	};
+};
+/* SUBSYSTEM-CLOUD  */
+/ {
+	chosen {
+		nordic,pm-ext-flash = &spi_flash0;
+	};
+};
+
+&spi_flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		littlefs_storage: partition@0 {
+			label = "littlefs_storage";
+
+			/*
+			 * This size doesn't matter due to Nordic's partition
+			 * manager; For the sake of consistency this should
+			 * match the configured size
+			 */
+			reg = <0x00000000 0x730000>;
+		};
+	};
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/lfs1";
+			partition = <&littlefs_storage>;
+			automount;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
+};
+/* SUBSYSTEM-LRW   */
+&ctr_lrw_if {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+};
+/* SUBSYSTEM-LTE-V2  */
+/ {
+	chosen {
+		ctr,lte_link = &ctr_lte_link;
+	};
+};
+
+&uart0 {
+	status = "okay";
+
+	ctr_lte_link: ctr_lte_link {
+		compatible = "hardwario,ctr-lte-link";
+		status = "okay";
+		reset-gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		wakeup-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+/* ### Preserved code "overlay" (begin) */
+
+/ {
+	chosen {
+		nordic,pm-ext-flash = &spi_flash0;
+	};
+};
+
+&spi_flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		littlefs_storage: partition@0 {
+			label = "littlefs_storage";
+
+			/*
+			 * This size doesn't matter due to Nordic's partition
+			 * manager; For the sake of consistency this should
+			 * match the configured size
+			 */
+			reg = <0x00000000 0x730000>;
+		};
+	};
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/lfs1";
+			partition = <&littlefs_storage>;
+			automount;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
+};
+
+/* ^^^ Preserved code "overlay" (end) */

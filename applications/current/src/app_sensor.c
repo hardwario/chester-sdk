@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
 #include "app_config.h"
 #include "app_data.h"
-#include "app_send.h"
 #include "app_sensor.h"
 
 /* CHESTER includes */
@@ -72,7 +71,7 @@ static void aggreg(float *samples, size_t count, float *min, float *max, float *
 }
 
 __unused static void aggreg_sample(float *samples, size_t count,
-				   struct app_data_analog_aggreg *sample)
+				   struct app_data_aggreg *sample)
 {
 	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
 }
@@ -114,7 +113,7 @@ int app_sensor_sample(void)
 	return 0;
 }
 
-#if defined(CONFIG_SHIELD_CTR_K1)
+#if defined(FEATURE_HARDWARE_CHESTER_K1)
 
 int app_sensor_analog_sample(void)
 {
@@ -136,7 +135,7 @@ int app_sensor_analog_sample(void)
 			continue;
 		}
 
-		if (g_app_data.channel[i].sample_count >= APP_DATA_ANALOG_MAX_SAMPLES) {
+		if (g_app_data.channel[i].sample_count >= APP_DATA_MAX_SAMPLES) {
 			LOG_WRN("Channel %d measurements buffer full", i);
 			continue;
 		}
@@ -265,7 +264,7 @@ int app_sensor_analog_aggreg(void)
 			}
 		}
 
-		if (g_app_data.channel[i].measurement_count < APP_DATA_ANALOG_MAX_MEASUREMENTS) {
+		if (g_app_data.channel[i].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
 
 			int measurement_count = g_app_data.channel[i].measurement_count;
 
@@ -307,9 +306,9 @@ int app_sensor_analog_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_K1) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_K1) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
 
 int app_sensor_w1_therm_sample(void)
 {
@@ -403,4 +402,108 @@ int app_sensor_w1_therm_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+int app_sensor_ble_tag_sample(void)
+{
+	int ret;
+
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		if (g_app_data.ble_tag.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
+			uint8_t addr[BT_ADDR_SIZE];
+			int rssi;
+			float voltage;
+			float temperature;
+			float humidity;
+			bool valid;
+
+			ret = ctr_ble_tag_read(i, addr, &rssi, &voltage, &temperature, &humidity,
+					       &valid);
+			if (ret && ret != -ENOENT) {
+				LOG_ERR("Call `ctr_ble_tag_read` failed: %d", ret);
+				continue;
+			} else if (ret == -ENOENT) {
+				continue;
+			}
+
+			app_data_lock();
+			struct app_data_ble_tag_sensor *sensor = &g_app_data.ble_tag.sensor[i];
+			memcpy(sensor->addr, addr, BT_ADDR_SIZE);
+			sensor->rssi = rssi;
+			sensor->voltage = voltage;
+			sensor->last_sample_temperature = temperature;
+			sensor->last_sample_humidity = humidity;
+			sensor->samples_temperature[sensor->sample_count] = temperature;
+			sensor->samples_humidity[sensor->sample_count] = humidity;
+			sensor->sample_count++;
+
+			LOG_INF("Sample count: %d", sensor->sample_count);
+			app_data_unlock();
+		} else {
+			LOG_WRN("Sample buffer full");
+			return -ENOSPC;
+		}
+		app_data_unlock();
+	}
+
+	return 0;
+}
+
+int app_sensor_ble_tag_aggreg(void)
+{
+	int ret;
+
+	struct app_data_ble_tag *ble_tag = &g_app_data.ble_tag;
+
+	app_data_lock();
+
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		if (ble_tag->sensor[i].measurement_count == 0) {
+			ret = ctr_rtc_get_ts(&ble_tag->timestamp);
+			if (ret) {
+				LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+				app_data_unlock();
+				return ret;
+			}
+		}
+
+		if (ble_tag->sensor[i].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+			struct app_data_ble_tag_measurement *measurement =
+				&ble_tag->sensor[i]
+					 .measurements[ble_tag->sensor[i].measurement_count];
+
+			aggreg_sample(ble_tag->sensor[i].samples_temperature,
+				      ble_tag->sensor[i].sample_count, &measurement->temperature);
+
+			aggreg_sample(ble_tag->sensor[i].samples_humidity,
+				      ble_tag->sensor[i].sample_count, &measurement->humidity);
+
+			ble_tag->sensor[i].measurement_count++;
+
+		} else {
+			LOG_WRN("Measurement buffer full");
+			app_data_unlock();
+			return -ENOSPC;
+		}
+
+		ble_tag->sensor[i].sample_count = 0;
+	}
+
+	return 0;
+}
+
+int app_sensor_ble_tag_clear(void)
+{
+	app_data_lock();
+
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		g_app_data.ble_tag.sensor[i].measurement_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */

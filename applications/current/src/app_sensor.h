@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -20,6 +20,10 @@ int app_sensor_analog_clear(void);
 int app_sensor_w1_therm_sample(void);
 int app_sensor_w1_therm_aggreg(void);
 int app_sensor_w1_therm_clear(void);
+
+int app_sensor_ble_tag_sample(void);
+int app_sensor_ble_tag_aggreg(void);
+int app_sensor_ble_tag_clear(void);
 
 #ifdef __cplusplus
 }
