@@ -14,6 +14,10 @@
 / {
 	model = "HARDWARIO CHESTER nRF52840";
 	compatible = "hardwario,chester-nrf52840";
+	
+	zephyr,user {
+		ctr_leds = <&gpio_leds>;
+	};
 
 	chosen {
 		zephyr,sram = &sram0;

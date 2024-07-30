@@ -17,16 +17,11 @@ int main(void)
 {
 	LOG_INF("Build time: " __DATE__ " " __TIME__);
 
-	bool state = false;
-
 	for (;;) {
 		LOG_INF("Alive");
 
-		/* Invert state variable */
-		state = !state;
-
 		/* Control LED */
-		ctr_led_set(CTR_LED_CHANNEL_R, state);
+		ctr_led_blink(ctr_led_mainboard, CTR_LED_CHANNEL_R, K_MSEC(500));
 
 		/* Wait 500 ms */
 		k_sleep(K_MSEC(500));
