@@ -95,43 +95,96 @@ $(document).ready(function(){initNavTree('ctr__led_8h.html',''); initResizable()
 
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
+<a href="#define-members">Macros</a> &#124;
+<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle"><div class="title">ctr_led.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;zephyr/drivers/led.h&gt;</code><br />
+<code>#include &lt;zephyr/kernel.h&gt;</code><br />
 <code>#include &lt;stdbool.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for ctr_led.h:</div>
 <div class="dyncontent">
 <div class="center"><img src="ctr__led_8h__incl.png" border="0" usemap="#actr__led_8h" alt=""/></div>
 <map name="actr__led_8h" id="actr__led_8h">
-<area shape="rect" title=" " alt="" coords="101,5,171,31"/>
+<area shape="rect" title=" " alt="" coords="182,5,253,31"/>
 <area shape="rect" title=" " alt="" coords="5,79,139,104"/>
-<area shape="rect" title=" " alt="" coords="163,79,237,104"/>
+<area shape="rect" title=" " alt="" coords="163,79,271,104"/>
+<area shape="rect" title=" " alt="" coords="296,79,371,104"/>
 </map>
 </div>
 </div>
 <p><a href="ctr__led_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__led__cmd.html">ctr_led_cmd</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">LED Command.  <a href="structctr__led__cmd.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__led__seq.html">ctr_led_seq</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">LED command sequence.  <a href="structctr__led__seq.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:gabb7f9ad4659b0fea0dc077de6a53209b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__led.html#gabb7f9ad4659b0fea0dc077de6a53209b">CTR_LED_SEQ_DEFINE</a>(name,  prio_arg,  loop_arg, ...)</td></tr>
+<tr class="memdesc:gabb7f9ad4659b0fea0dc077de6a53209b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience macro for creating static sequences.  <a href="group__ctr__led.html#gabb7f9ad4659b0fea0dc077de6a53209b">More...</a><br /></td></tr>
+<tr class="separator:gabb7f9ad4659b0fea0dc077de6a53209b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:ga3ec5cdcda7abc142a7d7b5fbea495056"><td class="memItemLeft" align="right" valign="top">typedef uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__led.html#ga3ec5cdcda7abc142a7d7b5fbea495056">ctr_led_value</a></td></tr>
+<tr class="memdesc:ga3ec5cdcda7abc142a7d7b5fbea495056"><td class="mdescLeft">&#160;</td><td class="mdescRight">Value for an LED.  <a href="group__ctr__led.html#ga3ec5cdcda7abc142a7d7b5fbea495056">More...</a><br /></td></tr>
+<tr class="separator:ga3ec5cdcda7abc142a7d7b5fbea495056"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
 <tr class="memitem:ga5de51735ccd24a14ba037f6d1ae9393d"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__led.html#ga5de51735ccd24a14ba037f6d1ae9393d">ctr_led_channel</a> { <br />
-&#160;&#160;<a class="el" href="group__ctr__led.html#gga5de51735ccd24a14ba037f6d1ae9393da494ab02eac268544e0986b469961cd80">CTR_LED_CHANNEL_R</a> = 0
-, <a class="el" href="group__ctr__led.html#gga5de51735ccd24a14ba037f6d1ae9393da480b4b4c00475ed2a24d10f2a7e31dc3">CTR_LED_CHANNEL_G</a> = 1
-, <a class="el" href="group__ctr__led.html#gga5de51735ccd24a14ba037f6d1ae9393da99bcb6ccbef92891e18106230d46f5d3">CTR_LED_CHANNEL_Y</a> = 2
-, <a class="el" href="group__ctr__led.html#gga5de51735ccd24a14ba037f6d1ae9393dae64c19745b76a98df9dca64718febae5">CTR_LED_CHANNEL_EXT</a> = 3
+&#160;&#160;<a class="el" href="group__ctr__led.html#gga5de51735ccd24a14ba037f6d1ae9393da494ab02eac268544e0986b469961cd80">CTR_LED_CHANNEL_R</a> = 0x0000ff
+, <a class="el" href="group__ctr__led.html#gga5de51735ccd24a14ba037f6d1ae9393da480b4b4c00475ed2a24d10f2a7e31dc3">CTR_LED_CHANNEL_G</a> = 0x00ff00
+, <a class="el" href="group__ctr__led.html#gga5de51735ccd24a14ba037f6d1ae9393da99bcb6ccbef92891e18106230d46f5d3">CTR_LED_CHANNEL_Y</a> = 0xff0000
+, <a class="el" href="group__ctr__led.html#gga5de51735ccd24a14ba037f6d1ae9393dae64c19745b76a98df9dca64718febae5">CTR_LED_CHANNEL_EXT</a> = 0xff000000
 , <br />
-&#160;&#160;<a class="el" href="group__ctr__led.html#gga5de51735ccd24a14ba037f6d1ae9393da449b68ce91278ce5789800dafaca9459">CTR_LED_CHANNEL_LOAD</a> = 4
+&#160;&#160;<a class="el" href="group__ctr__led.html#gga5de51735ccd24a14ba037f6d1ae9393da449b68ce91278ce5789800dafaca9459">CTR_LED_CHANNEL_LOAD</a> = 0xff00000000
 <br />
  }</td></tr>
+<tr class="memdesc:ga5de51735ccd24a14ba037f6d1ae9393d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channels of the mainboard LED.  <a href="group__ctr__led.html#ga5de51735ccd24a14ba037f6d1ae9393d">More...</a><br /></td></tr>
 <tr class="separator:ga5de51735ccd24a14ba037f6d1ae9393d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabfac96d6b2bb9848f0d596929c4408b7"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__led.html#gabfac96d6b2bb9848f0d596929c4408b7">ctr_led_prio</a> { <a class="el" href="group__ctr__led.html#ggabfac96d6b2bb9848f0d596929c4408b7ad196fc707d069660e980d7b41a73f336">CTR_LED_PRIO_LOW</a>
+, <a class="el" href="group__ctr__led.html#ggabfac96d6b2bb9848f0d596929c4408b7a2acc199f750898342cd5ce32ee57f5be">CTR_LED_PRIO_MEDIUM</a>
+, <a class="el" href="group__ctr__led.html#ggabfac96d6b2bb9848f0d596929c4408b7ac3c3bdabfa66d57fcb81515103e69ddb">CTR_LED_PRIO_HIGH</a>
+ }</td></tr>
+<tr class="memdesc:gabfac96d6b2bb9848f0d596929c4408b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sequence priority.  <a href="group__ctr__led.html#gabfac96d6b2bb9848f0d596929c4408b7">More...</a><br /></td></tr>
+<tr class="separator:gabfac96d6b2bb9848f0d596929c4408b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ga32bec2142a6226d1909e30cd7f1cb84a"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__led.html#ga32bec2142a6226d1909e30cd7f1cb84a">ctr_led_set</a> (enum <a class="el" href="group__ctr__led.html#ga5de51735ccd24a14ba037f6d1ae9393d">ctr_led_channel</a> channel, bool is_on)</td></tr>
+<tr class="memdesc:ga32bec2142a6226d1909e30cd7f1cb84a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Old API for controlling the mainboard LED. Do not use with the new API.  <a href="group__ctr__led.html#ga32bec2142a6226d1909e30cd7f1cb84a">More...</a><br /></td></tr>
 <tr class="separator:ga32bec2142a6226d1909e30cd7f1cb84a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabbd263f80f98ae9d87457337b0b193de"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__led.html#gabbd263f80f98ae9d87457337b0b193de">ctr_led_play</a> (const struct device *dev, struct <a class="el" href="structctr__led__seq.html">ctr_led_seq</a> seq)</td></tr>
+<tr class="memdesc:gabbd263f80f98ae9d87457337b0b193de"><td class="mdescLeft">&#160;</td><td class="mdescRight">Play a sequence.  <a href="group__ctr__led.html#gabbd263f80f98ae9d87457337b0b193de">More...</a><br /></td></tr>
+<tr class="separator:gabbd263f80f98ae9d87457337b0b193de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga50ecabd0edb3be7f4f93298135e82b0a"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__led.html#ga50ecabd0edb3be7f4f93298135e82b0a">ctr_led_stop</a> (const struct device *dev, struct <a class="el" href="structctr__led__seq.html">ctr_led_seq</a> seq)</td></tr>
+<tr class="memdesc:ga50ecabd0edb3be7f4f93298135e82b0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stop a sequence.  <a href="group__ctr__led.html#ga50ecabd0edb3be7f4f93298135e82b0a">More...</a><br /></td></tr>
+<tr class="separator:ga50ecabd0edb3be7f4f93298135e82b0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga83eb6d92a55e6b6bd3196502c4919b54"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__led.html#ga83eb6d92a55e6b6bd3196502c4919b54">ctr_led_blink</a> (const struct device *dev, uint32_t color, k_timeout_t time)</td></tr>
+<tr class="memdesc:ga83eb6d92a55e6b6bd3196502c4919b54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the LED to a color for the specified amount of time. This function call is blocking.  <a href="group__ctr__led.html#ga83eb6d92a55e6b6bd3196502c4919b54">More...</a><br /></td></tr>
+<tr class="separator:ga83eb6d92a55e6b6bd3196502c4919b54"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6d8268108cf84e5a7f1311e98661c33a"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__led.html#ga6d8268108cf84e5a7f1311e98661c33a">ctr_led_fade</a> (const struct device *dev, uint32_t from, uint32_t to, k_timeout_t length)</td></tr>
+<tr class="memdesc:ga6d8268108cf84e5a7f1311e98661c33a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fade the LED from one value to another. This function call is blocking.  <a href="group__ctr__led.html#ga6d8268108cf84e5a7f1311e98661c33a">More...</a><br /></td></tr>
+<tr class="separator:ga6d8268108cf84e5a7f1311e98661c33a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:ga782db3d0d936c469e2ec97c06a46d3da"><td class="memItemLeft" align="right" valign="top">const struct device *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__led.html#ga782db3d0d936c469e2ec97c06a46d3da">ctr_led_mainboard</a></td></tr>
+<tr class="memdesc:ga782db3d0d936c469e2ec97c06a46d3da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shortcut to the CHESTER mainboard LED + the EXT LED.  <a href="group__ctr__led.html#ga782db3d0d936c469e2ec97c06a46d3da">More...</a><br /></td></tr>
+<tr class="separator:ga782db3d0d936c469e2ec97c06a46d3da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

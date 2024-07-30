@@ -1,0 +1,4 @@
+<map id="ctr_led_seq" name="ctr_led_seq">
+<area shape="rect" id="node1" title="LED command sequence." alt="" coords="7,93,97,119"/>
+<area shape="rect" id="node2" href="$structctr__led__cmd.html" title="LED Command." alt="" coords="5,5,99,31"/>
+</map>
