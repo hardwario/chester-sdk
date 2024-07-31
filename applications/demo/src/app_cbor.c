@@ -89,6 +89,90 @@ int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
+	zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK);
+	{
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			static struct ctr_lte_v2_conn_param conn_param;
+			ret = ctr_lte_v2_get_conn_param(&conn_param);
+			if (ret) {
+				LOG_ERR("Call `ctr_lte_v2_state_get_conn_param` failed: %d", ret);
+				return ret;
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__EEST);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.eest);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__ECL);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.ecl);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__RSRP);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.rsrp);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__RSRQ);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.rsrq);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__SNR);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.snr);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__PLMN);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.plmn);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__CID);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.cid);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__BAND);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.band);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__EARFCN);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.earfcn);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+
 	zcbor_uint32_put(zs, CODEC_KEY_E_THERMOMETER);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);

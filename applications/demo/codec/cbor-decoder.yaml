@@ -14,6 +14,17 @@ schema:
       - $div: 1000
       - $fpp: 2
     - current_load:
+  - network:
+    - parameter:
+      - eest:
+      - ecl:
+      - rsrp:
+      - rsrq:
+      - snr:
+      - plmn:
+      - cid:
+      - band:
+      - earfcn:
   - thermometer:
     - temperature:
       - $div: 100
