@@ -638,7 +638,7 @@ class ProjectGenerator:
             template = self.env.get_template(jinja_path)
             # Render the template with data
             rendered_code = template.render(
-                setting_pfx=self.project_name,
+                setting_pfx=self.prj_folder_name,
                 data=kwargs,
                 data_dependency=self.group_by_dependency(kwargs),
             )

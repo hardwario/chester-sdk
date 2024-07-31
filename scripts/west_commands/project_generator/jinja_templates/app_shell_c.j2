@@ -92,7 +92,7 @@ SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 {%- if command['depends_on'] %}
 #if {{ command['depends_on'] }}
 {%- endif %}
-SHELL_CMD_REGISTER({{ command.name }}, NULL,"{{ command.help }}", cmd_{{ command.name }});
+SHELL_CMD_REGISTER({{ command.name }}, NULL, "{{ command.help }}", cmd_{{ command.name }});
 {%- if command['depends_on'] %}
 #endif /* {{ command['depends_on'] }} */
 {%- endif %}
