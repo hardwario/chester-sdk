@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -10,9 +10,11 @@
 #include "app_data.h"
 
 /* CHESTER includes */
+#include <chester/ctr_cloud.h>
 #include <chester/ctr_info.h>
 #include <chester/ctr_lte_v2.h>
 #include <chester/ctr_rtc.h>
+#include <chester/ctr_util.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -30,9 +32,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
+/* ### Preserved code "functions" (begin) */
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 
 __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *sample, float mul)
 {
@@ -66,125 +68,11 @@ __unused static void put_sample(zcbor_state_t *zs, struct app_data_aggreg *sampl
 	put_sample_mul(zs, sample, 1.f);
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
-#if 0
-static int encode(zcbor_state_t *zs)
-{
-	int ret;
+/* ^^^ Preserved code "functions" (end) */
 
-	zs->constant_state->stop_on_error = true;
-
-	zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-#if defined(CONFIG_SHIELD_CTR_X0_A)
-	zcbor_uint32_put(zs, CODEC_KEY_E_EVENTS);
-	{
-		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		if (g_app_data.trigger.event_count) {
-			int64_t timestamp_abs = g_app_data.backup.events[0].timestamp;
-
-			/* TSO absolute timestamp */
-			zcbor_int64_put(zs, timestamp_abs);
-
-			for (int i = 0; i < g_app_data.trigger.event_count; i++) {
-				/* TSO offset timestamp */
-				zcbor_int64_put(zs, g_app_data.trigger.events[i].timestamp -
-							    timestamp_abs);
-				/* type 0 - trigger*/
-				zcbor_uint32_put(zs, 0);
-				/* channel */
-				zcbor_uint32_put(zs, 0);
-				/* value */
-				zcbor_uint32_put(zs,
-						 g_app_data.trigger.events[i].is_active ? 1 : 0);
-			}
-		}
-
-		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}
-#if 0
-	zcbor_uint32_put(zs, CODEC_KEY_E_COUNTER);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_COUNTER__VALUE);
-		zcbor_uint64_put(zs, g_app_data.counter.value);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_COUNTER__DELTA);
-		zcbor_uint64_put(zs, g_app_data.counter.delta);
-
-		g_app_data.counter.delta = 0;
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_COUNTER__MEASUREMENTS);
-		{
-			zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-			zcbor_uint64_put(zs, g_app_data.counter.timestamp);
-			zcbor_uint32_put(zs, g_app_config.counter_interval_aggreg);
-
-			for (int i = 0; i < g_app_data.counter.measurement_count; i++) {
-				zcbor_uint64_put(zs, g_app_data.counter.measurements[i].value);
-			}
-
-			zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-		}
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}
-
-	zcbor_uint32_put(zs, CODEC_KEY_E_VOLTAGE);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_VOLTAGE__MEASUREMENTS_DIV);
-		{
-			zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-			zcbor_uint64_put(zs, g_app_data.voltage.timestamp);
-			zcbor_uint32_put(zs, g_app_config.analog_interval_aggreg);
-
-			for (int i = 0; i < g_app_data.voltage.measurement_count; i++) {
-				put_sample_mul(zs, &g_app_data.voltage.measurements[i], 100.f);
-			}
-
-			zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-		}
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}
-
-	zcbor_uint32_put(zs, CODEC_KEY_E_CURRENT);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_CURRENT__MEASUREMENTS_DIV);
-		{
-			zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-			zcbor_uint64_put(zs, g_app_data.current.timestamp);
-			zcbor_uint32_put(zs, g_app_config.analog_interval_aggreg);
-
-			for (int i = 0; i < g_app_data.current.measurement_count; i++) {
-				put_sample_mul(zs, &g_app_data.current.measurements[i], 100.f);
-			}
-
-			zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-		}
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}
-#endif /* if 0 */
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
-
-	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-	if (!zcbor_check_error(zs)) {
-		LOG_ERR("Encoding failed: %d", zcbor_pop_error(zs));
-		return -EFAULT;
-	}
-
-	return 0;
-}
-#endif /* 0 */
+LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
 static int encode(zcbor_state_t *zs)
 {
@@ -193,6 +81,8 @@ static int encode(zcbor_state_t *zs)
 	zs->constant_state->stop_on_error = true;
 
 	zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+	/* ### Preserved code "message" (begin) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_MESSAGE);
 	{
@@ -201,7 +91,7 @@ static int encode(zcbor_state_t *zs)
 		zcbor_uint32_put(zs, CODEC_KEY_E_MESSAGE__VERSION);
 		zcbor_uint32_put(zs, 1);
 
-		static uint32_t sequence;
+		static uint32_t sequence = 0;
 		zcbor_uint32_put(zs, CODEC_KEY_E_MESSAGE__SEQUENCE);
 		zcbor_uint32_put(zs, sequence++);
 
@@ -218,7 +108,11 @@ static int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	/*zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE);
+	/* ^^^ Preserved code "message" (end) */
+
+	/* ### Preserved code "attribute" (begin) */
+
+	zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
@@ -259,9 +153,13 @@ static int encode(zcbor_state_t *zs)
 		zcbor_tstr_put_term(zs, serial_number);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}*/
+	}
 
-	/*zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM);
+	/* ^^^ Preserved code "attribute" (end) */
+
+	/* ### Preserved code "system" (begin) */
+
+	zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
@@ -290,9 +188,13 @@ static int encode(zcbor_state_t *zs)
 		}
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}*/
+	}
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+	/* ^^^ Preserved code "system" (end) */
+
+	/* ### Preserved code "backup" (begin) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 	zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -344,110 +246,99 @@ static int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
+
+	/* ^^^ Preserved code "backup" (end) */
+
+	/* ### Preserved code "network" (begin) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		uint64_t imei;
-		ret = ctr_lte_v2_get_imei(&imei);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_get_imei` failed: %d", ret);
-			return ret;
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__IMEI);
-		zcbor_uint64_put(zs, imei);
-
-		uint64_t imsi;
-		ret = ctr_lte_v2_get_imsi(&imsi);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_get_imsi` failed: %d", ret);
-			return ret;
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__IMSI);
-		zcbor_uint64_put(zs, imsi);
-
-		/*zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER);
+		zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER);
 		{
 			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-			k_mutex_lock(&g_app_data_lte_eval_mut, K_FOREVER);
+			static struct ctr_lte_v2_conn_param conn_param;
+			ret = ctr_lte_v2_get_conn_param(&conn_param);
+			if (ret) {
+				LOG_ERR("Call `ctr_lte_v2_state_get_conn_param` failed: %d", ret);
+				return ret;
+			}
 
 			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__EEST);
-			if (g_app_data_lte_eval_valid) {
-				zcbor_int32_put(zs, g_app_data_lte_eval.eest);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.eest);
 			} else {
 				zcbor_nil_put(zs, NULL);
 			}
 
 			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__ECL);
-			if (g_app_data_lte_eval_valid) {
-				zcbor_int32_put(zs, g_app_data_lte_eval.ecl);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.ecl);
 			} else {
 				zcbor_nil_put(zs, NULL);
 			}
 
 			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__RSRP);
-			if (g_app_data_lte_eval_valid) {
-				zcbor_int32_put(zs, g_app_data_lte_eval.rsrp);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.rsrp);
 			} else {
 				zcbor_nil_put(zs, NULL);
 			}
 
 			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__RSRQ);
-			if (g_app_data_lte_eval_valid) {
-				zcbor_int32_put(zs, g_app_data_lte_eval.rsrq);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.rsrq);
 			} else {
 				zcbor_nil_put(zs, NULL);
 			}
 
 			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__SNR);
-			if (g_app_data_lte_eval_valid) {
-				zcbor_int32_put(zs, g_app_data_lte_eval.snr);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.snr);
 			} else {
 				zcbor_nil_put(zs, NULL);
 			}
 
 			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__PLMN);
-			if (g_app_data_lte_eval_valid) {
-				zcbor_int32_put(zs, g_app_data_lte_eval.plmn);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.plmn);
 			} else {
 				zcbor_nil_put(zs, NULL);
 			}
 
 			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__CID);
-			if (g_app_data_lte_eval_valid) {
-				zcbor_int32_put(zs, g_app_data_lte_eval.cid);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.cid);
 			} else {
 				zcbor_nil_put(zs, NULL);
 			}
 
 			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__BAND);
-			if (g_app_data_lte_eval_valid) {
-				zcbor_int32_put(zs, g_app_data_lte_eval.band);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.band);
 			} else {
 				zcbor_nil_put(zs, NULL);
 			}
 
 			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__EARFCN);
-			if (g_app_data_lte_eval_valid) {
-				zcbor_int32_put(zs, g_app_data_lte_eval.earfcn);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.earfcn);
 			} else {
 				zcbor_nil_put(zs, NULL);
 			}
 
-			g_app_data_lte_eval_valid = false;
-
-			k_mutex_unlock(&g_app_data_lte_eval_mut);
-
 			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-		}*/
+		}
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
+
+	/* ^^^ Preserved code "network" (end) */
+
+	/* ### Preserved code "thermometer" (begin) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_THERMOMETER);
 	{
@@ -462,6 +353,10 @@ static int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
+
+	/* ^^^ Preserved code "thermometer" (end) */
+
+	/* ### Preserved code "accelerometer" (begin) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_ACCELEROMETER);
 	{
@@ -498,7 +393,11 @@ static int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
+	/* ^^^ Preserved code "accelerometer" (end) */
+
+	/* ### Preserved code "trigger" (begin) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 	zcbor_uint32_put(zs, CODEC_KEY_E_TRIGGER);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -571,6 +470,10 @@ static int encode(zcbor_state_t *zs)
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
+	/* ^^^ Preserved code "trigger" (end) */
+
+	/* ### Preserved code "counter" (begin) */
+
 	zcbor_uint32_put(zs, CODEC_KEY_E_COUNTER);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -617,6 +520,10 @@ static int encode(zcbor_state_t *zs)
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
+	/* ^^^ Preserved code "counter" (end) */
+
+	/* ### Preserved code "voltage" (begin) */
+
 	zcbor_uint32_put(zs, CODEC_KEY_E_VOLTAGE);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -657,6 +564,10 @@ static int encode(zcbor_state_t *zs)
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
+	/* ^^^ Preserved code "voltage" (end) */
+
+	/* ### Preserved code "current" (begin) */
+
 	zcbor_uint32_put(zs, CODEC_KEY_E_CURRENT);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -695,19 +606,24 @@ static int encode(zcbor_state_t *zs)
 		}
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+	/* ^^^ Preserved code "current" (end) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+	/* ### Preserved code "hygrometer" (begin) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_S2)
 	zcbor_uint32_put(zs, CODEC_KEY_E_HYGROMETER);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		zcbor_uint32_put(zs, CODEC_KEY_E_HYGROMETER__EMPERATURE);
+		/* ### Preserved code "temperature" (begin) */
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_HYGROMETER__TEMPERATURE);
 		{
 			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-			zcbor_uint32_put(zs, CODEC_KEY_E_HYGROMETER__MEASUREMENTS_DIV);
+			zcbor_uint32_put(zs, CODEC_KEY_E_HYGROMETER__TEMPERATURE__MEASUREMENTS_DIV);
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
@@ -724,6 +640,10 @@ static int encode(zcbor_state_t *zs)
 			}
 			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
+
+		/* ^^^ Preserved code "temperature" (end) */
+
+		/* ### Preserved code "humidity" (begin) */
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_HYGROMETER__HUMIDITY);
 		{
@@ -747,11 +667,17 @@ static int encode(zcbor_state_t *zs)
 			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
 
+		/* ^^^ Preserved code "humidity" (end) */
+
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+	/* ^^^ Preserved code "hygrometer" (end) */
+
+	/* ### Preserved code "w1_thermometers" (begin) */
+
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
 	zcbor_uint32_put(zs, CODEC_KEY_E_W1_THERMOMETERS);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -786,7 +712,104 @@ static int encode(zcbor_state_t *zs)
 		}
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+	/* ^^^ Preserved code "w1_thermometers" (end) */
+
+	/* ### Preserved code "ble_tags" (begin) */
+	
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+	zcbor_int32_put(zs, CODEC_KEY_E_BLE_TAGS);
+	{
+		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+			struct app_data_ble_tag_sensor *sensor = &g_app_data.ble_tag.sensor[i];
+
+			if (ctr_ble_tag_is_addr_empty(sensor->addr)) {
+				continue;
+			}
+
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			{
+
+				zcbor_uint32_put(zs, CODEC_KEY_E_BLE_TAGS__ADDR);
+				{
+					char addr_str[BT_ADDR_SIZE * 2 + 1] = {0};
+					ctr_buf2hex(sensor->addr, BT_ADDR_SIZE, addr_str,
+						    BT_ADDR_SIZE * 2 + 1, false);
+					zcbor_tstr_put_lit(zs, addr_str);
+				}
+
+				zcbor_uint32_put(zs, CODEC_KEY_E_BLE_TAGS__RSSI);
+				zcbor_int32_put(zs, sensor->rssi);
+
+				zcbor_uint32_put(zs, CODEC_KEY_E_BLE_TAGS__VOLTAGE);
+				{
+					zcbor_uint32_put(zs, sensor->voltage * 100.f);
+				}
+
+				zcbor_uint32_put(zs, CODEC_KEY_E_BLE_TAGS__TEMPERATURE);
+				{
+					zcbor_map_start_encode(zs,
+							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint32_put(
+						zs,
+						CODEC_KEY_E_BLE_TAGS__TEMPERATURE__MEASUREMENTS);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						zcbor_uint64_put(zs, g_app_data.ble_tag.timestamp);
+						zcbor_uint32_put(zs, g_app_config.analog_interval_aggreg);
+
+						for (int j = 0; j < sensor->measurement_count;
+						     j++) {
+							put_sample_mul(zs,
+								       &sensor->measurements[j]
+										.temperature,
+								       100.f);
+						}
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+
+				zcbor_int32_put(zs, CODEC_KEY_E_BLE_TAGS__HUMIDITY);
+				{
+					zcbor_map_start_encode(zs,
+							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint32_put(
+						zs, CODEC_KEY_E_BLE_TAGS__HUMIDITY__MEASUREMENTS);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						zcbor_uint64_put(zs, g_app_data.ble_tag.timestamp);
+						zcbor_uint32_put(zs, g_app_config.analog_interval_aggreg);
+
+						for (int j = 0; j < sensor->measurement_count;
+						     j++) {
+							put_sample_mul(
+								zs,
+								&sensor->measurements[j].humidity,
+								100.f);
+						}
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
+	/* ^^^ Preserved code "ble_tags" (end) */
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
@@ -809,12 +832,15 @@ int decode(zcbor_state_t *zs, struct app_cbor_received *received)
 	uint32_t key;
 	bool ok;
 
+	/* ### Preserved code "while" (begin) */
 	while (1) {
 		if (!zcbor_uint32_decode(zs, &key)) {
 			break;
 		}
 
 		switch (key) {
+
+		/* Filled in by Project Generator */
 		case CODEC_KEY_D_OUTPUT_1_STATE:
 			ok = zcbor_int32_decode(zs, &received->output_1_state);
 			received->has_output_1_state = true;
@@ -837,6 +863,7 @@ int decode(zcbor_state_t *zs, struct app_cbor_received *received)
 			return -EBADMSG;
 		}
 	}
+	/* ^^^ Preserved code "while" (end) */
 
 	if (!zcbor_map_end_decode(zs)) {
 		return -EBADMSG;

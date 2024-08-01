@@ -1,6 +1,13 @@
+/*
+ * Copyright (c) 2024 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #include "app_backup.h"
 #include "app_cbor.h"
 #include "app_codec.h"
+#include "app_config.h"
 #include "app_send.h"
 
 /* CHESTER includes */
@@ -29,44 +36,42 @@ int app_send(void)
 {
 	int ret;
 
-	LOG_WRN("Running UPLOAD DATA");
+	switch (g_app_config.mode) {
+	case APP_CONFIG_MODE_NONE:
+		LOG_WRN("Application mode is set to none. Not sending data.");
+		break;
+#if defined(FEATURE_SUBSYSTEM_CLOUD)
+	case APP_CONFIG_MODE_LTE: {
+		CTR_BUF_DEFINE_STATIC(buf, 8 * 1024);
 
-	CTR_BUF_DEFINE_STATIC(buf, 4096);
+		ctr_buf_reset(&buf);
 
-	ctr_buf_reset(&buf);
+		ZCBOR_STATE_E(zs, 8, ctr_buf_get_mem(&buf), ctr_buf_get_free(&buf), 1);
 
-	ZCBOR_STATE_E(zs, 8, ctr_buf_get_mem(&buf), ctr_buf_get_free(&buf), 1);
+		ret = app_cbor_encode(zs);
+		if (ret) {
+			LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
+			return ret;
+		}
 
-	ret = app_cbor_encode(zs);
-	if (ret) {
-		LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
-		return ret;
+		size_t len = zs[0].payload_mut - ctr_buf_get_mem(&buf);
+
+		ret = ctr_buf_seek(&buf, len);
+		if (ret) {
+			LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
+			return ret;
+		}
+
+		ret = ctr_cloud_send(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf));
+		if (ret) {
+			LOG_ERR("Call `ctr_cloud_send` failed: %d", ret);
+			return ret;
+		}
+
+		break;
 	}
-
-	size_t len = zs[0].payload_mut - ctr_buf_get_mem(&buf);
-
-	ret = ctr_buf_seek(&buf, len);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
-		return ret;
+#endif /* defined(FEATURE_SUBSYSTEM_CLOUD) */
 	}
-
-	ret = ctr_cloud_send(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf));
-	if (ret) {
-		LOG_ERR("Call `ctr_cloud_send` failed: %d", ret);
-		return ret;
-	}
-
-	LOG_WRN("Stopped UPLOAD DATA");
 
 	return 0;
 }
-
-static int cmd_poll(const struct shell *shell, size_t argc, char **argv)
-{
-	ctr_cloud_poll_immediately();
-
-	return 0;
-}
-
-SHELL_CMD_REGISTER(poll, NULL, "Poll cloud for new data immediately.", cmd_poll);

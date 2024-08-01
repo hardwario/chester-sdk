@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -15,7 +15,6 @@
 /* CHESTER includes */
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_led.h>
-#include <chester/ctr_lte.h>
 #include <chester/ctr_rtc.h>
 #include <chester/drivers/ctr_x4.h>
 #include <chester/drivers/ctr_z.h>
@@ -58,7 +57,7 @@ static void report_rate_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_report_rate_timer, report_rate_timer_handler, NULL);
 
-#if defined(CONFIG_SHIELD_CTR_X0_A) || defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A) || defined(FEATURE_HARDWARE_CHESTER_Z)
 
 static void send_with_rate_limit(void)
 {
@@ -86,7 +85,7 @@ static void send_with_rate_limit(void)
 
 #endif
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 
 void app_handler_edge_trigger_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
 				       void *user_data)
@@ -153,9 +152,9 @@ void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_even
 	}
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 
 void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, void *param)
 {
@@ -208,9 +207,9 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, 
 	app_data_unlock();
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-#if defined(CONFIG_CTR_BUTTON)
+#if defined(FEATURE_SUBSYSTEM_BUTTON)
 
 static void app_load_timer_handler(struct k_timer *timer)
 {
@@ -219,7 +218,7 @@ static void app_load_timer_handler(struct k_timer *timer)
 
 K_TIMER_DEFINE(app_load_timer, app_load_timer_handler, NULL);
 
-#if defined(CONFIG_SHIELD_CTR_X4_B)
+#if defined(FEATURE_HARDWARE_CHESTER_X4_B)
 static void enable_x4_outputs(void)
 {
 	int ret;
@@ -255,7 +254,7 @@ static void enable_x4_outputs(void)
 		return;
 	}
 }
-#endif /* defined(CONFIG_SHIELD_CTR_X4_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) */
 
 void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val,
 			    void *user_data)
@@ -307,23 +306,23 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 			k_timer_start(&app_load_timer, K_MINUTES(2), K_FOREVER);
 			break;
 		case 6:
-#if defined(CONFIG_SHIELD_CTR_X4_B)
+#if defined(FEATURE_HARDWARE_CHESTER_X4_B)
 			enable_x4_outputs();
-#endif /* defined(CONFIG_SHIELD_CTR_X4_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) */
 
 			break;
 		}
 	}
 }
 
-#endif /* defined(CONFIG_CTR_BUTTON) */
+#endif /* defined(FEATURE_SUBSYSTEM_BUTTON) */
 
 void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_data *data,
 			     void *param)
 {
-#if defined(CONFIG_SHIELD_CTR_X4_B)
+#if defined(FEATURE_HARDWARE_CHESTER_X4_B)
 	int ret;
-#endif /* defined(CONFIG_SHIELD_CTR_X4_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) */
 
 	if (event == CTR_CLOUD_EVENT_RECV) {
 		LOG_HEXDUMP_INF(data->recv.buf, data->recv.len, "Received:");
@@ -333,7 +332,7 @@ void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_d
 			return;
 		}
 
-#if defined(CONFIG_SHIELD_CTR_X4_B)
+#if defined(FEATURE_HARDWARE_CHESTER_X4_B)
 		const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x4_b));
 
 		if (!device_is_ready(dev)) {
@@ -391,6 +390,6 @@ void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_d
 			}
 			ret = ctr_x4_set_output(dev, CTR_X4_OUTPUT_4, received.output_4_state);
 		}
-#endif /* defined(CONFIG_SHIELD_CTR_X4_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) */
 	}
 }

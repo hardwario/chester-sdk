@@ -35,18 +35,16 @@ schema:
         - "connected"
     - events:
   - network:
-    - imei:
-    - imsi:
-    - parameter:
-      - eest:
-      - ecl:
-      - rsrp:
-      - rsrq:
-      - snr:
-      - plmn:
-      - cid:
-      - band:
-      - earfcn:
+      - parameter:
+          - eest:
+          - ecl:
+          - rsrp:
+          - rsrq:
+          - snr:
+          - plmn:
+          - cid:
+          - band:
+          - earfcn:
   - thermometer:
     - temperature:
       - $div: 100
@@ -165,6 +163,41 @@ schema:
         - mdn:
           - $div: 100
           - $fpp: 2
-
+  - ble_tags:
+      - addr:
+      - rssi:
+      - voltage:
+        - $div: 100
+        - $fpp: 2
+      - temperature:
+        - measurements:
+          - $tsp:
+            - min:
+              - $div: 100
+              - $fpp: 2
+            - max:
+              - $div: 100
+              - $fpp: 2
+            - avg:
+              - $div: 100
+              - $fpp: 2
+            - mdn:
+              - $div: 100
+              - $fpp: 2
+      - humidity:
+        - measurements:
+          - $tsp:
+            - min:
+              - $div: 100
+              - $fpp: 2
+            - max:
+              - $div: 100
+              - $fpp: 2
+            - avg:
+              - $div: 100
+              - $fpp: 2
+            - mdn:
+              - $div: 100
+              - $fpp: 2
 
 

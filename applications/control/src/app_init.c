@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -40,13 +40,9 @@
 
 LOG_MODULE_REGISTER(app_init, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_LTE)
-K_SEM_DEFINE(g_app_init_sem, 0, 1);
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
-
 struct ctr_wdog_channel g_app_wdog_channel;
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 
 static int init_chester_z(void)
 {
@@ -128,9 +124,9 @@ static int init_chester_z(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 
 static int init_edge(struct ctr_edge *edge, ctr_edge_cb_t cb, const struct device *dev,
 		     enum ctr_x0_channel channel, enum ctr_x0_mode mode, int active_duration,
@@ -461,53 +457,21 @@ static int init_chester_x0(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
 int app_init(void)
 {
 	int ret;
 
-#if defined(CONFIG_CTR_BUTTON)
+#if defined(FEATURE_SUBSYSTEM_BUTTON)
 	ret = ctr_button_set_event_cb(app_handler_ctr_button, NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_button_set_event_cb` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_CTR_BUTTON) */
+#endif /* defined(FEATURE_SUBSYSTEM_BUTTON) */
 
 	ctr_led_set(CTR_LED_CHANNEL_R, true);
-
-#if defined(CONFIG_SHIELD_CTR_LTE_V2)
-
-	/* Turn on red */
-	ctr_led_set(CTR_LED_CHANNEL_R, true);
-
-	CODEC_CLOUD_OPTIONS_STATIC(copt);
-
-	ret = ctr_cloud_init(&copt);
-	if (ret) {
-		LOG_ERR("Call `ctr_cloud_init` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_cloud_set_callback(app_handler_cloud_event, NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_cloud_set_callback` failed: %d", ret);
-	}
-
-	ret = ctr_cloud_set_poll_interval(K_SECONDS(g_app_config.interval_poll));
-	if (ret) {
-		LOG_ERR("Call `ctr_cloud_set_poll_interval` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_cloud_wait_initialized(K_FOREVER);
-	if (ret) {
-		LOG_ERR("Call `ctr_cloud_wait_initialized` failed: %d", ret);
-		return ret;
-	}
-
-#endif /* defined(CONFIG_SHIELD_CTR_LTE_V2) */
 
 	ret = ctr_wdog_set_timeout(120000);
 	if (ret) {
@@ -527,6 +491,47 @@ int app_init(void)
 		return ret;
 	}
 
+#if defined(FEATURE_SUBSYSTEM_CLOUD)
+	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
+		CODEC_CLOUD_OPTIONS_STATIC(copt);
+
+		ret = ctr_cloud_init(&copt);
+		if (ret) {
+			LOG_ERR("Call `ctr_cloud_init` failed: %d", ret);
+			return ret;
+		}
+
+		if (g_app_config.interval_poll > 0) {
+			ret = ctr_cloud_set_poll_interval(K_SECONDS(g_app_config.interval_poll));
+			if (ret) {
+				LOG_ERR("Call `ctr_cloud_set_pull_interval` failed: %d", ret);
+				return ret;
+			}
+		}
+
+		while (true) {
+			ret = ctr_cloud_wait_initialized(K_SECONDS(60));
+			if (!ret) {
+				break;
+			} else {
+				if (ret == -ETIMEDOUT) {
+					LOG_INF("Waiting for cloud initialization");
+				} else {
+					LOG_ERR("Call `ctr_cloud_wait_initialized` failed: %d",
+						ret);
+					return ret;
+				}
+			}
+
+			ret = ctr_wdog_feed(&g_app_wdog_channel);
+			if (ret) {
+				LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
+				return ret;
+			}
+		}
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_CLOUD) */
+
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
 
 	ret = app_work_init();
@@ -535,29 +540,29 @@ int app_init(void)
 		return ret;
 	}
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 	ret = init_chester_z();
 	if (ret) {
 		LOG_ERR("Call `init_chester_z` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_X0_A)
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 	ret = init_chester_x0();
 	if (ret) {
 		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
 		k_oops();
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_X0_A) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
 	ret = ctr_ds18b20_scan();
 	if (ret) {
 		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -13,8 +13,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern struct k_timer g_app_send_timer;
 
 int app_send(void);
 
