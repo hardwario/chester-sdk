@@ -16,8 +16,16 @@ schema:
           - $fpp: 2
       - current_load:
   - network:
-      - imei:
-      - imsi:
+      - parameter:
+          - eest:
+          - ecl:
+          - rsrp:
+          - rsrq:
+          - snr:
+          - plmn:
+          - cid:
+          - band:
+          - earfcn:
   - thermometer:
       - temperature:
           - $div: 100
