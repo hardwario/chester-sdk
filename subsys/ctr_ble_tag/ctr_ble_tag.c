@@ -221,10 +221,11 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 			ret = bt_le_scan_stop();
 			if (ret) {
 				LOG_ERR("Call `bt_le_scan_stop` failed: %d", ret);
-				k_sem_give(&m_scan_sem);
 			}
 
 			m_scan_early_stop = true;
+
+			k_sem_give(&m_scan_sem);
 		}
 
 		tag_data[i].rssi = rssi;
