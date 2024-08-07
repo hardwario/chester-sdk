@@ -204,7 +204,7 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 			sys_memcpy_swap(swap_addr, m_config_interim.addr[i], BT_ADDR_SIZE);
 
 			ret = ctr_buf2hex(swap_addr, BT_ADDR_SIZE, m_enroll_addr_str,
-					  sizeof(m_enroll_addr_str), true);
+					  sizeof(m_enroll_addr_str), false);
 			if (ret < 0) {
 				LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
 				k_mutex_unlock(&tag_data_lock);
@@ -395,13 +395,13 @@ static void print_tag_list(const struct shell *shell)
 
 		sys_memcpy_swap(swap_addr, m_config_interim.addr[i], BT_ADDR_SIZE);
 
-		ret = ctr_buf2hex(swap_addr, BT_ADDR_SIZE, addr_str, BT_ADDR_SIZE * 2 + 1, true);
+		ret = ctr_buf2hex(swap_addr, BT_ADDR_SIZE, addr_str, BT_ADDR_SIZE * 2 + 1, false);
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
 			return;
 		}
 
-		shell_print(shell, "tag config devices key %d %s", i, addr_str);
+		shell_print(shell, "tag config devices addr %d %s", i, addr_str);
 	}
 }
 
@@ -654,7 +654,7 @@ static int cmd_config_scan(const struct shell *shell, size_t argc, char **argv)
 		if (valid) {
 			char addr_str[BT_ADDR_SIZE * 2 + 1];
 
-			ret = ctr_buf2hex(addr, BT_ADDR_SIZE, addr_str, sizeof(addr_str), true);
+			ret = ctr_buf2hex(addr, BT_ADDR_SIZE, addr_str, sizeof(addr_str), false);
 			if (ret < 0) {
 				LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
 				return ret;
