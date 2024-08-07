@@ -137,7 +137,49 @@ static int compose_lrw(struct ctr_buf *buf)
 #if defined(CONFIG_SHIELD_CTR_S1)
 	/* Field IAQ */
 	if (header & BIT(3)) {
-		/* TODO Implement */
+		struct app_data_iaq *iaqdata = &g_app_data.iaq;
+
+		if (isnan(iaqdata->sensors.last_temperature)) {
+			ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
+		} else {
+			int16_t val = iaqdata->sensors.last_temperature * 100.f;
+			ret |= ctr_buf_append_s16_le(buf, val);
+		}
+
+		if (isnan(iaqdata->sensors.last_humidity)) {
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
+		} else {
+			uint16_t val = iaqdata->sensors.last_humidity * 100.f;
+			ret |= ctr_buf_append_u16_le(buf, val);
+		}
+
+		if (isnan(iaqdata->sensors.last_altitude)) {
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
+		} else {
+			uint16_t val = iaqdata->sensors.last_altitude * 100.f;
+			ret |= ctr_buf_append_u16_le(buf, val);
+		}
+
+		if (isnan(iaqdata->sensors.last_co2_conc)) {
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
+		} else {
+			uint16_t val = iaqdata->sensors.last_co2_conc * 100.f;
+			ret |= ctr_buf_append_u16_le(buf, val);
+		}
+
+		if (isnan(iaqdata->sensors.last_illuminance)) {
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
+		} else {
+			uint16_t val = iaqdata->sensors.last_illuminance * 100.f;
+			ret |= ctr_buf_append_u16_le(buf, val);
+		}
+
+		if (isnan(iaqdata->sensors.last_pressure)) {
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
+		} else {
+			uint16_t val = iaqdata->sensors.last_pressure * 100.f;
+			ret |= ctr_buf_append_u16_le(buf, val);
+		}
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_S1) */
 

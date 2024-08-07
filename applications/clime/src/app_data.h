@@ -96,6 +96,11 @@ struct app_data_iaq_button_measurement {
 struct app_data_iaq_sensors {
 	atomic_t motion_count;
 	float last_co2_conc;
+	float last_temperature;
+	float last_humidity;
+	float last_illuminance;
+	float last_altitude;
+	float last_pressure;
 
 	int sample_count;
 	float samples_temperature[APP_DATA_MAX_SAMPLES];

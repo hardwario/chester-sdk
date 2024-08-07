@@ -2,7 +2,7 @@ var cursor = 0;
 var buffer;
 
 // Uncomment for ChirpStack:
-function Decode(port, bytes, variables) {
+function decodeUplink(input) {
 
   // Uncomment for The Things Network:
   // function Decoder(port, bytes) {
@@ -49,12 +49,53 @@ function Decode(port, bytes, variables) {
   }
 
   if ((header & 0x04) !== 0) {
-    data.therm_temperature = s16();
+    data.internal_temperature = s16();
+    if (data.internal_temperature === 0x7fff) {
+      data.internal_temperature = null;
+    } else {
+      data.internal_temperature = data.internal_temperature / 100;
+    }
 
+    data.therm_temperature = s16();
     if (data.therm_temperature === 0x7fff) {
       data.therm_temperature = null;
     } else {
       data.therm_temperature = data.therm_temperature / 100;
+    }
+
+    data.hygro_humidity = u16();
+    if (data.hygro_humidity === 0xffff) {
+      data.hygro_humidity = null;
+    } else {
+      data.hygro_humidity = data.hygro_humidity / 100;
+    }
+
+    data.altitude = u16();
+    if (data.altitude === 0xffff) {
+      data.altitude = null;
+    } else {
+      data.altitude = data.altitude / 100;
+    }
+
+    data.co2 = u16();
+    if (data.co2 === 0xffff) {
+      data.co2 = null;
+    } else {
+      data.co2 = data.co2 / 100;
+    }
+
+    data.illuminance = u16();
+    if (data.illuminance === 0xffff) {
+      data.illuminance = null;
+    } else {
+      data.illuminance = data.illuminance / 100;
+    }
+
+    data.presure = u16();
+    if (data.presure === 0xffff) {
+      data.presure = null;
+    } else {
+      data.presure = data.presure / 100;
     }
   }
 
