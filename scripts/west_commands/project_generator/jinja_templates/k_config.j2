@@ -20,10 +20,10 @@ menu "Application"
 {%- for feature in data['features'] %}
 {#- A1 #} 
 	{%- if feature == 'hardware-chester-a1' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_A1
 	bool "Enable SHIELD_CTR_A1"
-	default y 
+	default y
 
 config CTR_A1
 	default y
@@ -40,10 +40,10 @@ config I2C
 
 {#- B1 #} 
 	{%- if feature == 'hardware-chester-b1' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_B1
 	bool "Enable SHIELD_CTR_B1"
-	default y 
+	default y
 
 config CTR_B1
 	default y
@@ -60,10 +60,10 @@ config I2C
 
 {#- BAROMETER_TAG #} 
 	{%- if feature == 'hardware-chester-barometer-tag' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_BAROMETER_TAG
 	bool "Enable SHIELD_CTR_BAROMETER_TAG"
-	default y 
+	default y
 
 config I2C
 	default y
@@ -77,10 +77,10 @@ config MPL3115A2
 
 {#- C1 #} 
 	{%- if feature == 'hardware-chester-c1' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_C1
 	bool "Enable SHIELD_CTR_C1"
-	default y 
+	default y
 
 config GPIO
 	default y
@@ -94,10 +94,10 @@ config I2C
 
 {#- C2 #} 
 	{%- if feature == 'hardware-chester-c2' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_C2
 	bool "Enable SHIELD_CTR_C2"
-	default y 
+	default y
 
 config GPIO
 	default y
@@ -111,10 +111,10 @@ config I2C
 
 {#- DS18B20 #} 
 	{%- if feature == 'subsystem-ds18b20' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_DS18B20
 	bool "Enable SHIELD_CTR_DS18B20"
-	default y 
+	default y
 
 config CTR_DS18B20
 	default y
@@ -125,7 +125,7 @@ config CTR_DS18B20
 # {{ feature | upper }}#
 config SHIELD_CTR_GNSS
 	bool "Enable SHIELD_CTR_GNSS"
-	default y 
+	default y
 
 config CTR_GNSS
 	default y
@@ -133,10 +133,10 @@ config CTR_GNSS
 
 {#- K1 #} 
 	{%- if feature == 'hardware-chester-k1' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_K1
 	bool "Enable SHIELD_CTR_K1"
-	default y 
+	default y
 
 config CTR_K1
 	default y
@@ -144,10 +144,10 @@ config CTR_K1
 
 {#- LRW #} 
 	{%- if feature == 'subsystem-lrw' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_LRW
 	bool "Enable SHIELD_CTR_LRW"
-	default y 
+	default y
 
 config CTR_LRW
 	default y
@@ -155,10 +155,10 @@ config CTR_LRW
 
 {#- LTE #} 
 	{%- if feature == 'subsystem-lte' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_LTE
 	bool "Enable SHIELD_CTR_LTE"
-	default y 
+	default y
 
 config CTR_LTE
 	default y
@@ -166,10 +166,10 @@ config CTR_LTE
 
 {#- LTE-V2 #} 
 	{%- if feature == 'subsystem-lte-v2' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_LTE_V2
 	bool "Enable SHIELD_CTR_LTE_V2"
-	default y 
+	default y
 
 config CTR_LTE_V2
 	default y
@@ -177,10 +177,10 @@ config CTR_LTE_V2
 
 {#- MACHINE_PROBE #} 
 	{%- if feature == 'subsystem-machine-probe' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_MACHINE_PROBE
 	bool "Enable SHIELD_CTR_MACHINE_PROBE"
-	default y 
+	default y
 
 config CTR_MACHINE_PROBE
 	default y
@@ -188,10 +188,10 @@ config CTR_MACHINE_PROBE
 
 {#- MB7066_A #} 
 	{%- if feature == 'hardware-chester-mb7066-a' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_MB7066_A
 	bool "Enable SHIELD_CTR_MB7066_A"
-	default y 
+	default y
 
 config CTR_X0
 	default y
@@ -202,10 +202,10 @@ config MB7066
 
 {#- MB7066_B #} 
 	{%- if feature == 'hardware-chester-mb7066-b' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_MB7066_B
 	bool "Enable SHIELD_CTR_MB7066_B"
-	default y 
+	default y
 
 config CTR_X0
 	default y
@@ -216,14 +216,14 @@ config MB7066
 
 {#- METEO_A #} 
 	{%- if feature == 'hardware-chester-meteo-a' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_A
 	bool "Enable SHIELD_CTR_METEO_A"
-	default y 
+	default y
 
 config SHIELD_CTR_X0_A
 	bool "Enable SHIELD_CTR_X0_A"
-	default y 
+	default y
 
 config CTR_METEO
 	default y
@@ -234,14 +234,14 @@ config CTR_X0
 
 {#- METEO_B #} 
 	{%- if feature == 'hardware-chester-meteo-b' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_METEO_B
 	bool "Enable SHIELD_CTR_METEO_B"
-	default y 
+	default y
 
 config SHIELD_CTR_X0_B
 	bool "Enable SHIELD_CTR_X0_A"
-	default y 
+	default y
 
 config CTR_METEO
 	default y
@@ -252,10 +252,10 @@ config CTR_X0
 
 {#- RTD_A #} 
 	{%- if feature == 'hardware-chester-rtd-a' %}
-# {{ feature | upper }} 
-config SHIELD_CTR_A
+# {{ feature | upper }}
+config SHIELD_CTR_RTD_A
 	bool "Enable SHIELD_CTR_RTD_A"
-	default y 
+	default y
 
 config CTR_X3
 	default y
@@ -266,10 +266,10 @@ config CTR_RTD
 
 {#- RTD_B #} 
 	{%- if feature == 'hardware-chester-rtd-b' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_RTD_B
 	bool "Enable SHIELD_CTR_RTD_B"
-	default y 
+	default y
 
 config CTR_X3
 	default y
@@ -280,10 +280,10 @@ config CTR_RTD
 
 {#- S1 #} 
 	{%- if feature == 'hardware-chester-s1' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_S1
 	bool "Enable SHIELD_CTR_S1"
-	default y 
+	default y
 
 config CTR_S1
 	default y
@@ -294,10 +294,10 @@ config I2C
 
 {#- S2 #} 
 	{%- if feature == 'hardware-chester-s2' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_S2
 	bool "Enable SHIELD_CTR_S2"
-	default y 
+	default y
 
 config CTR_HYGRO
 	default y
@@ -305,10 +305,10 @@ config CTR_HYGRO
 
 {#- SOIL_SENSOR #} 
 	{%- if feature == 'subsystem-soil-sensor' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_SOIL_SENSOR
 	bool "Enable SHIELD_CTR_SOIL_SENSOR"
-	default y 
+	default y
 
 config CTR_SOIL_SENSOR
 	default y
@@ -316,10 +316,10 @@ config CTR_SOIL_SENSOR
 
 {#- WEIGHT_PROBE #} 
 	{%- if feature == 'subsystem-weight-probe' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_WEIGHT_PROBE
 	bool "Enable SHIELD_CTR_WEIGHT_PROBE"
-	default y 
+	default y
 
 config CTR_WEIGHT_PROBE
 	default y
@@ -327,10 +327,10 @@ config CTR_WEIGHT_PROBE
 	
 {#- X0A #} 
 	{%- if feature == 'hardware-chester-x0-a' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X0_A
 	bool "Enable SHIELD_CTR_X0_A"
-	default y 
+	default y
 
 config CTR_X0
 	default y
@@ -338,10 +338,10 @@ config CTR_X0
 
 {#- X0B #} 
 	{%- if feature == 'hardware-chester-x0-b' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X0_B
 	bool "Enable SHIELD_CTR_X0_B"
-	default y 
+	default y
 
 config CTR_X0
 	default y
@@ -349,10 +349,10 @@ config CTR_X0
 
 {#- X2A #} 
 	{%- if feature == 'hardware-chester-x2-a' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X2_A
 	bool "Enable SHIELD_CTR_X2_A"
-	default y 
+	default y
 
 config GPIO
 	default y
@@ -372,10 +372,10 @@ config UART_SC16IS7XX
 
 {#- X2B #} 
 	{%- if feature == 'hardware-chester-x2-b' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X2_B
 	bool "Enable SHIELD_CTR_X2_B"
-	default y 
+	default y
 
 config GPIO
 	default y
@@ -395,7 +395,7 @@ config UART_SC16IS7XX
 
 {#- X2_MODBUS_A #} 
 	{%- if feature == 'hardware-chester-x2-modbus-a' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X2_MODBUS_A
 	bool "Enable SHIELD_X2_MODBUS_A"
 	default y
@@ -434,12 +434,12 @@ config UART_SC16IS7XX
 	default y
 
 config I2C
-	default y  
+	default y
 {%- endif -%}
 
 {#- X2_MODBUS_B #} 
 	{%- if feature == 'hardware-chester-x2-modbus-b' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X2_MODBUS_B
 	bool "Enable SHIELD_X2_MODBUS_B"
 	default y
@@ -480,10 +480,10 @@ config UART_SC16IS7XX
 
 {#- X3_A #} 
 	{%- if feature == 'hardware-chester-x3-a' %}
-# {{ feature | upper }} 
-config SHIELD_CTR_CTR_X3_A
+# {{ feature | upper }}
+config SHIELD_CTR_X3_A
 	bool "Enable SHIELD_CTR_X3_A"
-	default y 
+	default y
 
 config CTR_X3
 	default y
@@ -491,10 +491,10 @@ config CTR_X3
 
 {#- X3_B #} 
 	{%- if feature == 'hardware-chester-x3-b' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X3_B
 	bool "Enable SHIELD_CTR_X3_B"
-	default y 
+	default y
 
 config CTR_X3
 	default y
@@ -502,10 +502,10 @@ config CTR_X3
 
 {#- X4_A #} 
 	{%- if feature == 'hardware-chester-x4-a' %}
-# {{ feature | upper }} 
-config SHIELD_CTR_CTR_X4_A
+# {{ feature | upper }}
+config SHIELD_CTR_X4_A
 	bool "Enable SHIELD_CTR_X4_A"
-	default y 
+	default y
 
 config CTR_X4
 	default y
@@ -513,10 +513,10 @@ config CTR_X4
 
 {#- X4_B #} 
 	{%- if feature == 'hardware-chester-x4-b' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X4_B
 	bool "Enable SHIELD_CTR_X4_B"
-	default y 
+	default y
 
 config CTR_X4
 	default y
@@ -524,10 +524,10 @@ config CTR_X4
 
 {#- X7_A #} 
 	{%- if feature == 'hardware-chester-x7-a' %}
-# {{ feature | upper }} 
-config SHIELD_CTR_CTR_X7_A
+# {{ feature | upper }}
+config SHIELD_CTR_X7_A
 	bool "Enable SHIELD_CTR_X7_A"
-	default y 
+	default y
 
 config CTR_X7
 	default y
@@ -535,10 +535,10 @@ config CTR_X7
 
 {#- X7_B #} 
 	{%- if feature == 'hardware-chester-x7-b' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X7_B
 	bool "Enable SHIELD_CTR_X7_B"
-	default y 
+	default y
 
 config CTR_X7
 	default y
@@ -546,10 +546,10 @@ config CTR_X7
 
 {#- X9_A #} 
 	{%- if feature == 'hardware-chester-x9-a' %}
-# {{ feature | upper }} 
-config SHIELD_CTR_CTR_X9_A
+# {{ feature | upper }}
+config SHIELD_CTR_X9_A
 	bool "Enable SHIELD_CTR_X9_A"
-	default y 
+	default y
 
 config CTR_X9
 	default y
@@ -557,10 +557,10 @@ config CTR_X9
 
 {#- X9_B #} 
 	{%- if feature == 'hardware-chester-x9-b' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X9_B
 	bool "Enable SHIELD_CTR_X9_B"
-	default y 
+	default y
 
 config CTR_X9
 	default y
@@ -568,10 +568,10 @@ config CTR_X9
 
 {#- X10 #} 
 	{%- if feature == 'hardware-chester-x10' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_X10
 	bool "Enable SHIELD_CTR_X10"
-	default y 
+	default y
 
 config CTR_X10
 	default y
@@ -579,10 +579,10 @@ config CTR_X10
 
 {#- Z #} 
 	{%- if feature == 'hardware-chester-z' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_CTR_Z
 	bool "Enable SHIELD_CTR_Z"
-	default y 
+	default y
 
 config CTR_Z
 	default y
@@ -593,7 +593,7 @@ config I2C
 
 {#- PEOPLE_COUTER #} 
 	{%- if feature == 'hardware-chester-people-counter' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config SHIELD_PEOPLE_COUNTER
 	bool "Enable SHIELD_PEOPLE_COUNTER"
 	default y
@@ -602,21 +602,21 @@ config PEOPLE_COUNTER
 	default y
 
 config I2C
-	default y  
+	default y
 {%- endif -%}
 
 {#- APP TAMPER #} 
 	{%- if feature == 'chester-app-tamper' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config APP_TAMPER
 	bool "Enable tamper functionality"
-	default y 
+	default y
 	select CTR_EDGE
 	{%- endif -%}
 
 {#- APP REPORT JITTER #} 
 	{%- if feature == 'chester-app-report-jitter' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config APP_REPORT_JITTER
 	bool "Add random time jitter to report transfers"
 	default y
@@ -625,7 +625,7 @@ config APP_REPORT_JITTER
 
 {#- APP LAMBRECHT #} 
 	{%- if feature == 'chester-app-lambrecht' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config APP_LAMBRECHT
 	bool "Enable Modbus weather station from Lambrecht meteo"
 	default y
@@ -634,7 +634,7 @@ config APP_LAMBRECHT
 
 {#- APP FLIP_MODE #} 
 	{%- if feature == 'chester-app-flip-mode' %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 config APP_FLIP_MODE
 	bool "Enable SHIELD_APP_FLIP_MODE"
 	default y

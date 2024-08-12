@@ -88,7 +88,7 @@ CONFIG_PM_PARTITION_REGION_LITTLEFS_EXTERNAL=y',
     {{log.err(feature)}}
 # {{feature}} <-- unknown
 {%- elif feature in feature_configs %}
-# {{ feature | upper }} 
+# {{ feature | upper }}
 {{ feature_configs.get(feature, '') }}
 {%- endif %}
 {%- endfor %}
