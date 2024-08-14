@@ -885,7 +885,7 @@ class ProjectGenerator:
                 {"dir": "", "name": "prj.conf", "template": "prj_conf.j2"},
                 {"dir": "", "name": "app.overlay", "template": "app_overlay.j2"},
                 {"dir": "src", "name": "feature.h", "template": "feature_h.j2"},
-                {"dir": "src", "name": "variant.h", "template": "variant_h.j2"},
+                {"dir": "", "name": "Kconfig.variant", "template": "k_config_variant.j2"},
                 {"dir": "", "name": "Kconfig", "template": "k_config.j2"},
                 {"dir": "", "name": "VERSION", "template": "VERSION.j2"},
             ]

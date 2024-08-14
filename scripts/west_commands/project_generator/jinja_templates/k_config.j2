@@ -639,10 +639,21 @@ config APP_FLIP_MODE
 	bool "Enable SHIELD_APP_FLIP_MODE"
 	default y
 {%- endif -%}
+
+{#- APP PYRANOMETER #} 
+	{%- if feature == 'chester-app-pyranometer' %}
+# {{ feature | upper }}
+config APP_PYRANOMETER
+	bool "Enable 0-10 V pyranometer on analog input B0"
+	default y
+	select CTR_ADC
+{%- endif -%}
 {%endfor%}
 
 # ### Preserved code "k_config" (begin)
 # ^^^ Preserved code "k_config" (end)
+
+rsource "Kconfig.variant"
 
 endmenu
 
