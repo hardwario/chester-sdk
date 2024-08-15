@@ -14,6 +14,7 @@
 #include "feature.h"
 
 /* CHESTER includes */
+#include <chester/ctr_adc.h>
 #include <chester/ctr_button.h>
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_edge.h>
@@ -165,6 +166,14 @@ int app_init(void)
 		return ret;
 	}
 #endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+
+#if defined(CONFIG_APP_PYRANOMETER)
+	ret = ctr_adc_init(CTR_ADC_CHANNEL_B0);
+	if (ret) {
+		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(CONFIG_APP_PYRANOMETER) */
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 	ret = ctr_ds18b20_scan();

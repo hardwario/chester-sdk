@@ -23,8 +23,16 @@ schema:
   - fw_version:
   - serial_number:
 - network:
-  - imei:
-  - imsi:
+  - parameter:
+    - eest: 
+    - ecl: 
+    - rsrp: 
+    - rsrq: 
+    - snr: 
+    - plmn: 
+    - cid: 
+    - band: 
+    - earfcn: 
 - thermometer:
   - temperature:
     - $div: 100
@@ -86,24 +94,47 @@ schema:
   - pressure:
     - measurements:
       - $tsp:
-        - value:
+        - min:
+        - max:
+        - avg:
+        - mdn:
 - hygrometer:
   - temperature:
     - events:
       - $tso:
         - type:
           - $enum:
-            - "disconnected"
-            - "connected"
+            - "alarm_hi_activated"
+            - "alarm_hi_deactivated"
+            - "alarm_lo_activated"
+            - "alarm_lo_deactivated"
     - measurements:
       - $tsp:
-        - value:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
           - $div: 100
           - $fpp: 2
   - humidity:
     - measurements:
       - $tsp:
-        - value:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
           - $div: 100
           - $fpp: 2
 - soil_sensors:
@@ -248,3 +279,11 @@ schema:
         - value:
           - $div: 100
           - $fpp: 2
+- pyranometer:
+  - irradiance:
+    - measurements:
+      - $tsp:
+        - min:
+        - max:
+        - avg:
+        - mdn:

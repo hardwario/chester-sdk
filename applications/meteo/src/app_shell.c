@@ -76,7 +76,7 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret;
+	__unused int ret;
 
 	if (argc > 1) {
 		shell_error(shell, "unknown parameter: %s", argv[1]);
@@ -131,9 +131,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 			       SHELL_SUBCMD_SET_END);
 SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 
-SHELL_CMD_REGISTER(sample, NULL,"Sample immediately.", cmd_sample);
-SHELL_CMD_REGISTER(send, NULL,"Send data immediately.", cmd_send);
-SHELL_CMD_REGISTER(aggreg, NULL,"Aggregate data immediately", cmd_aggreg);
+SHELL_CMD_REGISTER(sample, NULL, "Sample immediately.", cmd_sample);
+SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
+SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately", cmd_aggreg);
 
 /* ### Preserved code "functions 2" (begin) */
 SHELL_CMD_REGISTER(sensors_read, NULL, "Read sensors and print values to shell", cmd_read);

@@ -41,6 +41,10 @@ int app_sensor_lambrecht_sample(void);
 int app_sensor_lambrecht_aggreg(void);
 int app_sensor_lambrecht_clear(void);
 
+int app_sensor_pyranometer_sample(void);
+int app_sensor_pyranometer_aggreg(void);
+int app_sensor_pyranometer_clear(void);
+
 #ifdef __cplusplus
 }
 #endif

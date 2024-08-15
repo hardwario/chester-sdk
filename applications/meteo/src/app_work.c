@@ -72,13 +72,18 @@ static void send_work_handler(struct k_work *work)
 	app_sensor_soil_sensor_clear();
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	app_sensor_ble_tag_clear();
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 #if defined(FEATURE_CHESTER_APP_LAMBRECHT)
 	app_sensor_lambrecht_clear();
 #endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+
+#if defined(CONFIG_APP_PYRANOMETER)
+	app_sensor_pyranometer_clear();
+#endif /* defined(CONFIG_APP_PYRANOMETER) */
+
 }
 
 static K_WORK_DELAYABLE_DEFINE(m_send_work, send_work_handler);
@@ -316,7 +321,7 @@ void app_work_backup_update(void)
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 static void ble_tag_sample_work_handler(struct k_work *work)
 {
@@ -348,7 +353,7 @@ static void ble_tag_aggreg_work_handler(struct k_work *work)
 
 static K_WORK_DELAYABLE_DEFINE(m_ble_tag_aggreg_work, ble_tag_aggreg_work_handler);
 
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 #if defined(FEATURE_CHESTER_APP_LAMBRECHT)
 
@@ -383,6 +388,40 @@ static void lambrecht_aggreg_work_handler(struct k_work *work)
 static K_WORK_DELAYABLE_DEFINE(m_lambrecht_aggreg_work, lambrecht_aggreg_work_handler);
 
 #endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+
+#if defined(CONFIG_APP_PYRANOMETER)
+
+static void pyranometer_sample_work_handler(struct k_work *work)
+{
+	int ret;
+
+	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
+				  K_SECONDS(g_app_config.interval_sample));
+
+	ret = app_sensor_pyranometer_sample();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_pyranometer_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(m_pyranometer_sample_work, pyranometer_sample_work_handler);
+
+static void pyranometer_aggreg_work_handler(struct k_work *work)
+{
+	int ret;
+
+	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
+				  K_SECONDS(g_app_config.interval_aggreg));
+
+	ret = app_sensor_pyranometer_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_pyranometer_aggreg` failed: %d", ret);
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(m_pyranometer_aggreg_work, pyranometer_aggreg_work_handler);
+
+#endif /* defined(CONFIG_APP_PYRANOMETER) */
 
 int app_work_init(void)
 {
@@ -431,12 +470,12 @@ int app_work_init(void)
 				  K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_sample_work,
 				  K_SECONDS(g_app_config.interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_aggreg_work,
 				  K_SECONDS(g_app_config.interval_aggreg));
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 #if defined(FEATURE_CHESTER_APP_LAMBRECHT)
 	k_work_schedule_for_queue(&m_work_q, &m_lambrecht_sample_work,
@@ -444,6 +483,14 @@ int app_work_init(void)
 	k_work_schedule_for_queue(&m_work_q, &m_lambrecht_aggreg_work,
 				  K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+
+#if defined(CONFIG_APP_PYRANOMETER)
+	k_work_schedule_for_queue(&m_work_q, &m_pyranometer_sample_work,
+				  K_SECONDS(g_app_config.interval_sample));
+	k_work_schedule_for_queue(&m_work_q, &m_pyranometer_aggreg_work,
+				  K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(CONFIG_APP_PYRANOMETER) */
+
 
 	return 0;
 }
@@ -471,13 +518,13 @@ void app_work_aggreg(void)
 	k_work_reschedule_for_queue(&m_work_q, &m_soil_sensor_aggreg_work, K_NO_WAIT);
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
-	k_work_reschedule_for_queue(&m_work_q, &m_soil_sensor_aggreg_work, K_NO_WAIT);
-#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
-
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_work_reschedule_for_queue(&m_work_q, &m_ble_tag_aggreg_work, K_NO_WAIT);
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
+#if defined(CONFIG_APP_PYRANOMETER)
+	k_work_reschedule_for_queue(&m_work_q, &m_pyranometer_aggreg_work, K_NO_WAIT);
+#endif /* defined(CONFIG_APP_PYRANOMETER) */
 }
 
 void app_work_sample(void)
@@ -505,13 +552,17 @@ void app_work_sample(void)
 	k_work_reschedule_for_queue(&m_work_q, &m_soil_sensor_sample_work, K_NO_WAIT);
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_work_reschedule_for_queue(&m_work_q, &m_ble_tag_sample_work, K_NO_WAIT);
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 #if defined(FEATURE_CHESTER_APP_LAMBRECHT)
 	k_work_reschedule_for_queue(&m_work_q, &m_lambrecht_sample_work, K_NO_WAIT);
 #endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+
+#if defined(CONFIG_APP_PYRANOMETER)
+	k_work_reschedule_for_queue(&m_work_q, &m_pyranometer_sample_work, K_NO_WAIT);
+#endif /* defined(CONFIG_APP_PYRANOMETER) */
 }
 
 void app_work_send(void)

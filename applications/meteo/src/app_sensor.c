@@ -12,6 +12,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
+#include <chester/ctr_adc.h>
 #include <chester/ctr_ble_tag.h>
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_hygro.h>
@@ -268,8 +269,8 @@ static int meteo_aggreg_wind_speed(void)
 #if !defined(M_PI)
 #define M_PI 3.14159265f
 #endif
-#define DEGREES_TO_RADIANS(angle_degrees) ((angle_degrees) * M_PI / 180.f)
-#define RADIANS_TO_DEGREES(angle_radians) ((angle_radians) * 180.f / M_PI)
+#define DEGREES_TO_RADIANS(angle_degrees) ((angle_degrees)*M_PI / 180.f)
+#define RADIANS_TO_DEGREES(angle_radians) ((angle_radians)*180.f / M_PI)
 
 static float get_average_angle(float *array, size_t array_size)
 {
@@ -908,7 +909,7 @@ int app_sensor_soil_sensor_clear(void)
 
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 int app_sensor_ble_tag_sample(void)
 {
 	int ret;
@@ -1010,7 +1011,7 @@ int app_sensor_ble_tag_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 #if defined(FEATURE_CHESTER_APP_LAMBRECHT)
 
@@ -1411,3 +1412,86 @@ int app_sensor_lambrecht_clear(void)
 }
 
 #endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+
+#if defined(CONFIG_APP_PYRANOMETER)
+
+int app_sensor_pyranometer_sample(void)
+{
+	int ret;
+
+	struct app_data_pyranometer *pyranometer = &g_app_data.pyranometer;
+
+	app_data_lock();
+
+	if (pyranometer->sample_count >= APP_DATA_MAX_SAMPLES) {
+		LOG_WRN("Sample buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	uint16_t sample;
+	ret = ctr_adc_read(CTR_ADC_CHANNEL_B0, &sample);
+	if (ret) {
+		LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
+		app_data_unlock();
+		return ret;
+	}
+
+	pyranometer->irradiance_samples[pyranometer->sample_count] = CTR_ADC_MILLIVOLTS(sample);
+
+	LOG_INF("Irradiance response: %.0f mV",
+		pyranometer->irradiance_samples[pyranometer->sample_count]);
+
+	pyranometer->sample_count++;
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_pyranometer_aggreg(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	struct app_data_pyranometer *pyranometer = &g_app_data.pyranometer;
+
+	if (pyranometer->measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+		ret = ctr_rtc_get_ts(&pyranometer->timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc-get_tc` failed: %d", ret);
+			app_data_unlock();
+			return ret;
+		}
+
+		aggreg_sample(
+			pyranometer->irradiance_samples, pyranometer->sample_count,
+			&pyranometer->irradiance_measurements[pyranometer->measurement_count]);
+
+		pyranometer->sample_count = 0;
+		pyranometer->measurement_count++;
+
+	} else {
+		LOG_WRN("Measurement buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_pyranometer_clear(void)
+{
+	app_data_lock();
+
+	g_app_data.pyranometer.measurement_count = 0;
+
+	app_data_unlock();
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_APP_PYRANOMETER) */

@@ -200,7 +200,7 @@ struct app_data_soil_sensor {
 
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 struct app_data_ble_tag_measurement {
 	struct app_data_aggreg temperature;
@@ -232,7 +232,7 @@ struct app_data_ble_tag {
 	atomic_t aggreg;
 };
 
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 #if defined(FEATURE_CHESTER_APP_LAMBRECHT)
 
@@ -278,6 +278,20 @@ struct app_data_lambrecht {
 
 #endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
 
+#if defined(CONFIG_APP_PYRANOMETER)
+
+struct app_data_pyranometer {
+	int sample_count;
+	int measurement_count;
+
+	float irradiance_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg irradiance_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	int64_t timestamp;
+};
+
+#endif /* defined(CONFIG_APP_PYRANOMETER) */
+
 struct app_data {
 	float system_voltage_rest;
 	float system_voltage_load;
@@ -313,13 +327,18 @@ struct app_data {
 	struct app_data_soil_sensor soil_sensor;
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	struct app_data_ble_tag ble_tag;
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 #if defined(FEATURE_CHESTER_APP_LAMBRECHT)
 	struct app_data_lambrecht lambrecht;
 #endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+
+#if defined(CONFIG_APP_PYRANOMETER)
+	struct app_data_pyranometer pyranometer;
+#endif /* defined(CONFIG_APP_PYRANOMETER) */
+
 };
 
 extern struct app_data g_app_data;
