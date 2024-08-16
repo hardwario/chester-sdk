@@ -26,7 +26,6 @@ config VARIANT_{{data['project']['variant'] | upper | replace(' ', '_') }}
     bool "Enable VARIANT_{{data['project']['variant'] | upper | replace(' ', '_') }}"
     default y
     {{ log.wrn('The requested variant is not part of the default CHESTER variants or is unspecified. This is a CUSTOM project')}}
-{%- endif %}
-
-
-
+{%- endif -%}
+{% raw -%}
+{% endraw -%}
