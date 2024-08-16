@@ -50,6 +50,8 @@ var annotated_dup =
     [ "ctr_s1_buzzer_param", "structctr__s1__buzzer__param.html", "structctr__s1__buzzer__param" ],
     [ "ctr_s1_led_param", "structctr__s1__led__param.html", "structctr__s1__led__param" ],
     [ "ctr_s1_status", "structctr__s1__status.html", "structctr__s1__status" ],
+    [ "ctr_s3_driver_api", "structctr__s3__driver__api.html", "structctr__s3__driver__api" ],
+    [ "ctr_s3_param", "structctr__s3__param.html", "structctr__s3__param" ],
     [ "ctr_w1", "structctr__w1.html", "structctr__w1" ],
     [ "ctr_wdog_channel", "structctr__wdog__channel.html", "structctr__wdog__channel" ],
     [ "ctr_x3_driver_api", "structctr__x3__driver__api.html", "structctr__x3__driver__api" ],
