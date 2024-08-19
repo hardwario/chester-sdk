@@ -870,6 +870,57 @@
 };
 	{%- endif -%}
 
+{#- TERMOCOUPLE A #} 
+	{%- if feature == 'subsystem-thermocouple-a' %}
+/* {{ feature | upper }}  */
+&ctr_x3_a {
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_a1 {
+	gain = <4>;
+	mux = <0>;
+	vref = <0>;
+	idac = <0>;
+	i1mux = <0>;
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_a2 {
+	gain = <4>;
+	mux = <0>;
+	vref = <0>;
+	idac = <0>;
+	i1mux = <0>;
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- TERMOCOUPLE B #} 
+	{%- if feature == 'subsystem-thermocouple-b' %}
+/* {{ feature | upper }}  */
+&ctr_x3_b {
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_b1 {
+	gain = <4>;
+	mux = <0>;
+	vref = <0>;
+	idac = <0>;
+	i1mux = <0>;
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_b2 {
+	gain = <4>;
+	mux = <0>;
+	vref = <0>;
+	idac = <0>;
+	i1mux = <0>;
+	status = "okay";
+};
+	{%- endif -%}
 {%- endfor %}
 
 /* ### Preserved code "overlay" (begin) */

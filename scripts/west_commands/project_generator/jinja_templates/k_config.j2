@@ -639,6 +639,26 @@ config APP_FLIP_MODE
 	bool "Enable SHIELD_APP_FLIP_MODE"
 	default y
 {%- endif -%}
+
+{#- TERMOCOUPLE_A #} 
+	{%- if feature == 'subsystem-thermocouple-a' %}
+# {{ feature | upper }}
+config CTR_X3
+	default y
+
+config CTR_TC
+	default y
+{%- endif -%}
+
+{#- TERMOCOUPLE_B #} 
+	{%- if feature == 'subsystem-thermocouple-b' %}
+# {{ feature | upper }}
+config CTR_X3
+	default y
+
+config CTR_TC
+	default y
+{%- endif -%}
 {%endfor%}
 
 # ### Preserved code "k_config" (begin)
