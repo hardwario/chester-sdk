@@ -33,7 +33,7 @@ extern "C" {
  * @{
  */
 
-int ctr_ble_tag_read(int idx, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *voltage,
+int ctr_ble_tag_read(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *voltage,
 		     float *temperature, float *humidity, bool *valid);
 
 int ctr_ble_tag_is_addr_empty(const uint8_t addr[BT_ADDR_SIZE]);

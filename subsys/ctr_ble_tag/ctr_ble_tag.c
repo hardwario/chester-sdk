@@ -21,6 +21,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
+#include <ctype.h>
 #include <limits.h>
 #include <math.h>
 #include <stdbool.h>
@@ -28,9 +29,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-LOG_MODULE_REGISTER(ctr_ble_tag, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(ctr_ble_tag, CONFIG_CTR_BLE_TAG_LOG_LEVEL);
 
 #define SETTINGS_PFX "ble_tag"
+
+#define SCAN_PARAMS_DEFAULTS                                                                       \
+	{                                                                                          \
+		.type = BT_LE_SCAN_TYPE_ACTIVE,                                                    \
+		.options = BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST,                                      \
+		.interval = CTR_BLE_TAG_SCAN_MAX_TIME,                                             \
+		.window = CTR_BLE_TAG_SCAN_MAX_TIME,                                               \
+	}
 
 struct config {
 	bool enabled;
@@ -40,53 +49,35 @@ struct config {
 };
 
 static struct config m_config_interim = {
-	.enabled = false,
 	.scan_interval = 300,
-	.scan_duration = 10,
+	.scan_duration = 12,
 };
 
 static struct config m_config;
 
 struct ble_tag_data {
+	bool valid;
+	int64_t timestamp;
 	int rssi;
 	float temperature;
 	float humidity;
 	float voltage;
-	uint64_t timestamp;
-	bool valid;
 };
 
-static struct ble_tag_data tag_data[CTR_BLE_TAG_COUNT];
-K_MUTEX_DEFINE(tag_data_lock);
+static struct ble_tag_data m_tag_data[CTR_BLE_TAG_COUNT];
+static K_MUTEX_DEFINE(m_tag_data_lock);
 
-static uint8_t m_scan_tag_mask, m_scan_tag_flags;
-static bool m_scan_early_stop;
-
-static volatile bool m_enrolling = false;
 static char m_enroll_addr_str[BT_ADDR_SIZE * 2 + 1];
 
-K_SEM_DEFINE(m_has_enrolled_sem, 0, 1);
+static K_SEM_DEFINE(m_has_enrolled_sem, 0, 1);
 
-K_SEM_DEFINE(m_scan_sem, 0, 1);
+static K_MUTEX_DEFINE(m_scan_lock);
 
 static struct k_work_q m_scan_work_q;
-K_THREAD_STACK_DEFINE(m_scan_work_q_stack, 1024);
+static K_THREAD_STACK_DEFINE(m_scan_work_q_stack, 2048);
 
-static void start_scan_work_handler(struct k_work *work);
-static void stop_scan_work_handler(struct k_work *work);
-
-static K_WORK_DELAYABLE_DEFINE(m_start_scan_work, start_scan_work_handler);
-static K_WORK_DELAYABLE_DEFINE(m_stop_scan_work, stop_scan_work_handler);
-
-static struct bt_le_scan_param m_scan_params;
-
-int ctr_ble_tag_is_addr_empty(const uint8_t addr[BT_ADDR_SIZE])
-{
-	static const uint8_t empty_addr[BT_ADDR_SIZE] = {0};
-	return memcmp(addr, empty_addr, BT_ADDR_SIZE) == 0;
-}
-
-static int parse_data(struct net_buf_simple *buf, struct ble_tag_data *data)
+static int parse_data(struct net_buf_simple *buf, float *temperature, float *humidity,
+		      float *voltage)
 {
 	bool has_data = false;
 
@@ -96,202 +87,282 @@ static int parse_data(struct net_buf_simple *buf, struct ble_tag_data *data)
 	}
 
 	do {
-		int len = net_buf_simple_pull_u8(buf);
+		uint8_t len = net_buf_simple_pull_u8(buf);
 		if (len > buf->len) {
 			LOG_DBG("Invalid length: %d, needed: %d", buf->len, len);
 			return -EINVAL;
 		}
 
-		int type = net_buf_simple_pull_u8(buf);
-		if (type == 0xff) {
-			uint16_t company_id = net_buf_simple_pull_le16(buf);
-			if (company_id != 0x089a) {
-				LOG_DBG("Invalid company ID: %x", company_id);
-				return -EINVAL;
-			}
-
-			uint8_t version = net_buf_simple_pull_u8(buf);
-			if (version != 0x01) {
-				LOG_DBG("Invalid version: %d", version);
-				return -EINVAL;
-			}
-
-			uint8_t data_flags = net_buf_simple_pull_u8(buf);
-
-			int16_t temperature;
-			uint8_t humidity;
-			uint8_t voltage;
-
-			if (data_flags & BIT(0)) {
-				if (buf->len < 2) {
-					LOG_DBG("Invalid length: %d, needed: %d", buf->len,
-						sizeof(uint16_t));
-					return -EINVAL;
-				}
-
-				temperature = net_buf_simple_pull_be16(buf);
-
-				data->temperature = temperature / 100.0;
-				LOG_DBG("Temperature: %d", temperature);
-			}
-
-			if (data_flags & BIT(1)) {
-				if (buf->len < 1) {
-					LOG_DBG("Invalid length: %d, needed: %d", buf->len,
-						sizeof(uint8_t));
-					return -EINVAL;
-				}
-
-				humidity = net_buf_simple_pull_u8(buf);
-
-				data->humidity = humidity;
-				LOG_DBG("Humidity: %d", humidity);
-			}
-
-			if (data_flags & BIT(7)) {
-				if (buf->len < 1) {
-					LOG_ERR("Invalid length: %d, needed: %d", buf->len,
-						sizeof(uint8_t));
-					return -EINVAL;
-				}
-
-				net_buf_simple_pull_mem(buf, buf->len - 1);
-
-				voltage = net_buf_simple_pull_u8(buf);
-
-				data->voltage = (voltage * 10) + 2000.0;
-				LOG_DBG("Voltage: %d", voltage);
-			}
-
-			data->timestamp = k_uptime_get();
-			has_data = true;
-
-		} else {
+		uint8_t type = net_buf_simple_pull_u8(buf);
+		if (type != 0xff) {
 			net_buf_simple_pull_mem(buf, len - 1);
+			continue;
 		}
+
+		uint16_t company_id = net_buf_simple_pull_le16(buf);
+		if (company_id != 0x089a) {
+			LOG_DBG("Invalid company ID: %x", company_id);
+			return -EINVAL;
+		}
+
+		uint8_t version = net_buf_simple_pull_u8(buf);
+		if (version != 0x01) {
+			LOG_DBG("Invalid version: %d", version);
+			return -EINVAL;
+		}
+
+		uint8_t data_flags = net_buf_simple_pull_u8(buf);
+
+		int16_t temperature_;
+		uint8_t humidity_;
+		uint8_t voltage_;
+
+		if (data_flags & BIT(0)) {
+			if (buf->len < 2) {
+				LOG_DBG("Invalid length: %d, needed: %d", buf->len,
+					sizeof(uint16_t));
+				return -EINVAL;
+			}
+
+			temperature_ = net_buf_simple_pull_be16(buf);
+
+			if (temperature) {
+				*temperature = temperature_ / 100.0;
+				LOG_DBG("Temperature: %.2f C", *temperature);
+			}
+		}
+
+		if (data_flags & BIT(1)) {
+			if (buf->len < 1) {
+				LOG_DBG("Invalid length: %d, needed: %d", buf->len,
+					sizeof(uint8_t));
+				return -EINVAL;
+			}
+
+			humidity_ = net_buf_simple_pull_u8(buf);
+
+			if (humidity) {
+				*humidity = humidity_;
+				LOG_DBG("Humidity: %.0f %%", *humidity);
+			}
+		}
+
+		if (data_flags & BIT(7)) {
+			if (buf->len < 1) {
+				LOG_ERR("Invalid length: %d, needed: %d", buf->len,
+					sizeof(uint8_t));
+				return -EINVAL;
+			}
+
+			net_buf_simple_pull_mem(buf, buf->len - 1);
+
+			voltage_ = net_buf_simple_pull_u8(buf);
+
+			if (voltage) {
+				*voltage = (voltage_ * 10) + 2000.0;
+				LOG_DBG("Voltage: %.2f V", *voltage);
+			}
+		}
+
+		has_data = true;
+
 	} while (buf->len);
 
 	return has_data ? 0 : -EINVAL;
 }
 
+static void update_tag_data(const bt_addr_le_t *addr, int8_t rssi, float temperature,
+			    float humidity, float voltage)
+{
+	k_mutex_lock(&m_tag_data_lock, K_FOREVER);
+
+	size_t slot = 0;
+
+	for (; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (!memcmp(addr->a.val, m_config_interim.addr[slot], BT_ADDR_SIZE)) {
+			break;
+		}
+	}
+
+	if (slot == CTR_BLE_TAG_COUNT) {
+		k_mutex_unlock(&m_tag_data_lock);
+		return;
+	}
+
+	m_tag_data[slot].timestamp = k_uptime_get();
+	m_tag_data[slot].rssi = rssi;
+	m_tag_data[slot].temperature = temperature;
+	m_tag_data[slot].humidity = humidity;
+	m_tag_data[slot].voltage = voltage;
+
+	m_tag_data[slot].valid = true;
+
+	k_mutex_unlock(&m_tag_data_lock);
+}
+
 static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		    struct net_buf_simple *buf)
 {
+	float temperature;
+	float humidity;
+	float voltage;
+
+	if (parse_data(buf, &temperature, &humidity, &voltage)) {
+		return;
+	}
+
+	update_tag_data(addr, rssi, temperature, humidity, voltage);
+}
+
+static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+		      struct net_buf_simple *buf)
+{
 	int ret;
 
-	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
-		bool same_addr = memcmp(addr->a.val, m_config_interim.addr[i], BT_ADDR_SIZE) == 0;
-		bool is_empty = ctr_ble_tag_is_addr_empty(m_config_interim.addr[i]);
+	float temperature;
+	float humidity;
+	float voltage;
 
-		bool can_enroll = m_enrolling && (rssi > CTR_BLE_TAG_ENROLL_RSSI_THRESHOLD);
+	if (parse_data(buf, &temperature, &humidity, &voltage)) {
+		return;
+	}
 
-		if (!same_addr && !(is_empty && can_enroll)) {
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (!memcmp(addr->a.val, m_config_interim.addr[slot], BT_ADDR_SIZE)) {
+			return;
+		}
+	}
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (!ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
 			continue;
 		}
 
-		k_mutex_lock(&tag_data_lock, K_FOREVER);
+		memcpy(m_config_interim.addr[slot], (void *)addr->a.val, BT_ADDR_SIZE);
 
-		ret = parse_data(buf, &tag_data[i]);
-		if (ret) {
-			k_mutex_unlock(&tag_data_lock);
+		uint8_t swap_addr[BT_ADDR_SIZE];
+		sys_memcpy_swap(swap_addr, m_config_interim.addr[slot], BT_ADDR_SIZE);
+
+		ret = ctr_buf2hex(swap_addr, BT_ADDR_SIZE, m_enroll_addr_str,
+				  sizeof(m_enroll_addr_str), false);
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
 			return;
 		}
 
-		if (is_empty && can_enroll) {
-			memcpy(m_config_interim.addr[i], (void *)addr->a.val, BT_ADDR_SIZE);
+		LOG_INF("Enrolled: %s", m_enroll_addr_str);
 
-			uint8_t swap_addr[BT_ADDR_SIZE];
-			sys_memcpy_swap(swap_addr, m_config_interim.addr[i], BT_ADDR_SIZE);
+		k_sem_give(&m_has_enrolled_sem);
 
-			ret = ctr_buf2hex(swap_addr, BT_ADDR_SIZE, m_enroll_addr_str,
-					  sizeof(m_enroll_addr_str), false);
-			if (ret < 0) {
-				LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
-				k_mutex_unlock(&tag_data_lock);
-				return;
-			}
-
-			LOG_INF("Enrolled: %s", m_enroll_addr_str);
-			k_sem_give(&m_has_enrolled_sem);
-		}
-
-		m_scan_tag_flags |= BIT(i);
-
-		if (!m_enrolling && m_scan_tag_flags == m_scan_tag_mask) {
-			ret = bt_le_scan_stop();
-			if (ret) {
-				LOG_ERR("Call `bt_le_scan_stop` failed: %d", ret);
-			}
-
-			m_scan_early_stop = true;
-
-			k_sem_give(&m_scan_sem);
-		}
-
-		tag_data[i].rssi = rssi;
-		tag_data[i].valid = true;
-
-		k_mutex_unlock(&tag_data_lock);
+		break;
 	}
+
+	update_tag_data(addr, rssi, temperature, humidity, voltage);
 }
 
-int ctr_ble_tag_read(int idx, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *voltage,
+static void start_scan_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(m_start_scan_work, start_scan_work_handler);
+
+static void stop_scan_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(m_stop_scan_work, stop_scan_work_handler);
+
+static void start_scan_work_handler(struct k_work *work)
+{
+	int ret;
+
+	LOG_DBG("Starting scan...");
+
+	k_mutex_lock(&m_scan_lock, K_FOREVER);
+
+	struct bt_le_scan_param param = SCAN_PARAMS_DEFAULTS;
+
+	ret = bt_le_scan_start(&param, scan_cb);
+	if (ret) {
+		LOG_ERR("Call `bt_le_scan_start` failed: %d", ret);
+
+		k_work_schedule_for_queue(&m_scan_work_q, &m_start_scan_work,
+					  K_SECONDS(m_config.scan_interval));
+
+		k_mutex_unlock(&m_scan_lock);
+
+		return;
+	}
+
+	k_work_schedule_for_queue(&m_scan_work_q, &m_stop_scan_work,
+				  K_SECONDS(m_config.scan_duration));
+
+	LOG_DBG("Scan started");
+}
+
+static void stop_scan_work_handler(struct k_work *work)
+{
+	int ret;
+
+	LOG_DBG("Stopping scan...");
+
+	ret = bt_le_scan_stop();
+	if (ret) {
+		LOG_ERR("Call `bt_le_scan_stop` failed: %d", ret);
+	}
+
+	k_work_schedule_for_queue(&m_scan_work_q, &m_start_scan_work,
+				  K_SECONDS(m_config.scan_interval));
+
+	LOG_DBG("Scan stopped");
+
+	k_mutex_unlock(&m_scan_lock);
+}
+
+int ctr_ble_tag_is_addr_empty(const uint8_t addr[BT_ADDR_SIZE])
+{
+	static const uint8_t empty_addr[BT_ADDR_SIZE] = {0};
+	return memcmp(addr, empty_addr, BT_ADDR_SIZE) == 0;
+}
+
+int ctr_ble_tag_read(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *voltage,
 		     float *temperature, float *humidity, bool *valid)
 {
-	if (idx < 0 || idx >= CTR_BLE_TAG_COUNT ||
-	    ctr_ble_tag_is_addr_empty(m_config_interim.addr[idx])) {
+	if (slot < 0 || slot >= CTR_BLE_TAG_COUNT) {
+		return -EINVAL;
+	}
+
+	if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
 		return -ENOENT;
 	}
 
-	k_mutex_lock(&tag_data_lock, K_FOREVER);
+	k_mutex_lock(&m_tag_data_lock, K_FOREVER);
 
 	uint64_t now = k_uptime_get();
 
-	if (tag_data[idx].valid &&
-	    (now > tag_data[idx].timestamp +
+	if (m_tag_data[slot].valid &&
+	    (now > m_tag_data[slot].timestamp +
 			   m_config.scan_interval * 1000 * CTR_BLE_TAG_DATA_TIMEOUT_INTERVALS)) {
-		tag_data[idx].valid = false;
+		m_tag_data[slot].valid = false;
 	}
 
 	if (addr) {
-		sys_memcpy_swap(addr, m_config_interim.addr[idx], BT_ADDR_SIZE);
+		sys_memcpy_swap(addr, m_config_interim.addr[slot], BT_ADDR_SIZE);
 	}
 
 	if (rssi) {
-		if (tag_data[idx].valid) {
-			*rssi = tag_data[idx].rssi;
-		} else {
-			*rssi = INT_MAX;
-		}
+		*rssi = m_tag_data[slot].valid ? m_tag_data[slot].rssi : INT_MAX;
 	}
 
 	if (voltage) {
-		if (tag_data[idx].valid) {
-			*voltage = tag_data[idx].voltage / 1000.f;
-		} else {
-			*voltage = NAN;
-		}
+		*voltage = m_tag_data[slot].valid ? m_tag_data[slot].voltage / 1000.f : NAN;
 	}
 
 	if (temperature) {
-		if (tag_data[idx].valid) {
-			*temperature = tag_data[idx].temperature;
-		} else {
-			*temperature = NAN;
-		}
+		*temperature = m_tag_data[slot].valid ? m_tag_data[slot].temperature : NAN;
 	}
 
 	if (humidity) {
-		if (tag_data[idx].valid) {
-			*humidity = tag_data[idx].humidity;
-		} else {
-			*humidity = NAN;
-		}
+		*humidity = m_tag_data[slot].valid ? m_tag_data[slot].humidity : NAN;
 	}
 
-	*valid = tag_data[idx].valid;
+	*valid = m_tag_data[slot].valid;
 
-	k_mutex_unlock(&tag_data_lock);
+	k_mutex_unlock(&m_tag_data_lock);
 
 	return 0;
 }
@@ -389,11 +460,11 @@ static void print_tag_list(const struct shell *shell)
 {
 	int ret;
 
-	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		uint8_t swap_addr[BT_ADDR_SIZE];
 		char addr_str[BT_ADDR_SIZE * 2 + 1];
 
-		sys_memcpy_swap(swap_addr, m_config_interim.addr[i], BT_ADDR_SIZE);
+		sys_memcpy_swap(swap_addr, m_config_interim.addr[slot], BT_ADDR_SIZE);
 
 		ret = ctr_buf2hex(swap_addr, BT_ADDR_SIZE, addr_str, BT_ADDR_SIZE * 2 + 1, false);
 		if (ret < 0) {
@@ -401,7 +472,7 @@ static void print_tag_list(const struct shell *shell)
 			return;
 		}
 
-		shell_print(shell, "tag config devices addr %d %s", i, addr_str);
+		shell_print(shell, "tag config devices addr %d %s", slot, addr_str);
 	}
 }
 
@@ -409,23 +480,28 @@ static int cmd_config_enabled(const struct shell *shell, size_t argc, char **arg
 {
 	if (argc == 1) {
 		print_enabled(shell);
+		shell_print(shell, "command succeeded");
 		return 0;
 	}
 
 	if (argc == 2) {
 		if (strcmp(argv[1], "true") == 0) {
 			m_config_interim.enabled = true;
+			shell_print(shell, "command succeeded");
 			return 0;
 		} else if (strcmp(argv[1], "false") == 0) {
 			m_config_interim.enabled = false;
+			shell_print(shell, "command succeeded");
 			return 0;
 		}
 
-		shell_error(shell, "invalid option");
+		shell_print(shell, "invalid input");
+		shell_error(shell, "command failed");
 
 		return -EINVAL;
 	}
 
+	shell_error(shell, "command failed");
 	shell_help(shell);
 
 	return -EINVAL;
@@ -435,27 +511,27 @@ static int cmd_config_scan_interval(const struct shell *shell, size_t argc, char
 {
 	if (argc == 1) {
 		print_scan_interval(shell);
+		shell_print(shell, "command succeeded");
 		return 0;
 	}
 
 	if (argc == 2) {
-		char *endptr;
-		long val = strtol(argv[1], &endptr, 10);
-
-		if (endptr == argv[1] || *endptr != '\0' || errno == ERANGE) {
-			shell_error(shell, "invalid option");
-			return -EINVAL;
-		}
+		long val = strtol(argv[1], NULL, 10);
 
 		if (val < 1 || val > 86400) {
-			shell_error(shell, "invalid option");
+			shell_print(shell, "invalid input");
+			shell_error(shell, "command failed");
 			return -EINVAL;
 		}
 
 		m_config_interim.scan_interval = val;
+
+		shell_print(shell, "command succeeded");
+
 		return 0;
 	}
 
+	shell_error(shell, "command failed");
 	shell_help(shell);
 
 	return -EINVAL;
@@ -465,21 +541,27 @@ static int cmd_config_scan_duration(const struct shell *shell, size_t argc, char
 {
 	if (argc == 1) {
 		print_scan_duration(shell);
+		shell_print(shell, "command succeeded");
 		return 0;
 	}
 
 	if (argc == 2) {
-		int val = atoi(argv[1]);
+		long val = strtol(argv[1], NULL, 10);
 
 		if (val < 1 || val > 86400) {
-			shell_error(shell, "invalid option");
+			shell_print(shell, "invalid input");
+			shell_error(shell, "command failed");
 			return -EINVAL;
 		}
 
 		m_config_interim.scan_duration = val;
+
+		shell_print(shell, "command succeeded");
+
 		return 0;
 	}
 
+	shell_error(shell, "command failed");
 	shell_help(shell);
 
 	return -EINVAL;
@@ -490,35 +572,41 @@ static int cmd_config_add_tag(const struct shell *shell, size_t argc, char **arg
 	int ret;
 
 	if (argc > 2) {
-		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_print(shell, "unknown parameter: %s", argv[1]);
+		shell_error(shell, "command failed");
 		shell_help(shell);
 		return -EINVAL;
 	}
 
 	uint8_t addr[BT_ADDR_SIZE];
 
-	ret = ctr_hex2buf(argv[1], addr, BT_ADDR_SIZE, true);
+	ret = ctr_hex2buf(argv[1], addr, BT_ADDR_SIZE, false);
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_hex2buf` failed: %d", ret);
+		shell_print(shell, "invalid input");
+		shell_error(shell, "command failed");
 		return -EINVAL;
 	}
 
 	sys_mem_swap(addr, BT_ADDR_SIZE);
 
-	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
-		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[i])) {
-			memcpy(m_config_interim.addr[i], addr, BT_ADDR_SIZE);
-
-			m_scan_tag_mask |= BIT(i);
-
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
+			memcpy(m_config_interim.addr[slot], addr, BT_ADDR_SIZE);
+			shell_print(shell, "command succeeded");
 			return 0;
-		} else if (memcmp(m_config_interim.addr[i], addr, BT_ADDR_SIZE) == 0) {
-			shell_error(shell, "tag addr %s: already exists", argv[1]);
-			return -EINVAL;
+		}
+
+		if (memcmp(m_config_interim.addr[slot], addr, BT_ADDR_SIZE) == 0) {
+			shell_print(shell, "tag addr %s already exists", argv[1]);
+			shell_error(shell, "command failed");
+			return -EEXIST;
 		}
 	}
 
-	shell_error(shell, "no more space for additional tags");
+	shell_print(shell, "no slot available");
+	shell_error(shell, "command failed");
+
 	return -ENOSPC;
 }
 
@@ -527,59 +615,57 @@ static int cmd_config_remove_tag(const struct shell *shell, size_t argc, char **
 	int ret;
 
 	if (argc > 2) {
-		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_print(shell, "unknown parameter: %s", argv[1]);
+		shell_error(shell, "command failed");
 		shell_help(shell);
 		return -EINVAL;
 	}
 
-	char *endptr;
-	int index = strtol(argv[1], &endptr, 10);
-
-	if (*endptr) {
+	if (strlen(argv[1]) != 1 || !isdigit(argv[1][0])) {
 		uint8_t addr[BT_ADDR_SIZE];
 
-		ret = ctr_hex2buf(argv[1], addr, BT_ADDR_SIZE, true);
+		ret = ctr_hex2buf(argv[1], addr, BT_ADDR_SIZE, false);
 		if (ret < 0) {
 			LOG_ERR("Call `ctr_hex2buf` failed: %d", ret);
-			return -EINVAL;
+			shell_print(shell, "invalid address format");
+			shell_error(shell, "command failed");
+			return ret;
 		}
 
-		sys_mem_swap(addr, BT_ADDR_SIZE);
-
-		for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
-			if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[i])) {
+		for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+			if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
 				continue;
 			}
 
-			if (memcmp(m_config_interim.addr[i], addr, BT_ADDR_SIZE) == 0) {
-				memset(m_config_interim.addr[i], 0, BT_ADDR_SIZE);
-				shell_print(shell, "tag addr: %s removed", argv[1]);
-
-				m_scan_tag_mask &= ~BIT(i);
-
+			if (!memcmp(m_config_interim.addr[slot], addr, BT_ADDR_SIZE)) {
+				memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
+				shell_print(shell, "tag addr %s removed", argv[1]);
+				shell_print(shell, "command succeeded");
 				return 0;
 			}
 		}
 
-		shell_error(shell, "tag addr: %s not found", argv[1]);
+		shell_print(shell, "tag addr %s not found", argv[1]);
+		shell_error(shell, "command failed");
 
-		return -EINVAL;
-
+		return -ENOENT;
 	} else {
-		if (index < 0 || index >= CTR_BLE_TAG_COUNT) {
-			shell_error(shell, "index out of range: %d", index);
+		int slot = strtol(argv[1], NULL, 10);
+		if (slot < 0 || slot >= CTR_BLE_TAG_COUNT) {
+			shell_print(shell, "slot %d out of range", slot);
+			shell_error(shell, "command failed");
 			return -EINVAL;
 		}
 
-		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[index])) {
-			shell_error(shell, "tag index %d not found", index);
-			return -EINVAL;
+		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
+			shell_print(shell, "slot %d not found", slot);
+			shell_error(shell, "command failed");
+			return -ENOENT;
 		}
 
-		memset(m_config_interim.addr[index], 0, BT_ADDR_SIZE);
-		shell_print(shell, "tag index: %d removed", index);
-
-		m_scan_tag_mask &= ~BIT(index);
+		memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
+		shell_print(shell, "slot %d removed", slot);
+		shell_print(shell, "command succeeded");
 
 		return 0;
 	}
@@ -589,56 +675,77 @@ static int cmd_config_list_tags(const struct shell *shell, size_t argc, char **a
 {
 	print_tag_list(shell);
 
+	shell_print(shell, "command succeeded");
+
 	return 0;
 }
 
 static int cmd_config_clear_tags(const struct shell *shell, size_t argc, char **argv)
 {
-	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
-		memset(m_config_interim.addr[i], 0, BT_ADDR_SIZE);
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
 	}
 
-	m_scan_tag_mask = 0;
+	shell_print(shell, "command succeeded");
 
 	return 0;
 }
 
 static int cmd_config_scan(const struct shell *shell, size_t argc, char **argv)
 {
+	int ret;
+
 	if (!m_config.enabled) {
-		shell_error(shell, "tag subsystem is disabled");
-		return -EINVAL;
+		shell_print(shell, "tag functionality is disabled");
+		shell_error(shell, "command aborted");
+		return -EPERM;
+	}
+
+	for (int i = 30; i; i--) {
+		ret = k_mutex_lock(&m_scan_lock, K_NO_WAIT);
+		if (!ret) {
+			break;
+		}
+
+		if (i == 1) {
+			shell_print(shell, "waiting timed out");
+			shell_error(shell, "command failed");
+			return -EBUSY;
+
+		} else {
+			shell_print(shell, "waiting for scan opportunity...");
+		}
+
+		k_sleep(K_SECONDS(2));
 	}
 
 	shell_print(shell, "scanning...");
 
-	k_sem_take(&m_scan_sem, K_FOREVER);
+	struct bt_le_scan_param param = SCAN_PARAMS_DEFAULTS;
 
-	struct bt_le_scan_param scan_params = m_scan_params;
-
-	int ret = bt_le_scan_start(&scan_params, scan_cb);
+	ret = bt_le_scan_start(&param, scan_cb);
 	if (ret) {
-		LOG_ERR("Call `bt_le_scan_start` failed (err %d)", ret);
-		k_sem_give(&m_scan_sem);
+		LOG_ERR("Call `bt_le_scan_start` failed: %d", ret);
+		shell_error(shell, "command failed");
+		k_mutex_unlock(&m_scan_lock);
 		return ret;
 	}
 
 	k_sleep(K_SECONDS(CTR_BLE_TAG_ENROLL_TIMEOUT_SEC));
 
-	if (!m_scan_early_stop) {
-		ret = bt_le_scan_stop();
-		if (ret) {
-			LOG_ERR("Call `bt_le_scan_stop` failed (err %d)", ret);
-			k_sem_give(&m_scan_sem);
-			return ret;
-		}
+	ret = bt_le_scan_stop();
+	if (ret) {
+		LOG_ERR("Call `bt_le_scan_stop` failed: %d", ret);
+		shell_error(shell, "command failed");
+		k_mutex_unlock(&m_scan_lock);
+		return ret;
 	}
 
-	k_sem_give(&m_scan_sem);
+	k_mutex_unlock(&m_scan_lock);
 
 	shell_print(shell, "scan finished");
 
-	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		uint8_t addr[BT_ADDR_SIZE];
 		int rssi;
 		float voltage;
@@ -646,71 +753,114 @@ static int cmd_config_scan(const struct shell *shell, size_t argc, char **argv)
 		float humidity;
 		bool valid;
 
-		ret = ctr_ble_tag_read(i, addr, &rssi, &voltage, &temperature, &humidity, &valid);
+		ret = ctr_ble_tag_read(slot, addr, &rssi, &voltage, &temperature, &humidity,
+				       &valid);
 		if (ret) {
 			continue;
 		}
 
-		if (valid) {
-			char addr_str[BT_ADDR_SIZE * 2 + 1];
-
-			ret = ctr_buf2hex(addr, BT_ADDR_SIZE, addr_str, sizeof(addr_str), false);
-			if (ret < 0) {
-				LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
-				return ret;
-			}
-
-			shell_print(shell,
-				    "tag index %d: addr: %s / rssi: %d dBm / voltage: %.2f V / "
-				    "temperature: %.2f C / "
-				    "humidity: %.2f %%",
-				    i, addr_str, rssi, voltage, temperature, humidity);
+		if (!valid) {
+			LOG_DBG("Data was invalid");
+			continue;
 		}
+
+		char addr_str[BT_ADDR_SIZE * 2 + 1];
+
+		ret = ctr_buf2hex(addr, BT_ADDR_SIZE, addr_str, sizeof(addr_str), false);
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		shell_print(shell,
+			    "slot %u: addr: %s / rssi: %d dBm / voltage: %.2f V / "
+			    "temperature: %.2f C / "
+			    "humidity: %.2f %%",
+			    slot, addr_str, rssi, voltage, temperature, humidity);
 	}
+
+	shell_print(shell, "command succeeded");
 
 	return 0;
 }
 
 static int cmd_config_enroll(const struct shell *shell, size_t argc, char **argv)
 {
+	int ret;
+
 	if (!m_config.enabled) {
-		shell_error(shell, "tag subsystem is disabled");
-		return -EINVAL;
+		shell_print(shell, "tag subsystem is disabled");
+		shell_error(shell, "command aborted");
+		return 0;
 	}
 
-	k_sem_take(&m_scan_sem, K_FOREVER);
+	bool can_enroll = false;
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
+			can_enroll = true;
+		}
+	}
+
+	if (!can_enroll) {
+		shell_print(shell, "no slot available for enrollment");
+		shell_error(shell, "command failed");
+		return -ENOSPC;
+	}
+
+	for (int i = 30; i; i--) {
+		ret = k_mutex_lock(&m_scan_lock, K_NO_WAIT);
+		if (!ret) {
+			break;
+		}
+
+		if (i == 1) {
+			shell_print(shell, "waiting timed out");
+			shell_error(shell, "command failed");
+			return -EBUSY;
+
+		} else {
+			shell_print(shell, "waiting for enrollment opportunity...");
+		}
+
+		k_sleep(K_SECONDS(2));
+	}
 
 	shell_print(shell, "enrolling...");
 
-	m_enrolling = true;
+	struct bt_le_scan_param param = SCAN_PARAMS_DEFAULTS;
+	param.options = BT_LE_SCAN_OPT_NONE;
 
-	struct bt_le_scan_param scan_params = m_scan_params;
-	scan_params.options = BT_LE_SCAN_OPT_NONE;
-
-	int ret = bt_le_scan_start(&scan_params, scan_cb);
+	/* Start scan without filter */
+	ret = bt_le_scan_start(&param, enroll_cb);
 	if (ret) {
-		LOG_ERR("Call `bt_le_scan_start` failed (err %d)", ret);
-		k_sem_give(&m_scan_sem);
+		LOG_ERR("Call `bt_le_scan_start` failed %d", ret);
+		shell_error(shell, "command failed");
+		k_mutex_unlock(&m_scan_lock);
 		return ret;
 	}
 
 	ret = k_sem_take(&m_has_enrolled_sem, K_SECONDS(CTR_BLE_TAG_ENROLL_TIMEOUT_SEC));
-	if (ret) {
-		shell_error(shell, "enroll timeout");
-	} else {
+	if (!ret) {
 		shell_print(shell, "enrolled addr: %s", m_enroll_addr_str);
+	} else if (ret == -EAGAIN) {
+		shell_print(shell, "enrollment timed out");
+	} else {
+		LOG_ERR("Call `k_sem_take` failed %d", ret);
 	}
-
-	m_enrolling = false;
 
 	ret = bt_le_scan_stop();
 	if (ret) {
-		LOG_ERR("Call `bt_le_scan_stop` failed (err %d)", ret);
-		k_sem_give(&m_scan_sem);
+		LOG_ERR("Call `bt_le_scan_stop` failed %d", ret);
+		shell_error(shell, "command failed");
+		k_mutex_unlock(&m_scan_lock);
 		return ret;
 	}
 
-	k_sem_give(&m_scan_sem);
+	k_mutex_unlock(&m_scan_lock);
+
+	shell_print(shell, "command succeeded");
 
 	return 0;
 }
@@ -779,44 +929,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 SHELL_CMD_REGISTER(tag, &sub_tag, "BLE tag commands.", print_help);
 
-static void start_scan_work_handler(struct k_work *work)
-{
-	k_sem_take(&m_scan_sem, K_FOREVER);
-
-	int ret = bt_le_scan_start(&m_scan_params, scan_cb);
-	if (ret) {
-		LOG_ERR("Call `bt_le_scan_start` failed: %d", ret);
-		k_sem_give(&m_scan_sem);
-		return;
-	}
-
-	m_scan_tag_flags = 0;
-
-	k_work_schedule_for_queue(&m_scan_work_q, &m_stop_scan_work,
-				  K_SECONDS(m_config.scan_duration));
-}
-
-static void stop_scan_work_handler(struct k_work *work)
-{
-	int ret;
-
-	if (!m_scan_early_stop) {
-		ret = bt_le_scan_stop();
-		if (ret) {
-			LOG_ERR("Call `bt_le_scan_stop` failed: %d", ret);
-			k_sem_give(&m_scan_sem);
-			return;
-		}
-	}
-
-	m_scan_early_stop = false;
-
-	k_work_schedule_for_queue(&m_scan_work_q, &m_start_scan_work,
-				  K_SECONDS(m_config.scan_interval - m_config.scan_duration));
-
-	k_sem_give(&m_scan_sem);
-}
-
 static int init(void)
 {
 	int ret;
@@ -850,43 +962,36 @@ static int init(void)
 		return ret;
 	}
 
-	m_scan_params.type = BT_LE_SCAN_TYPE_ACTIVE;
-	m_scan_params.options = BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST;
-	m_scan_params.interval = CTR_BLE_TAG_SCAN_MAX_TIME;
-	m_scan_params.window = CTR_BLE_TAG_SCAN_MAX_TIME;
-
 	ret = bt_le_filter_accept_list_clear();
 	if (ret) {
 		LOG_ERR("Call `bt_le_filter_accept_list_clear` failed: %d", ret);
 		return ret;
 	}
 
-	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
-		if (!ctr_ble_tag_is_addr_empty(m_config_interim.addr[i])) {
-			bt_addr_le_t addr = {
-				.type = BT_ADDR_LE_PUBLIC,
-			};
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
+			continue;
+		}
 
-			memcpy(addr.a.val, m_config_interim.addr[i], BT_ADDR_SIZE);
+		bt_addr_le_t addr = {
+			.type = BT_ADDR_LE_PUBLIC,
+		};
 
-			ret = bt_le_filter_accept_list_add((const bt_addr_le_t *)&addr);
-			if (ret) {
-				LOG_ERR("Call `bt_le_filter_accept_list_add` failed: %d", ret);
-				return ret;
-			}
+		memcpy(addr.a.val, m_config_interim.addr[slot], BT_ADDR_SIZE);
 
-			m_scan_tag_mask |= BIT(i);
+		ret = bt_le_filter_accept_list_add((const bt_addr_le_t *)&addr);
+		if (ret) {
+			LOG_ERR("Call `bt_le_filter_accept_list_add` failed: %d", ret);
+			return ret;
 		}
 	}
 
 	if (m_config.enabled) {
 		k_work_queue_start(&m_scan_work_q, m_scan_work_q_stack,
-				   K_THREAD_STACK_SIZEOF(m_scan_work_q_stack), K_PRIO_COOP(7),
-				   NULL);
+				   K_THREAD_STACK_SIZEOF(m_scan_work_q_stack),
+				   K_LOWEST_APPLICATION_THREAD_PRIO, NULL);
 
 		k_work_schedule_for_queue(&m_scan_work_q, &m_start_scan_work, K_NO_WAIT);
-
-		k_sem_give(&m_scan_sem);
 	}
 
 	return 0;
