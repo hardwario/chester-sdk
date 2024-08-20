@@ -35,7 +35,7 @@
  * Copyright (c) {{data['project']['company']}}
 	{%- endif %}
 	{%- if data['project']['company'] and data['project']['license'] %}
- * 
+ *
 	{%- endif %}
 	{%- if data['project']['license'] %}
  * {{data['project']['license'] }}
@@ -65,7 +65,7 @@ extern "C" {
 {#- K1 #}
 {%- for feature in data['features'] %}
 	{%- if feature == 'hardware-chester-k1' %}
-#define APP_CONFIG_CHANNEL_COUNT 4  
+#define APP_CONFIG_CHANNEL_COUNT 4
 	{% endif %}
 {%- endfor %}
 
@@ -86,26 +86,26 @@ enum app_config_mode {
 #if {{ parameter['depends_on'] }}
 		{% endif %}
 enum {{domain}}_config_{{ var | replace('_{}', '')}}{
-		{%- for mode in parameter['valueset'] %}  
+		{%- for mode in parameter['valueset'] %}
 			{%- if parameter['related']%}
 	{{domain | upper}}_CONFIG_{{ var | upper}}_{{ mode |  upper}} = {{ loop.index0 }},
 			{%- else %}
 	{{domain | upper}}_CONFIG_{{ var | replace('{}', '') | upper}}{{ mode |  upper}} = {{ loop.index0 }},
 			{%- endif%}
-     	{%- endfor %}		
+     	{%- endfor %}
 };
 		{% if parameter['depends_on'] %}
 #endif /* {{ parameter['depends_on'] }} */
 		{%- endif %}
     {% endif -%}
-{%- endfor %}	
+{%- endfor %}
 
-{#- STRUCT #} 
+{#- STRUCT #}
 {%- if data and data_dependency %}
 struct app_config {
 {%- for dep , params in data_dependency['parameters'].items() %}
 	{%- if dep != 'no_dependency' %}
-	
+
 #if {{ dep }}
 	{%- endif %}
 	{%- for param in params -%}
@@ -123,15 +123,15 @@ struct app_config {
 	{#- ENUM #}
 	{%- elif param['type'] == 'enum' %}
 		{%- if param['related']%}
-			{%- for related in param['related'] %} 
+			{%- for related in param['related'] %}
 	enum {{domain}}_config_{{ var }} {{ related['name'] | replace('-', '_') }}_{{ var }};
 			{%- endfor %}
 		{%- else %}
-			{%- for related in param['valueset'] %} 
+			{%- for related in param['valueset'] %}
 	enum {{domain}}_config_{{ var | replace('_{}', '') }} {{ var | replace('-', '_') | replace('{}', loop.index) }};
 			{%- endfor %}
 		{%- endif %}
-				
+
 
 	{#- OTHERS #}
 	{%- elif param['type'] != 'enum' %}
@@ -141,7 +141,7 @@ struct app_config {
 	{%- endfor %}
 	{%- if dep != 'no_dependency' %}
 #endif /* {{dep}} */
-	{%- endif -%}	
+	{%- endif -%}
 {%- endfor %}
 
 {#- MODE LTE-LRW #}

@@ -5,7 +5,7 @@
  * Copyright (c) {{data['project']['company']}}
 	{%- endif %}
 	{%- if data['project']['company'] and data['project']['license'] %}
- * 
+ *
 	{%- endif %}
 	{%- if data['project']['license'] %}
  * {{data['project']['license'] }}
@@ -15,7 +15,7 @@
 {% endraw %}
 {%- endif -%}
 {%- for feature in data['features'] %}
-{#- A1 #} 
+{#- A1 #}
 	{%- if feature == 'hardware-chester-a1' %}
 /* {{ feature | upper }} */
 / {
@@ -40,7 +40,7 @@
 	};
 };
 	{%- endif -%}
-{#- B1 #} 
+{#- B1 #}
 	{%- if feature == 'hardware-chester-b1' %}
 /* {{ feature | upper }} */
 / {
@@ -92,7 +92,7 @@
 };
 	{%- endif -%}
 
-{#- BAROMETER_TAG #} 
+{#- BAROMETER_TAG #}
 	{%- if feature == 'hardware-chester-barometer-tag' %}
 /* {{ feature | upper }}   */
 &ctr_barometer_tag {
@@ -100,7 +100,7 @@
 };
 	{%- endif -%}
 
-{#- C1 #} 
+{#- C1 #}
 	{%- if feature == 'hardware-chester-c1' %}
 /* {{ feature | upper }}   */
 / {
@@ -133,7 +133,7 @@
 };
 	{%- endif -%}
 
-{#- C2 #} 
+{#- C2 #}
 	{%- if feature == 'hardware-chester-c2' %}
 /* {{ feature | upper }}   */
 &led_r {
@@ -160,7 +160,7 @@
 };
 	{%- endif -%}
 
-{#- DS18B20 #} 
+{#- DS18B20 #}
 	{%- if feature == 'subsystem-ds18b20' %}
 /* {{ feature | upper }}  */
 &ds2484 {
@@ -226,7 +226,7 @@
 };
 	{%- endif -%}
 
-{#- GNSS #} 
+{#- GNSS #}
 	{%- if feature == 'hardware-chester-gnss' %}
 /* {{ feature | upper }}  */
 &m8 {
@@ -234,7 +234,7 @@
 };
 	{%- endif -%}
 
-{#- K1 #} 
+{#- K1 #}
 	{%- if feature == 'hardware-chester-k1' %}
 /* {{ feature | upper }}  */
 / {
@@ -264,7 +264,7 @@
 };
 	{%- endif -%}
 
-{#- LRW #} 
+{#- LRW #}
 	{%- if feature == 'subsystem-lrw' %}
 /* {{ feature | upper }}   */
 &ctr_lrw_if {
@@ -276,7 +276,7 @@
 };
 	{%- endif -%}
 
-{#- LTE #} 
+{#- LTE #}
 	{%- if feature == 'subsystem-lte' %}
 /* {{ feature | upper }}  */
 &ctr_lte_if {
@@ -288,7 +288,7 @@
 };
 	{%- endif -%}
 
-{#- LTE_V2 #} 
+{#- LTE_V2 #}
 	{%- if feature == 'subsystem-lte-v2' %}
 /* {{ feature | upper }}  */
 / {
@@ -313,7 +313,7 @@
 };
 	{%- endif -%}
 
-{#- CLOUD #} 
+{#- CLOUD #}
 	{%- if feature == 'subsystem-cloud' %}
 /* {{ feature | upper }}  */
 / {
@@ -359,7 +359,7 @@
 };
 	{%- endif -%}
 
-{#- MACHINE_PROBE #} 
+{#- MACHINE_PROBE #}
 	{%- if feature == 'hardware-chester-machine-probe' %}
 /* {{ feature | upper }}  */
 &ds2484 {
@@ -406,7 +406,7 @@
 };
 	{%- endif -%}
 
-{#- MB7066_A #} 
+{#- MB7066_A #}
 	{%- if feature == 'hardware-chester-mb7066-a' %}
 /* {{ feature | upper }}  */
 &ctr_x0_a {
@@ -424,7 +424,7 @@
 };
 	{%- endif -%}
 
-{#- MB7066_B #} 
+{#- MB7066_B #}
 	{%- if feature == 'hardware-chester-mb7066-b' %}
 /* {{ feature | upper }}  */
 &ctr_x0_b {
@@ -442,7 +442,7 @@
 };
 	{%- endif -%}
 
-{#- METEO_A #} 
+{#- METEO_A #}
 	{%- if feature == 'hardware-chester-meteo-a' %}
 /* {{ feature | upper }}  */
 &ctr_x0_a {
@@ -460,7 +460,7 @@
 };
 	{%- endif -%}
 
-{#- METEO_B #} 
+{#- METEO_B #}
 	{%- if feature == 'hardware-chester-meteo-b' %}
 /* {{ feature | upper }}  */
 &ctr_x0_b {
@@ -478,7 +478,7 @@
 };
 	{%- endif -%}
 
-{#- RTD_A #} 
+{#- RTD_A #}
 	{%- if feature == 'hardware-chester-rtd-a' %}
 /* {{ feature | upper }}  */
 &ctr_x3_a {
@@ -500,7 +500,7 @@
 };
 	{%- endif -%}
 
-{#- RTD_B #} 
+{#- RTD_B #}
 	{%- if feature == 'hardware-chester-rtd-b' %}
 /* {{ feature | upper }}  */
 &ctr_x3_b {
@@ -522,7 +522,7 @@
 };
 	{%- endif -%}
 
-{#- S1 #} 
+{#- S1 #}
 	{%- if feature == 'hardware-chester-s1' %}
 /* {{ feature | upper }}  */
 &ctr_s1 {
@@ -530,7 +530,7 @@
 };
 	{%- endif -%}
 
-{#- S2 #} 
+{#- S2 #}
 	{%- if feature == 'hardware-chester-s2' %}
 /* {{ feature | upper }}  */
 &sht30_ext {
@@ -538,7 +538,7 @@
 };
 	{%- endif -%}
 
-{#- SOIL_SENSOR #} 
+{#- SOIL_SENSOR #}
 	{%- if feature == 'subsystem-soil-sensor' %}
 /* {{ feature | upper }}  */
 &ds2484 {
@@ -583,9 +583,9 @@
 		family-code = <0x19>;
 	};
 };
-	{%- endif -%}	
+	{%- endif -%}
 
-{#- WEIGHT_PROBE #} 
+{#- WEIGHT_PROBE #}
 	{%- if feature == 'hardware-chester-weight-probe' %}
 /* {{ feature | upper }}  */
 &ds2484 {
@@ -630,9 +630,9 @@
 		family-code = <0x19>;
 	};
 };
-	{%- endif -%}	
-	
-{#- X0A #} 
+	{%- endif -%}
+
+{#- X0A #}
 	{%- if feature == 'hardware-chester-x0-a' %}
 /* {{ feature | upper }}  */
 &ctr_x0_a {
@@ -644,7 +644,7 @@
 };
 	{%- endif -%}
 
-{#- X0B #} 
+{#- X0B #}
 	{%- if feature == 'hardware-chester-x0-b' %}
 /* {{ feature | upper }}  */
 &ctr_x0_b {
@@ -656,7 +656,7 @@
 };
 	{%- endif -%}
 
-{#- X2A #} 
+{#- X2A #}
 	{%- if feature == 'hardware-chester-x2-a' %}
 /* {{ feature | upper }}  */
 &ctr_x2_sc16is740_a {
@@ -664,7 +664,7 @@
 };
 	{%- endif -%}
 
-{#- X2B #} 
+{#- X2B #}
 	{%- if feature == 'hardware-chester-x2-b' %}
 /* {{ feature | upper }}  */
 &ctr_x2_sc16is740_b {
@@ -672,7 +672,7 @@
 };
 	{%- endif -%}
 
-{#- X2_MODBUS_A #} 
+{#- X2_MODBUS_A #}
 	{%- if feature == 'hardware-chester-x2-modbus-a' %}
 /* {{ feature | upper }}  */
 &ctr_x2_sc16is740_a {
@@ -688,7 +688,7 @@
 };
 {%- endif -%}
 
-{#- X2_MODBUS_B #} 
+{#- X2_MODBUS_B #}
 	{%- if feature == 'hardware-chester-x2-modbus-b' %}
 /* {{ feature | upper }}  */
 &ctr_x2_sc16is740_b {
@@ -704,7 +704,7 @@
 };
 {%- endif -%}
 
-{#- X3_A #} 
+{#- X3_A #}
 	{%- if feature == 'hardware-chester-x3-a' %}
 /* {{ feature | upper }}  */
 &ctr_x3_a {
@@ -724,7 +724,7 @@
 };
 	{%- endif -%}
 
-{#- X3_B #} 
+{#- X3_B #}
 	{%- if feature == 'hardware-chester-x3-b' %}
 /* {{ feature | upper }}  */
 &ctr_x3_b {
@@ -744,7 +744,7 @@
 };
 	{%- endif -%}
 
-{#- X4_A #} 
+{#- X4_A #}
 	{%- if feature == 'hardware-chester-x4-a' %}
 /* {{ feature | upper }}  */
 &ctr_x4_a {
@@ -759,7 +759,7 @@
 };
 	{%- endif -%}
 
-{#- X4_B #} 
+{#- X4_B #}
 	{%- if feature == 'hardware-chester-x4-b' %}
 /* {{ feature | upper }}  */
 &ctr_x4_b {
@@ -774,7 +774,7 @@
 };
 	{%- endif -%}
 
-{#- X7_A #} 
+{#- X7_A #}
 	{%- if feature == 'hardware-chester-x7-a' %}
 /* {{ feature | upper }}  */
 / {
@@ -786,7 +786,7 @@
 };
 	{%- endif -%}
 
-{#- X7_B #} 
+{#- X7_B #}
 	{%- if feature == 'hardware-chester-x7-b' %}
 /* {{ feature | upper }}  */
 / {
@@ -798,7 +798,7 @@
 };
 	{%- endif -%}
 
-{#- X9_A #} 
+{#- X9_A #}
 	{%- if feature == 'hardware-chester-x9-a' %}
 /* {{ feature | upper }}  */
 / {
@@ -813,7 +813,7 @@
 };
 	{%- endif -%}
 
-{#- X9_B #} 
+{#- X9_B #}
 	{%- if feature == 'hardware-chester-x9-b' %}
 /* {{ feature | upper }}  */
 / {
@@ -828,7 +828,7 @@
 };
 	{%- endif -%}
 
-{#- X10 #} 
+{#- X10 #}
 	{%- if feature == 'hardware-chester-x10' %}
 /* {{ feature | upper }}  */
 &ctr_x10 {
@@ -840,7 +840,7 @@
 };
 	{%- endif -%}
 
-{#- Z #} 
+{#- Z #}
 	{%- if feature == 'hardware-chester-z' %}
 /* {{ feature | upper }}  */
 &ctr_z {
@@ -848,7 +848,7 @@
 };
 	{%- endif -%}
 
-{#- PEOPLE_COUTER #} 
+{#- PEOPLE_COUTER #}
 	{%- if feature == 'hardware-chester-people-counter' %}
 /* {{ feature | upper }}  */
 &i2c0 {
@@ -857,10 +857,10 @@
 		status = "okay";
 		reg = <0x7f>;
 	};
-}; 
+};
 	{%- endif -%}
 
-{#- APP TAMPER #} 
+{#- APP TAMPER #}
 	{%- if feature == 'chester-app-tamper' %}
 /* {{ feature | upper }}  */
 / {
@@ -870,7 +870,7 @@
 };
 	{%- endif -%}
 
-{#- THERMOCOUPLE A #} 
+{#- THERMOCOUPLE A #}
 	{%- if feature == 'hardware-chester-tc-a' %}
 /* {{ feature | upper }}  */
 &ctr_x3_a {
@@ -896,7 +896,7 @@
 };
 	{%- endif -%}
 
-{#- THERMOCOUPLE B #} 
+{#- THERMOCOUPLE B #}
 	{%- if feature == 'hardware-chester-tc-b' %}
 /* {{ feature | upper }}  */
 &ctr_x3_b {
