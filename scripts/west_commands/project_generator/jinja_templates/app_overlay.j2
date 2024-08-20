@@ -870,8 +870,8 @@
 };
 	{%- endif -%}
 
-{#- TERMOCOUPLE A #} 
-	{%- if feature == 'subsystem-thermocouple-a' %}
+{#- THERMOCOUPLE A #} 
+	{%- if feature == 'hardware-chester-tc-a' %}
 /* {{ feature | upper }}  */
 &ctr_x3_a {
 	status = "okay";
@@ -896,8 +896,8 @@
 };
 	{%- endif -%}
 
-{#- TERMOCOUPLE B #} 
-	{%- if feature == 'subsystem-thermocouple-b' %}
+{#- THERMOCOUPLE B #} 
+	{%- if feature == 'hardware-chester-tc-b' %}
 /* {{ feature | upper }}  */
 &ctr_x3_b {
 	status = "okay";

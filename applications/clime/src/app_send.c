@@ -302,7 +302,7 @@ static int compose_lrw(struct ctr_buf *buf)
 
 int app_send(void)
 {
-	int ret;
+	__unused int ret;
 
 #if defined(CONFIG_SHIELD_CTR_LRW)
 	CTR_BUF_DEFINE_STATIC(lrw_buf, 51);

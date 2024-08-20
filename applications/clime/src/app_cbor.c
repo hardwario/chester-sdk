@@ -710,6 +710,50 @@ static int encode(zcbor_state_t *zs)
 	}
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 
+#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+	zcbor_uint32_put(zs, CODEC_KEY_E_TC_THERMOMETER);
+	{
+		const int channel_lookup[] = {
+#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A)
+			1,
+			2,
+#endif
+#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+			3,
+			4,
+#endif
+		};
+
+		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		for (int i = 0; i < APP_DATA_TC_THERM_COUNT; i++) {
+			struct app_data_tc_therm_sensor *sensor = &g_app_data.tc_therm.sensor[i];
+
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_TC_THERMOMETER__CHANNEL);
+			zcbor_uint32_put(zs, channel_lookup[i]);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_TC_THERMOMETER__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.tc_therm.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int j = 0; j < sensor->measurement_count; j++) {
+					put_sample_mul(zs, &sensor->measurements[j].temperature,
+						       100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+
 #if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
 	zcbor_uint32_put(zs, CODEC_KEY_E_SOIL_SENSORS);
 	{

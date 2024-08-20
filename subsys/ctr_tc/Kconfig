@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_TC
+	bool "CTR_TC"
+	depends on CTR_X3
+	depends on CTR_THERM
+	select CBPRINTF_FP_SUPPORT if CTR_TC_LOG_LEVEL_DBG || CTR_TC_SHELL
+	select REQUIRES_FULL_LIBC
+
+if CTR_TC
+
+module = CTR_TC
+module-str = CHESTER Thermocouple Temperature Detectors Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_TC_SHELL
+	bool "CTR_TC_SHELL"
+	depends on SHELL
+	depends on CTR_TC
+	default y
+
+endif # CTR_TC

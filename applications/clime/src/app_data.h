@@ -36,6 +36,13 @@
 #define APP_DATA_RTD_THERM_COUNT 4
 #endif
 
+#if (defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) && !defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)) ||                       \
+	(!defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) && defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B))
+#define APP_DATA_TC_THERM_COUNT 2
+#elif defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) && defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#define APP_DATA_TC_THERM_COUNT 4
+#endif
+
 #define APP_DATA_SOIL_SENSOR_COUNT 10
 
 #ifdef __cplusplus
@@ -221,6 +228,28 @@ struct app_data_rtd_therm {
 };
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
 
+#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+struct app_data_tc_therm_measurement {
+	struct app_data_aggreg temperature;
+};
+
+struct app_data_tc_therm_sensor {
+	float last_sample_temperature;
+
+	int sample_count;
+	float samples_temperature[APP_DATA_MAX_SAMPLES];
+
+	int measurement_count;
+	struct app_data_tc_therm_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+};
+
+struct app_data_tc_therm {
+	struct app_data_tc_therm_sensor sensor[APP_DATA_TC_THERM_COUNT];
+
+	int64_t timestamp;
+};
+#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+
 #if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
 
 struct app_data_soil_sensor_measurement {
@@ -313,6 +342,10 @@ struct app_data {
 #if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
 	struct app_data_rtd_therm rtd_therm;
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
+#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+	struct app_data_tc_therm tc_therm;
+#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
 
 #if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
 	struct app_data_soil_sensor soil_sensor;

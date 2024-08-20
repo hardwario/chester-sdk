@@ -37,6 +37,12 @@ variants:
   fw_version: v3.0.0
   features: 
     - hardware-chester-rtd-a
+- name: CHESTER Clime TC
+  fw_bundle: com.hardwario.chester.app.clime.tc
+  fw_name: hio-chester-clime-tc
+  fw_version: v3.0.0
+  features:
+    - hardware-chester-tc-a
 project:
   variant: Clime
   company: 2024 HARDWARIO a.s.
@@ -70,6 +76,8 @@ features:
 - subsystem-lrw
 - hardware-chester-s2
 - chester-app-report-jitter
+#- hardware-chester-tc-a
+#- hardware-chester-tc-b
 #- chester-app-tamper
 #- hardware-chester-s1
 #- subsystem-ds18b20

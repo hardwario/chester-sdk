@@ -640,8 +640,8 @@ config APP_FLIP_MODE
 	default y
 {%- endif -%}
 
-{#- TERMOCOUPLE_A #} 
-	{%- if feature == 'subsystem-thermocouple-a' %}
+{#- TERMOCOUPLE_A #}
+	{%- if feature == 'hardware-chester-tc-a' %}
 # {{ feature | upper }}
 config CTR_X3
 	default y
@@ -650,8 +650,8 @@ config CTR_TC
 	default y
 {%- endif -%}
 
-{#- TERMOCOUPLE_B #} 
-	{%- if feature == 'subsystem-thermocouple-b' %}
+{#- TERMOCOUPLE_B #}
+	{%- if feature == 'hardware-chester-tc-b' %}
 # {{ feature | upper }}
 config CTR_X3
 	default y

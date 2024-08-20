@@ -17,6 +17,7 @@
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_rtd.h>
 #include <chester/ctr_soil_sensor.h>
+#include <chester/ctr_tc.h>
 #include <chester/ctr_therm.h>
 #include <chester/drivers/ctr_batt.h>
 #include <chester/drivers/ctr_s1.h>
@@ -604,7 +605,7 @@ int app_sensor_rtd_therm_sample(void)
 			ret = ctr_rtd_read(channel_lookup[i], CTR_RTD_TYPE_PT1000, &temperature);
 
 			if (ret) {
-				LOG_ERR("Call `ctr_rtd_read` failed: %d", ret);
+				LOG_WRN("Call `ctr_rtd_read` failed: %d", ret);
 				continue;
 			} else {
 				LOG_INF("Temperature: %.1f C", temperature);
@@ -684,6 +685,109 @@ int app_sensor_rtd_therm_clear(void)
 }
 
 #endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+
+#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+
+int app_sensor_tc_therm_sample(void)
+{
+	int ret;
+	const enum ctr_tc_channel channel_lookup[] = {
+#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A)
+		CTR_TC_CHANNEL_A1,
+		CTR_TC_CHANNEL_A2,
+#endif
+#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+		CTR_TC_CHANNEL_B1,
+		CTR_TC_CHANNEL_B2,
+#endif
+	};
+
+	for (int i = 0; i < APP_DATA_TC_THERM_COUNT; i++) {
+		if (g_app_data.tc_therm.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
+			float temperature = NAN;
+			ret = ctr_tc_read(channel_lookup[i], CTR_TC_TYPE_K, &temperature);
+
+			if (ret) {
+				LOG_WRN("Call `ctr_tc_read` failed: %d", ret);
+				continue;
+			} else {
+				LOG_INF("Temperature: %.1f C", temperature);
+			}
+
+			app_data_lock();
+			struct app_data_tc_therm_sensor *sensor = &g_app_data.tc_therm.sensor[i];
+			sensor->last_sample_temperature = temperature;
+			sensor->samples_temperature[sensor->sample_count] = temperature;
+			sensor->sample_count++;
+
+			LOG_INF("Sample count: %d", sensor->sample_count);
+			app_data_unlock();
+
+		} else {
+			LOG_WRN("Sample buffer full");
+			return -ENOSPC;
+		}
+	}
+
+	return 0;
+}
+
+int app_sensor_tc_therm_aggreg(void)
+{
+	int ret;
+
+	struct app_data_tc_therm *tc_therm = &g_app_data.tc_therm;
+
+	app_data_lock();
+
+	for (int i = 0; i < APP_DATA_TC_THERM_COUNT; i++) {
+		if (tc_therm->sensor[i].measurement_count == 0) {
+			ret = ctr_rtc_get_ts(&tc_therm->timestamp);
+			if (ret) {
+				LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+				app_data_unlock();
+				return ret;
+			}
+		}
+		if (tc_therm->sensor[i].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+			struct app_data_tc_therm_measurement *measurement =
+				&tc_therm->sensor[i]
+					 .measurements[tc_therm->sensor[i].measurement_count];
+
+			aggreg_sample(tc_therm->sensor[i].samples_temperature,
+				      tc_therm->sensor[i].sample_count, &measurement->temperature);
+
+			tc_therm->sensor[i].measurement_count++;
+
+			LOG_INF("Measurement count: %d", tc_therm->sensor[i].measurement_count);
+		} else {
+			LOG_WRN("Measurement buffer full");
+			app_data_unlock();
+			return -ENOSPC;
+		}
+
+		tc_therm->sensor[i].sample_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_tc_therm_clear(void)
+{
+	app_data_lock();
+
+	for (int i = 0; i < APP_DATA_TC_THERM_COUNT; i++) {
+		g_app_data.tc_therm.sensor[i].measurement_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
 
 #if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
 
