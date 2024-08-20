@@ -8,34 +8,34 @@ variants:
   fw_bundle: com.hardwario.chester.app.clime.z
   fw_name: hio-chester-clime-z
   fw_version: v3.0.0
-  features: 
+  features:
   - hardware-chester-z
   remark: Support for CHESTER-Z
 - name: CHESTER Clime IAQ
   fw_bundle: com.hardwario.chester.app.clime.iaq
   fw_name: hio-chester-clime-iaq
   fw_version: v3.0.0
-  features: 
+  features:
   - hardware-chester-s1
 - name: CHESTER Clime 1W
   fw_bundle: com.hardwario.chester.app.clime.1w
   fw_name: hio-chester-clime-1w
   fw_version: v3.0.0
-  features: 
+  features:
   - hardware-chester-ds18b20
 - name: CHESTER Clime 1WH
   fw_bundle: com.hardwario.chester.app.clime.1wh
   fw_name: hio-chester-clime-1wh
   fw_version: v3.0.0
-  features: 
+  features:
     - hardware-chester-s2
-    - hardware-chester-ds18b20 
+    - hardware-chester-ds18b20
   remark: Support for CHESTER-S2, 1-Wire
 - name: CHESTER Clime RTD
   fw_bundle: com.hardwario.chester.app.clime.rtd
   fw_name: hio-chester-clime-rtd
   fw_version: v3.0.0
-  features: 
+  features:
     - hardware-chester-rtd-a
 - name: CHESTER Clime TC
   fw_bundle: com.hardwario.chester.app.clime.tc
@@ -50,7 +50,7 @@ project:
   fw_name: CHESTER Clime
   fw_bundle: com.hardwario.chester.app.clime
   fw_version: v3.0.0
-features: 
+features:
 - subsystem-accel
 - subsystem-batt
 - subsystem-button
@@ -60,7 +60,7 @@ features:
 - subsystem-bt-observer
 - subsystem-buf
 - subsystem-cloud
-- subsystem-config 
+- subsystem-config
 - subsystem-defaults
 - subsystem-info
 - subsystem-led
@@ -199,16 +199,16 @@ parameters:
   depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
 commands:
 - name: sample
-  callback: app_work_sample() 
+  callback: app_work_sample()
   help: 'Sample immediately.'
 - name: send
-  callback: app_work_send() 
+  callback: app_work_send()
   help: 'Send data immediately.'
 - name: aggreg
-  callback: app_work_aggreg() 
+  callback: app_work_aggreg()
   help: 'Aggregate data immediately'
 extras:
-- CONFIG_ADC_TLA2021_INIT_PRIORITY=60 
+- CONFIG_ADC_TLA2021_INIT_PRIORITY=60
 - CONFIG_ADC_NRFX_SAADC=n
 - CONFIG_ADC_SHELL=n
 - CONFIG_NEWLIB_LIBC_NANO=n

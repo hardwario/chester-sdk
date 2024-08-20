@@ -25,7 +25,7 @@ project:
   fw_name: CHESTER Current
   fw_bundle: com.hardwario.chester.app.current
   fw_version: v3.0.0
-features: 
+features:
 - subsystem-accel
 - subsystem-batt
 - subsystem-button
@@ -71,50 +71,50 @@ parameters:
   max: 86400
   default: 1
   help: 'Get/Set event report delay in seconds'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: event-report-rate
   type: int
   min: 1
   max: 3600
   default: 30
   help: 'Get/Set event report rate in reports per hour'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: backup-report-connected
   type: bool
   default: true
   help: 'Get/Set report when backup is active'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: backup-report-disconnected
   type: bool
   default: true
   help: 'Get/Set report when backup is inactive'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: channel-interval-sample
   type: int
   min: 1
   max: 86400
   default: 60
   help: 'Get/Set sample interval in seconds'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-interval-aggreg
   type: int
   min: 1
   max: 86400
   default: 300
   help: 'Get/Set aggregate interval in seconds'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-active
   type: array[bool]
   len: 4
   default: null
   help: 'Get/Set channel activation'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-differential
   type: array[bool]
   len: 4
   default: null
   help: 'Get/Set channel differential mode'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-x0
   type: array[int]
   len: 4
@@ -122,7 +122,7 @@ parameters:
   max: 86400
   default: null
   help: 'Get/Set channel X0 calibration point'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-x1
   type: array[int]
   len: 4
@@ -130,7 +130,7 @@ parameters:
   max: 86400
   default: null
   help: 'Get/Set channel X1 calibration point'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-y0
   type: array[int]
   len: 4
@@ -138,7 +138,7 @@ parameters:
   max: 86400
   default: null
   help: 'Get/Set channel Y0 calibration point'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-y1
   type: array[int]
   len: 4
@@ -146,7 +146,7 @@ parameters:
   max: 86400
   default: null
   help: 'Get/Set channel Y1 calibration point'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: w1-therm-interval-sample
   type: int
   min: 1
@@ -163,7 +163,7 @@ parameters:
   depends_on: defined(FEATURE_SUBSYSTEM_DS18B20)
 commands:
 - name: sample
-  callback: app_work_sample() 
+  callback: app_work_sample()
   help: 'Sample immediately.'
 - name: send
   callback: app_work_send()
@@ -172,7 +172,7 @@ commands:
   callback: app_work_aggreg()
   help: 'Aggregate data immediately'
 extras:
-- CONFIG_ADC_TLA2021_INIT_PRIORITY=60 
+- CONFIG_ADC_TLA2021_INIT_PRIORITY=60
 - CONFIG_ADC_NRFX_SAADC=n
 - CONFIG_ADC_SHELL=n
 - CONFIG_NEWLIB_LIBC_NANO=n
