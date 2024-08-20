@@ -21,6 +21,7 @@ var modules =
     [ "ctr_rtd", "group__ctr__rtd.html", "group__ctr__rtd" ],
     [ "ctr_signal", "group__ctr__signal.html", "group__ctr__signal" ],
     [ "ctr_soil_sensor", "group__ctr__soil__sensor.html", "group__ctr__soil__sensor" ],
+    [ "ctr_tc", "group__ctr__tc.html", "group__ctr__tc" ],
     [ "ctr_therm", "group__ctr__therm.html", "group__ctr__therm" ],
     [ "ctr_util", "group__ctr__util.html", "group__ctr__util" ],
     [ "ctr_w1", "group__ctr__w1.html", "group__ctr__w1" ],

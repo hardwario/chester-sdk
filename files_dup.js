@@ -25,6 +25,7 @@ var files_dup =
     [ "ctr_rtd.h", "ctr__rtd_8h.html", "ctr__rtd_8h" ],
     [ "ctr_signal.h", "ctr__signal_8h.html", "ctr__signal_8h" ],
     [ "ctr_soil_sensor.h", "ctr__soil__sensor_8h.html", "ctr__soil__sensor_8h" ],
+    [ "ctr_tc.h", "ctr__tc_8h.html", "ctr__tc_8h" ],
     [ "ctr_therm.h", "ctr__therm_8h.html", "ctr__therm_8h" ],
     [ "ctr_util.h", "ctr__util_8h.html", "ctr__util_8h" ],
     [ "ctr_w1.h", "ctr__w1_8h.html", "ctr__w1_8h" ],
