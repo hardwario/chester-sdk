@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -14,13 +14,10 @@
 extern "C" {
 #endif
 
-extern struct k_timer g_app_measure_weight_timer;
-extern struct k_timer g_app_measure_people_timer;
-
 int app_measure_weight(void);
 int app_measure_people(void);
-int app_measure(void);
-
+int app_measure_clear(void);
+int app_test_measure(const struct shell *shell);
 #ifdef __cplusplus
 }
 #endif

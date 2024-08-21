@@ -1,17 +1,22 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+#include "app_backup.h"
+#include "app_codec.h"
 #include "app_config.h"
-#include "app_data.h"
 #include "app_handler.h"
+#include "app_init.h"
+#include "app_work.h"
+#include "app_data.h"
 
 /* CHESTER includes */
 #include <chester/ctr_button.h>
 #include <chester/ctr_led.h>
-#include <chester/ctr_lte.h>
+#include <chester/ctr_lrw.h>
+#include <chester/ctr_cloud.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_wdog.h>
 #include <chester/drivers/ctr_z.h>
@@ -26,36 +31,14 @@
 /* Standard includes */
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 LOG_MODULE_REGISTER(app_init, LOG_LEVEL_DBG);
 
-K_SEM_DEFINE(g_app_init_sem, 0, 1);
-
 struct ctr_wdog_channel g_app_wdog_channel;
 
-#if defined(CONFIG_SHIELD_CTR_Z)
-static int init_ctr_z(void)
-{
-	int ret;
+#if defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
 
-	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		return -ENODEV;
-	}
-
-	ret = ctr_z_enable_interrupts(dev);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_enable_interrupts` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
-
-#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
 static int init_people_counter(void)
 {
 	int ret;
@@ -85,9 +68,20 @@ static int init_people_counter(void)
 		return ret;
 	}
 
+	int64_t people_measurement_ts;
+	ret = ctr_rtc_get_ts(&people_measurement_ts);
+	if (ret) {
+		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+		return ret;
+	}
+	app_data_lock();
+	g_app_data.people_measurement_timestamp = people_measurement_ts;
+	app_data_unlock();
+
 	return 0;
 }
-#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
+
+#endif /* defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER) */
 
 int app_init(void)
 {
@@ -115,73 +109,88 @@ int app_init(void)
 		return ret;
 	}
 
-#if defined(CONFIG_CTR_BUTTON)
+#if defined(FEATURE_SUBSYSTEM_BUTTON)
 	ret = ctr_button_set_event_cb(app_handler_ctr_button, NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_button_set_event_cb` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_CTR_BUTTON) */
+#endif /* defined(FEATURE_SUBSYSTEM_BUTTON) */
 
-#if defined(CONFIG_SHIELD_CTR_Z)
-	ret = init_ctr_z();
-	if (ret) {
-		LOG_ERR("Call `init_ctr_z` failed: %d", ret);
-		return ret;
+#if defined(FEATURE_SUBSYSTEM_CLOUD)
+	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
+		CODEC_CLOUD_OPTIONS_STATIC(copt);
+
+		ret = ctr_cloud_init(&copt);
+		if (ret) {
+			LOG_ERR("Call `ctr_cloud_init` failed: %d", ret);
+			return ret;
+		}
+
+		if (g_app_config.interval_poll > 0) {
+			ret = ctr_cloud_set_poll_interval(K_SECONDS(g_app_config.interval_poll));
+			if (ret) {
+				LOG_ERR("Call `ctr_cloud_set_pull_interval` failed: %d", ret);
+				return ret;
+			}
+		}
+
+		while (true) {
+			ret = ctr_cloud_wait_initialized(K_SECONDS(60));
+			if (!ret) {
+				break;
+			} else {
+				if (ret == -ETIMEDOUT) {
+					LOG_INF("Waiting for cloud initialization");
+				} else {
+					LOG_ERR("Call `ctr_cloud_wait_initialized` failed: %d",
+						ret);
+					return ret;
+				}
+			}
+
+			ret = ctr_wdog_feed(&g_app_wdog_channel);
+			if (ret) {
+				LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
+				return ret;
+			}
+		}
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_SUBSYSTEM_CLOUD) */
 
-#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
+	ctr_led_set(CTR_LED_CHANNEL_R, false);
+
+#if defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
 	ret = init_people_counter();
 	if (ret) {
 		LOG_ERR("Call `init_people_counter` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER) */
 
-	ret = ctr_lte_set_event_cb(app_handler_lte, NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_set_event_cb` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_lte_start(NULL);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_start` failed: %d", ret);
-		return ret;
-	}
-
-	for (;;) {
-		ret = ctr_wdog_feed(&g_app_wdog_channel);
-		if (ret) {
-			LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
-			return ret;
-		}
-
-		ret = k_sem_take(&g_app_init_sem, K_SECONDS(1));
-		if (ret == -EAGAIN) {
-			continue;
-		} else if (ret) {
-			LOG_ERR("Call `k_sem_take` failed: %d", ret);
-			return ret;
-		}
-
-		break;
-	}
-
-	ret = ctr_rtc_get_ts(&g_app_data.weight_measurement_timestamp);
+	int64_t timestamp;
+	ret = ctr_rtc_get_ts(&timestamp);
 	if (ret) {
 		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
 		return ret;
 	}
+	app_data_lock();
+	g_app_data.weight_measurement_timestamp = timestamp;
+	app_data_unlock();
 
-#if defined(CONFIG_SHIELD_PEOPLE_COUNTER)
-	ret = ctr_rtc_get_ts(&g_app_data.people_measurement_timestamp);
+	ret = app_work_init();
 	if (ret) {
-		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+		LOG_ERR("Call `app_work_init` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_SHIELD_PEOPLE_COUNTER) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
+	ret = app_backup_init();
+	if (ret) {
+		LOG_ERR("Call `app_backup_init` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 	return 0;
 }

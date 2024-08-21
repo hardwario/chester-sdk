@@ -1,0 +1,169 @@
+version: 1
+variants:
+- name: CHESTER Scale
+  fw_bundle: com.hardwario.chester.app.scale
+  fw_name: hio-chester-scale
+  fw_version: v3.0.0
+- name: CHESTER Scale Z
+  fw_bundle: com.hardwario.chester.app.scale.z
+  fw_name: hio-chester-scale-z
+  fw_version: v3.0.0
+  features:
+  - hardware-chester-z
+  remark: Support for CHESTER-Z
+project:
+  variant: Scale
+  company: 2024 HARDWARIO a.s.
+  license: 'SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause'
+  fw_name: CHESTER Scale
+  fw_version: v3.0.0
+  fw_bundle: com.hardwario.chester.app.scale
+features: 
+- subsystem-accel
+- subsystem-batt
+- subsystem-bluetooth
+- subsystem-ble-tag
+- subsystem-bt-observer
+- subsystem-bt-filter-accept-list
+- subsystem-buf
+- subsystem-button
+- subsystem-config
+- subsystem-defaults
+- subsystem-info
+- subsystem-led
+- subsystem-log
+- subsystem-rtc
+- subsystem-shell
+- subsystem-therm
+- subsystem-wdog
+- subsystem-entropy-generator
+- subsystem-tinycrypt
+- subsystem-tinycrypt-sha256
+- subsystem-zcbor
+- subsystem-lte-v2
+- subsystem-cloud
+- hardware-chester-x3-a 
+- chester-app-report-jitter
+#- hardware-chester-x3-b 
+#- hardware-chester-z
+#- hardware-chester-people-counter 
+parameters:
+- name: interval-report
+  type: int
+  min: 30
+  max: 86400
+  default: 900
+  help: 'Get/Set report interval in seconds'
+- name: interval-poll
+  type: int
+  min: 0
+  max: 86400
+  default: 0
+  help: 'Get/Set poll interval in seconds'
+- name: interval-sample
+  type: int
+  min: 1
+  max: 86400
+  default: 60
+  help: "Get/Set sample interval in seconds"
+- name: interval-aggreg
+  type: int
+  min: 1
+  max: 86400
+  default: 300
+  help: "Get/Set aggregate interval in seconds"
+- name: event-report-delay
+  type: int
+  min: 1
+  max: 86400
+  default: 1
+  help: 'Get/Set event report delay in seconds'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+- name: event-report-rate
+  type: int
+  min: 1
+  max: 3600
+  default: 30
+  help: 'Get/Set event report rate in reports per hour'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+- name: backup-report-connected
+  type: bool
+  default: true
+  help: 'Get/Set report when backup is active'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+- name: backup-report-disconnected
+  type: bool
+  default: true
+  help: 'Get/Set report when backup is inactive'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+- name: channel-a1-active
+  type: bool
+  default: true
+  help: 'Get/Set channel A1 activation'
+- name: channel-a2-active
+  type: bool
+  default: true
+  help: 'Get/Set channel A2 activation'
+- name: channel-b1-active
+  type: bool
+  default: true
+  help: 'Get/Set channel B1 activation'
+- name: channel-b2-active
+  type: bool
+  default: true
+  help: 'Get/Set channel B2 activation'
+- name: weight-measurement-interval
+  type: int
+  min: 30
+  max: 86400
+  default: 60
+  help: 'Get/Set weight measurement interval in seconds'
+- name: people-measurement-interval
+  type: int
+  min: 5
+  max: 3600
+  default: 600
+  help: 'Get/Set people measurement interval in seconds'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
+- name: people-counter-power-off-delay
+  type: int
+  min: 0
+  max: 255
+  default: 30
+  help: 'Get/Set People Counter power off delay in seconds'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
+- name: people-counter-stay-timeout
+  type: int
+  min: 0
+  max: 255
+  default: 5
+  help: 'Get/Set People Counter stay timeout in second'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
+- name: people-counter-adult-border
+  type: int
+  min: 0
+  max: 8
+  default: 4
+  help: 'Get/Set People Counter adult border'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
+commands:
+- name: send
+  callback: app_work_send()
+  help: 'Send data immediately.'
+- name: measure
+  callback: app_work_measure()
+  help: 'Measure immediately.'
+- name: test
+  callback: app_test_measure(shell)
+  help: 'Test immediately.'
+- name: sample
+  callback: app_work_sample()
+  help: "Sample immediately."
+- name: aggreg
+  callback: app_work_aggreg()
+  help: "Aggregate data immediately"
+extras:
+- CONFIG_ADC_NRFX_SAADC=n
+- CONFIG_ADC_SHELL=n
+- CONFIG_ADC_TLA2021_INIT_PRIORITY=60
+- CONFIG_NEWLIB_LIBC_NANO=n

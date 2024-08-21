@@ -1,25 +1,88 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+/* HARDWARE-CHESTER-X3-A  */
+&ctr_x3_a {
+	status = "okay";
+};
+
 &ctr_x3_ads122c04_a1 {
+	status = "okay";
 	gain = <7>;
 	vref = <1>;
 };
 
 &ctr_x3_ads122c04_a2 {
+	status = "okay";
 	gain = <7>;
 	vref = <1>;
+};
+/* SUBSYSTEM-CLOUD  */
+/ {
+	chosen {
+		nordic,pm-ext-flash = &spi_flash0;
+	};
 };
 
-&ctr_x3_ads122c04_b1 {
-	gain = <7>;
-	vref = <1>;
+&spi_flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		littlefs_storage: partition@0 {
+			label = "littlefs_storage";
+
+			/*
+			 * This size doesn't matter due to Nordic's partition
+			 * manager; For the sake of consistency this should
+			 * match the configured size
+			 */
+			reg = <0x00000000 0x730000>;
+		};
+	};
 };
 
-&ctr_x3_ads122c04_b2 {
-	gain = <7>;
-	vref = <1>;
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/lfs1";
+			partition = <&littlefs_storage>;
+			automount;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
 };
+/* SUBSYSTEM-LTE-V2  */
+/ {
+	chosen {
+		ctr,lte_link = &ctr_lte_link;
+	};
+};
+
+&uart0 {
+	status = "okay";
+
+	ctr_lte_link: ctr_lte_link {
+		compatible = "hardwario,ctr-lte-link";
+		status = "okay";
+		reset-gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		wakeup-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+/* ### Preserved code "overlay" (begin) */
+/* ^^^ Preserved code "overlay" (end) */

@@ -1,70 +1,118 @@
-- acceleration_x:
-  - div: 1000
-  - fpp: 2
-- acceleration_y:
-  - div: 1000
-  - fpp: 2
-- acceleration_z:
-  - div: 1000
-  - fpp: 2
-- accelerometer:
+version: 2
+type: decoder
+name: com.hardwario.chester.app.scale
+schema:
+- message:
+  - version: 
+  - sequence: 
+  - timestamp: 
 - attribute:
-- band:
-- battery:
-- cid:
-- consumed_energy:
-- current_load:
-- earfcn:
-- ecl:
-- eest:
-- frame:
-- fw_name:
-- fw_version:
-- hw_revision:
-- hw_variant:
-- imei:
-- imsi:
-- load_cell:
+  - vendor_name: 
+  - product_name: 
+  - hw_variant: 
+  - hw_revision: 
+  - fw_version: 
+  - serial_number: 
+- system:
+  - uptime: 
+  - voltage_load:
+    - $div: 1000
+    - $fpp: 2
+  - voltage_rest:
+    - $div: 1000
+    - $fpp: 2
+  - current_load: 
 - network:
-- orientation:
-- parameter:
-- people_measurements:
-  - tso:
-    - motion_counter:
-    - pass_counter_left:
-    - pass_counter_right:
-    - pass_counter_adult:
-    - pass_counter_child:
-    - stay_counter_adult:
-    - stay_counter_child:
-    - total_time_adult:
-    - total_time_child:
-    - consumed_energy:
-- plmn:
-- product_name:
-- protocol:
-- rsrp:
-- rsrq:
-- sequence:
-- serial_number:
-- snr:
-- state:
-- temperature:
-  - div: 100
-  - fpp: 2
+  - parameter:
+    - eest: 
+    - ecl: 
+    - rsrp: 
+    - rsrq: 
+    - snr: 
+    - plmn: 
+    - cid: 
+    - band: 
+    - earfcn: 
+- accelerometer:
+  - accel_x:
+    - $div: 1000
+    - $fpp: 2
+  - accel_y:
+    - $div: 1000
+    - $fpp: 2
+  - accel_z:
+    - $div: 1000
+    - $fpp: 2
+  - orientation: 
 - thermometer:
-- timestamp:
-- uptime:
-- vendor_name:
-- voltage_load:
-  - div: 1000
-  - fpp: 2
-- voltage_rest:
-  - div: 1000
-  - fpp: 2
-- weight_measurements:
-  - tso:
-    - raw_result_a1:
-    - raw_result_a2:
-    - raw_result_b1:
-    - raw_result_b2:
+  - temperature:
+    - $div: 100
+    - $fpp: 2
+- backup:
+  - line_voltage: 
+  - batt_voltage: 
+  - state:
+    - $enum:
+      - disconnected
+      - connected
+  - events:
+    - $key: events
+    - $tso:
+      - type:
+        - $enum:
+          - disconnected
+          - connected
+- weight:
+  - $tso:
+    - raw_result_a1: 
+    - raw_result_a2: 
+    - raw_result_b1: 
+    - raw_result_b2: 
+- people_counter:
+  - $tso:
+    - motion_counter: 
+    - pass_counter_left: 
+    - pass_counter_right: 
+    - pass_counter_adult: 
+    - pass_counter_child: 
+    - stay_counter_adult: 
+    - stay_counter_child: 
+    - total_time_adult: 
+    - total_time_child: 
+    - consumed_energy: 
+- ble_tags:
+  - addr:
+  - rssi:
+  - voltage:
+    - $div: 100
+    - $fpp: 2
+  - temperature:
+    - measurements:
+      - $tsp:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
+          - $div: 100
+          - $fpp: 2
+  - humidity:
+    - measurements:
+      - $tsp:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
+          - $div: 100
+          - $fpp: 2

@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2024 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config VARIANT_CHESTER_SCALE
+    bool "Enable VARIANT_CHESTER_SCALE"
+    default y
+        
