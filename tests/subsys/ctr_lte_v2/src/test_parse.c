@@ -9,22 +9,6 @@
 #include <chester/ctr_buf.h>
 #include <ctr_lte_v2_parse.h>
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_cclk)
-{
-
-	int year, month, day, hours, minutes, seconds;
-	int ret = ctr_lte_v2_parse_cclk("\"21/11/08,16:01:13+04\"", &year, &month, &day, &hours,
-					&minutes, &seconds);
-
-	zassert_ok(ret, "ctr_lte_v2_parse_cclk failed");
-	zassert_equal(year, 21, "year not equal");
-	zassert_equal(month, 11, "month not equal");
-	zassert_equal(day, 8, "day not equal");
-	zassert_equal(hours, 16, "hours not equal");
-	zassert_equal(minutes, 1, "minutes not equal");
-	zassert_equal(seconds, 13, "seconds not equal");
-}
-
 ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_xsocket_set)
 {
 	struct xsocket_set_param param;
@@ -74,6 +58,32 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_2)
 	zassert_true(strcmp(param.tac, "B4DC") == 0, "param.tac not equal");
 	zassert_equal(param.cid, 0x000AE520, "param.cid not equal");
 	zassert_equal(param.act, 9, "param.act not equal");
+}
+
+ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_2_empty)
+{
+	struct ctr_lte_v2_cereg_param param;
+	int ret = ctr_lte_v2_parse_urc_cereg("2", &param);
+
+	zassert_ok(ret, "ctr_lte_v2_parse_urc_cereg failed");
+	zassert_equal(param.valid, true, "param.valid not true");
+	zassert_equal(param.stat, 2, "param.stat not equal");
+	zassert_true(strcmp(param.tac, "") == 0, "param.tac not equal");
+	zassert_equal(param.cid, 0, "param.cid not equal");
+	zassert_equal(param.act, 0, "param.act not equal");
+}
+
+ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_4)
+{
+	struct ctr_lte_v2_cereg_param param;
+	int ret = ctr_lte_v2_parse_urc_cereg("4", &param);
+
+	zassert_ok(ret, "ctr_lte_v2_parse_urc_cereg failed");
+	zassert_equal(param.valid, true, "param.valid not true");
+	zassert_equal(param.stat, 4, "param.stat not equal");
+	zassert_true(strcmp(param.tac, "") == 0, "param.tac not equal");
+	zassert_equal(param.cid, 0, "param.cid not equal");
+	zassert_equal(param.act, 0, "param.act not equal");
 }
 
 ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xmodemsleep_1_89999825)

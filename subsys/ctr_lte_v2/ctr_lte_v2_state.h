@@ -42,6 +42,8 @@ void ctr_lte_v2_state_set_cereg_param(const struct ctr_lte_v2_cereg_param *param
 int ctr_lte_v2_state_set_gnss_update(const struct ctr_lte_v2_gnss_update *update);
 int ctr_lte_v2_state_get_gnss_update(struct ctr_lte_v2_gnss_update *update);
 
+const char *ctr_lte_v2_get_state(void);
+
 #ifdef __cplusplus
 }
 #endif

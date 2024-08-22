@@ -55,7 +55,7 @@ int ctr_lte_v2_flow_reset(void);
 int ctr_lte_v2_flow_prepare(void);
 int ctr_lte_v2_flow_cfun(int cfun);
 int ctr_lte_v2_flow_sim_info(void);
-int ctr_lte_v2_flow_sim_fplmn(bool *ok);
+int ctr_lte_v2_flow_sim_fplmn(void);
 int ctr_lte_v2_flow_open_socket(void);
 
 int ctr_lte_v2_flow_check(void);

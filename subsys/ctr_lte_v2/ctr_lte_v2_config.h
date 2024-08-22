@@ -37,7 +37,6 @@ struct ctr_lte_v2_config {
 	bool lte_m_mode;
 	bool autoconn;
 	char plmnid[6 + 1];
-	bool clksync;
 	char apn[63 + 1];
 	enum ctr_lte_v2_config_auth auth;
 	char username[32 + 1];
@@ -49,7 +48,7 @@ struct ctr_lte_v2_config {
 
 extern struct ctr_lte_v2_config g_ctr_lte_v2_config;
 
-int ctr_lte_v2_config_init();
+int ctr_lte_v2_config_init(void);
 int ctr_lte_v2_config_cmd_show(const struct shell *shell, size_t argc, char **argv);
 int ctr_lte_v2_config_cmd(const struct shell *shell, size_t argc, char **argv);
 

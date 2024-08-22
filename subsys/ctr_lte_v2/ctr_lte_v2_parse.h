@@ -36,8 +36,6 @@ struct xsocket_get_param {
 #define XSOCKET_ROLE_CLIENT  0
 #define XSOCKET_FAMILY_IPV4  1
 
-int ctr_lte_v2_parse_cclk(const char *s, int *year, int *month, int *day, int *hours, int *minutes,
-			  int *seconds);
 int ctr_lte_v2_parse_xsocket_set(const char *s, struct xsocket_set_param *param);
 int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param);
 int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *param);

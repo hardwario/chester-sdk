@@ -20,73 +20,10 @@
 
 LOG_MODULE_REGISTER(ctr_lte_v2_parse, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 
-int ctr_lte_v2_parse_cclk(const char *s, int *year, int *month, int *day, int *hours, int *minutes,
-			  int *seconds)
-{
-	/* "21/11/08,16:01:13+04" */
-
-	char *p = (char *)s;
-
-	bool def;
-	char buf[20 + 1];
-
-	if ((p = ctr_lte_v2_tok_str(p, &def, buf, sizeof(buf))) == NULL) {
-		LOG_ERR("ctr_lte_v2_tok_str failed");
-		return -EINVAL;
-	}
-
-	if (!def) {
-		return -EINVAL;
-	}
-
-	if (strlen(buf) != 20) {
-		return -EINVAL;
-	}
-
-	if (!isdigit((int)buf[0]) || !isdigit((int)buf[1]) || buf[2] != '/' ||
-	    !isdigit((int)buf[3]) || !isdigit((int)buf[4]) || buf[5] != '/' ||
-	    !isdigit((int)buf[6]) || !isdigit((int)buf[7]) || buf[8] != ',' ||
-	    !isdigit((int)buf[9]) || !isdigit((int)buf[10]) || buf[11] != ':' ||
-	    !isdigit((int)buf[12]) || !isdigit((int)buf[13]) || buf[14] != ':' ||
-	    !isdigit((int)buf[15]) || !isdigit((int)buf[16]) ||
-	    (buf[17] != '+' && buf[17] != '-') || !isdigit((int)buf[18]) ||
-	    !isdigit((int)buf[19])) {
-		return -EINVAL;
-	}
-
-	buf[2] = buf[5] = buf[8] = buf[11] = buf[14] = buf[17] = '\0';
-
-	if (year != NULL) {
-		*year = strtoll(&buf[0], NULL, 10);
-	}
-
-	if (month != NULL) {
-		*month = strtoll(&buf[3], NULL, 10);
-	}
-
-	if (day != NULL) {
-		*day = strtoll(&buf[6], NULL, 10);
-	}
-
-	if (hours != NULL) {
-		*hours = strtoll(&buf[9], NULL, 10);
-	}
-
-	if (minutes != NULL) {
-		*minutes = strtoll(&buf[12], NULL, 10);
-	}
-
-	if (seconds != NULL) {
-		*seconds = strtoll(&buf[15], NULL, 10);
-	}
-
-	return 0;
-}
-
 int ctr_lte_v2_parse_xsocket_set(const char *s, struct xsocket_set_param *param)
 {
 	/* 0,2,17 */
-	// <handle>,<type>,<protocol>
+	/* <handle>,<type>,<protocol> */
 
 	if (param == NULL) {
 		return -EINVAL;
@@ -134,7 +71,7 @@ int ctr_lte_v2_parse_xsocket_set(const char *s, struct xsocket_set_param *param)
 int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param)
 {
 	/* 0,1,0,2,0 */
-	//  <handle>,<family>,<role>,<type>,<cid>
+	/* <handle>,<family>,<role>,<type>,<cid> */
 
 	if (param == NULL) {
 		return -EINVAL;
@@ -145,7 +82,6 @@ int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param)
 	bool def;
 	long num;
 
-	// handle
 	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
 		return -EINVAL;
 	}
@@ -161,7 +97,6 @@ int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param)
 		return -EINVAL;
 	}
 
-	// family
 	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
 		return -EINVAL;
 	}
@@ -172,7 +107,6 @@ int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param)
 		return -EINVAL;
 	}
 
-	// role
 	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
 		return -EINVAL;
 	}
@@ -183,7 +117,6 @@ int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param)
 		return -EINVAL;
 	}
 
-	// type
 	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
 		return -EINVAL;
 	}
@@ -194,7 +127,6 @@ int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param)
 		return -EINVAL;
 	}
 
-	// cid
 	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
 		return -EINVAL;
 	}
@@ -241,12 +173,7 @@ int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *par
 
 	param->stat = num;
 
-	if (param->stat == CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME ||
-	    param->stat == CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING ||
-	    param->stat == CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING) {
-		if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
-			return -EINVAL;
-		}
+	if ((p = ctr_lte_v2_tok_sep(p)) != NULL) {
 
 		if ((p = ctr_lte_v2_tok_str(p, &def, param->tac, sizeof(param->tac))) == NULL ||
 		    !def) {
@@ -527,9 +454,8 @@ int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param)
 int ctr_lte_v2_parse_urc_xgps(const char *s, struct ctr_lte_v2_gnss_update *update)
 {
 
-	// <latitude>,<longitude>,<altitude>,<accuracy>,<speed>,<heading>,<datetime>
-	//           49.256682,17.699627,292.599670,5.468742,0.165512,73.682823,"2024-06-27
-	//           16:06:52"
+	/* <latitude>,<longitude>,<altitude>,<accuracy>,<speed>,<heading>,<datetime> */
+	/* 49.256682,17.699627,292.599670,5.468742,0.165512,73.682823,"2024-06-27 16:06:52" */
 
 	memset(update, 0, sizeof(*update));
 
@@ -596,7 +522,3 @@ int ctr_lte_v2_parse_urc_xgps(const char *s, struct ctr_lte_v2_gnss_update *upda
 
 	return 0;
 }
-
-// #XGPS: 49.256682,17.699627,292.599670,5.468742,0.165512,73.682823,"2024-06-27 16:06:52"
-// #XGPS: 1,1
-// #XGPS: 1,0

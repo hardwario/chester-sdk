@@ -51,7 +51,6 @@ static const struct device *dev_lte_if = DEVICE_DT_GET(DT_CHOSEN(ctr_lte_link));
 static const struct device *dev_rfmux = DEVICE_DT_GET(DT_NODELABEL(ctr_rfmux));
 
 static K_SEM_DEFINE(m_ready_sem, 0, 1);
-static K_SEM_DEFINE(m_time_sem, 0, 1);
 
 #define EVENT_CSCON_0          BIT(0)
 #define EVENT_CSCON_1          BIT(1)
@@ -108,6 +107,13 @@ static void process_urc(const char *line)
 {
 	LOG_INF("URC: %s", line);
 
+	if (g_ctr_lte_v2_config.test) {
+		if (!strcmp(line, "Ready")) {
+			k_sem_give(&m_ready_sem);
+		}
+		return;
+	}
+
 	if (!strcmp(line, "Ready")) {
 		m_event_delegate_cb(CTR_LTE_V2_EVENT_READY);
 
@@ -115,7 +121,6 @@ static void process_urc(const char *line)
 		m_event_delegate_cb(CTR_LTE_V2_EVENT_SIMDETECTED);
 
 	} else if (!strncmp(line, "%XTIME:", 7)) {
-		// k_sem_give(&m_time_sem);
 		m_event_delegate_cb(CTR_LTE_V2_EVENT_XTIME);
 
 	} else if (!strncmp(line, "+CEREG: ", 8)) {
@@ -185,7 +190,6 @@ static void ctr_lte_link_event_handler(const struct device *dev, enum ctr_lte_li
 
 	switch (event) {
 	case CTR_LTE_LINK_EVENT_RX_LINE:
-		// LOG_DBG("Event `CTR_LTE_LINK_EVENT_RX_LINE`");
 		for (;;) {
 			char *line;
 			ret = ctr_lte_link_recv_line(dev, K_NO_WAIT, &line);
@@ -207,7 +211,6 @@ static void ctr_lte_link_event_handler(const struct device *dev, enum ctr_lte_li
 		}
 		break;
 	case CTR_LTE_LINK_EVENT_RX_DATA:
-		// LOG_DBG("Event `CTR_LTE_LINK_EVENT_RX_DATA`");
 		break;
 	default:
 		LOG_WRN("Unknown event: %d", event);
@@ -218,17 +221,14 @@ static void str_remove_trailin_quotes(char *str)
 {
 	int l = strlen(str);
 	if (l > 0 && str[0] == '"' && str[l - 1] == '"') {
-		str[l - 1] = '\0';        // Remove trailing quote
-		memmove(str, str + 1, l); // Remove leading quote
+		str[l - 1] = '\0';        /* Remove trailing quote */
+		memmove(str, str + 1, l); /* Remove leading quote */
 	}
 }
 
 int ctr_lte_v2_flow_prepare(void)
 {
 	int ret;
-
-	// enum ctr_info_product_family product_family;
-	// ctr_info_get_product_family(&product_family);
 
 	ret = ctr_lte_v2_talk_at(&m_talk);
 	if (ret) {
@@ -400,14 +400,6 @@ int ctr_lte_v2_flow_prepare(void)
 		return ret;
 	}
 
-	if (g_ctr_lte_v2_config.clksync) {
-		ret = ctr_lte_v2_talk_at_xtime(&m_talk, 1);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_talk_at_xtime` failed: %d", ret);
-			return ret;
-		}
-	}
-
 	ret = ctr_lte_v2_talk_at_mdmev(&m_talk, 1);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_mdmev` failed: %d", ret);
@@ -575,12 +567,12 @@ int ctr_lte_v2_flow_sim_info(void)
 	return 0;
 }
 
-int ctr_lte_v2_flow_sim_fplmn(bool *ok)
+int ctr_lte_v2_flow_sim_fplmn(void)
 {
+	/* Test FPLMN (forbidden network) list on a SIM */
 	int ret;
-	// test FPLMN (forbidden network) list on a SIM
 	char crsm_144[32];
-	*ok = false;
+
 	ret = ctr_lte_v2_talk_crsm_176(&m_talk, crsm_144, sizeof(crsm_144));
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_talk_at_crsm_176` failed: %d", ret);
@@ -589,7 +581,7 @@ int ctr_lte_v2_flow_sim_fplmn(bool *ok)
 	if (strcmp(crsm_144, "\"FFFFFFFFFFFFFFFFFFFFFFFF\"")) {
 		LOG_WRN("Found forbidden network(s) - erasing");
 
-		// FPLMN erase
+		/* FPLMN erase */
 		ret = ctr_lte_v2_talk_crsm_214(&m_talk);
 		if (ret) {
 			LOG_ERR("Call `ctr_lte_v2_talk_crsm_214` failed: %d", ret);
@@ -609,8 +601,8 @@ int ctr_lte_v2_flow_sim_fplmn(bool *ok)
 			LOG_ERR("Call `ctr_lte_v2_talk_at_cfun: 1` failed: %d", ret);
 			return ret;
 		}
-	} else {
-		*ok = true;
+
+		return -EAGAIN;
 	}
 
 	return 0;
@@ -631,54 +623,7 @@ int ctr_lte_v2_flow_open_socket(void)
 
 	ctr_lte_v2_talk_at_cmd(&m_talk, "AT%XCBAND");
 	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CEINFO?");
-	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CGDCONT?"); // TODO: check ip
-
-	if (g_ctr_lte_v2_config.clksync) {
-		/* TODO Constant to #define */
-		ret = k_sem_take(&m_time_sem, K_MINUTES(10));
-
-		if (ret == -EAGAIN) {
-			LOG_WRN("Network time synchronization timed out");
-			return -ETIMEDOUT;
-		}
-
-		if (ret) {
-			LOG_ERR("Call `k_sem_take` failed: %d", ret);
-			return ret;
-		}
-
-		char cclk[64];
-		ret = ctr_lte_v2_talk_at_cclk_q(&m_talk, cclk, sizeof(cclk));
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_talk_at_cclk_q` failed: %d", ret);
-			return ret;
-		}
-
-#if defined(CONFIG_CTR_RTC)
-		struct ctr_rtc_tm tm;
-
-		ret = ctr_lte_v2_parse_cclk(cclk, &tm.year, &tm.month, &tm.day, &tm.hours,
-					    &tm.minutes, &tm.seconds);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_parse_cclk` failed: %d", ret);
-			return ret;
-		}
-
-		tm.year += 2000;
-
-		ret = ctr_rtc_set_tm(&tm);
-		if (ret) {
-			LOG_ERR("Call `ctr_rtc_set_tm` failed: %d", ret);
-			return ret;
-		}
-#else
-		ret = ctr_lte_v2_parse_cclk(cclk, NULL, NULL, NULL, NULL, NULL, NULL);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_parse_cclk` failed: %d", ret);
-			return ret;
-		}
-#endif
-	}
+	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CGDCONT?"); /* TODO: check ip */
 
 	char xsocket[64];
 	ret = ctr_lte_v2_talk_at_xsocket(&m_talk, 1, (int[]){2}, (int[]){0}, xsocket,
@@ -728,7 +673,7 @@ int ctr_lte_v2_flow_check(void)
 
 	char resp[128] = {0};
 
-	// Check functional mode
+	/* Check functional mode */
 	ret = ctr_lte_v2_talk_at_cmd_with_resp_prefix(&m_talk, "AT+CFUN?", resp, sizeof(resp),
 						      "+CFUN: ");
 
@@ -742,7 +687,7 @@ int ctr_lte_v2_flow_check(void)
 		return -ENOTCONN;
 	}
 
-	// Check network registration status
+	/* Check network registration status */
 	ret = ctr_lte_v2_talk_at_cmd_with_resp_prefix(&m_talk, "AT+CEREG?", resp, sizeof(resp),
 						      "+CEREG: ");
 
@@ -772,7 +717,7 @@ int ctr_lte_v2_flow_check(void)
 		return -ENOTCONN;
 	}
 
-	// Check if PDN is active
+	/* Check if PDN is active */
 	ret = ctr_lte_v2_talk_at_cmd_with_resp_prefix(&m_talk, "AT+CGATT?", resp, sizeof(resp),
 						      "+CGATT: ");
 
@@ -786,7 +731,7 @@ int ctr_lte_v2_flow_check(void)
 		return -ENOTCONN;
 	}
 
-	// Check PDN connections
+	/* Check PDN connections */
 	ret = ctr_lte_v2_talk_at_cmd_with_resp_prefix(&m_talk, "AT+CGACT?", resp, sizeof(resp),
 						      "+CGACT: ");
 
@@ -800,7 +745,7 @@ int ctr_lte_v2_flow_check(void)
 		return -ENOTCONN;
 	}
 
-	// Check socket
+	/* Check socket */
 	ret = ctr_lte_v2_talk_at_cmd_with_resp_prefix(&m_talk, "AT#XSOCKET?", resp, sizeof(resp),
 						      "#XSOCKET: ");
 
@@ -844,7 +789,7 @@ int ctr_lte_v2_flow_send(const struct ctr_lte_v2_send_recv_param *param)
 		return ret;
 	}
 
-	if (param->rai && !param->recv_buf) { // RAI and no receive buffer
+	if (param->rai && !param->recv_buf) { /* RAI and no receive buffer */
 		ret = ctr_lte_v2_talk_at_xsocketopt(&m_talk, 1, SO_RAI_NO_DATA, NULL);
 		if (ret) {
 			LOG_WRN("Call `ctr_lte_v2_talk_at_xsocketopt 1,50` failed: %d", ret);
@@ -875,43 +820,7 @@ int ctr_lte_v2_flow_recv(const struct ctr_lte_v2_send_recv_param *param)
 		if (ret) {
 			LOG_WRN("Call `ctr_lte_v2_talk_at_xsocketopt 1,50` failed: %d", ret);
 		}
-
-		// if (k_event_wait(&m_flow_events, EVENT_CSCON_0, false, SEND_CSCON_0_TIMEOUT) ==
-		// 0) { 	LOG_WRN("Timed out while waiting for: CSCON 0");
-
-		// } else {
-		// 	struct ctr_lte_v2_conn_param conn_param;
-
-		// 	ret = ctr_lte_v2_flow_coneval(&conn_param);
-		// 	if (ret) {
-		// 		LOG_WRN("Call `ctr_lte_v2_flow_coneval` failed: %d", ret);
-		// 	} else {
-		// 		ctr_lte_v2_state_set_conn_param(&conn_param);
-		// 	}
-		// }
 	}
-
-	// total_duration = k_uptime_get() - stime;
-
-	// if (param->recv_buf) {
-	// 	LOG_DBG("Send: len: %d B duration: %lld ms, Recv: len: %d B duration: %lld ms, "
-	// 		"Total: %lld "
-	// 		"ms",
-	// 		param->send_len, send_duration, recv_len, recv_duration, total_duration);
-	// } else {
-	// 	LOG_DBG("Send: len: %d B duration: %lld ms, Total: %lld ms", param->send_len,
-	// 		send_duration, total_duration);
-	// }
-
-	// if (param->send_duration != NULL) {
-	// 	*param->send_duration = send_duration;
-	// }
-	// if (param->recv_duration != NULL) {
-	// 	*param->recv_duration = recv_duration;
-	// }
-	// if (param->total_duration != NULL) {
-	// 	*param->total_duration = total_duration;
-	// }
 
 	return 0;
 }
@@ -1085,7 +994,18 @@ int ctr_lte_v2_flow_cmd_test_uart(const struct shell *shell, size_t argc, char *
 {
 	int ret;
 
-	if (argc == 2 && strcmp(argv[1], "enable") == 0) {
+	if (argc > 2) {
+		shell_error(shell, "command not found: %s", argv[2]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (!g_ctr_lte_v2_config.test) {
+		shell_error(shell, "test mode is not activated");
+		return -ENOEXEC;
+	}
+
+	if (strcmp(argv[1], "enable") == 0) {
 		ret = enable();
 		if (ret) {
 			LOG_ERR("Call `enable` failed: %d", ret);
@@ -1096,7 +1016,7 @@ int ctr_lte_v2_flow_cmd_test_uart(const struct shell *shell, size_t argc, char *
 		return 0;
 	}
 
-	if (argc == 2 && strcmp(argv[1], "disable") == 0) {
+	if (strcmp(argv[1], "disable") == 0) {
 		ret = disable();
 		if (ret) {
 			LOG_ERR("Call `disable` failed: %d", ret);

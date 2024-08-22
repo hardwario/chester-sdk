@@ -111,9 +111,9 @@ struct attach_timeout get_attach_timeout(int count)
 	case 8:
 		return (struct attach_timeout){K_MINUTES(5), K_MINUTES(45)};
 	default:
-		if (count % 2 != 0) { // 9, 11 ...
+		if (count % 2 != 0) { /*  9, 11 ... */
 			return (struct attach_timeout){K_HOURS(168), K_MINUTES(5)};
-		} else { // 10, 12 ...
+		} else { /* 10, 12 ... */
 			return (struct attach_timeout){K_MINUTES(5), K_MINUTES(45)};
 		}
 	}
@@ -223,12 +223,17 @@ const char *ctr_lte_v2_coneval_result_str(int result)
 	}
 }
 
+const char *ctr_lte_v2_get_state(void)
+{
+	return ctr_lte_v2_state_str(m_state);
+}
+
 static void start_timer(k_timeout_t timeout)
 {
 	k_work_schedule(&m_timeout_work, timeout);
 }
 
-static void stop_timer()
+static void stop_timer(void)
 {
 	k_work_cancel_delayable(&m_timeout_work);
 }
@@ -261,7 +266,6 @@ static void enter_state(enum ctr_lte_v2_state state)
 {
 	int ret;
 
-	// leave current state
 	LOG_DBG("leaving state: %s", ctr_lte_v2_state_str(m_state));
 	struct ctr_lte_fsm_state *fsm_state = get_fsm_state(m_state);
 	if (fsm_state && fsm_state->on_leave) {
@@ -275,7 +279,6 @@ static void enter_state(enum ctr_lte_v2_state state)
 		}
 	}
 
-	// enter new state
 	m_state = state;
 	LOG_DBG("entering to state: %s", ctr_lte_v2_state_str(state));
 	fsm_state = get_fsm_state(state);
@@ -503,7 +506,7 @@ static int on_enter_error(void)
 		LOG_ERR("Call `ctr_lte_v2_flow_stop` failed: %d", ret);
 	}
 
-	start_timer(K_SECONDS(10)); // TODO: retry timeout (progressive)
+	start_timer(K_SECONDS(10)); /* TODO: retry timeout (progressive) */
 
 	return 0;
 }
@@ -592,15 +595,15 @@ static int prepare_event_handler(enum ctr_lte_v2_event event)
 			LOG_ERR("Call `ctr_lte_v2_flow_sim_info` failed: %d", ret);
 			return ret;
 		}
-		bool ok;
-		ret = ctr_lte_v2_flow_sim_fplmn(&ok);
+		ret = ctr_lte_v2_flow_sim_fplmn();
 		if (ret) {
+			if (ret == -EAGAIN) {
+				break;
+			}
 			LOG_ERR("Call `ctr_lte_v2_flow_sim_fplmn` failed: %d", ret);
 			return ret;
 		}
-		if (ok) {
-			enter_state(CTR_LTE_V2_STATE_ATTACH);
-		}
+		enter_state(CTR_LTE_V2_STATE_ATTACH);
 		break;
 	case CTR_LTE_V2_EVENT_RESET_LOOP:
 		enter_state(CTR_LTE_V2_STATE_RESET_LOOP);
@@ -684,6 +687,19 @@ static int on_leave_reset_loop(void)
 
 static int on_enter_retry_delay(void)
 {
+	int ret = ctr_lte_v2_flow_cfun(4);
+	if (ret) {
+		LOG_WRN("Call `ctr_lte_v2_flow_cfun` failed: %d", ret);
+	}
+
+	k_sleep(K_SECONDS(5));
+
+	ret = ctr_lte_v2_flow_stop();
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_flow_stop` failed: %d", ret);
+		return ret;
+	}
+
 	struct attach_timeout timeout = get_attach_timeout(m_attach_retry_count);
 
 	LOG_INF("Waiting %lld minutes before attach retry",
@@ -697,7 +713,10 @@ static int retry_delay_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_TIMEOUT:
-		enter_state(CTR_LTE_V2_STATE_ATTACH);
+		enter_state(CTR_LTE_V2_STATE_BOOT);
+		break;
+	case CTR_LTE_V2_EVENT_ERROR:
+		enter_state(CTR_LTE_V2_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -733,6 +752,7 @@ static int attach_event_handler(enum ctr_lte_v2_event event)
 		m_cscon = false;
 		break;
 	case CTR_LTE_V2_EVENT_RESET_LOOP:
+		m_attach_retry_count = 0;
 		enter_state(CTR_LTE_V2_STATE_RESET_LOOP);
 		break;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
@@ -797,7 +817,7 @@ static int on_enter_ready(void)
 		delegate_event(CTR_LTE_V2_EVENT_SEND);
 	}
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
-	else if (atomic_get(&m_gnss_enable)) { // only one event delegate at a time
+	else if (atomic_get(&m_gnss_enable)) { /* Only one event delegate at a time */
 		delegate_event(CTR_LTE_V2_EVENT_XGPS_ENABLE);
 	}
 #endif
@@ -830,7 +850,8 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 		break;
 	case CTR_LTE_V2_EVENT_XMODMSLEEEP:
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
-	case CTR_LTE_V2_EVENT_XGPS_ENABLE: // fallthrough
+		__fallthrough;
+	case CTR_LTE_V2_EVENT_XGPS_ENABLE:
 		if (atomic_get(&m_gnss_enable)) {
 			enter_state(CTR_LTE_V2_STATE_GNSS);
 			break;
@@ -956,7 +977,7 @@ static int send_event_handler(enum ctr_lte_v2_event event)
 		enter_state(CTR_LTE_V2_STATE_READY);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:
-		m_cscon = true; // continue to send
+		m_cscon = true; /* Continue to send */
 	case CTR_LTE_V2_EVENT_SEND:
 		stop_timer();
 		if (m_send_recv_param) {

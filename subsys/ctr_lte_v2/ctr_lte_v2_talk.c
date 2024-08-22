@@ -316,7 +316,7 @@ int ctr_lte_v2_talk_at_cfun(struct ctr_lte_v2_talk *talk, int p1)
 
 	DIALOG_ENTER();
 	DIALOG_SEND_LINE("AT+CFUN=%d", p1);
-	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_S, {
+	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_L, {
 		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
 		DIALOG_LOOP_BREAK_ON_STR("OK");
 	});

@@ -43,13 +43,6 @@ static struct ctr_config_item m_config_items[] = {
 	CTR_CONFIG_ITEM_BOOL("autoconn", m_config_interim.autoconn, "auto-connect feature", false),
 	CTR_CONFIG_ITEM_STRING("plmnid", m_config_interim.plmnid,
 			       "network PLMN ID (format: 5-6 digits)", "23003"),
-	CTR_CONFIG_ITEM_BOOL("clksync", m_config_interim.clksync, "clock synchronization",
-#if defined(CONFIG_CTR_LTE_V2_CLKSYNC)
-			     true
-#else
-			     false
-#endif
-			     ),
 	CTR_CONFIG_ITEM_STRING("apn", m_config_interim.apn, "network APN", "hardwario"),
 	CTR_CONFIG_ITEM_ENUM("auth", m_config_interim.auth, m_enum_auth_items,
 			     "authentication protocol", CTR_LTE_V2_CONFIG_AUTH_NONE),
@@ -77,6 +70,9 @@ int ctr_lte_v2_config_cmd(const struct shell *shell, size_t argc, char **argv)
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
+	if (strncmp(key, "clksync", 7) == 0) { /* obsolete key, ignore load */
+		return 0;
+	}
 	return ctr_config_h_set(m_config_items, ARRAY_SIZE(m_config_items), key, len, read_cb,
 				cb_arg);
 }
@@ -93,7 +89,7 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	return ctr_config_h_export(m_config_items, ARRAY_SIZE(m_config_items), export_func);
 }
 
-int ctr_lte_v2_config_init()
+int ctr_lte_v2_config_init(void)
 {
 	int ret;
 

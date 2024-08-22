@@ -203,6 +203,8 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 		shell_print(shell, "earfcn: %d", conn_param.earfcn);
 	}
 
+	shell_print(shell, "state: %s", ctr_lte_v2_get_state());
+
 	shell_print(shell, "command succeeded");
 
 	return 0;
