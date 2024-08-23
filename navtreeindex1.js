@@ -115,7 +115,7 @@ var NAVTREEINDEX1 =
 "group__ctr__batt.html#gae20d5845b135ca482d67c792658513a3":[0,29,4],
 "group__ctr__batt.html#gae8a9acd98b0dcf21d41961274501c8d0":[0,29,2],
 "group__ctr__ble__tag.html":[0,2],
-"group__ctr__ble__tag.html#ga817fa2978b73aa498a5ee4a51eaa17a7":[0,2,1],
+"group__ctr__ble__tag.html#ga293c8bcecfada5c886dc75f4cfc6d499":[0,2,1],
 "group__ctr__ble__tag.html#gaef82e8abb46a22ffac811d06630f1bfb":[0,2,0],
 "group__ctr__buf.html":[0,3],
 "group__ctr__buf.html#ga03f7e073ba86008125bcef0ec281e0b4":[0,3,35],

@@ -67,7 +67,7 @@ var searchData=
   ['ctr_5fble_5ftag_5fenroll_5frssi_5fthreshold_64',['CTR_BLE_TAG_ENROLL_RSSI_THRESHOLD',['../ctr__ble__tag_8h.html#a73a24ad8ccf425def26a695a4c9c4506',1,'ctr_ble_tag.h']]],
   ['ctr_5fble_5ftag_5fenroll_5ftimeout_5fsec_65',['CTR_BLE_TAG_ENROLL_TIMEOUT_SEC',['../ctr__ble__tag_8h.html#af9ae7d1893e666653b6f768d599609b0',1,'ctr_ble_tag.h']]],
   ['ctr_5fble_5ftag_5fis_5faddr_5fempty_66',['ctr_ble_tag_is_addr_empty',['../group__ctr__ble__tag.html#gaef82e8abb46a22ffac811d06630f1bfb',1,'ctr_ble_tag.h']]],
-  ['ctr_5fble_5ftag_5fread_67',['ctr_ble_tag_read',['../group__ctr__ble__tag.html#ga817fa2978b73aa498a5ee4a51eaa17a7',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fread_67',['ctr_ble_tag_read',['../group__ctr__ble__tag.html#ga293c8bcecfada5c886dc75f4cfc6d499',1,'ctr_ble_tag.h']]],
   ['ctr_5fble_5ftag_5fscan_5fmax_5ftime_68',['CTR_BLE_TAG_SCAN_MAX_TIME',['../ctr__ble__tag_8h.html#a55003a22867f2546d165874399d036b0',1,'ctr_ble_tag.h']]],
   ['ctr_5fbuf_69',['ctr_buf',['../structctr__buf.html',1,'ctr_buf'],['../group__ctr__buf.html',1,'(Global Namespace)']]],
   ['ctr_5fbuf_2eh_70',['ctr_buf.h',['../ctr__buf_8h.html',1,'']]],
