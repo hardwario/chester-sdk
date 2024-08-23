@@ -1,0 +1,107 @@
+version: 1
+variants:
+- name: CHESTER Push
+  fw_bundle: com.hardwario.chester.app.push
+  fw_name: hio-chester-push
+  fw_version: v3.0.0
+- name: CHESTER Push FM
+  fw_bundle: com.hardwario.chester.app.push.fm
+  fw_name: hio-chester-push-fm
+  fw_version: v3.0.0
+  features:
+  - chester-app-flip-mode
+project:
+  variant: Push
+  company: 2024 HARDWARIO a.s.
+  license: 'SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause'
+  fw_name: CHESTER Push
+  fw_bundle: com.hardwario.chester.app.push
+  fw_version: v3.0.0
+features:
+- subsystem-accel
+- subsystem-batt
+- subsystem-bluetooth
+- subsystem-ble-tag
+- subsystem-bt-observer
+- subsystem-bt-filter-accept-list
+- subsystem-buf
+- subsystem-button
+- subsystem-config
+- subsystem-defaults
+- subsystem-info
+- subsystem-led
+- subsystem-log
+- subsystem-rtc
+- subsystem-shell
+- subsystem-therm
+- subsystem-wdog
+- subsystem-entropy-generator
+- subsystem-tinycrypt-sha256
+- subsystem-tinycrypt
+- subsystem-zcbor
+- subsystem-cloud
+- subsystem-lte-v2
+- subsystem-lrw
+- hardware-chester-s2
+- hardware-chester-z
+#- chester-app-flip-mode
+parameters:
+- name: interval-sample
+  type: int
+  min: 1
+  max: 86400
+  default: 60
+  help: 'Get/Set sample interval in seconds'
+- name: interval-aggreg
+  type: int
+  min: 1
+  max: 86400
+  default: 300
+  help: "Get/Set aggregate interval in seconds"
+- name: interval-report
+  type: int
+  min: 30
+  max: 86400
+  default: 1800
+  help: 'Get/Set report interval in seconds'
+- name: interval-poll
+  type: int
+  min: 0
+  max: 86400
+  default: 0
+  help: "Get/Set poll interval in seconds (disabled if 0)"
+- name: event-report-delay
+  type: int
+  min: 1
+  max: 86400
+  default: 1
+  help: 'Get/Set event report delay in seconds'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+- name: event-report-rate
+  type: int
+  min: 1
+  max: 3600
+  default: 30
+  help: 'Get/Set event report rate in reports per hour'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+- name: backup-report-connected
+  type: bool
+  default: true
+  help: 'Get/Set report when backup is active'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+- name: backup-report-disconnected
+  type: bool
+  default: true
+  help: 'Get/Set report when backup is inactive'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+commands:
+- name: sample
+  callback: app_work_sample()
+  help: 'Sample immediately.'
+- name: send
+  callback: app_work_send()
+  help: 'Send data immediately.'
+extras:
+- CONFIG_ADC_NRFX_SAADC=n
+- CONFIG_ADC_SHELL=n
+- CONFIG_ADC_TLA2021_INIT_PRIORITY=60

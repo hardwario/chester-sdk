@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -27,9 +27,52 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define BATT_TEST_INTERVAL_MSEC (12 * 60 * 60 * 1000)
-
 LOG_MODULE_REGISTER(app_measure, LOG_LEVEL_DBG);
+
+static int compare(const void *a, const void *b)
+{
+	float fa = *(const float *)a;
+	float fb = *(const float *)b;
+
+	return (fa > fb) - (fa < fb);
+}
+
+static void aggreg(float *samples, size_t count, float *min, float *max, float *avg, float *mdn)
+{
+	*min = NAN;
+	*max = NAN;
+	*avg = NAN;
+	*mdn = NAN;
+
+	if (!count) {
+		return;
+	}
+
+	for (size_t i = 0; i < count; i++) {
+		if (isnan(samples[i])) {
+			return;
+		}
+	}
+
+	qsort(samples, count, sizeof(float), compare);
+
+	*min = samples[0];
+	*max = samples[count - 1];
+
+	double avg_ = 0;
+	for (size_t i = 0; i < count; i++) {
+		avg_ += samples[i];
+	}
+	avg_ /= count;
+
+	*avg = avg_;
+	*mdn = samples[count / 2];
+}
+
+__unused static void aggreg_sample(float *samples, size_t count, struct app_data_aggreg *sample)
+{
+	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
+}
 
 int app_sensor_sample(void)
 {
@@ -67,3 +110,108 @@ int app_sensor_sample(void)
 
 	return 0;
 }
+
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+
+int app_sensor_ble_tag_sample(void)
+{
+	int ret;
+
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		if (g_app_data.ble_tag.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
+			uint8_t addr[BT_ADDR_SIZE];
+			int rssi;
+			float voltage;
+			float temperature;
+			float humidity;
+			bool valid;
+
+			ret = ctr_ble_tag_read(i, addr, &rssi, &voltage, &temperature, &humidity,
+					       &valid);
+			if (ret && ret != -ENOENT) {
+				LOG_ERR("Call `ctr_ble_tag_read` failed: %d", ret);
+				continue;
+			} else if (ret == -ENOENT) {
+				continue;
+			}
+
+			app_data_lock();
+			struct app_data_ble_tag_sensor *sensor = &g_app_data.ble_tag.sensor[i];
+			memcpy(sensor->addr, addr, BT_ADDR_SIZE);
+			sensor->rssi = rssi;
+			sensor->voltage = voltage;
+			sensor->last_sample_temperature = temperature;
+			sensor->last_sample_humidity = humidity;
+			sensor->samples_temperature[sensor->sample_count] = temperature;
+			sensor->samples_humidity[sensor->sample_count] = humidity;
+			sensor->sample_count++;
+
+			LOG_INF("Sample count: %d", sensor->sample_count);
+			app_data_unlock();
+		} else {
+			LOG_WRN("Sample buffer full");
+			return -ENOSPC;
+		}
+		app_data_unlock();
+	}
+
+	return 0;
+}
+
+int app_sensor_ble_tag_aggreg(void)
+{
+	int ret;
+
+	struct app_data_ble_tag *ble_tag = &g_app_data.ble_tag;
+
+	app_data_lock();
+
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		if (ble_tag->sensor[i].measurement_count == 0) {
+			ret = ctr_rtc_get_ts(&ble_tag->timestamp);
+			if (ret) {
+				LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+				app_data_unlock();
+				return ret;
+			}
+		}
+
+		if (ble_tag->sensor[i].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+			struct app_data_ble_tag_measurement *measurement =
+				&ble_tag->sensor[i]
+					 .measurements[ble_tag->sensor[i].measurement_count];
+
+			aggreg_sample(ble_tag->sensor[i].samples_temperature,
+				      ble_tag->sensor[i].sample_count, &measurement->temperature);
+
+			aggreg_sample(ble_tag->sensor[i].samples_humidity,
+				      ble_tag->sensor[i].sample_count, &measurement->humidity);
+
+			ble_tag->sensor[i].measurement_count++;
+
+		} else {
+			LOG_WRN("Measurement buffer full");
+			app_data_unlock();
+			return -ENOSPC;
+		}
+
+		ble_tag->sensor[i].sample_count = 0;
+	}
+
+	return 0;
+}
+
+int app_sensor_ble_tag_clear(void)
+{
+	app_data_lock();
+
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		g_app_data.ble_tag.sensor[i].measurement_count = 0;
+	}
+
+	app_data_unlock();
+
+	return 0;
+}
+
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */

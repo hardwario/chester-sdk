@@ -1,92 +1,128 @@
-- acceleration_x:
-  - div: 1000
-  - fpp: 2
-- acceleration_y:
-  - div: 1000
-  - fpp: 2
-- acceleration_z:
-  - div: 1000
-  - fpp: 2
-- accelerometer:
-- attribute:
-- backup:
-- band:
-- system:
-- battery:
-- button:
-- cid:
-- current_load:
-- earfcn:
-- ecl:
-- eest:
-- frame:
+version: 2
+type: decoder
+name: com.hardwario.chester.app.push
+schema:
 - message:
-- fw_name:
-- fw_version:
-- hw_revision:
-- hw_variant:
-- imei:
-- imsi:
-- line:
+  - version:
+  - sequence:
+  - timestamp:
+- attribute:
+  - vendor_name:
+  - product_name:
+  - hw_variant:
+  - hw_revision:
+  - fw_version:
+  - serial_number:
+- system:
+  - uptime:
+  - voltage_load:
+    - $div: 1000
+    - $fpp: 2
+  - voltage_rest:
+    - $div: 1000
+    - $fpp: 2
+  - current_load:
 - network:
-- orientation:
-- parameter:
-- plmn:
-- present:
-- product_name:
-- protocol:
-- version:
-- rsrp:
-- rsrq:
-- sequence:
-- serial_number:
-- snr:
-- state:
-- temperature:
-  - div: 100
-  - fpp: 2
+  - parameter:
+    - eest:
+    - ecl:
+    - rsrp:
+    - rsrq:
+    - snr:
+    - plmn:
+    - cid:
+    - band:
+    - earfcn:
 - thermometer:
-- timestamp:
-- uptime:
-- vendor_name:
-- line_voltage:
-  - div: 1000
-  - fpp: 2
-- batt_voltage:
-  - div: 1000
-  - fpp: 2
-- voltage:
-  - div: 1000
-  - fpp: 2
-- voltage_load:
-  - div: 1000
-  - fpp: 2
-- voltage_rest:
-  - div: 1000
-  - fpp: 2
-- backup_state:
-  - key: "state"
-  - enum:
-    - disconnected
-    - connected
-- backup_events:
-  - key: "events"
-  - tso:
-    - type:
-      - enum:
-        - disconnected
-        - connected
-- button_events:
-  - key: "events"
-  - tso:
-    - type:
-      - enum:
-        - clicked
-        - held
-- button_x:
-- button_1:
-- button_2:
-- button_3:
-- button_4:
-- count_click:
-- count_hold:
+  - temperature:
+    - $div: 100
+    - $fpp: 2
+- accelerometer:
+  - accel_x:
+    - $div: 1000
+    - $fpp: 2
+  - accel_y:
+    - $div: 1000
+    - $fpp: 2
+  - accel_z:
+    - $div: 1000
+    - $fpp: 2
+  - orientation:
+- backup:
+  - line_voltage:
+  - batt_voltage:
+  - state:
+    - $enum:
+      - "disconnected"
+      - "connected"
+  - events:
+    - $key: "events"
+    - $tso:
+      - type:
+        - $enum:
+          - "disconnected"
+          - "connected"
+- buttons:
+  - button:
+    - $enum:
+      - "button_x"
+      - "button_1"
+      - "button_2"
+      - "button_3"
+      - "button_4"
+  - count_click:
+  - count_hold:
+  - events:
+    - $tso:
+      - type:
+        - $enum:
+          - "clicked"
+          - "held"
+- tamper:
+  - state:
+    - $enum:
+      - "inactive"
+      - "active"
+  - events:
+    - $key: "events"
+    - $tso:
+      - type:
+        - $enum:
+          - "deactivated"
+          - "activated"
+- ble_tags:
+  - addr:
+  - rssi:
+  - voltage:
+    - $div: 100
+    - $fpp: 2
+  - temperature:
+    - measurements:
+      - $tsp:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
+          - $div: 100
+          - $fpp: 2
+  - humidity:
+    - measurements:
+      - $tsp:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
+          - $div: 100
+          - $fpp: 2

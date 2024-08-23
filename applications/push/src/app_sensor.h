@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -12,6 +12,10 @@ extern "C" {
 #endif
 
 int app_sensor_sample(void);
+
+int app_sensor_ble_tag_sample(void);
+int app_sensor_ble_tag_aggreg(void);
+int app_sensor_ble_tag_clear(void);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -11,6 +11,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
+#include <chester/ctr_cloud.h>
 #include <chester/ctr_info.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
@@ -30,7 +31,7 @@
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_LRW)
+#if defined(FEATURE_SUBSYSTEM_LRW)
 
 static int compose_lrw(struct ctr_buf *buf)
 {
@@ -58,7 +59,7 @@ static int compose_lrw(struct ctr_buf *buf)
 	}
 
 	/* FLAG BACKUP */
-	if (IS_ENABLED(CONFIG_SHIELD_CTR_Z)) {
+	if (IS_ENABLED(FEATURE_HARDWARE_CHESTER_Z)) {
 		header |= BIT(3);
 	}
 
@@ -108,7 +109,7 @@ static int compose_lrw(struct ctr_buf *buf)
 		}
 	}
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 	/* Field BACKUP */
 	if (header & BIT(3)) {
 		struct app_data_backup *backup = &g_app_data.backup;
@@ -151,110 +152,18 @@ static int compose_lrw(struct ctr_buf *buf)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
-
-static int compose_lte(struct ctr_buf *buf)
-{
-	int ret;
-
-	ctr_buf_reset(buf);
-	ret = ctr_buf_seek(buf, 8);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
-		return ret;
-	}
-
-	uint32_t serial_number;
-	ret = ctr_info_get_serial_number_uint32(&serial_number);
-	if (ret) {
-		LOG_ERR("Call `ctr_info_get_serial_number_uint32` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_append_u32_le(buf, serial_number);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u32_le` failed: %d", ret);
-		return ret;
-	}
-
-	zcbor_state_t zs[8];
-	zcbor_new_state(zs, ARRAY_SIZE(zs), ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf), 0);
-
-	ret = app_cbor_encode(zs);
-	if (ret) {
-		LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
-		return ret;
-	}
-
-	size_t len = zs[0].payload_mut - ctr_buf_get_mem(buf);
-
-	struct tc_sha256_state_struct s;
-	ret = tc_sha256_init(&s);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_init` failed: %d", ret);
-		return ret;
-	}
-
-	ret = tc_sha256_update(&s, ctr_buf_get_mem(buf) + 8, len - 8);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_update` failed: %d", ret);
-		return ret;
-	}
-
-	uint8_t digest[32];
-	ret = tc_sha256_final(digest, &s);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_final` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_seek(buf, 0);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_append_u16_le(buf, len);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u16_le` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_append_mem(buf, digest, 6);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_mem` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_seek(buf, len);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 int app_send(void)
 {
 	int ret;
 
-#if defined(CONFIG_SHIELD_CTR_LRW)
-	CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
-
-#if defined(CONFIG_SHIELD_CTR_LTE)
-	CTR_BUF_DEFINE_STATIC(lte_buf, 1024);
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
-
 	switch (g_app_config.mode) {
 
-#if defined(CONFIG_SHIELD_CTR_LRW)
+#if defined(FEATURE_SUBSYSTEM_LRW)
 	case APP_CONFIG_MODE_LRW:
+		CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
+
 		ret = compose_lrw(&lrw_buf);
 		if (ret) {
 			LOG_ERR("Call `compose_lrw` failed: %d", ret);
@@ -269,38 +178,38 @@ int app_send(void)
 			return ret;
 		}
 		break;
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
-#if defined(CONFIG_SHIELD_CTR_LTE)
+#if defined(FEATURE_SUBSYSTEM_LTE_V2)
 	case APP_CONFIG_MODE_LTE:
-		ret = compose_lte(&lte_buf);
+		CTR_BUF_DEFINE_STATIC(buf, 8 * 1024);
+
+		ctr_buf_reset(&buf);
+
+		ZCBOR_STATE_E(zs, 8, ctr_buf_get_mem(&buf), ctr_buf_get_free(&buf), 1);
+
+		ret = app_cbor_encode(zs);
 		if (ret) {
-			LOG_ERR("Call `compose` failed: %d", ret);
+			LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
 			return ret;
 		}
 
-		ret = ctr_lte_eval(NULL);
-		if (ret == -ENOMSG) {
-			LOG_WRN("LTE queue is full");
-			return 0;
-		} else if (ret) {
-			LOG_ERR("Call `ctr_lte_eval` failed: %d", ret);
+		size_t len = zs[0].payload_mut - ctr_buf_get_mem(&buf);
+
+		ret = ctr_buf_seek(&buf, len);
+		if (ret) {
+			LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
 			return ret;
 		}
 
-		struct ctr_lte_send_opts opts = CTR_LTE_SEND_OPTS_DEFAULTS;
-		opts.port = 5000;
-		ret = ctr_lte_send(&opts, ctr_buf_get_mem(&lte_buf), ctr_buf_get_used(&lte_buf),
-				   NULL);
-		if (ret == -ENOMSG) {
-			LOG_WRN("LTE queue is full");
-			return 0;
-		} else if (ret) {
-			LOG_ERR("Call `ctr_lte_send` failed: %d", ret);
+		ret = ctr_cloud_send(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf));
+		if (ret) {
+			LOG_ERR("Call `ctr_cloud_send` failed: %d", ret);
 			return ret;
 		}
 		break;
-#endif /* defined(CONFIG_SHIELD_CTR_LTE) */
+
+#endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
 
 	default:
 		break;

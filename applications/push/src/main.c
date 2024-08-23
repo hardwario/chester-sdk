@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+#include "app_config.h"
 #include "app_init.h"
 
 /* CHESTER includes */
@@ -42,9 +43,15 @@ int main(void)
 			k_oops();
 		}
 
-		ctr_led_set(CTR_LED_CHANNEL_G, true);
-		k_sleep(K_MSEC(30));
-		ctr_led_set(CTR_LED_CHANNEL_G, false);
+		if (g_app_config.mode == APP_CONFIG_MODE_NONE) {
+			ctr_led_set(CTR_LED_CHANNEL_Y, true);
+			k_sleep(K_MSEC(30));
+			ctr_led_set(CTR_LED_CHANNEL_Y, false);
+		} else {
+			ctr_led_set(CTR_LED_CHANNEL_G, true);
+			k_sleep(K_MSEC(30));
+			ctr_led_set(CTR_LED_CHANNEL_G, false);
+		}
 
 		k_sleep(K_SECONDS(5));
 	}

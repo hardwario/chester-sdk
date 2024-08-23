@@ -1,14 +1,47 @@
 #
-# Copyright (c) 2023 HARDWARIO a.s.
+# Copyright (c) 2024 HARDWARIO a.s.
 #
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
 menu "Application"
 
-config APP_FLIP_MODE
-	bool "Activate push-button flip mode"
-	default n
+# HARDWARE-CHESTER-S2
+config SHIELD_CTR_S2
+	bool "Enable SHIELD_CTR_S2"
+	default y
+
+config CTR_HYGRO
+	default y
+# HARDWARE-CHESTER-Z
+config SHIELD_CTR_Z
+	bool "Enable SHIELD_CTR_Z"
+	default y
+
+config CTR_Z
+	default y
+
+config I2C
+	default y
+# SUBSYSTEM-LRW
+config SHIELD_CTR_LRW
+	bool "Enable SHIELD_CTR_LRW"
+	default y
+
+config CTR_LRW
+	default y
+# SUBSYSTEM-LTE-V2
+config SHIELD_CTR_LTE_V2
+	bool "Enable SHIELD_CTR_LTE_V2"
+	default y
+
+config CTR_LTE_V2
+	default y
+
+# ### Preserved code "k_config" (begin)
+# ^^^ Preserved code "k_config" (end)
+
+rsource "Kconfig.variant"
 
 endmenu
 
