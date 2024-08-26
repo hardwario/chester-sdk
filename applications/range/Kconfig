@@ -6,32 +6,32 @@
 
 menu "Application"
 
-# CHESTER-APP-REPORT-JITTER 
+# CHESTER-APP-REPORT-JITTER
 config APP_REPORT_JITTER
 	bool "Add random time jitter to report transfers"
-	default y 
+	default y
 	select ENTROPY_GENERATOR
-# HARDWARE-CHESTER-MB7066-A 
+# HARDWARE-CHESTER-MB7066-A
 config SHIELD_CTR_MB7066_A
 	bool "Enable SHIELD_CTR_MB7066_A"
-	default y 
+	default y
 
 config CTR_X0
 	default y
 
 config MB7066
 	default y
-# SUBSYSTEM-DS18B20 
+# SUBSYSTEM-DS18B20
 config SHIELD_CTR_DS18B20
 	bool "Enable SHIELD_CTR_DS18B20"
-	default y 
+	default y
 
 config CTR_DS18B20
 	default y
-# SUBSYSTEM-LTE-V2 
+# SUBSYSTEM-LTE-V2
 config SHIELD_CTR_LTE_V2
 	bool "Enable SHIELD_CTR_LTE_V2"
-	default y 
+	default y
 
 config CTR_LTE_V2
 	default y
@@ -41,6 +41,8 @@ config SHIELD_CTR_MB7066_A
 	bool "Enable SHIELD_CTR_MB7066_A"
 	default y
 # ^^^ Preserved code "k_config" (end)
+
+rsource "Kconfig.variant"
 
 endmenu
 

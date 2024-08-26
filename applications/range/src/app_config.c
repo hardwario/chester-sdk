@@ -27,7 +27,7 @@
 
 LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
-#define SETTINGS_PFX "app-chester-range"
+#define SETTINGS_PFX "app-range"
 
 struct app_config g_app_config;
 
@@ -59,7 +59,7 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_FLOAT("hygro-t-alarm-lo-hst", m_config_interim.hygro_t_alarm_lo_hst, 0.0f, 100.0f, "Get/Set hygro low temperature alarm hysteresis.", 0.0f),
 #endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
 
-	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){"none", "lte-v2"}), "Set communication mode", APP_CONFIG_MODE_LTE_V2),
+	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){"none", "lte"}), "Set communication mode", APP_CONFIG_MODE_LTE),
 
 	/* ### Preserved code "config" (begin) */
 	/* ^^^ Preserved code "config" (end) */

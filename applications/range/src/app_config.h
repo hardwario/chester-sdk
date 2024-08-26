@@ -23,7 +23,7 @@ extern "C" {
 
 enum app_config_mode {
 	APP_CONFIG_MODE_NONE = 0,
-	APP_CONFIG_MODE_LTE_V2 = 1,
+	APP_CONFIG_MODE_LTE = 1,
 };
 
 struct app_config {

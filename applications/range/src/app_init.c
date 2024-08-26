@@ -155,7 +155,7 @@ int app_init(void)
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
 #if defined(FEATURE_SUBSYSTEM_CLOUD)
-	if (g_app_config.mode == APP_CONFIG_MODE_LTE_V2) {
+	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
 		CODEC_CLOUD_OPTIONS_STATIC(copt);
 
 		ret = ctr_cloud_init(&copt);

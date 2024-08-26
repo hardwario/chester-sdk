@@ -18,6 +18,48 @@
 &ctr_x0_pcal6416a_a {
 	status = "okay";
 };
+/* SUBSYSTEM-CLOUD  */
+/ {
+	chosen {
+		nordic,pm-ext-flash = &spi_flash0;
+	};
+};
+
+&spi_flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		littlefs_storage: partition@0 {
+			label = "littlefs_storage";
+
+			/*
+			 * This size doesn't matter due to Nordic's partition
+			 * manager; For the sake of consistency this should
+			 * match the configured size
+			 */
+			reg = <0x00000000 0x730000>;
+		};
+	};
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/lfs1";
+			partition = <&littlefs_storage>;
+			automount;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
+};
 /* SUBSYSTEM-DS18B20  */
 &ds2484 {
 	ds18b20_0: ds18b20_0 {

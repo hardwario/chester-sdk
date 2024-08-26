@@ -25,6 +25,10 @@ int app_sensor_w1_therm_sample(void);
 int app_sensor_w1_therm_aggreg(void);
 int app_sensor_w1_therm_clear(void);
 
+int app_sensor_ble_tag_sample(void);
+int app_sensor_ble_tag_aggreg(void);
+int app_sensor_ble_tag_clear(void);
+
 #ifdef _cplusplus
 }
 #endif

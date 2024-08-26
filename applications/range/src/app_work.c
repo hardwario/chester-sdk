@@ -67,6 +67,10 @@ static void send_work_handler(struct k_work *work)
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 	app_sensor_w1_therm_clear();
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+	app_sensor_ble_tag_clear();
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 }
 
 static K_WORK_DELAYABLE_DEFINE(m_send_work, send_work_handler);
@@ -231,7 +235,42 @@ static void w1_therm_aggreg_work_handler(struct k_work *work)
 }
 
 static K_WORK_DELAYABLE_DEFINE(m_w1_therm_aggreg_work, w1_therm_aggreg_work_handler);
+
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+
+static void ble_tag_sample_work_handler(struct k_work *work)
+{
+	int ret;
+
+	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
+				  K_SECONDS(g_app_config.interval_sample));
+
+	ret = app_sensor_ble_tag_sample();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_ble_tag_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(m_ble_tag_sample_work, ble_tag_sample_work_handler);
+
+static void ble_tag_aggreg_work_handler(struct k_work *work)
+{
+	int ret;
+
+	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
+				  K_SECONDS(g_app_config.interval_aggreg));
+
+	ret = app_sensor_ble_tag_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_ble_tag_aggreg` failed: %d", ret);
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(m_ble_tag_aggreg_work, ble_tag_aggreg_work_handler);
+
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 int app_work_init(void)
 {
@@ -266,6 +305,13 @@ int app_work_init(void)
 				  K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_sample_work,
+				  K_SECONDS(g_app_config.interval_sample));
+	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_aggreg_work,
+				  K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
 	return 0;
 }
 
@@ -285,11 +331,10 @@ void app_work_sample(void)
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 	k_work_reschedule_for_queue(&m_work_q, &m_w1_therm_sample_work, K_NO_WAIT);
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
-}
 
-void app_work_send(void)
-{
-	k_work_reschedule_for_queue(&m_work_q, &m_send_work, K_NO_WAIT);
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+	k_work_reschedule_for_queue(&m_work_q, &m_ble_tag_sample_work, K_NO_WAIT);
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 }
 
 void app_work_aggreg(void)
@@ -304,6 +349,15 @@ void app_work_aggreg(void)
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 	k_work_reschedule_for_queue(&m_work_q, &m_w1_therm_aggreg_work, K_NO_WAIT);
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+	k_work_reschedule_for_queue(&m_work_q, &m_ble_tag_aggreg_work, K_NO_WAIT);
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+}
+
+void app_work_send(void)
+{
+	k_work_reschedule_for_queue(&m_work_q, &m_send_work, K_NO_WAIT);
 }
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z)

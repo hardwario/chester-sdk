@@ -42,7 +42,7 @@ int app_send(void)
 		LOG_WRN("Application mode is set to none. Not sending data.");
 		break;
 #if defined(FEATURE_SUBSYSTEM_CLOUD)
-	case APP_CONFIG_MODE_LTE_V2: {
+	case APP_CONFIG_MODE_LTE: {
 		CTR_BUF_DEFINE_STATIC(buf, 8 * 1024);
 
 		ctr_buf_reset(&buf);

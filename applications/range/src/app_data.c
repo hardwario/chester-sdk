@@ -26,6 +26,13 @@ struct app_data g_app_data = {
 	.accel_acceleration_z = NAN,
 	.accel_orientation = INT_MAX,
 	.therm_temperature = NAN,
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+	.ble_tag.sensor[0 ... CTR_BLE_TAG_COUNT - 1] =
+		{
+			.last_sample_temperature = NAN,
+			.last_sample_humidity = NAN,
+		},
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 };
 
 static K_MUTEX_DEFINE(m_lock);

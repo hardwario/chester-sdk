@@ -1,102 +1,146 @@
 version: 2
 type: decoder
-name: com.hardwario.chester.app.clime
+name: com.hardwario.chester.app.range
 schema:
   - message:
-      - version:
-      - sequence:
-      - timestamp:
+    - version:
+    - sequence:
+    - timestamp:
   - system:
-      - uptime:
-      - voltage_load:
-          - $div: 1000
-          - $fpp: 2
-      - voltage_rest:
-          - $div: 1000
-          - $fpp: 2
-      - current_load:
+    - uptime:
+    - voltage_load:
+      - $div: 1000
+      - $fpp: 2
+    - voltage_rest:
+      - $div: 1000
+      - $fpp: 2
+    - current_load:
   - network:
-      - imei:
-      - imsi:
+    - parameter:
+        - eest:
+        - ecl:
+        - rsrp:
+        - rsrq:
+        - snr:
+        - plmn:
+        - cid:
+        - band:
+        - earfcn:
   - thermometer:
-      - temperature:
-          - $div: 100
-          - $fpp: 2
+    - temperature:
+      - $div: 100
+      - $fpp: 2
   - accelerometer:
-      - accel_x:
-          - $div: 1000
-          - $fpp: 2
-      - accel_y:
-          - $div: 1000
-          - $fpp: 2
-      - accel_z:
-          - $div: 1000
-          - $fpp: 2
-      - orientation:
+    - accel_x:
+      - $div: 1000
+      - $fpp: 2
+    - accel_y:
+      - $div: 1000
+      - $fpp: 2
+    - accel_z:
+      - $div: 1000
+      - $fpp: 2
+    - orientation:
   - backup:
-      - line_voltage:
-          - $div: 1000
-          - $fpp: 2
-      - batt_voltage:
-          - $div: 1000
-          - $fpp: 2
-      - state:
-          - $enum:
+    - line_voltage:
+      - $div: 1000
+      - $fpp: 2
+    - batt_voltage:
+      - $div: 1000
+      - $fpp: 2
+    - state:
+      - $enum:
+        - "disconnected"
+        - "connected"
+      - events:
+        - $tso:
+          - type:
+            - $enum:
               - "disconnected"
               - "connected"
-          - events:
-              - $tso:
-                  - type:
-                      - $enum:
-                          - "disconnected"
-                          - "connected"
   - hygrometer:
-      - temperature:
-          - events:
-              - $tso:
-                  - type:
-                      - $enum:
-                          - "disconnected"
-                          - "connected"
-          - measurements:
-              - $tsp:
-                  - value:
-                      - $div: 100
-                      - $fpp: 2
-      - humidity:
-          - measurements:
-              - $tsp:
-                  - value:
-                      - $div: 100
-                      - $fpp: 2
+    - temperature:
+      - events:
+        - $tso:
+          - type:
+            - $enum:
+              - "disconnected"
+              - "connected"
+      - measurements:
+        - $tsp:
+          - value:
+            - $div: 100
+            - $fpp: 2
+    - humidity:
+      - measurements:
+        - $tsp:
+          - value:
+            - $div: 100
+            - $fpp: 2
   - w1_thermometers:
-      - serial_number:
-      - measurements:
-          - $tsp:
-              - min:
-                  - $div: 100
-                  - $fpp: 2
-              - max:
-                  - $div: 100
-                  - $fpp: 2
-              - avg:
-                  - $div: 100
-                  - $fpp: 2
-              - mdn:
-                  - $div: 100
-                  - $fpp: 2
+    - serial_number:
+    - measurements:
+      - $tsp:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
+          - $div: 100
+          - $fpp: 2
   - ultrasonic_ranger:
+    - measurements:
+      - $tsp:
+        - min:
+          - $div: 100
+          - $fpp: 2
+        - max:
+          - $div: 100
+          - $fpp: 2
+        - avg:
+          - $div: 100
+          - $fpp: 2
+        - mdn:
+          - $div: 100
+          - $fpp: 2
+  - ble_tags:
+    - addr:
+    - rssi:
+    - voltage:
+      - $div: 100
+      - $fpp: 2
+    - temperature:
       - measurements:
-          - $tsp:
-              - min:
-                  - $div: 100
-                  - $fpp: 2
-              - max:
-                  - $div: 100
-                  - $fpp: 2
-              - avg:
-                  - $div: 100
-                  - $fpp: 2
-              - mdn:
-                  - $div: 100
-                  - $fpp: 2
+        - $tsp:
+          - min:
+            - $div: 100
+            - $fpp: 2
+          - max:
+            - $div: 100
+            - $fpp: 2
+          - avg:
+            - $div: 100
+            - $fpp: 2
+          - mdn:
+            - $div: 100
+            - $fpp: 2
+    - humidity:
+      - measurements:
+        - $tsp:
+          - min:
+            - $div: 100
+            - $fpp: 2
+          - max:
+            - $div: 100
+            - $fpp: 2
+          - avg:
+            - $div: 100
+            - $fpp: 2
+          - mdn:
+            - $div: 100
+            - $fpp: 2

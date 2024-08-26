@@ -22,6 +22,9 @@ features:
 - subsystem-accel
 - subsystem-batt
 - subsystem-bluetooth
+- subsystem-ble-tag
+- subsystem-bt-filter-accept-list
+- subsystem-bt-observer
 - subsystem-buf
 - subsystem-button
 - subsystem-defaults
