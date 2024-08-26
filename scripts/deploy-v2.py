@@ -67,7 +67,13 @@ def build_app(name, version):
 
 
 def main():
-    build_app('clime', 'v2.9.0')
+    # build_app('clime', 'v3.0.1')
+    # build_app('push', 'v3.0.1')
+    # build_app('control', 'v3.0.1')
+    # build_app('current', 'v3.0.1')
+    # build_app('scale', 'v3.0.1')
+    # build_app('meteo', 'v3.0.1')
+    build_app('range', 'v3.0.1')
 
 
 if __name__ == '__main__':
