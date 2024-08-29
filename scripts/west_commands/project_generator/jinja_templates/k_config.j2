@@ -176,7 +176,7 @@ config CTR_LTE_V2
 	{%- endif -%}
 
 {#- MACHINE_PROBE #}
-	{%- if feature == 'subsystem-machine-probe' %}
+	{%- if feature == 'hardware-chester-machine-probe' %}
 # {{ feature | upper }}
 config SHIELD_CTR_MACHINE_PROBE
 	bool "Enable SHIELD_CTR_MACHINE_PROBE"
@@ -315,7 +315,7 @@ config CTR_SOIL_SENSOR
 	{%- endif -%}
 
 {#- WEIGHT_PROBE #}
-	{%- if feature == 'subsystem-weight-probe' %}
+	{%- if feature == 'hardware-chester-weight-probe' %}
 # {{ feature | upper }}
 config SHIELD_CTR_WEIGHT_PROBE
 	bool "Enable SHIELD_CTR_WEIGHT_PROBE"
