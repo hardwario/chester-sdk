@@ -185,6 +185,24 @@
 		#io-channel-cells = <4>;
 	};
 
+	ctr_x12_sc16is740_a: uart@54 {
+		compatible = "nxp,sc16is7xx";
+		status = "disabled";
+		reg = <0x54>;
+		clock-frequency = <14745600>;
+		prescaler = <1>;
+		irq-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+	};
+
+	ctr_x12_sc16is740_b: uart@55 {
+		compatible = "nxp,sc16is7xx";
+		status = "disabled";
+		reg = <0x55>;
+		clock-frequency = <14745600>;
+		prescaler = <1>;
+		irq-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+	};
+
 	ctr_z: ctr_z@10 {
 		compatible = "hardwario,ctr-z";
 		status = "disabled";

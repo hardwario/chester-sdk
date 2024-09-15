@@ -1,0 +1,8 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config SHIELD_CTR_X12_A
+	def_bool $(shields_list_contains,ctr_x12_a)

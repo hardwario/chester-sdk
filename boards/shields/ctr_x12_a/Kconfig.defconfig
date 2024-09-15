@@ -1,0 +1,24 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+if SHIELD_CTR_X12_A
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_SC16IS7XX
+	default y
+
+endif # SHIELD_CTR_X12_A
