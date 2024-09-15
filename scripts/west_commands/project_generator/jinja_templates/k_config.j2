@@ -577,6 +577,44 @@ config CTR_X10
 	default y
 	{%- endif -%}
 
+{#- X12_A #}
+	{%- if feature == 'hardware-chester-x12-a' %}
+# {{ feature | upper }}
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_SC16IS7XX
+	default y
+	{%- endif -%}
+
+{#- X12_B #}
+	{%- if feature == 'hardware-chester-x12-b' %}
+# {{ feature | upper }}
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_SC16IS7XX
+	default y
+	{%- endif -%}
+
 {#- Z #}
 	{%- if feature == 'hardware-chester-z' %}
 # {{ feature | upper }}

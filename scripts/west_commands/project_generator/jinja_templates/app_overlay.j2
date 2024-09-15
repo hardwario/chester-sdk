@@ -840,6 +840,22 @@
 };
 	{%- endif -%}
 
+{#- X12_A #}
+	{%- if feature == 'hardware-chester-x12-a' %}
+/* {{ feature | upper }}  */
+&ctr_x12_sc16is740_a {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- X12_B #}
+	{%- if feature == 'hardware-chester-x12-b' %}
+/* {{ feature | upper }}  */
+&ctr_x12_sc16is740_b {
+	status = "okay";
+};
+	{%- endif -%}
+
 {#- Z #}
 	{%- if feature == 'hardware-chester-z' %}
 /* {{ feature | upper }}  */
