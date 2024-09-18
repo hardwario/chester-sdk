@@ -171,7 +171,7 @@ static int parse_data(struct net_buf_simple *buf, float *temperature, float *hum
 	return has_data ? 0 : -EINVAL;
 }
 
-static void update_tag_data(const bt_addr_le_t *addr, int8_t rssi, float temperature,
+static void update_tag_data(const bt_addr_le_t *addr, bool interim, int8_t rssi, float temperature,
 			    float humidity, float voltage)
 {
 	k_mutex_lock(&m_tag_data_lock, K_FOREVER);
@@ -179,7 +179,9 @@ static void update_tag_data(const bt_addr_le_t *addr, int8_t rssi, float tempera
 	size_t slot = 0;
 
 	for (; slot < CTR_BLE_TAG_COUNT; slot++) {
-		if (!memcmp(addr->a.val, m_config_interim.addr[slot], BT_ADDR_SIZE)) {
+		if (!memcmp(addr->a.val,
+			    interim ? m_config_interim.addr[slot] : m_config.addr[slot],
+			    BT_ADDR_SIZE)) {
 			break;
 		}
 	}
@@ -211,7 +213,7 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		return;
 	}
 
-	update_tag_data(addr, rssi, temperature, humidity, voltage);
+	update_tag_data(addr, false, rssi, temperature, humidity, voltage);
 }
 
 static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
@@ -234,6 +236,10 @@ static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 	}
 
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (rssi < CTR_BLE_TAG_ENROLL_RSSI_THRESHOLD) {
+			break;
+		}
+
 		if (!ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
 			continue;
 		}
@@ -257,7 +263,7 @@ static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		break;
 	}
 
-	update_tag_data(addr, rssi, temperature, humidity, voltage);
+	update_tag_data(addr, true, rssi, temperature, humidity, voltage);
 }
 
 static void start_scan_work_handler(struct k_work *work);
@@ -326,7 +332,7 @@ int ctr_ble_tag_read(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *
 		return -EINVAL;
 	}
 
-	if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
+	if (ctr_ble_tag_is_addr_empty(m_config.addr[slot])) {
 		return -ENOENT;
 	}
 
@@ -341,7 +347,7 @@ int ctr_ble_tag_read(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *
 	}
 
 	if (addr) {
-		sys_memcpy_swap(addr, m_config_interim.addr[slot], BT_ADDR_SIZE);
+		sys_memcpy_swap(addr, m_config.addr[slot], BT_ADDR_SIZE);
 	}
 
 	if (rssi) {
@@ -894,11 +900,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_tag_config_devices,
 
 	SHELL_CMD_ARG(add, NULL, "Add a device.", cmd_config_add_tag, 2, 0),
-	SHELL_CMD_ARG(enroll, NULL, "Enroll a device nearby (10 seconds).", cmd_config_enroll, 1, 0),
 	SHELL_CMD_ARG(list, NULL, "List all devices.", cmd_config_list_tags, 1, 0),
 	SHELL_CMD_ARG(remove, NULL, "Remove a device.", cmd_config_remove_tag, 2, 0),
 	SHELL_CMD_ARG(clear, NULL, "Clear all devices.", cmd_config_clear_tags, 1, 0),
-	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (10 seconds).", cmd_config_scan, 1, 0),
 
 	SHELL_SUBCMD_SET_END
 );
@@ -921,6 +925,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(config, &sub_tag_config,
 				  "Configuration commands.",
 				  print_help, 1, 0),
+	SHELL_CMD_ARG(enroll, NULL, "Enroll a device nearby (10 seconds).", cmd_config_enroll, 1, 0),
+	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (10 seconds).", cmd_config_scan, 1, 0),
 
 	SHELL_SUBCMD_SET_END
 );
@@ -969,7 +975,7 @@ static int init(void)
 	}
 
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
+		if (ctr_ble_tag_is_addr_empty(m_config.addr[slot])) {
 			continue;
 		}
 
@@ -977,7 +983,7 @@ static int init(void)
 			.type = BT_ADDR_LE_PUBLIC,
 		};
 
-		memcpy(addr.a.val, m_config_interim.addr[slot], BT_ADDR_SIZE);
+		memcpy(addr.a.val, m_config.addr[slot], BT_ADDR_SIZE);
 
 		ret = bt_le_filter_accept_list_add((const bt_addr_le_t *)&addr);
 		if (ret) {
