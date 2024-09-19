@@ -5,6 +5,8 @@ import subprocess
 import os
 from datetime import datetime
 
+# From 'chester-sdk/chester/applications' call '../scripts/deploy-v2.py'
+
 
 def build_app_variant(variant, version, docs_link, cwd):
     print(f'cwd {cwd}')
@@ -39,14 +41,17 @@ def build_app_variant(variant, version, docs_link, cwd):
             elif line.startswith("Sharable link"):
                 sharable_link = line.split(":", 1)[1].strip()
 
-    # sharable_link = "xyz.cz"
-    # unique_identifier = '55e7f6ba38c04b88aa68ad7ec2b3f353'
     docs_link_combined = docs_link + '#' + name.lower().replace(" ", "-")
 
     date_published = datetime.now().strftime("%Y-%m-%d")
 
     with open("docs.md", "a") as doc_file:
-        doc_file.write(f'| [**{name}**]({docs_link_combined}) ')
+        if "scale" in name:
+            # CHESTER Scale don't have catalog page
+            doc_file.write(f'| **{name}** ')
+        else:
+            doc_file.write(f'| [**{name}**]({docs_link_combined}) ')
+
         doc_file.write(f'| [**{version}**]({sharable_link}) ')
         doc_file.write(f'| <small>`{unique_identifier}`</small> ')
         doc_file.write(f'| {date_published} | {remark} |\n')
