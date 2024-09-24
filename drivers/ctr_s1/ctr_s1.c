@@ -144,10 +144,12 @@ static void irq_handler(const struct device *dev, struct gpio_callback *gpio_cb,
 	ret = gpio_pin_interrupt_configure_dt(&get_config(data->dev)->irq_spec, GPIO_INT_DISABLE);
 	if (ret) {
 		LOG_ERR("Call `gpio_pin_interrupt_configure_dt` failed: %d", ret);
-		return;
 	}
 
-	k_work_submit(&data->work);
+	ret = k_work_submit(&data->work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit` failed: %d", ret);
+	}
 }
 
 static int ctr_s1_enable_interrupts_(const struct device *dev)
@@ -418,13 +420,13 @@ static int ctr_s1_read_motion_count_(const struct device *dev, int *motion_count
 		return -EWOULDBLOCK;
 	}
 
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+	k_mutex_lock(&get_data(dev)->read_lock, K_FOREVER);
 
 	uint16_t reg_pircount0;
 	ret = read(dev, REG_PIRCOUNT0, &reg_pircount0);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
@@ -432,11 +434,11 @@ static int ctr_s1_read_motion_count_(const struct device *dev, int *motion_count
 	ret = read(dev, REG_PIRCOUNT1, &reg_pircount1);
 	if (ret) {
 		LOG_ERR("Call `read` failed: %d", ret);
-		k_mutex_unlock(&get_data(dev)->lock);
+		k_mutex_unlock(&get_data(dev)->read_lock);
 		return ret;
 	}
 
-	k_mutex_unlock(&get_data(dev)->lock);
+	k_mutex_unlock(&get_data(dev)->read_lock);
 
 	*motion_count = reg_pircount1 << 16 | reg_pircount0;
 
@@ -817,16 +819,16 @@ static void work_handler(struct k_work *work)
 
 	ret = read(data->dev, REG_IRQ0, &reg_irq0);
 	if (ret) {
-		k_mutex_unlock(&data->lock);
 		LOG_ERR("Call `read` failed: %d", ret);
 	}
 
 	ret = write(data->dev, REG_IRQ0, reg_irq0);
 	if (ret) {
-		k_mutex_unlock(&data->lock);
 		LOG_ERR("Call `write` failed: %d", ret);
 	}
 
+
+	k_mutex_unlock(&data->lock);
 #define DISPATCH(event)                                                                            \
 	do {                                                                                       \
 		if (reg_irq & BIT(event)) {                                                        \
@@ -847,8 +849,6 @@ static void work_handler(struct k_work *work)
 	}
 
 #undef DISPATCH
-
-	k_mutex_unlock(&data->lock);
 
 	if (reg_irq0 & BIT(CTR_S1_EVENT_TEMPERATURE_CONVERTED)) {
 		k_poll_signal_raise(&data->temperature_sig, 0);
