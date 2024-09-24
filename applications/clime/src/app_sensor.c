@@ -787,7 +787,8 @@ int app_sensor_tc_therm_clear(void)
 	return 0;
 }
 
-#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)   \
+	*/
 
 #if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
 
@@ -985,6 +986,8 @@ int app_sensor_ble_tag_aggreg(void)
 
 		ble_tag->sensor[i].sample_count = 0;
 	}
+
+	app_data_unlock();
 
 	return 0;
 }
