@@ -153,7 +153,6 @@ int app_sensor_ble_tag_sample(void)
 			LOG_WRN("Sample buffer full");
 			return -ENOSPC;
 		}
-		app_data_unlock();
 	}
 
 	return 0;
@@ -198,6 +197,8 @@ int app_sensor_ble_tag_aggreg(void)
 
 		ble_tag->sensor[i].sample_count = 0;
 	}
+
+	app_data_unlock();
 
 	return 0;
 }
