@@ -70,8 +70,7 @@ static void aggreg(float *samples, size_t count, float *min, float *max, float *
 	*mdn = samples[count / 2];
 }
 
-__unused static void aggreg_sample(float *samples, size_t count,
-				   struct app_data_aggreg *sample)
+__unused static void aggreg_sample(float *samples, size_t count, struct app_data_aggreg *sample)
 {
 	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
 }
@@ -444,7 +443,6 @@ int app_sensor_ble_tag_sample(void)
 			LOG_WRN("Sample buffer full");
 			return -ENOSPC;
 		}
-		app_data_unlock();
 	}
 
 	return 0;
@@ -489,6 +487,8 @@ int app_sensor_ble_tag_aggreg(void)
 
 		ble_tag->sensor[i].sample_count = 0;
 	}
+
+	app_data_unlock();
 
 	return 0;
 }
