@@ -269,8 +269,8 @@ static int meteo_aggreg_wind_speed(void)
 #if !defined(M_PI)
 #define M_PI 3.14159265f
 #endif
-#define DEGREES_TO_RADIANS(angle_degrees) ((angle_degrees)*M_PI / 180.f)
-#define RADIANS_TO_DEGREES(angle_radians) ((angle_radians)*180.f / M_PI)
+#define DEGREES_TO_RADIANS(angle_degrees) ((angle_degrees) * M_PI / 180.f)
+#define RADIANS_TO_DEGREES(angle_radians) ((angle_radians) * 180.f / M_PI)
 
 static float get_average_angle(float *array, size_t array_size)
 {
@@ -949,7 +949,6 @@ int app_sensor_ble_tag_sample(void)
 			LOG_WRN("Sample buffer full");
 			return -ENOSPC;
 		}
-		app_data_unlock();
 	}
 
 	return 0;
@@ -994,6 +993,8 @@ int app_sensor_ble_tag_aggreg(void)
 
 		ble_tag->sensor[i].sample_count = 0;
 	}
+
+	app_data_unlock();
 
 	return 0;
 }
