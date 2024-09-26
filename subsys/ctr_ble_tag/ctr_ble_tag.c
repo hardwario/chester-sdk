@@ -697,7 +697,7 @@ static int cmd_config_clear_tags(const struct shell *shell, size_t argc, char **
 	return 0;
 }
 
-static int cmd_config_scan(const struct shell *shell, size_t argc, char **argv)
+static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
@@ -791,7 +791,59 @@ static int cmd_config_scan(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_config_enroll(const struct shell *shell, size_t argc, char **argv)
+static int cmd_show(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (!m_config.enabled) {
+		shell_print(shell, "tag subsystem is disabled");
+		shell_error(shell, "command aborted");
+		return -EPERM;
+	}
+
+	shell_print(shell, "cached data:");
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		uint8_t addr[BT_ADDR_SIZE];
+		int rssi;
+		float voltage;
+		float temperature;
+		float humidity;
+		bool valid;
+
+		ret = ctr_ble_tag_read(slot, addr, &rssi, &voltage, &temperature, &humidity,
+				       &valid);
+		if (ret) {
+			continue;
+		}
+
+		if (!valid) {
+			LOG_DBG("Data was invalid");
+			continue;
+		}
+
+		char addr_str[BT_ADDR_SIZE * 2 + 1];
+
+		ret = ctr_buf2hex(addr, BT_ADDR_SIZE, addr_str, sizeof(addr_str), false);
+		if (ret < 0) {
+			LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		shell_print(shell,
+			    "slot %u: addr: %s / rssi: %d dBm / voltage: %.2f V / "
+			    "temperature: %.2f C / "
+			    "humidity: %.2f %%",
+			    slot, addr_str, rssi, voltage, temperature, humidity);
+	}
+
+	shell_print(shell, "command succeeded");
+
+	return 0;
+}
+
+static int cmd_enroll(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
 
@@ -925,8 +977,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(config, &sub_tag_config,
 				  "Configuration commands.",
 				  print_help, 1, 0),
-	SHELL_CMD_ARG(enroll, NULL, "Enroll a device nearby (10 seconds).", cmd_config_enroll, 1, 0),
-	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (10 seconds).", cmd_config_scan, 1, 0),
+	SHELL_CMD_ARG(enroll, NULL, "Enroll a device nearby (12 seconds).", cmd_enroll, 1, 0),
+	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (12 seconds).", cmd_scan, 1, 0),
+	SHELL_CMD_ARG(show, NULL, "Show cached readings of enrolled devices.", cmd_show, 1, 0),
 
 	SHELL_SUBCMD_SET_END
 );
