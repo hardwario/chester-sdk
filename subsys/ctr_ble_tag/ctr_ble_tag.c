@@ -596,18 +596,26 @@ static int cmd_config_add_tag(const struct shell *shell, size_t argc, char **arg
 
 	sys_mem_swap(addr, BT_ADDR_SIZE);
 
-	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
-			memcpy(m_config_interim.addr[slot], addr, BT_ADDR_SIZE);
-			shell_print(shell, "command succeeded");
-			return 0;
-		}
+	int8_t empty_slot = -1;
 
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		if (memcmp(m_config_interim.addr[slot], addr, BT_ADDR_SIZE) == 0) {
 			shell_print(shell, "tag addr %s already exists", argv[1]);
 			shell_error(shell, "command failed");
 			return -EEXIST;
 		}
+
+		if (empty_slot == -1 && ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
+			empty_slot = slot;
+			break;
+		}
+	}
+
+	if (empty_slot != -1) {
+		memcpy(m_config_interim.addr[empty_slot], addr, BT_ADDR_SIZE);
+		shell_print(shell, "tag addr %s added to slot %d", argv[1], empty_slot);
+		shell_print(shell, "command succeeded");
+		return 0;
 	}
 
 	shell_print(shell, "no slot available");
