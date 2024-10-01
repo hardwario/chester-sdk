@@ -1,5 +1,7 @@
 var NAVTREEINDEX3 =
 {
+"group__ctr__s1.html#ggaf7e13846d2a2104326bab976a4bae58eaec243093e6e3567390f522c7c7121f86":[0,35,8,7],
+"group__ctr__signal.html":[0,19],
 "group__ctr__signal.html#ga4703421561104832e95d4af6bf2f4293":[0,19,0],
 "group__ctr__soil__sensor.html":[0,20],
 "group__ctr__soil__sensor.html#ga57b1a8c0d0a02031fcb236120d5de272":[0,20,2],
@@ -247,7 +249,5 @@ var NAVTREEINDEX3 =
 "structctr__cloud__session.html#aef85577df2ce8076aee36b3ca716d469":[1,0,4,0],
 "structctr__cloud__session.html#af9a2737390bbf603feaf6ec82095bd9f":[1,0,4,6],
 "structctr__config__item.html":[0,5,0],
-"structctr__config__item.html#a07ad8a3b2bb67201cb8b5eca2d57d8cc":[0,5,0,13],
-"structctr__config__item.html#a1e38a69348b2c247deb4583ecac0cecb":[0,5,0,7],
-"structctr__config__item.html#a23e817b2f797e18f2178f64de2531a5a":[0,5,0,10]
+"structctr__config__item.html#a07ad8a3b2bb67201cb8b5eca2d57d8cc":[0,5,0,14]
 };

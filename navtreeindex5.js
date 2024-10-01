@@ -1,5 +1,8 @@
 var NAVTREEINDEX5 =
 {
+"structctr__x7__result.html#a033a49094517500c84754aea0f3a22be":[0,40,1,0],
+"structctr__x7__result.html#af36202c056e484295a76ba403122d371":[0,40,1,1],
+"structctr__z__buzzer__param.html":[0,42,0],
 "structctr__z__buzzer__param.html#a1895fb6046938f7261e1dd3182ba36c8":[0,42,0,0],
 "structctr__z__buzzer__param.html#ab78124801e5debcd30e59f03724c93f5":[0,42,0,1],
 "structctr__z__led__param.html":[0,42,1],
