@@ -148,7 +148,7 @@ static const char *m_enum_band_items[] = {
 	"AS923", "AU915", "", "", "", "EU868", "KR920", "IN865", "US915",
 };
 static const char *m_enum_class_items[] = {"A", "", "C"};
-static const char *m_enum_mode_items[] = {"apb", "otaa"};
+static const char *m_enum_mode_items[] = {"abp", "otaa"};
 static const char *m_enum_nwk_items[] = {"private", "public"};
 
 static const struct ctr_config_item m_config_items[] = {
