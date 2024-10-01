@@ -6,6 +6,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_config.h>
+#include <chester/ctr_util.h>
 
 /* Zephyr includes */
 #include <zephyr/fs/fs.h>
@@ -177,6 +178,14 @@ int ctr_config_show_item(const struct shell *shell, const struct ctr_config_item
 	case CTR_CONFIG_TYPE_STRING:
 		shell_print(shell, "%s config %s %s", mod, item->name, (char *)item->variable);
 		break;
+
+	case CTR_CONFIG_TYPE_HEX:
+		shell_fprintf(shell, SHELL_NORMAL, "%s config %s ", mod, item->name);
+		for (int i = 0; i < item->size; i++) {
+			shell_fprintf(shell, SHELL_NORMAL, "%02x", ((uint8_t *)item->variable)[i]);
+		}
+		shell_fprintf(shell, SHELL_NORMAL, "\n");
+		break;
 	}
 
 	return 0;
@@ -207,8 +216,13 @@ int ctr_config_help_item(const struct shell *shell, const struct ctr_config_item
 			}
 		}
 		break;
+
 	case CTR_CONFIG_TYPE_STRING:
 		shell_print(shell, "  %-18s:%s", item->name, item->help);
+		break;
+
+	case CTR_CONFIG_TYPE_HEX:
+		shell_print(shell, "  %-18s:%s (len: %d B)", item->name, item->help, item->size);
 		break;
 	}
 
@@ -312,6 +326,19 @@ static int parse_string(const struct shell *shell, char *argv, const struct ctr_
 	return 0;
 }
 
+static int parse_hex(const struct shell *shell, char *argv, const struct ctr_config_item *item)
+{
+	int ret = ctr_hex2buf(argv, item->variable, item->size, true);
+
+	if (ret != item->size) {
+		shell_error(shell, "Length does not match.");
+		ctr_config_help_item(shell, item);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int ctr_config_parse_item(const struct shell *shell, char *argv, const struct ctr_config_item *item)
 {
 	switch (item->type) {
@@ -325,6 +352,8 @@ int ctr_config_parse_item(const struct shell *shell, char *argv, const struct ct
 		return parse_enum(shell, argv, item);
 	case CTR_CONFIG_TYPE_STRING:
 		return parse_string(shell, argv, item);
+	case CTR_CONFIG_TYPE_HEX:
+		return parse_hex(shell, argv, item);
 	}
 
 	return -EINVAL;
@@ -347,6 +376,9 @@ int ctr_config_init_item(const struct ctr_config_item *item)
 		break;
 	case CTR_CONFIG_TYPE_STRING:
 		strcpy(item->variable, item->default_string);
+		break;
+	case CTR_CONFIG_TYPE_HEX:
+		memcpy(item->variable, item->default_hex, item->size);
 		break;
 	}
 

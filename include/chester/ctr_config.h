@@ -29,6 +29,7 @@ enum ctr_config_item_type {
 	CTR_CONFIG_TYPE_BOOL,
 	CTR_CONFIG_TYPE_ENUM,
 	CTR_CONFIG_TYPE_STRING,
+	CTR_CONFIG_TYPE_HEX,
 };
 
 #define CTR_CONFIG_ITEM_INT(_name_d, _var, _min, _max, _help, _default)                            \
@@ -37,7 +38,7 @@ enum ctr_config_item_type {
 		.name = _name_d,                                                                   \
 		.type = CTR_CONFIG_TYPE_INT,                                                       \
 		.variable = &_var,                                                                 \
-		.size = sizeof(_var),                                                             \
+		.size = sizeof(_var),                                                              \
 		.min = _min,                                                                       \
 		.max = _max,                                                                       \
 		.help = _help,                                                                     \
@@ -50,7 +51,7 @@ enum ctr_config_item_type {
 		.name = _name_d,                                                                   \
 		.type = CTR_CONFIG_TYPE_FLOAT,                                                     \
 		.variable = &_var,                                                                 \
-		.size = sizeof(_var),                                                             \
+		.size = sizeof(_var),                                                              \
 		.min = _min,                                                                       \
 		.max = _max,                                                                       \
 		.help = _help,                                                                     \
@@ -63,7 +64,7 @@ enum ctr_config_item_type {
 		.name = _name_d,                                                                   \
 		.type = CTR_CONFIG_TYPE_BOOL,                                                      \
 		.variable = &_var,                                                                 \
-		.size = sizeof(_var),                                                             \
+		.size = sizeof(_var),                                                              \
 		.help = _help,                                                                     \
 		.default_bool = _default,                                                          \
 	}
@@ -93,6 +94,17 @@ enum ctr_config_item_type {
 		.default_string = _default,                                                        \
 	}
 
+#define CTR_CONFIG_ITEM_HEX(_name_d, _var, _help, _default)                                        \
+	{                                                                                          \
+		.module = SETTINGS_PFX,                                                            \
+		.name = _name_d,                                                                   \
+		.type = CTR_CONFIG_TYPE_HEX,                                                       \
+		.variable = _var,                                                                  \
+		.size = ARRAY_SIZE(_var),                                                          \
+		.help = _help,                                                                     \
+		.default_hex = _default,                                                           \
+	}
+
 struct ctr_config_item {
 	const char *module;
 	const char *name;
@@ -109,6 +121,7 @@ struct ctr_config_item {
 		bool default_bool;
 		int default_enum;
 		const char *default_string;
+		const uint8_t *default_hex;
 	};
 };
 

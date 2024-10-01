@@ -18,8 +18,9 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 struct config {
 	int interval;
-	enum ctr_led_channel channel;
+	uint8_t channel;
 	char greeting[16 + 1];
+	uint8_t key[2];
 };
 
 static struct config m_config;
@@ -31,8 +32,10 @@ static const struct ctr_config_item m_config_items[] = {
 	CTR_CONFIG_ITEM_INT("interval", m_config_interim.interval, 200, 5000, "blink interval",
 			    500),
 	CTR_CONFIG_ITEM_ENUM("channel", m_config_interim.channel, m_enum_ctr_led_channel_str,
-			     "LED channel", CTR_LED_CHANNEL_R),
+			     "LED channel", 0),
 	CTR_CONFIG_ITEM_STRING("greeting", m_config_interim.greeting, "greeting text", "Alive"),
+	CTR_CONFIG_ITEM_HEX("key", m_config_interim.key, "hexadecimal key",
+			    ((uint8_t[]){0xab, 0xcd})),
 };
 
 static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
