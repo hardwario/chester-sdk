@@ -232,7 +232,7 @@ int ctr_config_help_item(const struct shell *shell, const struct ctr_config_item
 static int parse_int(const struct shell *shell, char *argv, const struct ctr_config_item *item)
 {
 	for (size_t i = 0; i < strlen(argv); i++) {
-		if (!isdigit((int)argv[i])) {
+		if (!isdigit((int)argv[i]) && argv[i] != '-') {
 			shell_error(shell, "Invalid format");
 			ctr_config_help_item(shell, item);
 			return -EINVAL;
