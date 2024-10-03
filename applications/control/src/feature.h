@@ -21,6 +21,7 @@
 #define FEATURE_SUBSYSTEM_CLOUD                 1
 #define FEATURE_SUBSYSTEM_CONFIG                1
 #define FEATURE_SUBSYSTEM_DEFAULTS              1
+#define FEATURE_SUBSYSTEM_DS18B20               1
 #define FEATURE_SUBSYSTEM_EDGE                  1
 #define FEATURE_SUBSYSTEM_ENTROPY_GENERATOR     1
 #define FEATURE_SUBSYSTEM_INFO                  1

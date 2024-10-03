@@ -35,7 +35,6 @@ target_sources(app PRIVATE src/app_handler.c)
 target_sources(app PRIVATE src/app_config.c)
 
 target_precompile_headers(app PRIVATE src/feature.h)
-target_precompile_headers(app PRIVATE src/variant.h)
 
 # ### Preserved code "cmake" (begin)
 # ^^^ Preserved code "cmake" (end)

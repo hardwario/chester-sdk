@@ -37,13 +37,13 @@ features:
 - subsystem-tinycrypt-sha256
 - subsystem-zcbor
 - subsystem-lte-v2
+- subsystem-ds18b20
 - hardware-chester-x0-a
 - hardware-chester-x4-b
 #- hardware-chester-x0-a
 #- hardware-chester-s2
 #- hardware-chester-z
 #- hardware-chester-x4-a
-#- subsystem-ds18b20
 parameters:
 - name: interval-report
   type: int

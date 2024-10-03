@@ -179,7 +179,7 @@ static void hygro_sample_work_handler(struct k_work *work)
 	int ret;
 
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
-				  K_SECONDS(g_app_config.interval_sample));
+				  K_SECONDS(g_app_config.hygro_interval_sample));
 
 	ret = app_sensor_hygro_sample();
 	if (ret) {
@@ -194,7 +194,7 @@ static void hygro_aggreg_work_handler(struct k_work *work)
 	int ret;
 
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
-				  K_SECONDS(g_app_config.interval_aggreg));
+				  K_SECONDS(g_app_config.hygro_interval_aggreg));
 
 	ret = app_sensor_hygro_aggreg();
 	if (ret) {
@@ -213,7 +213,7 @@ static void w1_therm_sample_work_handler(struct k_work *work)
 	int ret;
 
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
-				  K_SECONDS(g_app_config.interval_sample));
+				  K_SECONDS(g_app_config.w1_therm_interval_sample));
 
 	ret = app_sensor_w1_therm_sample();
 	if (ret) {
@@ -228,7 +228,7 @@ static void w1_therm_aggreg_work_handler(struct k_work *work)
 	int ret;
 
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
-				  K_SECONDS(g_app_config.interval_aggreg));
+				  K_SECONDS(g_app_config.w1_therm_interval_aggreg));
 
 	ret = app_sensor_w1_therm_aggreg();
 	if (ret) {
@@ -339,16 +339,16 @@ int app_work_init(void)
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2)
 	k_work_schedule_for_queue(&m_work_q, &m_hygro_sample_work,
-				  K_SECONDS(g_app_config.interval_sample));
+				  K_SECONDS(g_app_config.hygro_interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_hygro_aggreg_work,
-				  K_SECONDS(g_app_config.interval_aggreg));
+				  K_SECONDS(g_app_config.hygro_interval_aggreg));
 #endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 	k_work_schedule_for_queue(&m_work_q, &m_w1_therm_sample_work,
-				  K_SECONDS(g_app_config.interval_sample));
+				  K_SECONDS(g_app_config.w1_therm_interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_w1_therm_aggreg_work,
-				  K_SECONDS(g_app_config.interval_aggreg));
+				  K_SECONDS(g_app_config.w1_therm_interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
 #if defined(CONFIG_CTR_BLE_TAG)
