@@ -11,13 +11,6 @@ variants:
   features:
   - hardware-chester-z
   remark: Support for CHESTER-Z
-- name: CHESTER Current 1W
-  fw_bundle: com.hardwario.chester.app.current.1w
-  fw_name: hio-chester-current-1w
-  fw_version: v3.0.0
-  features:
-  - subsystem-ds18b20
-  remark: Support for 1-Wire
 project:
   variant: Current
   company: 2024 HARDWARIO a.s.
@@ -50,7 +43,7 @@ features:
 - subsystem-lrw
 - subsystem-cloud
 - hardware-chester-k1
-#- subsystem-ds18b20
+- subsystem-ds18b20
 #- hardware-chester-z
 parameters:
 - name: interval-report

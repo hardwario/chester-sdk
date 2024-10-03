@@ -27,7 +27,7 @@
 
 LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
 
-#define SETTINGS_PFX "app-chester-current"
+#define SETTINGS_PFX "app-current"
 
 struct app_config g_app_config;
 

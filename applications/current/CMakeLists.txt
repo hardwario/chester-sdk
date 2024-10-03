@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2024 HARDWARIO a.s.
 #
-#  SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
 cmake_minimum_required(VERSION 3.20.0)
@@ -17,7 +17,7 @@ project(chester-current)
 add_custom_command(
     COMMAND west gen-codec -d ../codec/cbor-decoder.yaml -e ../codec/cbor-encoder.yaml -o ../src/app_codec.h
     OUTPUT ../src/app_codec.h
-    DEPENDS ../codec/cbor-decoder.yaml 
+    DEPENDS ../codec/cbor-decoder.yaml
 )
 
 target_sources(app PRIVATE src/app_data.c)
@@ -36,7 +36,6 @@ target_sources(app PRIVATE src/app_handler.c)
 target_sources(app PRIVATE src/app_config.c)
 
 target_precompile_headers(app PRIVATE src/feature.h)
-target_precompile_headers(app PRIVATE src/variant.h)
 
 # ### Preserved code "cmake" (begin)
 # ^^^ Preserved code "cmake" (end)

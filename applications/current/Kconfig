@@ -6,30 +6,39 @@
 
 menu "Application"
 
-# HARDWARE-CHESTER-K1 
+# HARDWARE-CHESTER-K1
 config SHIELD_CTR_K1
 	bool "Enable SHIELD_CTR_K1"
-	default y 
+	default y
 
 config CTR_K1
 	default y
-# SUBSYSTEM-LRW 
+# SUBSYSTEM-DS18B20
+config SHIELD_CTR_DS18B20
+	bool "Enable SHIELD_CTR_DS18B20"
+	default y
+
+config CTR_DS18B20
+	default y
+# SUBSYSTEM-LRW
 config SHIELD_CTR_LRW
 	bool "Enable SHIELD_CTR_LRW"
-	default y 
+	default y
 
 config CTR_LRW
 	default y
-# SUBSYSTEM-LTE-V2 
+# SUBSYSTEM-LTE-V2
 config SHIELD_CTR_LTE_V2
 	bool "Enable SHIELD_CTR_LTE_V2"
-	default y 
+	default y
 
 config CTR_LTE_V2
 	default y
 
 # ### Preserved code "k_config" (begin)
 # ^^^ Preserved code "k_config" (end)
+
+rsource "Kconfig.variant"
 
 endmenu
 

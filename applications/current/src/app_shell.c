@@ -85,9 +85,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 			       SHELL_SUBCMD_SET_END);
 SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 
-SHELL_CMD_REGISTER(sample, NULL,"Sample immediately.", cmd_sample);
-SHELL_CMD_REGISTER(send, NULL,"Send data immediately.", cmd_send);
-SHELL_CMD_REGISTER(aggreg, NULL,"Aggregate data immediately", cmd_aggreg);
+SHELL_CMD_REGISTER(sample, NULL, "Sample immediately.", cmd_sample);
+SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
+SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately", cmd_aggreg);
 
 /* ### Preserved code "functions 2" (begin) */
 /* ^^^ Preserved code "functions 2" (end) */
