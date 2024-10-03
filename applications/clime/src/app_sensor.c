@@ -122,7 +122,7 @@ int app_sensor_sample(void)
 	return 0;
 }
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if defined(FEATURE_HARDWARE_CHESTER_S1)
 
 int app_sensor_iaq_sample(void)
 {
@@ -310,9 +310,9 @@ int app_sensor_iaq_clear(void)
 
 	return 0;
 }
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S1) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if defined(FEATURE_HARDWARE_CHESTER_S2)
 
 static void append_hygro_event(enum app_data_hygro_event_type type, float value)
 {
@@ -486,9 +486,9 @@ int app_sensor_hygro_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
 
 int app_sensor_w1_therm_sample(void)
 {
@@ -581,19 +581,19 @@ int app_sensor_w1_therm_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+#if defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B)
 
 int app_sensor_rtd_therm_sample(void)
 {
 	int ret;
 	const enum ctr_rtd_channel channel_lookup[] = {
-#if defined(CONFIG_SHIELD_CTR_RTD_A)
+#if defined(FEATURE_HARDWARE_CHESTER_RTD_A)
 		CTR_RTD_CHANNEL_A1,
 		CTR_RTD_CHANNEL_A2,
 #endif
-#if defined(CONFIG_SHIELD_CTR_RTD_B)
+#if defined(FEATURE_HARDWARE_CHESTER_RTD_B)
 		CTR_RTD_CHANNEL_B1,
 		CTR_RTD_CHANNEL_B2,
 #endif
@@ -684,7 +684,7 @@ int app_sensor_rtd_therm_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
 #if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
 
@@ -790,7 +790,7 @@ int app_sensor_tc_therm_clear(void)
 #endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)   \
 	*/
 
-#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 
 int app_sensor_soil_sensor_sample(void)
 {
@@ -893,9 +893,9 @@ int app_sensor_soil_sensor_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 int app_sensor_ble_tag_sample(void)
 {
 	int ret;
@@ -1005,4 +1005,4 @@ int app_sensor_ble_tag_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */

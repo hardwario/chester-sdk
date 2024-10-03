@@ -78,7 +78,7 @@ void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, v
 	}
 }
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if defined(FEATURE_HARDWARE_CHESTER_S1)
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data)
 {
 	int ret;
@@ -173,9 +173,9 @@ void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, voi
 		break;
 	}
 }
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S1) */
 
-#if defined(CONFIG_CTR_BUTTON)
+#if defined(FEATURE_SUBSYSTEM_BUTTON)
 
 static void app_load_timer_handler(struct k_timer *timer)
 {
@@ -238,9 +238,9 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 	}
 }
 
-#endif /* defined(CONFIG_CTR_BUTTON) */
+#endif /* defined(FEATURE_SUBSYSTEM_BUTTON) */
 
-#if defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)
+#if defined(FEATURE_HARDWARE_CHESTER_X4_A) || defined(FEATURE_HARDWARE_CHESTER_X4_B)
 
 void app_handler_ctr_x4(const struct device *dev, enum ctr_x4_event event, void *user_data)
 {
@@ -263,4 +263,4 @@ void app_handler_ctr_x4(const struct device *dev, enum ctr_x4_event event, void 
 	}
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)*/
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_A) || defined(FEATURE_HARDWARE_CHESTER_X4_B)*/

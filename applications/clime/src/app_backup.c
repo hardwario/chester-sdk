@@ -27,7 +27,7 @@
 
 LOG_MODULE_REGISTER(app_backup, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_Z)
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
 
 void handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, void *param)
 {
@@ -217,9 +217,9 @@ error:
 	return ret;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-#if defined(CONFIG_SHIELD_CTR_X10)
+#if defined(FEATURE_HARDWARE_CHESTER_X10)
 
 static void handler_ctr_x10(const struct device *dev, enum ctr_x10_event backup_event,
 			    void *user_data)
@@ -349,9 +349,9 @@ error:
 	return ret;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_X10) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X10) */
 
-#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
+#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
 
 int app_backup_clear(void)
 {
@@ -362,4 +362,4 @@ int app_backup_clear(void)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */

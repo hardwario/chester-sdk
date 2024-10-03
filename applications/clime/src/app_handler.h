@@ -22,18 +22,18 @@ extern "C" {
 void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param);
 void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, void *param);
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if defined(FEATURE_HARDWARE_CHESTER_S1)
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data);
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S1) */
 
-#if defined(CONFIG_CTR_BUTTON)
+#if defined(FEATURE_SUBSYSTEM_BUTTON)
 void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val,
 			    void *user_data);
-#endif /* defined(CONFIG_CTR_BUTTON) */
+#endif /* defined(FEATURE_SUBSYSTEM_BUTTON) */
 
-#if defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)
+#if defined(FEATURE_HARDWARE_CHESTER_X4_A) || defined(FEATURE_HARDWARE_CHESTER_X4_B)
 void app_handler_ctr_x4(const struct device *dev, enum ctr_x4_event event, void *user_data);
-#endif /* defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)*/
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_A) || defined(FEATURE_HARDWARE_CHESTER_X4_B)*/
 
 #ifdef __cplusplus
 }

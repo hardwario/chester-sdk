@@ -44,9 +44,9 @@ int main(void)
 			k_oops();
 		}
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if defined(FEATURE_HARDWARE_CHESTER_S1)
 		app_iaq_led_task();
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S1) */
 
 		/* Blink yellow when LTE/LRW mode not configured*/
 		if (g_app_config.mode == APP_CONFIG_MODE_NONE) {

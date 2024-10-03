@@ -7,3 +7,4 @@
 config VARIANT_CHESTER_CLIME
     bool "Enable VARIANT_CHESTER_CLIME"
     default y
+        

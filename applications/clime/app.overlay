@@ -50,6 +50,68 @@
 		};
 	};
 };
+/* SUBSYSTEM-DS18B20  */
+&ds2484 {
+	ds18b20_0: ds18b20_0 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_1: ds18b20_1 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_2: ds18b20_2 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_3: ds18b20_3 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_4: ds18b20_4 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_5: ds18b20_5 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_6: ds18b20_6 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_7: ds18b20_7 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_8: ds18b20_8 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+
+	ds18b20_9: ds18b20_9 {
+		compatible = "maxim,ds18b20";
+		resolution = <12>;
+		family-code = <0x28>;
+	};
+};
 /* SUBSYSTEM-LRW   */
 &ctr_lrw_if {
 	status = "okay";
@@ -78,6 +140,49 @@
 
 &uart0 {
 	status = "okay";
+};
+/* SUBSYSTEM-SOIL-SENSOR  */
+&ds2484 {
+	ctr_soil_sensor_0: ctr_soil_sensor_0 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_1: ctr_soil_sensor_1 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_2: ctr_soil_sensor_2 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_3: ctr_soil_sensor_3 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_4: ctr_soil_sensor_4 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_5: ctr_soil_sensor_5 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_6: ctr_soil_sensor_6 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_7: ctr_soil_sensor_7 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_8: ctr_soil_sensor_8 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
+	ctr_soil_sensor_9: ctr_soil_sensor_9 {
+		compatible = "maxim,ds28e17";
+		family-code = <0x19>;
+	};
 };
 
 /* ### Preserved code "overlay" (begin) */

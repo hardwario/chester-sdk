@@ -32,7 +32,7 @@
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_LRW)
+#if defined(FEATURE_SUBSYSTEM_LRW)
 
 static int compose_lrw(struct ctr_buf *buf)
 {
@@ -60,26 +60,26 @@ static int compose_lrw(struct ctr_buf *buf)
 	}
 
 	/* Flag IAQ */
-	if (IS_ENABLED(CONFIG_SHIELD_CTR_S1)) {
+	if (IS_ENABLED(FEATURE_HARDWARE_CHESTER_S1)) {
 		header |= BIT(3);
 	}
 
 	/* Flag HYGRO */
-	if (IS_ENABLED(CONFIG_SHIELD_CTR_S2)) {
+	if (IS_ENABLED(FEATURE_HARDWARE_CHESTER_S2)) {
 		header |= BIT(4);
 	}
 
 	/* Flag W1_THERM */
-	if (IS_ENABLED(CONFIG_SHIELD_CTR_DS18B20)) {
+	if (IS_ENABLED(FEATURE_SUBSYSTEM_DS18B20)) {
 		header |= BIT(5);
 	}
 
 	/* Flag RTD_THERM */
-	if (IS_ENABLED(CONFIG_SHIELD_CTR_RTD_A) || IS_ENABLED(CONFIG_SHIELD_CTR_RTD_B)) {
+	if (IS_ENABLED(FEATURE_HARDWARE_CHESTER_RTD_A) || IS_ENABLED(FEATURE_HARDWARE_CHESTER_RTD_B)) {
 		header |= BIT(6);
 	}
 
-	if (IS_ENABLED(CONFIG_CTR_BLE_TAG)) {
+	if (IS_ENABLED(FEATURE_SUBSYSTEM_BLE_TAG)) {
 		header |= BIT(7);
 		header |= BIT(8);
 	}
@@ -134,7 +134,7 @@ static int compose_lrw(struct ctr_buf *buf)
 		}
 	}
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if defined(FEATURE_HARDWARE_CHESTER_S1)
 	/* Field IAQ */
 	if (header & BIT(3)) {
 		struct app_data_iaq *iaqdata = &g_app_data.iaq;
@@ -181,9 +181,9 @@ static int compose_lrw(struct ctr_buf *buf)
 			ret |= ctr_buf_append_u16_le(buf, val);
 		}
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S1) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if defined(FEATURE_HARDWARE_CHESTER_S2)
 	/* Field HYGRO */
 	if (header & BIT(4)) {
 		struct app_data_hygro *hygro = &g_app_data.hygro;
@@ -200,9 +200,9 @@ static int compose_lrw(struct ctr_buf *buf)
 			ret |= ctr_buf_append_u8(buf, hygro->last_sample_humidity * 2.f);
 		}
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
 	/* Field W1_THERM */
 	if (header & BIT(5)) {
 		float t[APP_DATA_W1_THERM_COUNT];
@@ -229,9 +229,9 @@ static int compose_lrw(struct ctr_buf *buf)
 			}
 		}
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+#if defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B)
 	/* Field RTD_THERM */
 	if (header & BIT(6)) {
 
@@ -248,9 +248,9 @@ static int compose_lrw(struct ctr_buf *buf)
 			}
 		}
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	/* Field BLE_TAG */
 	if (header & BIT(8)) {
 		float temperature[CTR_BLE_TAG_COUNT];
@@ -287,7 +287,7 @@ static int compose_lrw(struct ctr_buf *buf)
 		}
 	}
 
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 	app_data_unlock();
 
@@ -298,19 +298,19 @@ static int compose_lrw(struct ctr_buf *buf)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 int app_send(void)
 {
 	__unused int ret;
 
-#if defined(CONFIG_SHIELD_CTR_LRW)
+#if defined(FEATURE_SUBSYSTEM_LRW)
 	CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 	switch (g_app_config.mode) {
 
-#if defined(CONFIG_SHIELD_CTR_LRW)
+#if defined(FEATURE_SUBSYSTEM_LRW)
 	case APP_CONFIG_MODE_LRW:
 		ret = compose_lrw(&lrw_buf);
 		if (ret) {
@@ -326,7 +326,7 @@ int app_send(void)
 			return ret;
 		}
 		break;
-#endif /* defined(CONFIG_SHIELD_CTR_LRW) */
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 	default:
 		break;
@@ -335,7 +335,7 @@ int app_send(void)
 	return 0;
 }
 
-#if defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B)
+#if defined(FEATURE_HARDWARE_CHESTER_X4_A) || defined(FEATURE_HARDWARE_CHESTER_X4_B)
 
 static int compose_x4_line_alert(struct ctr_buf *buf, bool line_connected_event)
 {
@@ -377,4 +377,4 @@ int app_send_lrw_x4_line_alert(bool line_connected_event)
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_X4_A) || defined(CONFIG_SHIELD_CTR_X4_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_A) || defined(FEATURE_HARDWARE_CHESTER_X4_B) */

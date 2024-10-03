@@ -151,7 +151,7 @@ static int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-#if defined(CONFIG_APP_TAMPER)
+#if defined(FEATURE_CHESTER_APP_TAMPER)
 	zcbor_uint32_put(zs, CODEC_KEY_E_TAMPER);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -189,9 +189,9 @@ static int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_APP_TAMPER) */
+#endif /* defined(FEATURE_CHESTER_APP_TAMPER) */
 
-#if defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10)
+#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
 	zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -243,7 +243,7 @@ static int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_Z) || defined(CONFIG_SHIELD_CTR_X10) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK);
 	{
@@ -378,7 +378,7 @@ static int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if defined(FEATURE_HARDWARE_CHESTER_S1)
 	zcbor_uint32_put(zs, CODEC_KEY_E_IAQ_SENSOR);
 	{
 		struct app_data_iaq_sensors *sensors = &g_app_data.iaq.sensors;
@@ -549,9 +549,9 @@ static int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S1) */
 
-#if defined(CONFIG_SHIELD_CTR_S2)
+#if defined(FEATURE_HARDWARE_CHESTER_S2)
 	zcbor_uint32_put(zs, CODEC_KEY_E_HYGROMETER);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -627,9 +627,9 @@ static int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_S2) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
 
-#if defined(CONFIG_SHIELD_CTR_DS18B20)
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
 	zcbor_uint32_put(zs, CODEC_KEY_E_W1_THERMOMETERS);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -664,17 +664,17 @@ static int encode(zcbor_state_t *zs)
 		}
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_DS18B20) */
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#if defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B)
+#if defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B)
 	zcbor_uint32_put(zs, CODEC_KEY_E_RTD_THERMOMETER);
 	{
 		const int channel_lookup[] = {
-#if defined(CONFIG_SHIELD_CTR_RTD_A)
+#if defined(FEATURE_HARDWARE_CHESTER_RTD_A)
 			1,
 			2,
 #endif
-#if defined(CONFIG_SHIELD_CTR_RTD_B)
+#if defined(FEATURE_HARDWARE_CHESTER_RTD_B)
 			3,
 			4,
 #endif
@@ -708,7 +708,7 @@ static int encode(zcbor_state_t *zs)
 		}
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_RTD_A) || defined(CONFIG_SHIELD_CTR_RTD_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
 #if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
 	zcbor_uint32_put(zs, CODEC_KEY_E_TC_THERMOMETER);
@@ -754,7 +754,7 @@ static int encode(zcbor_state_t *zs)
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
 
-#if defined(CONFIG_SHIELD_CTR_SOIL_SENSOR)
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 	zcbor_uint32_put(zs, CODEC_KEY_E_SOIL_SENSORS);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -817,9 +817,9 @@ static int encode(zcbor_state_t *zs)
 		}
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_SOIL_SENSOR) */
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 	zcbor_int32_put(zs, CODEC_KEY_E_BLE_TAGS);
 	{
@@ -916,7 +916,7 @@ static int encode(zcbor_state_t *zs)
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 

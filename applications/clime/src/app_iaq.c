@@ -27,7 +27,7 @@
 
 LOG_MODULE_REGISTER(app_iaq, LOG_LEVEL_DBG);
 
-#if defined(CONFIG_SHIELD_CTR_S1)
+#if defined(FEATURE_HARDWARE_CHESTER_S1)
 
 static const struct device *dev_s1 = DEVICE_DT_GET(DT_NODELABEL(ctr_s1));
 
@@ -171,7 +171,7 @@ int app_iaq_led_task(void)
 
 	bool line_present = false;
 
-#if defined(CONFIG_SHIELD_CTR_X10)
+#if defined(FEATURE_HARDWARE_CHESTER_X10)
 	const struct device *dev_x10 = DEVICE_DT_GET(DT_NODELABEL(ctr_x10));
 
 	ret = ctr_x10_get_line_present(dev_x10, &line_present);
@@ -179,11 +179,11 @@ int app_iaq_led_task(void)
 		LOG_ERR("Call `ctr_x10_get_line_present` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(CONFIG_SHIELD_CTR_X10) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X10) */
 
 	led_set(led_state, line_present);
 
 	return 0;
 }
 
-#endif /* defined(CONFIG_SHIELD_CTR_S1) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S1) */

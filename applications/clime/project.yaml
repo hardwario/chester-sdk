@@ -4,12 +4,15 @@ variants:
   fw_bundle: com.hardwario.chester.app.clime
   fw_name: hio-chester-clime
   fw_version: v3.0.0
+  features:
+  - hardware-chester-s2
 - name: CHESTER Clime Z
   fw_bundle: com.hardwario.chester.app.clime.z
   fw_name: hio-chester-clime-z
   fw_version: v3.0.0
   features:
   - hardware-chester-z
+  - hardware-chester-s2
   remark: Support for CHESTER-Z
 - name: CHESTER Clime IAQ
   fw_bundle: com.hardwario.chester.app.clime.iaq
@@ -17,26 +20,18 @@ variants:
   fw_version: v3.0.0
   features:
   - hardware-chester-s1
-- name: CHESTER Clime 1W
-  fw_bundle: com.hardwario.chester.app.clime.1w
-  fw_name: hio-chester-clime-1w
-  fw_version: v3.0.0
-  features:
-  - hardware-chester-ds18b20
-- name: CHESTER Clime 1WH
-  fw_bundle: com.hardwario.chester.app.clime.1wh
-  fw_name: hio-chester-clime-1wh
-  fw_version: v3.0.0
-  features:
-    - hardware-chester-s2
-    - hardware-chester-ds18b20
-  remark: Support for CHESTER-S2, 1-Wire
+  - hardware-chester-x10
 - name: CHESTER Clime RTD
   fw_bundle: com.hardwario.chester.app.clime.rtd
   fw_name: hio-chester-clime-rtd
   fw_version: v3.0.0
   features:
     - hardware-chester-rtd-a
+- name: CHESTER Clime 1W
+  fw_bundle: com.hardwario.chester.app.clime.1w
+  fw_name: hio-chester-clime-1w
+  fw_version: v3.0.0
+  remark:
 - name: CHESTER Clime TC
   fw_bundle: com.hardwario.chester.app.clime.tc
   fw_name: hio-chester-clime-tc
@@ -74,21 +69,20 @@ features:
 - subsystem-zcbor
 - subsystem-lte-v2
 - subsystem-lrw
-- hardware-chester-s2
+- subsystem-ds18b20
+- subsystem-soil-sensor
 - chester-app-report-jitter
-#- hardware-chester-tc-a
-#- hardware-chester-tc-b
 #- chester-app-tamper
 #- hardware-chester-s1
-#- subsystem-ds18b20
+#- hardware-chester-s2
 #- hardware-chester-rtd-a
 #- hardware-chester-rtd-b
-#- subsystem-soil-sensor
-#- hardware-app-tamper
 #- hardware-chester-x4-b
 #- hardware-chester-x4-a
 #- hardware-chester-x10
 #- hardware-chester-z
+#- hardware-chester-tc-a
+#- hardware-chester-tc-b
 parameters:
 - name: interval-sample
   type: int
