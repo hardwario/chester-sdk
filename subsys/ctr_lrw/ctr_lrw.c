@@ -166,7 +166,7 @@ static const struct ctr_config_item m_config_items[] = {
 	CTR_CONFIG_ITEM_ENUM("nwk", m_config_interim.nwk, m_enum_nwk_items, "network type",
 			     NWK_PUBLIC),
 	CTR_CONFIG_ITEM_BOOL("adr", m_config_interim.adr, "adaptive data rate", true),
-	CTR_CONFIG_ITEM_INT("datarate", m_config_interim.datarate, 1, 15, "data rate", 0),
+	CTR_CONFIG_ITEM_INT("datarate", m_config_interim.datarate, 0, 15, "data rate", 0),
 	CTR_CONFIG_ITEM_BOOL("dutycycle", m_config_interim.dutycycle, "duty cycle", true),
 	CTR_CONFIG_ITEM_HEX("devaddr", m_config_interim.devaddr,
 			    "DevAddr (format: <8 hexadecimal digits>)", ((const uint8_t[8]){0})),
