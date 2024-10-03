@@ -691,7 +691,9 @@ void app_work_sample(void)
 		      K_SECONDS(g_app_config.interval_sample));
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_timer_start(&m_ble_tag_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 }
 
 void app_work_aggreg(void)
@@ -723,7 +725,9 @@ void app_work_aggreg(void)
 		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_timer_start(&m_ble_tag_aggreg_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 }
 
 void app_work_send(void)
