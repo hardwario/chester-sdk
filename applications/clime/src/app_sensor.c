@@ -905,18 +905,20 @@ int app_sensor_ble_tag_sample(void)
 		sensor->rssi = INT_MAX;
 		sensor->voltage = NAN;
 
-		if (g_app_data.ble_tag.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
+		if (g_app_data.ble_tag.sensor[i].sample_count < APP_DATA_MAX_BLE_TAG_SAMPLES) {
 			uint8_t addr[BT_ADDR_SIZE];
 			int rssi;
 			float voltage;
 			float temperature;
 			float humidity;
+			int16_t sensor_mask;
 			bool valid;
 
-			ret = ctr_ble_tag_read(i, addr, &rssi, &voltage, &temperature, &humidity,
-					       &valid);
+			ret = ctr_ble_tag_read_cached(i, addr, &rssi, &voltage, &temperature,
+						      &humidity, NULL, NULL, NULL, NULL, NULL, NULL,
+						      &sensor_mask, &valid);
 			if (ret && ret != -ENOENT) {
-				LOG_ERR("Call `ctr_ble_tag_read` failed: %d", ret);
+				LOG_ERR("Call `ctr_ble_tag_read_cached` failed: %d", ret);
 				continue;
 			} else if (ret == -ENOENT) {
 				continue;
@@ -924,12 +926,15 @@ int app_sensor_ble_tag_sample(void)
 
 			app_data_lock();
 			memcpy(sensor->addr, addr, BT_ADDR_SIZE);
-			if (rssi != INT_MAX) {
+
+			if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_RSSI) {
 				sensor->rssi = rssi;
 			}
-			if (voltage != NAN) {
+
+			if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
 				sensor->voltage = voltage;
 			}
+
 			sensor->last_sample_temperature = temperature;
 			sensor->last_sample_humidity = humidity;
 			sensor->samples_temperature[sensor->sample_count] = temperature;
@@ -965,7 +970,7 @@ int app_sensor_ble_tag_aggreg(void)
 			}
 		}
 
-		if (ble_tag->sensor[i].measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+		if (ble_tag->sensor[i].measurement_count < APP_DATA_MAX_BLE_TAG_SAMPLES) {
 			struct app_data_ble_tag_measurement *measurement =
 				&ble_tag->sensor[i]
 					 .measurements[ble_tag->sensor[i].measurement_count];

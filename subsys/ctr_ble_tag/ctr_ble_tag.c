@@ -6,6 +6,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_ble_tag.h>
+#include <chester/ctr_buf.h>
 #include <chester/ctr_config.h>
 #include <chester/ctr_info.h>
 #include <chester/ctr_util.h>
@@ -26,6 +27,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -58,10 +60,17 @@ static struct config m_config;
 struct ble_tag_data {
 	bool valid;
 	int64_t timestamp;
+	int16_t sensor_mask;
 	int rssi;
 	float temperature;
 	float humidity;
 	float voltage;
+	bool magnet_detected;
+	bool moving;
+	float movement_event_count;
+	bool low_battery;
+	float roll;
+	float pitch;
 };
 
 static struct ble_tag_data m_tag_data[CTR_BLE_TAG_COUNT];
@@ -77,10 +86,11 @@ static K_MUTEX_DEFINE(m_scan_lock);
 static struct k_work_q m_scan_work_q;
 static K_THREAD_STACK_DEFINE(m_scan_work_q_stack, 2048);
 
-static int parse_data(struct net_buf_simple *buf, float *temperature, float *humidity,
-		      float *voltage)
+static int16_t parse_data(struct net_buf_simple *buf, float *temperature, float *humidity,
+			  float *voltage, bool *magnet_detected, bool *moving,
+			  float *movement_event_count, bool *low_battery, float *roll, float *pitch)
 {
-	bool has_data = false;
+	int16_t sensor_mask = 0;
 
 	if (buf->len < 1) {
 		LOG_DBG("Invalid length: %d", buf->len);
@@ -117,6 +127,11 @@ static int parse_data(struct net_buf_simple *buf, float *temperature, float *hum
 		int16_t temperature_;
 		uint8_t humidity_;
 		uint8_t voltage_;
+		bool magnet_detected_;
+		bool moving_;
+		uint16_t movement_event_count_;
+		int8_t roll_;
+		int16_t pitch_;
 
 		if (data_flags & BIT(0)) {
 			if (buf->len < 2) {
@@ -130,6 +145,8 @@ static int parse_data(struct net_buf_simple *buf, float *temperature, float *hum
 			if (temperature) {
 				*temperature = temperature_ / 100.0;
 				LOG_DBG("Temperature: %.2f C", *temperature);
+
+				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE;
 			}
 		}
 
@@ -145,7 +162,79 @@ static int parse_data(struct net_buf_simple *buf, float *temperature, float *hum
 			if (humidity) {
 				*humidity = humidity_;
 				LOG_DBG("Humidity: %.0f %%", *humidity);
+
+				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_HUMIDITY;
 			}
+		}
+
+		if (data_flags & BIT(2)) {
+			magnet_detected_ = (data_flags & BIT(3)) != 0;
+
+			if (magnet_detected) {
+				*magnet_detected = magnet_detected_;
+				LOG_DBG("magnet: %s",
+					magnet_detected_ ? "detected" : "not detected");
+
+				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED;
+			}
+		}
+
+		if (data_flags & BIT(4)) {
+			if (buf->len < 2) {
+				LOG_ERR("Invalid length: %d, needed: %d", buf->len,
+					sizeof(uint16_t));
+				return -EINVAL;
+			}
+
+			uint16_t movement_data = net_buf_simple_pull_be16(buf);
+			moving_ = movement_data & 0x8000 ? 1 : 0;
+			movement_event_count_ = movement_data & 0x7fff;
+
+			if (moving) {
+				*moving = moving_ != 0;
+				LOG_DBG("Moving: %s", moving_ ? "true" : "false");
+
+				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_MOVING;
+			}
+
+			if (movement_event_count) {
+				*movement_event_count = movement_event_count_;
+				LOG_DBG("Movement event count: %d", movement_event_count_);
+
+				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT;
+			}
+		}
+
+		if (data_flags & BIT(5)) {
+			if (buf->len < 1) {
+				LOG_ERR("Invalid length: %d, needed: %d", buf->len,
+					3 * (sizeof(uint8_t)));
+				return -EINVAL;
+			}
+
+			roll_ = net_buf_simple_pull_u8(buf);
+			pitch_ = net_buf_simple_pull_be16(buf);
+
+			if (roll) {
+				*roll = roll_;
+				LOG_DBG("Roll: %d", roll_);
+
+				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_ROLL;
+			}
+
+			if (pitch) {
+				*pitch = pitch_;
+				LOG_DBG("Pitch: %d", pitch_);
+
+				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_PITCH;
+			}
+		}
+
+		if (low_battery) {
+			*low_battery = data_flags & BIT(6);
+			LOG_DBG("Low battery: %s", *low_battery ? "true" : "false");
+
+			sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY;
 		}
 
 		if (data_flags & BIT(7)) {
@@ -162,18 +251,20 @@ static int parse_data(struct net_buf_simple *buf, float *temperature, float *hum
 			if (voltage) {
 				*voltage = (voltage_ * 10) + 2000.0;
 				LOG_DBG("Voltage: %.2f V", *voltage);
+
+				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_VOLTAGE;
 			}
 		}
 
-		has_data = true;
-
 	} while (buf->len);
 
-	return has_data ? 0 : -EINVAL;
+	return sensor_mask ? sensor_mask : -EINVAL;
 }
 
-static void update_tag_data(const bt_addr_le_t *addr, bool interim, int8_t rssi, float temperature,
-			    float humidity, float voltage)
+static void update_tag_data(const bt_addr_le_t *addr, bool interim, int16_t sensor_mask,
+			    int8_t rssi, float temperature, float humidity, float voltage,
+			    bool magnet_detected, bool moving, float movement_event_count,
+			    bool low_battery, float roll, float pitch)
 {
 	k_mutex_lock(&m_tag_data_lock, K_FOREVER);
 
@@ -193,10 +284,17 @@ static void update_tag_data(const bt_addr_le_t *addr, bool interim, int8_t rssi,
 	}
 
 	m_tag_data[slot].timestamp = k_uptime_get();
+	m_tag_data[slot].sensor_mask = sensor_mask;
 	m_tag_data[slot].rssi = rssi;
 	m_tag_data[slot].temperature = temperature;
 	m_tag_data[slot].humidity = humidity;
 	m_tag_data[slot].voltage = voltage;
+	m_tag_data[slot].magnet_detected = magnet_detected;
+	m_tag_data[slot].moving = moving;
+	m_tag_data[slot].movement_event_count = movement_event_count;
+	m_tag_data[slot].low_battery = low_battery;
+	m_tag_data[slot].roll = roll;
+	m_tag_data[slot].pitch = pitch;
 
 	m_tag_data[slot].valid = true;
 
@@ -209,12 +307,24 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 	float temperature;
 	float humidity;
 	float voltage;
+	bool magnet_detected;
+	bool moving;
+	float movement_event_count;
+	bool low_battery;
+	float roll;
+	float pitch;
 
-	if (parse_data(buf, &temperature, &humidity, &voltage)) {
+	int16_t sensor_mask =
+		parse_data(buf, &temperature, &humidity, &voltage, &magnet_detected, &moving,
+			   &movement_event_count, &low_battery, &roll, &pitch);
+
+	if (sensor_mask < 0) {
+		LOG_DBG("Failed to parse data");
 		return;
 	}
 
-	update_tag_data(addr, false, rssi, temperature, humidity, voltage);
+	update_tag_data(addr, false, sensor_mask, rssi, temperature, humidity, voltage,
+			magnet_detected, moving, movement_event_count, low_battery, roll, pitch);
 }
 
 static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
@@ -222,11 +332,21 @@ static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 {
 	int ret;
 
-	float temperature;
-	float humidity;
-	float voltage;
+	float temperature = NAN;
+	float humidity = NAN;
+	float voltage = NAN;
+	bool magnet_detected;
+	bool moving;
+	float movement_event_count;
+	bool low_battery;
+	float roll;
+	float pitch;
 
-	if (parse_data(buf, &temperature, &humidity, &voltage)) {
+	int16_t sensor_mask =
+		parse_data(buf, &temperature, &humidity, &voltage, &magnet_detected, &moving,
+			   &movement_event_count, &low_battery, &roll, &pitch);
+
+	if (sensor_mask < 0) {
 		return;
 	}
 
@@ -264,7 +384,8 @@ static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		break;
 	}
 
-	update_tag_data(addr, true, rssi, temperature, humidity, voltage);
+	update_tag_data(addr, true, sensor_mask, rssi, temperature, humidity, voltage,
+			magnet_detected, moving, movement_event_count, low_battery, roll, pitch);
 }
 
 static void start_scan_work_handler(struct k_work *work);
@@ -326,8 +447,10 @@ int ctr_ble_tag_is_addr_empty(const uint8_t addr[BT_ADDR_SIZE])
 	return memcmp(addr, empty_addr, BT_ADDR_SIZE) == 0;
 }
 
-int ctr_ble_tag_read(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *voltage,
-		     float *temperature, float *humidity, bool *valid)
+int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *voltage,
+			    float *temperature, float *humidity, bool *magnet_detected,
+			    bool *moving, int *movement_event_count, float *roll, float *pitch,
+			    bool *low_battery, int16_t *sensor_mask, bool *valid)
 {
 	if (slot < 0 || slot >= CTR_BLE_TAG_COUNT) {
 		return -EINVAL;
@@ -345,28 +468,58 @@ int ctr_ble_tag_read(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *
 	    (now > m_tag_data[slot].timestamp +
 			   m_config.scan_interval * 1000 * CTR_BLE_TAG_DATA_TIMEOUT_INTERVALS)) {
 		m_tag_data[slot].valid = false;
+
+		*valid = false;
+		return 0;
 	}
 
 	if (addr) {
 		sys_memcpy_swap(addr, m_config.addr[slot], BT_ADDR_SIZE);
 	}
 
-	if (rssi) {
-		*rssi = m_tag_data[slot].valid ? m_tag_data[slot].rssi : INT_MAX;
+	if (rssi && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_RSSI) {
+		*rssi = m_tag_data[slot].rssi;
 	}
 
-	if (voltage) {
-		*voltage = m_tag_data[slot].valid ? m_tag_data[slot].voltage / 1000.f : NAN;
+	if (voltage && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
+		*voltage = m_tag_data[slot].voltage / 1000.f;
 	}
 
-	if (temperature) {
-		*temperature = m_tag_data[slot].valid ? m_tag_data[slot].temperature : NAN;
+	if (temperature && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
+		*temperature = m_tag_data[slot].temperature;
 	}
 
-	if (humidity) {
-		*humidity = m_tag_data[slot].valid ? m_tag_data[slot].humidity : NAN;
+	if (humidity && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
+		*humidity = m_tag_data[slot].humidity;
 	}
 
+	if (magnet_detected && m_tag_data[slot].sensor_mask &&
+	    CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED) {
+		*magnet_detected = m_tag_data[slot].magnet_detected;
+	}
+
+	if (moving && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_MOVING) {
+		*moving = m_tag_data[slot].moving;
+	}
+
+	if (movement_event_count && m_tag_data[slot].sensor_mask &&
+	    CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT) {
+		*movement_event_count = m_tag_data[slot].movement_event_count;
+	}
+
+	if (roll && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_ROLL) {
+		*roll = m_tag_data[slot].roll;
+	}
+
+	if (pitch && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_PITCH) {
+		*pitch = m_tag_data[slot].pitch;
+	}
+
+	if (low_battery && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY) {
+		*low_battery = m_tag_data[slot].low_battery;
+	}
+
+	*sensor_mask = m_tag_data[slot].sensor_mask;
 	*valid = m_tag_data[slot].valid;
 
 	k_mutex_unlock(&m_tag_data_lock);
@@ -407,6 +560,32 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	SETTINGS_SET("addr-5", m_config_interim.addr[5], sizeof(m_config_interim.addr[5]));
 	SETTINGS_SET("addr-6", m_config_interim.addr[6], sizeof(m_config_interim.addr[6]));
 	SETTINGS_SET("addr-7", m_config_interim.addr[7], sizeof(m_config_interim.addr[7]));
+#if defined(CONFIG_CTR_BLE_TAG_32_SLOTS)
+	SETTINGS_SET("addr-8", m_config_interim.addr[8], sizeof(m_config_interim.addr[8]));
+	SETTINGS_SET("addr-9", m_config_interim.addr[9], sizeof(m_config_interim.addr[9]));
+	SETTINGS_SET("addr-10", m_config_interim.addr[10], sizeof(m_config_interim.addr[10]));
+	SETTINGS_SET("addr-11", m_config_interim.addr[11], sizeof(m_config_interim.addr[11]));
+	SETTINGS_SET("addr-12", m_config_interim.addr[12], sizeof(m_config_interim.addr[12]));
+	SETTINGS_SET("addr-13", m_config_interim.addr[13], sizeof(m_config_interim.addr[13]));
+	SETTINGS_SET("addr-14", m_config_interim.addr[14], sizeof(m_config_interim.addr[14]));
+	SETTINGS_SET("addr-15", m_config_interim.addr[15], sizeof(m_config_interim.addr[15]));
+	SETTINGS_SET("addr-16", m_config_interim.addr[16], sizeof(m_config_interim.addr[16]));
+	SETTINGS_SET("addr-17", m_config_interim.addr[17], sizeof(m_config_interim.addr[17]));
+	SETTINGS_SET("addr-18", m_config_interim.addr[18], sizeof(m_config_interim.addr[18]));
+	SETTINGS_SET("addr-19", m_config_interim.addr[19], sizeof(m_config_interim.addr[19]));
+	SETTINGS_SET("addr-20", m_config_interim.addr[20], sizeof(m_config_interim.addr[20]));
+	SETTINGS_SET("addr-21", m_config_interim.addr[21], sizeof(m_config_interim.addr[21]));
+	SETTINGS_SET("addr-22", m_config_interim.addr[22], sizeof(m_config_interim.addr[22]));
+	SETTINGS_SET("addr-23", m_config_interim.addr[23], sizeof(m_config_interim.addr[23]));
+	SETTINGS_SET("addr-24", m_config_interim.addr[24], sizeof(m_config_interim.addr[24]));
+	SETTINGS_SET("addr-25", m_config_interim.addr[25], sizeof(m_config_interim.addr[25]));
+	SETTINGS_SET("addr-26", m_config_interim.addr[26], sizeof(m_config_interim.addr[26]));
+	SETTINGS_SET("addr-27", m_config_interim.addr[27], sizeof(m_config_interim.addr[27]));
+	SETTINGS_SET("addr-28", m_config_interim.addr[28], sizeof(m_config_interim.addr[28]));
+	SETTINGS_SET("addr-29", m_config_interim.addr[29], sizeof(m_config_interim.addr[29]));
+	SETTINGS_SET("addr-30", m_config_interim.addr[30], sizeof(m_config_interim.addr[30]));
+	SETTINGS_SET("addr-31", m_config_interim.addr[31], sizeof(m_config_interim.addr[31]));
+#endif
 
 #undef SETTINGS_SET
 
@@ -440,6 +619,32 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 	EXPORT_FUNC("addr-5", m_config_interim.addr[5], sizeof(m_config_interim.addr[5]));
 	EXPORT_FUNC("addr-6", m_config_interim.addr[6], sizeof(m_config_interim.addr[6]));
 	EXPORT_FUNC("addr-7", m_config_interim.addr[7], sizeof(m_config_interim.addr[7]));
+#if defined(CONFIG_CTR_BLE_TAG_32_SLOTS)
+	EXPORT_FUNC("addr-8", m_config_interim.addr[8], sizeof(m_config_interim.addr[8]));
+	EXPORT_FUNC("addr-9", m_config_interim.addr[9], sizeof(m_config_interim.addr[9]));
+	EXPORT_FUNC("addr-10", m_config_interim.addr[10], sizeof(m_config_interim.addr[10]));
+	EXPORT_FUNC("addr-11", m_config_interim.addr[11], sizeof(m_config_interim.addr[11]));
+	EXPORT_FUNC("addr-12", m_config_interim.addr[12], sizeof(m_config_interim.addr[12]));
+	EXPORT_FUNC("addr-13", m_config_interim.addr[13], sizeof(m_config_interim.addr[13]));
+	EXPORT_FUNC("addr-14", m_config_interim.addr[14], sizeof(m_config_interim.addr[14]));
+	EXPORT_FUNC("addr-15", m_config_interim.addr[15], sizeof(m_config_interim.addr[15]));
+	EXPORT_FUNC("addr-16", m_config_interim.addr[16], sizeof(m_config_interim.addr[16]));
+	EXPORT_FUNC("addr-17", m_config_interim.addr[17], sizeof(m_config_interim.addr[17]));
+	EXPORT_FUNC("addr-18", m_config_interim.addr[18], sizeof(m_config_interim.addr[18]));
+	EXPORT_FUNC("addr-19", m_config_interim.addr[19], sizeof(m_config_interim.addr[19]));
+	EXPORT_FUNC("addr-20", m_config_interim.addr[20], sizeof(m_config_interim.addr[20]));
+	EXPORT_FUNC("addr-21", m_config_interim.addr[21], sizeof(m_config_interim.addr[21]));
+	EXPORT_FUNC("addr-22", m_config_interim.addr[22], sizeof(m_config_interim.addr[22]));
+	EXPORT_FUNC("addr-23", m_config_interim.addr[23], sizeof(m_config_interim.addr[23]));
+	EXPORT_FUNC("addr-24", m_config_interim.addr[24], sizeof(m_config_interim.addr[24]));
+	EXPORT_FUNC("addr-25", m_config_interim.addr[25], sizeof(m_config_interim.addr[25]));
+	EXPORT_FUNC("addr-26", m_config_interim.addr[26], sizeof(m_config_interim.addr[26]));
+	EXPORT_FUNC("addr-27", m_config_interim.addr[27], sizeof(m_config_interim.addr[27]));
+	EXPORT_FUNC("addr-28", m_config_interim.addr[28], sizeof(m_config_interim.addr[28]));
+	EXPORT_FUNC("addr-29", m_config_interim.addr[29], sizeof(m_config_interim.addr[29]));
+	EXPORT_FUNC("addr-30", m_config_interim.addr[30], sizeof(m_config_interim.addr[30]));
+	EXPORT_FUNC("addr-31", m_config_interim.addr[31], sizeof(m_config_interim.addr[31]));
+#endif
 
 #undef EXPORT_FUNC
 
@@ -483,6 +688,12 @@ static void print_tag_list(const struct shell *shell)
 	}
 }
 
+int ctr_ble_tag_enable(bool enabled)
+{
+	m_config_interim.enabled = enabled;
+	return 0;
+}
+
 static int cmd_config_enabled(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -493,11 +704,11 @@ static int cmd_config_enabled(const struct shell *shell, size_t argc, char **arg
 
 	if (argc == 2) {
 		if (strcmp(argv[1], "true") == 0) {
-			m_config_interim.enabled = true;
+			ctr_ble_tag_enable(true);
 			shell_print(shell, "command succeeded");
 			return 0;
 		} else if (strcmp(argv[1], "false") == 0) {
-			m_config_interim.enabled = false;
+			ctr_ble_tag_enable(false);
 			shell_print(shell, "command succeeded");
 			return 0;
 		}
@@ -514,8 +725,26 @@ static int cmd_config_enabled(const struct shell *shell, size_t argc, char **arg
 	return -EINVAL;
 }
 
+int ctr_ble_tag_set_scan_interval(int scan_interval)
+{
+	if (scan_interval < 1 || scan_interval > 86400) {
+		return -EINVAL;
+	}
+
+	m_config_interim.scan_interval = scan_interval;
+
+	return 0;
+}
+
+int ctr_ble_tag_get_scan_interval(void)
+{
+	return m_config_interim.scan_interval;
+}
+
 static int cmd_config_scan_interval(const struct shell *shell, size_t argc, char **argv)
 {
+	int ret;
+
 	if (argc == 1) {
 		print_scan_interval(shell);
 		shell_print(shell, "command succeeded");
@@ -525,10 +754,11 @@ static int cmd_config_scan_interval(const struct shell *shell, size_t argc, char
 	if (argc == 2) {
 		long val = strtol(argv[1], NULL, 10);
 
-		if (val < 1 || val > 86400) {
+		ret = ctr_ble_tag_set_scan_interval(val);
+		if (ret == -EINVAL) {
 			shell_print(shell, "invalid input");
 			shell_error(shell, "command failed");
-			return -EINVAL;
+			return ret;
 		}
 
 		m_config_interim.scan_interval = val;
@@ -544,8 +774,26 @@ static int cmd_config_scan_interval(const struct shell *shell, size_t argc, char
 	return -EINVAL;
 }
 
+int ctr_ble_tag_set_scan_duration(int scan_duration)
+{
+	if (scan_duration < 1 || scan_duration > 86400) {
+		return -EINVAL;
+	}
+
+	m_config_interim.scan_duration = scan_duration;
+
+	return 0;
+}
+
+int ctr_ble_tag_get_scan_duration(void)
+{
+	return m_config_interim.scan_duration;
+}
+
 static int cmd_config_scan_duration(const struct shell *shell, size_t argc, char **argv)
 {
+	int ret;
+
 	if (argc == 1) {
 		print_scan_duration(shell);
 		shell_print(shell, "command succeeded");
@@ -555,10 +803,11 @@ static int cmd_config_scan_duration(const struct shell *shell, size_t argc, char
 	if (argc == 2) {
 		long val = strtol(argv[1], NULL, 10);
 
-		if (val < 1 || val > 86400) {
+		ret = ctr_ble_tag_set_scan_duration(val);
+		if (ret == -EINVAL) {
 			shell_print(shell, "invalid input");
 			shell_error(shell, "command failed");
-			return -EINVAL;
+			return ret;
 		}
 
 		m_config_interim.scan_duration = val;
@@ -574,25 +823,16 @@ static int cmd_config_scan_duration(const struct shell *shell, size_t argc, char
 	return -EINVAL;
 }
 
-static int cmd_config_add_tag(const struct shell *shell, size_t argc, char **argv)
+int ctr_ble_tag_add(char *addr_str)
 {
 	int ret;
 
-	if (argc > 2) {
-		shell_print(shell, "unknown parameter: %s", argv[1]);
-		shell_error(shell, "command failed");
-		shell_help(shell);
-		return -EINVAL;
-	}
-
 	uint8_t addr[BT_ADDR_SIZE];
 
-	ret = ctr_hex2buf(argv[1], addr, BT_ADDR_SIZE, false);
+	ret = ctr_hex2buf(addr_str, addr, BT_ADDR_SIZE, false);
 	if (ret < 0) {
 		LOG_ERR("Call `ctr_hex2buf` failed: %d", ret);
-		shell_print(shell, "invalid input");
-		shell_error(shell, "command failed");
-		return -EINVAL;
+		return ret;
 	}
 
 	sys_mem_swap(addr, BT_ADDR_SIZE);
@@ -601,8 +841,7 @@ static int cmd_config_add_tag(const struct shell *shell, size_t argc, char **arg
 
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		if (memcmp(m_config_interim.addr[slot], addr, BT_ADDR_SIZE) == 0) {
-			shell_print(shell, "tag addr %s already exists", argv[1]);
-			shell_error(shell, "command failed");
+			LOG_WRN("Tag addr %s already exists", addr_str);
 			return -EEXIST;
 		}
 
@@ -614,15 +853,84 @@ static int cmd_config_add_tag(const struct shell *shell, size_t argc, char **arg
 
 	if (empty_slot != -1) {
 		memcpy(m_config_interim.addr[empty_slot], addr, BT_ADDR_SIZE);
-		shell_print(shell, "tag addr %s added to slot %d", argv[1], empty_slot);
-		shell_print(shell, "command succeeded");
-		return 0;
+		LOG_INF("Tag addr %s added to slot %d", addr_str, empty_slot);
+		return empty_slot;
 	}
 
-	shell_print(shell, "no slot available");
-	shell_error(shell, "command failed");
+	LOG_ERR("No slot available");
 
 	return -ENOSPC;
+}
+
+static int cmd_config_add_tag(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 2) {
+		shell_print(shell, "unknown parameter: %s", argv[1]);
+		shell_error(shell, "command failed");
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	ret = ctr_ble_tag_add(argv[1]);
+	if (ret == -EEXIST) {
+		shell_print(shell, "tag addr %s already exists", argv[1]);
+		shell_error(shell, "command failed");
+		return -EEXIST;
+	} else if (ret == -ENOSPC) {
+		shell_print(shell, "no slot available");
+		shell_error(shell, "command failed");
+		return -ENOSPC;
+	}
+
+	shell_print(shell, "tag addr %s added to slot %d", argv[1], ret);
+	shell_print(shell, "command succeeded");
+
+	return 0;
+}
+
+int ctr_ble_tag_remove_addr(char *addr_str)
+{
+	int ret;
+
+	uint8_t addr[BT_ADDR_SIZE];
+
+	ret = ctr_hex2buf(addr_str, addr, BT_ADDR_SIZE, false);
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_hex2buf` failed: %d", ret);
+		return ret;
+	}
+
+	sys_mem_swap(addr, BT_ADDR_SIZE);
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (memcmp(m_config_interim.addr[slot], addr, BT_ADDR_SIZE) == 0) {
+			memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
+			LOG_INF("Tag addr %s removed from slot %d", addr_str, slot);
+			return slot;
+		}
+	}
+
+	LOG_WRN("tag addr %s not found", addr_str);
+
+	return -ENOENT;
+}
+
+int ctr_ble_tag_remove_slot(size_t slot)
+{
+	if (slot >= CTR_BLE_TAG_COUNT) {
+		return -EINVAL;
+	}
+
+	if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
+		LOG_WRN("slot is already empty");
+		return -ENOENT;
+	}
+
+	memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
+
+	return 0;
 }
 
 static int cmd_config_remove_tag(const struct shell *shell, size_t argc, char **argv)
@@ -636,34 +944,20 @@ static int cmd_config_remove_tag(const struct shell *shell, size_t argc, char **
 		return -EINVAL;
 	}
 
-	if (strlen(argv[1]) != 1 || !isdigit(argv[1][0])) {
-		uint8_t addr[BT_ADDR_SIZE];
-
-		ret = ctr_hex2buf(argv[1], addr, BT_ADDR_SIZE, false);
-		if (ret < 0) {
-			LOG_ERR("Call `ctr_hex2buf` failed: %d", ret);
-			shell_print(shell, "invalid address format");
+	if (strlen(argv[1]) > 2) {
+		ret = ctr_ble_tag_remove_addr(argv[1]);
+		if (ret == -ENOENT) {
+			shell_print(shell, "tag addr %s not found", argv[1]);
+			shell_error(shell, "command failed");
+			return -ENOENT;
+		} else if (ret < 0) {
 			shell_error(shell, "command failed");
 			return ret;
 		}
 
-		for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-			if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
-				continue;
-			}
-
-			if (!memcmp(m_config_interim.addr[slot], addr, BT_ADDR_SIZE)) {
-				memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
-				shell_print(shell, "tag addr %s removed", argv[1]);
-				shell_print(shell, "command succeeded");
-				return 0;
-			}
-		}
-
-		shell_print(shell, "tag addr %s not found", argv[1]);
-		shell_error(shell, "command failed");
-
-		return -ENOENT;
+		shell_print(shell, "tag addr %s removed", argv[1]);
+		shell_print(shell, "command succeeded");
+		return 0;
 	} else {
 		int slot = strtol(argv[1], NULL, 10);
 		if (slot < 0 || slot >= CTR_BLE_TAG_COUNT) {
@@ -672,13 +966,12 @@ static int cmd_config_remove_tag(const struct shell *shell, size_t argc, char **
 			return -EINVAL;
 		}
 
-		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
-			shell_print(shell, "slot %d not found", slot);
-			shell_error(shell, "command failed");
+		ret = ctr_ble_tag_remove_slot(slot);
+		if (ret == -ENOENT) {
+			shell_print(shell, "slot is already empty");
 			return -ENOENT;
 		}
 
-		memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
 		shell_print(shell, "slot %d removed", slot);
 		shell_print(shell, "command succeeded");
 
@@ -695,11 +988,16 @@ static int cmd_config_list_tags(const struct shell *shell, size_t argc, char **a
 	return 0;
 }
 
-static int cmd_config_clear_tags(const struct shell *shell, size_t argc, char **argv)
+void ctr_ble_tag_remove_all(void)
 {
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
 	}
+}
+
+static int cmd_config_clear_tags(const struct shell *shell, size_t argc, char **argv)
+{
+	ctr_ble_tag_remove_all();
 
 	shell_print(shell, "command succeeded");
 
@@ -760,16 +1058,30 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 
 	shell_print(shell, "scan finished");
 
+	char _msg_buf[512];
+	char intermediate_buf[64];
+	struct ctr_buf msg_buf;
+	ctr_buf_init(&msg_buf, (void *)_msg_buf, 256);
+
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		uint8_t addr[BT_ADDR_SIZE];
 		int rssi;
 		float voltage;
 		float temperature;
 		float humidity;
+		bool magnet_detected;
+		bool moving;
+		int movement_event_count;
+		float roll;
+		float pitch;
+		bool low_battery;
+
+		int16_t sensor_mask;
 		bool valid;
 
-		ret = ctr_ble_tag_read(slot, addr, &rssi, &voltage, &temperature, &humidity,
-				       &valid);
+		ret = ctr_ble_tag_read_cached(slot, addr, &rssi, &voltage, &temperature, &humidity,
+					      &magnet_detected, &moving, &movement_event_count,
+					      &roll, &pitch, &low_battery, &sensor_mask, &valid);
 		if (ret) {
 			continue;
 		}
@@ -788,11 +1100,129 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 			return ret;
 		}
 
-		shell_print(shell,
-			    "slot %u: addr: %s / rssi: %d dBm / voltage: %.2f V / "
-			    "temperature: %.2f C / "
-			    "humidity: %.2f %%",
-			    slot, addr_str, rssi, voltage, temperature, humidity);
+		ctr_buf_fill(&msg_buf, 0);
+
+		sprintf(intermediate_buf, "slot %u: addr: %s ", slot, addr_str);
+		ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+		if (ret) {
+			LOG_ERR("Call `ctr_buf_append_str` failed");
+			shell_error(shell, "command failed");
+			return ret;
+		}
+		msg_buf.len--;
+
+		sprintf(intermediate_buf, "/ rssi: %d dBm ", rssi);
+		ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+		if (ret) {
+			LOG_ERR("Call `ctr_buf_append_str` failed");
+			shell_error(shell, "command failed");
+			return ret;
+		}
+		msg_buf.len--;
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
+			sprintf(intermediate_buf, "/ voltage: %.2f V ", voltage);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
+			sprintf(intermediate_buf, "/ temperature: %.2f C ", temperature);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
+			sprintf(intermediate_buf, "/ humidity: %.2f %% ", humidity);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED) {
+			sprintf(intermediate_buf, "/ magnetic sensor: %s ",
+				magnet_detected ? "detected" : "not detected");
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVING) {
+			sprintf(intermediate_buf, "/ moving: %s ", moving ? "true" : "false");
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT) {
+			sprintf(intermediate_buf, "/ movement event count: %d ",
+				movement_event_count);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_ROLL) {
+			sprintf(intermediate_buf, "/ roll: %.2f ", roll);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_PITCH) {
+			sprintf(intermediate_buf, "/ pitch: %.2f ", pitch);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY) {
+			sprintf(intermediate_buf, "/ low battery: %s ",
+				low_battery ? "true" : "false");
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		shell_print(shell, "%s", ctr_buf_get_mem(&msg_buf));
 	}
 
 	shell_print(shell, "command succeeded");
@@ -812,16 +1242,30 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 
 	shell_print(shell, "cached data:");
 
+	char _msg_buf[512];
+	char intermediate_buf[64];
+	struct ctr_buf msg_buf;
+	ctr_buf_init(&msg_buf, (void *)_msg_buf, 256);
+
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		uint8_t addr[BT_ADDR_SIZE];
 		int rssi;
 		float voltage;
 		float temperature;
 		float humidity;
+		bool magnet_detected;
+		bool moving;
+		int movement_event_count;
+		float roll;
+		float pitch;
+		bool low_battery;
+
+		int16_t sensor_mask;
 		bool valid;
 
-		ret = ctr_ble_tag_read(slot, addr, &rssi, &voltage, &temperature, &humidity,
-				       &valid);
+		ret = ctr_ble_tag_read_cached(slot, addr, &rssi, &voltage, &temperature, &humidity,
+					      &magnet_detected, &moving, &movement_event_count,
+					      &roll, &pitch, &low_battery, &sensor_mask, &valid);
 		if (ret) {
 			continue;
 		}
@@ -840,11 +1284,129 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 			return ret;
 		}
 
-		shell_print(shell,
-			    "slot %u: addr: %s / rssi: %d dBm / voltage: %.2f V / "
-			    "temperature: %.2f C / "
-			    "humidity: %.2f %%",
-			    slot, addr_str, rssi, voltage, temperature, humidity);
+		ctr_buf_fill(&msg_buf, 0);
+
+		snprintf(intermediate_buf, 32, "slot %u: addr: %s ", slot, addr_str);
+		ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+		if (ret) {
+			LOG_ERR("Call `ctr_buf_append_str` failed");
+			shell_error(shell, "command failed");
+			return ret;
+		}
+		msg_buf.len--;
+
+		snprintf(intermediate_buf, 32, "/ rssi: %d dBm ", rssi);
+		ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+		if (ret) {
+			LOG_ERR("Call `ctr_buf_append_str` failed");
+			shell_error(shell, "command failed");
+			return ret;
+		}
+		msg_buf.len--;
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
+			snprintf(intermediate_buf, 32, "/ voltage: %.2f V ", voltage);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
+			snprintf(intermediate_buf, 32, "/ temperature: %.2f C ", temperature);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
+			snprintf(intermediate_buf, 32, "/ humidity: %.2f %% ", humidity);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED) {
+			snprintf(intermediate_buf, 64, "/ magnetic sensor: %s ",
+				 magnet_detected ? "detected" : "not detected");
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVING) {
+			snprintf(intermediate_buf, 32, "/ moving: %s ", moving ? "true" : "false");
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT) {
+			snprintf(intermediate_buf, 64, "/ movement event count: %d ",
+				 movement_event_count);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_ROLL) {
+			snprintf(intermediate_buf, 32, "/ roll: %.2f ", roll);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_PITCH) {
+			snprintf(intermediate_buf, 32, "/ pitch: %.2f ", pitch);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY) {
+			snprintf(intermediate_buf, 32, "/ low battery: %s",
+				 low_battery ? "true" : "false");
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+		}
+
+		shell_print(shell, "%s", ctr_buf_get_mem(&msg_buf));
 	}
 
 	shell_print(shell, "command succeeded");

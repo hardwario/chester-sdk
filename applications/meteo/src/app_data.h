@@ -27,6 +27,11 @@
 #define APP_DATA_W1_THERM_COUNT    10
 #define APP_DATA_SOIL_SENSOR_COUNT 10
 
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+#define APP_DATA_MAX_BLE_TAG_SAMPLES      16
+#define APP_DATA_MAX_BLE_TAG_MEASUREMENTS 16
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -221,7 +226,7 @@ struct app_data_ble_tag_sensor {
 	float samples_humidity[APP_DATA_MAX_SAMPLES];
 
 	int measurement_count;
-	struct app_data_ble_tag_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct app_data_ble_tag_measurement measurements[APP_DATA_MAX_BLE_TAG_MEASUREMENTS];
 };
 
 struct app_data_ble_tag {
@@ -338,7 +343,6 @@ struct app_data {
 #if defined(CONFIG_APP_PYRANOMETER)
 	struct app_data_pyranometer pyranometer;
 #endif /* defined(CONFIG_APP_PYRANOMETER) */
-
 };
 
 extern struct app_data g_app_data;

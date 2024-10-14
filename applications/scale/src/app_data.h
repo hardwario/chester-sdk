@@ -23,6 +23,11 @@
 #define APP_DATA_MAX_SAMPLES       32
 #define APP_DATA_MAX_BACKUP_EVENTS 32
 
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+#define APP_DATA_MAX_BLE_TAG_SAMPLES      16
+#define APP_DATA_MAX_BLE_TAG_MEASUREMENTS 16
+#endif /* FEATURE_SUBSYSTEM_BLE_TAG */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -86,7 +91,7 @@ struct app_data_ble_tag_sensor {
 	float samples_humidity[APP_DATA_MAX_SAMPLES];
 
 	int measurement_count;
-	struct app_data_ble_tag_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct app_data_ble_tag_measurement measurements[APP_DATA_MAX_BLE_TAG_MEASUREMENTS];
 };
 
 struct app_data_ble_tag {

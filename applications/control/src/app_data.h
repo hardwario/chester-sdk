@@ -20,10 +20,10 @@
 
 #define APP_DATA_NUM_CHANNELS 4
 
-#define APP_DATA_MAX_MEASUREMENTS  32
-#define APP_DATA_MAX_SAMPLES       32
+#define APP_DATA_MAX_MEASUREMENTS 32
+#define APP_DATA_MAX_SAMPLES      32
 
-#define APP_DATA_ANALOG_MAX_SAMPLES	 64
+#define APP_DATA_ANALOG_MAX_SAMPLES      64
 #define APP_DATA_ANALOG_MAX_MEASUREMENTS 64
 
 #define APP_DATA_COUNTER_MAX_MEASUREMENTS 64
@@ -31,12 +31,17 @@
 #define APP_DATA_MAX_TRIGGER_EVENTS 128
 #define APP_DATA_MAX_BACKUP_EVENTS  64
 
-#define APP_DATA_HYGRO_MAX_SAMPLES	64
+#define APP_DATA_HYGRO_MAX_SAMPLES      64
 #define APP_DATA_HYGRO_MAX_MEASUREMENTS 64
 
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+#define APP_DATA_BLE_TAG_MAX_SAMPLES      16
+#define APP_DATA_BLE_TAG_MAX_MEASUREMENTS 16
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
-#define APP_DATA_W1_THERM_COUNT		   10
-#define APP_DATA_W1_THERM_MAX_SAMPLES	   32
+#define APP_DATA_W1_THERM_COUNT            10
+#define APP_DATA_W1_THERM_MAX_SAMPLES      32
 #define APP_DATA_W1_THERM_MAX_MEASUREMENTS 64
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
@@ -149,7 +154,7 @@ struct app_data_w1_therm {
 };
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 struct app_data_ble_tag_measurement {
 	struct app_data_aggreg temperature;
@@ -166,11 +171,11 @@ struct app_data_ble_tag_sensor {
 	float last_sample_humidity;
 
 	int sample_count;
-	float samples_temperature[APP_DATA_MAX_SAMPLES];
-	float samples_humidity[APP_DATA_MAX_SAMPLES];
+	float samples_temperature[APP_DATA_BLE_TAG_MAX_SAMPLES];
+	float samples_humidity[APP_DATA_BLE_TAG_MAX_SAMPLES];
 
 	int measurement_count;
-	struct app_data_ble_tag_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct app_data_ble_tag_measurement measurements[APP_DATA_BLE_TAG_MAX_MEASUREMENTS];
 };
 
 struct app_data_ble_tag {
@@ -181,7 +186,7 @@ struct app_data_ble_tag {
 	atomic_t aggreg;
 };
 
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 struct app_data {
 	float system_voltage_rest;

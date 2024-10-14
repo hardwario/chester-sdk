@@ -24,6 +24,11 @@
 #define APP_DATA_MAX_BACKUP_EVENTS 32
 #define APP_DATA_MAX_HYGRO_EVENTS  32
 
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+#define APP_DATA_MAX_BLE_TAG_MEASUREMENTS 16
+#define APP_DATA_MAX_BLE_TAG_SAMPLES      16
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 #define APP_DATA_W1_THERM_COUNT       10
 #define APP_DATA_W1_THERM_MAX_SAMPLES 128
@@ -292,11 +297,11 @@ struct app_data_ble_tag_sensor {
 	float last_sample_humidity;
 
 	int sample_count;
-	float samples_temperature[APP_DATA_MAX_SAMPLES];
-	float samples_humidity[APP_DATA_MAX_SAMPLES];
+	float samples_temperature[APP_DATA_MAX_BLE_TAG_SAMPLES];
+	float samples_humidity[APP_DATA_MAX_BLE_TAG_SAMPLES];
 
 	int measurement_count;
-	struct app_data_ble_tag_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct app_data_ble_tag_measurement measurements[APP_DATA_MAX_BLE_TAG_MEASUREMENTS];
 };
 
 struct app_data_ble_tag {

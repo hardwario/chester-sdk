@@ -8,6 +8,7 @@ config CTR_BLE_TAG
     bool "CTR_BLE_TAG"
     select BT
     select CRC
+    select CTR_BUF
     select CTR_CONFIG
     select CTR_INFO
     select CTR_SHELL
@@ -18,5 +19,11 @@ if CTR_BLE_TAG
 module = CTR_BLE_TAG
 module-str = CHESTER BLE Tag Subsystem
 source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_BLE_TAG_32_SLOTS
+	# default is 8 slots
+	bool "CTR_BLE_TAG_32_SLOTS"
+	depends on CTR_BLE_TAG
+	default n
 
 endif # CTR_BLE_TAG

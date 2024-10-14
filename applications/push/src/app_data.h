@@ -27,6 +27,11 @@ extern "C" {
 
 #define APP_DATA_BUTTON_COUNT 5
 
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+#define APP_DATA_MAX_BLE_TAG_SAMPLES      16
+#define APP_DATA_MAX_BLE_TAG_MEASUREMENTS 16
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
 struct app_data_aggreg {
 	float min;
 	float max;
@@ -97,7 +102,7 @@ struct app_data_ble_tag_sensor {
 	float samples_humidity[APP_DATA_MAX_SAMPLES];
 
 	int measurement_count;
-	struct app_data_ble_tag_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct app_data_ble_tag_measurement measurements[APP_DATA_MAX_BLE_TAG_MEASUREMENTS];
 };
 
 struct app_data_ble_tag {
