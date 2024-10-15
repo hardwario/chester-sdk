@@ -15,6 +15,13 @@
 extern "C" {
 #endif
 
+struct app_data_aggreg {
+	float min;
+	float max;
+	float avg;
+	float mdn;
+};
+
 struct app_data {
 	uint32_t sequence;
 	float system_voltage_rest;

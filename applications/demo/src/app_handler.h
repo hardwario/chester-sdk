@@ -15,8 +15,10 @@
 extern "C" {
 #endif
 
-void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val, void *user_data);
-void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_data *data, void *param);
+void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val,
+			    void *user_data);
+void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_data *data,
+			     void *param);
 
 #ifdef __cplusplus
 }

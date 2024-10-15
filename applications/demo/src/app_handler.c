@@ -35,7 +35,6 @@
 
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
 
-
 static void app_load_timer_handler(struct k_timer *timer)
 {
 	ctr_led_set(CTR_LED_CHANNEL_LOAD, 0);
@@ -48,8 +47,9 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 {
 	int ret;
 
-	if (chan != CTR_BUTTON_CHANNEL_INT)
+	if (chan != CTR_BUTTON_CHANNEL_INT) {
 		return;
+	}
 
 	if (ev == CTR_BUTTON_EVENT_CLICK) {
 		for (int i = 0; i < val; i++) {
@@ -96,7 +96,8 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 	}
 }
 
-void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_data *data, void *param)
+void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_data *data,
+			     void *param)
 {
 	int ret;
 

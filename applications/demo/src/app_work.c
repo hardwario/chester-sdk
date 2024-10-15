@@ -75,7 +75,7 @@ static void send_work_handler(struct k_work *work)
 		return;
 	}
 
-#if defined(CONFIG_SHIELD_CTR_LTE_V2)
+#if defined(FEATURE_SUBSYSTEM_LTE_V2)
 
 	ret = ctr_cloud_send(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf));
 	if (ret) {
@@ -83,7 +83,8 @@ static void send_work_handler(struct k_work *work)
 		return;
 	}
 
-#endif /* defined(CONFIG_SHIELD_CTR_LTE_V2) */
+#endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
+
 }
 
 static K_WORK_DEFINE(m_send_work, send_work_handler);

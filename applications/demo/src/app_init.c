@@ -70,7 +70,7 @@ int app_init(void)
 		return ret;
 	}
 
-#if defined(CONFIG_SHIELD_CTR_LTE_V2)
+#if defined(FEATURE_SUBSYSTEM_LTE_V2)
 
 	CODEC_CLOUD_OPTIONS_STATIC(copt);
 
@@ -85,10 +85,12 @@ int app_init(void)
 		LOG_ERR("Call `ctr_cloud_set_callback` failed: %d", ret);
 	}
 
-	ret = ctr_cloud_set_poll_interval(K_SECONDS(2 * 60));
-	if (ret) {
-		LOG_ERR("Call `ctr_cloud_set_pull_interval` failed: %d", ret);
-		return ret;
+	if (g_app_config.interval_poll) {
+		ret = ctr_cloud_set_poll_interval(K_SECONDS(g_app_config.interval_poll));
+		if (ret) {
+			LOG_ERR("Call `ctr_cloud_set_poll_interval` failed: %d", ret);
+			return ret;
+		}
 	}
 
 	while (true) {
@@ -111,7 +113,7 @@ int app_init(void)
 		}
 	}
 
-#endif /* defined(CONFIG_SHIELD_CTR_LTE_V2) */
+#endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
 

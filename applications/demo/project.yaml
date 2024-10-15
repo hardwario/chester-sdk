@@ -1,0 +1,75 @@
+version: 1
+variants:
+- name: CHESTER Demo
+  fw_bundle: com.hardwario.chester.app.demo
+  fw_name: hio-chester-demo
+  fw_version: v3.0.0
+project:
+  variant: Demo
+  company: 2024 HARDWARIO a.s.
+  license: 'SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause'
+  fw_name: CHESTER Demo
+  fw_bundle: com.hardwario.chester.app.demo
+  fw_version: v3.0.0
+features:
+- subsystem-accel
+- subsystem-batt
+- subsystem-bluetooth
+- subsystem-buf
+- subsystem-button
+- subsystem-config
+- subsystem-cloud
+- subsystem-defaults
+- subsystem-gnss
+- subsystem-info
+- subsystem-led
+- subsystem-log
+- subsystem-rtc
+- subsystem-shell
+- subsystem-therm
+- subsystem-wdog
+- subsystem-entropy-generator
+- subsystem-tinycrypt
+- subsystem-tinycrypt-sha256
+- subsystem-zcbor
+- subsystem-lte-v2
+- chester-app-report-jitter
+#- chester-app-tamper
+parameters:
+- name: interval-sample
+  type: int
+  min: 1
+  max: 86400
+  default: 60
+  help: 'Get/Set sample interval in seconds'
+- name: interval-aggreg
+  type: int
+  min: 1
+  max: 86400
+  default: 300
+  help: 'Get/Set aggregate interval in seconds '
+- name: interval-report
+  type: int
+  min: 30
+  max: 86400
+  default: 1800
+  help: 'Get/Set report interval in seconds'
+- name: interval-poll
+  type: int
+  min: 0
+  max: 86400
+  default: 0
+  help: "Get/Set poll interval in seconds (disabled if 0)"
+commands:
+- name: sample
+  callback: app_work_sample()
+  help: 'Sample immediately.'
+- name: send
+  callback: app_work_send()
+  help: 'Send data immediately.'
+extras:
+- CONFIG_CTR_LTE_V2_GNSS=y
+- CONFIG_ADC_NRFX_SAADC=n
+- CONFIG_NEWLIB_LIBC_NANO=n
+- CONFIG_ADC_SHELL=n
+- CONFIG_ADC_TLA2021_INIT_PRIORITY=60

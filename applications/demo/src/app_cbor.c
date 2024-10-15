@@ -1,14 +1,19 @@
+/*
+ * Copyright (c) 2024 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #include "app_cbor.h"
-#include "app_data.h"
 #include "app_codec.h"
+#include "app_config.h"
+#include "app_data.h"
 
 /* CHESTER includes */
 #include <chester/ctr_info.h>
 #include <chester/ctr_lte_v2.h>
 #include <chester/ctr_rtc.h>
-#include <chester/ctr_buf.h>
-#include <chester/ctr_cloud.h>
-#include <chester/drivers/ctr_z.h>
+#include <chester/ctr_util.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -26,11 +31,67 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-// #define CONFIG_SHIELD_CTR_Z 1
+/* ### Preserved code "functions" (begin) */
+
+__unused static void put_sample(zcbor_state_t *zs, struct app_data_aggreg *sample)
+{
+	if (isnan(sample->min)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->min);
+	}
+
+	if (isnan(sample->max)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->max);
+	}
+
+	if (isnan(sample->avg)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->avg);
+	}
+
+	if (isnan(sample->mdn)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->mdn);
+	}
+}
+
+__unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *sample, float mul)
+{
+	if (isnan(sample->min)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->min * mul);
+	}
+
+	if (isnan(sample->max)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->max * mul);
+	}
+
+	if (isnan(sample->avg)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->avg * mul);
+	}
+
+	if (isnan(sample->mdn)) {
+		zcbor_nil_put(zs, NULL);
+	} else {
+		zcbor_int32_put(zs, sample->mdn * mul);
+	}
+}
+
+/* ^^^ Preserved code "functions" (end) */
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
-int encode(zcbor_state_t *zs)
+static int encode(zcbor_state_t *zs)
 {
 	int ret;
 
@@ -38,12 +99,18 @@ int encode(zcbor_state_t *zs)
 
 	zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
+	/* ### Preserved code "message" (begin) */
+
 	zcbor_uint32_put(zs, CODEC_KEY_E_MESSAGE);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
+		zcbor_uint32_put(zs, CODEC_KEY_E_MESSAGE__VERSION);
+		zcbor_uint32_put(zs, 1);
+
+		static uint32_t sequence = 0;
 		zcbor_uint32_put(zs, CODEC_KEY_E_MESSAGE__SEQUENCE);
-		zcbor_uint32_put(zs, g_app_data.sequence++);
+		zcbor_uint32_put(zs, sequence++);
 
 		uint64_t timestamp;
 		ret = ctr_rtc_get_ts(&timestamp);
@@ -57,6 +124,10 @@ int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
+
+	/* ^^^ Preserved code "message" (end) */
+
+	/* ### Preserved code "system" (begin) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM);
 	{
@@ -88,6 +159,57 @@ int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
+
+	/* ^^^ Preserved code "system" (end) */
+
+	/* ### Preserved code "attribute" (begin) */
+
+	zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE);
+	{
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		char *vendor_name;
+		ctr_info_get_vendor_name(&vendor_name);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__VENDOR_NAME);
+		zcbor_tstr_put_term(zs, vendor_name);
+
+		char *product_name;
+		ctr_info_get_product_name(&product_name);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__PRODUCT_NAME);
+		zcbor_tstr_put_term(zs, product_name);
+
+		char *hw_variant;
+		ctr_info_get_hw_variant(&hw_variant);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__HW_VARIANT);
+		zcbor_tstr_put_term(zs, hw_variant);
+
+		char *hw_revision;
+		ctr_info_get_hw_revision(&hw_revision);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__HW_REVISION);
+		zcbor_tstr_put_term(zs, hw_revision);
+
+		char *fw_version;
+		ctr_info_get_fw_version(&fw_version);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__FW_VERSION);
+		zcbor_tstr_put_term(zs, fw_version);
+
+		char *serial_number;
+		ctr_info_get_serial_number(&serial_number);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__SERIAL_NUMBER);
+		zcbor_tstr_put_term(zs, serial_number);
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+
+	/* ^^^ Preserved code "attribute" (end) */
+
+	/* ### Preserved code "network" (begin) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK);
 	{
@@ -173,6 +295,10 @@ int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
+	/* ^^^ Preserved code "network" (end) */
+
+	/* ### Preserved code "thermometer" (begin) */
+
 	zcbor_uint32_put(zs, CODEC_KEY_E_THERMOMETER);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -186,6 +312,10 @@ int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
+
+	/* ^^^ Preserved code "thermometer" (end) */
+
+	/* ### Preserved code "accelerometer" (begin) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_ACCELEROMETER);
 	{
@@ -222,16 +352,7 @@ int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	zcbor_uint32_put(zs, CODEC_KEY_E_BUFFER);
-	{
-		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		for (int i = 0; i < 5; i++) {
-			zcbor_int32_put(zs, 1000000 + i);
-		}
-
-		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}
+	/* ^^^ Preserved code "accelerometer" (end) */
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
@@ -254,12 +375,15 @@ int decode(zcbor_state_t *zs, struct app_cbor_received *received)
 	uint32_t key;
 	bool ok;
 
+	/* ### Preserved code "while" (begin) */
 	while (1) {
 		if (!zcbor_uint32_decode(zs, &key)) {
 			break;
 		}
 
 		switch (key) {
+
+		/* Filled in by Project Generator */
 		case CODEC_KEY_D_LED_R:
 			ok = zcbor_int32_decode(zs, &received->led_r);
 			received->has_led_r = true;
@@ -282,6 +406,7 @@ int decode(zcbor_state_t *zs, struct app_cbor_received *received)
 			return -EBADMSG;
 		}
 	}
+	/* ^^^ Preserved code "while" (end) */
 
 	if (!zcbor_map_end_decode(zs)) {
 		return -EBADMSG;

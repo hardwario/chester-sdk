@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+/* SUBSYSTEM-CLOUD  */
 / {
 	chosen {
 		nordic,pm-ext-flash = &spi_flash0;
@@ -45,3 +46,31 @@
 		};
 	};
 };
+/* SUBSYSTEM-GNSS  */
+&m8 {
+	status = "okay";
+};
+/* SUBSYSTEM-LTE-V2  */
+/ {
+	chosen {
+		ctr,lte_link = &ctr_lte_link;
+	};
+};
+
+&uart0 {
+	status = "okay";
+
+	ctr_lte_link: ctr_lte_link {
+		compatible = "hardwario,ctr-lte-link";
+		status = "okay";
+		reset-gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		wakeup-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+/* ### Preserved code "overlay" (begin) */
+/* ^^^ Preserved code "overlay" (end) */

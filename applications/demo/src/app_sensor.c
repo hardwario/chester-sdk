@@ -23,8 +23,54 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 LOG_MODULE_REGISTER(app_sensor, LOG_LEVEL_DBG);
+
+static int compare(const void *a, const void *b)
+{
+	float fa = *(const float *)a;
+	float fb = *(const float *)b;
+
+	return (fa > fb) - (fa < fb);
+}
+
+static void aggreg(float *samples, size_t count, float *min, float *max, float *avg, float *mdn)
+{
+	*min = NAN;
+	*max = NAN;
+	*avg = NAN;
+	*mdn = NAN;
+
+	if (!count) {
+		return;
+	}
+
+	for (size_t i = 0; i < count; i++) {
+		if (isnan(samples[i])) {
+			return;
+		}
+	}
+
+	qsort(samples, count, sizeof(float), compare);
+
+	*min = samples[0];
+	*max = samples[count - 1];
+
+	double avg_ = 0;
+	for (size_t i = 0; i < count; i++) {
+		avg_ += samples[i];
+	}
+	avg_ /= count;
+
+	*avg = avg_;
+	*mdn = samples[count / 2];
+}
+
+__unused static void aggreg_sample(float *samples, size_t count, struct app_data_aggreg *sample)
+{
+	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
+}
 
 int app_sensor_sample(void)
 {

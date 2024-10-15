@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #ifndef APP_CBOR_H_
 #define APP_CBOR_H_
 
@@ -10,8 +16,7 @@
 extern "C" {
 #endif
 
-struct app_cbor_received
-{
+struct app_cbor_received {
 	bool has_led_r;
 	int32_t led_r;
 	bool has_led_g;
