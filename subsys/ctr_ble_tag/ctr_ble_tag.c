@@ -67,6 +67,7 @@ struct ble_tag_data {
 static struct ble_tag_data m_tag_data[CTR_BLE_TAG_COUNT];
 static K_MUTEX_DEFINE(m_tag_data_lock);
 
+static int m_enroll_threshold;
 static char m_enroll_addr_str[BT_ADDR_SIZE * 2 + 1];
 
 static K_SEM_DEFINE(m_has_enrolled_sem, 0, 1);
@@ -236,7 +237,7 @@ static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 	}
 
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-		if (rssi < CTR_BLE_TAG_ENROLL_RSSI_THRESHOLD) {
+		if (rssi < m_enroll_threshold) {
 			break;
 		}
 
@@ -861,6 +862,20 @@ static int cmd_enroll(const struct shell *shell, size_t argc, char **argv)
 		return 0;
 	}
 
+	m_enroll_threshold = CTR_BLE_TAG_ENROLL_RSSI_THRESHOLD;
+
+	if (argc == 2) {
+		int rssi_threshold = strtol(argv[1], NULL, 10);
+
+		if (rssi_threshold < -128 || rssi_threshold > 0) {
+			shell_print(shell, "invalid input, expected [-128:0]dbm");
+			shell_error(shell, "command failed");
+			return 0;
+		}
+
+		m_enroll_threshold = rssi_threshold;
+	}
+
 	bool can_enroll = false;
 
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
@@ -985,7 +1000,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(config, &sub_tag_config,
 				  "Configuration commands.",
 				  print_help, 1, 0),
-	SHELL_CMD_ARG(enroll, NULL, "Enroll a device nearby (12 seconds).", cmd_enroll, 1, 0),
+	SHELL_CMD_ARG(enroll, NULL, "Enroll a device nearby (12 seconds) <threshold (-128:0)>.", cmd_enroll, 1, 1),
 	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (12 seconds).", cmd_scan, 1, 0),
 	SHELL_CMD_ARG(show, NULL, "Show cached readings of enrolled devices.", cmd_show, 1, 0),
 
