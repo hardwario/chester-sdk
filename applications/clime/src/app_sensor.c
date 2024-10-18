@@ -686,17 +686,17 @@ int app_sensor_rtd_therm_clear(void)
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 
 int app_sensor_tc_therm_sample(void)
 {
 	int ret;
 	const enum ctr_tc_channel channel_lookup[] = {
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A)
 		CTR_TC_CHANNEL_A1,
 		CTR_TC_CHANNEL_A2,
 #endif
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_B)
 		CTR_TC_CHANNEL_B1,
 		CTR_TC_CHANNEL_B2,
 #endif
@@ -787,7 +787,7 @@ int app_sensor_tc_therm_clear(void)
 	return 0;
 }
 
-#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)   \
+#endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)         \
 	*/
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)

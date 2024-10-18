@@ -710,15 +710,15 @@ static int encode(zcbor_state_t *zs)
 	}
 #endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 	zcbor_uint32_put(zs, CODEC_KEY_E_TC_THERMOMETER);
 	{
 		const int channel_lookup[] = {
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A)
 			1,
 			2,
 #endif
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_B)
 			3,
 			4,
 #endif
@@ -752,7 +752,7 @@ static int encode(zcbor_state_t *zs)
 		}
 		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B) */
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 	zcbor_uint32_put(zs, CODEC_KEY_E_SOIL_SENSORS);

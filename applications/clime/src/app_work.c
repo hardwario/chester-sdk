@@ -134,9 +134,9 @@ static void send_work_handler(struct k_work *work)
 	app_sensor_ble_tag_clear();
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 	app_sensor_tc_therm_clear();
-#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B) */
 }
 
 static K_WORK_DEFINE(m_send_work, send_work_handler);
@@ -416,7 +416,7 @@ static K_TIMER_DEFINE(m_rtd_therm_aggreg_timer, rtd_therm_aggreg_timer_handler, 
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 
 static void tc_therm_sample_work_handler(struct k_work *work)
 {
@@ -466,7 +466,7 @@ static void tc_therm_aggreg_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_tc_therm_aggreg_timer, tc_therm_aggreg_timer_handler, NULL);
 
-#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B) */
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 
@@ -637,12 +637,12 @@ int app_work_init(void)
 		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 	k_timer_start(&m_tc_therm_sample_timer, K_SECONDS(g_app_config.interval_sample),
 		      K_SECONDS(g_app_config.interval_sample));
 	k_timer_start(&m_tc_therm_aggreg_timer, K_SECONDS(g_app_config.interval_aggreg),
 		      K_SECONDS(g_app_config.interval_aggreg));
-#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B) */
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 	k_timer_start(&m_soil_sensor_sample_timer, K_SECONDS(g_app_config.interval_sample),
@@ -682,9 +682,9 @@ void app_work_sample(void)
 		      K_SECONDS(g_app_config.interval_sample));
 #endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 	k_timer_start(&m_tc_therm_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
-#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B) */
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 	k_timer_start(&m_soil_sensor_sample_timer, K_NO_WAIT,
@@ -716,9 +716,9 @@ void app_work_aggreg(void)
 		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 	k_timer_start(&m_tc_therm_aggreg_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_aggreg));
-#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B) */
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 	k_timer_start(&m_soil_sensor_aggreg_timer, K_NO_WAIT,
@@ -735,7 +735,8 @@ void app_work_send(void)
 	k_timer_start(&m_send_timer, K_NO_WAIT, K_FOREVER);
 }
 
-#if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
+#if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) ||                 \
+	defined(FEATURE_HARDWARE_CHESTER_X10)
 static atomic_t m_report_rate_hourly_counter = 0;
 static atomic_t m_report_rate_timer_is_active = false;
 static atomic_t m_report_delay_timer_is_active = false;
@@ -780,5 +781,5 @@ void app_work_send_with_rate_limit(void)
 	}
 }
 
-#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) ||                         \
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) ||           \
 	  defined(FEATURE_HARDWARE_CHESTER_X10) */

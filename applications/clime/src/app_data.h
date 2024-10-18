@@ -29,17 +29,17 @@
 #define APP_DATA_W1_THERM_MAX_SAMPLES 128
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#if (defined(FEATURE_HARDWARE_CHESTER_RTD_A) && !defined(FEATURE_HARDWARE_CHESTER_RTD_B)) ||                     \
+#if (defined(FEATURE_HARDWARE_CHESTER_RTD_A) && !defined(FEATURE_HARDWARE_CHESTER_RTD_B)) ||       \
 	(!defined(FEATURE_HARDWARE_CHESTER_RTD_A) && defined(FEATURE_HARDWARE_CHESTER_RTD_B))
 #define APP_DATA_RTD_THERM_COUNT 2
 #elif defined(FEATURE_HARDWARE_CHESTER_RTD_A) && defined(FEATURE_HARDWARE_CHESTER_RTD_B)
 #define APP_DATA_RTD_THERM_COUNT 4
 #endif
 
-#if (defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) && !defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)) ||                       \
-	(!defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) && defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B))
+#if (defined(FEATURE_HARDWARE_CHESTER_TC_A) && !defined(FEATURE_HARDWARE_CHESTER_TC_B)) ||         \
+	(!defined(FEATURE_HARDWARE_CHESTER_TC_A) && defined(FEATURE_HARDWARE_CHESTER_TC_B))
 #define APP_DATA_TC_THERM_COUNT 2
-#elif defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) && defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#elif defined(FEATURE_HARDWARE_CHESTER_TC_A) && defined(FEATURE_HARDWARE_CHESTER_TC_B)
 #define APP_DATA_TC_THERM_COUNT 4
 #endif
 
@@ -228,7 +228,7 @@ struct app_data_rtd_therm {
 };
 #endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 struct app_data_tc_therm_measurement {
 	struct app_data_aggreg temperature;
 };
@@ -248,7 +248,7 @@ struct app_data_tc_therm {
 
 	int64_t timestamp;
 };
-#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B) */
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 
@@ -343,9 +343,9 @@ struct app_data {
 	struct app_data_rtd_therm rtd_therm;
 #endif /* defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B) */
 
-#if defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B)
+#if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 	struct app_data_tc_therm tc_therm;
-#endif /* defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_A) || defined(FEATURE_SUBSYSTEM_THERMOCOUPLE_B) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B) */
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 	struct app_data_soil_sensor soil_sensor;
