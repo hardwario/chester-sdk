@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-config VARIANT_CHESTER_DEMO
-    bool "Enable VARIANT_CHESTER_DEMO"
+config VARIANT_DEMO
+    bool "Enable VARIANT_DEMO"
     default y
-        

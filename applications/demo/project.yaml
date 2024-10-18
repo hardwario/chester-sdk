@@ -58,7 +58,7 @@ parameters:
   type: int
   min: 0
   max: 86400
-  default: 0
+  default: 60
   help: "Get/Set poll interval in seconds (disabled if 0)"
 commands:
 - name: sample
