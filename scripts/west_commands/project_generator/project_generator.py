@@ -494,6 +494,8 @@ class ProjectGenerator:
                     ):
                         file_path = os.path.relpath(os.path.join(root, file), src_dir)
                         sources.append(file_path)
+            # Sort sources
+            sources.sort()
             # Render the template with data
             rendered_template = template.render(
                 project_name=self.project_name,
