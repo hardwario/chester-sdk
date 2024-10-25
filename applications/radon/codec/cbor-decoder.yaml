@@ -1,0 +1,127 @@
+version: 2
+type: decoder
+name: com.hardwario.chester.app.counter
+schema:
+  - message:
+      - version:
+      - sequence:
+      - timestamp:
+  - attribute:
+      - vendor_name:
+      - product_name:
+      - hw_variant:
+      - hw_revision:
+      - fw_version:
+      - serial_number:
+  - system:
+      - uptime:
+      - voltage_load:
+          - $div: 1000
+          - $fpp: 2
+      - voltage_rest:
+          - $div: 1000
+          - $fpp: 2
+      - current_load:
+  - network:
+      - imei:
+      - imsi:
+  - thermometer:
+      - temperature:
+          - $div: 100
+          - $fpp: 2
+  - accelerometer:
+      - accel_x:
+          - $div: 1000
+          - $fpp: 2
+      - accel_y:
+          - $div: 1000
+          - $fpp: 2
+      - accel_z:
+          - $div: 1000
+          - $fpp: 2
+      - orientation:
+  - tamper:
+      - state:
+          - $enum:
+              - "inactive"
+              - "active"
+      - events:
+          - $key: "events"
+          - $tso:
+              - type:
+                  - $enum:
+                      - "deactivated"
+                      - "activated"
+  - backup:
+      - line_voltage:
+      - batt_voltage:
+      - state:
+          - $enum:
+              - "disconnected"
+              - "connected"
+      - events:
+          - $key: "events"
+          - $tso:
+              - type:
+                  - $enum:
+                      - "disconnected"
+                      - "connected"
+  - radon_probe:
+      - concentration_hourly:
+          - measurements:
+              - $tsp:
+                  - value:
+      - concentration_daily:
+          - measurements:
+              - $tsp:
+                  - value:
+      - chamber_temperature:
+          - measurements:
+              - $tsp:
+                  - min:
+                  - max:
+                  - avg:
+                  - mdn:
+      - chamber_humidity:
+          - measurements:
+              - $tsp:
+                  - min:
+                  - max:
+                  - avg:
+                  - mdn:
+  - ble_tags:
+      - addr:
+      - rssi:
+      - voltage:
+          - $div: 100
+          - $fpp: 2
+      - temperature:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
+      - humidity:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2

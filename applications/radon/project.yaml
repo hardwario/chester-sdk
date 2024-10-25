@@ -1,0 +1,94 @@
+version: 1
+project:
+  variant: Template
+  company: 2024 HARDWARIO a.s.
+  license: "SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause"
+  fw_name: CHESTER Radon
+  fw_bundle:
+  fw_version: v2.1.0
+features:
+  - subsystem-accel
+  - subsystem-batt
+  - subsystem-bluetooth
+  - subsystem-button
+  - subsystem-buf
+  - subsystem-defaults
+  - subsystem-info
+  - subsystem-led
+  - subsystem-log
+  - subsystem-lte-v2
+  - subsystem-cloud
+  - subsystem-rtc
+  - subsystem-shell
+  - subsystem-therm
+  - subsystem-tinycrypt
+  - subsystem-tinycrypt-sha256
+  - subsystem-wdog
+  - subsystem-zcbor
+  - hardware-chester-x2-modbus-a
+  - subsystem-ble-tag
+  - hardware-chester-z
+parameters:
+  - name: interval-sample
+    type: int
+    min: 1
+    max: 86400
+    default: 60
+    help: "Get/Set sample interval in seconds"
+  - name: interval-aggreg
+    type: int
+    min: 1
+    max: 86400
+    default: 60
+    help: "Get/Set sample interval in seconds"
+  - name: interval-report
+    type: int
+    min: 30
+    max: 86400
+    default: 1800
+    help: "Get/Set report interval in seconds"
+  - name: interval-poll
+    type: int
+    min: 0
+    max: 86400
+    default: 0
+    help: "Get/Set poll interval in seconds (disabled if 0)"
+  - name: modbus-baud
+    type: int
+    min: 1200
+    max: 19200
+    default: 19200
+    help: "Get/Set modbus baudrate"
+  - name: modbus-addr
+    type: int
+    min: 1
+    max: 247
+    default: 1
+    help: "Get/Set modbus slave address"
+  - name: event-report-delay
+    type: int
+    min: 1
+    max: 86400
+    default: 1
+    help: 'Get/Set event report delay in seconds'
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+  - name: event-report-rate
+    type: int
+    min: 1
+    max: 3600
+    default: 30
+    help: 'Get/Set event report rate in reports per hour'
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+  - name: backup-report-connected
+    type: bool
+    default: true
+    help: 'Get/Set report when backup is active'
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+  - name: backup-report-disconnected
+    type: bool
+    default: true
+    help: 'Get/Set report when backup is inactive'
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+commands:
+extras:
+  - CONFIG_ADC_TLA2021_INIT_PRIORITY=60

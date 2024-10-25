@@ -1,0 +1,76 @@
+#
+# Copyright (c) 2024 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+menu "Application"
+
+# HARDWARE-CHESTER-X2-MODBUS-A
+config SHIELD_CTR_X2_MODBUS_A
+	bool "Enable SHIELD_X2_MODBUS_A"
+	default y
+
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config MODBUS
+	default y
+
+config MODBUS_BUFFER_SIZE
+	default 64
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_0_INTERRUPT_DRIVEN
+	default n
+
+config UART_ASYNC_API
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+config UART_LINE_CTRL
+	default n
+
+config UART_SC16IS7XX
+	default y
+
+config I2C
+	default y
+# HARDWARE-CHESTER-Z
+config SHIELD_CTR_Z
+	bool "Enable SHIELD_CTR_Z"
+	default y
+
+config CTR_Z
+	default y
+
+config I2C
+	default y
+# SUBSYSTEM-LTE-V2
+config SHIELD_CTR_LTE_V2
+	bool "Enable SHIELD_CTR_LTE_V2"
+	default y
+
+config CTR_LTE_V2
+	default y
+
+# ### Preserved code "k_config" (begin)
+# ^^^ Preserved code "k_config" (end)
+
+rsource "Kconfig.variant"
+
+endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
