@@ -46,8 +46,8 @@ def build_app_variant(variant, version, docs_link, cwd):
     date_published = datetime.now().strftime("%Y-%m-%d")
 
     with open("docs.md", "a") as doc_file:
-        if "scale" in name:
-            # CHESTER Scale don't have catalog page
+        if "scale" in name.lower() or " demo" in name.lower():
+            # CHESTER Scale, Demo don't have catalog page
             doc_file.write(f'| **{name}** ')
         else:
             doc_file.write(f'| [**{name}**]({docs_link_combined}) ')
@@ -72,13 +72,15 @@ def build_app(name, version):
 
 
 def main():
-    # build_app('clime', 'v3.0.1')
-    # build_app('push', 'v3.0.1')
-    # build_app('control', 'v3.0.1')
-    # build_app('current', 'v3.0.1')
-    # build_app('scale', 'v3.0.1')
-    # build_app('meteo', 'v3.0.1')
-    build_app('range', 'v3.0.1')
+    version = 'v3.0.4'
+    build_app('clime', version)
+    build_app('push', version)
+    build_app('control', version)
+    build_app('current', version)
+    build_app('scale', version)
+    build_app('meteo', version)
+    build_app('range', version)
+    build_app('demo', version)
 
 
 if __name__ == '__main__':
