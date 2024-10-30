@@ -33,6 +33,12 @@ LOG_MODULE_REGISTER(ctr_lte_v2, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 #define SEND_CSCON_1_TIMEOUT   K_SECONDS(30)
 #define CONEVAL_TIMEOUT        K_SECONDS(30)
 
+#define WORK_Q_STACK_SIZE 4096
+#define WORK_Q_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
+
+static struct k_work_q m_work_q;
+static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);
+
 enum ctr_lte_v2_state {
 	CTR_LTE_V2_STATE_DISABLED = 0,
 	CTR_LTE_V2_STATE_ERROR,
@@ -230,7 +236,7 @@ const char *ctr_lte_v2_get_state(void)
 
 static void start_timer(k_timeout_t timeout)
 {
-	k_work_schedule(&m_timeout_work, timeout);
+	k_work_schedule_for_queue(&m_work_q, &m_timeout_work, timeout);
 }
 
 static void stop_timer(void)
@@ -243,7 +249,7 @@ static void delegate_event(enum ctr_lte_v2_event event)
 	k_mutex_lock(&m_event_rb_lock, K_FOREVER);
 	ring_buf_put(&m_event_rb, (uint8_t *)&event, 1);
 	k_mutex_unlock(&m_event_rb_lock);
-	k_work_submit(&m_event_dispatch_work);
+	k_work_submit_to_queue(&m_work_q, &m_event_dispatch_work);
 }
 
 static void event_handler(enum ctr_lte_v2_event event)
@@ -1139,7 +1145,7 @@ static int gnss_event_handler(enum ctr_lte_v2_event event)
 		enter_state(CTR_LTE_V2_STATE_READY);
 		break;
 	case CTR_LTE_V2_EVENT_XGPS:
-		k_work_submit(&m_gnss_work);
+		k_work_submit_to_queue(&m_work_q, &m_gnss_work);
 		break;
 	case CTR_LTE_V2_EVENT_XGPS_DISABLE:
 		enter_state(CTR_LTE_V2_STATE_READY);
@@ -1216,6 +1222,11 @@ static int init(void)
 	}
 
 	m_state = CTR_LTE_V2_STATE_DISABLED;
+
+	k_work_queue_init(&m_work_q);
+
+	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
+			   WORK_Q_PRIORITY, NULL);
 
 	k_work_init_delayable(&m_timeout_work, timeout_work_handler);
 	k_work_init(&m_event_dispatch_work, event_dispatch_work_handler);
