@@ -7,5 +7,4 @@
 config VARIANT_CHESTER_METEO
     bool "Enable VARIANT_CHESTER_METEO"
     default y
-
-
+        
