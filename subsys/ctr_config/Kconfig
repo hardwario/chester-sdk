@@ -16,6 +16,12 @@ config CTR_CONFIG
 	select SETTINGS
 	select SETTINGS_RUNTIME
 
+config CTR_CONFIG_FACTORY_RESET
+	bool "CTR_CONFIG_FACTORY_RESET"
+	default y
+	depends on CTR_CONFIG
+	depends on CTR_LED
+
 if CTR_CONFIG
 
 module = CTR_CONFIG

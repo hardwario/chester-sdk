@@ -7,9 +7,17 @@
 /* CHESTER includes */
 #include <chester/ctr_config.h>
 #include <chester/ctr_util.h>
+#if defined(CONFIG_CTR_CONFIG_FACTORY_RESET)
+#include <chester/ctr_led.h>
+#endif
 
 /* Zephyr includes */
 #include <zephyr/fs/fs.h>
+#if defined(CONFIG_CTR_CONFIG_FACTORY_RESET)
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#endif
 #include <zephyr/fs/nvs.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -624,6 +632,60 @@ static int init(void)
 		LOG_ERR("Call `settings_subsys_init` failed: %d", ret);
 		return ret;
 	}
+
+#if defined(CONFIG_CTR_CONFIG_FACTORY_RESET)
+	const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(DT_NODELABEL(btn_int), gpios);
+	gpio_pin_configure_dt(&button, GPIO_INPUT);
+
+	LOG_INF("Checking a button for factory reset");
+
+	if (!gpio_pin_get_dt(&button)) {
+		return 0;
+	}
+
+	LOG_INF("Button held, waiting 5s");
+
+	k_sleep(K_SECONDS(5));
+
+	if (!gpio_pin_get_dt(&button)) {
+		return 0;
+	}
+
+	LOG_INF("Starting 5s window to release a button");
+
+	const int period = 125;
+	const int window = 5000;
+	/* The flag is used to delay the reset by one cycle, implementing simple debouncing logic.
+	 */
+	bool flag = false;
+
+	for (int i = 0; i < window / period; i++) {
+		const bool pressed = gpio_pin_get_dt(&button);
+
+		if (flag && !pressed) {
+			ctr_led_set(CTR_LED_CHANNEL_R, 1);
+			k_sleep(K_SECONDS(2));
+			ctr_led_set(CTR_LED_CHANNEL_R, 0);
+
+			LOG_INF("Performing a factory reset");
+			k_sleep(K_MSEC(100));
+			ctr_config_reset(true);
+
+			return 0;
+		}
+
+		flag = !pressed;
+
+		ctr_led_set(CTR_LED_CHANNEL_R, i % 2);
+
+		k_sleep(K_MSEC(period));
+	}
+
+	LOG_INF("Button not released, skipping factory reset");
+
+	ctr_led_set(CTR_LED_CHANNEL_R, 0);
+	k_sleep(K_SECONDS(1));
+#endif /* defined(CTR_CONFIG_FACTORY_RESET) */
 
 	return 0;
 }
