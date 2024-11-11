@@ -34,6 +34,7 @@ enum app_config_mode {
 struct app_config {
 	int interval_report;
 	int interval_poll;
+	int downlink_wdg_interval;
 
 #if defined(FEATURE_HARDWARE_CHESTER_Z)
 	int event_report_delay;

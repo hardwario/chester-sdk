@@ -58,6 +58,12 @@ parameters:
   max: 86400
   default: 0
   help: 'Get/Set poll interval in seconds'
+- name: downlink-wdg-interval
+  type: int
+  min: 0
+  max: 1209600
+  default: 129600
+  help: "Get/Set downlink watchdog interval in seconds (disabled if 0)"
 - name: event-report-delay
   type: int
   min: 1
@@ -111,32 +117,32 @@ parameters:
 - name: channel-calib-x0
   type: array[int]
   len: 4
-  min: 30
-  max: 86400
+  min: -2147483648
+  max: 2147483647
   default: null
   help: 'Get/Set channel X0 calibration point'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-x1
   type: array[int]
   len: 4
-  min: 30
-  max: 86400
+  min: -2147483648
+  max: 2147483647
   default: null
   help: 'Get/Set channel X1 calibration point'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-y0
   type: array[int]
   len: 4
-  min: 30
-  max: 86400
+  min: -2147483648
+  max: 2147483647
   default: null
   help: 'Get/Set channel Y0 calibration point'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-y1
   type: array[int]
   len: 4
-  min: 30
-  max: 86400
+  min: -2147483648
+  max: 2147483647
   default: null
   help: 'Get/Set channel Y1 calibration point'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
