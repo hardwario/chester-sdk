@@ -44,6 +44,8 @@ features:
 #- hardware-chester-s2
 #- hardware-chester-z
 #- hardware-chester-x4-a
+#- hardware-chester-x9-a
+#- hardware-chester-x9-b
 parameters:
 - name: interval-report
   type: int

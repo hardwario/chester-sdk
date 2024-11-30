@@ -10,6 +10,7 @@
 #include "app_handler.h"
 #include "app_init.h"
 #include "app_work.h"
+#include "feature.h"
 
 /* CHESTER includes */
 #include <chester/ctr_adc.h>
@@ -498,6 +499,12 @@ int app_init(void)
 		ret = ctr_cloud_init(&copt);
 		if (ret) {
 			LOG_ERR("Call `ctr_cloud_init` failed: %d", ret);
+			return ret;
+		}
+
+		ret = ctr_cloud_set_callback(app_handler_cloud_event, NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_cloud_set_callback` failed: %d", ret);
 			return ret;
 		}
 

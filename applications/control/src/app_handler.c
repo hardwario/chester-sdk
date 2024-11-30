@@ -11,12 +11,18 @@
 #include "app_handler.h"
 #include "app_init.h"
 #include "app_work.h"
+#include "feature.h"
 
 /* CHESTER includes */
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_led.h>
 #include <chester/ctr_rtc.h>
+#if defined(FEATURE_HARDWARE_CHESTER_X4_B)
 #include <chester/drivers/ctr_x4.h>
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) */
+#if defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B)
+#include <chester/drivers/ctr_x9.h>
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B) */
 #include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
@@ -261,8 +267,9 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 {
 	int ret;
 
-	if (chan != CTR_BUTTON_CHANNEL_INT)
+	if (chan != CTR_BUTTON_CHANNEL_INT) {
 		return;
+	}
 
 	if (ev == CTR_BUTTON_EVENT_CLICK) {
 		for (int i = 0; i < val; i++) {
@@ -320,76 +327,123 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_data *data,
 			     void *param)
 {
-#if defined(FEATURE_HARDWARE_CHESTER_X4_B)
-	int ret;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) */
-
-	if (event == CTR_CLOUD_EVENT_RECV) {
-		LOG_HEXDUMP_INF(data->recv.buf, data->recv.len, "Received:");
-
-		if (data->recv.len < 8) {
-			LOG_ERR("Missing encoder hash");
-			return;
-		}
-
-#if defined(FEATURE_HARDWARE_CHESTER_X4_B)
-		const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x4_b));
-
-		if (!device_is_ready(dev)) {
-			LOG_ERR("Device not ready");
-			return;
-		}
-
-		uint8_t *buf = (uint8_t *)data->recv.buf + 8;
-		size_t len = data->recv.len - 8;
-
-		ZCBOR_STATE_D(zs, 1, buf, len, 1);
-
-		struct app_cbor_received received;
-
-		ret = app_cbor_decode(zs, &received);
-		if (ret) {
-			LOG_ERR("Call `app_cbor_decode` failed: %d", ret);
-			return;
-		}
-
-		LOG_INF("Decode ok");
-
-		if (received.has_output_1_state) {
-			LOG_DBG("Received output_1_state: %d", received.output_1_state);
-			if (received.output_1_state < 0 || received.output_1_state > 2) {
-				LOG_ERR("Invalid output_1_state value");
-				return;
-			}
-			ret = ctr_x4_set_output(dev, CTR_X4_OUTPUT_1, received.output_1_state);
-		}
-
-		if (received.has_output_2_state) {
-			LOG_DBG("Received output_2_state: %d", received.output_2_state);
-			if (received.output_2_state < 0 || received.output_2_state > 2) {
-				LOG_ERR("Invalid output_2_state value");
-				return;
-			}
-			ret = ctr_x4_set_output(dev, CTR_X4_OUTPUT_2, received.output_2_state);
-		}
-
-		if (received.has_output_3_state) {
-			LOG_DBG("Received output_3_state: %d", received.output_3_state);
-			if (received.output_3_state < 0 || received.output_3_state > 2) {
-				LOG_ERR("Invalid output_3_state value");
-				return;
-			}
-			ret = ctr_x4_set_output(dev, CTR_X4_OUTPUT_3, received.output_3_state);
-		}
-
-		if (received.has_output_4_state) {
-			LOG_DBG("Received output_4_state: %d", received.output_4_state);
-			if (received.output_4_state < 0 || received.output_4_state > 2) {
-				LOG_ERR("Invalid output_3_state value");
-				return;
-			}
-			ret = ctr_x4_set_output(dev, CTR_X4_OUTPUT_4, received.output_4_state);
-		}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) */
+	if (event != CTR_CLOUD_EVENT_RECV) {
+		return;
 	}
+
+	LOG_HEXDUMP_INF(data->recv.buf, data->recv.len, "Received:");
+
+	if (data->recv.len < 8) {
+		LOG_ERR("Missing encoder hash");
+		return;
+	}
+
+#if defined(FEATURE_HARDWARE_CHESTER_X4_B) || defined(FEATURE_HARDWARE_CHESTER_X9_A) ||            \
+	defined(FEATURE_HARDWARE_CHESTER_X9_B)
+	int ret;
+	uint8_t *buf = (uint8_t *)data->recv.buf + 8;
+	size_t len = data->recv.len - 8;
+
+	ZCBOR_STATE_D(zs, 1, buf, len, 1);
+
+	struct app_cbor_received received;
+
+	ret = app_cbor_decode(zs, &received);
+	if (ret) {
+		LOG_ERR("Call `app_cbor_decode` failed: %d", ret);
+		return;
+	}
+
+	LOG_INF("Decode ok");
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) || defined(FEATURE_HARDRWARE_CHESTER_X9_A) ||     \
+	  defined(FEATURE_HARDWARE_CHESTER_X9_B) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_X4_B)
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x4_b));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		return;
+	}
+
+	if (received.has_output_1_state) {
+		LOG_DBG("Received output_1_state: %d", received.output_1_state);
+		if (received.output_1_state < 0 || received.output_1_state > 2) {
+			LOG_ERR("Invalid output_1_state value");
+			return;
+		}
+		ret = ctr_x4_set_output(dev, CTR_X4_OUTPUT_1, received.output_1_state);
+	}
+
+	if (received.has_output_2_state) {
+		LOG_DBG("Received output_2_state: %d", received.output_2_state);
+		if (received.output_2_state < 0 || received.output_2_state > 2) {
+			LOG_ERR("Invalid output_2_state value");
+			return;
+		}
+		ret = ctr_x4_set_output(dev, CTR_X4_OUTPUT_2, received.output_2_state);
+	}
+
+	if (received.has_output_3_state) {
+		LOG_DBG("Received output_3_state: %d", received.output_3_state);
+		if (received.output_3_state < 0 || received.output_3_state > 2) {
+			LOG_ERR("Invalid output_3_state value");
+			return;
+		}
+		ret = ctr_x4_set_output(dev, CTR_X4_OUTPUT_3, received.output_3_state);
+	}
+
+	if (received.has_output_4_state) {
+		LOG_DBG("Received output_4_state: %d", received.output_4_state);
+		if (received.output_4_state < 0 || received.output_4_state > 2) {
+			LOG_ERR("Invalid output_3_state value");
+			return;
+		}
+		ret = ctr_x4_set_output(dev, CTR_X4_OUTPUT_4, received.output_4_state);
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_X9_A)
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x9_a));
+#elif defined(FEATURE_HARDWARE_CHESTER_X9_B)
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x9_b));
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X9_A) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B)
+	if (received.has_output_1_state) {
+		LOG_DBG("Received output_1_state: %d", received.output_1_state);
+		if (received.output_1_state < 0 || received.output_1_state > 2) {
+			LOG_ERR("Invalid output_1_state value");
+			return;
+		}
+		ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_1, received.output_1_state);
+	}
+
+	if (received.has_output_2_state) {
+		LOG_DBG("Received output_2_state: %d", received.output_2_state);
+		if (received.output_2_state < 0 || received.output_2_state > 2) {
+			LOG_ERR("Invalid output_2_state value");
+			return;
+		}
+		ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_2, received.output_1_state);
+	}
+
+	if (received.has_output_3_state) {
+		LOG_DBG("Received output_3_state: %d", received.output_3_state);
+		if (received.output_3_state < 0 || received.output_3_state > 2) {
+			LOG_ERR("Invalid output_3_state value");
+			return;
+		}
+		ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_3, received.output_1_state);
+	}
+
+	if (received.has_output_4_state) {
+		LOG_DBG("Received output_4_state: %d", received.output_4_state);
+		if (received.output_4_state < 0 || received.output_4_state > 2) {
+			LOG_ERR("Invalid output_4_state value");
+			return;
+		}
+		ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_4, received.output_1_state);
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B) */
 }
