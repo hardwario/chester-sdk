@@ -102,13 +102,103 @@ $(document).ready(function(){initNavTree('group__ctr__ble__tag.html',''); initRe
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ga293c8bcecfada5c886dc75f4cfc6d499"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#ga293c8bcecfada5c886dc75f4cfc6d499">ctr_ble_tag_read</a> (size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *voltage, float *temperature, float *humidity, bool *valid)</td></tr>
-<tr class="separator:ga293c8bcecfada5c886dc75f4cfc6d499"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga18edcd0a9abf8ce8c96aad1c7937efaf"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#ga18edcd0a9abf8ce8c96aad1c7937efaf">ctr_ble_tag_enable</a> (bool enabled)</td></tr>
+<tr class="separator:ga18edcd0a9abf8ce8c96aad1c7937efaf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaacc2b6b3b4e2c954d24552116cde70ef"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#gaacc2b6b3b4e2c954d24552116cde70ef">ctr_ble_tag_add</a> (char *addr)</td></tr>
+<tr class="separator:gaacc2b6b3b4e2c954d24552116cde70ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae8305e85443c8b38c5d08f6c42a5fa95"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#gae8305e85443c8b38c5d08f6c42a5fa95">ctr_ble_tag_remove_addr</a> (char *addr)</td></tr>
+<tr class="separator:gae8305e85443c8b38c5d08f6c42a5fa95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga75d585a6c580eb5b19b139eb460dceb0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#ga75d585a6c580eb5b19b139eb460dceb0">ctr_ble_tag_remove_slot</a> (size_t slot)</td></tr>
+<tr class="separator:ga75d585a6c580eb5b19b139eb460dceb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga92bded6c70d73a2bcc1e9e9d1eb2b3aa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#ga92bded6c70d73a2bcc1e9e9d1eb2b3aa">ctr_ble_tag_remove_all</a> (void)</td></tr>
+<tr class="separator:ga92bded6c70d73a2bcc1e9e9d1eb2b3aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac99a043bb37778f435f41fd395677fae"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#gac99a043bb37778f435f41fd395677fae">ctr_ble_tag_set_scan_interval</a> (int scan_interval)</td></tr>
+<tr class="separator:gac99a043bb37778f435f41fd395677fae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4a2b90d39dea52d6e7ac06993f2680df"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#ga4a2b90d39dea52d6e7ac06993f2680df">ctr_ble_tag_get_scan_interval</a> (void)</td></tr>
+<tr class="separator:ga4a2b90d39dea52d6e7ac06993f2680df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga27f4feec13b255b5f7d5abcda7ca9881"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#ga27f4feec13b255b5f7d5abcda7ca9881">ctr_ble_tag_set_scan_duration</a> (int scan_duration)</td></tr>
+<tr class="separator:ga27f4feec13b255b5f7d5abcda7ca9881"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gafbcaafaa92a40dae02318c8135ce793b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#gafbcaafaa92a40dae02318c8135ce793b">ctr_ble_tag_get_scan_duration</a> (void)</td></tr>
+<tr class="separator:gafbcaafaa92a40dae02318c8135ce793b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7c872cb81e77cbf996ffbacfafcd6877"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#ga7c872cb81e77cbf996ffbacfafcd6877">ctr_ble_tag_read_cached</a> (size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *voltage, float *temperature, float *humidity, bool *magnet_detected, bool *moving, int *movement_event_count, float *roll, float *pitch, bool *low_battery, int16_t *sensor_mask, bool *valid)</td></tr>
+<tr class="separator:ga7c872cb81e77cbf996ffbacfafcd6877"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaef82e8abb46a22ffac811d06630f1bfb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#gaef82e8abb46a22ffac811d06630f1bfb">ctr_ble_tag_is_addr_empty</a> (const uint8_t addr[BT_ADDR_SIZE])</td></tr>
 <tr class="separator:gaef82e8abb46a22ffac811d06630f1bfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="gaacc2b6b3b4e2c954d24552116cde70ef" name="gaacc2b6b3b4e2c954d24552116cde70ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaacc2b6b3b4e2c954d24552116cde70ef">&#9670;&#160;</a></span>ctr_ble_tag_add()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_ble_tag_add </td>
+          <td>(</td>
+          <td class="paramtype">char *&#160;</td>
+          <td class="paramname"><em>addr</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga18edcd0a9abf8ce8c96aad1c7937efaf" name="ga18edcd0a9abf8ce8c96aad1c7937efaf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga18edcd0a9abf8ce8c96aad1c7937efaf">&#9670;&#160;</a></span>ctr_ble_tag_enable()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_ble_tag_enable </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>enabled</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="gafbcaafaa92a40dae02318c8135ce793b" name="gafbcaafaa92a40dae02318c8135ce793b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gafbcaafaa92a40dae02318c8135ce793b">&#9670;&#160;</a></span>ctr_ble_tag_get_scan_duration()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_ble_tag_get_scan_duration </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga4a2b90d39dea52d6e7ac06993f2680df" name="ga4a2b90d39dea52d6e7ac06993f2680df"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga4a2b90d39dea52d6e7ac06993f2680df">&#9670;&#160;</a></span>ctr_ble_tag_get_scan_interval()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_ble_tag_get_scan_interval </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="gaef82e8abb46a22ffac811d06630f1bfb" name="gaef82e8abb46a22ffac811d06630f1bfb"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gaef82e8abb46a22ffac811d06630f1bfb">&#9670;&#160;</a></span>ctr_ble_tag_is_addr_empty()</h2>
 
@@ -127,14 +217,14 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ga293c8bcecfada5c886dc75f4cfc6d499" name="ga293c8bcecfada5c886dc75f4cfc6d499"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga293c8bcecfada5c886dc75f4cfc6d499">&#9670;&#160;</a></span>ctr_ble_tag_read()</h2>
+<a id="ga7c872cb81e77cbf996ffbacfafcd6877" name="ga7c872cb81e77cbf996ffbacfafcd6877"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga7c872cb81e77cbf996ffbacfafcd6877">&#9670;&#160;</a></span>ctr_ble_tag_read_cached()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int ctr_ble_tag_read </td>
+          <td class="memname">int ctr_ble_tag_read_cached </td>
           <td>(</td>
           <td class="paramtype">size_t&#160;</td>
           <td class="paramname"><em>slot</em>, </td>
@@ -173,12 +263,144 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool *&#160;</td>
+          <td class="paramname"><em>magnet_detected</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool *&#160;</td>
+          <td class="paramname"><em>moving</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int *&#160;</td>
+          <td class="paramname"><em>movement_event_count</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float *&#160;</td>
+          <td class="paramname"><em>roll</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float *&#160;</td>
+          <td class="paramname"><em>pitch</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool *&#160;</td>
+          <td class="paramname"><em>low_battery</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int16_t *&#160;</td>
+          <td class="paramname"><em>sensor_mask</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool *&#160;</td>
           <td class="paramname"><em>valid</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
           <td>)</td>
           <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="gae8305e85443c8b38c5d08f6c42a5fa95" name="gae8305e85443c8b38c5d08f6c42a5fa95"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gae8305e85443c8b38c5d08f6c42a5fa95">&#9670;&#160;</a></span>ctr_ble_tag_remove_addr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_ble_tag_remove_addr </td>
+          <td>(</td>
+          <td class="paramtype">char *&#160;</td>
+          <td class="paramname"><em>addr</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga92bded6c70d73a2bcc1e9e9d1eb2b3aa" name="ga92bded6c70d73a2bcc1e9e9d1eb2b3aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga92bded6c70d73a2bcc1e9e9d1eb2b3aa">&#9670;&#160;</a></span>ctr_ble_tag_remove_all()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ctr_ble_tag_remove_all </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga75d585a6c580eb5b19b139eb460dceb0" name="ga75d585a6c580eb5b19b139eb460dceb0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga75d585a6c580eb5b19b139eb460dceb0">&#9670;&#160;</a></span>ctr_ble_tag_remove_slot()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_ble_tag_remove_slot </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>slot</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga27f4feec13b255b5f7d5abcda7ca9881" name="ga27f4feec13b255b5f7d5abcda7ca9881"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga27f4feec13b255b5f7d5abcda7ca9881">&#9670;&#160;</a></span>ctr_ble_tag_set_scan_duration()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_ble_tag_set_scan_duration </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>scan_duration</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="gac99a043bb37778f435f41fd395677fae" name="gac99a043bb37778f435f41fd395677fae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gac99a043bb37778f435f41fd395677fae">&#9670;&#160;</a></span>ctr_ble_tag_set_scan_interval()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_ble_tag_set_scan_interval </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>scan_interval</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">

@@ -7,6 +7,16 @@ var searchData=
   ['ctr_5fble_5ftag_5fenroll_5frssi_5fthreshold_4',['CTR_BLE_TAG_ENROLL_RSSI_THRESHOLD',['../ctr__ble__tag_8h.html#a73a24ad8ccf425def26a695a4c9c4506',1,'ctr_ble_tag.h']]],
   ['ctr_5fble_5ftag_5fenroll_5ftimeout_5fsec_5',['CTR_BLE_TAG_ENROLL_TIMEOUT_SEC',['../ctr__ble__tag_8h.html#af9ae7d1893e666653b6f768d599609b0',1,'ctr_ble_tag.h']]],
   ['ctr_5fble_5ftag_5fscan_5fmax_5ftime_6',['CTR_BLE_TAG_SCAN_MAX_TIME',['../ctr__ble__tag_8h.html#a55003a22867f2546d165874399d036b0',1,'ctr_ble_tag.h']]],
-  ['ctr_5fcloud_5ftransfer_5fbuf_5fsize_7',['CTR_CLOUD_TRANSFER_BUF_SIZE',['../ctr__cloud_8h.html#abe114fcd1fd4f3e6eb5827aa77e3b264',1,'ctr_cloud.h']]],
-  ['ctr_5flrw_5fsend_5fopts_5fdefaults_8',['CTR_LRW_SEND_OPTS_DEFAULTS',['../ctr__lrw__v2_8h.html#a93abac54c2d362aa6e5a55a316330bea',1,'ctr_lrw_v2.h']]]
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5fhumidity_7',['CTR_BLE_TAG_SENSOR_MASK_HUMIDITY',['../ctr__ble__tag_8h.html#abc817b2df0ad4ab4ec98a8f29689e2a0',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5flow_5fbattery_8',['CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY',['../ctr__ble__tag_8h.html#a85ab88d6c755267432e1d1981057b9d7',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5fmagnet_5fdetected_9',['CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED',['../ctr__ble__tag_8h.html#a8c151f3d2a8515a0ca4cf108142eb5d4',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5fmovement_5fevent_5fcount_10',['CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT',['../ctr__ble__tag_8h.html#ab1a11067195f76f89174ae1104c4a281',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5fmoving_11',['CTR_BLE_TAG_SENSOR_MASK_MOVING',['../ctr__ble__tag_8h.html#a074f3065015bba149240d0853823dac8',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5fpitch_12',['CTR_BLE_TAG_SENSOR_MASK_PITCH',['../ctr__ble__tag_8h.html#a8c440bb3d2f34de249b71eba69d15628',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5froll_13',['CTR_BLE_TAG_SENSOR_MASK_ROLL',['../ctr__ble__tag_8h.html#a20a48fc7bc2acfda127eaeb279fad1bb',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5frssi_14',['CTR_BLE_TAG_SENSOR_MASK_RSSI',['../ctr__ble__tag_8h.html#a44d85d01533f60e52905811a624a843c',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5ftemperature_15',['CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE',['../ctr__ble__tag_8h.html#a1460aea61d04fc9c5ecc6ee644dc20d7',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5fvoltage_16',['CTR_BLE_TAG_SENSOR_MASK_VOLTAGE',['../ctr__ble__tag_8h.html#a049dc4c47e29cbc371ff7d738e402c25',1,'ctr_ble_tag.h']]],
+  ['ctr_5fcloud_5ftransfer_5fbuf_5fsize_17',['CTR_CLOUD_TRANSFER_BUF_SIZE',['../ctr__cloud_8h.html#abe114fcd1fd4f3e6eb5827aa77e3b264',1,'ctr_cloud.h']]],
+  ['ctr_5flrw_5fsend_5fopts_5fdefaults_18',['CTR_LRW_SEND_OPTS_DEFAULTS',['../ctr__lrw__v2_8h.html#a93abac54c2d362aa6e5a55a316330bea',1,'ctr_lrw_v2.h']]]
 ];
