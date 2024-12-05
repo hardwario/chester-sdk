@@ -1098,11 +1098,11 @@ static int encode(zcbor_state_t *zs)
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		zcbor_uint32_put(zs, CODEC_KEY_E_PYRANOMETER__IRRADIANCE);
+		zcbor_uint32_put(zs, CODEC_KEY_E_PYRANOMETER__IRRADIANCE_1);
 		{
 			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-			zcbor_uint32_put(zs, CODEC_KEY_E_PYRANOMETER__IRRADIANCE__MEASUREMENTS);
+			zcbor_uint32_put(zs, CODEC_KEY_E_PYRANOMETER__IRRADIANCE_1__MEASUREMENTS);
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
@@ -1110,9 +1110,29 @@ static int encode(zcbor_state_t *zs)
 				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
 
 				for (int i = 0; i < g_app_data.pyranometer.measurement_count; i++) {
-					put_sample(
-						zs,
-						&g_app_data.pyranometer.irradiance_measurements[i]);
+					put_sample(zs, &g_app_data.pyranometer
+								.irradiance_1_measurements[i]);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_PYRANOMETER__IRRADIANCE_2);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_PYRANOMETER__IRRADIANCE_2__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.pyranometer.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.pyranometer.measurement_count; i++) {
+					put_sample(zs, &g_app_data.pyranometer
+								.irradiance_2_measurements[i]);
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);

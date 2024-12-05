@@ -15,6 +15,7 @@
 #include <chester/ctr_adc.h>
 #include <chester/ctr_ble_tag.h>
 #include <chester/ctr_ds18b20.h>
+#include <chester/ctr_gpio.h>
 #include <chester/ctr_hygro.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_soil_sensor.h>
@@ -1432,6 +1433,14 @@ int app_sensor_pyranometer_sample(void)
 {
 	int ret;
 
+	ret = ctr_gpio_write(CTR_GPIO_CHANNEL_B3, 1);
+	if (ret) {
+		LOG_ERR("Call `ctr_gpio_write` failed: %d", ret);
+		return ret;
+	}
+
+	k_sleep(K_MSEC(100));
+
 	struct app_data_pyranometer *pyranometer = &g_app_data.pyranometer;
 
 	app_data_lock();
@@ -1439,25 +1448,47 @@ int app_sensor_pyranometer_sample(void)
 	if (pyranometer->sample_count >= APP_DATA_MAX_SAMPLES) {
 		LOG_WRN("Sample buffer full");
 		app_data_unlock();
+		ctr_gpio_write(CTR_GPIO_CHANNEL_B3, 0);
 		return -ENOSPC;
 	}
 
-	uint16_t sample;
-	ret = ctr_adc_read(CTR_ADC_CHANNEL_B0, &sample);
+	uint16_t sample_1;
+	ret = ctr_adc_read(CTR_ADC_CHANNEL_B0, &sample_1);
 	if (ret) {
-		LOG_ERR("Call `ctr_adc_read` failed: %d", ret);
+		LOG_ERR("Call `ctr_adc_read` failed (1): %d", ret);
 		app_data_unlock();
+		ctr_gpio_write(CTR_GPIO_CHANNEL_B3, 0);
 		return ret;
 	}
 
-	pyranometer->irradiance_samples[pyranometer->sample_count] = CTR_ADC_MILLIVOLTS(sample);
+	pyranometer->irradiance_1_samples[pyranometer->sample_count] = CTR_ADC_MILLIVOLTS(sample_1);
 
-	LOG_INF("Irradiance response: %.0f mV",
-		pyranometer->irradiance_samples[pyranometer->sample_count]);
+	LOG_INF("Irradiance 1 response: %.0f mV",
+		pyranometer->irradiance_1_samples[pyranometer->sample_count]);
+
+	uint16_t sample_2;
+	ret = ctr_adc_read(CTR_ADC_CHANNEL_B1, &sample_2);
+	if (ret) {
+		LOG_ERR("Call `ctr_adc_read` failed (2): %d", ret);
+		app_data_unlock();
+		ctr_gpio_write(CTR_GPIO_CHANNEL_B3, 0);
+		return ret;
+	}
+
+	pyranometer->irradiance_2_samples[pyranometer->sample_count] = CTR_ADC_MILLIVOLTS(sample_2);
+
+	LOG_INF("Irradiance 2 response: %.0f mV",
+		pyranometer->irradiance_2_samples[pyranometer->sample_count]);
 
 	pyranometer->sample_count++;
 
 	app_data_unlock();
+
+	ret = ctr_gpio_write(CTR_GPIO_CHANNEL_B3, 0);
+	if (ret) {
+		LOG_ERR("Call `ctr_gpio_write` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }
@@ -1479,8 +1510,12 @@ int app_sensor_pyranometer_aggreg(void)
 		}
 
 		aggreg_sample(
-			pyranometer->irradiance_samples, pyranometer->sample_count,
-			&pyranometer->irradiance_measurements[pyranometer->measurement_count]);
+			pyranometer->irradiance_1_samples, pyranometer->sample_count,
+			&pyranometer->irradiance_1_measurements[pyranometer->measurement_count]);
+
+		aggreg_sample(
+			pyranometer->irradiance_2_samples, pyranometer->sample_count,
+			&pyranometer->irradiance_2_measurements[pyranometer->measurement_count]);
 
 		pyranometer->sample_count = 0;
 		pyranometer->measurement_count++;

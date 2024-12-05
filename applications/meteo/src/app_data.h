@@ -289,8 +289,11 @@ struct app_data_pyranometer {
 	int sample_count;
 	int measurement_count;
 
-	float irradiance_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg irradiance_measurements[APP_DATA_MAX_MEASUREMENTS];
+	float irradiance_1_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg irradiance_1_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	float irradiance_2_samples[APP_DATA_MAX_SAMPLES];
+	struct app_data_aggreg irradiance_2_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	int64_t timestamp;
 };

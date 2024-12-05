@@ -18,6 +18,7 @@
 #include <chester/ctr_button.h>
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_edge.h>
+#include <chester/ctr_gpio.h>
 #include <chester/ctr_led.h>
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_soil_sensor.h>
@@ -168,9 +169,21 @@ int app_init(void)
 #endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
 
 #if defined(CONFIG_APP_PYRANOMETER)
+	ret = ctr_gpio_set_mode(CTR_GPIO_CHANNEL_B3, CTR_GPIO_MODE_OUTPUT);
+	if (ret) {
+		LOG_ERR("Call `ctr_gpio_set_mode` failed: %d", ret);
+		return ret;
+	}
+
 	ret = ctr_adc_init(CTR_ADC_CHANNEL_B0);
 	if (ret) {
-		LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_adc_init` failed (0): %d", ret);
+		return ret;
+	}
+
+	ret = ctr_adc_init(CTR_ADC_CHANNEL_B1);
+	if (ret) {
+		LOG_ERR("Call `ctr_adc_init` failed (1): %d", ret);
 		return ret;
 	}
 #endif /* defined(CONFIG_APP_PYRANOMETER) */

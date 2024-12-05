@@ -3,21 +3,28 @@ variants:
 - name: CHESTER Meteo
   fw_bundle: com.hardwario.chester.app.meteo
   fw_name: hio-chester-meteo
-  fw_version: v3.0.0
+  fw_version: v3.0.2
 - name: CHESTER Meteo Z
   fw_bundle: com.hardwario.chester.app.meteo.z
   fw_name: hio-chester-meteo-z
-  fw_version: v3.0.0
+  fw_version: v3.0.2
   features:
   - hardware-chester-z
   remark: Support for CHESTER-Z
+- name: CHESTER Meteo P
+  fw_bundle: com.hardwario.chester.app.meteo.p
+  fw_name: hio-chester-meteo-p
+  fw_version: v3.0.2
+  extras:
+  - CONFIG_APP_PYRANOMETER=y
+  remark: Support for pyranometer
 project:
   variant: Meteo
   company: 2024 HARDWARIO a.s.
   license: "SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause"
   fw_name: CHESTER Meteo
   fw_bundle: com.hardwario.chester.app.meteo
-  fw_version: v3.0.0
+  fw_version: v3.0.2
 features:
 - subsystem-accel
 - subsystem-batt
@@ -154,5 +161,3 @@ commands:
   help: "Aggregate data immediately"
 extras:
 - CONFIG_ADC_TLA2021_INIT_PRIORITY=60
-
-

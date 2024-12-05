@@ -24,15 +24,15 @@ schema:
   - serial_number:
 - network:
   - parameter:
-    - eest: 
-    - ecl: 
-    - rsrp: 
-    - rsrq: 
-    - snr: 
-    - plmn: 
-    - cid: 
-    - band: 
-    - earfcn: 
+    - eest:
+    - ecl:
+    - rsrp:
+    - rsrq:
+    - snr:
+    - plmn:
+    - cid:
+    - band:
+    - earfcn:
 - thermometer:
   - temperature:
     - $div: 100
@@ -280,7 +280,14 @@ schema:
           - $div: 100
           - $fpp: 2
 - pyranometer:
-  - irradiance:
+  - irradiance_1:
+    - measurements:
+      - $tsp:
+        - min:
+        - max:
+        - avg:
+        - mdn:
+  - irradiance_2:
     - measurements:
       - $tsp:
         - min:
