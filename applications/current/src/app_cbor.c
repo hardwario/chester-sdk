@@ -218,7 +218,7 @@ static int encode(zcbor_state_t *zs)
 		}
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__IMEI);
-		zcbor_uint32_put(zs, imei);
+		zcbor_uint64_put(zs, imei);
 
 		uint64_t imsi;
 		ret = ctr_lte_v2_get_imsi(&imsi);
@@ -228,7 +228,7 @@ static int encode(zcbor_state_t *zs)
 		}
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__IMSI);
-		zcbor_uint32_put(zs, imsi);
+		zcbor_uint64_put(zs, imsi);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
