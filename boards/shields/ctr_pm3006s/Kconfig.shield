@@ -1,0 +1,2 @@
+config SHIELD_CTR_PM3006S
+	def_bool $(shields_list_contains,ctr_pm3006s)

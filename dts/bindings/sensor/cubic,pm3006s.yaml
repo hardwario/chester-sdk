@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+description: Cubic PM3006S Outdoor Laser Particle Sensor Module
+
+compatible: "cubic,pm3006s"
+
+include: i2c-device.yaml
