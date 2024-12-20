@@ -8,6 +8,7 @@
 #include "app_config.h"
 #include "app_data.h"
 #include "app_send.h"
+#include "feature.h"
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
@@ -83,6 +84,11 @@ static int compose_lrw(struct ctr_buf *buf)
 	if (IS_ENABLED(FEATURE_SUBSYSTEM_BLE_TAG)) {
 		header |= BIT(7);
 		header |= BIT(8);
+	}
+
+	if (IS_ENABLED(FEATURE_SUBSYSTEM_SOIL_SENSOR)) {
+		header |= BIT(7);
+		header |= BIT(9);
 	}
 
 	ret |= ctr_buf_append_u8(buf, header);
@@ -289,6 +295,46 @@ static int compose_lrw(struct ctr_buf *buf)
 	}
 
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	if (header & BIT(9)) {
+		int count = 0;
+
+		for (int i = 0; i < APP_DATA_SOIL_SENSOR_COUNT; i++) {
+			struct app_data_soil_sensor_sensor *sensor =
+				&g_app_data.soil_sensor.sensor[i];
+
+			if (sensor->serial_number == 0) {
+				continue;
+			}
+
+			count++;
+		}
+
+		ret |= ctr_buf_append_u8(buf, count);
+
+		for (int i = 0; i < APP_DATA_SOIL_SENSOR_COUNT; i++) {
+			struct app_data_soil_sensor_sensor *sensor =
+				&g_app_data.soil_sensor.sensor[i];
+
+			if (sensor->serial_number == 0) {
+				continue;
+			}
+
+			if (isnan(sensor->last_temperature)) {
+				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
+			} else {
+				ret |= ctr_buf_append_s16_le(buf, sensor->last_temperature * 100.f);
+			}
+
+			if (isnan(sensor->last_moisture)) {
+				ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
+			} else {
+				ret |= ctr_buf_append_u16(buf, sensor->last_moisture);
+			}
+		}
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
 	app_data_unlock();
 
