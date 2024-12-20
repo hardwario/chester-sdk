@@ -3,19 +3,17 @@ var buffer;
 
 // Uncomment for ChirpStack:
 function decodeUplink(input) {
-
   // Uncomment for The Things Network:
   // function Decoder(port, bytes) {
 
-  buffer = bytes;
+  buffer = input.bytes;
 
   var data = {};
 
   var header = u8();
 
   if (header & 0x80) {
-    var header_higher = u8() << 8;
-    header = header_higher + header;
+    header = header | (u8() << 8);
   }
 
   if ((header & 0x01) !== 0) {
@@ -48,7 +46,16 @@ function decodeUplink(input) {
     }
   }
 
-  if ((header & 0x04) !== 0) {
+  if ((header & 0x04) !== 0 && (header & 0x08) == 0) {
+    data.therm_temperature = s16();
+    if (data.therm_temperature === 0x7fff) {
+      data.therm_temperature = null;
+    } else {
+      data.therm_temperature /= 100;
+    }
+  }
+
+  if ((header & 0x08) !== 0) {
     data.internal_temperature = s16();
     if (data.internal_temperature === 0x7fff) {
       data.internal_temperature = null;
@@ -91,11 +98,11 @@ function decodeUplink(input) {
       data.illuminance = data.illuminance / 100;
     }
 
-    data.presure = u16();
-    if (data.presure === 0xffff) {
-      data.presure = null;
+    data.pressure = u16();
+    if (data.pressure === 0xffff) {
+      data.pressure = null;
     } else {
-      data.presure = data.presure / 100;
+      data.pressure = data.pressure / 100;
     }
   }
 
@@ -182,7 +189,33 @@ function decodeUplink(input) {
     }
   }
 
-  return data;
+  if ((header & 0x0200) !== 0) {
+    data.soil_sensors = [];
+
+    let count = u8();
+
+    for (let i = 0; i < count; i++) {
+      let sensor = {};
+
+      let temperature = s16();
+      if (temperature === 0x7fff) {
+        sensor.temperature = null;
+      } else {
+        sensor.temperature = temperature / 100;
+      }
+
+      let moisture = u16();
+      if (moisture === 0xffff) {
+        sensor.moisture = null;
+      } else {
+        sensor.moisture = moisture;
+      }
+
+      data.soil_sensors.push(sensor);
+    }
+  }
+
+  return { data: data };
 }
 
 function s8() {
@@ -205,7 +238,7 @@ function u8() {
 
 function s16() {
   var value = buffer.slice(cursor);
-  value = value[0] | value[1] << 8;
+  value = value[0] | (value[1] << 8);
   if ((value & (1 << 15)) > 0) {
     value = (~value & 0xffff) + 1;
     value = -value;
@@ -216,21 +249,21 @@ function s16() {
 
 function u16() {
   var value = buffer.slice(cursor);
-  value = value[0] | value[1] << 8;
+  value = value[0] | (value[1] << 8);
   cursor = cursor + 2;
   return value;
 }
 
 function u32() {
   var value = buffer.slice(cursor);
-  value = value[0] | value[1] << 8 | value[2] << 16 | value[3] << 24;
+  value = value[0] | (value[1] << 8) | (value[2] << 16) | (value[3] << 24);
   cursor = cursor + 4;
   return value;
 }
 
 function s32() {
   var value = buffer.slice(cursor);
-  value = value[0] | value[1] << 8 | value[2] << 16 | value[3] << 24;
+  value = value[0] | (value[1] << 8) | (value[2] << 16) | (value[3] << 24);
   if ((value & (1 << 31)) > 0) {
     value = (~value & 0xffffffff) + 1;
     value = -value;
@@ -240,7 +273,8 @@ function s32() {
 }
 
 if (false) {
-  var hex = "00000020026609ff7fff97260200e712691298b700000000000000000000000000000000000000000000"
-  var buf = Buffer.from(hex, 'hex')
-  console.log(JSON.stringify(Decode(1, buf, 0)));
+  var hex = "af01070eda0d23022e094f096d0d2887c4e46400145c0000";
+  var buf = Buffer.from(hex, "hex");
+  console.log(decodeUplink({ bytes: buf }));
 }
+

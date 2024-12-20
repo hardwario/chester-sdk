@@ -75,7 +75,8 @@ static int compose_lrw(struct ctr_buf *buf)
 	}
 
 	/* Flag RTD_THERM */
-	if (IS_ENABLED(FEATURE_HARDWARE_CHESTER_RTD_A) || IS_ENABLED(FEATURE_HARDWARE_CHESTER_RTD_B)) {
+	if (IS_ENABLED(FEATURE_HARDWARE_CHESTER_RTD_A) ||
+	    IS_ENABLED(FEATURE_HARDWARE_CHESTER_RTD_B)) {
 		header |= BIT(6);
 	}
 
@@ -163,7 +164,7 @@ static int compose_lrw(struct ctr_buf *buf)
 		if (isnan(iaqdata->sensors.last_co2_conc)) {
 			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
 		} else {
-			uint16_t val = iaqdata->sensors.last_co2_conc * 100.f;
+			uint16_t val = iaqdata->sensors.last_co2_conc;
 			ret |= ctr_buf_append_u16_le(buf, val);
 		}
 
@@ -175,10 +176,10 @@ static int compose_lrw(struct ctr_buf *buf)
 		}
 
 		if (isnan(iaqdata->sensors.last_pressure)) {
-			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
+			ret |= ctr_buf_append_u32_le(buf, BIT_MASK(16));
 		} else {
-			uint16_t val = iaqdata->sensors.last_pressure * 100.f;
-			ret |= ctr_buf_append_u16_le(buf, val);
+			uint32_t val = iaqdata->sensors.last_pressure;
+			ret |= ctr_buf_append_u32_le(buf, val);
 		}
 	}
 #endif /* defined(FEATURE_HARDWARE_CHESTER_S1) */
