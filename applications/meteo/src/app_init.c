@@ -23,6 +23,7 @@
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_soil_sensor.h>
 #include <chester/ctr_wdog.h>
+#include <chester/ctr_lrw.h>
 #include <chester/drivers/ctr_s1.h>
 #include <chester/drivers/ctr_z.h>
 
@@ -244,6 +245,24 @@ int app_init(void)
 		}
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_CLOUD) */
+
+#if defined(FEATURE_SUBSYSTEM_LRW)
+	if (g_app_config.mode == APP_CONFIG_MODE_LRW) {
+		ret = ctr_lrw_init(app_handler_lrw, NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_init` failed: %d", ret);
+			return ret;
+		}
+
+		ret = ctr_lrw_start(NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_start` failed: %d", ret);
+			return ret;
+		}
+
+		k_sleep(K_SECONDS(2));
+	}
+#endif
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
 

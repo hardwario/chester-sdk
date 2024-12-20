@@ -130,6 +130,14 @@
 		family-code = <0x28>;
 	};
 };
+/* SUBSYSTEM-LRW   */
+&ctr_lrw_if {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+};
 /* SUBSYSTEM-LTE-V2  */
 / {
 	chosen {

@@ -1,23 +1,23 @@
 version: 1
 variants:
-- name: CHESTER Meteo
-  fw_bundle: com.hardwario.chester.app.meteo
-  fw_name: hio-chester-meteo
-  fw_version: v3.0.2
-- name: CHESTER Meteo Z
-  fw_bundle: com.hardwario.chester.app.meteo.z
-  fw_name: hio-chester-meteo-z
-  fw_version: v3.0.2
-  features:
-  - hardware-chester-z
-  remark: Support for CHESTER-Z
-- name: CHESTER Meteo P
-  fw_bundle: com.hardwario.chester.app.meteo.p
-  fw_name: hio-chester-meteo-p
-  fw_version: v3.0.2
-  extras:
-  - CONFIG_APP_PYRANOMETER=y
-  remark: Support for pyranometer
+  - name: CHESTER Meteo
+    fw_bundle: com.hardwario.chester.app.meteo
+    fw_name: hio-chester-meteo
+    fw_version: v3.0.2
+  - name: CHESTER Meteo Z
+    fw_bundle: com.hardwario.chester.app.meteo.z
+    fw_name: hio-chester-meteo-z
+    fw_version: v3.0.2
+    features:
+      - hardware-chester-z
+    remark: Support for CHESTER-Z
+  - name: CHESTER Meteo P
+    fw_bundle: com.hardwario.chester.app.meteo.p
+    fw_name: hio-chester-meteo-p
+    fw_version: v3.0.2
+    extras:
+      - CONFIG_APP_PYRANOMETER=y
+    remark: Support for pyranometer
 project:
   variant: Meteo
   company: 2024 HARDWARIO a.s.
@@ -26,138 +26,139 @@ project:
   fw_bundle: com.hardwario.chester.app.meteo
   fw_version: v3.0.2
 features:
-- subsystem-accel
-- subsystem-batt
-- subsystem-bluetooth
-- subsystem-ble-tag
-- subsystem-bt-filter-accept-list
-- subsystem-bt-observer
-- subsystem-buf
-- subsystem-button
-- subsystem-cbprintf-fp-support
-- subsystem-cloud
-- subsystem-defaults
-- subsystem-entropy-generator
-- subsystem-flash
-- subsystem-info
-- subsystem-led
-- subsystem-log
-- subsystem-lte-v2
-- subsystem-rtc
-- subsystem-shell
-- subsystem-therm
-- subsystem-tinycrypt
-- subsystem-tinycrypt-sha256
-- subsystem-wdog
-- subsystem-zcbor
-- hardware-chester-barometer-tag
-- subsystem-ds18b20
-- hardware-chester-meteo-a
-- hardware-chester-s2
-- subsystem-soil-sensor
+  - subsystem-accel
+  - subsystem-batt
+  - subsystem-bluetooth
+  - subsystem-ble-tag
+  - subsystem-bt-filter-accept-list
+  - subsystem-bt-observer
+  - subsystem-buf
+  - subsystem-button
+  - subsystem-cbprintf-fp-support
+  - subsystem-cloud
+  - subsystem-defaults
+  - subsystem-entropy-generator
+  - subsystem-flash
+  - subsystem-info
+  - subsystem-led
+  - subsystem-log
+  - subsystem-lte-v2
+  - subsystem-lrw
+  - subsystem-rtc
+  - subsystem-shell
+  - subsystem-therm
+  - subsystem-tinycrypt
+  - subsystem-tinycrypt-sha256
+  - subsystem-wdog
+  - subsystem-zcbor
+  - hardware-chester-barometer-tag
+  - subsystem-ds18b20
+  - hardware-chester-meteo-a
+  - hardware-chester-s2
+  - subsystem-soil-sensor
 #- hardware-chester-z
 parameters:
-- name: interval-sample
-  type: int
-  min: 1
-  max: 86400
-  default: 60
-  help: "Get/Set sample interval in seconds"
-- name: interval-aggreg
-  type: int
-  min: 1
-  max: 86400
-  default: 300
-  help: "Get/Set aggregate interval in seconds"
-- name: interval-report
-  type: int
-  min: 30
-  max: 86400
-  default: 1800
-  help: "Get/Set report interval in seconds"
-- name: interval-poll
-  type: int
-  min: 0
-  max: 86400
-  default: 0
-  help: "Get/Set poll interval in seconds (disabled if 0)"
-- name: downlink-wdg-interval
-  type: int
-  min: 0
-  max: 1209600
-  default: 129600
-  help: "Get/Set downlink watchdog interval in seconds (disabled if 0)"
-- name: event-report-delay
-  type: int
-  min: 1
-  max: 86400
-  default: 1
-  help: "Get/Set event report delay in seconds"
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_S2)
-- name: event-report-rate
-  type: int
-  min: 1
-  max: 3600
-  default: 30
-  help: "Get/Set event report rate in reports per hour"
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_S2)
-- name: backup-report-connected
-  type: bool
-  default: true
-  help: "Get/Set report when backup is active"
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: backup-report-disconnected
-  type: bool
-  default: true
-  help: "Get/Set report when backup is inactive"
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: hygro_t_alarm_hi_report
-  type: bool
-  default: false
-  help: "Enable/Disable high temperature alarm"
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
-- name: hygro_t_alarm_lo_report
-  type: bool
-  default: false
-  help: "Enable/Disable low temperature alarm"
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
-- name: hygro_t_alarm_hi_thr
-  type: float
-  default: 0.0
-  min: -40.0
-  max: 125.0
-  help: "Get/Set high temperature alarm threshold"
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
-- name: hygro_t_alarm_hi_hst
-  type: float
-  default: 0.0
-  min: 0.0
-  max: 100.0
-  help: "Get/Set high temperature alarm hysteresis"
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
-- name: hygro_t_alarm_lo_thr
-  type: float
-  default: 0.0
-  min: -40.0
-  max: 125.0
-  help: "Get/Set low temperature alarm threshold"
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
-- name: hygro_t_alarm_lo_hst
-  type: float
-  default: 0.0
-  min: 0.0
-  max: 100.0
-  help: "Get/Set low temperature alarm hysteresis"
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
+  - name: interval-sample
+    type: int
+    min: 1
+    max: 86400
+    default: 60
+    help: "Get/Set sample interval in seconds"
+  - name: interval-aggreg
+    type: int
+    min: 1
+    max: 86400
+    default: 300
+    help: "Get/Set aggregate interval in seconds"
+  - name: interval-report
+    type: int
+    min: 30
+    max: 86400
+    default: 1800
+    help: "Get/Set report interval in seconds"
+  - name: interval-poll
+    type: int
+    min: 0
+    max: 86400
+    default: 0
+    help: "Get/Set poll interval in seconds (disabled if 0)"
+  - name: downlink-wdg-interval
+    type: int
+    min: 0
+    max: 1209600
+    default: 129600
+    help: "Get/Set downlink watchdog interval in seconds (disabled if 0)"
+  - name: event-report-delay
+    type: int
+    min: 1
+    max: 86400
+    default: 1
+    help: "Get/Set event report delay in seconds"
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_S2)
+  - name: event-report-rate
+    type: int
+    min: 1
+    max: 3600
+    default: 30
+    help: "Get/Set event report rate in reports per hour"
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_S2)
+  - name: backup-report-connected
+    type: bool
+    default: true
+    help: "Get/Set report when backup is active"
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+  - name: backup-report-disconnected
+    type: bool
+    default: true
+    help: "Get/Set report when backup is inactive"
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+  - name: hygro_t_alarm_hi_report
+    type: bool
+    default: false
+    help: "Enable/Disable high temperature alarm"
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
+  - name: hygro_t_alarm_lo_report
+    type: bool
+    default: false
+    help: "Enable/Disable low temperature alarm"
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
+  - name: hygro_t_alarm_hi_thr
+    type: float
+    default: 0.0
+    min: -40.0
+    max: 125.0
+    help: "Get/Set high temperature alarm threshold"
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
+  - name: hygro_t_alarm_hi_hst
+    type: float
+    default: 0.0
+    min: 0.0
+    max: 100.0
+    help: "Get/Set high temperature alarm hysteresis"
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
+  - name: hygro_t_alarm_lo_thr
+    type: float
+    default: 0.0
+    min: -40.0
+    max: 125.0
+    help: "Get/Set low temperature alarm threshold"
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
+  - name: hygro_t_alarm_lo_hst
+    type: float
+    default: 0.0
+    min: 0.0
+    max: 100.0
+    help: "Get/Set low temperature alarm hysteresis"
+    depends_on: defined(FEATURE_HARDWARE_CHESTER_S2)
 commands:
-- name: sample
-  callback: app_work_sample()
-  help: "Sample immediately."
-- name: send
-  callback: app_work_send()
-  help: "Send data immediately."
-- name: aggreg
-  callback: app_work_aggreg()
-  help: "Aggregate data immediately"
+  - name: sample
+    callback: app_work_sample()
+    help: "Sample immediately."
+  - name: send
+    callback: app_work_send()
+    help: "Send data immediately."
+  - name: aggreg
+    callback: app_work_aggreg()
+    help: "Aggregate data immediately"
 extras:
-- CONFIG_ADC_TLA2021_INIT_PRIORITY=60
+  - CONFIG_ADC_TLA2021_INIT_PRIORITY=60

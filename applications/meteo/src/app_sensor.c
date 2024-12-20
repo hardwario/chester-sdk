@@ -9,6 +9,7 @@
 #include "app_work.h"
 #include "app_lambrecht.h"
 #include "app_sensor.h"
+#include "feature.h"
 
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
@@ -163,6 +164,8 @@ static int meteo_sample_wind_direction(void)
 			LOG_INF("Sample count: %d", wd->sample_count);
 		}
 
+		wd->last_sample = *sample;
+
 		app_data_unlock();
 
 	} else {
@@ -199,6 +202,7 @@ static int meteo_sample_wind_speed(void)
 		}
 
 		ws->sample_count++;
+		ws->last_sample = *sample;
 
 		LOG_INF("Wind speed: %.2f m/s", (double)*sample);
 		LOG_INF("Sample count: %d", ws->sample_count);
@@ -378,6 +382,7 @@ static int meteo_aggreg_rainfall(void)
 			return ret;
 		}
 
+		rf->last_sample = rainfall;
 		rf->measurements[rf->measurement_count] = rainfall;
 		rf->measurement_count++;
 
@@ -467,6 +472,7 @@ int app_sensor_barometer_sample(void)
 
 		app_data_lock();
 
+		bp->last_sample = pressure;
 		bp->samples[bp->sample_count] = pressure;
 		bp->sample_count++;
 
@@ -729,6 +735,7 @@ int app_sensor_w1_therm_sample(void)
 
 			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];
 
+			sensor->last_sample_temperature = temperature;
 			sensor->samples_temperature[sensor->sample_count] = temperature;
 			sensor->serial_number = serial_number;
 			sensor->sample_count++;

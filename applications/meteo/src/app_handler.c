@@ -15,6 +15,7 @@
 #include <chester/ctr_led.h>
 #include <chester/ctr_lte.h>
 #include <chester/ctr_rtc.h>
+#include <chester/ctr_lrw.h>
 #include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
@@ -28,6 +29,47 @@
 #include <stddef.h>
 
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
+
+#if defined(FEATURE_SUBSYSTEM_LRW)
+void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param)
+{
+	int ret;
+
+	switch (event) {
+	case CTR_LRW_EVENT_FAILURE:
+		LOG_INF("Event `CTR_LRW_EVENT_FAILURE`");
+		ret = ctr_lrw_start(NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_start` failed: %d", ret);
+		}
+		break;
+	case CTR_LRW_EVENT_START_OK:
+		LOG_INF("Event `CTR_LRW_EVENT_START_OK`");
+		ret = ctr_lrw_join(NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_join` failed: %d", ret);
+		}
+		break;
+	case CTR_LRW_EVENT_START_ERR:
+		LOG_INF("Event `CTR_LRW_EVENT_START_ERR`");
+		break;
+	case CTR_LRW_EVENT_JOIN_OK:
+		LOG_INF("Event `CTR_LRW_EVENT_JOIN_OK`");
+		break;
+	case CTR_LRW_EVENT_JOIN_ERR:
+		LOG_INF("Event `CTR_LRW_EVENT_JOIN_ERR`");
+		break;
+	case CTR_LRW_EVENT_SEND_OK:
+		LOG_INF("Event `CTR_LRW_EVENT_SEND_OK`");
+		break;
+	case CTR_LRW_EVENT_SEND_ERR:
+		LOG_INF("Event `CTR_LRW_EVENT_SEND_ERR`");
+		break;
+	default:
+		LOG_WRN("Unknown event: %d", event);
+	}
+}
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_Z)
 static atomic_t m_report_rate_hourly_counter = 0;
@@ -148,8 +190,9 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 {
 	int ret;
 
-	if (chan != CTR_BUTTON_CHANNEL_INT)
+	if (chan != CTR_BUTTON_CHANNEL_INT) {
 		return;
+	}
 
 	if (ev == CTR_BUTTON_EVENT_CLICK) {
 		for (int i = 0; i < val; i++) {

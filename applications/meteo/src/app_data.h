@@ -8,6 +8,7 @@
 #define APP_DATA_H_
 
 #include "app_lambrecht.h"
+#include "feature.h"
 
 /* CHESTER includes */
 #include <chester/ctr_ble_tag.h>
@@ -64,6 +65,7 @@ struct app_data_meteo_wind_speed {
 	int64_t last_sample_timestamp;
 	int sample_count;
 	float samples[APP_DATA_MAX_SAMPLES];
+	float last_sample;
 
 	int measurement_count;
 	struct app_data_aggreg measurements[APP_DATA_MAX_MEASUREMENTS];
@@ -74,6 +76,7 @@ struct app_data_meteo_wind_speed {
 struct app_data_meteo_wind_direction {
 	int sample_count;
 	float samples[APP_DATA_MAX_SAMPLES];
+	float last_sample;
 
 	int measurement_count;
 	float measurements[APP_DATA_MAX_MEASUREMENTS];
@@ -84,6 +87,7 @@ struct app_data_meteo_wind_direction {
 struct app_data_meteo_rainfall {
 	int measurement_count;
 	float measurements[APP_DATA_MAX_MEASUREMENTS];
+	float last_sample;
 
 	int64_t timestamp;
 };
@@ -100,6 +104,7 @@ struct app_data_meteo {
 struct app_data_barometer_pressure {
 	int sample_count;
 	float samples[APP_DATA_MAX_SAMPLES];
+	float last_sample;
 
 	int measurement_count;
 	struct app_data_aggreg measurements[APP_DATA_MAX_MEASUREMENTS];
@@ -162,6 +167,8 @@ struct app_data_w1_therm_measurement {
 
 struct app_data_w1_therm_sensor {
 	uint64_t serial_number;
+
+	float last_sample_temperature;
 
 	int sample_count;
 	float samples_temperature[APP_DATA_MAX_SAMPLES];
