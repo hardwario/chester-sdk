@@ -34,7 +34,7 @@
 
 /* ### Preserved code "functions" (begin) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A) || defined(FEATURE_SUBSYSTEM_DS18B20)
 
 __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *sample, float mul)
 {
@@ -68,7 +68,7 @@ __unused static void put_sample(zcbor_state_t *zs, struct app_data_aggreg *sampl
 	put_sample_mul(zs, sample, 1.f);
 }
 
-#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) || defined(FEATURE_SUBSYSTEM_DS18B20) */
 
 /* ^^^ Preserved code "functions" (end) */
 
@@ -717,7 +717,7 @@ static int encode(zcbor_state_t *zs)
 	/* ^^^ Preserved code "w1_thermometers" (end) */
 
 	/* ### Preserved code "ble_tags" (begin) */
-	
+
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	zcbor_int32_put(zs, CODEC_KEY_E_BLE_TAGS);
 	{
@@ -760,7 +760,8 @@ static int encode(zcbor_state_t *zs)
 							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 						zcbor_uint64_put(zs, g_app_data.ble_tag.timestamp);
-						zcbor_uint32_put(zs, g_app_config.analog_interval_aggreg);
+						zcbor_uint32_put(
+							zs, g_app_config.analog_interval_aggreg);
 
 						for (int j = 0; j < sensor->measurement_count;
 						     j++) {
@@ -786,7 +787,8 @@ static int encode(zcbor_state_t *zs)
 							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 						zcbor_uint64_put(zs, g_app_data.ble_tag.timestamp);
-						zcbor_uint32_put(zs, g_app_config.analog_interval_aggreg);
+						zcbor_uint32_put(
+							zs, g_app_config.analog_interval_aggreg);
 
 						for (int j = 0; j < sensor->measurement_count;
 						     j++) {

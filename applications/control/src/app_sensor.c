@@ -73,14 +73,14 @@ __unused static void aggreg(float *samples, size_t count, float *minimum, float 
 	*median = samples[count / 2];
 }
 
-#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A) || defined(FEATURE_SUBSYSTEM_DS18B20)
 
 __unused static void aggreg_sample(float *samples, size_t count, struct app_data_aggreg *sample)
 {
 	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
 }
 
-#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) || defined(FEATURE_SUBSYSTEM_DS18B20) */
 
 int app_sensor_sample(void)
 {

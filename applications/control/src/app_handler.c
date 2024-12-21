@@ -425,7 +425,7 @@ void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_d
 			LOG_ERR("Invalid output_2_state value");
 			return;
 		}
-		ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_2, received.output_1_state);
+		ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_2, received.output_2_state);
 	}
 
 	if (received.has_output_3_state) {
@@ -434,7 +434,7 @@ void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_d
 			LOG_ERR("Invalid output_3_state value");
 			return;
 		}
-		ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_3, received.output_1_state);
+		ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_3, received.output_3_state);
 	}
 
 	if (received.has_output_4_state) {
@@ -443,7 +443,7 @@ void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_d
 			LOG_ERR("Invalid output_4_state value");
 			return;
 		}
-		ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_4, received.output_1_state);
+		ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_4, received.output_4_state);
 	}
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B) */
 }
