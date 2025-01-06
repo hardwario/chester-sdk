@@ -67,6 +67,9 @@ struct app_data_channel {
 	int measurement_count;
 	struct app_data_aggreg measurements_mean[APP_DATA_MAX_MEASUREMENTS];
 	struct app_data_aggreg measurements_rms[APP_DATA_MAX_MEASUREMENTS];
+
+	float last_sample_mean;
+	float last_sample_rms;
 };
 #endif /* defined(FEATURE_HARDWARE_CHESTER_K1) */
 

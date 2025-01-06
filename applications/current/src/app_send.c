@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+#include "feature.h"
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
@@ -181,24 +182,21 @@ static int compose_lrw(struct ctr_buf *buf)
 #if defined(FEATURE_HARDWARE_CHESTER_K1)
 	/* Field CHANNELS */
 	for (int i = 0; i < APP_CONFIG_CHANNEL_COUNT; i++) {
-		if (header & BIT(5 + i)) {
+		if (g_app_config.channel_active[i]) {
 			struct app_data_channel *channel = &(g_app_data.channel[i]);
 
-			if (channel->measurement_count == 0) {
-				ret |= ctr_buf_append_s32_le(buf, BIT_MASK(31));
+			if (isnan(channel->last_sample_mean)) {
 				ret |= ctr_buf_append_s32_le(buf, BIT_MASK(31));
 			} else {
-				int32_t mean_avg =
-					channel->measurements_mean[channel->measurement_count - 1]
-						.avg *
-					1000.f;
-				ret |= ctr_buf_append_s32_le(buf, mean_avg);
+				int32_t mean = channel->last_sample_mean * 1000.f;
+				ret |= ctr_buf_append_s32_le(buf, mean);
+			}
 
-				int rms_avg =
-					channel->measurements_rms[channel->measurement_count - 1]
-						.avg *
-					1000.f;
-				ret |= ctr_buf_append_s32_le(buf, rms_avg);
+			if (isnan(channel->last_sample_rms)) {
+				ret |= ctr_buf_append_s32_le(buf, BIT_MASK(31));
+			} else {
+				int32_t rms = channel->last_sample_rms * 1000.f;
+				ret |= ctr_buf_append_s32_le(buf, rms);
 			}
 		}
 	}
@@ -261,7 +259,7 @@ int app_send(void)
 		if (ret) {
 			LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
 			return ret;
-		}	
+		}
 
 		ret = ctr_cloud_send(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf));
 		if (ret) {
@@ -269,7 +267,7 @@ int app_send(void)
 			return ret;
 		}
 		break;
-	
+
 #endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
 
 	default:

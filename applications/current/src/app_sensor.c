@@ -208,11 +208,13 @@ int app_sensor_analog_sample(void)
 	}
 
 	for (size_t i = 0; i < channels_count; i++) {
-		int sample_count = g_app_data.channel[CTR_K1_CHANNEL_IDX(channels[i])].sample_count;
-		g_app_data.channel[CTR_K1_CHANNEL_IDX(channels[i])].samples_mean[sample_count] =
-			results[i].avg;
-		g_app_data.channel[CTR_K1_CHANNEL_IDX(channels[i])].samples_rms[sample_count] =
-			results[i].rms;
+		struct app_data_channel *channel =
+			&g_app_data.channel[CTR_K1_CHANNEL_IDX(channels[i])];
+		int sample_count = channel->sample_count;
+		channel->samples_mean[sample_count] = results[i].avg;
+		channel->samples_rms[sample_count] = results[i].rms;
+		channel->last_sample_mean = results[i].avg;
+		channel->last_sample_rms = results[i].rms;
 
 		LOG_INF("Channel %d: sample count: %d, mean: %.1f, rms: %.1f",
 			CTR_K1_CHANNEL_IDX(channels[i]) + 1, sample_count, results[i].avg,

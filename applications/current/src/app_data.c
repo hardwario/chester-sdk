@@ -48,6 +48,14 @@ struct app_data g_app_data = {
 			.last_sample_humidity = NAN,
 		},
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_K1)
+	.channel[0 ... APP_CONFIG_CHANNEL_COUNT - 1] =
+		{
+			.last_sample_mean = NAN,
+			.last_sample_rms = NAN,
+		},
+#endif /* defined(FEATURE_HARDWARE_CHESTER_K1) */
 };
 
 static K_MUTEX_DEFINE(m_lock);
@@ -61,4 +69,3 @@ void app_data_unlock(void)
 {
 	k_mutex_unlock(&m_lock);
 }
-
