@@ -209,8 +209,12 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 {
 #define EXPORT_FUNC_SCALAR(_key, _var)                                                             \
 	do {                                                                                       \
-		(void)export_func(SETTINGS_PFX "/" #_key, &m_app_config_interim._var,              \
-				  sizeof(m_app_config_interim._var));                              \
+		int ret = export_func(SETTINGS_PFX "/" #_key, &m_app_config_interim._var,          \
+				      sizeof(m_app_config_interim._var));                          \
+		if (ret != 0) {                                                                    \
+			LOG_ERR("Call `export_func` failed: %d", ret);                             \
+			return ret;                                                                \
+		}                                                                                  \
 	} while (0)
 
 #define CONFIG_PARAM_INT(_name_d, _name_u, _min, _max, _help) EXPORT_FUNC_SCALAR(_name_d, _name_u);

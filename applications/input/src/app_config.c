@@ -1107,13 +1107,21 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 {
 #define EXPORT_FUNC_ARRAY(_key, _var, _size)                                                       \
 	do {                                                                                       \
-		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
+		int ret = export_func(SETTINGS_PFX "/" _key, _var, _size);                         \
+		if (ret != 0) {                                                                    \
+			LOG_ERR("Call `export_func` failed: %d", ret);                             \
+			return ret;                                                                \
+		}                                                                                  \
 	} while (0)
 
 #define EXPORT_FUNC_SCALAR(_key, _var)                                                             \
 	do {                                                                                       \
-		(void)export_func(SETTINGS_PFX "/" _key, &m_app_config_interim._var,               \
-				  sizeof(m_app_config_interim._var));                              \
+		int ret = export_func(SETTINGS_PFX "/" _key, &m_app_config_interim._var,           \
+				      sizeof(m_app_config_interim._var));                          \
+		if (ret != 0) {                                                                    \
+			LOG_ERR("Call `export_func` failed: %d", ret);                             \
+			return ret;                                                                \
+		}                                                                                  \
 	} while (0)
 
 	EXPORT_FUNC_SCALAR("interval-report", interval_report);

@@ -202,7 +202,11 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 {
 #define EXPORT_FUNC(_key, _var, _size)                                                             \
 	do {                                                                                       \
-		(void)export_func(SETTINGS_PFX "/" _key, _var, _size);                             \
+		int ret = export_func(SETTINGS_PFX "/" _key, _var, _size);                         \
+		if (ret != 0) {                                                                    \
+			LOG_ERR("Call `export_func` failed: %d", ret);                             \
+			return ret;                                                                \
+		}                                                                                  \
 	} while (0)
 
 	EXPORT_FUNC("active-filter", &m_app_config_interim.active_filter,
