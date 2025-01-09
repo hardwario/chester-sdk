@@ -262,6 +262,48 @@ static void enable_x4_outputs(void)
 }
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) */
 
+#if defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B)
+static void enable_x9_outputs(void)
+{
+	int ret;
+
+#if defined(FEATURE_HARDWARE_CHESTER_X9_A)
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x9_a));
+#elif defined(FEATURE_HARDWARE_CHESTER_X9_B)
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x9_b));
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X9_A) */
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device not ready");
+		return;
+	}
+
+	ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_1, true);
+	if (ret) {
+		LOG_ERR("Call `ctr_x9_set_output` failed: %d", ret);
+		return;
+	}
+
+	ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_2, true);
+	if (ret) {
+		LOG_ERR("Call `ctr_x9_set_output` failed: %d", ret);
+		return;
+	}
+
+	ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_3, true);
+	if (ret) {
+		LOG_ERR("Call `ctr_x9_set_output` failed: %d", ret);
+		return;
+	}
+
+	ret = ctr_x9_set_output(dev, CTR_X9_OUTPUT_4, true);
+	if (ret) {
+		LOG_ERR("Call `ctr_x9_set_output` failed: %d", ret);
+		return;
+	}
+}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B) */
+
 void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val,
 			    void *user_data)
 {
@@ -316,6 +358,10 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 #if defined(FEATURE_HARDWARE_CHESTER_X4_B)
 			enable_x4_outputs();
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X4_B) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B)
+			enable_x9_outputs();
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B) */
 
 			break;
 		}
