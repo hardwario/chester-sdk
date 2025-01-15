@@ -38,6 +38,12 @@ variants:
   fw_version: v3.0.0
   features:
     - hardware-chester-tc-a
+- name: CHESTER Clime SPS30
+  fw_bundle: com.hardwario.chester.app.clime.sps30
+  fw_name: hio-chester-clime-sps30
+  fw_version: v3.0.1
+  features:
+    - hardware-chester-sps30
 project:
   variant: Clime
   company: 2024 HARDWARIO a.s.
@@ -75,6 +81,7 @@ features:
 #- chester-app-tamper
 #- hardware-chester-s1
 #- hardware-chester-s2
+#- hardware-chester-sps30
 #- hardware-chester-rtd-a
 #- hardware-chester-rtd-b
 #- hardware-chester-x4-b

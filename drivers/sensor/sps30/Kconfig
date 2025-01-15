@@ -1,0 +1,17 @@
+# Sensirion SPS30 Particulate Matter Sensor
+
+#
+# Copyright (c) 2024 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+menuconfig SPS30
+	bool "SPS30 Particulate Matter Sensor"
+	depends on I2C
+	help
+	  Enable the driver for Sensirion SPS30 Particulate Matter Sensor
+
+if SPS30
+
+endif # SPS30

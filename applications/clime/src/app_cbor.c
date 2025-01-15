@@ -817,6 +817,222 @@ static int encode(zcbor_state_t *zs)
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
+#if defined(FEATURE_HARDWARE_CHESTER_SPS30)
+	zcbor_uint32_put(zs, CODEC_KEY_E_SPS30);
+	{
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__PM1);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__PM1__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.sps30.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.sps30.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.sps30.measurements[i].mass_conc_pm_1_0,
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__PM2_5);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__PM2_5__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.sps30.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.sps30.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.sps30.measurements[i].mass_conc_pm_2_5,
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__PM4);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__PM4__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.sps30.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.sps30.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.sps30.measurements[i].mass_conc_pm_4_0,
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__PM10);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__PM10__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.sps30.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.sps30.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.sps30.measurements[i].mass_conc_pm_10_0,
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__NUM_PM0_5);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__NUM_PM0_5__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.sps30.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.sps30.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.sps30.measurements[i].num_conc_pm_0_5,
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__NUM_PM1);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__NUM_PM1__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.sps30.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.sps30.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.sps30.measurements[i].num_conc_pm_1_0,
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__NUM_PM2_5);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__NUM_PM2_5__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.sps30.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.sps30.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.sps30.measurements[i].num_conc_pm_2_5,
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__NUM_PM4);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__NUM_PM4__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.sps30.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.sps30.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.sps30.measurements[i].num_conc_pm_4_0,
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__NUM_PM10);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SPS30__NUM_PM10__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.sps30.timestamp);
+				zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.sps30.measurement_count; i++) {
+					put_sample_mul(
+						zs,
+						&g_app_data.sps30.measurements[i].num_conc_pm_10_0,
+						100.f);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_SPS30) */
+
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 	zcbor_int32_put(zs, CODEC_KEY_E_BLE_TAGS);

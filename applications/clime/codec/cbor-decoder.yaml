@@ -206,6 +206,142 @@ schema:
                   - max:
                   - avg:
                   - mdn:
+  - sps30:
+      - pm1:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
+      - pm2_5:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
+      - pm4:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
+      - pm10:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
+      - num_pm0_5:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
+      - num_pm1:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
+      - num_pm2_5:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
+      - num_pm4:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
+      - num_pm10:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
   - ble_tags:
       - addr:
       - rssi:

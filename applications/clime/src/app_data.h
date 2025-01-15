@@ -280,6 +280,56 @@ struct app_data_soil_sensor {
 
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
+#if defined(FEATURE_HARDWARE_CHESTER_SPS30)
+
+struct app_data_sps30_measurement {
+	struct app_data_aggreg mass_conc_pm_1_0;
+	struct app_data_aggreg mass_conc_pm_2_5;
+	struct app_data_aggreg mass_conc_pm_4_0;
+	struct app_data_aggreg mass_conc_pm_10_0;
+
+	struct app_data_aggreg num_conc_pm_0_5;
+	struct app_data_aggreg num_conc_pm_1_0;
+	struct app_data_aggreg num_conc_pm_2_5;
+	struct app_data_aggreg num_conc_pm_4_0;
+	struct app_data_aggreg num_conc_pm_10_0;
+};
+
+struct app_data_sps30 {
+	struct app_data_aggreg temperature;
+	struct app_data_aggreg humidity;
+
+	float last_sample_mass_conc_pm_1_0;
+	float last_sample_mass_conc_pm_2_5;
+	float last_sample_mass_conc_pm_4_0;
+	float last_sample_mass_conc_pm_10_0;
+
+	float last_sample_num_conc_pm_0_5;
+	float last_sample_num_conc_pm_1_0;
+	float last_sample_num_conc_pm_2_5;
+	float last_sample_num_conc_pm_4_0;
+	float last_sample_num_conc_pm_10_0;
+
+	int sample_count;
+	float samples_mass_conc_pm_1_0[APP_DATA_MAX_SAMPLES];
+	float samples_mass_conc_pm_2_5[APP_DATA_MAX_SAMPLES];
+	float samples_mass_conc_pm_4_0[APP_DATA_MAX_SAMPLES];
+	float samples_mass_conc_pm_10_0[APP_DATA_MAX_SAMPLES];
+
+	float samples_num_conc_pm_0_5[APP_DATA_MAX_SAMPLES];
+	float samples_num_conc_pm_1_0[APP_DATA_MAX_SAMPLES];
+	float samples_num_conc_pm_2_5[APP_DATA_MAX_SAMPLES];
+	float samples_num_conc_pm_4_0[APP_DATA_MAX_SAMPLES];
+	float samples_num_conc_pm_10_0[APP_DATA_MAX_SAMPLES];
+
+	int measurement_count;
+	struct app_data_sps30_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	int64_t timestamp;
+};
+
+#endif /* defined(FEATURE_HARDWARE_CHESTER_SPS30) */
+
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 struct app_data_ble_tag_measurement {
@@ -355,6 +405,10 @@ struct app_data {
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 	struct app_data_soil_sensor soil_sensor;
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_SPS30)
+	struct app_data_sps30 sps30;
+#endif /* defined(FEATURE_HARDWARE_CHESTER_SPS30) */
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	struct app_data_ble_tag ble_tag;

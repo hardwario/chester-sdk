@@ -314,6 +314,23 @@ config CTR_SOIL_SENSOR
 	default y
 	{%- endif -%}
 
+{#- SPS30 #}
+	{%- if feature == 'hardware-chester-sps30' %}
+# {{ feature | upper }}
+config SHIELD_CTR_SPS30
+	bool "Enable SHIELD_CTR_SPS30"
+	default y
+
+config SPS30
+	default y
+
+config I2C
+	default y
+
+config SENSOR
+	default y
+	{%- endif -%}
+
 {#- WEIGHT_PROBE #}
 	{%- if feature == 'hardware-chester-weight-probe' %}
 # {{ feature | upper }}

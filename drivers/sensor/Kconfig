@@ -12,5 +12,6 @@ menuconfig SENSOR
 if SENSOR
 
 rsource "mpl3115a2/Kconfig"
+rsource "sps30/Kconfig"
 
 endif # SENSOR

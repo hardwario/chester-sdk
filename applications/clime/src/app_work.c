@@ -130,6 +130,10 @@ static void send_work_handler(struct k_work *work)
 	app_sensor_soil_sensor_clear();
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
+#if defined(FEATURE_HARDWARE_CHESTER_SPS30)
+	app_sensor_sps30_clear();
+#endif /* defined(FEATURE_HARDWARE_CHESTER_SPS30) */
+
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	app_sensor_ble_tag_clear();
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
@@ -520,6 +524,58 @@ static K_TIMER_DEFINE(m_soil_sensor_aggreg_timer, soil_sensor_aggreg_timer_handl
 
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
+#if defined(FEATURE_HARDWARE_CHESTER_SPS30)
+
+static void sps30_sample_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_sps30_sample();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_sps30_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_sps30_sample_work, sps30_sample_work_handler);
+
+static void sps30_sample_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_sps30_sample_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_sps30_sample_timer, sps30_sample_timer_handler, NULL);
+
+static void sps30_aggreg_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_sps30_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_sps30_aggreg` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_sps30_aggreg_work, sps30_aggreg_work_handler);
+
+static void sps30_aggreg_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_sps30_aggreg_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_sps30_aggreg_timer, sps30_aggreg_timer_handler, NULL);
+
+#endif /* defined(FEATURE_HARDWARE_CHESTER_SPS30) */
+
 #if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
 
 static void backup_work_handler(struct k_work *work)
@@ -651,6 +707,13 @@ int app_work_init(void)
 		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
+#if defined(FEATURE_HARDWARE_CHESTER_SPS30)
+	k_timer_start(&m_sps30_sample_timer, K_SECONDS(g_app_config.interval_sample),
+		      K_SECONDS(g_app_config.interval_sample));
+	k_timer_start(&m_sps30_aggreg_timer, K_SECONDS(g_app_config.interval_aggreg),
+		      K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(FEATURE_HARDWARE_CHESTER_SPS30) */
+
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_timer_start(&m_ble_tag_sample_timer, K_SECONDS(g_app_config.interval_sample),
 		      K_SECONDS(g_app_config.interval_sample));
@@ -690,6 +753,10 @@ void app_work_sample(void)
 	k_timer_start(&m_soil_sensor_sample_timer, K_NO_WAIT,
 		      K_SECONDS(g_app_config.interval_sample));
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_SPS30)
+	k_timer_start(&m_sps30_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
+#endif /* defined(FEATURE_HARDWARE_CHESTER_SPS30) */
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_timer_start(&m_ble_tag_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));

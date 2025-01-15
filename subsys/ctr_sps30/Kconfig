@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2024 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_SPS30
+	bool "CTR_SPS30"
+	select CBPRINTF_FP_SUPPORT if CTR_SPS30_LOG_LEVEL_DBG || CTR_SPS30_SHELL
+	select I2C
+	select SENSOR
+	select SPS30
+
+if CTR_SPS30
+
+module = CTR_SPS30
+module-str = CHESTER SPS30 Particulate Matter Sensor Sensor Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_SPS30_SHELL
+	bool "CTR_SPS30_SHELL"
+	depends on SHELL
+	default y
+
+endif # CTR_SPS30

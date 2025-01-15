@@ -585,6 +585,22 @@
 };
 	{%- endif -%}
 
+{#- SPS30 #}
+	{%- if feature == 'hardware-chester-sps30' %}
+/* {{ feature | upper }}  */
+&sps30_ext {
+	status = "okay";
+};
+
+&ctr_x0_a {
+	status = "okay";
+};
+
+&ctr_x0_pcal6416a_a {
+	status = "okay";
+};
+	{%- endif -%}
+
 {#- WEIGHT_PROBE #}
 	{%- if feature == 'hardware-chester-weight-probe' %}
 /* {{ feature | upper }}  */

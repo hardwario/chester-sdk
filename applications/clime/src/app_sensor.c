@@ -17,6 +17,7 @@
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_rtd.h>
 #include <chester/ctr_soil_sensor.h>
+#include <chester/ctr_sps30.h>
 #include <chester/ctr_tc.h>
 #include <chester/ctr_therm.h>
 #include <chester/drivers/ctr_batt.h>
@@ -894,6 +895,152 @@ int app_sensor_soil_sensor_clear(void)
 }
 
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_SPS30)
+
+int app_sensor_sps30_sample(void)
+{
+	int ret;
+
+	float pm_1_0;
+	float pm_2_5;
+	float pm_4_0;
+	float pm_10_0;
+
+	float num_0_5;
+	float num_1_0;
+	float num_2_5;
+	float num_4_0;
+	float num_10_0;
+
+	if (g_app_data.sps30.sample_count < APP_DATA_MAX_SAMPLES) {
+		ret = ctr_sps30_read(&pm_1_0, &pm_2_5, &pm_4_0, &pm_10_0, &num_0_5, &num_1_0,
+				     &num_2_5, &num_4_0, &num_10_0);
+		if (ret) {
+			LOG_ERR("Call `ctr_sps30_read` failed: %d", ret);
+			pm_1_0 = NAN;
+			pm_2_5 = NAN;
+			pm_4_0 = NAN;
+			pm_10_0 = NAN;
+
+			num_0_5 = NAN;
+			num_1_0 = NAN;
+			num_2_5 = NAN;
+			num_4_0 = NAN;
+			num_10_0 = NAN;
+		} else {
+			LOG_INF("SPS30: Mass Concentration PM1.0: %.2f ug/m3", pm_1_0);
+			LOG_INF("SPS30: Mass Concentration PM2.5: %.2f ug/m3", pm_2_5);
+			LOG_INF("SPS30: Mass Concentration PM4.0: %.2f ug/m3", pm_4_0);
+			LOG_INF("SPS30: Mass Concentration PM10.0: %.2f ug/m3", pm_10_0);
+
+			LOG_INF("SPS30: Number Concentration PM0.5: %.2f", num_0_5);
+			LOG_INF("SPS30: Number Concentration PM1.0: %.2f", num_1_0);
+			LOG_INF("SPS30: Number Concentration PM2.5: %.2f", num_2_5);
+			LOG_INF("SPS30: Number Concentration PM4.0: %.2f", num_4_0);
+			LOG_INF("SPS30: Number Concentration PM10.0: %.2f", num_10_0);
+		}
+
+		app_data_lock();
+		g_app_data.sps30.last_sample_mass_conc_pm_1_0 = pm_1_0;
+		g_app_data.sps30.last_sample_mass_conc_pm_2_5 = pm_2_5;
+		g_app_data.sps30.last_sample_mass_conc_pm_4_0 = pm_4_0;
+		g_app_data.sps30.last_sample_mass_conc_pm_10_0 = pm_10_0;
+
+		g_app_data.sps30.last_sample_num_conc_pm_0_5 = num_0_5;
+		g_app_data.sps30.last_sample_num_conc_pm_1_0 = num_1_0;
+		g_app_data.sps30.last_sample_num_conc_pm_2_5 = num_2_5;
+		g_app_data.sps30.last_sample_num_conc_pm_4_0 = num_4_0;
+		g_app_data.sps30.last_sample_num_conc_pm_10_0 = num_10_0;
+
+		g_app_data.sps30.samples_mass_conc_pm_1_0[g_app_data.sps30.sample_count] = pm_1_0;
+		g_app_data.sps30.samples_mass_conc_pm_2_5[g_app_data.sps30.sample_count] = pm_2_5;
+		g_app_data.sps30.samples_mass_conc_pm_4_0[g_app_data.sps30.sample_count] = pm_4_0;
+		g_app_data.sps30.samples_mass_conc_pm_10_0[g_app_data.sps30.sample_count] = pm_10_0;
+
+		g_app_data.sps30.samples_num_conc_pm_0_5[g_app_data.sps30.sample_count] = num_0_5;
+		g_app_data.sps30.samples_num_conc_pm_1_0[g_app_data.sps30.sample_count] = num_1_0;
+		g_app_data.sps30.samples_num_conc_pm_2_5[g_app_data.sps30.sample_count] = num_2_5;
+		g_app_data.sps30.samples_num_conc_pm_4_0[g_app_data.sps30.sample_count] = num_4_0;
+		g_app_data.sps30.samples_num_conc_pm_10_0[g_app_data.sps30.sample_count] = num_10_0;
+
+		g_app_data.sps30.sample_count++;
+		app_data_unlock();
+
+		LOG_INF("Sample count: %d", g_app_data.sps30.sample_count);
+	} else {
+		LOG_WRN("Sample buffer full");
+		return -ENOSPC;
+	}
+
+	return 0;
+}
+
+int app_sensor_sps30_aggreg(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	if (g_app_data.sps30.measurement_count == 0) {
+		ret = ctr_rtc_get_ts(&g_app_data.sps30.timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			app_data_unlock();
+			return ret;
+		}
+	}
+
+	if (g_app_data.sps30.measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+		struct app_data_sps30_measurement *sps30_measurement =
+			&g_app_data.sps30.measurements[g_app_data.sps30.measurement_count];
+
+		aggreg_sample(g_app_data.sps30.samples_mass_conc_pm_1_0,
+			      g_app_data.sps30.sample_count, &sps30_measurement->mass_conc_pm_1_0);
+		aggreg_sample(g_app_data.sps30.samples_mass_conc_pm_2_5,
+			      g_app_data.sps30.sample_count, &sps30_measurement->mass_conc_pm_2_5);
+		aggreg_sample(g_app_data.sps30.samples_mass_conc_pm_4_0,
+			      g_app_data.sps30.sample_count, &sps30_measurement->mass_conc_pm_4_0);
+		aggreg_sample(g_app_data.sps30.samples_mass_conc_pm_10_0,
+			      g_app_data.sps30.sample_count, &sps30_measurement->mass_conc_pm_10_0);
+
+		aggreg_sample(g_app_data.sps30.samples_num_conc_pm_0_5,
+			      g_app_data.sps30.sample_count, &sps30_measurement->num_conc_pm_0_5);
+		aggreg_sample(g_app_data.sps30.samples_num_conc_pm_1_0,
+			      g_app_data.sps30.sample_count, &sps30_measurement->num_conc_pm_1_0);
+		aggreg_sample(g_app_data.sps30.samples_num_conc_pm_2_5,
+			      g_app_data.sps30.sample_count, &sps30_measurement->num_conc_pm_2_5);
+		aggreg_sample(g_app_data.sps30.samples_num_conc_pm_4_0,
+			      g_app_data.sps30.sample_count, &sps30_measurement->num_conc_pm_4_0);
+		aggreg_sample(g_app_data.sps30.samples_num_conc_pm_10_0,
+			      g_app_data.sps30.sample_count, &sps30_measurement->num_conc_pm_10_0);
+
+		g_app_data.sps30.measurement_count++;
+
+		LOG_INF("Measurement count: %d", g_app_data.sps30.measurement_count);
+	} else {
+		LOG_WRN("Measurement buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	g_app_data.sps30.sample_count = 0;
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_sps30_clear(void)
+{
+	app_data_lock();
+	g_app_data.sps30.measurement_count = 0;
+	app_data_unlock();
+
+	return 0;
+}
+
+#endif /* defined(FEATURE_HARDWARE_CHESTER_SPS30) */
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 int app_sensor_ble_tag_sample(void)

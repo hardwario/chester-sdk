@@ -216,6 +216,13 @@
 		reg = <0x45>;
 	};
 
+	sps30_ext: sps30_ext@69 {
+		compatible = "sensirion,sps30";
+		status = "disabled";
+		reg = <0x69>;
+		deferred-init;
+	};
+
 	ctr_barometer_tag: ctr_barometer_tag@60 {
 		compatible = "nxp,mpl3115a2";
 		status = "disabled";

@@ -56,6 +56,18 @@ struct app_data g_app_data = {
 		},
 #endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B) */
 
+#if defined(FEATURE_HARDWARE_CHESTER_SPS30)
+	.sps30 = {.last_sample_mass_conc_pm_1_0 = NAN,
+		  .last_sample_mass_conc_pm_2_5 = NAN,
+		  .last_sample_mass_conc_pm_4_0 = NAN,
+		  .last_sample_mass_conc_pm_10_0 = NAN,
+		  .last_sample_num_conc_pm_0_5 = NAN,
+		  .last_sample_num_conc_pm_1_0 = NAN,
+		  .last_sample_num_conc_pm_2_5 = NAN,
+		  .last_sample_num_conc_pm_4_0 = NAN,
+		  .last_sample_num_conc_pm_10_0 = NAN},
+#endif /* defined(FEATURE_HARDWARE_CHESTER_SPS30) */
+
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	.ble_tag.sensor[0 ... CTR_BLE_TAG_COUNT - 1] =
 		{
