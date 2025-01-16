@@ -12,6 +12,7 @@
 #include <chester/ctr_accel.h>
 #include <chester/ctr_hygro.h>
 #include <chester/ctr_therm.h>
+#include <chester/ctr_rtc.h>
 #include <chester/drivers/ctr_batt.h>
 #include <chester/drivers/ctr_z.h>
 
