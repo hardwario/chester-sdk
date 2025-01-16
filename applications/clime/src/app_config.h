@@ -32,6 +32,7 @@ struct app_config {
 	int interval_aggreg;
 	int interval_report;
 	int interval_poll;
+	int downlink_wdg_interval;
 
 #if defined(FEATURE_HARDWARE_CHESTER_S1)
 	float iaq_led_thr_warning;

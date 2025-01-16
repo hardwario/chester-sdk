@@ -108,6 +108,12 @@ parameters:
   max: 86400
   default: 0
   help: "Get/Set poll interval in seconds (disabled if 0)"
+- name: downlink-wdg-interval
+  type: int
+  min: 0
+  max: 1209600
+  default: 129600
+  help: "Get/Set downlink watchdog interval in seconds (disabled if 0)"
 - name: iaq-led-thr-warning
   type: float
   min: -40.0
