@@ -163,6 +163,30 @@ schema:
         - mdn:
           - $div: 100
           - $fpp: 2
+  - soil_sensors:
+    - serial_number:
+    - temperature:
+      - measurements:
+        - $tsp:
+          - min:
+            - $div: 100
+            - $fpp: 2
+          - max:
+            - $div: 100
+            - $fpp: 2
+          - avg:
+            - $div: 100
+            - $fpp: 2
+          - mdn:
+            - $div: 100
+            - $fpp: 2
+    - moisture:
+      - measurements:
+        - $tsp:
+          - min:
+          - max:
+          - avg:
+          - mdn:
   - ble_tags:
       - addr:
       - rssi:

@@ -16,6 +16,7 @@
 #include <chester/ctr_adc.h>
 #include <chester/ctr_button.h>
 #include <chester/ctr_cloud.h>
+#include <chester/ctr_soil_sensor.h>
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_edge.h>
 #include <chester/ctr_led.h>
@@ -492,6 +493,30 @@ int app_init(void)
 		return ret;
 	}
 
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+	ret = init_chester_x0();
+	if (ret) {
+		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
+		k_oops();
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
+
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
+	ret = ctr_ds18b20_scan();
+	if (ret) {
+		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	ret = ctr_soil_sensor_scan();
+	if (ret) {
+		LOG_ERR("Call `ctr_soil_sensor_scan` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+
 #if defined(FEATURE_SUBSYSTEM_CLOUD)
 	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
 		CODEC_CLOUD_OPTIONS_STATIC(copt);
@@ -554,22 +579,6 @@ int app_init(void)
 		return ret;
 	}
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
-	ret = init_chester_x0();
-	if (ret) {
-		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
-		k_oops();
-	}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
-
-#if defined(FEATURE_SUBSYSTEM_DS18B20)
-	ret = ctr_ds18b20_scan();
-	if (ret) {
-		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
-		return ret;
-	}
-#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
 	return 0;
 }

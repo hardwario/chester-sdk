@@ -45,6 +45,8 @@
 #define APP_DATA_W1_THERM_MAX_MEASUREMENTS 64
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
+#define APP_DATA_SOIL_SENSOR_COUNT 10
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -154,6 +156,31 @@ struct app_data_w1_therm {
 };
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+
+struct app_data_soil_sensor_measurement {
+	struct app_data_aggreg temperature;
+	struct app_data_aggreg moisture;
+};
+
+struct app_data_soil_sensor_sensor {
+	uint64_t serial_number;
+
+	int sample_count;
+	float samples_temperature[APP_DATA_MAX_SAMPLES];
+	float samples_moisture[APP_DATA_MAX_SAMPLES];
+
+	int measurement_count;
+	struct app_data_soil_sensor_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
+};
+
+struct app_data_soil_sensor {
+	struct app_data_soil_sensor_sensor sensor[APP_DATA_SOIL_SENSOR_COUNT];
+	int64_t timestamp;
+};
+
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 struct app_data_ble_tag_measurement {
@@ -216,6 +243,10 @@ struct app_data {
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 	struct app_data_w1_therm w1_therm;
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	struct app_data_soil_sensor soil_sensor;
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
 #if defined(CONFIG_CTR_BLE_TAG)
 	struct app_data_ble_tag ble_tag;

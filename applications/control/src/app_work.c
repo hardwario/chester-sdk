@@ -71,6 +71,10 @@ static void send_work_handler(struct k_work *work)
 	app_sensor_w1_therm_clear();
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	app_sensor_soil_sensor_clear();
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+
 #if defined(CONFIG_CTR_BLE_TAG)
 	app_sensor_ble_tag_clear();
 #endif /* defined(CONFIG_CTR_BLE_TAG) */
@@ -82,8 +86,7 @@ static void sample_work_handler(struct k_work *work)
 {
 	int ret;
 
-	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
-				  K_SECONDS(60));
+	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work, K_SECONDS(60));
 
 #if defined(FEATURE_HARDWARE_CHESTER_Z)
 	ret = app_backup_sample();
@@ -240,6 +243,40 @@ static K_WORK_DELAYABLE_DEFINE(m_w1_therm_aggreg_work, w1_therm_aggreg_work_hand
 
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+
+static void soil_sensor_sample_work_handler(struct k_work *work)
+{
+	int ret;
+
+	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
+				  K_SECONDS(g_app_config.w1_therm_interval_sample));
+
+	ret = app_sensor_soil_sensor_sample();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_soil_sensor_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(m_soil_sensor_sample_work, soil_sensor_sample_work_handler);
+
+static void soil_sensor_aggreg_work_handler(struct k_work *work)
+{
+	int ret;
+
+	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
+				  K_SECONDS(g_app_config.w1_therm_interval_aggreg));
+
+	ret = app_sensor_soil_sensor_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_soil_sensor_aggreg` failed: %d", ret);
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(m_soil_sensor_aggreg_work, soil_sensor_aggreg_work_handler);
+
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+
 #if defined(FEATURE_HARDWARE_CHESTER_Z)
 
 static void backup_work_handler(struct k_work *work)
@@ -332,9 +369,12 @@ int app_work_init(void)
 	k_work_schedule_for_queue(&m_work_q, &m_power_work, K_SECONDS(60));
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
-	k_work_schedule_for_queue(&m_work_q, &m_counter_aggreg_work, K_SECONDS(g_app_config.counter_interval_aggreg));
-	k_work_schedule_for_queue(&m_work_q, &m_analog_sample_work, K_SECONDS(g_app_config.analog_interval_sample));
-	k_work_schedule_for_queue(&m_work_q, &m_analog_aggreg_work, K_SECONDS(g_app_config.analog_interval_aggreg));
+	k_work_schedule_for_queue(&m_work_q, &m_counter_aggreg_work,
+				  K_SECONDS(g_app_config.counter_interval_aggreg));
+	k_work_schedule_for_queue(&m_work_q, &m_analog_sample_work,
+				  K_SECONDS(g_app_config.analog_interval_sample));
+	k_work_schedule_for_queue(&m_work_q, &m_analog_aggreg_work,
+				  K_SECONDS(g_app_config.analog_interval_aggreg));
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2)
@@ -350,6 +390,13 @@ int app_work_init(void)
 	k_work_schedule_for_queue(&m_work_q, &m_w1_therm_aggreg_work,
 				  K_SECONDS(g_app_config.w1_therm_interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	k_work_schedule_for_queue(&m_work_q, &m_soil_sensor_sample_work,
+				  K_SECONDS(g_app_config.w1_therm_interval_sample));
+	k_work_schedule_for_queue(&m_work_q, &m_soil_sensor_aggreg_work,
+				  K_SECONDS(g_app_config.w1_therm_interval_aggreg));
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
 #if defined(CONFIG_CTR_BLE_TAG)
 	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_sample_work,
@@ -376,6 +423,10 @@ void app_work_aggreg(void)
 	k_work_reschedule_for_queue(&m_work_q, &m_w1_therm_aggreg_work, K_NO_WAIT);
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	k_work_reschedule_for_queue(&m_work_q, &m_soil_sensor_aggreg_work, K_NO_WAIT);
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+
 #if defined(CONFIG_CTR_BLE_TAG)
 	k_work_reschedule_for_queue(&m_work_q, &m_ble_tag_aggreg_work, K_NO_WAIT);
 #endif /* defined(CONFIG_CTR_BLE_TAG) */
@@ -396,6 +447,10 @@ void app_work_sample(void)
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 	k_work_reschedule_for_queue(&m_work_q, &m_w1_therm_sample_work, K_NO_WAIT);
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	k_work_reschedule_for_queue(&m_work_q, &m_soil_sensor_sample_work, K_NO_WAIT);
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
 #if defined(CONFIG_CTR_BLE_TAG)
 	k_work_reschedule_for_queue(&m_work_q, &m_ble_tag_aggreg_work, K_NO_WAIT);

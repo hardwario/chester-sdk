@@ -34,6 +34,13 @@ config SHIELD_CTR_LTE_V2
 
 config CTR_LTE_V2
 	default y
+# SUBSYSTEM-SOIL-SENSOR
+config SHIELD_CTR_SOIL_SENSOR
+	bool "Enable SHIELD_CTR_SOIL_SENSOR"
+	default y
+
+config CTR_SOIL_SENSOR
+	default y
 
 # ### Preserved code "k_config" (begin)
 # ^^^ Preserved code "k_config" (end)

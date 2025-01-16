@@ -30,6 +30,7 @@
 #define FEATURE_SUBSYSTEM_LTE_V2                1
 #define FEATURE_SUBSYSTEM_RTC                   1
 #define FEATURE_SUBSYSTEM_SHELL                 1
+#define FEATURE_SUBSYSTEM_SOIL_SENSOR           1
 #define FEATURE_SUBSYSTEM_THERM                 1
 #define FEATURE_SUBSYSTEM_TINYCRYPT             1
 #define FEATURE_SUBSYSTEM_TINYCRYPT_SHA256      1

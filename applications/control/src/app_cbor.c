@@ -728,6 +728,75 @@ static int encode(zcbor_state_t *zs)
 
 	/* ^^^ Preserved code "w1_thermometers" (end) */
 
+	/* ### Preserved code "soil_sensors" (begin) */
+
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	zcbor_uint32_put(zs, CODEC_KEY_E_SOIL_SENSORS);
+	{
+		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		for (int i = 0; i < APP_DATA_SOIL_SENSOR_COUNT; i++) {
+			struct app_data_soil_sensor_sensor *sensor =
+				&g_app_data.soil_sensor.sensor[i];
+
+			if (!sensor->serial_number) {
+				continue;
+			}
+
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SOIL_SENSORS__SERIAL_NUMBER);
+			zcbor_uint64_put(zs, sensor->serial_number);
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SOIL_SENSORS__TEMPERATURE);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(
+					zs, CODEC_KEY_E_SOIL_SENSORS__TEMPERATURE__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.soil_sensor.timestamp);
+					zcbor_uint32_put(zs, g_app_config.w1_therm_interval_aggreg);
+
+					for (int j = 0; j < sensor->measurement_count; j++) {
+						put_sample_mul(zs,
+							       &sensor->measurements[j].temperature,
+							       100.f);
+					}
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SOIL_SENSORS__MOISTURE);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs,
+						 CODEC_KEY_E_SOIL_SENSORS__MOISTURE__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.soil_sensor.timestamp);
+					zcbor_uint32_put(zs, g_app_config.w1_therm_interval_aggreg);
+
+					for (int j = 0; j < sensor->measurement_count; j++) {
+						put_sample(zs, &sensor->measurements[j].moisture);
+					}
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+
+	/* ^^^ Preserved code "soil_sensors" (end) */
+
 	/* ### Preserved code "ble_tags" (begin) */
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)

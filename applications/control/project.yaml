@@ -38,6 +38,7 @@ features:
 - subsystem-zcbor
 - subsystem-lte-v2
 - subsystem-ds18b20
+- subsystem-soil-sensor
 - hardware-chester-x0-a
 - hardware-chester-x4-b
 #- hardware-chester-x0-a
