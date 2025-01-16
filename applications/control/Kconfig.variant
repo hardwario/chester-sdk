@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-config VARIANT_CONTROL
-    bool "Enable VARIANT_CONTROL"
+config VARIANT_CHESTER_CONTROL
+    bool "Enable VARIANT_CHESTER_CONTROL"
     default y
+        
