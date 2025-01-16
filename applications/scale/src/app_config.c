@@ -39,6 +39,7 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_INT("interval-poll", m_config_interim.interval_poll, 0, 86400, "Get/Set poll interval in seconds.", 0),
 	CTR_CONFIG_ITEM_INT("interval-sample", m_config_interim.interval_sample, 1, 86400, "Get/Set sample interval in seconds.", 60),
 	CTR_CONFIG_ITEM_INT("interval-aggreg", m_config_interim.interval_aggreg, 1, 86400, "Get/Set aggregate interval in seconds.", 300),
+	CTR_CONFIG_ITEM_INT("downlink-wdg-interval", m_config_interim.downlink_wdg_interval, 0, 1209600, "Get/Set downlink watchdog interval in seconds (disabled if 0).", 129600),
 	CTR_CONFIG_ITEM_BOOL("channel-a1-active", m_config_interim.channel_a1_active, "Get/Set channel A1 activation.", true),
 	CTR_CONFIG_ITEM_BOOL("channel-a2-active", m_config_interim.channel_a2_active, "Get/Set channel A2 activation.", true),
 	CTR_CONFIG_ITEM_BOOL("channel-b1-active", m_config_interim.channel_b1_active, "Get/Set channel B1 activation.", true),

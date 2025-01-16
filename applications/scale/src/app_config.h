@@ -31,6 +31,7 @@ struct app_config {
 	int interval_poll;
 	int interval_sample;
 	int interval_aggreg;
+	int downlink_wdg_interval;
 	bool channel_a1_active;
 	bool channel_a2_active;
 	bool channel_b1_active;

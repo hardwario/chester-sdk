@@ -18,7 +18,7 @@ project:
   fw_name: CHESTER Scale
   fw_version: v3.0.0
   fw_bundle: com.hardwario.chester.app.scale
-features: 
+features:
 - subsystem-accel
 - subsystem-batt
 - subsystem-bluetooth
@@ -42,11 +42,11 @@ features:
 - subsystem-zcbor
 - subsystem-lte-v2
 - subsystem-cloud
-- hardware-chester-x3-a 
+- hardware-chester-x3-a
 - chester-app-report-jitter
-#- hardware-chester-x3-b 
+#- hardware-chester-x3-b
 #- hardware-chester-z
-#- hardware-chester-people-counter 
+#- hardware-chester-people-counter
 parameters:
 - name: interval-report
   type: int
@@ -72,30 +72,36 @@ parameters:
   max: 86400
   default: 300
   help: "Get/Set aggregate interval in seconds"
+- name: downlink-wdg-interval
+  type: int
+  min: 0
+  max: 1209600
+  default: 129600
+  help: "Get/Set downlink watchdog interval in seconds (disabled if 0)"
 - name: event-report-delay
   type: int
   min: 1
   max: 86400
   default: 1
   help: 'Get/Set event report delay in seconds'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: event-report-rate
   type: int
   min: 1
   max: 3600
   default: 30
   help: 'Get/Set event report rate in reports per hour'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: backup-report-connected
   type: bool
   default: true
   help: 'Get/Set report when backup is active'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: backup-report-disconnected
   type: bool
   default: true
   help: 'Get/Set report when backup is inactive'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) 
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: channel-a1-active
   type: bool
   default: true
