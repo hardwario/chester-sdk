@@ -32,34 +32,51 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
+
 /* ### Preserved code "functions" (begin) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_X0_A) || defined(FEATURE_SUBSYSTEM_DS18B20)
-
 __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *sample, float mul)
 {
 	if (isnan(sample->min)) {
 		zcbor_nil_put(zs, NULL);
 	} else {
-		zcbor_int32_put(zs, sample->min * mul);
+		int32_t v = sample->min * mul;
+		// -12 -> -0.12°C * 100 -> 0x2B (character '+') - fix for AT modem terminal string
+		// ending '+++'
+		if (v == -12) {
+			v = -13;
+		}
+		zcbor_int32_put(zs, v);
 	}
 
 	if (isnan(sample->max)) {
 		zcbor_nil_put(zs, NULL);
 	} else {
-		zcbor_int32_put(zs, sample->max * mul);
+		int32_t v = sample->max * mul;
+		if (v == -12) {
+			v = -13;
+		}
+		zcbor_int32_put(zs, v);
 	}
 
 	if (isnan(sample->avg)) {
 		zcbor_nil_put(zs, NULL);
 	} else {
-		zcbor_int32_put(zs, sample->avg * mul);
+		int32_t v = sample->avg * mul;
+		if (v == -12) {
+			v = -13;
+		}
+		zcbor_int32_put(zs, v);
 	}
 
 	if (isnan(sample->mdn)) {
 		zcbor_nil_put(zs, NULL);
 	} else {
-		zcbor_int32_put(zs, sample->mdn * mul);
+		int32_t v = sample->mdn * mul;
+		if (v == -12) {
+			v = -13;
+		}
+		zcbor_int32_put(zs, v);
 	}
 }
 
@@ -67,12 +84,7 @@ __unused static void put_sample(zcbor_state_t *zs, struct app_data_aggreg *sampl
 {
 	put_sample_mul(zs, sample, 1.f);
 }
-
-#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) || defined(FEATURE_SUBSYSTEM_DS18B20) */
-
 /* ^^^ Preserved code "functions" (end) */
-
-LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
 static int encode(zcbor_state_t *zs)
 {
