@@ -1,5 +1,6 @@
 var dir_14bc92f4b96c8519b376567118ac28b3 =
 [
+    [ "sensor", "dir_a818fdcdd20ceb5fbef5e87c201500ac.html", "dir_a818fdcdd20ceb5fbef5e87c201500ac" ],
     [ "w1", "dir_2bb72fdd796da29649935311768003d4.html", "dir_2bb72fdd796da29649935311768003d4" ],
     [ "ctr_a1.h", "ctr__a1_8h.html", "ctr__a1_8h" ],
     [ "ctr_b1.h", "ctr__b1_8h.html", "ctr__b1_8h" ],

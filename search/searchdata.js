@@ -2,12 +2,12 @@ var indexSectionsWithContent =
 {
   0: "_abcdefghijlmnoprstuvwxy",
   1: "cps",
-  2: "cdmp",
-  3: "_cdmp",
+  2: "cdmps",
+  3: "_cdmps",
   4: "abcdefghijlmnoprstuvwxy",
   5: "c",
-  6: "cd",
-  7: "cd",
+  6: "cds",
+  7: "cds",
   8: "crt",
   9: "cdmp"
 };
