@@ -4,8 +4,6 @@ This repository contains source codes for the CHESTER SDK. It is a firmware fram
 
 The CHESTER SDK targets only nRF52840 SoC (Nordic Semiconductor). It has no relation to the onboard LTE module, nor LoRaWAN module.
 
-HARDWARIO provides full support and training materials for CHESTER SDK. The repository is available solely to HARDWARIO partners. It is forbidden to redistribute source codes of this repository without prior written agreement.
-
 ## Requirements
 
 These are the basic prerequisites to work with the CHESTER SDK:
