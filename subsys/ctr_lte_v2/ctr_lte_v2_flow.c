@@ -36,6 +36,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SO_RAI_NO_DATA  50
+#define SO_RAI_LAST     51
+#define SO_RAI_ONE_RESP 52
+
 LOG_MODULE_REGISTER(ctr_lte_v2_flow, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 
 #define XSLEEP_PAUSE         K_MSEC(100)

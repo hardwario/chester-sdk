@@ -17,7 +17,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 /* Standard includes */
 #include <math.h>
@@ -27,7 +27,7 @@
 LOG_MODULE_REGISTER(app_work, LOG_LEVEL_DBG);
 
 #define WORK_Q_STACK_SIZE 4096
-#define WORK_Q_PRIORITY	  K_LOWEST_APPLICATION_THREAD_PRIO
+#define WORK_Q_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
 
 static struct k_work_q m_work_q;
 static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);

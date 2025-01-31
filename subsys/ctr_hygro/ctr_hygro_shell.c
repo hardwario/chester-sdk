@@ -51,8 +51,8 @@ static int cmd_hygro_read(const struct shell *shell, size_t argc, char **argv)
 			return ret;
 		}
 
-		shell_print(shell, "Temperature: %.2f C", temperature);
-		shell_print(shell, "Humidity: %.1f %%", humidity);
+		shell_print(shell, "Temperature: %.2f C", (double)temperature);
+		shell_print(shell, "Humidity: %.1f %%", (double)humidity);
 	}
 
 	return 0;

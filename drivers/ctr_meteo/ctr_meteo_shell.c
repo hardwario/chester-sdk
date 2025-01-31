@@ -44,7 +44,7 @@ static int cmd_meteo_read(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	shell_print(shell, "rainfall: %.2f mm", rainfall);
+	shell_print(shell, "rainfall: %.2f mm", (double)rainfall);
 
 	float speed;
 	ret = ctr_meteo_get_wind_speed_and_clear(dev, &speed);
@@ -54,7 +54,7 @@ static int cmd_meteo_read(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	shell_print(shell, "wind speed: %.2f m/s", speed);
+	shell_print(shell, "wind speed: %.2f m/s", (double)speed);
 
 	float direction;
 	ret = ctr_meteo_get_wind_direction(dev, &direction);
@@ -64,7 +64,7 @@ static int cmd_meteo_read(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	shell_print(shell, "wind direction: %.2f deg", direction);
+	shell_print(shell, "wind direction: %.2f deg", (double)direction);
 
 	return 0;
 }

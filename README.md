@@ -47,7 +47,7 @@ west update
 Pre-configure the target board for West workspace:
 
 ```
-west config build.board chester_nrf52840
+west config build.board chester
 ```
 
 ## Building & flashing

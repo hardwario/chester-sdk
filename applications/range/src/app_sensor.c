@@ -63,7 +63,7 @@ static void aggreg(float *samples, size_t count, float *min, float *max, float *
 
 	double avg_ = 0;
 	for (size_t i = 0; i < count; i++) {
-		avg_ += samples[i];
+		avg_ += (double)samples[i];
 	}
 	avg_ /= count;
 
@@ -135,7 +135,7 @@ int app_sensor_sonar_sample(void)
 	g_app_data.sonar.samples[g_app_data.sonar.sample_count++] = dist;
 	app_data_unlock();
 
-	LOG_INF("Distance: %.3f m", dist);
+	LOG_INF("Distance: %.3f m", (double)dist);
 
 	return 0;
 }
@@ -376,7 +376,7 @@ int app_sensor_w1_therm_sample(void)
 				LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
 				continue;
 			} else {
-				LOG_INF("Temperature: %.1f C", temperature);
+				LOG_INF("Temperature: %.1f C", (double)temperature);
 			}
 
 			app_data_lock();

@@ -156,8 +156,8 @@ static void event_dispatch_work_handler(struct k_work *work)
 
 static void urc_dispatch_work_handler(struct k_work *work)
 {
-	struct ctr_lte_link_data *const data =
-		CONTAINER_OF(work, struct ctr_lte_link_data, urc_dispatch_work);
+	struct ctr_lte_link_data *const data = CONTAINER_OF(
+		(struct k_work_delayable *)work, struct ctr_lte_link_data, urc_dispatch_work);
 
 	if (data->items_index < data->items_count) {
 		const struct mock_link_item *item = &data->items[data->items_index];

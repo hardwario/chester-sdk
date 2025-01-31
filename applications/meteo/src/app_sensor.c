@@ -74,7 +74,7 @@ static void aggreg(float *samples, size_t count, float *min, float *max, float *
 
 	double avg_ = 0;
 	for (size_t i = 0; i < count; i++) {
-		avg_ += samples[i];
+		avg_ += (double)samples[i];
 	}
 	avg_ /= count;
 
@@ -159,7 +159,7 @@ static int meteo_sample_wind_direction(void)
 			*sample = wind_direction;
 			wd->sample_count++;
 
-			LOG_INF("Wind direction: %.2f deg", *sample);
+			LOG_INF("Wind direction: %.2f deg", (double)*sample);
 			LOG_INF("Sample count: %d", wd->sample_count);
 		}
 
@@ -200,7 +200,7 @@ static int meteo_sample_wind_speed(void)
 
 		ws->sample_count++;
 
-		LOG_INF("Wind speed: %.2f m/s", *sample);
+		LOG_INF("Wind speed: %.2f m/s", (double)*sample);
 		LOG_INF("Sample count: %d", ws->sample_count);
 
 		app_data_unlock();
@@ -331,7 +331,7 @@ static int meteo_aggreg_wind_direction(void)
 		*measurement = get_average_angle(wd->samples, wd->sample_count);
 		wd->measurement_count++;
 
-		LOG_INF("Wind direction: %.2f", *measurement);
+		LOG_INF("Wind direction: %.2f", (double)*measurement);
 		LOG_INF("Measurement count: %d", wd->measurement_count);
 	} else {
 		LOG_WRN("Measurement full");
@@ -381,7 +381,7 @@ static int meteo_aggreg_rainfall(void)
 		rf->measurements[rf->measurement_count] = rainfall;
 		rf->measurement_count++;
 
-		LOG_INF("Rainfall: %.2f mm", rainfall);
+		LOG_INF("Rainfall: %.2f mm", (double)rainfall);
 		LOG_INF("Measurement count: %d", rf->measurement_count);
 	} else {
 		LOG_WRN("Measurement full");
@@ -463,7 +463,7 @@ int app_sensor_barometer_sample(void)
 
 		float pressure = sensor_value_to_double(&val);
 
-		LOG_INF("Pressure: %.0f Pa", pressure);
+		LOG_INF("Pressure: %.0f Pa", (double)pressure);
 
 		app_data_lock();
 
@@ -631,8 +631,8 @@ int app_sensor_hygro_sample(void)
 			temperature = NAN;
 			humidity = NAN;
 		} else {
-			LOG_INF("Hygro: Temperature: %.2f °C", temperature);
-			LOG_INF("Hygro: Humidity: %.2f %% RH", humidity);
+			LOG_INF("Hygro: Temperature: %.2f °C", (double)temperature);
+			LOG_INF("Hygro: Humidity: %.2f %% RH", (double)humidity);
 		}
 
 		app_data_lock();
@@ -723,7 +723,7 @@ int app_sensor_w1_therm_sample(void)
 				continue;
 			}
 
-			LOG_INF("Temperature: %.1f C", temperature);
+			LOG_INF("Temperature: %.1f C", (double)temperature);
 
 			app_data_lock();
 
@@ -822,7 +822,7 @@ int app_sensor_soil_sensor_sample(void)
 				continue;
 			}
 
-			LOG_INF("Temperature: %.1f C Moisture: %d", temperature, moisture);
+			LOG_INF("Temperature: %.1f C Moisture: %d", (double)temperature, moisture);
 
 			app_data_lock();
 

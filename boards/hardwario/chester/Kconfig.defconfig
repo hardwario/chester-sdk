@@ -1,13 +1,10 @@
 #
-# Copyright (c) 2023 HARDWARIO a.s.
+# Copyright (c) 2024 HARDWARIO a.s.
 #
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
 if BOARD_CHESTER_NRF52840
-
-config BOARD
-	default "chester_nrf52840"
 
 config BT_CTLR
 	default BT

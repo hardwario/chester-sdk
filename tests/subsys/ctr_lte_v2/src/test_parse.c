@@ -156,12 +156,12 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xgps)
 	int ret = ctr_lte_v2_parse_urc_xgps(line, &update);
 
 	zassert_ok(ret, "ctr_lte_v2_parse_urc_xgps failed");
-	zassert_within(update.latitude, 49.256683, 0.000001, "update.latitude not equal");
-	zassert_within(update.longitude, 17.699627, 0.000001, "update.longitude not equal");
-	zassert_within(update.altitude, 292.599670, 0.000001, "update.altitude not equal");
-	zassert_within(update.accuracy, 5.468742, 0.000001, "update.accuracy not equal");
-	zassert_within(update.speed, 0.165512, 0.000001, "update.speed not equal");
-	zassert_within(update.heading, 73.682823, 0.000001, "update.heading not equal");
+	zassert_within((double)update.latitude, 49.256683, 0.000001, "update.latitude not equal");
+	zassert_within((double)update.longitude, 17.699627, 0.000001, "update.longitude not equal");
+	zassert_within((double)update.altitude, 292.599670, 0.000001, "update.altitude not equal");
+	zassert_within((double)update.accuracy, 5.468742, 0.000001, "update.accuracy not equal");
+	zassert_within((double)update.speed, 0.165512, 0.000001, "update.speed not equal");
+	zassert_within((double)update.heading, 73.682823, 0.000001, "update.heading not equal");
 	zassert_true(strcmp(update.datetime, "2024-06-27 16:06:52") == 0,
 		     "update.datetime not equal");
 }

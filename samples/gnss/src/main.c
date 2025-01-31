@@ -18,9 +18,9 @@ void gnss_handler(enum ctr_gnss_event event, union ctr_gnss_event_data *data, vo
 	if (event == CTR_GNSS_EVENT_UPDATE) {
 		LOG_DBG("Fix quality: %d", data->update.fix_quality);
 		LOG_DBG("Satellites tracked: %d", data->update.satellites_tracked);
-		LOG_DBG("Latitude: %.7f", data->update.latitude);
-		LOG_DBG("Longitude: %.7f", data->update.longitude);
-		LOG_DBG("Altitude: %.1f", data->update.altitude);
+		LOG_DBG("Latitude: %.7f", (double)data->update.latitude);
+		LOG_DBG("Longitude: %.7f", (double)data->update.longitude);
+		LOG_DBG("Altitude: %.1f", (double)data->update.altitude);
 	}
 }
 

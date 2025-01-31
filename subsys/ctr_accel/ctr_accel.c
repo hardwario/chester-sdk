@@ -21,7 +21,7 @@
 
 LOG_MODULE_REGISTER(ctr_accel, CONFIG_CTR_ACCEL_LOG_LEVEL);
 
-#define GRAVITY		9.80665f
+#define GRAVITY         9.80665
 #define ORIENTATION_THR 0.4f
 
 static const int m_vectors[7][3] = {
@@ -113,9 +113,9 @@ int ctr_accel_read(float *accel_x, float *accel_y, float *accel_z, int *orientat
 		return ret;
 	}
 
-	float accel_x_ = sensor_value_to_double(&val[0]);
-	float accel_y_ = sensor_value_to_double(&val[1]);
-	float accel_z_ = sensor_value_to_double(&val[2]);
+	double accel_x_ = sensor_value_to_double(&val[0]);
+	double accel_y_ = sensor_value_to_double(&val[1]);
+	double accel_z_ = sensor_value_to_double(&val[2]);
 
 	LOG_DBG("Acceleration X: %.3f m/s^2", accel_x_);
 	LOG_DBG("Acceleration Y: %.3f m/s^2", accel_y_);

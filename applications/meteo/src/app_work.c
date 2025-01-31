@@ -18,7 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 /* Standard includes */
 #include <math.h>
@@ -83,7 +83,6 @@ static void send_work_handler(struct k_work *work)
 #if defined(CONFIG_APP_PYRANOMETER)
 	app_sensor_pyranometer_clear();
 #endif /* defined(CONFIG_APP_PYRANOMETER) */
-
 }
 
 static K_WORK_DELAYABLE_DEFINE(m_send_work, send_work_handler);
@@ -490,7 +489,6 @@ int app_work_init(void)
 	k_work_schedule_for_queue(&m_work_q, &m_pyranometer_aggreg_work,
 				  K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(CONFIG_APP_PYRANOMETER) */
-
 
 	return 0;
 }

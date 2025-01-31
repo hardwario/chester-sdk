@@ -367,7 +367,7 @@ static int init(void)
 	}
 #endif /* defined(CONFIG_SHELL_BT_NUS) */
 
-	struct bt_le_adv_param *adv_param =
+	const struct bt_le_adv_param *adv_param =
 		BT_LE_ADV_PARAM(ADV_OPT, BT_GAP_ADV_SLOW_INT_MIN, BT_GAP_ADV_SLOW_INT_MAX, NULL);
 
 	ret = bt_le_adv_start(adv_param, m_ad, ARRAY_SIZE(m_ad), m_sd, ARRAY_SIZE(m_sd));

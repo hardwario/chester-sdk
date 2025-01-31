@@ -43,7 +43,7 @@ struct mb7066_data {
 
 	nrfx_timer_t timer;
 	nrf_ppi_channel_t ppi_chan;
-	uint8_t gpiote_chan;
+	nrfx_gpiote_t gpiote;
 
 	bool measuring;
 	uint32_t measurements[CONFIG_MB7066_SAMPLE_COUNT];
@@ -62,7 +62,7 @@ static int enable_measurement(const struct device *dev)
 {
 	struct mb7066_data *data = dev->data;
 
-	nrfx_gpiote_trigger_enable(data->pin->pin, true);
+	nrfx_gpiote_trigger_enable(&data->gpiote, data->pin->pin, true);
 	CHECKOUT(nrfx_ppi_channel_enable, data->ppi_chan);
 	nrfx_timer_enable(&data->timer);
 
@@ -73,7 +73,7 @@ static int disable_measurement(const struct device *dev)
 {
 	struct mb7066_data *data = dev->data;
 
-	nrfx_gpiote_trigger_disable(data->pin->pin);
+	nrfx_gpiote_trigger_disable(&data->gpiote, data->pin->pin);
 	CHECKOUT(nrfx_ppi_channel_disable, data->ppi_chan);
 	nrfx_timer_disable(&data->timer);
 
@@ -152,8 +152,8 @@ static int mb7066_measure_(const struct device *dev, float *value)
 	}
 
 	const uint32_t m = get_median_measurement(data->measurements, data->nmeasurement);
-	const float microseconds = m / 16e6;
-	*value = microseconds / 58e-6 / 100.0f;
+	const float microseconds = m / 16e6f;
+	*value = microseconds / 58e-6f / 100.0f;
 
 error_off:
 	disable_measurement(dev);
@@ -185,13 +185,19 @@ static int mb7066_init(const struct device *dev)
 	gpio_pin_configure_dt(data->pin, GPIO_INPUT);
 
 	/* setup gpiote */
-	CHECKOUT(nrfx_gpiote_channel_alloc, &data->gpiote_chan);
-	CHECKOUT(nrfx_gpiote_input_configure, data->pin->pin, &(nrfx_gpiote_input_config_t){},
-		 &(nrfx_gpiote_trigger_config_t){
-			 .trigger = NRFX_GPIOTE_TRIGGER_TOGGLE,
-		 },
-		 &(nrfx_gpiote_handler_config_t){.handler = gpiote_toggle_handler,
-						 .p_context = (void *)dev});
+	data->gpiote = (nrfx_gpiote_t)NRFX_GPIOTE_INSTANCE(0);
+	CHECKOUT(nrfx_gpiote_input_configure, &data->gpiote, data->pin->pin,
+		 &(nrfx_gpiote_input_pin_config_t){
+			 .p_trigger_config =
+				 &(nrfx_gpiote_trigger_config_t){
+					 .trigger = NRFX_GPIOTE_TRIGGER_TOGGLE,
+				 },
+			 .p_handler_config =
+				 &(nrfx_gpiote_handler_config_t){
+					 .handler = gpiote_toggle_handler,
+					 .p_context = (void *)dev,
+				 },
+		 });
 
 	/* setup timer */
 	data->timer = (nrfx_timer_t)NRFX_TIMER_INSTANCE(CONFIG_MB7066_TIMER);
@@ -203,7 +209,7 @@ static int mb7066_init(const struct device *dev)
 	/* setup PPI GPIOTE -> timer capture */
 	CHECKOUT(nrfx_ppi_channel_alloc, &data->ppi_chan);
 	CHECKOUT(nrfx_ppi_channel_assign, data->ppi_chan,
-		 nrfx_gpiote_in_event_address_get(data->pin->pin),
+		 nrfx_gpiote_in_event_address_get(&data->gpiote, data->pin->pin),
 		 nrfx_timer_task_address_get(&data->timer, NRF_TIMER_TASK_CAPTURE0));
 	CHECKOUT(nrfx_ppi_channel_fork_assign, data->ppi_chan,
 		 nrfx_timer_task_address_get(&data->timer, NRF_TIMER_TASK_CLEAR));

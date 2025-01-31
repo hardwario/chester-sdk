@@ -32,7 +32,7 @@ int main(void)
 		if (ret) {
 			LOG_ERR("Call `ctr_therm_read` failed: %d", ret);
 		} else {
-			LOG_INF("Temperature: %.2f C", temperature);
+			LOG_INF("Temperature: %.2f C", (double)temperature);
 		}
 
 		k_sleep(K_SECONDS(5));

@@ -111,7 +111,7 @@ int main(void)
 			k_oops();
 		}
 
-		float temperature = ((int16_t)reg_temperature >> 4) / 16.f;
+		double temperature = ((int16_t)reg_temperature >> 4) / 16.0;
 
 		LOG_INF("Temperature: %.2f C", temperature);
 

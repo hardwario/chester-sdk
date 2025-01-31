@@ -168,7 +168,8 @@ int ctr_config_show_item(const struct shell *shell, const struct ctr_config_item
 		break;
 
 	case CTR_CONFIG_TYPE_FLOAT:
-		shell_print(shell, "%s config %s %.2f", mod, item->name, *(float *)item->variable);
+		shell_print(shell, "%s config %s %.2f", mod, item->name,
+			    (double)*(float *)item->variable);
 		break;
 
 	case CTR_CONFIG_TYPE_BOOL:
@@ -223,7 +224,7 @@ int ctr_config_help_item(const struct shell *shell, const struct ctr_config_item
 
 	case CTR_CONFIG_TYPE_FLOAT:
 		shell_print(shell, "  %-18s:%s <%.2f~%.2f>", item->name, item->help,
-			    (float)item->min, (float)item->max);
+			    (double)item->min, (double)item->max);
 		break;
 
 	case CTR_CONFIG_TYPE_BOOL:

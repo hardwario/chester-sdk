@@ -62,3 +62,9 @@ config LOG_BACKEND_RTT_BUFFER_SIZE
 config LOG_BACKEND_RTT_MESSAGE_SIZE
 	default 256
 	depends on CTR_LOG
+
+choice SEGGER_RTT_SECTION
+	default SEGGER_RTT_SECTION_NONE
+	depends on CTR_LOG
+endchoice
+

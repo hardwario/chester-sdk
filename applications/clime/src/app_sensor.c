@@ -73,7 +73,7 @@ static void aggreg(float *samples, size_t count, float *min, float *max, float *
 
 	double avg_ = 0;
 	for (size_t i = 0; i < count; i++) {
-		avg_ += samples[i];
+		avg_ += (double)samples[i];
 	}
 	avg_ /= count;
 
@@ -414,8 +414,8 @@ int app_sensor_hygro_sample(void)
 			temperature = NAN;
 			humidity = NAN;
 		} else {
-			LOG_INF("Hygro: Temperature: %.2f °C", temperature);
-			LOG_INF("Hygro: Humidity: %.2f %% RH", humidity);
+			LOG_INF("Hygro: Temperature: %.2f °C", (double)temperature);
+			LOG_INF("Hygro: Humidity: %.2f %% RH", (double)humidity);
 		}
 
 		app_data_lock();
@@ -505,7 +505,7 @@ int app_sensor_w1_therm_sample(void)
 				LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
 				continue;
 			} else {
-				LOG_INF("Temperature: %.1f C", temperature);
+				LOG_INF("Temperature: %.1f C", (double)temperature);
 			}
 
 			app_data_lock();
@@ -808,7 +808,7 @@ int app_sensor_soil_sensor_sample(void)
 				continue;
 			}
 
-			LOG_INF("Temperature: %.1f C Moisture: %d", temperature, moisture);
+			LOG_INF("Temperature: %.1f C Moisture: %d", (double)temperature, moisture);
 
 			app_data_lock();
 

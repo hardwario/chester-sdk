@@ -62,7 +62,7 @@ static void aggreg(float *samples, size_t count, float *min, float *max, float *
 
 	double avg_ = 0;
 	for (size_t i = 0; i < count; i++) {
-		avg_ += samples[i];
+		avg_ += (double)samples[i];
 	}
 	avg_ /= count;
 
@@ -217,8 +217,8 @@ int app_sensor_analog_sample(void)
 		channel->last_sample_rms = results[i].rms;
 
 		LOG_INF("Channel %d: sample count: %d, mean: %.1f, rms: %.1f",
-			CTR_K1_CHANNEL_IDX(channels[i]) + 1, sample_count, results[i].avg,
-			results[i].rms);
+			CTR_K1_CHANNEL_IDX(channels[i]) + 1, sample_count, (double)results[i].avg,
+			(double)results[i].rms);
 	}
 
 	for (size_t i = 0; i < APP_CONFIG_CHANNEL_COUNT; i++) {
@@ -328,7 +328,7 @@ int app_sensor_w1_therm_sample(void)
 				LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
 				continue;
 			} else {
-				LOG_INF("Temperature: %.1f C", temperature);
+				LOG_INF("Temperature: %.1f C", (double)temperature);
 			}
 
 			app_data_lock();

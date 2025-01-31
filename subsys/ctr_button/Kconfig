@@ -6,7 +6,6 @@
 
 config CTR_BUTTON
 	bool "CTR_BUTTON"
-	depends on SHELL
 	select GPIO
 	select CTR_EDGE
 
@@ -19,5 +18,10 @@ source "subsys/logging/Kconfig.template.log_config"
 config CTR_BUTTON_INIT_PRIORITY
 	int "Initialization priority"
 	default APPLICATION_INIT_PRIORITY
+
+config CTR_BUTTON_SHELL
+	bool
+	default y
+	depends on SHELL
 
 endif # CTR_BUTTON

@@ -58,7 +58,7 @@ struct ctr_k1_data {
 };
 
 static const nrfx_timer_t m_timer = NRFX_TIMER_INSTANCE(4);
-static nrf_saadc_value_t m_samples[MAX_CHANNEL_COUNT * MAX_SAMPLE_COUNT];
+static int16_t m_samples[MAX_CHANNEL_COUNT * MAX_SAMPLE_COUNT];
 static K_MUTEX_DEFINE(m_lock);
 static K_SEM_DEFINE(m_adc_sem, 0, 1);
 
@@ -375,12 +375,12 @@ static int measure(const nrfx_saadc_channel_t saadc_channels[], size_t saadc_cha
 	return 0;
 }
 
-static inline float convert_single_ended_to_millivolts(nrf_saadc_value_t value)
+static inline float convert_single_ended_to_millivolts(int16_t value)
 {
 	return (float)value * 6 * 600 / 4096;
 }
 
-static inline float convert_differential_to_millivolts(nrf_saadc_value_t value)
+static inline float convert_differential_to_millivolts(int16_t value)
 {
 	return (float)value * 6 * 600 / 2048;
 }
@@ -400,7 +400,7 @@ static int ctr_k1_measure_(const struct device *dev, const enum ctr_k1_channel c
 	}
 
 	nrfx_saadc_channel_t saadc_channels[MAX_CHANNEL_COUNT] = {0};
-	float (*convert[MAX_CHANNEL_COUNT])(nrf_saadc_value_t) = {0};
+	float (*convert[MAX_CHANNEL_COUNT])(int16_t) = {0};
 
 	for (size_t i = 0; i < channels_count; i++) {
 		results[i].avg = 0.f;
@@ -505,14 +505,14 @@ static int ctr_k1_measure_(const struct device *dev, const enum ctr_k1_channel c
 		raw_avg[i] = raw_avg[i] / MAX_SAMPLE_COUNT;
 		raw_rms[i] = sqrtf(raw_rms[i] / MAX_SAMPLE_COUNT);
 
-		LOG_DBG("Channel %u: AVG (raw): %+.1f", ch, raw_avg[i]);
-		LOG_DBG("Channel %u: RMS (raw): %+.1f", ch, raw_rms[i]);
+		LOG_DBG("Channel %u: AVG (raw): %+.1f", ch, (double)raw_avg[i]);
+		LOG_DBG("Channel %u: RMS (raw): %+.1f", ch, (double)raw_rms[i]);
 
 		results[i].avg = results[i].avg / MAX_SAMPLE_COUNT;
 		results[i].rms = sqrtf(results[i].rms / MAX_SAMPLE_COUNT);
 
-		LOG_DBG("Channel %u: AVG (cal): %+.1f", ch, results[i].avg);
-		LOG_DBG("Channel %u: RMS (cal): %+.1f", ch, results[i].rms);
+		LOG_DBG("Channel %u: AVG (cal): %+.1f", ch, (double)results[i].avg);
+		LOG_DBG("Channel %u: RMS (cal): %+.1f", ch, (double)results[i].rms);
 	}
 
 	return 0;

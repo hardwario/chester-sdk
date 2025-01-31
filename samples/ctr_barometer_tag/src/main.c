@@ -42,21 +42,21 @@ int main(void)
 			LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
 			break;
 		}
-		float altitude_ = sensor_value_to_double(&val);
+		double altitude_ = sensor_value_to_double(&val);
 
 		ret = sensor_channel_get(m_dev, SENSOR_CHAN_PRESS, &val);
 		if (ret) {
 			LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
 			break;
 		}
-		float pressure_ = sensor_value_to_double(&val);
+		double pressure_ = sensor_value_to_double(&val);
 
 		ret = sensor_channel_get(m_dev, SENSOR_CHAN_AMBIENT_TEMP, &val);
 		if (ret) {
 			LOG_ERR("Call `sensor_channel_get` failed: %d", ret);
 			break;
 		}
-		float temperature_ = sensor_value_to_double(&val);
+		double temperature_ = sensor_value_to_double(&val);
 
 		LOG_DBG("Altitude: %.0f m Pressure: %.0f Pa Temperature: %.2f", altitude_,
 			pressure_, temperature_);

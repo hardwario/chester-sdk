@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(ctr_button, CONFIG_CTR_BUTTON_LOG_LEVEL);
 static const struct gpio_dt_spec m_button_int = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 static const struct gpio_dt_spec m_button_ext = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
 
+#if defined(CONFIG_CTR_BUTTON_SHELL)
 static int read_button(enum ctr_button_channel channel, bool *is_pressed)
 {
 	int ret;
@@ -114,6 +115,8 @@ SHELL_CMD_REGISTER(button, &sub_button, "Button commands.", print_help);
 
 /* clang-format on */
 
+#endif /* defined(CONFIG_CTR_BUTTON_SHELL) */
+
 #define MAX_CLICK_PERIOD 600
 #define MIN_PRESS_LENGTH 1000
 
@@ -147,7 +150,7 @@ static void click_breakup_work_handler(struct k_work *work)
 	struct button_data *data = CONTAINER_OF(work, struct button_data, click_breakup_work);
 
 	m_event_cb(button_data_to_channel(data), CTR_BUTTON_EVENT_CLICK, data->click_count,
-		m_user_data);
+		   m_user_data);
 	data->click_count = 0;
 }
 
@@ -170,13 +173,14 @@ static void hold_work_handler(struct k_work *work)
 	struct button_data *data = CONTAINER_OF(work, struct button_data, hold_work);
 
 	m_event_cb(button_data_to_channel(data), CTR_BUTTON_EVENT_HOLD, data->press_length,
-		m_user_data);
+		   m_user_data);
 }
 
 static void edge_event_cb(struct ctr_edge *edge, enum ctr_edge_event event, void *user_data)
 {
-	if (!m_event_cb)
+	if (!m_event_cb) {
 		return;
+	}
 
 	struct button_data *data = edge == &m_edge_int ? &m_button_data_int : &m_button_data_ext;
 

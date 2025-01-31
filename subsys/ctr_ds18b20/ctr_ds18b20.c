@@ -201,7 +201,7 @@ int ctr_ds18b20_read(int index, uint64_t *serial_number, float *temperature)
 
 	if (temperature) {
 		*temperature = (float)val.val1 + (float)val.val2 / 1000000.f;
-		LOG_DBG("Temperature: %.2f C", *temperature);
+		LOG_DBG("Temperature: %.2f C", (double)*temperature);
 	}
 
 error:

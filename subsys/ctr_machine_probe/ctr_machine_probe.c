@@ -27,11 +27,11 @@
 
 LOG_MODULE_REGISTER(ctr_machine_probe, CONFIG_CTR_MACHINE_PROBE_LOG_LEVEL);
 
-#define TMP112_I2C_ADDR	 0x48
+#define TMP112_I2C_ADDR  0x48
 #define TMP112_INIT_TIME K_MSEC(10)
 #define TMP112_CONV_TIME K_MSEC(50)
 
-#define SHT30_I2C_ADDR	0x45
+#define SHT30_I2C_ADDR  0x45
 #define SHT30_INIT_TIME K_MSEC(100)
 #define SHT30_CONV_TIME K_MSEC(100)
 
@@ -685,7 +685,7 @@ int ctr_machine_probe_read_thermometer(int index, uint64_t *serial_number, float
 	}
 
 	if (!res && temperature) {
-		LOG_DBG("Temperature: %.2f C", *temperature);
+		LOG_DBG("Temperature: %.2f C", (double)*temperature);
 	}
 
 	COMM_EPILOGUE
@@ -740,11 +740,11 @@ int ctr_machine_probe_read_hygrometer(int index, uint64_t *serial_number, float 
 	}
 
 	if (!res && temperature) {
-		LOG_DBG("Temperature: %.2f C", *temperature);
+		LOG_DBG("Temperature: %.2f C", (double)*temperature);
 	}
 
 	if (!res && humidity) {
-		LOG_DBG("Humidity: %.1f %%", *humidity);
+		LOG_DBG("Humidity: %.1f %%", (double)*humidity);
 	}
 
 	COMM_EPILOGUE
@@ -794,7 +794,7 @@ int ctr_machine_probe_read_lux_meter(int index, uint64_t *serial_number, float *
 	}
 
 	if (!res && illuminance) {
-		LOG_DBG("Illuminance: %.0f lux", *illuminance);
+		LOG_DBG("Illuminance: %.0f lux", (double)*illuminance);
 	}
 
 	COMM_EPILOGUE
@@ -822,7 +822,7 @@ int ctr_machine_probe_read_magnetometer(int index, uint64_t *serial_number, floa
 	}
 
 	if (!res && magnetic_field) {
-		LOG_DBG("Magnetic field: %.2f mT", *magnetic_field);
+		LOG_DBG("Magnetic field: %.2f mT", (double)*magnetic_field);
 	}
 
 	COMM_EPILOGUE
@@ -863,15 +863,15 @@ int ctr_machine_probe_read_accelerometer(int index, uint64_t *serial_number, flo
 	}
 
 	if (!res && accel_x) {
-		LOG_DBG("Acceleration in X-axis: %.3f m/s^2", *accel_x);
+		LOG_DBG("Acceleration in X-axis: %.3f m/s^2", (double)*accel_x);
 	}
 
 	if (!res && accel_y) {
-		LOG_DBG("Acceleration in Y-axis: %.3f m/s^2", *accel_y);
+		LOG_DBG("Acceleration in Y-axis: %.3f m/s^2", (double)*accel_y);
 	}
 
 	if (!res && accel_z) {
-		LOG_DBG("Acceleration in Z-axis: %.3f m/s^2", *accel_z);
+		LOG_DBG("Acceleration in Z-axis: %.3f m/s^2", (double)*accel_z);
 	}
 
 	COMM_EPILOGUE

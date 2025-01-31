@@ -53,7 +53,7 @@ int ctr_hygro_read(float *temperature, float *humidity)
 		return ret;
 	}
 
-	float temperature_ = sensor_value_to_double(&val_temperature);
+	double temperature_ = sensor_value_to_double(&val_temperature);
 
 	LOG_DBG("Temperature: %.2f C", temperature_);
 
@@ -69,7 +69,7 @@ int ctr_hygro_read(float *temperature, float *humidity)
 		return ret;
 	}
 
-	float humidity_ = sensor_value_to_double(&val_humidity);
+	double humidity_ = sensor_value_to_double(&val_humidity);
 
 	LOG_DBG("Humidity: %.1f %%", humidity_);
 

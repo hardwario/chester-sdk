@@ -29,7 +29,7 @@ int main(void)
 			k_oops();
 		}
 
-		LOG_INF("Temperature: %.3f C", temperature);
+		LOG_INF("Temperature: %.3f C", (double)temperature);
 
 		k_sleep(K_SECONDS(1));
 	}

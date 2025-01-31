@@ -15,7 +15,6 @@ config CTR_K1
 	select NRFX_SAADC
 	select NRFX_TIMER
 	select NRFX_TIMER4
-	select REQUIRES_FULL_LIBC
 
 if CTR_K1
 

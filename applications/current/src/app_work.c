@@ -17,7 +17,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 /* Standard includes */
 #include <math.h>
@@ -256,7 +256,6 @@ int app_work_init(void)
 	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_aggreg_work,
 				  K_SECONDS(g_app_config.channel_interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
-
 
 	return 0;
 }

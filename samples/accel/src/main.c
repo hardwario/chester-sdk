@@ -36,9 +36,9 @@ int main(void)
 			LOG_ERR("Call `ctr_accel_read` failed: %d", ret);
 
 		} else {
-			LOG_INF("Acceleration X: %.3f m/s^2", accel_x);
-			LOG_INF("Acceleration Y: %.3f m/s^2", accel_y);
-			LOG_INF("Acceleration Z: %.3f m/s^2", accel_z);
+			LOG_INF("Acceleration X: %.3f m/s^2", (double)accel_x);
+			LOG_INF("Acceleration Y: %.3f m/s^2", (double)accel_y);
+			LOG_INF("Acceleration Z: %.3f m/s^2", (double)accel_z);
 			LOG_INF("Orientation: %d", orientation);
 		}
 

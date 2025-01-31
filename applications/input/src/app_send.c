@@ -59,7 +59,8 @@ static int compose(struct ctr_buf *buf)
 	}
 
 	zcbor_state_t zs[8];
-	zcbor_new_state(zs, ARRAY_SIZE(zs), ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf), 0);
+	zcbor_new_state(zs, ARRAY_SIZE(zs), ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf), 0,
+			NULL, 0);
 
 	ret = app_cbor_encode(zs);
 	if (ret) {

@@ -13,7 +13,6 @@ config CTR_LRW_V2
 	select CTR_UTIL
 	select EVENTS
 	select PM_DEVICE
-	select REQUIRES_FULL_LIBC
 	select RING_BUFFER
 
 if CTR_LRW_V2

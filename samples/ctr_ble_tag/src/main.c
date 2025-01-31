@@ -89,7 +89,8 @@ int main(void)
 			msg_buf.len--;
 
 			if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
-				snprintf(intermediate_buf, 32, "/ voltage: %.2f V ", voltage);
+				snprintf(intermediate_buf, 32, "/ voltage: %.2f V ",
+					 (double)voltage);
 				ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 				if (ret) {
 					LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -100,7 +101,7 @@ int main(void)
 
 			if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
 				snprintf(intermediate_buf, 32, "/ temperature: %.2f C ",
-					 temperature);
+					 (double)temperature);
 				ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 				if (ret) {
 					LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -110,7 +111,8 @@ int main(void)
 			}
 
 			if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
-				snprintf(intermediate_buf, 32, "/ humidity: %.2f %% ", humidity);
+				snprintf(intermediate_buf, 32, "/ humidity: %.2f %% ",
+					 (double)humidity);
 				ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 				if (ret) {
 					LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -153,7 +155,7 @@ int main(void)
 			}
 
 			if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_ROLL) {
-				snprintf(intermediate_buf, 32, "/ roll: %.2f ", roll);
+				snprintf(intermediate_buf, 32, "/ roll: %.2f ", (double)roll);
 				ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 				if (ret) {
 					LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -163,7 +165,7 @@ int main(void)
 			}
 
 			if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_PITCH) {
-				snprintf(intermediate_buf, 32, "/ pitch: %.2f ", pitch);
+				snprintf(intermediate_buf, 32, "/ pitch: %.2f ", (double)pitch);
 				ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 				if (ret) {
 					LOG_ERR("Call `ctr_buf_append_str` failed");

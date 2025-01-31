@@ -63,7 +63,7 @@ __unused static void aggreg(float *samples, size_t count, float *minimum, float 
 
 	double average_ = 0;
 	for (size_t i = 0; i < count; i++) {
-		average_ += samples[i];
+		average_ += (double)samples[i];
 	}
 	average_ /= count;
 
@@ -229,7 +229,7 @@ int app_sensor_voltage_sample(void)
 			*sample = (float)CTR_ADC_MILLIVOLTS(adc_voltage) * (10.f + 1.f) / 1000.f;
 			g_app_data.voltage.sample_count++;
 
-			LOG_INF("Voltage: %.2f V", *sample);
+			LOG_INF("Voltage: %.2f V", (double)*sample);
 			LOG_INF("Sample count: %d", g_app_data.voltage.sample_count);
 
 		} else {
@@ -291,7 +291,7 @@ int app_sensor_current_sample(void)
 			*sample = CTR_ADC_X0_CL_MILLIAMPS(adc_current);
 			g_app_data.current.sample_count++;
 
-			LOG_INF("Current: %.2f mA", *sample);
+			LOG_INF("Current: %.2f mA", (double)*sample);
 			LOG_INF("Sample count: %d", g_app_data.current.sample_count);
 
 		} else {
@@ -439,7 +439,7 @@ int app_sensor_w1_therm_sample(void)
 				LOG_ERR("Call `ctr_ds18b20_read` failed: %d", ret);
 				continue;
 			} else {
-				LOG_INF("Temperature: %.1f C", temperature);
+				LOG_INF("Temperature: %.1f C", (double)temperature);
 			}
 
 			app_data_lock();

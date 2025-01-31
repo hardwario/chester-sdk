@@ -129,7 +129,7 @@ int main(void)
 			} else {
 				LOG_INF("Serial number: %llu / Thermometer / Temperature: "
 					"%.2f C",
-					serial_number, temperature);
+					serial_number, (double)temperature);
 			}
 #endif /* READ_THERMOMETER */
 
@@ -145,10 +145,10 @@ int main(void)
 			} else {
 				LOG_INF("Serial number: %llu / Hygrometer / Temperature: "
 					"%.2f C",
-					serial_number, hygrometer_temperature);
+					serial_number, (double)hygrometer_temperature);
 				LOG_INF("Serial number: %llu / Hygrometer / Humidity: %.1f "
 					"%%",
-					serial_number, hygrometer_humidity);
+					serial_number, (double)hygrometer_humidity);
 			}
 #endif /* READ_HYGROMETER */
 
@@ -163,7 +163,7 @@ int main(void)
 			} else {
 				LOG_INF("Serial number: %llu / Lux meter / Illuminance: "
 					"%.0f lux",
-					serial_number, lux_meter_illuminance);
+					serial_number, (double)lux_meter_illuminance);
 			}
 #endif /* READ_LUX_METER */
 
@@ -179,7 +179,7 @@ int main(void)
 				LOG_INF("Serial number: %llu / Magnetometer / Magnetic "
 					"field: %.2f "
 					"mT",
-					serial_number, megnetometer_magnetic_field);
+					serial_number, (double)megnetometer_magnetic_field);
 			}
 #endif /* READ_MAGNETOMETER */
 
@@ -198,15 +198,15 @@ int main(void)
 				LOG_INF("Serial number: %llu / Accelerometer / "
 					"Acceleration X: "
 					"%.3f m/s^2",
-					serial_number, accelerometer_accel_x);
+					serial_number, (double)accelerometer_accel_x);
 				LOG_INF("Serial number: %llu / Accelerometer / "
 					"Acceleration Y: "
 					"%.3f m/s^2",
-					serial_number, accelerometer_accel_y);
+					serial_number, (double)accelerometer_accel_y);
 				LOG_INF("Serial number: %llu / Accelerometer / "
 					"Acceleration Z: "
 					"%.3f m/s^2",
-					serial_number, accelerometer_accel_z);
+					serial_number, (double)accelerometer_accel_z);
 			}
 #endif /* READ_ACCELEROMETER */
 		}

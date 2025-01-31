@@ -168,7 +168,7 @@ int main(void)
 		if (ret) {
 			LOG_ERR("Call `ctr_s1_read_temperature` failed: %d", ret);
 		} else {
-			LOG_INF("IAQ: Temperature: %.1f C", temperature);
+			LOG_INF("IAQ: Temperature: %.1f C", (double)temperature);
 		}
 
 		float humidity;
@@ -176,7 +176,7 @@ int main(void)
 		if (ret) {
 			LOG_ERR("Call `ctr_s1_read_humidity` failed: %d", ret);
 		} else {
-			LOG_INF("IAQ: Humidity: %.1f %%", humidity);
+			LOG_INF("IAQ: Humidity: %.1f %%", (double)humidity);
 		}
 
 		float co2_conc;
@@ -184,7 +184,7 @@ int main(void)
 		if (ret) {
 			LOG_ERR("Call `ctr_s1_read_co2_conc` failed: %d", ret);
 		} else {
-			LOG_INF("IAQ: CO2 conc.: %.0f ppm", co2_conc);
+			LOG_INF("IAQ: CO2 conc.: %.0f ppm", (double)co2_conc);
 		}
 
 		float illuminance;
@@ -192,7 +192,7 @@ int main(void)
 		if (ret) {
 			LOG_ERR("Call `ctr_s1_read_illuminance` failed: %d", ret);
 		} else {
-			LOG_INF("IAQ: Illuminance: %.0f lux", illuminance);
+			LOG_INF("IAQ: Illuminance: %.0f lux", (double)illuminance);
 		}
 
 		float pressure;
@@ -200,7 +200,7 @@ int main(void)
 		if (ret) {
 			LOG_ERR("Call `ctr_s1_read_pressure` failed: %d", ret);
 		} else {
-			LOG_INF("IAQ: Pressure: %.0f Pa", pressure);
+			LOG_INF("IAQ: Pressure: %.0f Pa", (double)pressure);
 		}
 
 		float altitude;
@@ -208,7 +208,7 @@ int main(void)
 		if (ret) {
 			LOG_ERR("Call `ctr_s1_read_altitude` failed: %d", ret);
 		} else {
-			LOG_INF("IAQ: Altitude: %.0f m", altitude);
+			LOG_INF("IAQ: Altitude: %.0f m", (double)altitude);
 		}
 
 		k_sleep(K_SECONDS(10));

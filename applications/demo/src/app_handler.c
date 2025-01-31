@@ -112,7 +112,7 @@ void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_d
 		uint8_t *buf = (uint8_t *)data->recv.buf + 8;
 		size_t len = data->recv.len - 8;
 
-		ZCBOR_STATE_D(zs, 1, buf, len, 1);
+		ZCBOR_STATE_D(zs, 1, buf, len, 1, 0);
 
 		struct app_cbor_received received;
 

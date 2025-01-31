@@ -10,7 +10,6 @@ config CTR_GNSS
 	select GNSS if SHIELD_CTR_GNSS
 	select GNSS_M8 if SHIELD_CTR_GNSS
 	select I2C if SHIELD_CTR_GNSS
-	select REQUIRES_FULL_LIBC
 	select CTR_INFO
 	depends on SHIELD_CTR_GNSS || CTR_LTE_V2_GNSS
 

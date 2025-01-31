@@ -17,7 +17,7 @@
 /* Zephyr includes */
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
@@ -51,7 +51,8 @@ static int compose(struct ctr_buf *buf)
 	}
 
 	zcbor_state_t zs[8];
-	zcbor_new_state(zs, ARRAY_SIZE(zs), ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf), 0);
+	zcbor_new_state(zs, ARRAY_SIZE(zs), ctr_buf_get_mem(buf) + 12, ctr_buf_get_free(buf), 0,
+			NULL, 0);
 
 	ret = app_cbor_encode(zs);
 	if (ret) {

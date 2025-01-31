@@ -69,37 +69,37 @@ int app_cbor_encode(zcbor_state_t *zs)
 		ctr_info_get_vendor_name(&vendor_name);
 
 		zcbor_uint32_put(zs, MSG_KEY_VENDOR_NAME);
-		zcbor_tstr_put_term(zs, vendor_name);
+		zcbor_tstr_put_term(zs, vendor_name, CONFIG_ZCBOR_MAX_STR_LEN);
 
 		char *product_name;
 		ctr_info_get_product_name(&product_name);
 
 		zcbor_uint32_put(zs, MSG_KEY_PRODUCT_NAME);
-		zcbor_tstr_put_term(zs, product_name);
+		zcbor_tstr_put_term(zs, product_name, CONFIG_ZCBOR_MAX_STR_LEN);
 
 		char *hw_variant;
 		ctr_info_get_hw_variant(&hw_variant);
 
 		zcbor_uint32_put(zs, MSG_KEY_HW_VARIANT);
-		zcbor_tstr_put_term(zs, hw_variant);
+		zcbor_tstr_put_term(zs, hw_variant, CONFIG_ZCBOR_MAX_STR_LEN);
 
 		char *hw_revision;
 		ctr_info_get_hw_revision(&hw_revision);
 
 		zcbor_uint32_put(zs, MSG_KEY_HW_REVISION);
-		zcbor_tstr_put_term(zs, hw_revision);
+		zcbor_tstr_put_term(zs, hw_revision, CONFIG_ZCBOR_MAX_STR_LEN);
 
 		char *fw_version;
 		ctr_info_get_fw_version(&fw_version);
 
 		zcbor_uint32_put(zs, MSG_KEY_FW_VERSION);
-		zcbor_tstr_put_term(zs, fw_version);
+		zcbor_tstr_put_term(zs, fw_version, CONFIG_ZCBOR_MAX_STR_LEN);
 
 		char *serial_number;
 		ctr_info_get_serial_number(&serial_number);
 
 		zcbor_uint32_put(zs, MSG_KEY_SERIAL_NUMBER);
-		zcbor_tstr_put_term(zs, serial_number);
+		zcbor_tstr_put_term(zs, serial_number, CONFIG_ZCBOR_MAX_STR_LEN);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -538,11 +538,11 @@ int app_cbor_encode(zcbor_state_t *zs)
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	
+
 	if (!zcbor_check_error(zs)) {
 		LOG_ERR("Encoding failed: %d", zcbor_pop_error(zs));
 		return -EFAULT;
 	}
-	
+
 	return 0;
 }

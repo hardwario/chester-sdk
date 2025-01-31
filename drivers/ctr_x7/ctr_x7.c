@@ -46,7 +46,7 @@ struct ctr_x7_data {
 };
 
 static const nrfx_timer_t m_timer = NRFX_TIMER_INSTANCE(4);
-static nrf_saadc_value_t m_samples[2 * MAX_SAMPLE_COUNT];
+static int16_t m_samples[2 * MAX_SAMPLE_COUNT];
 static K_MUTEX_DEFINE(m_lock);
 static K_SEM_DEFINE(m_adc_sem, 0, 1);
 
@@ -278,12 +278,12 @@ static int measure(const nrfx_saadc_channel_t saadc_channels[], size_t saadc_cha
 	return 0;
 }
 
-static inline float convert_single_ended_to_millivolts(nrf_saadc_value_t value)
+static inline float convert_single_ended_to_millivolts(int16_t value)
 {
 	return (float)value * 6 * 600 / 4096;
 }
 
-static inline float convert_differential_to_millivolts(nrf_saadc_value_t value)
+static inline float convert_differential_to_millivolts(int16_t value)
 {
 	return (float)value * 6 * 600 / 2048;
 }
@@ -316,7 +316,7 @@ static int ctr_x7_measure_(const struct device *dev,
 	saadc_channels[1].pin_p = (nrf_saadc_input_t)NRF_SAADC_INPUT_AIN0;
 	saadc_channels[1].pin_n = NRF_SAADC_INPUT_DISABLED;
 
-	float (*convert[2])(nrf_saadc_value_t) = {0};
+	float (*convert[2])(int16_t) = {0};
 
 	convert[0] = convert_differential_to_millivolts;
 	convert[1] = convert_single_ended_to_millivolts;
@@ -361,14 +361,14 @@ static int ctr_x7_measure_(const struct device *dev,
 		raw_avg[i] = raw_avg[i] / MAX_SAMPLE_COUNT;
 		raw_rms[i] = sqrtf(raw_rms[i] / MAX_SAMPLE_COUNT);
 
-		LOG_DBG("Channel %u: AVG (raw): %+.1f", i + 1, raw_avg[i]);
-		LOG_DBG("Channel %u: RMS (raw): %+.1f", i + 1, raw_rms[i]);
+		LOG_DBG("Channel %u: AVG (raw): %+.1f", i + 1, (double)raw_avg[i]);
+		LOG_DBG("Channel %u: RMS (raw): %+.1f", i + 1, (double)raw_rms[i]);
 
 		results[i].avg = results[i].avg / MAX_SAMPLE_COUNT;
 		results[i].rms = sqrtf(results[i].rms / MAX_SAMPLE_COUNT);
 
-		LOG_DBG("Channel %u: AVG (cal): %+.1f", i + 1, results[i].avg);
-		LOG_DBG("Channel %u: RMS (cal): %+.1f", i + 1, results[i].rms);
+		LOG_DBG("Channel %u: AVG (cal): %+.1f", i + 1, (double)results[i].avg);
+		LOG_DBG("Channel %u: RMS (cal): %+.1f", i + 1, (double)results[i].rms);
 	}
 
 	return 0;

@@ -11,6 +11,7 @@
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
 #include <chester/ctr_hygro.h>
+#include <chester/ctr_rtc.h>
 #include <chester/ctr_therm.h>
 #include <chester/ctr_rtc.h>
 #include <chester/drivers/ctr_batt.h>
@@ -62,7 +63,7 @@ static void aggreg(float *samples, size_t count, float *min, float *max, float *
 
 	double avg_ = 0;
 	for (size_t i = 0; i < count; i++) {
-		avg_ += samples[i];
+		avg_ += (double)samples[i];
 	}
 	avg_ /= count;
 

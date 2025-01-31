@@ -8,5 +8,9 @@ if SHIELD_CTR_GNSS
 
 config CTR_GNSS
 	default y
+	
+# Disables mainline UART-based driver
+config GNSS_U_BLOX_M8
+	default n
 
 endif # SHIELD_CTR_GNSS

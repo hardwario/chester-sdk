@@ -13,7 +13,6 @@ config CTR_LTE_V2
 	select CTR_UTIL
 	select CTR_INFO
 	select PM_DEVICE
-	select REQUIRES_FULL_LIBC
 	select RING_BUFFER
 
 if CTR_LTE_V2

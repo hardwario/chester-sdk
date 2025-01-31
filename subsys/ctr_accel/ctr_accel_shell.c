@@ -32,9 +32,9 @@ static int cmd_accel_read(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	shell_print(shell, "accel-axis-x: %.3f m/s^2", accel_x);
-	shell_print(shell, "accel-axis-y: %.3f m/s^2", accel_y);
-	shell_print(shell, "accel-axis-z: %.3f m/s^2", accel_z);
+	shell_print(shell, "accel-axis-x: %.3f m/s^2", (double)accel_x);
+	shell_print(shell, "accel-axis-y: %.3f m/s^2", (double)accel_y);
+	shell_print(shell, "accel-axis-z: %.3f m/s^2", (double)accel_z);
 	shell_print(shell, "orientation: %d", orientation);
 
 	return 0;

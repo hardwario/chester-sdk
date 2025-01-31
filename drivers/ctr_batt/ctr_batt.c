@@ -324,7 +324,6 @@ static const struct ctr_batt_driver_api ctr_batt_driver_api = {
 		.adc_sequence = {.channels = BIT(0), .resolution = 12},                            \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, &ctr_batt_init, NULL, &inst_##n##_data, &inst_##n##_config,       \
-			      APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY,                       \
-			      &ctr_batt_driver_api);
+			      POST_KERNEL, CONFIG_CTR_BATT_INIT_PRIORITY, &ctr_batt_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_BATT_INIT)

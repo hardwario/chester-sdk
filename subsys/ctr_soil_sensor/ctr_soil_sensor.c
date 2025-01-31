@@ -23,7 +23,7 @@
 
 LOG_MODULE_REGISTER(ctr_soil_sensor, CONFIG_CTR_SOIL_SENSOR_LOG_LEVEL);
 
-#define TMP112_I2C_ADDR	 0x48
+#define TMP112_I2C_ADDR  0x48
 #define TMP112_CONV_TIME K_MSEC(40)
 
 #define ZSSC3123_I2C_ADDR  0x28
@@ -348,7 +348,7 @@ int ctr_soil_sensor_read(int index, uint64_t *serial_number, float *temperature,
 			res = ret;
 			goto error;
 		} else if (temperature) {
-			LOG_DBG("Temperature: %.2f C", *temperature);
+			LOG_DBG("Temperature: %.2f C", (double)*temperature);
 		}
 	}
 

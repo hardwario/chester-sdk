@@ -9,7 +9,6 @@ config CTR_S1
 	depends on GPIO
 	depends on I2C
 	select POLL
-	select REQUIRES_FULL_LIBC
 
 if CTR_S1
 

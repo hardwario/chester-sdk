@@ -179,7 +179,9 @@ static void clear_b_work_handler_0(struct k_work *work)
 {
 	int ret;
 
-	const struct device *dev = CONTAINER_OF(work, struct ctr_s3_data, clear_b_work_0)->dev;
+	const struct device *dev =
+		CONTAINER_OF((struct k_work_delayable *)work, struct ctr_s3_data, clear_b_work_0)
+			->dev;
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->dl_spec_0, GPIO_INPUT);
 	if (ret) {
@@ -196,7 +198,9 @@ static void clear_b_work_handler_1(struct k_work *work)
 {
 	int ret;
 
-	const struct device *dev = CONTAINER_OF(work, struct ctr_s3_data, clear_b_work_1)->dev;
+	const struct device *dev =
+		CONTAINER_OF((struct k_work_delayable *)work, struct ctr_s3_data, clear_b_work_1)
+			->dev;
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->dl_spec_1, GPIO_INPUT);
 	if (ret) {
@@ -213,7 +217,9 @@ static void clear_c_work_handler_0(struct k_work *work)
 {
 	int ret;
 
-	const struct device *dev = CONTAINER_OF(work, struct ctr_s3_data, clear_c_work_0)->dev;
+	const struct device *dev =
+		CONTAINER_OF((struct k_work_delayable *)work, struct ctr_s3_data, clear_c_work_0)
+			->dev;
 
 	ret = gpio_pin_interrupt_configure_dt(&get_config(dev)->dl_spec_0, GPIO_INT_LEVEL_HIGH);
 	if (ret) {
@@ -225,7 +231,9 @@ static void clear_c_work_handler_1(struct k_work *work)
 {
 	int ret;
 
-	const struct device *dev = CONTAINER_OF(work, struct ctr_s3_data, clear_c_work_1)->dev;
+	const struct device *dev =
+		CONTAINER_OF((struct k_work_delayable *)work, struct ctr_s3_data, clear_c_work_1)
+			->dev;
 
 	ret = gpio_pin_interrupt_configure_dt(&get_config(dev)->dl_spec_1, GPIO_INT_LEVEL_HIGH);
 	if (ret) {

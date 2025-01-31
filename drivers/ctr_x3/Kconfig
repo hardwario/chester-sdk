@@ -17,4 +17,8 @@ module = CTR_X3
 module-str = ctr_x3
 source "subsys/logging/Kconfig.template.log_config"
 
+config CTR_X3_INIT_PRIORITY
+	int "Init Priority"
+	default 99
+
 endif # CTR_X3

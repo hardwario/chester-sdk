@@ -174,11 +174,6 @@ static const struct ctr_x3_driver_api ctr_x3_driver_api = {
 	.measure = ctr_x3_measure_,
 };
 
-/* TODO Delete (these macros will make it to mainline) */
-#define DT_INST_ENUM_IDX(inst, prop) DT_ENUM_IDX(DT_DRV_INST(inst), prop)
-#define DEVICE_DT_GET_OR_NULL(node_id)                                                             \
-	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay), (DEVICE_DT_GET(node_id)), (NULL))
-
 #define CTR_X3_INIT(n)                                                                             \
 	static const struct ctr_x3_config inst_##n##_config = {                                    \
 		.adc0_dev = COND_CODE_0(DT_INST_ENUM_IDX(n, slot),                                 \
@@ -192,6 +187,6 @@ static const struct ctr_x3_driver_api ctr_x3_driver_api = {
 	};                                                                                         \
 	static struct ctr_x3_data inst_##n##_data = {};                                            \
 	DEVICE_DT_INST_DEFINE(n, ctr_x3_init, NULL, &inst_##n##_data, &inst_##n##_config,          \
-			      APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY, &ctr_x3_driver_api);
+			      POST_KERNEL, CONFIG_CTR_X3_INIT_PRIORITY, &ctr_x3_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CTR_X3_INIT)

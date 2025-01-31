@@ -47,7 +47,7 @@ int main(void)
 				LOG_ERR("Call `ctr_soil_sensor_read` failed: %d", ret);
 			} else {
 				LOG_INF("Serial number: %llu / Temperature: %.2f C / Moisture: %d",
-					serial_number, temperature, moisture);
+					serial_number, (double)temperature, moisture);
 			}
 		}
 

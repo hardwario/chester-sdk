@@ -438,6 +438,7 @@ static int sc16is7xx_configure(const struct device *dev, const struct uart_confi
 	return 0;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int sc16is7xx_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	if (k_is_in_isr()) {
@@ -452,6 +453,7 @@ static int sc16is7xx_config_get(const struct device *dev, struct uart_config *cf
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
@@ -1143,8 +1145,10 @@ static int sc16is7xx_pm_control(const struct device *dev, enum pm_device_action 
 static const struct uart_driver_api sc16is7xx_driver_api = {
 	.poll_in = sc16is7xx_poll_in,
 	.poll_out = sc16is7xx_poll_out,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = sc16is7xx_configure,
 	.config_get = sc16is7xx_config_get,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = sc16is7xx_fifo_fill,

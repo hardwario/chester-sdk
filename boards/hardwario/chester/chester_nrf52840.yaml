@@ -1,14 +1,16 @@
 #
-# Copyright (c) 2023 HARDWARIO a.s.
+# Copyright (c) 2024 HARDWARIO a.s.
 #
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-identifier: chester_nrf52840
+identifier: chester/nrf52840
 name: HARDWARIO CHESTER nRF52840
 type: mcu
 arch: arm
 ram: 256
 flash: 1024
 toolchain:
+  - zephyr
   - gnuarmemb
+vendor: hardwario

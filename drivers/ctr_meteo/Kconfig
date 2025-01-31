@@ -10,7 +10,6 @@ config CTR_METEO
 	select CTR_EDGE
 	select GPIO
 	select I2C
-	select REQUIRES_FULL_LIBC
 
 if CTR_METEO
 

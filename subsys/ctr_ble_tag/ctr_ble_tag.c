@@ -144,7 +144,7 @@ static int16_t parse_data(struct net_buf_simple *buf, float *temperature, float 
 
 			if (temperature) {
 				*temperature = temperature_ / 100.0;
-				LOG_DBG("Temperature: %.2f C", *temperature);
+				LOG_DBG("Temperature: %.2f C", (double)*temperature);
 
 				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE;
 			}
@@ -161,7 +161,7 @@ static int16_t parse_data(struct net_buf_simple *buf, float *temperature, float 
 
 			if (humidity) {
 				*humidity = humidity_;
-				LOG_DBG("Humidity: %.0f %%", *humidity);
+				LOG_DBG("Humidity: %.0f %%", (double)*humidity);
 
 				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_HUMIDITY;
 			}
@@ -250,7 +250,7 @@ static int16_t parse_data(struct net_buf_simple *buf, float *temperature, float 
 
 			if (voltage) {
 				*voltage = (voltage_ * 10) + 2000.0;
-				LOG_DBG("Voltage: %.2f V", *voltage);
+				LOG_DBG("Voltage: %.2f V", (double)*voltage);
 
 				sensor_mask |= CTR_BLE_TAG_SENSOR_MASK_VOLTAGE;
 			}
@@ -1121,7 +1121,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 		msg_buf.len--;
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
-			sprintf(intermediate_buf, "/ voltage: %.2f V ", voltage);
+			sprintf(intermediate_buf, "/ voltage: %.2f V ", (double)voltage);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -1132,7 +1132,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
-			sprintf(intermediate_buf, "/ temperature: %.2f C ", temperature);
+			sprintf(intermediate_buf, "/ temperature: %.2f C ", (double)temperature);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -1143,7 +1143,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
-			sprintf(intermediate_buf, "/ humidity: %.2f %% ", humidity);
+			sprintf(intermediate_buf, "/ humidity: %.2f %% ", (double)humidity);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -1189,7 +1189,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_ROLL) {
-			sprintf(intermediate_buf, "/ roll: %.2f ", roll);
+			sprintf(intermediate_buf, "/ roll: %.2f ", (double)roll);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -1200,7 +1200,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_PITCH) {
-			sprintf(intermediate_buf, "/ pitch: %.2f ", pitch);
+			sprintf(intermediate_buf, "/ pitch: %.2f ", (double)pitch);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -1305,7 +1305,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 		msg_buf.len--;
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
-			snprintf(intermediate_buf, 32, "/ voltage: %.2f V ", voltage);
+			snprintf(intermediate_buf, 32, "/ voltage: %.2f V ", (double)voltage);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -1316,7 +1316,8 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
-			snprintf(intermediate_buf, 32, "/ temperature: %.2f C ", temperature);
+			snprintf(intermediate_buf, 32, "/ temperature: %.2f C ",
+				 (double)temperature);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -1327,7 +1328,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
-			snprintf(intermediate_buf, 32, "/ humidity: %.2f %% ", humidity);
+			snprintf(intermediate_buf, 32, "/ humidity: %.2f %% ", (double)humidity);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -1373,7 +1374,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_ROLL) {
-			snprintf(intermediate_buf, 32, "/ roll: %.2f ", roll);
+			snprintf(intermediate_buf, 32, "/ roll: %.2f ", (double)roll);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -1384,7 +1385,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_PITCH) {
-			snprintf(intermediate_buf, 32, "/ pitch: %.2f ", pitch);
+			snprintf(intermediate_buf, 32, "/ pitch: %.2f ", (double)pitch);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_append_str` failed");

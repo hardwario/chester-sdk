@@ -283,7 +283,7 @@ int main(void)
 			goto error;
 		}
 
-		LOG_INF("Temperature: %.2f C", temperature);
+		LOG_INF("Temperature: %.2f C", (double)temperature);
 
 		ctr_led_set(CTR_LED_CHANNEL_R, true);
 		k_sleep(K_MSEC(100));

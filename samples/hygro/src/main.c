@@ -34,8 +34,8 @@ int main(void)
 			LOG_ERR("Call `ctr_hygro_read` failed: %d", ret);
 
 		} else {
-			LOG_INF("Temperature: %.2f C", temperature);
-			LOG_INF("Humidity: %.1f %%", humidity);
+			LOG_INF("Temperature: %.2f C", (double)temperature);
+			LOG_INF("Humidity: %.1f %%", (double)humidity);
 		}
 
 		k_sleep(K_SECONDS(5));

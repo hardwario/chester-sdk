@@ -52,7 +52,7 @@ int ctr_therm_read(float *temperature)
 
 	float temperature_ = sensor_value_to_double(&val);
 
-	LOG_DBG("Temperature: %.2f C", temperature_);
+	LOG_DBG("Temperature: %.2f C", (double)temperature_);
 
 	if (temperature != NULL) {
 		*temperature = temperature_;

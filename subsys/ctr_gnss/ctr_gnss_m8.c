@@ -47,9 +47,9 @@ static void parse_nmea(const char *line)
 
 			LOG_DBG("Fix quality: %d", data.update.fix_quality);
 			LOG_DBG("Satellites tracked: %d", data.update.satellites_tracked);
-			LOG_DBG("Latitude: %.7f", data.update.latitude);
-			LOG_DBG("Longitude: %.7f", data.update.longitude);
-			LOG_DBG("Altitude: %.1f", data.update.altitude);
+			LOG_DBG("Latitude: %.7f", (double)data.update.latitude);
+			LOG_DBG("Longitude: %.7f", (double)data.update.longitude);
+			LOG_DBG("Altitude: %.1f", (double)data.update.altitude);
 
 			if (m_user_cb) {
 				m_user_cb(CTR_GNSS_EVENT_UPDATE, &data, m_user_data);

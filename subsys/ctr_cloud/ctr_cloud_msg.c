@@ -138,49 +138,49 @@ int ctr_cloud_msg_pack_create_session(struct ctr_buf *buf)
 	ctr_info_get_vendor_name(&vendor_name);
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_VENDOR_NAME);
-	zcbor_tstr_put_term(zs, vendor_name);
+	zcbor_tstr_put_term(zs, vendor_name, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	char *product_name;
 	ctr_info_get_product_name(&product_name);
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_PRODUCT_NAME);
-	zcbor_tstr_put_term(zs, product_name);
+	zcbor_tstr_put_term(zs, product_name, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	char *hw_variant;
 	ctr_info_get_hw_variant(&hw_variant);
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_HW_VARIANT);
-	zcbor_tstr_put_term(zs, hw_variant);
+	zcbor_tstr_put_term(zs, hw_variant, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	char *hw_revision;
 	ctr_info_get_hw_revision(&hw_revision);
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_HW_REVISION);
-	zcbor_tstr_put_term(zs, hw_revision);
+	zcbor_tstr_put_term(zs, hw_revision, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	char *fw_bundle;
 	ctr_info_get_fw_bundle(&fw_bundle);
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_APP_FW_BUNDLE);
-	zcbor_tstr_put_term(zs, fw_bundle);
+	zcbor_tstr_put_term(zs, fw_bundle, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	char *fw_name;
 	ctr_info_get_fw_name(&fw_name);
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_APP_FW_NAME);
-	zcbor_tstr_put_term(zs, fw_name);
+	zcbor_tstr_put_term(zs, fw_name, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	char *fw_version;
 	ctr_info_get_fw_version(&fw_version);
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_APP_FW_VERSION);
-	zcbor_tstr_put_term(zs, fw_version);
+	zcbor_tstr_put_term(zs, fw_version, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	char *ble_passkey;
 	ctr_info_get_ble_passkey(&ble_passkey);
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_BLE_PASSKEY);
-	zcbor_tstr_put_term(zs, ble_passkey);
+	zcbor_tstr_put_term(zs, ble_passkey, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	uint64_t imei;
 	ret = ctr_lte_v2_get_imei(&imei);
@@ -202,7 +202,7 @@ int ctr_cloud_msg_pack_create_session(struct ctr_buf *buf)
 	ctr_lte_v2_get_modem_fw_version(&modem_fw_version);
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_LTE_FW_VERSION);
-	zcbor_tstr_put_term(zs, modem_fw_version);
+	zcbor_tstr_put_term(zs, modem_fw_version, CONFIG_ZCBOR_MAX_STR_LEN);
 
 #if defined(CONFIG_SHIELD_CTR_Z)
 
@@ -240,21 +240,21 @@ int ctr_cloud_msg_pack_create_session(struct ctr_buf *buf)
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_CTR_Z_SERIAL_NUMBER);
 	snprintf(tmp, sizeof(tmp), "%d", ctr_z_serial_number);
-	zcbor_tstr_put_term(zs, tmp);
+	zcbor_tstr_put_term(zs, tmp, sizeof(tmp));
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_CTR_Z_HW_REVISION);
 	snprintf(tmp, sizeof(tmp), "R%u.%u", (ctr_z_hw_revision >> 8) & 0xff,
 		 ctr_z_hw_revision & 0xff);
-	zcbor_tstr_put_term(zs, tmp);
+	zcbor_tstr_put_term(zs, tmp, sizeof(tmp));
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_CTR_Z_HW_VARIANT);
 	snprintf(tmp, sizeof(tmp), "0x%04x", ctr_z_hw_variant);
-	zcbor_tstr_put_term(zs, tmp);
+	zcbor_tstr_put_term(zs, tmp, sizeof(tmp));
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_CTR_Z_FW_VERSION);
 	snprintf(tmp, sizeof(tmp), "v%u.%u.%u", (ctr_z_fw_version >> 24) & 0xff,
 		 (ctr_z_fw_version >> 16) & 0xff, (ctr_z_fw_version >> 8) & 0xff);
-	zcbor_tstr_put_term(zs, tmp);
+	zcbor_tstr_put_term(zs, tmp, sizeof(tmp));
 
 #endif /* defined(CONFIG_SHIELD_CTR_Z) */
 
@@ -281,7 +281,7 @@ int ctr_cloud_msg_unpack_set_session(struct ctr_buf *buf, struct ctr_cloud_sessi
 
 	memset(session, 0, sizeof(struct ctr_cloud_session));
 
-	ZCBOR_STATE_D(zs, 1, p + 1, ctr_buf_get_used(buf) - 1, 1);
+	ZCBOR_STATE_D(zs, 1, p + 1, ctr_buf_get_used(buf) - 1, 1, 0);
 
 	if (!zcbor_map_start_decode(zs)) {
 		return -EBADMSG;
@@ -647,7 +647,7 @@ int ctr_cloud_msg_unpack_config(struct ctr_buf *buf, struct ctr_cloud_msg_dlconf
 	zcbor_state_t *zs = &config->zs[0];
 
 	zcbor_new_decode_state(zs, sizeof(config->zs) / sizeof(zcbor_state_t), p + 2,
-			       ctr_buf_get_used(buf) - 2, 1);
+			       ctr_buf_get_used(buf) - 2, 1, NULL, 0);
 
 	if (!zcbor_list_start_decode(zs)) {
 		return -EBADMSG;
@@ -708,7 +708,7 @@ int ctr_cloud_msg_dlconfig_reset(struct ctr_cloud_msg_dlconfig *config)
 	uint8_t *p = ctr_buf_get_mem(config->buf);
 
 	zcbor_new_decode_state(config->zs, sizeof(config->zs) / sizeof(zcbor_state_t), p + 2,
-			       ctr_buf_get_used(config->buf) - 2, 1);
+			       ctr_buf_get_used(config->buf) - 2, 1, NULL, 0);
 
 	if (!zcbor_list_start_decode(config->zs)) {
 		LOG_ERR("Call `zcbor_list_start_decode` failed");
@@ -770,7 +770,7 @@ int ctr_cloud_msg_unpack_dlshell(struct ctr_buf *buf, struct ctr_cloud_msg_dlshe
 	dlshell->buf = buf;
 
 	zcbor_new_decode_state(dlshell->zs, sizeof(dlshell->zs) / sizeof(zcbor_state_t), p + 1,
-			       ctr_buf_get_used(dlshell->buf) - 1, 1);
+			       ctr_buf_get_used(dlshell->buf) - 1, 1, NULL, 0);
 
 	if (!zcbor_map_start_decode(dlshell->zs)) {
 		LOG_ERR("Call `zcbor_map_start_decode` failed");
@@ -846,7 +846,7 @@ int ctr_cloud_msg_dlshell_reset(struct ctr_cloud_msg_dlshell *dlshell)
 	uint8_t *p = ctr_buf_get_mem(dlshell->buf);
 
 	zcbor_new_decode_state(dlshell->zs, sizeof(dlshell->zs) / sizeof(zcbor_state_t), p + 1,
-			       ctr_buf_get_used(dlshell->buf) - 1, 1);
+			       ctr_buf_get_used(dlshell->buf) - 1, 1, NULL, 0);
 
 	if (!zcbor_map_start_decode(dlshell->zs)) {
 		LOG_ERR("Call `zcbor_map_start_decode` failed");
@@ -927,7 +927,7 @@ int ctr_cloud_msg_pack_upshell_start(struct ctr_cloud_msg_upshell *upshell, stru
 
 	uint8_t *p = ctr_buf_get_mem(buf) + 1;
 
-	zcbor_new_state(upshell->zs, 0, p, ctr_buf_get_free(buf) - 1, 1);
+	zcbor_new_state(upshell->zs, 0, p, ctr_buf_get_free(buf) - 1, 1, NULL, 0);
 
 	if (!zcbor_map_start_encode(upshell->zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH)) {
 		LOG_ERR("Call `zcbor_map_start_encode` failed");
@@ -981,7 +981,7 @@ int ctr_cloud_msg_pack_upshell_add_response(struct ctr_cloud_msg_upshell *upshel
 		return -EBADMSG;
 	}
 
-	if (!zcbor_tstr_put_term(upshell->zs, command)) {
+	if (!zcbor_tstr_put_term(upshell->zs, command, CONFIG_ZCBOR_MAX_STR_LEN)) {
 		LOG_ERR("Call `zcbor_tstr_put_term` failed");
 		return -EBADMSG;
 	}
@@ -1086,10 +1086,10 @@ int ctr_cloud_msg_pack_firmware(struct ctr_buf *buf, const struct ctr_cloud_upfi
 	zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 	zcbor_uint32_put(zs, UL_FIRMWARE_KEY_TARGET);
-	zcbor_tstr_put_term(zs, upfirmware->target);
+	zcbor_tstr_put_term(zs, upfirmware->target, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	zcbor_uint32_put(zs, UL_FIRMWARE_KEY_TYPE);
-	zcbor_tstr_put_term(zs, upfirmware->type);
+	zcbor_tstr_put_term(zs, upfirmware->type, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	if (upfirmware->id != NULL) {
 		zcbor_uint32_put(zs, UL_FIRMWARE_KEY_ID);
@@ -1108,12 +1108,12 @@ int ctr_cloud_msg_pack_firmware(struct ctr_buf *buf, const struct ctr_cloud_upfi
 
 	if (upfirmware->firmware != NULL) {
 		zcbor_uint32_put(zs, UL_FIRMWARE_KEY_FIRMWARE);
-		zcbor_tstr_put_term(zs, upfirmware->firmware);
+		zcbor_tstr_put_term(zs, upfirmware->firmware, CONFIG_ZCBOR_MAX_STR_LEN);
 	}
 
 	if (upfirmware->error != NULL) {
 		zcbor_uint32_put(zs, UL_FIRMWARE_KEY_ERROR);
-		zcbor_tstr_put_term(zs, upfirmware->error);
+		zcbor_tstr_put_term(zs, upfirmware->error, CONFIG_ZCBOR_MAX_STR_LEN);
 	}
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -1140,7 +1140,7 @@ int ctr_cloud_msg_unpack_dlfirmware(struct ctr_buf *buf,
 
 	memset(dlfirmware, 0, sizeof(struct ctr_cloud_msg_dlfirmware));
 
-	ZCBOR_STATE_D(zs, 1, p + 1, ctr_buf_get_used(buf) - 1, 1);
+	ZCBOR_STATE_D(zs, 1, p + 1, ctr_buf_get_used(buf) - 1, 1, 0);
 
 	if (!zcbor_map_start_decode(zs)) {
 		return -EBADMSG;

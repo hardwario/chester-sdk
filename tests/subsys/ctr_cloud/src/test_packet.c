@@ -122,7 +122,7 @@ ZTEST(subsus_ctr_cloud_0_packet, test_unpack_error_short)
 
 	int ret = ctr_cloud_packet_unpack(&pck, claim_token, &buffer);
 
-	zassert_equal(ret, -74, "ctr_cloud_packet_unpack failed");
+	zassert_equal(ret, -EBADMSG, "ctr_cloud_packet_unpack failed");
 }
 
 ZTEST(subsus_ctr_cloud_0_packet, test_unpack_error_bad_hash)
@@ -137,7 +137,7 @@ ZTEST(subsus_ctr_cloud_0_packet, test_unpack_error_bad_hash)
 
 	int ret = ctr_cloud_packet_unpack(&pck, claim_token, &buffer);
 
-	zassert_equal(ret, -74, "ctr_cloud_packet_unpack failed");
+	zassert_equal(ret, -EBADMSG, "ctr_cloud_packet_unpack failed");
 }
 
 ZTEST(subsus_ctr_cloud_0_packet, test_pack_a)

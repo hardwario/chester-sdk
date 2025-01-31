@@ -15,7 +15,7 @@ build:
     - git -C chester checkout "${CI_COMMIT_SHA}"
     - west init -l --mf west.yml chester
     - west update
-    - west config build.board chester_nrf52840
+    - west config build.board chester
     - ./zephyr/scripts/twister --testsuite-root chester/tests -c -i
     - |
       for sample in chester/samples/*/

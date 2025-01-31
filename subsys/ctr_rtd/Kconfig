@@ -8,7 +8,6 @@ config CTR_RTD
 	bool "CTR_RTD"
 	depends on CTR_X3
 	select CBPRINTF_FP_SUPPORT if CTR_RTD_LOG_LEVEL_DBG || CTR_RTD_SHELL
-	select REQUIRES_FULL_LIBC
 
 if CTR_RTD
 

@@ -97,7 +97,8 @@ int main(void)
 			sample[1] = NAN;
 		}
 
-		LOG_INF("Voltage CH1(0-26V): %.3f V, CH2(0-3V): %.3f", sample[0], sample[1]);
+		LOG_INF("Voltage CH1(0-26V): %.3f V, CH2(0-3V): %.3f", (double)sample[0],
+			(double)sample[1]);
 
 		k_sleep(K_MSEC(500));
 	}

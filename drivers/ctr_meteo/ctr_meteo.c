@@ -27,35 +27,35 @@
 
 LOG_MODULE_REGISTER(ctr_meteo, CONFIG_CTR_METEO_LOG_LEVEL);
 
-#define RAINFALL_EDGE_ACTIVE_DURATION	20
+#define RAINFALL_EDGE_ACTIVE_DURATION   20
 #define RAINFALL_EDGE_INACTIVE_DURATION 20
-#define RAINFALL_EDGE_COOLDOWN_TIME	100
+#define RAINFALL_EDGE_COOLDOWN_TIME     100
 
-#define WIND_SPEED_EDGE_ACTIVE_DURATION	  2
+#define WIND_SPEED_EDGE_ACTIVE_DURATION   2
 #define WIND_SPEED_EDGE_INACTIVE_DURATION 2
-#define WIND_SPEED_EDGE_COOLDOWN_TIME	  10
+#define WIND_SPEED_EDGE_COOLDOWN_TIME     10
 
-#define R1	    4700
+#define R1          4700
 #define DIVIDER(R2) ((float)(R2) / ((float)(R1) + (float)(R2)))
 
 #define WIND_ADC_ANGLE_SIZE 16
 static const float wind_adc_angle[WIND_ADC_ANGLE_SIZE] = {
-	DIVIDER(33000),	 /* 0°		North	*/
-	DIVIDER(6570),	 /* 22.5°		*/
-	DIVIDER(8200),	 /* 45°			*/
-	DIVIDER(891),	 /* 67.5°		*/
-	DIVIDER(1000),	 /* 90°		East	*/
-	DIVIDER(688),	 /* 112.5°		*/
-	DIVIDER(2200),	 /* 135°		*/
-	DIVIDER(1410),	 /* 157.5°		*/
-	DIVIDER(3900),	 /* 180°	South	*/
-	DIVIDER(3140),	 /* 202.5°		*/
-	DIVIDER(16000),	 /* 225°		*/
-	DIVIDER(14120),	 /* 247.5°		*/
+	DIVIDER(33000),  /* 0°		North	*/
+	DIVIDER(6570),   /* 22.5°		*/
+	DIVIDER(8200),   /* 45°			*/
+	DIVIDER(891),    /* 67.5°		*/
+	DIVIDER(1000),   /* 90°		East	*/
+	DIVIDER(688),    /* 112.5°		*/
+	DIVIDER(2200),   /* 135°		*/
+	DIVIDER(1410),   /* 157.5°		*/
+	DIVIDER(3900),   /* 180°	South	*/
+	DIVIDER(3140),   /* 202.5°		*/
+	DIVIDER(16000),  /* 225°		*/
+	DIVIDER(14120),  /* 247.5°		*/
 	DIVIDER(120000), /* 270°	West	*/
-	DIVIDER(42120),	 /* 292.5°		*/
-	DIVIDER(64900),	 /* 315°		*/
-	DIVIDER(21880),	 /* 337.5°		*/
+	DIVIDER(42120),  /* 292.5°		*/
+	DIVIDER(64900),  /* 315°		*/
+	DIVIDER(21880),  /* 337.5°		*/
 };
 
 #undef R1
@@ -94,8 +94,8 @@ static int ctr_meteo_get_rainfall_and_clear_(const struct device *dev, float *ra
 	return 0;
 }
 
-#define PULSES_PER_SECOND_IS_KM_PER_HOUR       2.4
-#define PULSES_PER_SECOND_IS_METERS_PER_SECOND (PULSES_PER_SECOND_IS_KM_PER_HOUR / 3.6)
+#define PULSES_PER_SECOND_IS_KM_PER_HOUR       2.4f
+#define PULSES_PER_SECOND_IS_METERS_PER_SECOND (PULSES_PER_SECOND_IS_KM_PER_HOUR / 3.6f)
 
 static int ctr_meteo_get_wind_speed_and_clear_(const struct device *dev, float *wind_speed_mps)
 {

@@ -20,7 +20,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -84,7 +84,6 @@ static void send_work_handler(struct k_work *work)
 	}
 
 #endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
-
 }
 
 static K_WORK_DEFINE(m_send_work, send_work_handler);
@@ -169,7 +168,8 @@ static void gnss_handler(enum ctr_gnss_event event, union ctr_gnss_event_data *d
 		LOG_INF("GNSS update: fix_quality=%d, satellites_tracked=%d, latitude=%.6f, "
 			"longitude=%.6f, altitude=%.2f",
 			data->update.fix_quality, data->update.satellites_tracked,
-			data->update.latitude, data->update.longitude, data->update.altitude);
+			(double)data->update.latitude, (double)data->update.longitude,
+			(double)data->update.altitude);
 		break;
 	case CTR_GNSS_EVENT_FAILURE:
 		LOG_ERR("GNSS failure");

@@ -29,7 +29,7 @@ static int cmd_therm_read(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	shell_print(shell, "temperature: %.2f C", temperature);
+	shell_print(shell, "temperature: %.2f C", (double)temperature);
 
 	return 0;
 }

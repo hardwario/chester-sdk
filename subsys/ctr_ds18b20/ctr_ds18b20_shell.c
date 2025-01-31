@@ -73,7 +73,7 @@ static int cmd_ds18b20_read(const struct shell *shell, size_t argc, char **argv)
 			}
 
 			shell_print(shell, "serial number %llu: temperature: %.2f C", serial_number,
-				    temperature);
+				    (double)temperature);
 		}
 	}
 
