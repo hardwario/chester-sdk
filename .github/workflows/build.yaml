@@ -48,7 +48,7 @@ jobs:
           cd chester-sdk
           west init -l --mf west.yml chester
           west update --narrow
-          west config build.board chester_nrf52840
+          west config build.board chester
       - name: short_sha
         id: short-sha
         run: |
