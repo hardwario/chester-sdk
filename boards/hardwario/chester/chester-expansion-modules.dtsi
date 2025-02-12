@@ -243,4 +243,12 @@
 		spi-max-frequency = <DT_FREQ_M(8)>;
 		xstby-enable;
 	};
+
+	ctr_x14_w5500: w5500@0 {
+		compatible = "wiznet,w5500";
+		status = "disabled";
+		reg = <0>;
+		int-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
+	};
 };

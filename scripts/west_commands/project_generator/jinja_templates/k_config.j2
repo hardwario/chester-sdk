@@ -631,7 +631,7 @@ config SERIAL
 config UART_SC16IS7XX
 	default y
 	{%- endif -%}
-	
+
 {#- X13_A|B #}
 	{%- if feature == 'hardware-chester-x13-a' or feature == 'hardware-chester-x13-b' %}
 # {{ feature | upper }}
@@ -640,6 +640,26 @@ config CAN
 
 config CAN_SHELL
 	default y if SHELL
+	{%- endif -%}
+
+{#- X14_A #}
+	{%- if feature == 'hardware-chester-x14-a' %}
+# {{ feature | upper }}
+config NET_L2_ETHERNET
+	default y
+
+config NETWORKING
+	default y
+	{%- endif -%}
+
+{#- X14_B #}
+	{%- if feature == 'hardware-cheater-x14-b' %}
+# {{ feature | upper }}
+config NET_L2_ETHERNET
+	default y
+
+config NETWORKING
+	default y
 	{%- endif -%}
 
 {#- Z #}

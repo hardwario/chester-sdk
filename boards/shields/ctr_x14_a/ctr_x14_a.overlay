@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_x14_default_a>;
+	pinctrl-1 = <&spi0_x14_sleep_a>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+};
+
+&ctr_x14_w5500 {
+	status = "okay";
+};

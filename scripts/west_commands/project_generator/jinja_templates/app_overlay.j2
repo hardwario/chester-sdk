@@ -871,7 +871,7 @@
 	status = "okay";
 };
 	{%- endif -%}
-	
+
 {#- X13_A #}
 	{%- if feature == 'hardware-chester-x13-a' %}
 /* {{ feature | upper }}  */
@@ -893,7 +893,7 @@
 	status = "okay";
 };
 	{%- endif -%}
-	
+
 {#- X13_B #}
 	{%- if feature == 'hardware-chester-x13-b' %}
 /* {{ feature | upper }}  */
@@ -912,6 +912,40 @@
 };
 
 &ctr_x13_can {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- X14_A #}
+	{%- if feature == 'hardware-chester-x14-a' %}
+/* {{ feature | upper }}  */
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_x14_default_a>;
+	pinctrl-1 = <&spi0_x14_sleep_a>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+};
+
+&ctr_x14_w5500 {
+	status = "okay";
+};
+	{%- endif -%}
+
+{#- X14_B #}
+	{%- if feature == 'hardware-chester-x14-b' %}
+/* {{ feature | upper }}  */
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_x14_default_b>;
+	pinctrl-1 = <&spi0_x14_sleep_b>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+};
+
+&ctr_x14_w5500 {
 	status = "okay";
 };
 	{%- endif -%}
