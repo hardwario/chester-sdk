@@ -631,6 +631,16 @@ config SERIAL
 config UART_SC16IS7XX
 	default y
 	{%- endif -%}
+	
+{#- X13_A|B #}
+	{%- if feature == 'hardware-chester-x13-a' or feature == 'hardware-chester-x13-b' %}
+# {{ feature | upper }}
+config CAN
+	default y
+
+config CAN_SHELL
+	default y if SHELL
+	{%- endif -%}
 
 {#- Z #}
 	{%- if feature == 'hardware-chester-z' %}

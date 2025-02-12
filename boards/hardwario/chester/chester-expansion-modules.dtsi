@@ -229,3 +229,18 @@
 		reg = <0x60>;
 	};
 };
+
+&spi0 {
+	status = "disabled";
+
+	ctr_x13_can: ctr_x13_mcp2518fd@0 {
+		compatible = "microchip,mcp251xfd";
+		status = "disabled";
+		reg = <0>;
+		osc-freq = <DT_FREQ_M(20)>;
+		int-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		/* According to the datasheet, the maximum SPI frequency is osc-freq/2*0.85 */
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		xstby-enable;
+	};
+};

@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+if SHIELD_CTR_X13_B
+
+config CAN
+	default y
+
+config CAN_SHELL
+	default y if SHELL
+
+endif # SHIELD_CTR_X2_B
