@@ -181,14 +181,14 @@ static int encode(zcbor_state_t *zs)
 		if (isnan(g_app_data.system_voltage_rest)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_uint32_put(zs, g_app_data.system_voltage_rest * 1000.f);
+			zcbor_uint32_put(zs, g_app_data.system_voltage_rest);
 		}
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__VOLTAGE_LOAD);
 		if (isnan(g_app_data.system_voltage_load)) {
 			zcbor_nil_put(zs, NULL);
 		} else {
-			zcbor_uint32_put(zs, g_app_data.system_voltage_load * 1000.f);
+			zcbor_uint32_put(zs, g_app_data.system_voltage_load);
 		}
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__CURRENT_LOAD);
