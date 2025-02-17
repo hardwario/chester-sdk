@@ -14,7 +14,7 @@
 / {
 	model = "HARDWARIO CHESTER nRF52840";
 	compatible = "hardwario,chester-nrf52840";
-	
+
 	zephyr,user {
 		ctr_leds = <&gpio_leds>;
 	};
@@ -236,7 +236,7 @@
 		compatible = "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>,
-		            <&gpio0 17 GPIO_ACTIVE_HIGH>;
+					<&gpio0 17 GPIO_ACTIVE_HIGH>;
 		disconnect-sdo-sa0-pull-up;
 	};
 
@@ -289,7 +289,7 @@
 		compatible = "atmel,at45";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(15)>;
-		jedec-id = [1f 28 00];
+		jedec-id = [ 1f 28 00  ];
 		size = <DT_SIZE_M(64)>;
 		sector-size = <DT_SIZE_K(256)>;
 		block-size = <DT_SIZE_K(2)>;
@@ -369,6 +369,11 @@
 			reg = <0x000f8000 DT_SIZE_K(32)>;
 		};
 	};
+};
+
+&reg1 {
+	status = "okay";
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
 };
 
 #include "chester-expansion-modules.dtsi"
