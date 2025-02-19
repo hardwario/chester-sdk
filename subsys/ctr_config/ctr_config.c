@@ -364,6 +364,10 @@ static int parse_hex(const struct shell *shell, char *argv, const struct ctr_con
 
 int ctr_config_parse_item(const struct shell *shell, char *argv, const struct ctr_config_item *item)
 {
+	if (item->parse_cb != NULL) {
+		return item->parse_cb(shell, argv, item);
+	}
+
 	switch (item->type) {
 	case CTR_CONFIG_TYPE_INT:
 		return parse_int(shell, argv, item);
