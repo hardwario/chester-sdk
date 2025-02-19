@@ -12,6 +12,7 @@ var structctr__config__item =
     [ "min", "structctr__config__item.html#ac5de23e6165971047fc11904ac166344", null ],
     [ "module", "structctr__config__item.html#a769b42ee240603e7f17c7f05010e44b0", null ],
     [ "name", "structctr__config__item.html#a23e817b2f797e18f2178f64de2531a5a", null ],
+    [ "parse_cb", "structctr__config__item.html#a86f35a1135e7d19336812c4e7f59f3d6", null ],
     [ "size", "structctr__config__item.html#acd0dbb1fc5e22266d83ed329a3431ad3", null ],
     [ "type", "structctr__config__item.html#a722fcd8feddf1877f036de95d1cd6ac6", null ],
     [ "variable", "structctr__config__item.html#a07ad8a3b2bb67201cb8b5eca2d57d8cc", null ]

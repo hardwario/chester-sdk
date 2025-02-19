@@ -6,6 +6,8 @@ var ctr__config_8h =
     [ "CTR_CONFIG_ITEM_HEX", "group__ctr__config.html#gaf517ad3a0fdb9f5ca32b3a01eb96d9b2", null ],
     [ "CTR_CONFIG_ITEM_INT", "group__ctr__config.html#ga936d3bff8acbd6281a0c27ac84a9128f", null ],
     [ "CTR_CONFIG_ITEM_STRING", "group__ctr__config.html#ga345d55e3d70e8cafba9f535cdafa0a9a", null ],
+    [ "CTR_CONFIG_ITEM_STRING_PARSE_CB", "group__ctr__config.html#ga80f8171fbeb22746dc76911687c30918", null ],
+    [ "ctr_config_parse_cb", "group__ctr__config.html#gac1f2d01f0cebb959228acda8b022add4", null ],
     [ "ctr_config_show_cb", "group__ctr__config.html#gac68562a9443640c60dc453cf4633d800", null ],
     [ "ctr_config_item_type", "group__ctr__config.html#ga8287cc294380be3621f0b8ad80209bac", [
       [ "CTR_CONFIG_TYPE_INT", "group__ctr__config.html#gga8287cc294380be3621f0b8ad80209baca5c001bbdadd38265ca8f60e3cac0f03e", null ],

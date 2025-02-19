@@ -1,5 +1,7 @@
 var NAVTREEINDEX4 =
 {
+"mb7066_8h_source.html":[2,0,0,22],
+"modules.html":[0],
 "pages.html":[],
 "people__counter_8h.html":[2,0,0,23],
 "people__counter_8h_source.html":[2,0,0,23],
@@ -37,19 +39,20 @@ var NAVTREEINDEX4 =
 "structctr__cloud__session.html#aef85577df2ce8076aee36b3ca716d469":[1,0,4,0],
 "structctr__cloud__session.html#af9a2737390bbf603feaf6ec82095bd9f":[1,0,4,6],
 "structctr__config__item.html":[0,5,0],
-"structctr__config__item.html#a07ad8a3b2bb67201cb8b5eca2d57d8cc":[0,5,0,14],
+"structctr__config__item.html#a07ad8a3b2bb67201cb8b5eca2d57d8cc":[0,5,0,15],
 "structctr__config__item.html#a19ea7f91e9e2639316611fe39bb8a570":[0,5,0,3],
 "structctr__config__item.html#a1e38a69348b2c247deb4583ecac0cecb":[0,5,0,8],
 "structctr__config__item.html#a23e817b2f797e18f2178f64de2531a5a":[0,5,0,11],
 "structctr__config__item.html#a4e66ef256f0c8c0692768414c8fb7d11":[0,5,0,5],
-"structctr__config__item.html#a722fcd8feddf1877f036de95d1cd6ac6":[0,5,0,13],
+"structctr__config__item.html#a722fcd8feddf1877f036de95d1cd6ac6":[0,5,0,14],
 "structctr__config__item.html#a769b42ee240603e7f17c7f05010e44b0":[0,5,0,10],
 "structctr__config__item.html#a863fe62cb3b8c5f2fc40acf47c4df848":[0,5,0,4],
+"structctr__config__item.html#a86f35a1135e7d19336812c4e7f59f3d6":[0,5,0,12],
 "structctr__config__item.html#a8f0f149da4bf0710661d26d3e1b42120":[0,5,0,7],
 "structctr__config__item.html#ab1949dc13ecac4d9d84bd9d432bf0ab8":[0,5,0,6],
 "structctr__config__item.html#ac4eb28469504475b0227ca4d1b532234":[0,5,0,0],
 "structctr__config__item.html#ac5de23e6165971047fc11904ac166344":[0,5,0,9],
-"structctr__config__item.html#acd0dbb1fc5e22266d83ed329a3431ad3":[0,5,0,12],
+"structctr__config__item.html#acd0dbb1fc5e22266d83ed329a3431ad3":[0,5,0,13],
 "structctr__config__item.html#ad4d0e9b4842778a826a73d9a17e909f9":[0,5,0,1],
 "structctr__config__item.html#af2173149f43470a4ac804260e9f796a6":[0,5,0,2],
 "structctr__edge.html":[0,7,0],
@@ -246,8 +249,5 @@ var NAVTREEINDEX4 =
 "structctr__lte__v2__send__recv__param.html#a651f61df2b09e8ec920219ab52e8fe78":[1,0,45,3],
 "structctr__lte__v2__send__recv__param.html#a6b943f8e328e355d533e53e1e2905443":[1,0,45,1],
 "structctr__lte__v2__send__recv__param.html#aa15707a6209e097aca5928d0fdc67587":[1,0,45,6],
-"structctr__lte__v2__send__recv__param.html#aa3e984cd200d79c7509f0f8f3011cb32":[1,0,45,4],
-"structctr__lte__v2__send__recv__param.html#acac7c5e1b392dfbc15acf58b3827f552":[1,0,45,2],
-"structctr__lte__v2__send__recv__param.html#ae7aeddb6cc68da9707c030e5c77cd246":[1,0,45,5],
-"structctr__rtc__tm.html":[0,17,0]
+"structctr__lte__v2__send__recv__param.html#aa3e984cd200d79c7509f0f8f3011cb32":[1,0,45,4]
 };

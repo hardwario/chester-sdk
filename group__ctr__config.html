@@ -121,11 +121,15 @@ Macros</h2></td></tr>
 <tr class="separator:ga0bee38c51b4304b2de30a5a1e2585e09"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga345d55e3d70e8cafba9f535cdafa0a9a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#ga345d55e3d70e8cafba9f535cdafa0a9a">CTR_CONFIG_ITEM_STRING</a>(_name_d,  _var,  _help,  _default)</td></tr>
 <tr class="separator:ga345d55e3d70e8cafba9f535cdafa0a9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga80f8171fbeb22746dc76911687c30918"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#ga80f8171fbeb22746dc76911687c30918">CTR_CONFIG_ITEM_STRING_PARSE_CB</a>(_name_d,  _var,  _help,  _default,  _cb)</td></tr>
+<tr class="separator:ga80f8171fbeb22746dc76911687c30918"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaf517ad3a0fdb9f5ca32b3a01eb96d9b2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#gaf517ad3a0fdb9f5ca32b3a01eb96d9b2">CTR_CONFIG_ITEM_HEX</a>(_name_d,  _var,  _help,  _default)</td></tr>
 <tr class="separator:gaf517ad3a0fdb9f5ca32b3a01eb96d9b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
+<tr class="memitem:gac1f2d01f0cebb959228acda8b022add4"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#gac1f2d01f0cebb959228acda8b022add4">ctr_config_parse_cb</a>) (const struct shell *shell, char *argv, const struct <a class="el" href="structctr__config__item.html">ctr_config_item</a> *item)</td></tr>
+<tr class="separator:gac1f2d01f0cebb959228acda8b022add4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac68562a9443640c60dc453cf4633d800"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#gac68562a9443640c60dc453cf4633d800">ctr_config_show_cb</a>) (const struct shell *shell, size_t argc, char **argv)</td></tr>
 <tr class="separator:gac68562a9443640c60dc453cf4633d800"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -505,7 +509,77 @@ Functions</h2></td></tr>
 </div><!-- fragment -->
 </div>
 </div>
+<a id="ga80f8171fbeb22746dc76911687c30918" name="ga80f8171fbeb22746dc76911687c30918"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga80f8171fbeb22746dc76911687c30918">&#9670;&#160;</a></span>CTR_CONFIG_ITEM_STRING_PARSE_CB</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_CONFIG_ITEM_STRING_PARSE_CB</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_name_d, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_var, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_help, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_default, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_cb&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    {                                                                                          \</div>
+<div class="line">        .module = SETTINGS_PFX,                                                            \</div>
+<div class="line">        .name = _name_d,                                                                   \</div>
+<div class="line">        .type = <a class="code hl_enumvalue" href="group__ctr__config.html#gga8287cc294380be3621f0b8ad80209bacac23fdf62b40d21e9bd7af0fceba72ec8">CTR_CONFIG_TYPE_STRING</a>,                                                    \</div>
+<div class="line">        .variable = _var,                                                                  \</div>
+<div class="line">        .size = ARRAY_SIZE(_var),                                                          \</div>
+<div class="line">        .help = _help,                                                                     \</div>
+<div class="line">        .default_string = _default,                                                        \</div>
+<div class="line">        .parse_cb = _cb,                                                                   \</div>
+<div class="line">    }</div>
+</div><!-- fragment -->
+</div>
+</div>
 <h2 class="groupheader">Typedef Documentation</h2>
+<a id="gac1f2d01f0cebb959228acda8b022add4" name="gac1f2d01f0cebb959228acda8b022add4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gac1f2d01f0cebb959228acda8b022add4">&#9670;&#160;</a></span>ctr_config_parse_cb</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef int(* ctr_config_parse_cb) (const struct shell *shell, char *argv, const struct <a class="el" href="structctr__config__item.html">ctr_config_item</a> *item)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="gac68562a9443640c60dc453cf4633d800" name="gac68562a9443640c60dc453cf4633d800"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gac68562a9443640c60dc453cf4633d800">&#9670;&#160;</a></span>ctr_config_show_cb</h2>
 
