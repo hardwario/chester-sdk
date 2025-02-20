@@ -234,6 +234,12 @@ const char *ctr_lte_v2_get_state(void)
 	return ctr_lte_v2_state_str(m_state);
 }
 
+int ctr_lte_v2_get_timeout_remaining(void)
+{
+	k_ticks_t ticks = k_work_delayable_remaining_get(&m_timeout_work);
+	return k_ticks_to_ms_ceil32(ticks);
+}
+
 static void start_timer(k_timeout_t timeout)
 {
 	k_work_schedule_for_queue(&m_work_q, &m_timeout_work, timeout);
@@ -247,9 +253,18 @@ static void stop_timer(void)
 static void delegate_event(enum ctr_lte_v2_event event)
 {
 	k_mutex_lock(&m_event_rb_lock, K_FOREVER);
-	ring_buf_put(&m_event_rb, (uint8_t *)&event, 1);
+	int ret = ring_buf_put(&m_event_rb, (uint8_t *)&event, 1);
 	k_mutex_unlock(&m_event_rb_lock);
-	k_work_submit_to_queue(&m_work_q, &m_event_dispatch_work);
+
+	if (ret < 0) {
+		LOG_WRN("Failed to put event in ring buffer");
+		return;
+	}
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_event_dispatch_work);
+	if (ret < 0) {
+		LOG_WRN("Failed to submit work to queue");
+	}
 }
 
 static void event_handler(enum ctr_lte_v2_event event)
@@ -464,9 +479,9 @@ int ctr_lte_v2_gnss_set_handler(ctr_lte_v2_gnss_cb callback, void *user_data)
 static int on_enter_disabled(void)
 {
 	int ret;
-	ret = ctr_lte_v2_flow_stop();
+	ret = ctr_lte_v2_flow_disable(true);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_flow_stop` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_flow_disable` failed: %d", ret);
 	}
 
 	ret = ctr_lte_v2_flow_rfmux_release();
@@ -507,9 +522,9 @@ static int on_enter_error(void)
 {
 	k_event_clear(&m_states_event, CONNECTED_BIT);
 
-	int ret = ctr_lte_v2_flow_stop();
+	int ret = ctr_lte_v2_flow_disable(true);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_flow_stop` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_flow_disable` failed: %d", ret);
 	}
 
 	start_timer(K_SECONDS(10)); /* TODO: retry timeout (progressive) */
@@ -539,9 +554,9 @@ static int on_enter_boot(void)
 		return ret;
 	}
 
-	ret = ctr_lte_v2_flow_start();
+	ret = ctr_lte_v2_flow_enable(true);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_flow_start` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_flow_enable` failed: %d", ret);
 		return ret;
 	}
 
@@ -640,9 +655,9 @@ static int on_enter_reset_loop(void)
 
 	k_sleep(K_SECONDS(5));
 
-	ret = ctr_lte_v2_flow_stop();
+	ret = ctr_lte_v2_flow_disable(true);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_flow_stop` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_flow_disable` failed: %d", ret);
 		return ret;
 	}
 
@@ -668,9 +683,9 @@ static int reset_loop_event_handler(enum ctr_lte_v2_event event)
 
 static int on_leave_reset_loop(void)
 {
-	int ret = ctr_lte_v2_flow_start();
+	int ret = ctr_lte_v2_flow_enable(true);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_flow_start` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_flow_enable` failed: %d", ret);
 		return ret;
 	}
 
@@ -700,9 +715,9 @@ static int on_enter_retry_delay(void)
 
 	k_sleep(K_SECONDS(5));
 
-	ret = ctr_lte_v2_flow_stop();
+	ret = ctr_lte_v2_flow_disable(true);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_flow_stop` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_flow_disable` failed: %d", ret);
 		return ret;
 	}
 
@@ -796,7 +811,7 @@ static int open_socket_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_SOCKET_OPENED:
-		k_event_set(&m_states_event, CONNECTED_BIT);
+		k_event_post(&m_states_event, CONNECTED_BIT);
 		enter_state(CTR_LTE_V2_STATE_CONEVAL);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:
@@ -876,9 +891,9 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 
 static int on_enter_sleep(void)
 {
-	int ret = ctr_lte_v2_flow_stop();
+	int ret = ctr_lte_v2_flow_disable(true);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_flow_stop` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_flow_disable` failed: %d", ret);
 		return ret;
 	}
 
@@ -904,9 +919,9 @@ static int sleep_event_handler(enum ctr_lte_v2_event event)
 
 static int on_enter_wakeup(void)
 {
-	int ret = ctr_lte_v2_flow_start();
+	int ret = ctr_lte_v2_flow_enable(true);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_flow_start` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_flow_enable` failed: %d", ret);
 		return ret;
 	}
 
@@ -991,7 +1006,7 @@ static int send_event_handler(enum ctr_lte_v2_event event)
 				enter_state(CTR_LTE_V2_STATE_RECEIVE);
 			} else {
 				m_send_recv_param = NULL;
-				k_event_set(&m_states_event, SEND_RECV_BIT);
+				k_event_post(&m_states_event, SEND_RECV_BIT);
 				enter_state(CTR_LTE_V2_STATE_CONEVAL);
 			}
 		} else {
@@ -1057,7 +1072,7 @@ static int on_enter_receive(void)
 	}
 
 	m_send_recv_param = NULL;
-	k_event_set(&m_states_event, SEND_RECV_BIT);
+	k_event_post(&m_states_event, SEND_RECV_BIT);
 
 	return 0;
 }
@@ -1129,9 +1144,9 @@ static int on_enter_gnss(void)
 {
 	int ret;
 
-	ret = ctr_lte_v2_flow_cmd("AT#XGPS=1,0,1");
+	ret = ctr_lte_v2_flow_cmd_without_response("AT#XGPS=1,0,1");
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_flow_cmd` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_flow_cmd_without_response` failed: %d", ret);
 		return ret;
 	}
 
@@ -1159,9 +1174,9 @@ static int gnss_event_handler(enum ctr_lte_v2_event event)
 static int on_leave_gnss(void)
 {
 	int ret;
-	ret = ctr_lte_v2_flow_cmd("AT#XGPS=0");
+	ret = ctr_lte_v2_flow_cmd_without_response("AT#XGPS=0");
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_flow_cmd AT#XGPS=0` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_v2_flow_cmd_without_response AT#XGPS=0` failed: %d", ret);
 		return ret;
 	}
 	return 0;

@@ -241,6 +241,228 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_test_uart(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 2) {
+		shell_error(shell, "command not found: %s", argv[2]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (!g_ctr_lte_v2_config.test) {
+		shell_error(shell, "test mode is not activated");
+		return -ENOEXEC;
+	}
+
+	if (strcmp(argv[1], "enable") == 0) {
+		ret = ctr_lte_v2_flow_enable(false);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_flow_enable` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		return 0;
+	}
+
+	if (strcmp(argv[1], "disable") == 0) {
+		ret = ctr_lte_v2_flow_disable(false);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_flow_disable` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		return 0;
+	}
+
+	shell_help(shell);
+	return -EINVAL;
+}
+
+static int cmd_test_reset(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (!g_ctr_lte_v2_config.test) {
+		shell_error(shell, "test mode is not activated");
+		return -ENOEXEC;
+	}
+
+	ret = ctr_lte_v2_flow_reset();
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_flow_reset` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int cmd_test_wakeup(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (!g_ctr_lte_v2_config.test) {
+		shell_error(shell, "test mode is not activated");
+		return -ENOEXEC;
+	}
+
+	ret = ctr_lte_v2_flow_wake_up_and_wait_on_ready();
+	if (ret) {
+		if (ret == -ENOTCONN) {
+			shell_warn(shell, "uart not enabled");
+			return 0;
+		}
+		if (ret == -EAGAIN) {
+			shell_warn(shell, "boot message timed out");
+			return 0;
+		}
+
+		LOG_ERR("Call `ctr_lte_v2_flow_wake_up_and_wait_on_ready` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int cmd_test_prepare(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (!g_ctr_lte_v2_config.test) {
+		shell_error(shell, "test mode is not activated");
+		return -ENOEXEC;
+	}
+
+	ret = ctr_lte_v2_flow_prepare();
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_flow_prepare` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int cmd_test_cmd(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc > 2) {
+		shell_error(shell, "only one argument is accepted (use quotes?)");
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (!g_ctr_lte_v2_config.test) {
+		shell_error(shell, "test mode is not activated");
+		return -ENOEXEC;
+	}
+
+	ret = ctr_lte_v2_flow_cmd_without_response(argv[1]);
+	if (ret) {
+		if (ret == -ENOTCONN) {
+			shell_warn(shell, "uart not enabled");
+			return 0;
+		}
+		LOG_ERR("Call `ctr_lte_v2_flow_cmd_without_response` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	return 0;
+}
+
+static inline bool is_ascii(uint8_t data)
+{
+	return (data >= 0x30 && data <= 0x39) || (data >= 0x61 && data <= 0x66) ||
+	       (data >= 0x41 && data <= 0x46);
+}
+
+static void flow_bypass_cb(void *user_data, const uint8_t *data, size_t len)
+{
+	// shell_print((const struct shell *)user_data, "%s", (const char *)data);
+	const struct shell_fprintf *fprintf_ctx = (struct shell_fprintf *)user_data;
+	fprintf_ctx->fwrite(fprintf_ctx->user_ctx, data, len);
+}
+
+static void shell_bypass_cb(const struct shell *shell, uint8_t *data, size_t len)
+{
+	static char line[256];
+	static size_t line_len = 0;
+
+	if (len == 0) {
+		return;
+	}
+
+	if (strncmp((const char *)data, "+++", 3) == 0) {
+		shell_print(shell, "exiting bypass mode");
+		ctr_lte_v2_flow_bypass_set_cb(NULL, NULL);
+		shell_set_bypass(shell, NULL);
+		return;
+	}
+
+	for (size_t i = 0; i < len; i++) {
+		if (data[i] == '\r' || data[i] == '\n') {
+			line[line_len++] = '\r';
+			line[line_len++] = '\n';
+			line[line_len] = '\0';
+			ctr_lte_v2_flow_bypass_write(line, line_len);
+			line_len = 0;
+			continue;
+		}
+
+		line[line_len++] = data[i];
+		if (line_len >= sizeof(line)) {
+			line_len = 0;
+		}
+	}
+}
+
+static int cmd_test_bypass(const struct shell *shell, size_t argc, char **argv)
+{
+
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (!g_ctr_lte_v2_config.test) {
+		shell_error(shell, "test mode is not activated");
+		return -ENOEXEC;
+	}
+
+	ctr_lte_v2_flow_bypass_set_cb(flow_bypass_cb, (void *)shell->fprintf_ctx);
+	shell_set_bypass(shell, shell_bypass_cb);
+
+	shell_print(shell, "bypass mode enabled, for exit type +++");
+
+	return 0;
+}
+
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -261,19 +483,23 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 	SHELL_CMD_ARG(uart, NULL,
 	              "Enable/Disable UART interface (format: <enable|disable>).",
-	              ctr_lte_v2_flow_cmd_test_uart, 2, 0),
+	              cmd_test_uart, 2, 0),
 
 	SHELL_CMD_ARG(reset, NULL,
 	              "Reset modem.",
-	              ctr_lte_v2_flow_cmd_test_reset, 1, 0),
+	              cmd_test_reset, 1, 0),
 
 	SHELL_CMD_ARG(wakeup, NULL,
 	              "Wake up modem.",
-	              ctr_lte_v2_flow_cmd_test_wakeup, 1, 0),
+	              cmd_test_wakeup, 1, 0),
 
 	SHELL_CMD_ARG(cmd, NULL,
-	              "Send command to modem. (format: <command>)",
-	              ctr_lte_v2_flow_cmd_test_cmd, 2, 0),
+	              "Send command to modem. (format: <command>).",
+	              cmd_test_cmd, 2, 0),
+
+	SHELL_CMD_ARG(prepare, NULL, "Run prepare modem sequence.", cmd_test_prepare, 1, 0),
+
+	SHELL_CMD_ARG(bypass, NULL, "Switch to bypass mode.", cmd_test_bypass, 1, 1),
 
 	SHELL_SUBCMD_SET_END
 );

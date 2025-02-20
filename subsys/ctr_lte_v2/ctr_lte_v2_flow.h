@@ -44,12 +44,13 @@ enum ctr_lte_v2_event {
 };
 
 typedef void (*ctr_lte_v2_flow_event_delegate_cb)(enum ctr_lte_v2_event event);
+typedef void (*ctr_lte_v2_flow_bypass_cb)(void *user_data, const uint8_t *data, size_t len);
 
 int ctr_lte_v2_flow_init(ctr_lte_v2_flow_event_delegate_cb cb);
 int ctr_lte_v2_flow_rfmux_acquire(void);
 int ctr_lte_v2_flow_rfmux_release(void);
-int ctr_lte_v2_flow_start(void);
-int ctr_lte_v2_flow_stop(void);
+int ctr_lte_v2_flow_enable(bool wakeup);
+int ctr_lte_v2_flow_disable(bool send_sleep);
 int ctr_lte_v2_flow_reset(void);
 
 int ctr_lte_v2_flow_prepare(void);
@@ -63,13 +64,11 @@ int ctr_lte_v2_flow_send(const struct ctr_lte_v2_send_recv_param *param);
 int ctr_lte_v2_flow_recv(const struct ctr_lte_v2_send_recv_param *param);
 
 int ctr_lte_v2_flow_coneval(void);
-int ctr_lte_v2_flow_cmd(const char *s);
 
-int ctr_lte_v2_flow_cmd_test_uart(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_flow_cmd_test_reset(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_flow_cmd_test_wakeup(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_flow_cmd_test_cmd(const struct shell *shell, size_t argc, char **argv);
-int ctr_lte_v2_flow_cmd_trace(const struct shell *shell, size_t argc, char **argv);
+int ctr_lte_v2_flow_wake_up_and_wait_on_ready(void);
+int ctr_lte_v2_flow_cmd_without_response(const char *s);
+int ctr_lte_v2_flow_bypass_set_cb(ctr_lte_v2_flow_bypass_cb cb, void *user_data);
+int ctr_lte_v2_flow_bypass_write(const uint8_t *data, const size_t len);
 
 #ifdef __cplusplus
 }

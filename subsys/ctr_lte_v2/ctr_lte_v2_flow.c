@@ -65,47 +65,9 @@ static K_SEM_DEFINE(m_ready_sem, 0, 1);
 static K_EVENT_DEFINE(m_flow_events);
 
 static atomic_t m_started;
-static ctr_lte_v2_flow_event_delegate_cb m_event_delegate_cb;
-
-static int enable(void)
-{
-	int ret;
-
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(ctr_lte_link));
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		return -ENODEV;
-	}
-
-	ret = ctr_lte_link_enable_uart(dev);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_link_enable_uart` failed: %d", ret);
-		return ret;
-	}
-
-	return ret;
-}
-
-static int disable(void)
-{
-	int ret;
-
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(ctr_lte_link));
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		return -ENODEV;
-	}
-
-	ret = ctr_lte_link_disable_uart(dev);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_link_disable_uart` failed: %d", ret);
-		return ret;
-	}
-
-	return ret;
-}
+static ctr_lte_v2_flow_event_delegate_cb m_event_delegate_cb = NULL;
+static ctr_lte_v2_flow_bypass_cb m_bypass_cb = NULL;
+static void *m_bypass_user_data = NULL;
 
 static void process_urc(const char *line)
 {
@@ -115,6 +77,11 @@ static void process_urc(const char *line)
 		if (!strcmp(line, "Ready")) {
 			k_sem_give(&m_ready_sem);
 		}
+
+		if (m_bypass_cb) {
+			m_bypass_cb(m_bypass_user_data, (const uint8_t *)line, strlen(line));
+		}
+
 		return;
 	}
 
@@ -215,6 +182,29 @@ static void ctr_lte_link_event_handler(const struct device *dev, enum ctr_lte_li
 		}
 		break;
 	case CTR_LTE_LINK_EVENT_RX_DATA:
+		if (m_bypass_cb) {
+			uint8_t buf[64];
+			size_t len = 0;
+			size_t read;
+			for (;;) {
+				ret = ctr_lte_link_recv_data(dev, K_NO_WAIT, &buf[len], 1, &read);
+				if (ret) {
+					break;
+				}
+				if (read == 1) {
+					len++;
+				} else {
+					break;
+				}
+				if (len == sizeof(buf)) {
+					m_bypass_cb(m_bypass_user_data, buf, len);
+					len = 0;
+				}
+			}
+			if (len > 0) {
+				m_bypass_cb(m_bypass_user_data, buf, len);
+			}
+		}
 		break;
 	default:
 		LOG_WRN("Unknown event: %d", event);
@@ -470,7 +460,13 @@ int ctr_lte_v2_flow_prepare(void)
 		return ret;
 	}
 
-	if (!g_ctr_lte_v2_config.autoconn) {
+	if (g_ctr_lte_v2_config.autoconn) {
+		ret = ctr_lte_v2_talk_at_cops(&m_talk, 0, NULL, NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_talk_at_cops` failed: %d", ret);
+			return ret;
+		}
+	} else {
 		ret = ctr_lte_v2_talk_at_cops(&m_talk, 1, (int[]){2}, g_ctr_lte_v2_config.plmnid);
 		if (ret) {
 			LOG_ERR("Call `ctr_lte_v2_talk_at_cops` failed: %d", ret);
@@ -652,7 +648,7 @@ int ctr_lte_v2_flow_open_socket(void)
 		return -ENOTCONN;
 	}
 
-	char at_cmd[32 + 1] = {0};
+	char at_cmd[15 + sizeof(g_ctr_lte_v2_config.addr) + 5 + 1] = {0};
 	char ar_response[64] = {0};
 	snprintf(at_cmd, sizeof(at_cmd), "AT#XCONNECT=\"%s\",%u", g_ctr_lte_v2_config.addr,
 		 g_ctr_lte_v2_config.port);
@@ -842,7 +838,7 @@ int ctr_lte_v2_flow_reset(void)
 	return 0;
 }
 
-int ctr_lte_v2_flow_start(void)
+int ctr_lte_v2_flow_enable(bool wakeup)
 {
 	int ret;
 
@@ -850,16 +846,23 @@ int ctr_lte_v2_flow_start(void)
 		return 0;
 	}
 
-	ret = enable();
+	if (!device_is_ready(dev_lte_if)) {
+		LOG_ERR("Device not ready");
+		return -ENODEV;
+	}
+
+	ret = ctr_lte_link_enable_uart(dev_lte_if);
 	if (ret) {
-		LOG_ERR("Call `enable` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_link_enable_uart` failed: %d", ret);
 		return ret;
 	}
 
-	ret = ctr_lte_link_wake_up(dev_lte_if);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_link_wake_up` failed: %d", ret);
-		return ret;
+	if (wakeup) {
+		ret = ctr_lte_link_wake_up(dev_lte_if);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_link_wake_up` failed: %d", ret);
+			return ret;
+		}
 	}
 
 	atomic_set(&m_started, true);
@@ -869,7 +872,7 @@ int ctr_lte_v2_flow_start(void)
 	return 0;
 }
 
-int ctr_lte_v2_flow_stop(void)
+int ctr_lte_v2_flow_disable(bool send_sleep)
 {
 	int ret;
 
@@ -879,16 +882,18 @@ int ctr_lte_v2_flow_stop(void)
 
 	atomic_set(&m_started, false);
 
-	ret = ctr_lte_v2_talk_at_xsleep(&m_talk, 2);
-	if (ret) {
-		LOG_WRN("Call `ctr_lte_v2_talk_at_xsleep` failed: %d", ret);
+	if (send_sleep) {
+		ret = ctr_lte_v2_talk_at_xsleep(&m_talk, 2);
+		if (ret) {
+			LOG_WRN("Call `ctr_lte_v2_talk_at_xsleep` failed: %d", ret);
+		}
+
+		k_sleep(XSLEEP_PAUSE);
 	}
 
-	k_sleep(XSLEEP_PAUSE);
-
-	ret = disable();
+	ret = ctr_lte_link_disable_uart(dev_lte_if);
 	if (ret) {
-		LOG_ERR("Call `disable` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_link_disable_uart` failed: %d", ret);
 		return ret;
 	}
 
@@ -981,164 +986,6 @@ int ctr_lte_v2_flow_coneval(void)
 	return 0;
 }
 
-int ctr_lte_v2_flow_cmd(const char *s)
-{
-	int ret;
-
-	ret = ctr_lte_v2_talk_(&m_talk, s);
-	if (ret) {
-		LOG_ERR("Call `lte_talk_` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int ctr_lte_v2_flow_cmd_test_uart(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc > 2) {
-		shell_error(shell, "command not found: %s", argv[2]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	if (!g_ctr_lte_v2_config.test) {
-		shell_error(shell, "test mode is not activated");
-		return -ENOEXEC;
-	}
-
-	if (strcmp(argv[1], "enable") == 0) {
-		ret = enable();
-		if (ret) {
-			LOG_ERR("Call `enable` failed: %d", ret);
-			shell_error(shell, "command failed");
-			return ret;
-		}
-
-		return 0;
-	}
-
-	if (strcmp(argv[1], "disable") == 0) {
-		ret = disable();
-		if (ret) {
-			LOG_ERR("Call `disable` failed: %d", ret);
-			shell_error(shell, "command failed");
-			return ret;
-		}
-
-		return 0;
-	}
-
-	shell_help(shell);
-	return -EINVAL;
-}
-
-int ctr_lte_v2_flow_cmd_test_reset(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc > 1) {
-		shell_error(shell, "command not found: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	if (!g_ctr_lte_v2_config.test) {
-		shell_error(shell, "test mode is not activated");
-		return -ENOEXEC;
-	}
-
-	ret = ctr_lte_link_reset(dev_lte_if);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_link_reset` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	return 0;
-}
-
-int ctr_lte_v2_flow_cmd_test_wakeup(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc > 1) {
-		shell_error(shell, "command not found: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	if (!g_ctr_lte_v2_config.test) {
-		shell_error(shell, "test mode is not activated");
-		return -ENOEXEC;
-	}
-
-	k_sem_reset(&m_ready_sem);
-
-	ret = ctr_lte_link_wake_up(dev_lte_if);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_link_wake_up` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	ret = k_sem_take(&m_ready_sem, BOOT_TIMEOUT);
-	if (ret == -EAGAIN) {
-		LOG_WRN("Boot message timed out");
-		shell_warn(shell, "boot message timed out");
-		return 0;
-	}
-
-	if (ret) {
-		LOG_ERR("Call `k_sem` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	return 0;
-}
-
-int ctr_lte_v2_flow_cmd_test_cmd(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc > 2) {
-		shell_error(shell, "only one argument is accepted (use quotes?)");
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	if (!g_ctr_lte_v2_config.test) {
-		shell_error(shell, "test mode is not activated");
-		return -ENOEXEC;
-	}
-
-	ret = ctr_lte_v2_talk_(&m_talk, argv[1]);
-	if (ret) {
-		LOG_ERR("Call `lte_talk_` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
-	}
-
-	return 0;
-}
-
-int ctr_lte_v2_flow_cmd_trace(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	ret = ctr_lte_v2_talk_at_xmodemtrace(&m_talk);
-
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_talk_at_xmodemtrace` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 int ctr_lte_v2_flow_init(ctr_lte_v2_flow_event_delegate_cb cb)
 {
 	int ret;
@@ -1162,13 +1009,113 @@ int ctr_lte_v2_flow_init(ctr_lte_v2_flow_event_delegate_cb cb)
 		return ret;
 	}
 
-	ret = ctr_lte_link_reset(dev_lte_if);
+	m_event_delegate_cb = cb;
+
+	if (g_ctr_lte_v2_config.test) {
+		LOG_WRN("LTE Test mode enabled, skipping lte link reset");
+	} else {
+		ret = ctr_lte_link_reset(dev_lte_if);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_link_reset` failed: %d", ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int ctr_lte_v2_flow_wake_up_and_wait_on_ready(void)
+{
+	int ret;
+
+	if (!g_ctr_lte_v2_config.test) {
+		LOG_WRN("Not in test mode");
+		return -ENOTSUP;
+	}
+
+	if (!atomic_get(&m_started)) {
+		return -ENOTCONN;
+	}
+
+	k_sem_reset(&m_ready_sem);
+
+	ret = ctr_lte_link_wake_up(dev_lte_if);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_link_reset` failed: %d", ret);
+		LOG_ERR("Call `ctr_lte_link_wake_up` failed: %d", ret);
 		return ret;
 	}
 
-	m_event_delegate_cb = cb;
+	ret = k_sem_take(&m_ready_sem, BOOT_TIMEOUT);
+	if (ret < 0) {
+		if (ret != -EAGAIN) {
+			LOG_WRN("Call `k_sem_take` failed: %d", ret);
+		}
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_v2_flow_cmd_without_response(const char *s)
+{
+	int ret;
+
+	if (!s) {
+		return -EINVAL;
+	}
+
+	if (!atomic_get(&m_started)) {
+		return -ENOTCONN;
+	}
+
+	ret = ctr_lte_v2_talk_(&m_talk, s);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_v2_flow_bypass_set_cb(ctr_lte_v2_flow_bypass_cb cb, void *user_data)
+{
+	m_bypass_cb = cb;
+	m_bypass_user_data = user_data;
+
+	int ret;
+
+	if (cb) {
+		ret = ctr_lte_link_enter_data_mode(dev_lte_if);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_link_enter_data_mode` failed: %d", ret);
+			return ret;
+		}
+	} else {
+		ret = ctr_lte_link_exit_data_mode(dev_lte_if);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_link_exit_data_mode` failed: %d", ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int ctr_lte_v2_flow_bypass_write(const uint8_t *data, const size_t len)
+{
+	if (!data || !len) {
+		return -EINVAL;
+	}
+
+	if (!atomic_get(&m_started)) {
+		return -ENOTCONN;
+	}
+
+	int ret = ctr_lte_link_send_data(dev_lte_if, K_SECONDS(1), data, len);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_link_send_data` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }
