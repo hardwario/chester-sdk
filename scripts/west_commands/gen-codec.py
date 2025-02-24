@@ -22,7 +22,7 @@ import struct
 
 key_separator = '__'
 key_words_decoder = ('$key', '$div', '$mul', '$add',
-                     '$sub', '$fpp', '$tso', '$tsp', '$enum')
+                     '$sub', '$fpp', '$tso', '$tsp', '$enum', '$mbus')
 key_words_encoder = ('$div', '$mul', '$add', '$sub', '$fpp', '$enum', '$type')
 type_words = ('int', 'float', 'bool', 'string')
 
