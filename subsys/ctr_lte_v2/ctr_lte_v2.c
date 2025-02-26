@@ -99,11 +99,11 @@ struct attach_timeout get_attach_timeout(int count)
 {
 	switch (count) {
 	case 0:
-		return (struct attach_timeout){K_NO_WAIT, K_MINUTES(1)};
+		return (struct attach_timeout){K_NO_WAIT, K_MINUTES(5)};
 	case 1:
 		return (struct attach_timeout){K_NO_WAIT, K_MINUTES(5)};
 	case 2:
-		return (struct attach_timeout){K_MINUTES(5), K_MINUTES(45)};
+		return (struct attach_timeout){K_NO_WAIT, K_MINUTES(50)};
 	case 3:
 		return (struct attach_timeout){K_HOURS(1), K_MINUTES(5)};
 	case 4:

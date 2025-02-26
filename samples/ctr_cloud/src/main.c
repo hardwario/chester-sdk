@@ -26,7 +26,7 @@ static void ctr_cloud_event_handler(enum ctr_cloud_event event, union ctr_cloud_
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -37,13 +37,13 @@ void main(void)
 	ret = ctr_cloud_init(&copt);
 	if (ret) {
 		LOG_ERR("Call `ctr_cloud_init` failed: %d", ret);
-		return;
+		return ret;
 	}
 
 	ret = ctr_cloud_set_callback(ctr_cloud_event_handler, NULL);
 	if (ret) {
 		LOG_ERR("Call `ctr_cloud_set_callback` failed: %d", ret);
-		return;
+		return ret;
 	}
 
 	ctr_cloud_wait_initialized(K_FOREVER);

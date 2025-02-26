@@ -9,7 +9,7 @@
 #include <chester/ctr_buf.h>
 #include <ctr_lte_v2_parse.h>
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_xsocket_set)
+ZTEST(parser, test_xsocket_set)
 {
 	struct xsocket_set_param param;
 	int ret = ctr_lte_v2_parse_xsocket_set("0,2,17", &param);
@@ -20,7 +20,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_xsocket_set)
 	zassert_equal(param.protocol, 17, "protocol not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_xsocket_get)
+ZTEST(parser, test_xsocket_get)
 {
 	struct xsocket_get_param param;
 	int ret = ctr_lte_v2_parse_xsocket_get("0,1,0,2,0", &param);
@@ -33,7 +33,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_xsocket_get)
 	zassert_equal(param.cid, 0, "cid not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_5)
+ZTEST(parser, test_urc_cereg_5)
 {
 	struct ctr_lte_v2_cereg_param param;
 	int ret = ctr_lte_v2_parse_urc_cereg(
@@ -47,7 +47,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_5)
 	zassert_equal(param.act, 9, "param.act not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_2)
+ZTEST(parser, test_urc_cereg_2)
 {
 	struct ctr_lte_v2_cereg_param param;
 	int ret = ctr_lte_v2_parse_urc_cereg("2,\"B4DC\",\"000AE520\",9", &param);
@@ -60,7 +60,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_2)
 	zassert_equal(param.act, 9, "param.act not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_2_empty)
+ZTEST(parser, test_urc_cereg_2_empty)
 {
 	struct ctr_lte_v2_cereg_param param;
 	int ret = ctr_lte_v2_parse_urc_cereg("2", &param);
@@ -73,7 +73,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_2_empty)
 	zassert_equal(param.act, 0, "param.act not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_4)
+ZTEST(parser, test_urc_cereg_4)
 {
 	struct ctr_lte_v2_cereg_param param;
 	int ret = ctr_lte_v2_parse_urc_cereg("4", &param);
@@ -86,7 +86,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_cereg_4)
 	zassert_equal(param.act, 0, "param.act not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xmodemsleep_1_89999825)
+ZTEST(parser, test_urc_xmodemsleep_1_89999825)
 {
 	int p1, p2;
 	int ret = ctr_lte_v2_parse_urc_xmodemsleep("1,89999825", &p1, &p2);
@@ -96,7 +96,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xmodemsleep_1_89999825)
 	zassert_equal(p2, 89999825, "p2 not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xmodemsleep_1_0)
+ZTEST(parser, test_urc_xmodemsleep_1_0)
 {
 	int p1, p2;
 	int ret = ctr_lte_v2_parse_urc_xmodemsleep("1,0", &p1, &p2);
@@ -106,7 +106,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xmodemsleep_1_0)
 	zassert_equal(p2, 0, "p2 not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xmodemsleep_4_0)
+ZTEST(parser, test_urc_xmodemsleep_4_0)
 {
 	int p1, p2;
 	int ret = ctr_lte_v2_parse_urc_xmodemsleep("4,0", &p1, &p2);
@@ -116,7 +116,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xmodemsleep_4_0)
 	zassert_equal(p2, 0, "p2 not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xmodemsleep_4)
+ZTEST(parser, test_urc_xmodemsleep_4)
 {
 	int p1, p2;
 	int ret = ctr_lte_v2_parse_urc_xmodemsleep("4", &p1, &p2);
@@ -126,7 +126,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xmodemsleep_4)
 	zassert_equal(p2, 0, "p2 not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_coneval)
+ZTEST(parser, test_coneval)
 {
 
 	struct ctr_lte_v2_conn_param param;
@@ -147,7 +147,7 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_coneval)
 	zassert_equal(param.earfcn, 6447, "param.earfcn not equal");
 }
 
-ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xgps)
+ZTEST(parser, test_urc_xgps)
 {
 	struct ctr_lte_v2_gnss_update update;
 
@@ -166,4 +166,4 @@ ZTEST(subsus_ctr_lte_v2_0_parse, test_parse_urc_xgps)
 		     "update.datetime not equal");
 }
 
-ZTEST_SUITE(subsus_ctr_lte_v2_0_parse, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(parser, NULL, NULL, NULL, NULL, NULL);

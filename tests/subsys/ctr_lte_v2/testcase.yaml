@@ -1,8 +1,14 @@
-tests:
-  subsys.ctr_lte_v2:
-    tags:
+
+common:
+  tags:
       - chester
-    platform_allow: native_posix
-    integration_platforms:
-      - native_posix
-    # harness: ztest
+  platform_allow: native_posix
+  integration_platforms:
+    - native_posix
+
+tests:
+  subsys.ctr_lte_v2.parser:
+    extra_args: CONFIG_TEST_FEATURE_PARSING=y
+
+  subsys.ctr_lte_v2.stack:
+    extra_args: CONFIG_TEST_FEATURE_STACK=y

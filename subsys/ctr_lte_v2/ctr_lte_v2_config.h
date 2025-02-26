@@ -35,6 +35,7 @@ struct ctr_lte_v2_config {
 	enum ctr_lte_v2_config_antenna antenna;
 	bool nb_iot_mode;
 	bool lte_m_mode;
+	char bands[41 + 1];
 	bool autoconn;
 	char plmnid[6 + 1];
 	char apn[63 + 1];

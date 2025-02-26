@@ -11,194 +11,159 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *ctr_lte_v2_tok_pfx(const char *s, const char *pfx)
+const char *ctr_lte_v2_tok_pfx(const char *s, const char *pfx)
 {
-	char *p = (char *)s;
+	if (!s || !pfx) {
+		return NULL;
+	}
 
 	size_t len = strlen(pfx);
 
-	if (strncmp(p, pfx, len) != 0) {
+	if (!len) {
 		return NULL;
 	}
 
-	return p + len;
-}
-
-char *ctr_lte_v2_tok_sep(const char *s)
-{
-	char *p = (char *)s;
-
-	if (*p++ != ',') {
+	if (strncmp(s, pfx, len) != 0) {
 		return NULL;
 	}
 
-	return p;
+	return s + len;
 }
 
-char *ctr_lte_v2_tok_end(const char *s)
+const char *ctr_lte_v2_tok_sep(const char *s)
 {
-	char *p = (char *)s;
-
-	if (*p != '\0') {
+	if (!s || *s != ',') {
 		return NULL;
 	}
 
-	return p;
+	return s + 1;
 }
 
-char *ctr_lte_v2_tok_str(const char *s, bool *def, char *str, size_t size)
+const char *ctr_lte_v2_tok_end(const char *s)
 {
-	if (str != NULL) {
-		memset(str, 0, size);
+	if (!s || *s != '\0') {
+		return NULL;
+	}
+	return s;
+}
+
+const char *ctr_lte_v2_tok_str(const char *s, bool *def, char *str, size_t size)
+{
+	if (!s) {
+		return NULL;
 	}
 
-	if (def != NULL) {
+	if (def) {
 		*def = false;
 	}
 
-	char *p = (char *)s;
-
-	if (*p == '\0' || *p == ',') {
-		return p;
+	if (str && size > 0) {
+		str[0] = '\0';
 	}
 
-	if (*p++ != '"') {
+	if (*s == '\0' || *s == ',') {
+		return (char *)s;
+	}
+
+	if (*s != '"') {
 		return NULL;
 	}
 
-	p = strchr(p, '"');
+	const char *end_quote = strchr(s + 1, '"');
 
-	if (p == NULL) {
+	if (!end_quote) {
 		return NULL;
 	}
 
-	if (def != NULL) {
+	if (def) {
 		*def = true;
 	}
 
-	if (str != NULL) {
-		size_t len = p - s - 1;
+	if (str) {
+		size_t len = end_quote - s - 1;
 
 		if (len >= size) {
 			return NULL;
 		}
 
 		strncpy(str, s + 1, len);
+		str[len] = '\0';
 	}
 
-	return p + 1;
+	return end_quote + 1;
 }
 
-char *ctr_lte_v2_tok_num(const char *s, bool *def, long *num)
+const char *ctr_lte_v2_tok_num(const char *s, bool *def, long *num)
 {
-	if (num != NULL) {
-		*num = 0;
+	if (!s) {
+		return NULL;
 	}
 
-	if (def != NULL) {
+	if (def) {
 		*def = false;
 	}
 
-	char *p = (char *)s;
-
-	if (*p == '\0' || *p == ',') {
-		return p;
+	if (num) {
+		*num = 0;
 	}
 
-	if (isdigit((int)*p) == 0 && *p != '-') {
+	if (*s == '\0' || *s == ',') {
+		return (char *)s;
+	}
+
+	if (isdigit((int)*s) == 0 && *s != '-') {
 		return NULL;
 	}
 
-	p++;
+	char *end;
+	long value = strtol(s, &end, 10);
 
-	while (*p != '\0' && *p != ',') {
-		if (isdigit((int)*p++) == 0) {
-			return NULL;
-		}
+	if (*end != '\0' && *end != ',') {
+		return NULL;
 	}
 
-	if (def != NULL) {
+	if (def) {
 		*def = true;
 	}
 
-	if (*s == '-') {
-		char buf[11 + 1] = {0};
-
-		size_t len = p - s;
-
-		if (len >= sizeof(buf)) {
-			return NULL;
-		}
-
-		strncpy(buf, s, len);
-
-		if (num != NULL) {
-			*num = atol(buf);
-		}
-
-	} else {
-		char buf[10 + 1] = {0};
-
-		size_t len = p - s;
-
-		if (len >= sizeof(buf)) {
-			return NULL;
-		}
-
-		strncpy(buf, s, len);
-
-		if (num != NULL) {
-			*num = atol(buf);
-		}
+	if (num) {
+		*num = value;
 	}
 
-	return p;
+	return end;
 }
 
-char *ctr_lte_v2_tok_float(const char *s, bool *def, float *num)
+const char *ctr_lte_v2_tok_float(const char *s, bool *def, float *num)
 {
-	if (!num) {
+	if (!s) {
 		return NULL;
 	}
 
-	*num = 0;
-	*def = false;
-
-	char *p = (char *)s;
-
-	if (*p == '\0' || *p == ',') {
-		return p;
+	if (def) {
+		*def = false;
 	}
 
-	if (isdigit((int)*p) == 0 && *p != '-') {
+	if (num) {
+		*num = 0;
+	}
+	if (*s == '\0' || *s == ',') {
+		return (char *)s;
+	}
+
+	char *end;
+	float value = strtof(s, &end);
+
+	if (end == s || (*end != '\0' && *end != ',')) {
 		return NULL;
 	}
 
-	p++;
-
-	while (*p != '\0' && *p != ',') {
-		if (isdigit((int)*p) == 0 && *p != '.') {
-			return NULL;
-		}
-
-		p++;
-	}
-
-	if (def != NULL) {
+	if (def) {
 		*def = true;
 	}
 
-	char buf[11 + 1] = {0};
-
-	size_t len = p - s;
-
-	if (len >= sizeof(buf)) {
-		return NULL;
+	if (num) {
+		*num = value;
 	}
 
-	strncpy(buf, s, len);
-
-	*num = strtof(s, &p);
-
-	return p;
+	return end;
 }

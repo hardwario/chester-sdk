@@ -6,16 +6,51 @@
 
 config CTR_LTE_V2
 	bool "CTR_LTE_V2"
-	depends on SHIELD_CTR_LTE_V2
+	select CTR_LTE_LINK if !ZTEST
+	select CTR_RFMUX if !ZTEST
+	select CTR_INFO if !ZTEST
 	select CTR_CONFIG
-	select CTR_LTE_LINK
-	select CTR_RFMUX
 	select CTR_UTIL
-	select CTR_INFO
 	select PM_DEVICE
 	select RING_BUFFER
 
 if CTR_LTE_V2
+
+choice
+	prompt "CTR_LTE_V2_CONFIG_ANTENNA"
+	default CTR_LTE_V2_CONFIG_ANTENNA_INT
+
+config CTR_LTE_V2_CONFIG_ANTENNA_INT
+	bool "CTR_LTE_V2_CONFIG_ANTENNA_INT"
+
+config CTR_LTE_V2_CONFIG_ANTENNA_EXT
+	bool "CTR_LTE_V2_CONFIG_ANTENNA_EXT"
+endchoice
+
+config CTR_LTE_V2_CONFIG_ANTENNA
+	int "CTR_LTE_V2_CONFIG_ANTENNA"
+	default 0 if CTR_LTE_V2_CONFIG_ANTENNA_INT
+	default 1 if CTR_LTE_V2_CONFIG_ANTENNA_EXT
+
+config CTR_LTE_V2_DEFAULT_NB_IOT_MODE
+	bool "CTR_LTE_V2_DEFAULT_NB_IOT_MODE"
+	default y
+
+config CTR_LTE_V2_DEFAULT_LTE_M_MODE
+	bool "CTR_LTE_V2_DEFAULT_LTE_M_MODE"
+	default n
+
+config CTR_LTE_V2_DEFAULT_BANDS
+	string "CTR_LTE_V2_DEFAULT_BANDS"
+	default "auto"
+	help
+		original value: "2,4,5,8,12,13,17,18,19,20,25,26,28,66"
+
+config CTR_LTE_V2_DEFAULT_APN
+	string "CTR_LTE_V2_DEFAULT_APN"
+	default ""
+	help
+		original value: "hardwario"
 
 config CTR_LTE_V2_INIT_PRIORITY
 	int "CTR_LTE_V2_INIT_PRIORITY"
@@ -35,7 +70,6 @@ config CTR_LTE_V2_GNSS
 config HEAP_MEM_POOL_SIZE
 	int "HEAP_MEM_POOL_SIZE"
 	default 8192
-
 
 module = CTR_LTE_V2
 module-str = CHESTER LTE Subsystem

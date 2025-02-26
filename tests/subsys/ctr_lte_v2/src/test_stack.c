@@ -9,6 +9,8 @@
 #include <zephyr/ztest.h>
 #include <zephyr/settings/settings.h>
 
+#include "ctr_lte_v2_state.h"
+
 // static void shell_cmd(const char *cmd)
 // {
 // 	const struct shell *sh = shell_backend_dummy_get_ptr();
@@ -22,7 +24,7 @@
 // 	zassert_ok(ret, "shell_execute_cmd failed: %s", cmd);
 // }
 
-ZTEST(subsus_ctr_lte_v2_1_stack, test_stack)
+ZTEST(stack, test_attach)
 {
 
 	/* clang-format off */
@@ -41,7 +43,7 @@ ZTEST(subsus_ctr_lte_v2_1_stack, test_stack)
 		{"AT%XTEMP=1", "OK"},
 		{"AT%XSYSTEMMODE=0,1,1,0", "OK"},
 		{"AT%XDATAPRFL=0", "OK"},
-		{"AT%XBANDLOCK=1,\"0000000000000000000000100000000000000000000000000000000000001011000011110011100010011010\"", "OK"},
+		{"AT%XBANDLOCK=1,\"0000000000000000000000100000000000000000000000000000000000001011000011110001100010011010\"", "OK"},
 		{"AT%XSIM=1", "OK"},
 		{"AT%XNETTIME=1", "OK"},
 		{"AT%MDMEV=1", "OK"},
@@ -96,4 +98,4 @@ ZTEST(subsus_ctr_lte_v2_1_stack, test_stack)
 	// zassert_equal(2, 1, "1 should be equal to 1");
 }
 
-ZTEST_SUITE(subsus_ctr_lte_v2_1_stack, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(stack, NULL, NULL, NULL, NULL, NULL);

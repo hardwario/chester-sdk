@@ -9,6 +9,7 @@
 #include "ctr_lte_v2_parse.h"
 #include "ctr_lte_v2_state.h"
 #include "ctr_lte_v2_talk.h"
+#include "ctr_lte_v2_tok.h"
 
 /* CHESTER includes */
 #include <chester/ctr_lte_v2.h>
@@ -220,6 +221,41 @@ static void str_remove_trailin_quotes(char *str)
 	}
 }
 
+static int fill_bands(char *bands)
+{
+	size_t len = strlen(bands);
+	const char *p = g_ctr_lte_v2_config.bands;
+	bool def;
+	long band;
+	while (p) {
+		if (!(p = ctr_lte_v2_tok_num(p, &def, &band)) || !def || band < 0 || band > 255) {
+			LOG_ERR("Invalid number format");
+			return -EINVAL;
+		}
+
+		LOG_INF("Band: %ld", band);
+
+		int n = len - band; /* band 1 is first 1 in bands from right */
+		if (n < 0) {
+			LOG_ERR("Invalid band number");
+			return -EINVAL;
+		}
+
+		bands[n] = '1';
+
+		if (ctr_lte_v2_tok_end(p)) {
+			break;
+		}
+
+		if (!(p = ctr_lte_v2_tok_sep(p))) {
+			LOG_ERR("Expected comma");
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
 int ctr_lte_v2_flow_prepare(void)
 {
 	int ret;
@@ -333,50 +369,20 @@ int ctr_lte_v2_flow_prepare(void)
 		return ret;
 	}
 
-	/* Enabled bands: B2, B4, B5, B8, B12, B20, B28 */
-#if 1
-	const char *bands =
-		/* B88 - B81 */
-		"00000000"
-		/* B80 - B71 */
-		"0000000000"
-		/* B70 - B61 */
-		"0000100000"
-		/* B60 - B51 */
-		"0000000000"
-		/* B50 - B41 */
-		"0000000000"
-		/* B40 - B31 */
-		"0000000000"
-		/* B30 - B21 */
-		"0010110000"
-		/* B20 - B11 */
-		"1111001110"
-		/* B10 -  B1 */
-		"0010011010";
-#else
-	const char *bands =
-		/* B88 - B81 */
-		"111111"
-		/* B80 - B71 */
-		"1111111111"
-		/* B70 - B61 */
-		"1111111111"
-		/* B60 - B51 */
-		"1111111111"
-		/* B50 - B41 */
-		"1111111111"
-		/* B40 - B31 */
-		"1111111111"
-		/* B30 - B21 */
-		"1111111111"
-		/* B20 - B11 */
-		"1111111111"
-		/* B10 - B01 */
-		"1111111111";
-#endif
+	if (!strncmp(g_ctr_lte_v2_config.bands, "auto", 4)) {
+		ret = ctr_lte_v2_talk_at_xbandlock(&m_talk, 0, NULL);
+	} else {
+		char bands[] =
+			"00000000000000000000000000000000000000000000000000000000000000000000"
+			"00000000000000000000";
 
-	ret = ctr_lte_v2_talk_at_xbandlock(&m_talk, 1, bands);
+		ret = fill_bands(bands);
+		if (ret) {
+			LOG_ERR("Call `fill_bands` failed: %d", ret);
+			return ret;
+		}
+		ret = ctr_lte_v2_talk_at_xbandlock(&m_talk, 1, bands);
+	}
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_xbandlock` failed: %d", ret);
 		return ret;
@@ -474,12 +480,14 @@ int ctr_lte_v2_flow_prepare(void)
 		}
 	}
 
-	if (strlen(g_ctr_lte_v2_config.apn)) {
+	if (!strlen(g_ctr_lte_v2_config.apn)) {
+		ret = ctr_lte_v2_talk_at_cgdcont(&m_talk, 0, "IP", NULL);
+	} else {
 		ret = ctr_lte_v2_talk_at_cgdcont(&m_talk, 0, "IP", g_ctr_lte_v2_config.apn);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_talk_at_cgdcont` failed: %d", ret);
-			return ret;
-		}
+	}
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cgdcont` failed: %d", ret);
+		return ret;
 	}
 
 	if (g_ctr_lte_v2_config.auth == CTR_LTE_V2_CONFIG_AUTH_PAP ||
@@ -1046,7 +1054,7 @@ int ctr_lte_v2_flow_wake_up_and_wait_on_ready(void)
 	}
 
 	ret = k_sem_take(&m_ready_sem, BOOT_TIMEOUT);
-	if (ret < 0) {
+	if (ret) {
 		if (ret != -EAGAIN) {
 			LOG_WRN("Call `k_sem_take` failed: %d", ret);
 		}

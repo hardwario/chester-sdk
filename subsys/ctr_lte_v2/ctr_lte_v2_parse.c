@@ -25,16 +25,18 @@ int ctr_lte_v2_parse_xsocket_set(const char *s, struct xsocket_set_param *param)
 	/* 0,2,17 */
 	/* <handle>,<type>,<protocol> */
 
-	if (param == NULL) {
+	if (!s || !param) {
 		return -EINVAL;
 	}
 
-	char *p = (char *)s;
+	memset(param, 0, sizeof(*param));
+
+	const char *p = s;
 
 	bool def;
 	long num;
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 		return -EINVAL;
 	}
 
@@ -45,21 +47,21 @@ int ctr_lte_v2_parse_xsocket_set(const char *s, struct xsocket_set_param *param)
 		return -ENOTCONN;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 		return -EINVAL;
 	}
 
 	param->type = num;
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 		return -EINVAL;
 	}
 
@@ -73,16 +75,18 @@ int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param)
 	/* 0,1,0,2,0 */
 	/* <handle>,<family>,<role>,<type>,<cid> */
 
-	if (param == NULL) {
+	if (!s || !param) {
 		return -EINVAL;
 	}
 
-	char *p = (char *)s;
+	memset(param, 0, sizeof(*param));
+
+	const char *p = s;
 
 	bool def;
 	long num;
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 		return -EINVAL;
 	}
 
@@ -93,41 +97,41 @@ int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param)
 		return -ENOTCONN;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 		return -EINVAL;
 	}
 
 	param->family = num;
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 		return -EINVAL;
 	}
 
 	param->role = num;
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 		return -EINVAL;
 	}
 
 	param->type = num;
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 		return -EINVAL;
 	}
 
@@ -138,7 +142,7 @@ int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param)
 
 int cellid_hex2int(char *ci, size_t size, int *cid)
 {
-	if (ci == NULL || size != 9 || cid == NULL) {
+	if (!ci || size != 9 || !cid) {
 		return -EINVAL;
 	}
 
@@ -160,33 +164,36 @@ int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *par
 	/* 5,"AF66","009DE067",9,,,"00000000","00111000" */
 	/* 2,"B4DC","000AE520",9 */
 
+	if (!s || !param) {
+		return -EINVAL;
+	}
+
 	memset(param, 0, sizeof(*param));
 
-	char *p = (char *)s;
+	const char *p = s;
 
 	bool def;
 	long num;
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 		return -EINVAL;
 	}
 
 	param->stat = num;
 
-	if ((p = ctr_lte_v2_tok_sep(p)) != NULL) {
+	if ((p = ctr_lte_v2_tok_sep(p))) {
 
-		if ((p = ctr_lte_v2_tok_str(p, &def, param->tac, sizeof(param->tac))) == NULL ||
-		    !def) {
+		if (!(p = ctr_lte_v2_tok_str(p, &def, param->tac, sizeof(param->tac))) || !def) {
 			return -EINVAL;
 		}
 
-		if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+		if (!(p = ctr_lte_v2_tok_sep(p))) {
 			return -EINVAL;
 		}
 
 		char cell_id[8 + 1];
 
-		if ((p = ctr_lte_v2_tok_str(p, &def, cell_id, sizeof(cell_id))) == NULL || !def) {
+		if (!(p = ctr_lte_v2_tok_str(p, &def, cell_id, sizeof(cell_id))) || !def) {
 			return -EINVAL;
 		}
 
@@ -194,11 +201,11 @@ int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *par
 			return -EINVAL;
 		}
 
-		if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+		if (!(p = ctr_lte_v2_tok_sep(p))) {
 			return -EINVAL;
 		}
 
-		if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL || !def) {
+		if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 			return -EINVAL;
 		}
 
@@ -215,7 +222,11 @@ int ctr_lte_v2_parse_urc_xmodemsleep(const char *s, int *p1, int *p2)
 	/* 1,86399999 */
 	/* 4 */
 
-	char *p = (char *)s;
+	if (!s) {
+		return -EINVAL;
+	}
+
+	const char *p = s;
 
 	bool def;
 	long num;
@@ -223,27 +234,27 @@ int ctr_lte_v2_parse_urc_xmodemsleep(const char *s, int *p1, int *p2)
 	*p1 = 0;
 	*p2 = 0;
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num))) {
 		return -EINVAL;
 	}
 
-	if (p1 != NULL) {
+	if (p1) {
 		*p1 = num;
 	}
 
-	if (ctr_lte_v2_tok_end(p) != NULL) {
+	if (ctr_lte_v2_tok_end(p)) {
 		return 0;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, &num)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num))) {
 		return -EINVAL;
 	}
 
-	if (p2 != NULL) {
+	if (p2) {
 		*p2 = num;
 	}
 
@@ -257,65 +268,65 @@ static int parse_coneval(const char *s, long *result, long *rrc_state, long *ene
 			 long *dl_pathloss)
 {
 	/* 0,1,5,8,2,14,"011B0780”,"26295",7,1575,3,1,1,23,16,32,130 */
-	char *p = (char *)s;
+	const char *p = s;
 
 	bool def;
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, result)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, result)) || !def) {
 		return -EINVAL;
 	}
 
-	if (ctr_lte_v2_tok_end(p) != NULL) {
+	if (ctr_lte_v2_tok_end(p)) {
 		return 0;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, rrc_state)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, rrc_state)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, energy_estimate)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, energy_estimate)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, rsrp)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, rsrp)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, rsrq)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, rsrq)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, snr)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, snr)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
 	char cell_id[8 + 1];
 
-	if ((p = ctr_lte_v2_tok_str(p, &def, cell_id, sizeof(cell_id))) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_str(p, &def, cell_id, sizeof(cell_id))) || !def) {
 		return -EINVAL;
 	}
 
@@ -323,87 +334,87 @@ static int parse_coneval(const char *s, long *result, long *rrc_state, long *ene
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_str(p, &def, plmn, plmn_size)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_str(p, &def, plmn, plmn_size)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, phys_cell_id)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, phys_cell_id)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, earfcn)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, earfcn)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, band)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, band)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, tau_triggered)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, tau_triggered)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, ce_level)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, ce_level)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, tx_power)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, tx_power)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, tx_repetitions)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, tx_repetitions)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, rx_repetitions)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, rx_repetitions)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_num(p, &def, dl_pathloss)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_num(p, &def, dl_pathloss)) || !def) {
 		return -EINVAL;
 	}
 
-	if (ctr_lte_v2_tok_end(p) == NULL) {
+	if (!ctr_lte_v2_tok_end(p)) {
 		return -EINVAL;
 	}
 
@@ -413,6 +424,11 @@ static int parse_coneval(const char *s, long *result, long *rrc_state, long *ene
 int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param)
 {
 	int ret;
+
+	if (!s || !param) {
+		return -EINVAL;
+	}
+
 	memset(param, 0, sizeof(*param));
 
 	long result;
@@ -457,66 +473,70 @@ int ctr_lte_v2_parse_urc_xgps(const char *s, struct ctr_lte_v2_gnss_update *upda
 	/* <latitude>,<longitude>,<altitude>,<accuracy>,<speed>,<heading>,<datetime> */
 	/* 49.256682,17.699627,292.599670,5.468742,0.165512,73.682823,"2024-06-27 16:06:52" */
 
+	if (!s || !update) {
+		return -EINVAL;
+	}
+
 	memset(update, 0, sizeof(*update));
 
-	char *p = (char *)s;
+	const char *p = s;
 
 	bool def;
 
-	if ((p = ctr_lte_v2_tok_float(p, &def, &update->latitude)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_float(p, &def, &update->latitude)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_float(p, &def, &update->longitude)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_float(p, &def, &update->longitude)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_float(p, &def, &update->altitude)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_float(p, &def, &update->altitude)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_float(p, &def, &update->accuracy)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_float(p, &def, &update->accuracy)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_float(p, &def, &update->speed)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_float(p, &def, &update->speed)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_float(p, &def, &update->heading)) == NULL || !def) {
+	if (!(p = ctr_lte_v2_tok_float(p, &def, &update->heading)) || !def) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_sep(p)) == NULL) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
 		return -EINVAL;
 	}
 
-	if ((p = ctr_lte_v2_tok_str(p, &def, update->datetime, sizeof(update->datetime))) == NULL ||
+	if (!(p = ctr_lte_v2_tok_str(p, &def, update->datetime, sizeof(update->datetime))) ||
 	    !def) {
 		return -EINVAL;
 	}
 
-	if (ctr_lte_v2_tok_end(p) == NULL) {
+	if (!ctr_lte_v2_tok_end(p)) {
 		return -EINVAL;
 	}
 

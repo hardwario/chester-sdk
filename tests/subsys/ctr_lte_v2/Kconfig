@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+menu "Test Features"
+
+config TEST_FEATURE_PARSING
+	bool "TEST_FEATURE_PARSING"
+	default n
+
+config TEST_FEATURE_STACK
+	bool "TEST_FEATURE_STACK"
+	default n
+	select CTR_LTE_V2_GNSS
+
+config CTR_LTE_V2_DEFAULT_BANDS
+	string "LTE Bands for CTR_LTE_V2"
+	default "2,4,5,8,12,13,17,18,19,20,25,26,28,66" if TEST_FEATURE_STACK
+
+config CTR_LTE_V2_DEFAULT_APN
+	string "Default APN for CTR_LTE_V2"
+	default "hardwario" if TEST_FEATURE_STACK
+
+endmenu
+
+#Include Zephyr's Kconfig
+source "Kconfig"
