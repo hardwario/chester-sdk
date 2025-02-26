@@ -1,4 +1,4 @@
-image: "hardwario/nrf-connect-sdk-build:v2.5.0-1"
+image: "hardwario/nrf-connect-sdk-build:v2.9.0-1"
 
 variables:
   CI_DEBUG_TRACE: "false"
@@ -16,7 +16,7 @@ build:
     - west init -l --mf west.yml chester
     - west update
     - west config build.board chester
-    - ./zephyr/scripts/twister --testsuite-root chester/tests -c -i
+    - ./zephyr/scripts/twister --testsuite-root chester/tests -c -i -v -p native_posix
     - |
       for sample in chester/samples/*/
       do
@@ -42,4 +42,10 @@ build:
         printf 'Build: %s' ${application::-1}
         printf '\033[0m\n'
         west build -d "${application}/build" ${application}
+        if [[ -f "${application}/build/zephyr/merged.hex" ]]; then
+          echo "Application ${application} built successfully"
+        else
+          echo "Application ${application} build failed - missing merged.hex"
+          exit 1
+        fi
       done
