@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+zephyr_library()
+
+zephyr_library_sources(ctr_radon.c)
+zephyr_library_sources(ctr_radon_config.c)
+zephyr_library_sources_ifdef(CONFIG_CTR_RADON_SHELL ctr_radon_shell.c)

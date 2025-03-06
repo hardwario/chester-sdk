@@ -366,6 +366,22 @@ struct app_data_ble_tag {
 
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
+#if defined(FEATURE_SUBSYSTEM_RADON)
+struct app_data_radon {
+	int sample_count;
+	float temp_samples[APP_DATA_MAX_SAMPLES];
+	float hum_samples[APP_DATA_MAX_SAMPLES];
+
+	int measurement_count;
+	struct app_data_aggreg temp_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct app_data_aggreg hum_measurements[APP_DATA_MAX_MEASUREMENTS];
+	uint32_t concentration_measurements[APP_DATA_MAX_MEASUREMENTS];
+	uint32_t daily_concentration_measurements[APP_DATA_MAX_MEASUREMENTS];
+
+	int64_t timestamp;
+};
+#endif /* defined(FEATURE_SUBSYSTEM_RADON) */
+
 struct app_data {
 	float system_voltage_rest;
 	float system_voltage_load;
@@ -415,6 +431,10 @@ struct app_data {
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	struct app_data_ble_tag ble_tag;
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
+#if defined(FEATURE_SUBSYSTEM_RADON)
+	struct app_data_radon radon;
+#endif /* defined(FEATURE_SUBSYSTEM_RADON) */
 };
 
 extern struct app_data g_app_data;

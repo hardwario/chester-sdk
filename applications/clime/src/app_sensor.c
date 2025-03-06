@@ -14,6 +14,7 @@
 #include <chester/ctr_ble_tag.h>
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_hygro.h>
+#include <chester/ctr_radon.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_rtd.h>
 #include <chester/ctr_soil_sensor.h>
@@ -1165,3 +1166,116 @@ int app_sensor_ble_tag_clear(void)
 }
 
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
+#if defined(FEATURE_SUBSYSTEM_RADON)
+int app_sensor_radon_sample(void)
+{
+	int ret;
+
+	if (g_app_data.radon.sample_count < APP_DATA_MAX_SAMPLES) {
+		ctr_radon_enable();
+
+		uint16_t hum;
+		ret = ctr_radon_read_humidity(&hum);
+		if (ret) {
+			LOG_ERR("Call `app_radon_read_humidity` failed: %d", ret);
+			return ret;
+		}
+
+		LOG_INF("Chamber humidity: %d %%", hum);
+
+		uint16_t temp;
+		ret = ctr_radon_read_temperature(&temp);
+		if (ret) {
+			LOG_ERR("Call `app_radon_read_temperature` failed: %d", ret);
+			return ret;
+		}
+
+		ctr_radon_disable();
+
+		LOG_INF("Chamber temperature: %d C", temp);
+
+		app_data_lock();
+
+		g_app_data.radon.hum_samples[g_app_data.radon.sample_count] = hum;
+		g_app_data.radon.temp_samples[g_app_data.radon.sample_count] = temp;
+		g_app_data.radon.sample_count++;
+
+		app_data_unlock();
+
+		LOG_INF("Sample count: %d", g_app_data.radon.sample_count);
+	} else {
+		LOG_WRN("Sample buffer full");
+		return -ENOSPC;
+	}
+
+	return 0;
+}
+
+int app_sensor_radon_aggreg(void)
+{
+	int ret;
+
+	app_data_lock();
+
+	if (g_app_data.radon.measurement_count == 0) {
+		ret = ctr_rtc_get_ts(&g_app_data.radon.timestamp);
+		if (ret) {
+			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+			app_data_unlock();
+			return ret;
+		}
+	}
+
+	struct app_data_radon *radon = &g_app_data.radon;
+
+	if (radon->measurement_count < APP_DATA_MAX_MEASUREMENTS) {
+		aggreg_sample(radon->temp_samples, radon->sample_count,
+			      &radon->temp_measurements[radon->measurement_count]);
+		aggreg_sample(radon->hum_samples, radon->sample_count,
+			      &radon->hum_measurements[radon->measurement_count]);
+
+		ctr_radon_enable();
+
+		ret = ctr_radon_read_concentration(
+			&radon->concentration_measurements[radon->measurement_count], false);
+		if (ret) {
+			LOG_ERR("Call `app_radon_read_concentration` failed: %d", ret);
+			return ret;
+		}
+
+		ret = ctr_radon_read_concentration(
+			&radon->daily_concentration_measurements[radon->measurement_count], true);
+		if (ret) {
+			LOG_ERR("Call `app_radon_read_concentration` failed: %d", ret);
+			return ret;
+		}
+
+		ctr_radon_disable();
+
+		radon->measurement_count++;
+		LOG_INF("Measurements: %d", radon->measurement_count);
+	} else {
+		LOG_WRN("Measurement buffer full");
+		app_data_unlock();
+		return -ENOSPC;
+	}
+
+	radon->sample_count = 0;
+
+	app_data_unlock();
+
+	return 0;
+}
+
+int app_sensor_radon_clear(void)
+{
+	app_data_lock();
+
+	g_app_data.radon.measurement_count = 0;
+
+	app_data_unlock();
+
+	return 0;
+}
+#endif /* defined(FEATURE_SUBSYSTEM_RADON) */

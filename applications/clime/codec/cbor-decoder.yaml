@@ -422,3 +422,26 @@ schema:
               - mdn:
                   - $div: 100
                   - $fpp: 2
+  - radon_probe:
+      - concentration_hourly:
+          - measurements:
+              - $tsp:
+                  - value:
+      - concentration_daily:
+          - measurements:
+              - $tsp:
+                  - value:
+      - chamber_temperature:
+          - measurements:
+              - $tsp:
+                  - min:
+                  - max:
+                  - avg:
+                  - mdn:
+      - chamber_humidity:
+          - measurements:
+              - $tsp:
+                  - min:
+                  - max:
+                  - avg:
+                  - mdn:

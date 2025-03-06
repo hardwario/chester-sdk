@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2023 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_RADON
+	bool "CTR_RADON"
+	default n
+	depends on CTR_CONFIG
+	depends on DT_HAS_NXP_SC16IS7XX_ENABLED
+	depends on MODBUS
+
+if CTR_RADON
+
+module = CTR_RADON
+module-str = CHESTER Piketronic Radon Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_RADON_SHELL
+	bool "CTR_RADON_SHELL"
+	depends on SHELL
+	default y
+	
+choice CTR_RADON_SLOT
+	bool "CTR_RADON_SLOT"
+	default CTR_RADON_SLOT_A
+	default CTR_RADON_SLOT_B if CTR_X2_MODBUS_B
+
+config CTR_RADON_SLOT_A
+	bool "Slot A"
+
+config CTR_RADON_SLOT_B
+	bool "Slot B"
+
+endchoice
+
+endif # CTR_RADON

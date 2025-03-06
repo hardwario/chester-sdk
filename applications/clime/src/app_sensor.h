@@ -46,6 +46,10 @@ int app_sensor_ble_tag_sample(void);
 int app_sensor_ble_tag_aggreg(void);
 int app_sensor_ble_tag_clear(void);
 
+int app_sensor_radon_sample(void);
+int app_sensor_radon_aggreg(void);
+int app_sensor_radon_clear(void);
+
 #ifdef __cplusplus
 }
 #endif

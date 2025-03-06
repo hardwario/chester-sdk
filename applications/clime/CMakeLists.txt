@@ -7,8 +7,8 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 set(ENV{FW_BUNDLE} "com.hardwario.chester.app.clime")
+set(ENV{FW_VERSION} "v3.0.0")
 set(ENV{FW_NAME} "CHESTER Clime")
-set(ENV{FW_VERSION} "v3.3.0")
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 

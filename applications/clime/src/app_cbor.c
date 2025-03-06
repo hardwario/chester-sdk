@@ -1118,6 +1118,106 @@ static int encode(zcbor_state_t *zs)
 
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
+#if defined(FEATURE_SUBSYSTEM_RADON)
+	zcbor_uint32_put(zs, CODEC_KEY_E_RADON_PROBE);
+	{
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_RADON_PROBE__CHAMBER_HUMIDITY);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(zs,
+					 CODEC_KEY_E_RADON_PROBE__CHAMBER_HUMIDITY__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.radon.timestamp);
+				zcbor_uint64_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.radon.measurement_count; i++) {
+					put_sample(zs, &g_app_data.radon.hum_measurements[i]);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_RADON_PROBE__CHAMBER_TEMPERATURE);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(
+				zs, CODEC_KEY_E_RADON_PROBE__CHAMBER_TEMPERATURE__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.radon.timestamp);
+				zcbor_uint64_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.radon.measurement_count; i++) {
+					put_sample(zs, &g_app_data.radon.temp_measurements[i]);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_RADON_PROBE__CONCENTRATION_HOURLY);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(
+				zs, CODEC_KEY_E_RADON_PROBE__CONCENTRATION_HOURLY__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.radon.timestamp);
+				zcbor_uint64_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.radon.measurement_count; i++) {
+					zcbor_uint32_put(
+						zs, g_app_data.radon.concentration_measurements[i]);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_RADON_PROBE__CONCENTRATION_DAILY);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			zcbor_uint32_put(
+				zs, CODEC_KEY_E_RADON_PROBE__CONCENTRATION_DAILY__MEASUREMENTS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				zcbor_uint64_put(zs, g_app_data.radon.timestamp);
+				zcbor_uint64_put(zs, g_app_config.interval_aggreg);
+
+				for (int i = 0; i < g_app_data.radon.measurement_count; i++) {
+					zcbor_uint32_put(
+						zs, g_app_data.radon
+							    .daily_concentration_measurements[i]);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_RADON) */
+
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 	if (!zcbor_check_error(zs)) {

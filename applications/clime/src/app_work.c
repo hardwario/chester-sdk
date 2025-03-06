@@ -141,6 +141,10 @@ static void send_work_handler(struct k_work *work)
 #if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 	app_sensor_tc_therm_clear();
 #endif /* defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B) */
+
+#if defined(FEATURE_SUBSYSTEM_RADON)
+	app_sensor_radon_clear();
+#endif /* defined(FEATURE_SUBSYSTEM_RADON) */
 }
 
 static K_WORK_DEFINE(m_send_work, send_work_handler);
@@ -654,6 +658,58 @@ static K_TIMER_DEFINE(m_ble_tag_aggreg_timer, ble_tag_aggreg_timer_handler, NULL
 
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
+#if defined(FEATURE_SUBSYSTEM_RADON)
+
+static void radon_sample_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_radon_sample();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_radon_sample` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_radon_sample_work, radon_sample_work_handler);
+
+static void radon_sample_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_radon_sample_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_radon_sample_timer, radon_sample_timer_handler, NULL);
+
+static void radon_aggreg_work_handler(struct k_work *work)
+{
+	int ret;
+
+	ret = app_sensor_radon_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_sensor_radon_aggreg` failed: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(m_radon_aggreg_work, radon_aggreg_work_handler);
+
+static void radon_aggreg_timer_handler(struct k_timer *timer)
+{
+	int ret;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_radon_aggreg_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+static K_TIMER_DEFINE(m_radon_aggreg_timer, radon_aggreg_timer_handler, NULL);
+
+#endif /* defined(FEATURE_SUBSYTEM_RADON) */
+
 int app_work_init(void)
 {
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
@@ -721,6 +777,13 @@ int app_work_init(void)
 		      K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
+#if defined(FEATURE_SUBSYSTEM_RADON)
+	k_timer_start(&m_radon_sample_timer, K_SECONDS(g_app_config.interval_sample),
+		      K_SECONDS(g_app_config.interval_sample));
+	k_timer_start(&m_radon_aggreg_timer, K_SECONDS(g_app_config.interval_aggreg),
+		      K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(FEATURE_SUBSYSTEM_RADON) */
+
 	return 0;
 }
 
@@ -761,6 +824,10 @@ void app_work_sample(void)
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_timer_start(&m_ble_tag_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
+#if defined(FEATURE_SUBSYSTEM_RADON)
+	k_timer_start(&m_radon_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
+#endif /* defined(FEATURE_SUBSYSTEM_RADON) */
 }
 
 void app_work_aggreg(void)
@@ -795,6 +862,10 @@ void app_work_aggreg(void)
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_timer_start(&m_ble_tag_aggreg_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
+#if defined(FEATURE_SUBSYSTEM_RADON)
+	k_timer_start(&m_radon_aggreg_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_aggreg));
+#endif /* defined(FEATURE_SUBSYSTEM_RADON) */
 }
 
 void app_work_send(void)

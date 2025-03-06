@@ -44,6 +44,14 @@ variants:
   fw_version: v3.0.1
   features:
     - hardware-chester-sps30
+- name: CHESTER Radon
+  fw_bundle: com.hardwario.chester.app.radon
+  fw_name: hio-chester-radon
+  fw_version: v3.0.0
+  features:
+    - hardware-chester-x2-modbus-a
+    - hardware-chester-z
+    - subsystem-radon
 project:
   variant: Clime
   company: 2024 HARDWARIO a.s.

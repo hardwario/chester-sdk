@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-config VARIANT_CLIME
-    bool "Enable VARIANT_CLIME"
+config VARIANT_CHESTER_CLIME
+    bool "Enable VARIANT_CHESTER_CLIME"
     default y
+        

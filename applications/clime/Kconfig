@@ -11,6 +11,13 @@ config APP_REPORT_JITTER
 	bool "Add random time jitter to report transfers"
 	default y
 	select ENTROPY_GENERATOR
+# HARDWARE-CHESTER-S2
+config SHIELD_CTR_S2
+	bool "Enable SHIELD_CTR_S2"
+	default y
+
+config CTR_HYGRO
+	default y
 # SUBSYSTEM-LRW
 config SHIELD_CTR_LRW
 	bool "Enable SHIELD_CTR_LRW"
