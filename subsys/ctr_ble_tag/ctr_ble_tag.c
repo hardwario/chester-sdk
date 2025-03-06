@@ -470,6 +470,7 @@ int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, 
 		m_tag_data[slot].valid = false;
 
 		*valid = false;
+		k_mutex_unlock(&m_tag_data_lock);
 		return 0;
 	}
 
