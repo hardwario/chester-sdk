@@ -65,6 +65,27 @@ static int cmd_stop(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_state(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	bool running;
+	int ret = ctr_gnss_is_running(&running);
+	if (ret) {
+		LOG_ERR("Call `ctr_gnss_is_running` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "running: %s", running ? "yes" : "no");
+
+	return 0;
+}
+
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -90,6 +111,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(stop, NULL,
 	              "Stop receiver.",
 	              cmd_stop, 1, 0),
+
+	SHELL_CMD_ARG(state, NULL,
+	              "Get receiver state.",
+	              cmd_state, 1, 0),
 
         SHELL_SUBCMD_SET_END
 );

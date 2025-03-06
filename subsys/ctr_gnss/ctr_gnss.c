@@ -56,6 +56,7 @@ static ctr_gnss_user_cb m_user_cb;
 static void *m_user_data;
 static atomic_t m_corr_id;
 static bool m_running;
+enum ctr_info_product_family m_product_family;
 
 K_MSGQ_DEFINE_STATIC(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
@@ -72,28 +73,27 @@ static void lte_v2_gnss_handler(const struct ctr_lte_v2_gnss_update *update, voi
 static int process_req_start(const struct cmd_msgq_item *item)
 {
 	int ret;
-	enum ctr_info_product_family product_family;
 
-	ret = ctr_info_get_product_family(&product_family);
+	ret = ctr_info_get_product_family(&m_product_family);
 	if (ret) {
 		LOG_ERR("Call `ctr_info_get_product_family` failed: %d", ret);
 		return ret;
 	}
 
 #if defined(CONFIG_CTR_GNSS_M8)
-	if (product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_M) {
+	if (m_product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_M) {
 		ctr_gnss_m8_set_handler(m_user_cb, m_user_data);
 		return ctr_gnss_m8_start();
 	}
 #endif
 
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
-	if (product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_U1) {
+	if (m_product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_U1) {
 		ctr_lte_v2_gnss_set_handler(lte_v2_gnss_handler, NULL);
 		return ctr_lte_v2_gnss_set_enable(true);
 	}
 #endif
-	LOG_ERR("Unsupported product family: 0x%03x", product_family);
+	LOG_ERR("Unsupported product family: 0x%03x", m_product_family);
 
 	return -ENOTSUP;
 }
@@ -103,11 +103,15 @@ static int process_req_stop(const struct cmd_msgq_item *item)
 	int ret = -ENOTSUP;
 
 #if defined(CONFIG_CTR_GNSS_M8)
-	ret = ctr_gnss_m8_stop(item->data.stop.keep_bckp_domain);
+	if (m_product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_M) {
+		ret = ctr_gnss_m8_stop(item->data.stop.keep_bckp_domain);
+	}
 #endif
 
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
-	ret = ctr_lte_v2_gnss_set_enable(false);
+	if (m_product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_U1) {
+		ret = ctr_lte_v2_gnss_set_enable(false);
+	}
 #endif
 
 	return ret;
@@ -198,24 +202,29 @@ static void dispatcher_thread(void)
 			int ret;
 
 #if defined(CONFIG_CTR_GNSS_M8)
-			ret = ctr_gnss_m8_process_data();
-			if (ret) {
-				LOG_ERR("Call `ctr_gnss_m8_process_data` failed: %d", ret);
+			if (m_product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_M) {
+				ret = ctr_gnss_m8_process_data();
+				if (ret) {
+					LOG_ERR("Call `ctr_gnss_m8_process_data` failed: %d", ret);
+				}
 			}
 #endif
 
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
-			struct ctr_lte_v2_gnss_update update;
-			ret = k_msgq_get(&m_lte_v2_msgq, &update, K_MSEC(100));
-			if (!ret) {
-				union ctr_gnss_event_data data = {0};
-				data.update.fix_quality = -1;
-				data.update.satellites_tracked = -1;
-				data.update.latitude = update.latitude;
-				data.update.longitude = update.longitude;
-				data.update.altitude = update.altitude;
-				if (m_user_cb) {
-					m_user_cb(CTR_GNSS_EVENT_UPDATE, &data, m_user_data);
+			if (m_product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_U1) {
+				struct ctr_lte_v2_gnss_update update;
+				ret = k_msgq_get(&m_lte_v2_msgq, &update, K_MSEC(100));
+				if (!ret) {
+					union ctr_gnss_event_data data = {0};
+					data.update.fix_quality = -1;
+					data.update.satellites_tracked = -1;
+					data.update.latitude = update.latitude;
+					data.update.longitude = update.longitude;
+					data.update.altitude = update.altitude;
+					if (m_user_cb) {
+						m_user_cb(CTR_GNSS_EVENT_UPDATE, &data,
+							  m_user_data);
+					}
 				}
 			}
 #endif
@@ -281,6 +290,17 @@ int ctr_gnss_stop(bool keep_bckp_domain, int *corr_id)
 		LOG_ERR("Call `k_msgq_put` failed: %d", ret);
 		return ret;
 	}
+
+	return 0;
+}
+
+int ctr_gnss_is_running(bool *running)
+{
+	if (!running) {
+		return -EINVAL;
+	}
+
+	*running = m_running;
 
 	return 0;
 }

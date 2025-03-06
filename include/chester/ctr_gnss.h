@@ -66,6 +66,7 @@ typedef void (*ctr_gnss_user_cb)(enum ctr_gnss_event event, union ctr_gnss_event
 int ctr_gnss_set_handler(ctr_gnss_user_cb user_cb, void *user_data);
 int ctr_gnss_start(int *corr_id);
 int ctr_gnss_stop(bool keep_bckp_domain, int *corr_id);
+int ctr_gnss_is_running(bool *running);
 
 /** @} */
 
