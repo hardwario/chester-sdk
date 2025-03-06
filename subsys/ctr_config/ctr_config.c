@@ -181,25 +181,12 @@ int ctr_config_show_item(const struct shell *shell, const struct ctr_config_item
 		int32_t val = 0;
 		memcpy(&val, item->variable, item->size);
 
-		shell_print(shell, "%s config %s %s", mod, item->name, item->enums[val]);
+		shell_print(shell, "%s config %s \"%s\"", mod, item->name, item->enums[val]);
 		break;
 	}
 	case CTR_CONFIG_TYPE_STRING: {
-		size_t len = strlen((char *)item->variable);
-		bool contains_space = false;
-		for (size_t i = 0; i < len; i++) {
-			if (isspace(((char *)item->variable)[i])) {
-				contains_space = true;
-				break;
-			}
-		}
-		if (contains_space) {
-			shell_print(shell, "%s config %s \"%s\"", mod, item->name,
-				    (char *)item->variable);
-		} else {
-			shell_print(shell, "%s config %s %s", mod, item->name,
-				    (char *)item->variable);
-		}
+
+		shell_print(shell, "%s config %s \"%s\"", mod, item->name, (char *)item->variable);
 		break;
 	}
 	case CTR_CONFIG_TYPE_HEX:
