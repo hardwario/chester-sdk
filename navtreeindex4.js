@@ -1,5 +1,6 @@
 var NAVTREEINDEX4 =
 {
+"mb7066_8h.html":[2,0,0,22],
 "mb7066_8h_source.html":[2,0,0,22],
 "modules.html":[0],
 "pages.html":[],
@@ -248,6 +249,5 @@ var NAVTREEINDEX4 =
 "structctr__lte__v2__send__recv__param.html#a16cc41d0dd4030b254d76b0b41937881":[1,0,45,0],
 "structctr__lte__v2__send__recv__param.html#a651f61df2b09e8ec920219ab52e8fe78":[1,0,45,3],
 "structctr__lte__v2__send__recv__param.html#a6b943f8e328e355d533e53e1e2905443":[1,0,45,1],
-"structctr__lte__v2__send__recv__param.html#aa15707a6209e097aca5928d0fdc67587":[1,0,45,6],
-"structctr__lte__v2__send__recv__param.html#aa3e984cd200d79c7509f0f8f3011cb32":[1,0,45,4]
+"structctr__lte__v2__send__recv__param.html#aa15707a6209e097aca5928d0fdc67587":[1,0,45,6]
 };
