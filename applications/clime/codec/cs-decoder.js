@@ -273,14 +273,8 @@ function s32() {
 }
 
 if (false) {
-<<<<<<< HEAD
   var hex = "af01070eda0d23022e094f096d0d2887c4e46400145c0000";
   var buf = Buffer.from(hex, "hex");
   console.log(decodeUplink({ bytes: buf }));
-=======
-  var hex = "9703ffffffffff0221094c093f000100000000";
-  var buf = Buffer.from(hex, "hex");
-  console.log(JSON.stringify(decodeUplink({ bytes: buf })));
->>>>>>> 46a8f6ff (applications: clime: Add soil sensor lrw encoding)
 }
 
