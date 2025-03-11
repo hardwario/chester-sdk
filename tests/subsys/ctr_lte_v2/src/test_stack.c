@@ -30,6 +30,7 @@ ZTEST(stack, test_attach)
 	/* clang-format off */
 	#define URC(ms, urc) { .rx=urc, .delay_ms=ms }
 
+
 	static struct mock_link_item items[] = {
 		{"AT", "OK"},
 		{"AT+CGSN=1", "+CGSN: \"351358815178345\"", "OK"},
@@ -43,7 +44,11 @@ ZTEST(stack, test_attach)
 		{"AT%XTEMP=1", "OK"},
 		{"AT%XSYSTEMMODE=0,1,1,0", "OK"},
 		{"AT%XDATAPRFL=0", "OK"},
+		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG)
 		{"AT%XBANDLOCK=1,\"0000000000000000000000100000000000000000000000000000000000001011000011110001100010011010\"", "OK"},
+		#else
+		{"AT%XBANDLOCK=0", "OK"},
+		#endif
 		{"AT%XSIM=1", "OK"},
 		{"AT%XNETTIME=1", "OK"},
 		{"AT%MDMEV=1", "OK"},
@@ -57,8 +62,13 @@ ZTEST(stack, test_attach)
 		{"AT+CNEC=24", "OK"},
 		{"AT%XCOEX0=1,1,1565,1586", "OK"},
 		{"AT+CSCON=1", "OK"},
+		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG)
 		{"AT+COPS=1,2,\"23003\"", "OK"},
 		{"AT+CGDCONT=0,\"IP\",\"hardwario\"", "OK"},
+		#else
+		{"AT+COPS=0", "OK"},
+		{"AT+CGDCONT=0,\"IP\"", "OK"},
+		#endif
 		{"AT+CGAUTH=0,0", "OK"},
 		{"AT%XMODEMSLEEP=1,500,10240", "OK"},
 		{"AT+CFUN=1", "%XMODEMSLEEP: 4", "OK"},
@@ -76,7 +86,11 @@ ZTEST(stack, test_attach)
 		{"AT+CEINFO?", "+CEINFO: 0,1,C,8,1,-79,21", "OK"},
 		{"AT+CGDCONT?", "+CGDCONT: 0,\"IP\",\"hardwario\",\"172.28.0.139\",0,0", "OK"},
 		{"AT#XSOCKET=1,2,0", "#XSOCKET: 0,2,17", "OK"},
-		{"AT#XCONNECT=\"192.168.192.4\",5002", "#XCONNECT: 1", "OK"},
+		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG)
+		{"AT#XCONNECT=\"46.101.214.168\",5003", "#XCONNECT: 1", "OK"},
+		#else
+		{"AT#XCONNECT=\"192.168.192.4\",5003", "#XCONNECT: 1", "OK"},
+		#endif
 	};
 
 	/* clang-format on */

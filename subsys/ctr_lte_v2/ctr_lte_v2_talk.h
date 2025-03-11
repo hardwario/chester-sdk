@@ -67,6 +67,7 @@ int ctr_lte_v2_talk_at_xrecvfrom(struct ctr_lte_v2_talk *talk, int p1, char *buf
 int ctr_lte_v2_talk_at_xsendto(struct ctr_lte_v2_talk *talk, const char *p1, int p2,
 			       const void *buf, size_t len);
 int ctr_lte_v2_talk_at_xsend(struct ctr_lte_v2_talk *talk, const void *buf, size_t len);
+int ctr_lte_v2_talk_at_xsend_string(struct ctr_lte_v2_talk *talk, const void *buf, size_t len);
 int ctr_lte_v2_talk_at_xrecv(struct ctr_lte_v2_talk *talk, int timeout, char *buf, size_t size,
 			     size_t *len);
 int ctr_lte_v2_talk_at_xsim(struct ctr_lte_v2_talk *talk, int p1);

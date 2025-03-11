@@ -17,6 +17,7 @@ config CTR_CLOUD
 	select ZCBOR_STOP_ON_ERROR
 	select SHELL
 	select SHELL_BACKEND_DUMMY
+	select BASE64
 
 if CTR_CLOUD
 

@@ -32,25 +32,33 @@ config CTR_LTE_V2_CONFIG_ANTENNA
 	default 0 if CTR_LTE_V2_CONFIG_ANTENNA_INT
 	default 1 if CTR_LTE_V2_CONFIG_ANTENNA_EXT
 
-config CTR_LTE_V2_DEFAULT_NB_IOT_MODE
-	bool "CTR_LTE_V2_DEFAULT_NB_IOT_MODE"
-	default y
-
-config CTR_LTE_V2_DEFAULT_LTE_M_MODE
-	bool "CTR_LTE_V2_DEFAULT_LTE_M_MODE"
-	default n
+config CTR_LTE_V2_DEFAULT_MODE
+	string "CTR_LTE_V2_DEFAULT_MODE"
+	default "nb-iot"
 
 config CTR_LTE_V2_DEFAULT_BANDS
 	string "CTR_LTE_V2_DEFAULT_BANDS"
-	default "auto"
+	default ""
 	help
 		original value: "2,4,5,8,12,13,17,18,19,20,25,26,28,66"
+
+config CTR_LTE_V2_DEFAULT_NETWORK
+	string "CTR_LTE_V2_DEFAULT_NETWORK"
+	default ""
 
 config CTR_LTE_V2_DEFAULT_APN
 	string "CTR_LTE_V2_DEFAULT_APN"
 	default ""
 	help
 		original value: "hardwario"
+
+config CTR_LTE_V2_DEFAULT_ADDR
+	string "CTR_LTE_V2_DEFAULT_ADDR"
+	default "192.168.192.4"
+
+config CTR_LTE_V2_PORT
+	int "CTR_LTE_V2_PORT"
+	default 5003
 
 config CTR_LTE_V2_INIT_PRIORITY
 	int "CTR_LTE_V2_INIT_PRIORITY"
@@ -66,6 +74,7 @@ config CTR_LTE_V2_THREAD_PRIORITY
 
 config CTR_LTE_V2_GNSS
 	bool "CTR_LTE_V2_GNSS"
+	default y
 
 config HEAP_MEM_POOL_SIZE
 	int "HEAP_MEM_POOL_SIZE"

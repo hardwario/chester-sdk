@@ -45,6 +45,46 @@ ZTEST(parser, test_urc_cereg_5)
 	zassert_true(strcmp(param.tac, "AF66") == 0, "param.tac not equal");
 	zassert_equal(param.cid, 0x009DE067, "param.cid not equal");
 	zassert_equal(param.act, 9, "param.act not equal");
+	zassert_equal(param.cause_type, 0, "param.cause_type not equal");
+	zassert_equal(param.reject_cause, 0, "param.reject_cause not equal");
+	zassert_equal(param.active_time, 0, "param.active_time not equal");
+	zassert_equal(param.periodic_tau_ext, 86400, "param.periodic_tau_ext not equal");
+}
+
+ZTEST(parser, test_urc_cereg_5_active_time)
+{
+	struct ctr_lte_v2_cereg_param param;
+	int ret = ctr_lte_v2_parse_urc_cereg(
+		"5,\"AF66\",\"009DE067\",9,,,\"00000101\",\"00111000\"", &param);
+
+	zassert_ok(ret, "ctr_lte_v2_parse_urc_cereg failed");
+	zassert_equal(param.valid, true, "param.valid not true");
+	zassert_equal(param.stat, 5, "param.stat not equal");
+	zassert_true(strcmp(param.tac, "AF66") == 0, "param.tac not equal");
+	zassert_equal(param.cid, 0x009DE067, "param.cid not equal");
+	zassert_equal(param.act, 9, "param.act not equal");
+	zassert_equal(param.cause_type, 0, "param.cause_type not equal");
+	zassert_equal(param.reject_cause, 0, "param.reject_cause not equal");
+	zassert_equal(param.active_time, 10, "param.active_time not equal");
+	zassert_equal(param.periodic_tau_ext, 86400, "param.periodic_tau_ext not equal");
+}
+
+ZTEST(parser, test_urc_cereg_5_psm_disabled)
+{
+	struct ctr_lte_v2_cereg_param param;
+	int ret = ctr_lte_v2_parse_urc_cereg(
+		"5,\"3866\",\"074FEB0C\",7,,,\"11100000\",\"11100000\"", &param);
+
+	zassert_ok(ret, "ctr_lte_v2_parse_urc_cereg failed");
+	zassert_equal(param.valid, true, "param.valid not true");
+	zassert_equal(param.stat, 5, "param.stat not equal");
+	zassert_true(strcmp(param.tac, "3866") == 0, "param.tac not equal");
+	zassert_equal(param.cid, 0x074FEB0C, "param.cid not equal");
+	zassert_equal(param.act, 7, "param.act not equal");
+	zassert_equal(param.cause_type, 0, "param.cause_type not equal");
+	zassert_equal(param.reject_cause, 0, "param.reject_cause not equal");
+	zassert_equal(param.active_time, -1, "param.active_time not equal");
+	zassert_equal(param.periodic_tau_ext, -1, "param.periodic_tau_ext not equal");
 }
 
 ZTEST(parser, test_urc_cereg_2)
@@ -167,3 +207,23 @@ ZTEST(parser, test_urc_xgps)
 }
 
 ZTEST_SUITE(parser, NULL, NULL, NULL, NULL, NULL);
+
+// int main() {
+//     // Testovací příklady
+//     const char *test1 = "11100000"; // Očekávaný výsledek: deaktivováno (-1)
+//     const char *test2 = "00000000"; // Očekávaný výsledek: 0 sekund
+//     const char *test3 = "00000101"; // GPRS Timer 2: 5 * 2 = 10 sekund
+//     const char *test4 = "00101001"; // GPRS Timer 2: 9 * 60 = 540 sekund (9 minut)
+//     const char *test5 = "10000101"; // GPRS Timer 3: 5 * 30 = 150 sekund (2,5 minuty)
+//     const char *test6 = "11001000"; // GPRS Timer 3: 8 * 320h = 2560 hodin (deaktivováno?)
+
+//     printf("GPRS Timer 2 - Test 1: %d\n", parse_gprs_timer(test1, 2));
+//     printf("GPRS Timer 2 - Test 2: %d\n", parse_gprs_timer(test2, 2));
+//     printf("GPRS Timer 2 - Test 3: %d\n", parse_gprs_timer(test3, 2));
+//     printf("GPRS Timer 2 - Test 4: %d\n", parse_gprs_timer(test4, 2));
+
+//     printf("GPRS Timer 3 - Test 5: %d\n", parse_gprs_timer(test5, 3));
+//     printf("GPRS Timer 3 - Test 6: %d\n", parse_gprs_timer(test6, 3));
+
+//     return 0;
+// }

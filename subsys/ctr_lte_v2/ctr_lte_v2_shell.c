@@ -227,14 +227,24 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
+	shell_print(shell, "attach count: %u", metrics.attach_count);
+	shell_print(shell, "attach fail count: %u", metrics.attach_fail_count);
+	shell_print(shell, "attach duration ms: %u", metrics.attach_duration_ms);
+	shell_print(shell, "attach last ts: %lld", metrics.attach_last_ts);
+	shell_print(shell, "attach last duration ms: %u", metrics.attach_last_duration_ms);
+
 	shell_print(shell, "uplink messages: %u", metrics.uplink_count);
 	shell_print(shell, "uplink bytes: %u", metrics.uplink_bytes);
 	shell_print(shell, "uplink errors: %u", metrics.uplink_errors);
 	shell_print(shell, "uplink last ts: %lld", metrics.uplink_last_ts);
+
 	shell_print(shell, "downlink messages: %u", metrics.downlink_count);
 	shell_print(shell, "downlink bytes: %u", metrics.downlink_bytes);
 	shell_print(shell, "downlink errors: %u", metrics.downlink_errors);
 	shell_print(shell, "downlink last ts: %lld", metrics.downlink_last_ts);
+
+	shell_print(shell, "cscon 1 duration ms: %u", metrics.cscon_1_duration_ms);
+	shell_print(shell, "cscon 1 last duration ms: %u", metrics.cscon_1_last_duration_ms);
 
 	shell_print(shell, "command succeeded");
 

@@ -19,6 +19,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
+#include <zephyr/sys/base64.h>
+
 /* Standard includes */
 #include <errno.h>
 #include <stdbool.h>
@@ -27,10 +29,13 @@
 
 #define MODEM_SLEEP_DELAY K_SECONDS(10)
 
+#define MAX_DATA_SIZE        (CTR_CLOUD_PACKET_MAX_SIZE - CTR_CLOUD_PACKET_MIN_SIZE)
+#define MAX_BASE64_DATA_SIZE ((CTR_CLOUD_PACKET_MAX_SIZE / 4 * 3) - 7 - CTR_CLOUD_PACKET_MIN_SIZE)
+
 LOG_MODULE_REGISTER(ctr_cloud_transfer, CONFIG_CTR_CLOUD_LOG_LEVEL);
 
-CTR_BUF_DEFINE_STATIC(m_send_buf, CTR_CLOUD_PACKET_MAX_SIZE);
-CTR_BUF_DEFINE_STATIC(m_recv_buf, CTR_CLOUD_PACKET_MAX_SIZE);
+CTR_BUF_DEFINE_STATIC(m_buf_0, CTR_CLOUD_PACKET_MAX_SIZE);
+CTR_BUF_DEFINE_STATIC(m_buf_1, CTR_CLOUD_PACKET_MAX_SIZE);
 
 static uint16_t m_sequence;
 static uint16_t m_last_recv_sequence;
@@ -44,26 +49,49 @@ static struct ctr_cloud_transfer_metrics m_metrics = {
 };
 static K_MUTEX_DEFINE(m_lock_metrics);
 
-static int send_recv(struct ctr_buf *send_buf, struct ctr_buf *recv_buf, bool rai)
+static int transfer(struct ctr_cloud_packet *pck_send, struct ctr_cloud_packet *pck_recv, bool rai)
 {
 	int ret;
+	struct ctr_buf *pck_buf = &m_buf_0;
+	struct ctr_buf *send_buf = &m_buf_1;
+	struct ctr_buf *recv_buf = &m_buf_0;
+	size_t len;
 
-	LOG_HEXDUMP_INF(ctr_buf_get_mem(&m_send_buf), ctr_buf_get_used(&m_send_buf),
+	LOG_INF("Sending packet Sequence: %u %s len: %u", pck_send->sequence,
+		ctr_cloud_packet_flags_to_str(pck_send->flags), pck_send->data_len);
+
+	ctr_buf_reset(pck_buf);
+	ret = ctr_cloud_packet_pack(pck_send, m_token, pck_buf);
+	if (ret) {
+		LOG_ERR("Call `ctr_cloud_packet_pack` failed: %d", ret);
+		return ret;
+	}
+
+	ctr_buf_reset(send_buf);
+	ret = base64_encode(ctr_buf_get_mem(send_buf), ctr_buf_get_free(send_buf), &len,
+			    ctr_buf_get_mem(pck_buf), ctr_buf_get_used(pck_buf));
+	if (ret) {
+		LOG_ERR("Call `base64_encode` failed: %d", ret);
+		return ret;
+	}
+	ctr_buf_seek(send_buf, len);
+	len = 0;
+
+	LOG_HEXDUMP_INF(ctr_buf_get_mem(send_buf), ctr_buf_get_used(send_buf),
 			rai ? "Sending packet RAI:" : "Sending packet:");
-
-	size_t recv_len;
 
 	struct ctr_lte_v2_send_recv_param param = {
 		.rai = rai,
+		.send_as_string = true,
 		.send_buf = ctr_buf_get_mem(send_buf),
 		.send_len = ctr_buf_get_used(send_buf),
 		.recv_buf = NULL,
 		.recv_size = 0,
-		.recv_len = &recv_len,
-		.timeout = K_FOREVER,
+		.recv_len = &len,
+		.timeout = K_FOREVER, // todo timeout
 	};
 
-	if (recv_buf) {
+	if (pck_recv) {
 		ctr_buf_reset(recv_buf);
 		param.recv_buf = ctr_buf_get_mem(recv_buf);
 		param.recv_size = ctr_buf_get_free(recv_buf);
@@ -75,20 +103,41 @@ static int send_recv(struct ctr_buf *send_buf, struct ctr_buf *recv_buf, bool ra
 		return ret;
 	}
 
-	if (recv_buf) {
-		ret = ctr_buf_seek(&m_recv_buf, recv_len);
+	if (pck_recv) {
+		ret = ctr_buf_seek(recv_buf, len);
 		if (ret) {
 			LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
 			return ret;
 		}
 
-		if (!ctr_buf_get_used(&m_recv_buf)) {
+		if (!ctr_buf_get_used(recv_buf)) {
 			LOG_ERR("No data received");
 			return -EIO;
 		}
 
-		// LOG_HEXDUMP_INF(ctr_buf_get_mem(&m_recv_buf), ctr_buf_get_used(&m_recv_buf),
+		// LOG_HEXDUMP_INF(ctr_buf_get_mem(recv_buf), ctr_buf_get_used(recv_buf),
 		// 		"Received packet:");
+
+		pck_buf = &m_buf_1;
+		len = 0;
+
+		ctr_buf_reset(pck_buf);
+		ret = base64_decode(ctr_buf_get_mem(pck_buf), ctr_buf_get_free(pck_buf), &len,
+				    ctr_buf_get_mem(recv_buf), ctr_buf_get_used(recv_buf));
+		if (ret) {
+			LOG_ERR("Call `base64_decode` failed: %d", ret);
+			return ret;
+		}
+		ctr_buf_seek(pck_buf, len);
+
+		ret = ctr_cloud_packet_unpack(pck_recv, m_token, pck_buf);
+		if (ret) {
+			LOG_ERR("Call `ctr_cloud_packet_unpack` failed: %d", ret);
+			return ret;
+		}
+
+		LOG_INF("Received packet Sequence: %u %s len: %u", pck_recv->sequence,
+			ctr_cloud_packet_flags_to_str(pck_recv->flags), pck_recv->data_len);
 	}
 
 	return 0;
@@ -155,7 +204,7 @@ int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink)
 	int part = 0;
 	int fragments = 0;
 
-	if (has_downlink != NULL) {
+	if (has_downlink) {
 		*has_downlink = false;
 	}
 
@@ -166,8 +215,9 @@ restart:
 		p = ctr_buf_get_mem(buf);
 		len = ctr_buf_get_used(buf);
 
-		fragments = len / CTR_CLOUD_DATA_MAX_SIZE;
-		if (len % CTR_CLOUD_DATA_MAX_SIZE) {
+		/* calculate number of fragments */
+		fragments = len / MAX_BASE64_DATA_SIZE;
+		if (len % MAX_BASE64_DATA_SIZE) {
 			fragments++;
 		}
 	}
@@ -175,61 +225,26 @@ restart:
 	do {
 		LOG_INF("Processing part: %d (%d left)", part, fragments - part - 1);
 
-		ctr_buf_reset(&m_recv_buf);
-
-		m_pck_send.data_len = 0;
-		m_pck_send.flags = 0;
-		m_pck_send.data = NULL;
-
-		if (buf) {
-			m_pck_send.data = p;
-			m_pck_send.data_len = MIN(len, CTR_CLOUD_DATA_MAX_SIZE);
-
-			p += m_pck_send.data_len;
-			len -= m_pck_send.data_len;
-
-			if (part == 0) {
-				m_pck_send.flags |= CTR_CLOUD_PACKET_FLAG_FIRST;
-			}
-			if (len == 0) {
-				m_pck_send.flags |= CTR_CLOUD_PACKET_FLAG_LAST;
-			}
-
-			part++;
-		}
-
+		m_pck_send.data = p;
+		m_pck_send.data_len = MIN(len, MAX_BASE64_DATA_SIZE);
 		m_pck_send.sequence = m_sequence;
 		m_sequence = ctr_cloud_packet_sequence_inc(m_sequence);
 
-	again:
-		LOG_INF("Sending packet Sequence: %u %s len: %u", m_pck_send.sequence,
-			ctr_cloud_packet_flags_to_str(m_pck_send.flags), m_pck_send.data_len);
-
-		ret = ctr_cloud_packet_pack(&m_pck_send, m_token, &m_send_buf);
-		if (ret) {
-			LOG_ERR("Call `ctr_cloud_packet_pack` failed: %d", ret);
-			res = ret;
-			goto exit;
+		m_pck_send.flags = 0;
+		if (part == 0) {
+			m_pck_send.flags |= CTR_CLOUD_PACKET_FLAG_FIRST;
+		}
+		if (len == m_pck_send.data_len) {
+			m_pck_send.flags |= CTR_CLOUD_PACKET_FLAG_LAST;
 		}
 
-		ctr_buf_reset(&m_recv_buf);
 		bool rai = m_pck_send.flags & CTR_CLOUD_PACKET_FLAG_LAST;
-		ret = send_recv(&m_send_buf, &m_recv_buf, rai);
+		ret = transfer(&m_pck_send, &m_pck_recv, rai);
 		if (ret) {
-			LOG_ERR("Call `send_recv` failed: %d", ret);
+			LOG_ERR("Call `transfer` failed: %d", ret);
 			res = ret;
 			goto exit;
 		}
-
-		ret = ctr_cloud_packet_unpack(&m_pck_recv, m_token, &m_recv_buf);
-		if (ret) {
-			LOG_ERR("Call `ctr_cloud_packet_unpack` failed: %d", ret);
-			res = ret;
-			goto exit;
-		}
-
-		LOG_INF("Received packet Sequence: %u %s len: %u", m_pck_recv.sequence,
-			ctr_cloud_packet_flags_to_str(m_pck_recv.flags), m_pck_recv.data_len);
 
 		if (m_pck_recv.serial_number != m_pck_send.serial_number) {
 			LOG_ERR("Serial number mismatch");
@@ -237,7 +252,7 @@ restart:
 			goto exit;
 		}
 
-		if (has_downlink != NULL) {
+		if (has_downlink) {
 			*has_downlink = m_pck_recv.flags & CTR_CLOUD_PACKET_FLAG_POLL;
 		}
 
@@ -256,7 +271,7 @@ restart:
 		if (m_pck_recv.sequence != m_sequence) {
 			if (m_pck_recv.sequence == m_last_recv_sequence) {
 				LOG_WRN("Received repeat response");
-				goto again;
+				continue;
 			} else {
 				LOG_WRN("Received unexpected sequence expect: %u", m_sequence);
 				m_sequence = 0;
@@ -264,14 +279,18 @@ restart:
 			}
 		}
 
+		if (m_pck_recv.data_len) {
+			LOG_ERR("Received unexpected data length");
+			m_sequence = 0;
+			goto restart;
+		}
+
 		m_last_recv_sequence = m_pck_recv.sequence;
 		m_sequence = ctr_cloud_packet_sequence_inc(m_sequence);
 
-		if (m_pck_recv.data_len != 0) {
-			LOG_ERR("Received unexpected data length");
-			res = -EIO;
-			goto exit;
-		}
+		p += m_pck_send.data_len;
+		len -= m_pck_send.data_len;
+		part++;
 
 	} while (len);
 
@@ -307,8 +326,9 @@ int ctr_cloud_transfer_downlink(struct ctr_buf *buf, bool *has_downlink)
 	int part = 0;
 	bool quit;
 
-	*has_downlink = false;
-
+	if (has_downlink) {
+		*has_downlink = false;
+	}
 	size_t buf_used = ctr_buf_get_used(buf);
 
 restart:
@@ -327,23 +347,12 @@ restart:
 		m_sequence = ctr_cloud_packet_sequence_inc(m_sequence);
 
 	again:
-		LOG_INF("Sending packet Sequence: %u %s len: %u", m_pck_send.sequence,
-			ctr_cloud_packet_flags_to_str(m_pck_send.flags), m_pck_send.data_len);
-
-		ret = ctr_cloud_packet_pack(&m_pck_send, m_token, &m_send_buf);
-
-		if (ret) {
-			LOG_ERR("Call `ctr_cloud_packet_pack` failed: %d", ret);
-			res = ret;
-			goto exit;
-		}
-
-		ctr_buf_reset(&m_recv_buf);
 		if (quit) {
-			bool rai = !*has_downlink; // use RAI if no downlink is expected
-			ret = send_recv(&m_send_buf, NULL, rai);
+			bool rai = has_downlink ? !*has_downlink
+						: true; /* use RAI if no downlink is expected */
+			ret = transfer(&m_pck_send, NULL, rai);
 			if (ret) {
-				LOG_ERR("Call `send_recv` failed: %d", ret);
+				LOG_ERR("Call `transfer` failed: %d", ret);
 				res = ret;
 				goto exit;
 			}
@@ -351,23 +360,12 @@ restart:
 		}
 
 		bool rai = part == 0;
-
-		ret = send_recv(&m_send_buf, &m_recv_buf, rai);
+		ret = transfer(&m_pck_send, &m_pck_recv, rai);
 		if (ret) {
-			LOG_ERR("Call `send_recv` failed: %d", ret);
+			LOG_ERR("Call `transfer` failed: %d", ret);
 			res = ret;
 			goto exit;
 		}
-
-		ret = ctr_cloud_packet_unpack(&m_pck_recv, m_token, &m_recv_buf);
-		if (ret) {
-			LOG_ERR("Call `ctr_cloud_packet_unpack` failed: %d", ret);
-			res = ret;
-			goto exit;
-		}
-
-		LOG_INF("Received packet Sequence: %u %s len: %u", m_pck_recv.sequence,
-			ctr_cloud_packet_flags_to_str(m_pck_recv.flags), m_pck_recv.data_len);
 
 		if (m_pck_recv.serial_number != m_pck_send.serial_number) {
 			LOG_ERR("Serial number mismatch");
@@ -413,7 +411,10 @@ restart:
 		}
 
 		quit = m_pck_recv.flags & CTR_CLOUD_PACKET_FLAG_LAST;
-		*has_downlink = m_pck_recv.flags & CTR_CLOUD_PACKET_FLAG_POLL;
+
+		if (has_downlink) {
+			*has_downlink = m_pck_recv.flags & CTR_CLOUD_PACKET_FLAG_POLL;
+		}
 
 		if (quit && m_pck_recv.data_len == 0 && part == 0) {
 			LOG_INF("Skip ack response");

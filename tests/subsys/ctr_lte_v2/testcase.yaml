@@ -10,5 +10,8 @@ tests:
   subsys.ctr_lte_v2.parser:
     extra_args: CONFIG_TEST_FEATURE_PARSING=y
 
-  subsys.ctr_lte_v2.stack:
+  subsys.ctr_lte_v2.stack_overrides_config:
+    extra_args: CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG=y
+
+  subsys.ctr_lte_v2.stack_default:
     extra_args: CONFIG_TEST_FEATURE_STACK=y

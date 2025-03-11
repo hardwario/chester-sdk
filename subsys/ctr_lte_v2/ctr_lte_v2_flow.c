@@ -351,13 +351,23 @@ int ctr_lte_v2_flow_prepare(void)
 		return ret;
 	}
 
-	int gnss_enable = 0;
+	int gnss_mode = 0;
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
-	gnss_enable = 1;
+	gnss_mode = 1;
 #endif
-	ret = ctr_lte_v2_talk_at_xsystemmode(&m_talk, g_ctr_lte_v2_config.lte_m_mode ? 1 : 0,
-					     g_ctr_lte_v2_config.nb_iot_mode ? 1 : 0, gnss_enable,
-					     0);
+
+	char *pos_let_m = strstr(g_ctr_lte_v2_config.mode, "lte-m");
+	char *pos_nb_iot = strstr(g_ctr_lte_v2_config.mode, "nb-iot");
+
+	int lte_m_mode = pos_let_m ? 1 : 0;
+	int nb_iot_mode = pos_nb_iot ? 1 : 0;
+	int preference = 0;
+	if (pos_let_m && pos_nb_iot) {
+		preference = pos_let_m < pos_nb_iot ? 1 : 2;
+	}
+
+	ret = ctr_lte_v2_talk_at_xsystemmode(&m_talk, lte_m_mode, nb_iot_mode, gnss_mode,
+					     preference);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_xsystemmode` failed: %d", ret);
 		return ret;
@@ -369,7 +379,7 @@ int ctr_lte_v2_flow_prepare(void)
 		return ret;
 	}
 
-	if (!strncmp(g_ctr_lte_v2_config.bands, "auto", 4)) {
+	if (!strlen(g_ctr_lte_v2_config.bands)) {
 		ret = ctr_lte_v2_talk_at_xbandlock(&m_talk, 0, NULL);
 	} else {
 		char bands[] =
@@ -456,7 +466,7 @@ int ctr_lte_v2_flow_prepare(void)
 		return ret;
 	}
 
-	if (gnss_enable) {
+	if (gnss_mode) {
 		ctr_lte_v2_talk_at_cmd(&m_talk, "AT%XCOEX0=1,1,1565,1586");
 	}
 
@@ -466,14 +476,14 @@ int ctr_lte_v2_flow_prepare(void)
 		return ret;
 	}
 
-	if (g_ctr_lte_v2_config.autoconn) {
+	if (!strlen(g_ctr_lte_v2_config.network)) {
 		ret = ctr_lte_v2_talk_at_cops(&m_talk, 0, NULL, NULL);
 		if (ret) {
 			LOG_ERR("Call `ctr_lte_v2_talk_at_cops` failed: %d", ret);
 			return ret;
 		}
 	} else {
-		ret = ctr_lte_v2_talk_at_cops(&m_talk, 1, (int[]){2}, g_ctr_lte_v2_config.plmnid);
+		ret = ctr_lte_v2_talk_at_cops(&m_talk, 1, (int[]){2}, g_ctr_lte_v2_config.network);
 		if (ret) {
 			LOG_ERR("Call `ctr_lte_v2_talk_at_cops` failed: %d", ret);
 			return ret;
@@ -659,7 +669,7 @@ int ctr_lte_v2_flow_open_socket(void)
 	char at_cmd[15 + sizeof(g_ctr_lte_v2_config.addr) + 5 + 1] = {0};
 	char ar_response[64] = {0};
 	snprintf(at_cmd, sizeof(at_cmd), "AT#XCONNECT=\"%s\",%u", g_ctr_lte_v2_config.addr,
-		 g_ctr_lte_v2_config.port);
+		 CONFIG_CTR_LTE_V2_PORT);
 
 	ret = ctr_lte_v2_talk_at_cmd_with_resp(&m_talk, at_cmd, ar_response, sizeof(ar_response));
 	if (ret) {
@@ -791,10 +801,18 @@ int ctr_lte_v2_flow_send(const struct ctr_lte_v2_send_recv_param *param)
 		}
 	}
 
-	ret = ctr_lte_v2_talk_at_xsend(&m_talk, param->send_buf, param->send_len);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_talk_at_xsend` failed: %d", ret);
-		return ret;
+	if (param->send_as_string) {
+		ret = ctr_lte_v2_talk_at_xsend_string(&m_talk, param->send_buf, param->send_len);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_talk_at_xsend_string` failed: %d", ret);
+			return ret;
+		}
+	} else {
+		ret = ctr_lte_v2_talk_at_xsend(&m_talk, param->send_buf, param->send_len);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_talk_at_xsend` failed: %d", ret);
+			return ret;
+		}
 	}
 
 	if (param->rai && !param->recv_buf) { /* RAI and no receive buffer */

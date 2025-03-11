@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 LOG_MODULE_REGISTER(ctr_lte_v2_parse, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 
@@ -159,10 +160,76 @@ int cellid_hex2int(char *ci, size_t size, int *cid)
 	return 0;
 }
 
-int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *param)
+int parse_gprs_timer(const char *binary_string, int flag)
 {
-	/* 5,"AF66","009DE067",9,,,"00000000","00111000" */
-	/* 2,"B4DC","000AE520",9 */
+	if (strlen(binary_string) != 8) {
+		return GRPS_TIMER_INVALID;
+	}
+
+	int byte_value = (int)strtol(binary_string, NULL, 2);
+	int time_unit = (byte_value >> 5) & 0x07;
+	int timer_value = byte_value & 0x1F;
+
+	if (time_unit == 0b111) {
+		return GRPS_TIMER_DEACTIVATED;
+	}
+
+	int multiplier = 0;
+	if (flag == 2) {
+		/* GPRS Timer 2 (Active-Time) */
+		switch (time_unit) {
+		case 0b000:
+			multiplier = 2;
+			break; /* 2 seconds */
+		case 0b001:
+			multiplier = 60;
+			break; /* 1 minute */
+		case 0b010:
+			multiplier = 360;
+			break; /* 6 minutes */
+		default:
+			return GRPS_TIMER_INVALID;
+		}
+	} else if (flag == 3) {
+		/* GPRS Timer 3 (Periodic-TAU-ext) */
+		switch (time_unit) {
+		case 0b000:
+			multiplier = 600;
+			break; /* 10 minutes */
+		case 0b001:
+			multiplier = 3600;
+			break; /* 1 hour */
+		case 0b010:
+			multiplier = 36000;
+			break; /* 10 hours */
+		case 0b011:
+			multiplier = 2;
+			break; /* 2 seconds */
+		case 0b100:
+			multiplier = 30;
+			break; /* 30 seconds */
+		case 0b101:
+			multiplier = 60;
+			break; /* 1 minute */
+		case 0b110:
+			multiplier = 1152000;
+			break; /* 320 hours */
+		default:
+			return GRPS_TIMER_INVALID;
+		}
+	} else {
+		return GRPS_TIMER_INVALID;
+	}
+
+	return timer_value * multiplier;
+}
+
+int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *param)
+{ /*
+	 <stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU-ext>]]]]
+	 5,"AF66","009DE067",9,,,"00000000","00111000"
+	 2,"B4DC","000AE520",9
+	 */
 
 	if (!s || !param) {
 		return -EINVAL;
@@ -174,6 +241,7 @@ int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *par
 
 	bool def;
 	long num;
+	char str[8 + 1];
 
 	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
 		return -EINVAL;
@@ -181,35 +249,81 @@ int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *par
 
 	param->stat = num;
 
-	if ((p = ctr_lte_v2_tok_sep(p))) {
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
+		param->valid = true;
+		return 0;
+	}
 
-		if (!(p = ctr_lte_v2_tok_str(p, &def, param->tac, sizeof(param->tac))) || !def) {
-			return -EINVAL;
-		}
+	if (!(p = ctr_lte_v2_tok_str(p, &def, param->tac, sizeof(param->tac))) || !def) {
+		return -EINVAL;
+	}
 
-		if (!(p = ctr_lte_v2_tok_sep(p))) {
-			return -EINVAL;
-		}
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
+		return -EINVAL;
+	}
 
-		char cell_id[8 + 1];
+	if (!(p = ctr_lte_v2_tok_str(p, &def, str, sizeof(str))) || !def) {
+		return -EINVAL;
+	}
 
-		if (!(p = ctr_lte_v2_tok_str(p, &def, cell_id, sizeof(cell_id))) || !def) {
-			return -EINVAL;
-		}
+	if (cellid_hex2int(str, sizeof(str), &param->cid) != 0) {
+		return -EINVAL;
+	}
 
-		if (cellid_hex2int(cell_id, sizeof(cell_id), &param->cid) != 0) {
-			return -EINVAL;
-		}
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
+		return -EINVAL;
+	}
 
-		if (!(p = ctr_lte_v2_tok_sep(p))) {
-			return -EINVAL;
-		}
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
+		return -EINVAL;
+	}
 
-		if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
-			return -EINVAL;
-		}
+	param->act = num;
 
-		param->act = num;
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
+		param->valid = true;
+		return 0;
+	}
+
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) && !def) {
+		return -EINVAL;
+	}
+
+	param->cause_type = num;
+
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
+		return 0;
+	}
+
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) && !def) {
+		return -EINVAL;
+	}
+
+	param->reject_cause = num;
+
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
+		param->valid = true;
+		return 0;
+	}
+
+	if (!(p = ctr_lte_v2_tok_str(p, &def, str, sizeof(str))) || !def) {
+		return -EINVAL;
+	}
+
+	param->active_time = parse_gprs_timer(str, 2);
+
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
+		return -EINVAL;
+	}
+
+	if (!(p = ctr_lte_v2_tok_str(p, &def, str, sizeof(str))) || !def) {
+		return -EINVAL;
+	}
+
+	param->periodic_tau_ext = parse_gprs_timer(str, 3);
+
+	if (!ctr_lte_v2_tok_end(p)) {
+		return -EINVAL;
 	}
 
 	param->valid = true;

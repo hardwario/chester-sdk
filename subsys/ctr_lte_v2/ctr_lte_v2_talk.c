@@ -888,6 +888,30 @@ int ctr_lte_v2_talk_at_xsend(struct ctr_lte_v2_talk *talk, const void *buf, size
 	DIALOG_EPILOG /* clang-format on */
 }
 
+int ctr_lte_v2_talk_at_xsend_string(struct ctr_lte_v2_talk *talk, const void *buf, size_t len)
+{
+	DIALOG_PROLOG /* clang-format off */
+
+	char xsend[16] = {0};
+
+	DIALOG_ENTER();
+	DIALOG_SEND_LINE("AT#XSEND=\"%s\"", (char *)buf);
+	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_L, {
+		if (!DIALOG_LOOP_GATHER_GET_COUNT()) {
+			DIALOG_LOOP_GATHER_PFX("#XSEND: ", xsend, sizeof(xsend));
+		} else {
+			DIALOG_LOOP_BREAK_ON_STR("OK");
+		}
+	});
+
+	if (len != strtol(xsend, NULL, 10)) {
+		DIALOG_ABORT(-EPIPE);
+	}
+	DIALOG_EXIT();
+
+	DIALOG_EPILOG /* clang-format on */
+}
+
 int ctr_lte_v2_talk_at_xsim(struct ctr_lte_v2_talk *talk, int p1)
 {
 	DIALOG_PROLOG /* clang-format off */

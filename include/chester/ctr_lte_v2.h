@@ -46,13 +46,18 @@ enum ctr_lte_v2_cereg_param_act {
 struct ctr_lte_v2_cereg_param {
 	bool valid;
 	enum ctr_lte_v2_cereg_param_stat stat;
-	char tac[5];                         // Tracking Area Code (TAC). (hexadecimal format.)
-	int cid;                             // Cell Identity (CI) (E-UTRAN cell ID.)
-	enum ctr_lte_v2_cereg_param_act act; // Access Technology (AcT).
+	char tac[5];                         /* Tracking Area Code (TAC). (hexadecimal format.) */
+	int cid;                             /* Cell Identity (CI) (E-UTRAN cell ID.) */
+	enum ctr_lte_v2_cereg_param_act act; /* Access Technology (AcT). */
+	uint8_t cause_type;
+	uint8_t reject_cause;
+	int active_time;      /* -1: disabled */
+	int periodic_tau_ext; /* -1: disabled */
 };
 
 struct ctr_lte_v2_send_recv_param {
 	bool rai;
+	bool send_as_string;
 	const void *send_buf;
 	size_t send_len;
 	void *recv_buf;
@@ -62,6 +67,11 @@ struct ctr_lte_v2_send_recv_param {
 };
 
 struct ctr_lte_v2_metrics {
+	uint32_t attach_count;
+	uint32_t attach_fail_count;
+	uint32_t attach_duration_ms;
+	int64_t attach_last_ts;
+	uint32_t attach_last_duration_ms;
 	uint32_t uplink_count;
 	uint32_t uplink_bytes;
 	uint32_t uplink_errors;
@@ -70,8 +80,15 @@ struct ctr_lte_v2_metrics {
 	uint32_t downlink_bytes;
 	uint32_t downlink_errors;
 	int64_t downlink_last_ts;
+
+	uint32_t cscon_1_duration_ms;
+	uint32_t cscon_1_last_duration_ms;
 };
 
+// struct ctr_lte_v2_state {
+// 	// not sim card
+// 	bool sim_inserted;
+// };
 struct ctr_lte_v2_gnss_update {
 	float latitude;
 	float longitude;

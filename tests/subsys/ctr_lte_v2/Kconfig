@@ -11,17 +11,31 @@ config TEST_FEATURE_PARSING
 	default n
 
 config TEST_FEATURE_STACK
-	bool "TEST_FEATURE_STACK"
+	bool "TEST_FEATURE_PARSING"
 	default n
 	select CTR_LTE_V2_GNSS
 
+config TEST_FEATURE_STACK_OVERRIDES_CONFIG
+	bool "TEST_FEATURE_STACK"
+	default n
+	select CTR_LTE_V2_GNSS
+	select TEST_FEATURE_STACK
+
 config CTR_LTE_V2_DEFAULT_BANDS
 	string "LTE Bands for CTR_LTE_V2"
-	default "2,4,5,8,12,13,17,18,19,20,25,26,28,66" if TEST_FEATURE_STACK
+	default "2,4,5,8,12,13,17,18,19,20,25,26,28,66" if TEST_FEATURE_STACK_OVERRIDES_CONFIG
+
+config CTR_LTE_V2_DEFAULT_NETWORK
+	string "Default Network for CTR_LTE_V2"
+	default "23003" if TEST_FEATURE_STACK_OVERRIDES_CONFIG
 
 config CTR_LTE_V2_DEFAULT_APN
 	string "Default APN for CTR_LTE_V2"
-	default "hardwario" if TEST_FEATURE_STACK
+	default "hardwario" if TEST_FEATURE_STACK_OVERRIDES_CONFIG
+
+config CTR_LTE_V2_DEFAULT_ADDR
+	string "Default Address for CTR_LTE_V2"
+	default "46.101.214.168" if TEST_FEATURE_STACK_OVERRIDES_CONFIG
 
 endmenu
 
