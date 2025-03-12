@@ -1,10 +1,10 @@
 version: 1
 project:
-  variant: Template
+  variant: Radon
   company: 2024 HARDWARIO a.s.
   license: "SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause"
   fw_name: CHESTER Radon
-  fw_bundle:
+  fw_bundle: com.hardwario.chester.app.radon
   fw_version: v2.1.0
 features:
   - subsystem-accel

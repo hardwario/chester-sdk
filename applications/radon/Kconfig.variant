@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-config VARIANT_TEMPLATE
-    bool "Enable VARIANT_TEMPLATE"
+config VARIANT_RADON
+    bool "Enable VARIANT_RADON"
     default y

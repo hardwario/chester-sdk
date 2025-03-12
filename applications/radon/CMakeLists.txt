@@ -6,7 +6,7 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-set(ENV{FW_BUNDLE} "None")
+set(ENV{FW_BUNDLE} "com.hardwario.chester.app.radon")
 set(ENV{FW_VERSION} "v2.1.0")
 set(ENV{FW_NAME} "CHESTER Radon")
 

@@ -33,6 +33,11 @@ if out == 'path':
 project_yml_path = os.path.join(path, '../applications', name , 'project.yaml')
 if os.path.exists(project_yml_path):
     project = yaml.safe_load(open(project_yml_path, 'r'))
+    if not project.get('variants', None):
+        if out == 'cmd':
+            print(f'rm -rf build && west chester-update && west build')
+            sys.exit(0)
+
     for variant in project['variants']:
         if variant['fw_bundle'] == fw_bundle:
             # print(json.dumps(variant, sort_keys=True))

@@ -26,10 +26,14 @@ if sys.argv[1] == 'applications':
         project_yml_path = os.path.join(path, '../applications', name , 'project.yaml')
         if os.path.exists(project_yml_path):
             project = yaml.safe_load(open(project_yml_path, 'r'))
+            if not 'project' in project:
+                panic(f"Project {name} has no project key")
+
             if not project.get('variants', None):
-                panic(f"Project {name} has no variants")
+                project['variants'] = [project['project']]
+
             for variant in project['variants']:
-                fw_bundle = variant.get('fw_bundle', '')
+                fw_bundle = variant.get('fw_bundle', None)
                 if name not in fw_bundle:
                     panic(f"Invalid fw_bundle name: name: {name} variant {variant['name']}")
                 if not fw_bundle.startswith(PREFIX):
