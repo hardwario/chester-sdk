@@ -345,17 +345,35 @@
 
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000c000 DT_SIZE_K(472)>;
+			reg = <0x0000c000 DT_SIZE_K(832)>;
 		};
 
-		slot1_partition: partition@82000 {
+		scratch_partition: partition@dc000 {
+			label = "mcuboot-scratch";
+			reg = <0xdc000 DT_SIZE_K(120)>;
+		};
+
+		storage_partition: partition@fa000 {
+			label = "nvs-storage";
+			reg = <0x000fa000 DT_SIZE_K(24)>;
+		};
+	};
+};
+
+&spi_flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot1_partition: partition@0 {
 			label = "image-1";
-			reg = <0x00082000 DT_SIZE_K(472)>;
+			reg = <0x0 DT_SIZE_K(832)>;
 		};
 
-		storage_partition: partition@f8000 {
-			label = "storage";
-			reg = <0x000f8000 DT_SIZE_K(32)>;
+		littlefs_storage: partition@d0000 {
+			label = "littlefs-storage";
+			reg = <0xd0000 0x730000>;
 		};
 	};
 };

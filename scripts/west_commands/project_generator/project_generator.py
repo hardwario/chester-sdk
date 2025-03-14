@@ -846,15 +846,12 @@ class ProjectGenerator:
                 {"dir": "src", "name": "app_cbor.h", "template": "app_cbor.h.j2"},
                 {"dir": "src", "name": "app_codec.h",
                     "template": "app_codec.h.j2"},
+                {"dir": "", "name": "sysbuild.conf",
+                    "template": "sysbuild.conf.j2"},
                 {
-                    "dir": "child_image",
+                    "dir": "sysbuild",
                     "name": "mcuboot.conf",
                     "template": "mcuboot.conf.j2",
-                },
-                {
-                    "dir": "child_image/mcuboot/boards",
-                    "name": "chester_nrf52840.overlay",
-                    "template": "chester_nrf52840.overlay.j2",
                 },
                 {
                     "dir": "codec",
@@ -863,12 +860,6 @@ class ProjectGenerator:
                 },
                 {"dir": "src", "name": "main.c", "template": "main.c.j2"},
             ]
-            # Corner case to templates without cloud enabled
-            if "subsystem-cloud" in data["features"]:
-                files_to_generate.append(
-                    {"dir": "", "name": "pm_static.yml",
-                        "template": "pm_static.yml.j2"}
-                )
             # Generate each file
             for file_info in files_to_generate:
                 self.generate_file(

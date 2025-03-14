@@ -53,10 +53,10 @@ applications:
         printf '\n\033[1;36m%s\033[0m\n' "**************************************************"
         printf '\033[1;36mBuild: %s\033[0m\n' "${application%/}"
         west build -d "${application}/build" "${application}"
-        if [[ -f "${application}/build/zephyr/merged.hex" ]]; then
+        if [[ -f "${application}/build/merged_chester_nrf52840.hex" ]]; then
           echo "Application ${application} built successfully"
         else
-          echo "Application ${application} build failed - missing merged.hex"
+          echo "Application ${application} build failed - missing merged_chester_nrf52840.hex"
           exit 1
         fi
       done

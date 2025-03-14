@@ -1,0 +1,21 @@
+{#- COPYRIGHT AND LICENSE #}
+{%- if data['project']['company'] or data['project']['license'] -%}
+#
+	{%- if data['project']['company'] %}
+# Copyright (c) {{data['project']['company']}}
+	{%- endif %}
+	{%- if data['project']['company'] and data['project']['license'] %}
+#
+	{%- endif %}
+	{%- if data['project']['license'] %}
+# {{data['project']['license'] }}
+	{%- endif %}
+#
+{% raw %}
+{% endraw %}
+{%- endif -%}
+
+SB_CONFIG_BOOTLOADER_MCUBOOT=y
+SB_CONFIG_MCUBOOT_MODE_SWAP_SCRATCH=y
+SB_CONFIG_PARTITION_MANAGER=n
+SB_CONFIG_MERGED_HEX_FILES=y

@@ -26,31 +26,6 @@
 };
 /* SUBSYSTEM-CLOUD  */
 / {
-	chosen {
-		nordic,pm-ext-flash = &spi_flash0;
-	};
-};
-
-&spi_flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		littlefs_storage: partition@0 {
-			label = "littlefs_storage";
-
-			/*
-			 * This size doesn't matter due to Nordic's partition
-			 * manager; For the sake of consistency this should
-			 * match the configured size
-			 */
-			reg = <0x00000000 0x730000>;
-		};
-	};
-};
-
-/ {
 	fstab {
 		compatible = "zephyr,fstab";
 		lfs1: lfs1 {
@@ -202,4 +177,16 @@
 };
 
 /* ### Preserved code "overlay" (begin) */
+/* Previously the CHESTER Control had a missing pm_static.yml, which resulted
+ * in a smaller littlefs_storage partition. To preserve compatibility with
+ * already deployed CHESTERs, the partition needs to be kept at 24 kB.
+ */
+&spi_flash0 {
+	partitions {
+		littlefs_storage: partition@d0000 {
+			label = "littlefs-storage";
+			reg = <0xd0000 0x6000>;
+		};
+	};
+};
 /* ^^^ Preserved code "overlay" (end) */
