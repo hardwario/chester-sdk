@@ -137,7 +137,6 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 	}
 	if (!strncmp(key, "addr", 4)) {
 		m_config_loaded |= LOAD_ADDR;
-		return 0;
 	}
 	if (!strncmp(key, "port", 4)) {
 		m_config_loaded |= LOAD_PORT;
