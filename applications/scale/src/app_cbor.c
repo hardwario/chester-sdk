@@ -38,11 +38,6 @@ __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *s
 		zcbor_nil_put(zs, NULL);
 	} else {
 		int32_t v = sample->min * mul;
-		// -12 -> -0.12°C * 100 -> 0x2B (character '+') - fix for AT modem terminal string
-		// ending '+++'
-		if (v == -12) {
-			v = -13;
-		}
 		zcbor_int32_put(zs, v);
 	}
 
@@ -50,9 +45,6 @@ __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *s
 		zcbor_nil_put(zs, NULL);
 	} else {
 		int32_t v = sample->max * mul;
-		if (v == -12) {
-			v = -13;
-		}
 		zcbor_int32_put(zs, v);
 	}
 
@@ -60,9 +52,6 @@ __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *s
 		zcbor_nil_put(zs, NULL);
 	} else {
 		int32_t v = sample->avg * mul;
-		if (v == -12) {
-			v = -13;
-		}
 		zcbor_int32_put(zs, v);
 	}
 
@@ -70,9 +59,6 @@ __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *s
 		zcbor_nil_put(zs, NULL);
 	} else {
 		int32_t v = sample->mdn * mul;
-		if (v == -12) {
-			v = -13;
-		}
 		zcbor_int32_put(zs, v);
 	}
 }
