@@ -517,6 +517,14 @@ int app_init(void)
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
+	ret = init_chester_z();
+	if (ret) {
+		LOG_ERR("Call `init_chester_z` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
+
 #if defined(FEATURE_SUBSYSTEM_CLOUD)
 	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
 		CODEC_CLOUD_OPTIONS_STATIC(copt);
@@ -571,14 +579,6 @@ int app_init(void)
 		LOG_ERR("Call `app_work_init` failed: %d", ret);
 		return ret;
 	}
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	ret = init_chester_z();
-	if (ret) {
-		LOG_ERR("Call `init_chester_z` failed: %d", ret);
-		return ret;
-	}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 	return 0;
 }

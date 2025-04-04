@@ -4,6 +4,13 @@ variants:
   fw_bundle: com.hardwario.chester.app.control
   fw_name: hio-chester-control
   fw_version: v3.0.0
+- name: CHESTER Control Z
+  fw_bundle: com.hardwario.chester.app.control.z
+  fw_name: hio-chester-control-z
+  fw_version: v3.0.0
+  features:
+  - hardware-chester-z
+  remark: Support for CHESTER-Z
 project:
   variant: Control
   company: 2024 HARDWARIO a.s.
