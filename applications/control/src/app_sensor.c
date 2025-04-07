@@ -690,31 +690,39 @@ int app_sensor_ble_tag_sample(void)
 			ret = ctr_ble_tag_read_cached(i, addr, &rssi, &voltage, &temperature,
 						      &humidity, NULL, NULL, NULL, NULL, NULL, NULL,
 						      &sensor_mask, &valid);
-			if (ret && ret != -ENOENT) {
+			if (ret) {
+				if (ret == -ENOENT) {
+					continue; /* skip no configured sensor */
+				}
+				valid = false;
 				LOG_ERR("Call `ctr_ble_tag_read_cached` failed: %d", ret);
-				continue;
-			} else if (ret == -ENOENT) {
-				continue;
 			}
 
 			app_data_lock();
-			memcpy(sensor->addr, addr, BT_ADDR_SIZE);
 
-			if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_RSSI) {
-				sensor->rssi = rssi;
+			if (valid) {
+				memcpy(sensor->addr, addr, BT_ADDR_SIZE);
+
+				sensor->last_sample_temperature = temperature;
+				sensor->last_sample_humidity = humidity;
+				if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_RSSI) {
+					sensor->rssi = rssi;
+				}
+
+				if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
+					sensor->voltage = voltage;
+				}
+
+				sensor->samples_temperature[sensor->sample_count] = temperature;
+				sensor->samples_humidity[sensor->sample_count] = humidity;
+				sensor->sample_count++;
+
+				LOG_INF("Sensor %d: sample count: %d", i, sensor->sample_count);
+			} else {
+				sensor->last_sample_temperature = NAN;
+				sensor->last_sample_humidity = NAN;
 			}
 
-			if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
-				sensor->voltage = voltage;
-			}
-
-			sensor->last_sample_temperature = temperature;
-			sensor->last_sample_humidity = humidity;
-			sensor->samples_temperature[sensor->sample_count] = temperature;
-			sensor->samples_humidity[sensor->sample_count] = humidity;
-			sensor->sample_count++;
-
-			LOG_INF("Sample count: %d", sensor->sample_count);
 			app_data_unlock();
 		} else {
 			LOG_WRN("Sample buffer full");

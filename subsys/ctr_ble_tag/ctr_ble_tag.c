@@ -468,9 +468,10 @@ int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, 
 	    (now > m_tag_data[slot].timestamp +
 			   m_config.scan_interval * 1000 * CTR_BLE_TAG_DATA_TIMEOUT_INTERVALS)) {
 		m_tag_data[slot].valid = false;
-
-		*valid = false;
 		k_mutex_unlock(&m_tag_data_lock);
+		if (valid) {
+			*valid = false;
+		}
 		return 0;
 	}
 
@@ -520,8 +521,13 @@ int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, 
 		*low_battery = m_tag_data[slot].low_battery;
 	}
 
-	*sensor_mask = m_tag_data[slot].sensor_mask;
-	*valid = m_tag_data[slot].valid;
+	if (sensor_mask) {
+		*sensor_mask = m_tag_data[slot].sensor_mask;
+	}
+
+	if (valid) {
+		*valid = m_tag_data[slot].valid;
+	}
 
 	k_mutex_unlock(&m_tag_data_lock);
 
@@ -1271,11 +1277,6 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 			continue;
 		}
 
-		if (!valid) {
-			LOG_DBG("Data was invalid");
-			continue;
-		}
-
 		char addr_str[BT_ADDR_SIZE * 2 + 1];
 
 		ret = ctr_buf2hex(addr, BT_ADDR_SIZE, addr_str, sizeof(addr_str), false);
@@ -1295,6 +1296,11 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 			return ret;
 		}
 		msg_buf.len--;
+
+		if (!valid) {
+			shell_print(shell, "%s/ not received data", ctr_buf_get_mem(&msg_buf));
+			continue;
+		}
 
 		snprintf(intermediate_buf, 32, "/ rssi: %d dBm ", rssi);
 		ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
