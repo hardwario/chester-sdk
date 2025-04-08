@@ -437,9 +437,9 @@ int app_sensor_ble_tag_sample(void)
 
 			app_data_lock();
 
-			if (valid) {
-				memcpy(sensor->addr, addr, BT_ADDR_SIZE);
+			memcpy(sensor->addr, addr, BT_ADDR_SIZE);
 
+			if (valid) {
 				sensor->last_sample_temperature = temperature;
 				sensor->last_sample_humidity = humidity;
 				if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_RSSI) {
@@ -458,6 +458,7 @@ int app_sensor_ble_tag_sample(void)
 			} else {
 				sensor->last_sample_temperature = NAN;
 				sensor->last_sample_humidity = NAN;
+				LOG_INF("Sensor %d: no valid data", i);
 			}
 
 			app_data_unlock();

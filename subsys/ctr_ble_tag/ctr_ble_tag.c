@@ -462,21 +462,17 @@ int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, 
 
 	k_mutex_lock(&m_tag_data_lock, K_FOREVER);
 
-	uint64_t now = k_uptime_get();
-
-	if (m_tag_data[slot].valid &&
-	    (now > m_tag_data[slot].timestamp +
-			   m_config.scan_interval * 1000 * CTR_BLE_TAG_DATA_TIMEOUT_INTERVALS)) {
-		m_tag_data[slot].valid = false;
-		k_mutex_unlock(&m_tag_data_lock);
-		if (valid) {
-			*valid = false;
-		}
-		return 0;
-	}
-
 	if (addr) {
 		sys_memcpy_swap(addr, m_config.addr[slot], BT_ADDR_SIZE);
+	}
+
+	if (m_tag_data[slot].valid) {
+		uint64_t now = k_uptime_get();
+		if (now > m_tag_data[slot].timestamp + m_config.scan_interval * 1000 *
+							       CTR_BLE_TAG_DATA_TIMEOUT_INTERVALS) {
+
+			m_tag_data[slot].valid = false;
+		}
 	}
 
 	if (rssi && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_RSSI) {
@@ -1256,8 +1252,8 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		uint8_t addr[BT_ADDR_SIZE];
-		int rssi;
-		float voltage;
+		int rssi = 0;
+		float voltage = NAN;
 		float temperature;
 		float humidity;
 		bool magnet_detected;
@@ -1298,18 +1294,35 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 		msg_buf.len--;
 
 		if (!valid) {
-			shell_print(shell, "%s/ not received data", ctr_buf_get_mem(&msg_buf));
-			continue;
+			ret = ctr_buf_append_str(&msg_buf, "not received data ");
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
+			if (sensor_mask &
+			    (CTR_BLE_TAG_SENSOR_MASK_RSSI | CTR_BLE_TAG_SENSOR_MASK_VOLTAGE)) {
+				ret = ctr_buf_append_str(&msg_buf, "/ last recveived ");
+				if (ret) {
+					LOG_ERR("Call `ctr_buf_append_str` failed");
+					shell_error(shell, "command failed");
+					return ret;
+				}
+				msg_buf.len--;
+			}
 		}
 
-		snprintf(intermediate_buf, 32, "/ rssi: %d dBm ", rssi);
-		ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-		if (ret) {
-			LOG_ERR("Call `ctr_buf_append_str` failed");
-			shell_error(shell, "command failed");
-			return ret;
+		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_RSSI) {
+			snprintf(intermediate_buf, 32, "/ rssi: %d dBm ", rssi);
+			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_append_str` failed");
+				shell_error(shell, "command failed");
+				return ret;
+			}
+			msg_buf.len--;
 		}
-		msg_buf.len--;
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
 			snprintf(intermediate_buf, 32, "/ voltage: %.2f V ", (double)voltage);
@@ -1320,6 +1333,11 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 				return ret;
 			}
 			msg_buf.len--;
+		}
+
+		if (!valid) {
+			shell_print(shell, "%s", ctr_buf_get_mem(&msg_buf));
+			continue;
 		}
 
 		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
