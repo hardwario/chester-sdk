@@ -147,8 +147,6 @@ Macros</h2></td></tr>
 <tr class="separator:a85ab88d6c755267432e1d1981057b9d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a049dc4c47e29cbc371ff7d738e402c25"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__ble__tag_8h.html#a049dc4c47e29cbc371ff7d738e402c25">CTR_BLE_TAG_SENSOR_MASK_VOLTAGE</a>&#160;&#160;&#160;BIT(8)</td></tr>
 <tr class="separator:a049dc4c47e29cbc371ff7d738e402c25"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44d85d01533f60e52905811a624a843c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__ble__tag_8h.html#a44d85d01533f60e52905811a624a843c">CTR_BLE_TAG_SENSOR_MASK_RSSI</a>&#160;&#160;&#160;BIT(9)</td></tr>
-<tr class="separator:a44d85d01533f60e52905811a624a843c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -170,8 +168,8 @@ Functions</h2></td></tr>
 <tr class="separator:ga27f4feec13b255b5f7d5abcda7ca9881"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gafbcaafaa92a40dae02318c8135ce793b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#gafbcaafaa92a40dae02318c8135ce793b">ctr_ble_tag_get_scan_duration</a> (void)</td></tr>
 <tr class="separator:gafbcaafaa92a40dae02318c8135ce793b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga7c872cb81e77cbf996ffbacfafcd6877"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#ga7c872cb81e77cbf996ffbacfafcd6877">ctr_ble_tag_read_cached</a> (size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *voltage, float *temperature, float *humidity, bool *magnet_detected, bool *moving, int *movement_event_count, float *roll, float *pitch, bool *low_battery, int16_t *sensor_mask, bool *valid)</td></tr>
-<tr class="separator:ga7c872cb81e77cbf996ffbacfafcd6877"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2d0b5edd7db5691a3c02f1b01b93c148"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#ga2d0b5edd7db5691a3c02f1b01b93c148">ctr_ble_tag_read_cached</a> (size_t slot, uint8_t addr[BT_ADDR_SIZE], int8_t *rssi, float *voltage, float *temperature, float *humidity, bool *magnet_detected, bool *moving, int *movement_event_count, float *roll, float *pitch, bool *low_battery, int16_t *sensor_mask, bool *valid)</td></tr>
+<tr class="separator:ga2d0b5edd7db5691a3c02f1b01b93c148"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaef82e8abb46a22ffac811d06630f1bfb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__ble__tag.html#gaef82e8abb46a22ffac811d06630f1bfb">ctr_ble_tag_is_addr_empty</a> (const uint8_t addr[BT_ADDR_SIZE])</td></tr>
 <tr class="separator:gaef82e8abb46a22ffac811d06630f1bfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -338,20 +336,6 @@ Functions</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">#define CTR_BLE_TAG_SENSOR_MASK_ROLL&#160;&#160;&#160;BIT(5)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a44d85d01533f60e52905811a624a843c" name="a44d85d01533f60e52905811a624a843c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a44d85d01533f60e52905811a624a843c">&#9670;&#160;</a></span>CTR_BLE_TAG_SENSOR_MASK_RSSI</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define CTR_BLE_TAG_SENSOR_MASK_RSSI&#160;&#160;&#160;BIT(9)</td>
         </tr>
       </table>
 </div><div class="memdoc">

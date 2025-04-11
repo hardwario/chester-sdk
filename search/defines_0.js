@@ -14,9 +14,8 @@ var searchData=
   ['ctr_5fble_5ftag_5fsensor_5fmask_5fmoving_11',['CTR_BLE_TAG_SENSOR_MASK_MOVING',['../ctr__ble__tag_8h.html#a074f3065015bba149240d0853823dac8',1,'ctr_ble_tag.h']]],
   ['ctr_5fble_5ftag_5fsensor_5fmask_5fpitch_12',['CTR_BLE_TAG_SENSOR_MASK_PITCH',['../ctr__ble__tag_8h.html#a8c440bb3d2f34de249b71eba69d15628',1,'ctr_ble_tag.h']]],
   ['ctr_5fble_5ftag_5fsensor_5fmask_5froll_13',['CTR_BLE_TAG_SENSOR_MASK_ROLL',['../ctr__ble__tag_8h.html#a20a48fc7bc2acfda127eaeb279fad1bb',1,'ctr_ble_tag.h']]],
-  ['ctr_5fble_5ftag_5fsensor_5fmask_5frssi_14',['CTR_BLE_TAG_SENSOR_MASK_RSSI',['../ctr__ble__tag_8h.html#a44d85d01533f60e52905811a624a843c',1,'ctr_ble_tag.h']]],
-  ['ctr_5fble_5ftag_5fsensor_5fmask_5ftemperature_15',['CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE',['../ctr__ble__tag_8h.html#a1460aea61d04fc9c5ecc6ee644dc20d7',1,'ctr_ble_tag.h']]],
-  ['ctr_5fble_5ftag_5fsensor_5fmask_5fvoltage_16',['CTR_BLE_TAG_SENSOR_MASK_VOLTAGE',['../ctr__ble__tag_8h.html#a049dc4c47e29cbc371ff7d738e402c25',1,'ctr_ble_tag.h']]],
-  ['ctr_5fcloud_5ftransfer_5fbuf_5fsize_17',['CTR_CLOUD_TRANSFER_BUF_SIZE',['../ctr__cloud_8h.html#abe114fcd1fd4f3e6eb5827aa77e3b264',1,'ctr_cloud.h']]],
-  ['ctr_5flrw_5fsend_5fopts_5fdefaults_18',['CTR_LRW_SEND_OPTS_DEFAULTS',['../ctr__lrw__v2_8h.html#a93abac54c2d362aa6e5a55a316330bea',1,'ctr_lrw_v2.h']]]
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5ftemperature_14',['CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE',['../ctr__ble__tag_8h.html#a1460aea61d04fc9c5ecc6ee644dc20d7',1,'ctr_ble_tag.h']]],
+  ['ctr_5fble_5ftag_5fsensor_5fmask_5fvoltage_15',['CTR_BLE_TAG_SENSOR_MASK_VOLTAGE',['../ctr__ble__tag_8h.html#a049dc4c47e29cbc371ff7d738e402c25',1,'ctr_ble_tag.h']]],
+  ['ctr_5fcloud_5ftransfer_5fbuf_5fsize_16',['CTR_CLOUD_TRANSFER_BUF_SIZE',['../ctr__cloud_8h.html#abe114fcd1fd4f3e6eb5827aa77e3b264',1,'ctr_cloud.h']]],
+  ['ctr_5flrw_5fsend_5fopts_5fdefaults_17',['CTR_LRW_SEND_OPTS_DEFAULTS',['../ctr__lrw__v2_8h.html#a93abac54c2d362aa6e5a55a316330bea',1,'ctr_lrw_v2.h']]]
 ];
