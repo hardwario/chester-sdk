@@ -200,17 +200,16 @@ int app_sensor_ble_tag_sample(void)
 
 	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
 		struct app_data_ble_tag_sensor *sensor = &g_app_data.ble_tag.sensor[i];
-		sensor->rssi = INT_MAX;
 		sensor->voltage = NAN;
 
 		if (g_app_data.ble_tag.sensor[i].sample_count < APP_DATA_MAX_BLE_TAG_SAMPLES) {
-			uint8_t addr[BT_ADDR_SIZE];
-			int rssi;
-			float voltage;
-			float temperature;
-			float humidity;
-			int16_t sensor_mask;
-			bool valid;
+			uint8_t addr[BT_ADDR_SIZE] = {0};
+			int8_t rssi = 0;
+			float voltage = NAN;
+			float temperature = NAN;
+			float humidity = NAN;
+			int16_t sensor_mask = 0;
+			bool valid = false;
 
 			ret = ctr_ble_tag_read_cached(i, addr, &rssi, &voltage, &temperature,
 						      &humidity, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -230,13 +229,8 @@ int app_sensor_ble_tag_sample(void)
 			if (valid) {
 				sensor->last_sample_temperature = temperature;
 				sensor->last_sample_humidity = humidity;
-				if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_RSSI) {
-					sensor->rssi = rssi;
-				}
-
-				if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
-					sensor->voltage = voltage;
-				}
+				sensor->rssi = rssi;
+				sensor->voltage = voltage;
 
 				sensor->samples_temperature[sensor->sample_count] = temperature;
 				sensor->samples_humidity[sensor->sample_count] = humidity;
@@ -246,6 +240,8 @@ int app_sensor_ble_tag_sample(void)
 			} else {
 				sensor->last_sample_temperature = NAN;
 				sensor->last_sample_humidity = NAN;
+				sensor->rssi = 0;
+				sensor->voltage = NAN;
 				LOG_INF("Sensor %d: no valid data", i);
 			}
 

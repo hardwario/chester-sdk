@@ -40,7 +40,7 @@ int main(void)
 
 		for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 			uint8_t addr[BT_ADDR_SIZE];
-			int rssi;
+			int8_t rssi;
 			float voltage;
 			float temperature;
 			float humidity;

@@ -61,7 +61,7 @@ struct ble_tag_data {
 	bool valid;
 	int64_t timestamp;
 	int16_t sensor_mask;
-	int rssi;
+	int8_t rssi;
 	float temperature;
 	float humidity;
 	float voltage;
@@ -261,8 +261,8 @@ static int16_t parse_data(struct net_buf_simple *buf, float *temperature, float 
 	return sensor_mask ? sensor_mask : -EINVAL;
 }
 
-static void update_tag_data(const bt_addr_le_t *addr, bool interim, int16_t sensor_mask,
-			    int8_t rssi, float temperature, float humidity, float voltage,
+static void update_tag_data(const bt_addr_le_t *addr, int8_t rssi, bool interim,
+			    int16_t sensor_mask, float temperature, float humidity, float voltage,
 			    bool magnet_detected, bool moving, float movement_event_count,
 			    bool low_battery, float roll, float pitch)
 {
@@ -323,7 +323,7 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		return;
 	}
 
-	update_tag_data(addr, false, sensor_mask, rssi, temperature, humidity, voltage,
+	update_tag_data(addr, rssi, false, sensor_mask, temperature, humidity, voltage,
 			magnet_detected, moving, movement_event_count, low_battery, roll, pitch);
 }
 
@@ -384,7 +384,7 @@ static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		break;
 	}
 
-	update_tag_data(addr, true, sensor_mask, rssi, temperature, humidity, voltage,
+	update_tag_data(addr, rssi, true, sensor_mask, temperature, humidity, voltage,
 			magnet_detected, moving, movement_event_count, low_battery, roll, pitch);
 }
 
@@ -447,7 +447,7 @@ int ctr_ble_tag_is_addr_empty(const uint8_t addr[BT_ADDR_SIZE])
 	return memcmp(addr, empty_addr, BT_ADDR_SIZE) == 0;
 }
 
-int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, float *voltage,
+int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int8_t *rssi, float *voltage,
 			    float *temperature, float *humidity, bool *magnet_detected,
 			    bool *moving, int *movement_event_count, float *roll, float *pitch,
 			    bool *low_battery, int16_t *sensor_mask, bool *valid)
@@ -475,7 +475,7 @@ int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int *rssi, 
 		}
 	}
 
-	if (rssi && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_RSSI) {
+	if (rssi) {
 		*rssi = m_tag_data[slot].rssi;
 	}
 
@@ -1068,7 +1068,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		uint8_t addr[BT_ADDR_SIZE];
-		int rssi;
+		int8_t rssi;
 		float voltage;
 		float temperature;
 		float humidity;
@@ -1252,7 +1252,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		uint8_t addr[BT_ADDR_SIZE];
-		int rssi = 0;
+		int8_t rssi = 0;
 		float voltage = NAN;
 		float temperature;
 		float humidity;
@@ -1301,8 +1301,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 				return ret;
 			}
 			msg_buf.len--;
-			if (sensor_mask &
-			    (CTR_BLE_TAG_SENSOR_MASK_RSSI | CTR_BLE_TAG_SENSOR_MASK_VOLTAGE)) {
+			if ((rssi < 0) || (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE)) {
 				ret = ctr_buf_append_str(&msg_buf, "/ last recveived ");
 				if (ret) {
 					LOG_ERR("Call `ctr_buf_append_str` failed");
@@ -1313,7 +1312,7 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 			}
 		}
 
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_RSSI) {
+		if (rssi < 0) {
 			snprintf(intermediate_buf, 32, "/ rssi: %d dBm ", rssi);
 			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
 			if (ret) {
@@ -1604,6 +1603,8 @@ static int init(void)
 	int ret;
 
 	LOG_INF("System initialization");
+
+	memset(&m_tag_data, 0, sizeof(m_tag_data));
 
 	static struct settings_handler sh = {
 		.name = SETTINGS_PFX,

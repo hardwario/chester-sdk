@@ -487,7 +487,7 @@ int app_cbor_encode(zcbor_state_t *zs)
 				}
 
 				zcbor_uint32_put(zs, CODEC_KEY_E_BLE_TAGS__RSSI);
-				if (sensor->rssi != INT_MAX) {
+				if (sensor->rssi < 0) {
 					zcbor_int32_put(zs, sensor->rssi);
 				} else {
 					zcbor_nil_put(zs, NULL);

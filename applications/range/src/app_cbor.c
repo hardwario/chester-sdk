@@ -518,11 +518,17 @@ static int encode(zcbor_state_t *zs)
 				}
 
 				zcbor_uint32_put(zs, CODEC_KEY_E_BLE_TAGS__RSSI);
-				zcbor_int32_put(zs, sensor->rssi);
+				if (sensor->rssi < 0) {
+					zcbor_int32_put(zs, sensor->rssi);
+				} else {
+					zcbor_nil_put(zs, NULL);
+				}
 
 				zcbor_uint32_put(zs, CODEC_KEY_E_BLE_TAGS__VOLTAGE);
-				{
+				if (!isnan(sensor->voltage)) {
 					zcbor_uint32_put(zs, sensor->voltage * 100.f);
+				} else {
+					zcbor_nil_put(zs, NULL);
 				}
 
 				zcbor_uint32_put(zs, CODEC_KEY_E_BLE_TAGS__TEMPERATURE);

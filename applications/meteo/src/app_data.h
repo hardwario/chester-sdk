@@ -222,7 +222,7 @@ struct app_data_ble_tag_measurement {
 struct app_data_ble_tag_sensor {
 	uint8_t addr[BT_ADDR_SIZE];
 
-	int rssi;
+	int8_t rssi;
 	float voltage;
 
 	float last_sample_temperature;
