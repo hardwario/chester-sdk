@@ -157,7 +157,9 @@ int app_sensor_counter_aggreg(void)
 				struct app_data_counter_measurement *measurement =
 					&counter->measurements[counter->measurement_count];
 
+				measurement->delta = counter->value - counter->last_value;
 				measurement->value = counter->value;
+				counter->last_value = counter->value;
 				counter->measurement_count++;
 
 				LOG_INF("Measurement count: %d", counter->measurement_count);
@@ -580,7 +582,7 @@ int app_sensor_soil_sensor_sample(void)
 				continue;
 			}
 
-			LOG_INF("Temperature: %.1f C Moisture: %d", temperature, moisture);
+			LOG_INF("Temperature: %.1f C Moisture: %d", (double)temperature, moisture);
 
 			app_data_lock();
 

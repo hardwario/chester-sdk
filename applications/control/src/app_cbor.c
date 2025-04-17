@@ -506,6 +506,8 @@ static int encode(zcbor_state_t *zs)
 						     i++) {
 							zcbor_uint64_put(
 								zs, counter->measurements[i].value);
+							zcbor_uint64_put(
+								zs, counter->measurements[i].delta);
 						}
 
 						zcbor_list_end_encode(
