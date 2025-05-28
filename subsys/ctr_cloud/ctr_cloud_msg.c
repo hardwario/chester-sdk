@@ -45,6 +45,7 @@
 #define UL_SESSION_KEY_BLE_PASSKEY         0x08
 #define UL_SESSION_KEY_LTE_IMSI            0x09
 #define UL_SESSION_KEY_LTE_IMEI            0x0a
+#define UL_SESSION_KEY_LTE_ICCID           0x11
 #define UL_SESSION_KEY_LTE_FW_VERSION      0x0b // AT#XVERSION
 #define UL_SESSION_KEY_CTR_Z_SERIAL_NUMBER 0x0c
 #define UL_SESSION_KEY_CTR_Z_HW_REVISION   0x0d
@@ -197,6 +198,11 @@ int ctr_cloud_msg_pack_create_session(struct ctr_buf *buf)
 
 	zcbor_uint32_put(zs, UL_SESSION_KEY_LTE_IMSI);
 	zcbor_uint64_put(zs, imsi);
+
+	char *iccid;
+	ctr_lte_v2_get_iccid(&iccid);
+	zcbor_uint32_put(zs, UL_SESSION_KEY_LTE_ICCID);
+	zcbor_tstr_put_term(zs, iccid, CONFIG_ZCBOR_MAX_STR_LEN);
 
 	char *modem_fw_version;
 	ctr_lte_v2_get_modem_fw_version(&modem_fw_version);

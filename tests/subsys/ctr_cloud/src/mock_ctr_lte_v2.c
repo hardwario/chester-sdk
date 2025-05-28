@@ -37,6 +37,13 @@ int ctr_lte_v2_get_imsi(uint64_t *imsi)
 	return 0;
 }
 
+int ctr_lte_v2_get_iccid(char **iccid)
+{
+	static char iccid_str[] = "89882390000262826558";
+	*iccid = iccid_str;
+	return 0;
+}
+
 int ctr_lte_v2_get_modem_fw_version(char **version)
 {
 	*version = "v1.5.0";
