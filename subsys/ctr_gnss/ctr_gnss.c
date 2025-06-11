@@ -57,6 +57,15 @@ static void *m_user_data;
 static atomic_t m_corr_id;
 static bool m_running;
 enum ctr_info_product_family m_product_family;
+static struct ctr_gnss_data_update m_last_data_update = {
+	.fix_quality = -1,
+	.satellites_tracked = -1,
+	.latitude = NAN,
+	.longitude = NAN,
+	.altitude = NAN,
+};
+
+K_MUTEX_DEFINE(m_data_mutex);
 
 K_MSGQ_DEFINE_STATIC(m_cmd_msgq, sizeof(struct cmd_msgq_item), CMD_MSGQ_MAX_ITEMS, 4);
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
@@ -70,6 +79,19 @@ static void lte_v2_gnss_handler(const struct ctr_lte_v2_gnss_update *update, voi
 }
 #endif
 
+static void gnss_update_cb(enum ctr_gnss_event event, union ctr_gnss_event_data *data,
+			   void *user_data)
+{
+	if (event == CTR_GNSS_EVENT_UPDATE) {
+		k_mutex_lock(&m_data_mutex, K_FOREVER);
+		memcpy(&m_last_data_update, &data->update, sizeof(m_last_data_update));
+		k_mutex_unlock(&m_data_mutex);
+	}
+	if (m_user_cb) {
+		m_user_cb(event, data, m_user_data);
+	}
+}
+
 static int process_req_start(const struct cmd_msgq_item *item)
 {
 	int ret;
@@ -82,7 +104,7 @@ static int process_req_start(const struct cmd_msgq_item *item)
 
 #if defined(CONFIG_CTR_GNSS_M8)
 	if (m_product_family == CTR_INFO_PRODUCT_FAMILY_CHESTER_M) {
-		ctr_gnss_m8_set_handler(m_user_cb, m_user_data);
+		ctr_gnss_m8_set_handler(gnss_update_cb, NULL);
 		return ctr_gnss_m8_start();
 	}
 #endif
@@ -221,10 +243,7 @@ static void dispatcher_thread(void)
 					data.update.latitude = update.latitude;
 					data.update.longitude = update.longitude;
 					data.update.altitude = update.altitude;
-					if (m_user_cb) {
-						m_user_cb(CTR_GNSS_EVENT_UPDATE, &data,
-							  m_user_data);
-					}
+					gnss_update_cb(CTR_GNSS_EVENT_UPDATE, &data, NULL);
 				}
 			}
 #endif
@@ -301,6 +320,19 @@ int ctr_gnss_is_running(bool *running)
 	}
 
 	*running = m_running;
+
+	return 0;
+}
+
+int ctr_gnss_get_last_data_update(struct ctr_gnss_data_update *data_update)
+{
+	if (!data_update) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&m_data_mutex, K_FOREVER);
+	memcpy(data_update, &m_last_data_update, sizeof(m_last_data_update));
+	k_mutex_unlock(&m_data_mutex);
 
 	return 0;
 }

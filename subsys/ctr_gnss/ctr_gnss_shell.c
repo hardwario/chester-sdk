@@ -83,6 +83,15 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 
 	shell_print(shell, "running: %s", running ? "yes" : "no");
 
+	struct ctr_gnss_data_update data_update;
+	ctr_gnss_get_last_data_update(&data_update);
+
+	shell_print(shell, "fix: %d", data_update.fix_quality);
+	shell_print(shell, "satellites: %d", data_update.satellites_tracked);
+	shell_print(shell, "latitude: %.7f", (double)data_update.latitude);
+	shell_print(shell, "longitude: %.7f", (double)data_update.longitude);
+	shell_print(shell, "altitude: %.1f", (double)data_update.altitude);
+
 	return 0;
 }
 

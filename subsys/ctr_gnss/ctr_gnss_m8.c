@@ -80,8 +80,7 @@ static void ingest_nmea(uint8_t *buf, size_t len)
 		} else {
 			if (m_line_len < sizeof(m_line_buf) - 2) {
 				m_line_buf[m_line_len++] = c;
-				m_line_buf[m_line_len + 1] = '\0';
-
+				m_line_buf[m_line_len] = '\0';
 			} else {
 				m_line_clipped = true;
 			}
@@ -165,7 +164,11 @@ int ctr_gnss_m8_process_data(void)
 	uint8_t buf[64];
 	size_t bytes_read;
 
-	for (;;) {
+	/* Limit for number of read attempts to avoid infinite loop */
+	const int max_attempts = 50;
+	int attempt = 0;
+
+	while (attempt++ < max_attempts) {
 		ret = m8_read_buffer(m_m8_dev, buf, sizeof(buf), &bytes_read);
 		if (ret) {
 			LOG_ERR("Call `m8_read_buffer` failed: %d", ret);
@@ -173,15 +176,25 @@ int ctr_gnss_m8_process_data(void)
 			if (m_user_cb) {
 				m_user_cb(CTR_GNSS_EVENT_FAILURE, NULL, m_user_data);
 			}
+
+			/* Wait before retrying in case of transient failure */
+			k_sleep(K_MSEC(50));
+			continue;
 		}
 
-		if (!bytes_read) {
+		if (bytes_read == 0) {
+			/* No more data available at the moment */
 			break;
 		}
 
 		ingest_nmea(buf, bytes_read);
 
+		/* Optional delay to prevent tight polling loop */
 		k_sleep(K_MSEC(20));
+	}
+
+	if (attempt >= max_attempts) {
+		LOG_WRN("GNSS read loop reached max attempts (%d)", max_attempts);
 	}
 
 	return 0;
