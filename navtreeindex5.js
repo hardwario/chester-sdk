@@ -1,5 +1,6 @@
 var NAVTREEINDEX5 =
 {
+"structctr__lte__v2__metrics.html#ab41547efe08a7cca0f4a3a8457413ee1":[1,0,44,6],
 "structctr__lte__v2__metrics.html#ac29d69a6c9c82981937fcaa36b3097d8":[1,0,44,7],
 "structctr__lte__v2__metrics.html#ad85e58cb14ddaac1dbcbe9fb1a246323":[1,0,44,12],
 "structctr__lte__v2__metrics.html#ad9dfb9ab7ac4eb28dbf240abfcac1cc3":[1,0,44,9],

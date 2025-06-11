@@ -35,6 +35,7 @@ var group__ctr__gnss =
       [ "CTR_GNSS_EVENT_STOP_ERR", "group__ctr__gnss.html#gga5c0274583f70421f63936dfdb732c433a1ff7c95514b62f73762dd448bfa68cf9", null ],
       [ "CTR_GNSS_EVENT_UPDATE", "group__ctr__gnss.html#gga5c0274583f70421f63936dfdb732c433a29cd04d53417c957daad5ecbb4cf3298", null ]
     ] ],
+    [ "ctr_gnss_get_last_data_update", "group__ctr__gnss.html#ga59c01d313b1ccfb5cc35b441b7117e40", null ],
     [ "ctr_gnss_is_running", "group__ctr__gnss.html#ga1c9512258258d2ba2b49654bda3540e0", null ],
     [ "ctr_gnss_set_handler", "group__ctr__gnss.html#ga0d744a0dce348a1cab827358bdc721a6", null ],
     [ "ctr_gnss_start", "group__ctr__gnss.html#gac03534ce1aac62d5117fbd4258cf3ce5", null ],
