@@ -18,7 +18,10 @@ var searchData=
   ['people_5fcounter_5fset_5fstay_5ftimeout_15',['people_counter_set_stay_timeout',['../group__people__counter.html#ga6dca1f227cd3116588ef8de5b52d6e4c',1,'people_counter.h']]],
   ['periodic_5ftau_5fext_16',['periodic_tau_ext',['../structctr__lte__v2__cereg__param.html#a09005bf883e96d5223cd3dc40e341ab3',1,'ctr_lte_v2_cereg_param']]],
   ['plmn_17',['plmn',['../structctr__lte__eval.html#a87c8093de6fa51769de9b3ca58b08957',1,'ctr_lte_eval::plmn()'],['../structctr__lte__v2__conn__param.html#a2684244b862f4a2a78a615e8d9164bd3',1,'ctr_lte_v2_conn_param::plmn()']]],
-  ['port_18',['port',['../structctr__lrw__send__opts.html#a07c55012aa3d9cc0c5144688051c7c41',1,'ctr_lrw_send_opts::port()'],['../structsend__msgq__data.html#a90cd163dfae24543f6dda753501ccf55',1,'send_msgq_data::port()'],['../structctr__lte__send__opts.html#acbfb2cfc465201e49ef6f176c4f9f678',1,'ctr_lte_send_opts::port()']]],
-  ['prio_19',['prio',['../structctr__led__seq.html#a74b1b0e82711083f919b5ec1b930bbc9',1,'ctr_led_seq']]],
-  ['pulse_5fcounter_20',['pulse_counter',['../structctr__s3__param.html#a0fcaea6a0e6dfdadab855e6b475d63d5',1,'ctr_s3_param']]]
+  ['pm1_18',['pm1',['../structctr__pm3006s__measurement.html#a09f1faf1b26858ca343f6095c3d3cf4f',1,'ctr_pm3006s_measurement']]],
+  ['pm10_19',['pm10',['../structctr__pm3006s__measurement.html#a8972fe110c8a611509a42ee6e3cd7880',1,'ctr_pm3006s_measurement']]],
+  ['pm2_5f5_20',['pm2_5',['../structctr__pm3006s__measurement.html#a7b0c2ed05b3188875570408d19aee91a',1,'ctr_pm3006s_measurement']]],
+  ['port_21',['port',['../structctr__lte__send__opts.html#acbfb2cfc465201e49ef6f176c4f9f678',1,'ctr_lte_send_opts::port()'],['../structsend__msgq__data.html#a90cd163dfae24543f6dda753501ccf55',1,'send_msgq_data::port()'],['../structctr__lrw__send__opts.html#a07c55012aa3d9cc0c5144688051c7c41',1,'ctr_lrw_send_opts::port()']]],
+  ['prio_22',['prio',['../structctr__led__seq.html#a74b1b0e82711083f919b5ec1b930bbc9',1,'ctr_led_seq']]],
+  ['pulse_5fcounter_23',['pulse_counter',['../structctr__s3__param.html#a0fcaea6a0e6dfdadab855e6b475d63d5',1,'ctr_s3_param']]]
 ];

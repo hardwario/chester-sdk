@@ -11,6 +11,7 @@ var dir_14bc92f4b96c8519b376567118ac28b3 =
     [ "ctr_lte_if.h", "ctr__lte__if_8h.html", "ctr__lte__if_8h" ],
     [ "ctr_lte_link.h", "ctr__lte__link_8h.html", "ctr__lte__link_8h" ],
     [ "ctr_meteo.h", "ctr__meteo_8h.html", "ctr__meteo_8h" ],
+    [ "ctr_pm3006s.h", "ctr__pm3006s_8h.html", "ctr__pm3006s_8h" ],
     [ "ctr_rfmux.h", "ctr__rfmux_8h.html", "ctr__rfmux_8h" ],
     [ "ctr_s1.h", "ctr__s1_8h.html", "ctr__s1_8h" ],
     [ "ctr_s3.h", "ctr__s3_8h.html", "ctr__s3_8h" ],

@@ -35,6 +35,7 @@ var modules =
     [ "ctr_lrw_if", "group__ctr__lrw__if.html", "group__ctr__lrw__if" ],
     [ "ctr_lte_if", "group__ctr__lte__if.html", "group__ctr__lte__if" ],
     [ "ctr_meteo", "group__ctr__meteo.html", "group__ctr__meteo" ],
+    [ "ctr_pm3006s", "group__ctr__pm3006s.html", "group__ctr__pm3006s" ],
     [ "ctr_rfmux", "group__ctr__rfmux.html", "group__ctr__rfmux" ],
     [ "ctr_s1", "group__ctr__s1.html", "group__ctr__s1" ],
     [ "ctr_x0", "group__ctr__x0.html", "group__ctr__x0" ],

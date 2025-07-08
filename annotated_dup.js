@@ -46,6 +46,8 @@ var annotated_dup =
     [ "ctr_lte_v2_gnss_update", "structctr__lte__v2__gnss__update.html", "structctr__lte__v2__gnss__update" ],
     [ "ctr_lte_v2_metrics", "structctr__lte__v2__metrics.html", "structctr__lte__v2__metrics" ],
     [ "ctr_lte_v2_send_recv_param", "structctr__lte__v2__send__recv__param.html", "structctr__lte__v2__send__recv__param" ],
+    [ "ctr_pm3006s_driver_api", "structctr__pm3006s__driver__api.html", "structctr__pm3006s__driver__api" ],
+    [ "ctr_pm3006s_measurement", "structctr__pm3006s__measurement.html", "structctr__pm3006s__measurement" ],
     [ "ctr_rtc_tm", "structctr__rtc__tm.html", "structctr__rtc__tm" ],
     [ "ctr_s1_buzzer_param", "structctr__s1__buzzer__param.html", "structctr__s1__buzzer__param" ],
     [ "ctr_s1_led_param", "structctr__s1__led__param.html", "structctr__s1__led__param" ],
