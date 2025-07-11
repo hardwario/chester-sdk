@@ -233,19 +233,15 @@ int app_sensor_voltage_sample(void)
 {
 	int ret;
 
-	app_data_lock();
-
 	for (int i = 0; i < APP_DATA_NUM_CHANNELS; i++) {
 		struct app_data_analog *voltage = g_app_data.voltage[i];
 		if (voltage) {
+			uint16_t adc_voltage;
+			ret = ctr_adc_read(x0_adc_lookup[i], &adc_voltage);
+
+			app_data_lock();
 			if (voltage->sample_count < APP_DATA_ANALOG_MAX_SAMPLES) {
 				float *sample = &voltage->samples[voltage->sample_count];
-				app_data_unlock();
-
-				uint16_t adc_voltage;
-				ret = ctr_adc_read(x0_adc_lookup[i], &adc_voltage);
-
-				app_data_lock();
 
 				if (!ret) {
 
@@ -309,19 +305,15 @@ int app_sensor_current_sample(void)
 {
 	int ret;
 
-	app_data_lock();
-
 	for (int i = 0; i < APP_DATA_NUM_CHANNELS; i++) {
 		struct app_data_analog *current = g_app_data.current[i];
 		if (current) {
+			uint16_t adc_current;
+			ret = ctr_adc_read(x0_adc_lookup[i], &adc_current);
+
+			app_data_lock();
 			if (current->sample_count < APP_DATA_ANALOG_MAX_SAMPLES) {
 				float *sample = &current->samples[current->sample_count];
-				app_data_unlock();
-
-				uint16_t adc_current;
-				ret = ctr_adc_read(x0_adc_lookup[i], &adc_current);
-
-				app_data_lock();
 
 				if (!ret) {
 
@@ -336,8 +328,8 @@ int app_sensor_current_sample(void)
 					*sample = NAN;
 					current->sample_count++;
 				}
-				app_data_unlock();
 
+				app_data_unlock();
 			} else {
 				LOG_WRN("Samples full");
 				app_data_unlock();

@@ -8,7 +8,6 @@
 
 /* CHESTER includes */
 
-
 /* Zephyr includes */
 #include <zephyr/kernel.h>
 
