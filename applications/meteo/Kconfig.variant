@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-config VARIANT_CHESTER_METEO
-    bool "Enable VARIANT_CHESTER_METEO"
+config VARIANT_METEO
+    bool "Enable VARIANT_METEO"
     default y
-        

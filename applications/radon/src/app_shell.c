@@ -42,6 +42,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 			       SHELL_CMD_ARG(config, NULL, "Configurations commands.",
 					     app_config_cmd_config, 1, 3),
 
+/* ### Preserved code "subcmd" (begin) */
+/* ^^^ Preserved code "subcmd" (end) */
+
 			       SHELL_SUBCMD_SET_END);
 SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 

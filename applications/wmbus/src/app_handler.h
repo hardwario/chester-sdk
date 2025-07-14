@@ -1,19 +1,8 @@
-{#- COPYRIGHT AND LICENSE #}
-{%- if data['project']['company'] or data['project']['license'] -%}
 /*
-	{%- if data['project']['company'] %}
- * Copyright (c) {{data['project']['company']}}
-	{%- endif %}
-	{%- if data['project']['company'] and data['project']['license'] %}
+ * Copyright (c) 2024 HARDWARIO a.s.
  *
-	{%- endif %}
-	{%- if data['project']['license'] %}
- * {{data['project']['license'] }}
-	{%- endif %}
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
-{% raw %}
-{% endraw %}
-{%- endif -%}
 
 #ifndef APP_HANDLER_H_
 #define APP_HANDLER_H_
@@ -32,6 +21,8 @@ extern "C" {
 
 void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param);
 void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, void *param);
+void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val,
+			    void *user_data);
 
 #ifdef __cplusplus
 }

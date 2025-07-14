@@ -15,6 +15,7 @@
 {% endraw %}
 {%- endif -%}
 
+#include "app_backup.h"
 #include "app_codec.h"
 #include "app_config.h"
 #include "app_handler.h"
@@ -22,6 +23,7 @@
 #include "app_work.h"
 
 /* CHESTER includes */
+#include <chester/ctr_button.h>
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
@@ -69,6 +71,14 @@ int app_init(void)
 		return ret;
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_WDOG) */
+
+#if defined(FEATURE_SUBSYSTEM_BUTTON)
+	ret = ctr_button_set_event_cb(app_handler_ctr_button, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_button_set_event_cb` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_BUTTON) */
 
 	switch (g_app_config.mode) {
 #if defined(FEATURE_SUBSYSTEM_LRW)
@@ -132,6 +142,14 @@ int app_init(void)
 	}
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
+
+#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
+	ret = app_backup_init();
+	if (ret) {
+		LOG_ERR("Call `app_backup_init` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
 
 	ret = app_work_init();
 	if (ret) {

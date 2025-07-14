@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2024 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+menu "Application"
+
+# SUBSYSTEM-LTE-V2
+config SHIELD_CTR_LTE_V2
+	bool "Enable SHIELD_CTR_LTE_V2"
+	default y
+
+config CTR_LTE_V2
+	default y
+
+# ### Preserved code "k_config" (begin)
+# ^^^ Preserved code "k_config" (end)
+
+rsource "Kconfig.variant"
+
+endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu

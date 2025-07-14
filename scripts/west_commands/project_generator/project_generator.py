@@ -23,7 +23,8 @@ class ProjectGenerator:
         self.dir = self.check_vendor()
         self.app_dir = os.path.join(self.dir, "applications")
         self.prj_dir = os.path.join(self.app_dir, self.prj_folder_name)
-        self.file_status = {"created": [], "updated": [], "error": [], "yaml_error": []}
+        self.file_status = {"created": [],
+                            "updated": [], "error": [], "yaml_error": []}
         self.log = {"Template": None, "Variant": None}
 
         # Setup Jinja environment
@@ -116,7 +117,8 @@ class ProjectGenerator:
             if corr:
                 return project_data
             else:
-                log.err(f"Variant '{variant}' not found. Check your project.yaml.")
+                log.err(
+                    f"Variant '{variant}' not found. Check your project.yaml.")
                 sys.exit(1)
         except Exception as e:
             log.err(f"No variant found in your project.yaml. Error: {e}")
@@ -156,7 +158,8 @@ class ProjectGenerator:
                     f"Parameter '{name}' 'type' {type_} is not valid."
                 )
             if not name:
-                self.file_status["yaml_error"].append(f"Parameter missing 'name'.")
+                self.file_status["yaml_error"].append(
+                    f"Parameter missing 'name'.")
             if not type_:
                 self.file_status["yaml_error"].append(
                     f"Parameter '{name}' missing 'type'."
@@ -321,7 +324,8 @@ class ProjectGenerator:
                                 f"Parameter '{name}' 'len' is sized incorrectly."
                             )
                     if default is None:
-                        pass  # default is [{min_val}...{max_val}] None, which is allowed
+                        # default is [{min_val}...{max_val}] None, which is allowed
+                        pass
                     elif isinstance(default, list):
                         for item in default:
                             if not isinstance(item, bool):
@@ -383,7 +387,8 @@ class ProjectGenerator:
                 callback = command.get("callback")
                 help_ = command.get("help")
                 if not name or name is None:
-                    self.file_status["yaml_error"].append(f"Command missing 'name'.")
+                    self.file_status["yaml_error"].append(
+                        f"Command missing 'name'.")
                 if not callback or callback is None:
                     self.file_status["yaml_error"].append(
                         f"Command '{name}' missing 'callback'."
@@ -443,8 +448,10 @@ class ProjectGenerator:
 
     def cbor(self):
         data = self.yaml_source(self.prj_folder_name, "app", "project.yaml")
-        decoder = self.yaml_source(self.prj_folder_name, "cbor", "cbor-decoder.yaml")
-        encoder = self.yaml_source(self.prj_folder_name, "cbor", "cbor-encoder.yaml")
+        decoder = self.yaml_source(
+            self.prj_folder_name, "cbor", "cbor-decoder.yaml")
+        encoder = self.yaml_source(
+            self.prj_folder_name, "cbor", "cbor-encoder.yaml")
         merged_dict = {"decoder": decoder, "encoder": encoder, **data}
         # Logs
         self.project_name = data["project"]["fw_name"]
@@ -461,14 +468,14 @@ class ProjectGenerator:
         self.generate_file(
             "src",
             "app_cbor.c",
-            "app_cbor_v2_c.j2",
+            "app_cbor_v2.c.j2",
             **merged_dict,
         )
         # Generate app_cbor.c
         self.generate_file(
             "src",
             "app_cbor.h",
-            "app_cbor_v2_h.j2",
+            "app_cbor_v2.h.j2",
             **merged_dict,
         )
         # Logs
@@ -478,7 +485,7 @@ class ProjectGenerator:
     def generate_cmake(self, data):
         try:
             # Load template
-            template = self.env.get_template("CMakeLists.j2")
+            template = self.env.get_template("CMakeLists.txt.j2")
             # CMake path
             cmake_file_path = os.path.join(self.prj_dir, "CMakeLists.txt")
             # Walking into files
@@ -492,7 +499,8 @@ class ProjectGenerator:
                         or file == "msg_key.h"
                         or file == "app_codec.h"
                     ):
-                        file_path = os.path.relpath(os.path.join(root, file), src_dir)
+                        file_path = os.path.relpath(
+                            os.path.join(root, file), src_dir)
                         sources.append(file_path)
             # Sort sources
             sources.sort()
@@ -560,7 +568,8 @@ class ProjectGenerator:
                     return None
 
         except Exception as e:
-            log.err(f"The {ext} file was not found in the project folder. Error: {e}")
+            log.err(
+                f"The {ext} file was not found in the project folder. Error: {e}")
             sys.exit(1)
             data = None
 
@@ -602,13 +611,15 @@ class ProjectGenerator:
                     block_pattern = block(block_name)
                     new_block_content = new_block(block_name, block_content)
                     if block_content.strip():  # If block content is not empty
-                        indentation = re.match(r"^(\s*)", block_content).group(1)
+                        indentation = re.match(
+                            r"^(\s*)", block_content).group(1)
                     else:  # If block content is empty, copy indentation from existing code
                         existing_block_match = re.search(
                             block_pattern, new_content, flags=re.DOTALL
                         )
                         if existing_block_match:
-                            existing_block_content = existing_block_match.group(1)
+                            existing_block_content = existing_block_match.group(
+                                1)
                             indentation = re.match(
                                 r"^(\s*)", existing_block_content
                             ).group(1)
@@ -681,14 +692,16 @@ class ProjectGenerator:
             self.file_status[status].sort(key=lambda x: x.lower())
 
         # Project log
-        log.msg(f"Project: {self.project_name}", color=colorama.Fore.LIGHTWHITE_EX)
+        log.msg(f"Project: {self.project_name}",
+                color=colorama.Fore.LIGHTWHITE_EX)
         for key in ["Variant", "Template"]:
             if self.log.get(key):
-                log.msg(f"{key}: {self.log[key]} ", color=colorama.Fore.LIGHTWHITE_EX)
-        log.msg(
-            f"Version: v{self.fw_version.replace('v','')}",
-            color=colorama.Fore.LIGHTWHITE_EX,
-        )
+                log.msg(f"{key}: {self.log[key]} ",
+                        color=colorama.Fore.LIGHTWHITE_EX)
+        # log.msg(
+        #    f"Version: v{self.fw_version.replace('v', '')}",
+        #    color=colorama.Fore.LIGHTWHITE_EX,
+        # )
         log.msg(f"Path: {self.prj_dir}", color=colorama.Fore.LIGHTWHITE_EX)
 
         # Successful creation log information
@@ -724,7 +737,8 @@ class ProjectGenerator:
 
     def create(self, template):
         # Setup dirs
-        prj_dir = self.generate_project_folder(self.app_dir, self.prj_folder_name)
+        prj_dir = self.generate_project_folder(
+            self.app_dir, self.prj_folder_name)
 
         if template == None:
             template = "minimal"
@@ -775,7 +789,8 @@ class ProjectGenerator:
         if variant != None:
             data = self.handler_variant(project_data=data, variant=variant)
         try:
-            self.project_name = self.transform_to_slug(data["project"]["fw_name"])
+            self.project_name = self.transform_to_slug(
+                data["project"]["fw_name"])
         except:
             log.err(
                 "Field 'project' 'fw_name' not found in project.yaml. Check your project.yaml."
@@ -785,44 +800,56 @@ class ProjectGenerator:
         try:
             # List of files to generate
             files_to_generate = [
-                {"dir": "src", "name": "app_send.c", "template": "app_send_c.j2"},
-                {"dir": "src", "name": "app_send.h", "template": "app_send_h.j2"},
-                {"dir": "src", "name": "app_handler.c", "template": "app_handler_c.j2"},
-                {"dir": "src", "name": "app_handler.h", "template": "app_handler_h.j2"},
-                {"dir": "src", "name": "app_init.c", "template": "app_init_c.j2"},
-                {"dir": "src", "name": "app_init.h", "template": "app_init_h.j2"},
-                {"dir": "src", "name": "app_data.c", "template": "app_data_c.j2"},
-                {"dir": "src", "name": "app_data.h", "template": "app_data_h.j2"},
-                {"dir": "src", "name": "app_sensor.c", "template": "app_sensor_c.j2"},
-                {"dir": "src", "name": "app_sensor.h", "template": "app_sensor_h.j2"},
-                {"dir": "src", "name": "app_power.c", "template": "app_power_c.j2"},
-                {"dir": "src", "name": "app_power.h", "template": "app_power_h.j2"},
-                {"dir": "src", "name": "app_work.c", "template": "app_work_c.j2"},
-                {"dir": "src", "name": "app_work.h", "template": "app_work_h.j2"},
-                {"dir": "src", "name": "app_cbor.c", "template": "app_cbor_c.j2"},
-                {"dir": "src", "name": "app_cbor.h", "template": "app_cbor_h.j2"},
-                {"dir": "src", "name": "app_codec.h", "template": "app_codec_h.j2"},
+                {"dir": "src", "name": "app_backup.c",
+                    "template": "app_backup.c.j2"},
+                {"dir": "src", "name": "app_backup.h",
+                    "template": "app_backup.h.j2"},
+                {"dir": "src", "name": "app_send.c", "template": "app_send.c.j2"},
+                {"dir": "src", "name": "app_send.h", "template": "app_send.h.j2"},
+                {"dir": "src", "name": "app_handler.c",
+                    "template": "app_handler.c.j2"},
+                {"dir": "src", "name": "app_handler.h",
+                    "template": "app_handler.h.j2"},
+                {"dir": "src", "name": "app_init.c", "template": "app_init.c.j2"},
+                {"dir": "src", "name": "app_init.h", "template": "app_init.h.j2"},
+                {"dir": "src", "name": "app_data.c", "template": "app_data.c.j2"},
+                {"dir": "src", "name": "app_data.h", "template": "app_data.h.j2"},
+                {"dir": "src", "name": "app_sensor.c",
+                    "template": "app_sensor.c.j2"},
+                {"dir": "src", "name": "app_sensor.h",
+                    "template": "app_sensor.h.j2"},
+                {"dir": "src", "name": "app_power.c",
+                    "template": "app_power.c.j2"},
+                {"dir": "src", "name": "app_power.h",
+                    "template": "app_power.h.j2"},
+                {"dir": "src", "name": "app_work.c", "template": "app_work.c.j2"},
+                {"dir": "src", "name": "app_work.h", "template": "app_work.h.j2"},
+                {"dir": "src", "name": "app_cbor.c", "template": "app_cbor.c.j2"},
+                {"dir": "src", "name": "app_cbor.h", "template": "app_cbor.h.j2"},
+                {"dir": "src", "name": "app_codec.h",
+                    "template": "app_codec.h.j2"},
                 {
                     "dir": "child_image",
                     "name": "mcuboot.conf",
-                    "template": "mcuboot_conf.j2",
+                    "template": "mcuboot.conf.j2",
                 },
                 {
-                    "dir": "child_image/boards",
+                    "dir": "child_image/mcuboot/boards",
                     "name": "chester_nrf52840.overlay",
-                    "template": "chester_nrf52840_overlay.j2",
+                    "template": "chester_nrf52840.overlay.j2",
                 },
                 {
                     "dir": "codec",
                     "name": "cbor-decoder.yaml",
-                    "template": "cbor_decoder_yaml.j2",
+                    "template": "cbor_decoder.yaml.j2",
                 },
-                {"dir": "src", "name": "main.c", "template": "main_c.j2"},
+                {"dir": "src", "name": "main.c", "template": "main.c.j2"},
             ]
             # Corner case to templates without cloud enabled
             if "subsystem-cloud" in data["features"]:
                 files_to_generate.append(
-                    {"dir": "", "name": "pm_static.yml", "template": "pm_static_yml.j2"}
+                    {"dir": "", "name": "pm_static.yml",
+                        "template": "pm_static.yml.j2"}
                 )
             # Generate each file
             for file_info in files_to_generate:
@@ -850,7 +877,8 @@ class ProjectGenerator:
         if variant != None:
             data = self.handler_variant(project_data=data, variant=variant)
         try:
-            self.project_name = self.transform_to_slug(data["project"]["fw_name"])
+            self.project_name = self.transform_to_slug(
+                data["project"]["fw_name"])
         except:
             log.err(
                 "Field project 'fw_name' not found in project.yaml. Check your project.yaml."
@@ -876,18 +904,20 @@ class ProjectGenerator:
                 {
                     "dir": "src",
                     "name": "app_config.c",
-                    "template": "app_config_c.j2",
+                    "template": "app_config.c.j2",
                 },
                 {
                     "dir": "src",
                     "name": "app_config.h",
-                    "template": "app_config_h.j2",
+                    "template": "app_config.h.j2",
                 },
-                {"dir": "src", "name": "app_shell.c", "template": "app_shell_c.j2"},
-                {"dir": "", "name": "prj.conf", "template": "prj_conf.j2"},
-                {"dir": "", "name": "app.overlay", "template": "app_overlay.j2"},
-                {"dir": "src", "name": "feature.h", "template": "feature_h.j2"},
-                {"dir": "", "name": "Kconfig.variant", "template": "k_config_variant.j2"},
+                {"dir": "src", "name": "app_shell.c",
+                    "template": "app_shell.c.j2"},
+                {"dir": "", "name": "prj.conf", "template": "prj.conf.j2"},
+                {"dir": "", "name": "app.overlay", "template": "app.overlay.j2"},
+                {"dir": "src", "name": "feature.h", "template": "feature.h.j2"},
+                {"dir": "", "name": "Kconfig.variant",
+                    "template": "k_config.variant.j2"},
                 {"dir": "", "name": "Kconfig", "template": "k_config.j2"},
                 {"dir": "", "name": "VERSION", "template": "VERSION.j2"},
             ]

@@ -4,10 +4,6 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-/* HARDWARE-CHESTER-S2  */
-&sht30_ext {
-	status = "okay";
-};
 /* SUBSYSTEM-CLOUD  */
 / {
 	chosen {

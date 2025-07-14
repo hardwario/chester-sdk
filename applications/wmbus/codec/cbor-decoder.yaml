@@ -1,0 +1,72 @@
+version: 2
+type: decoder
+name: com.hardwario.wmbus
+schema:
+  - frame:
+      - protocol:
+      - sequence:
+      - timestamp:
+  - attribute:
+      - vendor_name:
+      - product_name:
+      - hw_variant:
+      - hw_revision:
+      - fw_version:
+      - serial_number:
+  - state:
+      - uptime:
+  - battery:
+      - voltage_rest:
+          - $div: 1000
+          - $fpp: 2
+      - voltage_load:
+          - $div: 1000
+          - $fpp: 2
+      - current_load:
+  - network:
+      - imei:
+      - imsi:
+      - parameter:
+          - eest:
+          - ecl:
+          - rsrp:
+          - rsrq:
+          - snr:
+          - plmn:
+          - cid:
+          - band:
+          - earfcn:
+  - thermometer:
+      - temperature:
+          - $div: 100
+          - $fpp: 2
+  - accelerometer:
+      - accel_x:
+          - $div: 1000
+          - $fpp: 2
+      - accel_y:
+          - $div: 1000
+          - $fpp: 2
+      - accel_z:
+          - $div: 1000
+          - $fpp: 2
+      - orientation:
+  - wmbus:
+      - scan_mode:
+          - $enum:
+              - "off"
+              - "interval"
+              - "daily"
+              - "weekly"
+              - "monthly"
+      - scan_ant:
+          - $enum:
+              - "single"
+              - "dual"
+      - scan_time:
+      - received:
+      - devices:
+      - cycle:
+      - part:
+      - packets:
+          - $wmbus:

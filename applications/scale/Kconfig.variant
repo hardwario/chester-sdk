@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-config VARIANT_CHESTER_SCALE
-    bool "Enable VARIANT_CHESTER_SCALE"
+config VARIANT_SCALE
+    bool "Enable VARIANT_SCALE"
     default y
-        

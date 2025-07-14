@@ -409,17 +409,16 @@ schema:
   - tc_thermometer:
       - channel:
       - measurements:
-              - $tsp:
-                  - min:
-                      - $div: 100
-                      - $fpp: 2
-                  - max:
-                      - $div: 100
-                      - $fpp: 2
-                  - avg:
-                      - $div: 100
-                      - $fpp: 2
-                  - mdn:
-                      - $div: 100
-                      - $fpp: 2
-
+          - $tsp:
+              - min:
+                  - $div: 100
+                  - $fpp: 2
+              - max:
+                  - $div: 100
+                  - $fpp: 2
+              - avg:
+                  - $div: 100
+                  - $fpp: 2
+              - mdn:
+                  - $div: 100
+                  - $fpp: 2

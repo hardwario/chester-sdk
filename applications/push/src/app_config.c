@@ -61,32 +61,50 @@ const struct ctr_config_item items[] = {
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
+	/* ### Preserved code "app_config_cmd_config_show start" (begin) */
+	/* ^^^ Preserved code "app_config_cmd_config_show start" (end) */
+
 	for (int i = 0; i < ARRAY_SIZE(items); i++) {
 		ctr_config_show_item(shell, &items[i]);
 	}
+
+	/* ### Preserved code "app_config_cmd_config_show end" (begin) */
+	/* ^^^ Preserved code "app_config_cmd_config_show end" (end) */
 
 	return 0;
 }
 
 int app_config_cmd_config(const struct shell *shell, size_t argc, char **argv)
 {
+	/* ### Preserved code "app_config_cmd_config" (begin) */
+	/* ^^^ Preserved code "app_config_cmd_config" (end) */
 	return ctr_config_cmd_config(items, ARRAY_SIZE(items), shell, argc, argv);
 }
 
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
+	/* ### Preserved code "h_set" (begin) */
+	/* ^^^ Preserved code "h_set" (end) */
+
 	return ctr_config_h_set(items, ARRAY_SIZE(items), key, len, read_cb, cb_arg);
 }
 
 static int h_commit(void)
 {
 	LOG_DBG("Loaded settings in full");
+
+	/* ### Preserved code "h_commit" (begin) */
+	/* ^^^ Preserved code "h_commit" (end) */
+
 	memcpy(&g_app_config, &m_config_interim, sizeof(g_app_config));
 	return 0;
 }
 
 static int h_export(int (*export_func)(const char *name, const void *val, size_t val_len))
 {
+	/* ### Preserved code "h_export" (begin) */
+	/* ^^^ Preserved code "h_export" (end) */
+
 	return ctr_config_h_export(items, ARRAY_SIZE(items), export_func);
 }
 

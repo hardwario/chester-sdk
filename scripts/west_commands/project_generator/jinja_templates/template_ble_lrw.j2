@@ -11,6 +11,7 @@ features:
 - subsystem-batt
 - subsystem-bluetooth
 - subsystem-buf
+- subsystem-button
 - subsystem-defaults
 - subsystem-info
 - subsystem-led
@@ -18,9 +19,9 @@ features:
 - subsystem-lrw
 - subsystem-rtc
 - subsystem-shell
+- subsystem-therm
 - subsystem-tinycrypt
 - subsystem-tinycrypt-sha256
-- subsystem-therm
 - subsystem-wdog
 parameters:
 - name: interval-sample
@@ -29,12 +30,51 @@ parameters:
   max: 86400
   default: 60
   help: 'Get/Set sample interval in seconds'
+- name: interval-aggreg
+  type: int
+  min: 1
+  max: 86400
+  default: 60
+  help: 'Get/Set aggregation interval in seconds'
 - name: interval-report
   type: int
   min: 30
   max: 86400
   default: 1800
   help: 'Get/Set report interval in seconds'
+- name: event-report-delay
+  type: int
+  min: 1
+  max: 86400
+  default: 1
+  help: 'Get/Set event report delay in seconds'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
+- name: event-report-rate
+  type: int
+  min: 1
+  max: 3600
+  default: 30
+  help: 'Get/Set event report rate in reports per hour'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
+- name: backup-report-connected
+  type: bool
+  default: true
+  help: 'Get/Set report when backup is active'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
+- name: backup-report-disconnected
+  type: bool
+  default: true
+  help: 'Get/Set report when backup is inactive'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
 commands:
+- name: sample
+  callback: app_work_sample()
+  help: "Sample immediately."
+- name: send
+  callback: app_work_send()
+  help: "Send data immediately."
+- name: aggreg
+  callback: app_work_aggreg()
+  help: "Aggregate data immediately"
 extras:
 - CONFIG_ADC_TLA2021_INIT_PRIORITY=60

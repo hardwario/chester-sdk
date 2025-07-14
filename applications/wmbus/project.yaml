@@ -1,0 +1,95 @@
+version: 1
+variants:
+  - name: CHESTER wM-Bus
+    fw_bundle: com.hardwario.chester.app.wmbus
+    fw_name: hio-chester-wmbus
+    fw_version: v3.2.4-rc3
+project:
+  variant: wMBus
+  company: 2024 HARDWARIO a.s.
+  license: "SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause"
+  fw_name: CHESTER wM-Bus
+  fw_bundle: com.hardwario.chester.app.wmbus
+  fw_version: v3.2.4-rc3
+features:
+  - subsystem-accel
+  - subsystem-batt
+  - subsystem-bluetooth
+  - subsystem-buf
+  - subsystem-button
+  - subsystem-cloud
+  - subsystem-defaults
+  - subsystem-gpio
+  - subsystem-info
+  - subsystem-led
+  - subsystem-log
+  - subsystem-lte-v2
+  - subsystem-rtc
+  - subsystem-shell
+  - subsystem-therm
+  - subsystem-tinycrypt
+  - subsystem-tinycrypt-sha256
+  - subsystem-wdog
+  - subsystem-zcbor
+parameters:
+  - name: scan-timeout
+    type: int
+    min: 1
+    max: 86400
+    default: 130
+    help: "Get/Set scan timeout"
+  - name: scan-interval
+    type: int
+    min: 30
+    max: 604800
+    default: 600
+    help: "Get/Set scan interval in seconds"
+  - name: scan-hour
+    type: int
+    min: 0
+    max: 23
+    default: 12
+    help: "Get/Set scan hour"
+  - name: scan-weekday
+    type: int
+    min: 0
+    max: 6
+    default: 3
+    help: "Get/Set scan weekday"
+  - name: scan-day
+    type: int
+    min: 1
+    max: 31
+    default: 15
+    help: "Get/Set scan day in the month"
+  - name: scan-mode
+    type: enum
+    help: "Get/Set scan mode"
+    default: "off"
+    valueset:
+      - "off"
+      - "interval"
+      - "daily"
+      - "weekly"
+      - "monthly"
+  - name: scan-ant
+    type: enum
+    help: "Get/Set scan antenna"
+    default: single
+    valueset:
+      - single
+      - dual
+  - name: poll-interval
+    type: int
+    min: 5
+    max: 1209600
+    default: 28800
+    help: "Get/Set poll interval in seconds"
+  - name: downlink-wdg-interval
+    type: int
+    min: 0
+    max: 1209600
+    default: 172800
+    help: "Get/Set poll interval in seconds"
+commands:
+extras:

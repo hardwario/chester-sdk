@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-config VARIANT_CHESTER_PUSH
-    bool "Enable VARIANT_CHESTER_PUSH"
+config VARIANT_PUSH
+    bool "Enable VARIANT_PUSH"
     default y
-        
