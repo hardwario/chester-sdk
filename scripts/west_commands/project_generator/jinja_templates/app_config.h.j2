@@ -90,7 +90,7 @@ enum {{domain}}_config_{{ var | replace('_{}', '')}}{
 			{%- if parameter['related']%}
 	{{domain | upper}}_CONFIG_{{ var | upper}}_{{ mode |  upper}} = {{ loop.index0 }},
 			{%- else %}
-	{{domain | upper}}_CONFIG_{{ var | replace('{}', '') | upper}}_{{ mode |  upper}} = {{ loop.index0 }},
+	{{domain | upper}}_CONFIG_{{ var | replace('{}', '') | upper}}{{ mode |  upper}} = {{ loop.index0 }},
 			{%- endif%}
      	{%- endfor %}
 };

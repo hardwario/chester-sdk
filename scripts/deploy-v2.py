@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-import yaml
-import subprocess
 import os
+import subprocess
 from datetime import datetime
+
+import yaml
+
 
 # From 'chester-sdk/chester/applications' call '../scripts/deploy-v2.py'
 
@@ -28,7 +30,8 @@ def build_app_variant(variant, version, docs_link, cwd):
         p.wait()
 
         p = subprocess.Popen(['hardwario', 'chester', 'app', 'fw', 'upload',
-                              '--name', fw_name, '--version', version], cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                              '--name', fw_name, '--version', version], cwd=cwd,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         stdout, stderr = p.communicate()
 
         # Parse the output
@@ -72,7 +75,7 @@ def build_app(name, version):
 
 
 def main():
-    version = 'v3.0.4'
+    version = 'v3.2.5'
     build_app('clime', version)
     build_app('push', version)
     build_app('control', version)
