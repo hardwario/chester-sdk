@@ -75,7 +75,7 @@ def build_app(name, version):
 
 
 def main():
-    version = 'v3.2.5'
+    version = 'v3.3.0'
     build_app('clime', version)
     build_app('push', version)
     build_app('control', version)
@@ -84,6 +84,7 @@ def main():
     build_app('meteo', version)
     build_app('range', version)
     build_app('demo', version)
+    build_app('wmbus', version)
 
 
 if __name__ == '__main__':

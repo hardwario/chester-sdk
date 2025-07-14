@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 set(ENV{FW_BUNDLE} "com.hardwario.chester.app.control.z")
-set(ENV{FW_VERSION} "v3.2.5")
+set(ENV{FW_VERSION} "v3.3.0")
 set(ENV{FW_NAME} "CHESTER Control Z")
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
