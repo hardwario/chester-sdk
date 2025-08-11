@@ -89,6 +89,8 @@ enum {{domain}}_config_{{ var | replace('_{}', '')}}{
 		{%- for mode in parameter['valueset'] %}
 			{%- if parameter['related']%}
 	{{domain | upper}}_CONFIG_{{ var | upper}}_{{ mode |  upper}} = {{ loop.index0 }},
+			{%- elif '{}' in var %}
+	{{domain | upper}}_CONFIG_{{ var | replace('_{}', '') | upper}}_{{ mode |  upper}} = {{ loop.index0 }},
 			{%- else %}
 	{{domain | upper}}_CONFIG_{{ var | replace('{}', '') | upper}}_{{ mode |  upper}} = {{ loop.index0 }},
 			{%- endif%}
