@@ -98,21 +98,22 @@ class ProjectGenerator:
                     project_data["project"]["fw_bundle"] = app_variant["fw_bundle"]
                     project_data["project"]["fw_version"] = app_variant["fw_version"]
                     project_data["project"]["fw_name"] = app_variant["name"]
+
                     if "features" in app_variant:
                         # Append applications variant features
                         for app_feature in app_variant["features"]:
-                            if app_feature not in project_data["features"]:
+                            if app_feature not in project_data.get("features", []):
                                 project_data["features"].append(app_feature)
                     if "extras" in app_variant:
                         # Append applications variant extras
                         for app_feature in app_variant["extras"]:
-                            if app_feature not in project_data["extras"]:
+                            if app_feature not in project_data.get("extras", []):
                                 project_data["extras"].append(app_feature)
             # Remove duplicates from project_data['features']
-            if "features" in project_data:
+            if "features" in project_data and project_data["features"] is not None:
                 project_data["features"] = list(set(project_data["features"]))
             # Remove duplicates from project_data['features']
-            if "extras" in project_data:
+            if "extras" in project_data and project_data["extras"] is not None:
                 project_data["extras"] = list(set(project_data["extras"]))
             if corr:
                 return project_data
