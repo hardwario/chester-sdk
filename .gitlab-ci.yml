@@ -7,14 +7,23 @@ build:
   stage: build
   variables:
     GIT_STRATEGY: none
-
+    WEST_PATH: /shared-cache/west-path/chester-sdk-base
+  before_script:
+    - |
+      if [ ! -d "$WEST_PATH/done" ]; then
+        west init -m https://github.com/hardwario/chester-sdk.git --manifest-rev main $WEST_PATH
+        cd $WEST_PATH
+        west update
+        rm -rf chester .west
+        date +%s > $WEST_PATH/done
+      fi
   script:
     - mkdir /build && cd /build
     - git clone -n "${CI_REPOSITORY_URL}" chester
     - git -C chester config advice.detachedHead false
     - git -C chester checkout "${CI_COMMIT_SHA}"
     - west init -l --mf west.yml chester
-    - west update
+    - west update --path-cache "$WEST_PATH"
     - west config build.board chester
     - ./zephyr/scripts/twister --testsuite-root chester/tests -c -i -v -p native_posix
     - |
