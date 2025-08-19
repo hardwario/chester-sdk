@@ -3,54 +3,56 @@ image: "hardwario/nrf-connect-sdk-build:v2.9.0-1"
 variables:
   CI_DEBUG_TRACE: "false"
 
-build:
+.build_template:
   stage: build
   variables:
     GIT_STRATEGY: none
     WEST_PATH: /shared-cache/west-path/chester-sdk-base
   before_script:
+    - set -euo pipefail
     - |
-      if [ ! -d "$WEST_PATH/done" ]; then
-        west init -m https://github.com/hardwario/chester-sdk.git --manifest-rev main $WEST_PATH
-        cd $WEST_PATH
+      if [ ! -f "$WEST_PATH/done" ]; then
+        mkdir -p "$WEST_PATH"
+        west init -m https://github.com/hardwario/chester-sdk.git --manifest-rev main "$WEST_PATH"
+        cd "$WEST_PATH"
         west update
         rm -rf chester .west
-        date +%s > $WEST_PATH/done
+        date +%s > "$WEST_PATH/done"
       fi
-  script:
-    - mkdir /build && cd /build
+    - mkdir -p /build
+    - cd /build
     - git clone -n "${CI_REPOSITORY_URL}" chester
     - git -C chester config advice.detachedHead false
     - git -C chester checkout "${CI_COMMIT_SHA}"
     - west init -l --mf west.yml chester
     - west update --path-cache "$WEST_PATH"
     - west config build.board chester
+
+tests:
+  extends: .build_template
+  script:
     - ./zephyr/scripts/twister --testsuite-root chester/tests -c -i -v -p native_posix
+
+samples:
+  extends: .build_template
+  script:
     - |
-      for sample in chester/samples/*/
-      do
-        if [[ $sample == chester/samples/_legacy/ ]]; then
-          continue
-        fi
-        printf '\n\033[1;36m'
-        printf '*%.0s' {1..50}
-        printf '\033[0m'
-        printf '\n\033[1;36mBuild: %s\033[0m\n' ${sample::-1}
-        west build -d "${sample}/build" ${sample}
+      for sample in chester/samples/*/; do
+        [[ "$sample" == "chester/samples/_legacy/" ]] && continue
+        printf '\n\033[1;36m%s\033[0m\n' "**************************************************"
+        printf '\033[1;36mBuild: %s\033[0m\n' "${sample%/}"
+        west build -d "${sample}/build" "${sample}"
       done
+
+applications:
+  extends: .build_template
+  script:
     - |
-      for application in chester/applications/*/
-      do
-        if [[ $application == chester/applications/_legacy/ ]]; then
-          continue
-        fi
-        printf '\n\033[1;36m'
-        printf '*%.0s' {1..50}
-        printf '\033[0m'
-        printf '\n\033[1;36m'
-        printf 'Build: %s' ${application::-1}
-        printf '\033[0m\n'
-        west build -d "${application}/build" ${application}
+      for application in chester/applications/*/; do
+        [[ "$application" == "chester/applications/_legacy/" ]] && continue
+        printf '\n\033[1;36m%s\033[0m\n' "**************************************************"
+        printf '\033[1;36mBuild: %s\033[0m\n' "${application%/}"
+        west build -d "${application}/build" "${application}"
         if [[ -f "${application}/build/zephyr/merged.hex" ]]; then
           echo "Application ${application} built successfully"
         else
