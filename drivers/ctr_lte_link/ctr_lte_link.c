@@ -731,6 +731,15 @@ static int ctr_lte_link_exit_dialog_(const struct device *dev)
 	return 0;
 }
 
+static void tx(char *line) /* for better logging */
+{
+	if (!strncmp(line, "AT#XSEND=\"", 10) && strlen(line) > 20) {
+		LOG_INF("%.20s...", line);
+		return;
+	}
+	LOG_INF("%s", line);
+}
+
 static int ctr_lte_link_send_line_(const struct device *dev, k_timeout_t timeout,
 				   const char *format, va_list ap)
 {
@@ -768,7 +777,7 @@ static int ctr_lte_link_send_line_(const struct device *dev, k_timeout_t timeout
 		return -ENOBUFS;
 	}
 
-	LOG_INF("Send line: %s", &get_data(dev)->tx_line_buf[strlen(TX_LINE_PREFIX)]);
+	tx(&get_data(dev)->tx_line_buf[strlen(TX_LINE_PREFIX)]);
 
 	strcat(get_data(dev)->tx_line_buf, TX_LINE_SUFFIX);
 
@@ -796,6 +805,11 @@ static int ctr_lte_link_send_line_(const struct device *dev, k_timeout_t timeout
 	k_mutex_unlock(&get_data(dev)->lock);
 
 	return 0;
+}
+
+static void rx(char *line) /* for better logging */
+{
+	LOG_INF("%s", line);
 }
 
 static int ctr_lte_link_recv_line_(const struct device *dev, k_timeout_t timeout, char **line)
@@ -842,7 +856,7 @@ static int ctr_lte_link_recv_line_(const struct device *dev, k_timeout_t timeout
 
 	*line = k_fifo_get(&get_data(dev)->rx_fifo, K_NO_WAIT);
 	if (*line) {
-		LOG_INF("Receive line: %s", *line);
+		rx(*line);
 	}
 
 	k_mutex_unlock(&get_data(dev)->lock);
