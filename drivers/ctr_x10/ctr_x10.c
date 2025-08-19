@@ -23,8 +23,8 @@
 
 LOG_MODULE_REGISTER(ctr_x10, CONFIG_CTR_X10_LOG_LEVEL);
 
-#define R7_KOHM	 330
-#define R8_KOHM	 22
+#define R7_KOHM  330
+#define R8_KOHM  22
 #define R33_MOHM 1
 #define R35_MOHM 1
 
@@ -163,27 +163,29 @@ static void work_handler(struct k_work *work)
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
+	ctr_x10_user_cb user_cb = NULL;
+	enum ctr_x10_event event;
+	void *user_data = get_data(dev)->user_data;
+
 	if (get_data(dev)->is_line_present) {
 		if (voltage_mv < get_config(dev)->line_threshold_min) {
 			get_data(dev)->is_line_present = false;
-
-			if (get_data(dev)->user_cb) {
-				get_data(dev)->user_cb(dev, CTR_X10_EVENT_LINE_DISCONNECTED,
-						       get_data(dev)->user_data);
-			}
+			event = CTR_X10_EVENT_LINE_DISCONNECTED;
+			user_cb = get_data(dev)->user_cb;
 		}
 	} else {
 		if (voltage_mv > get_config(dev)->line_threshold_max) {
 			get_data(dev)->is_line_present = true;
-
-			if (get_data(dev)->user_cb) {
-				get_data(dev)->user_cb(dev, CTR_X10_EVENT_LINE_CONNECTED,
-						       get_data(dev)->user_data);
-			}
+			event = CTR_X10_EVENT_LINE_CONNECTED;
+			user_cb = get_data(dev)->user_cb;
 		}
 	}
 
 	k_mutex_unlock(&get_data(dev)->lock);
+
+	if (user_cb) {
+		user_cb(dev, event, user_data);
+	}
 }
 
 static int ctr_x10_init(const struct device *dev)
@@ -210,9 +212,6 @@ static int ctr_x10_init(const struct device *dev)
 		return ret;
 	}
 
-	k_timer_start(&get_data(dev)->timer, K_MSEC(get_config(dev)->line_measurement_interval),
-		      K_MSEC(get_config(dev)->line_measurement_interval));
-
 	int line_voltage_mv;
 	ret = ctr_x10_get_line_voltage(dev, &line_voltage_mv);
 	if (ret) {
@@ -221,6 +220,9 @@ static int ctr_x10_init(const struct device *dev)
 	}
 
 	get_data(dev)->is_line_present = line_voltage_mv > get_config(dev)->line_threshold_min;
+
+	k_timer_start(&get_data(dev)->timer, K_MSEC(get_config(dev)->line_measurement_interval),
+		      K_MSEC(get_config(dev)->line_measurement_interval));
 
 	return 0;
 }
