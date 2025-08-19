@@ -3,6 +3,8 @@
  *
  */
 
+/* west twister -p native_posix -c -i -j 1 --testsuite-root . -vv */
+
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
@@ -206,6 +208,18 @@ ZTEST(parser, test_urc_xgps)
 		     "update.datetime not equal");
 }
 
+ZTEST(parser, test_cgcont)
+{
+	struct cgdcont_param param;
+	int ret = ctr_lte_v2_parse_cgcont("0,\"IP\",\"iot.1nce.net\",\"10.52.2.149\",0,0", &param);
+
+	zassert_ok(ret, "ctr_lte_v2_parse_cgcont failed");
+	zassert_equal(param.cid, 0, "param.cid not equal");
+	zassert_true(strcmp(param.pdn_type, "IP") == 0, "param.pdn_type not equal");
+	zassert_true(strcmp(param.apn, "iot.1nce.net") == 0, "param.apn not equal");
+	zassert_true(strcmp(param.addr, "10.52.2.149") == 0, "param.addr not equal");
+}
+
 ZTEST_SUITE(parser, NULL, NULL, NULL, NULL, NULL);
 
 // int main() {
@@ -215,7 +229,8 @@ ZTEST_SUITE(parser, NULL, NULL, NULL, NULL, NULL);
 //     const char *test3 = "00000101"; // GPRS Timer 2: 5 * 2 = 10 sekund
 //     const char *test4 = "00101001"; // GPRS Timer 2: 9 * 60 = 540 sekund (9 minut)
 //     const char *test5 = "10000101"; // GPRS Timer 3: 5 * 30 = 150 sekund (2,5 minuty)
-//     const char *test6 = "11001000"; // GPRS Timer 3: 8 * 320h = 2560 hodin (deaktivováno?)
+//     const char *test6 = "11001000"; // GPRS Timer 3: 8 * 320h = 2560 hodin
+//     (deaktivováno?)
 
 //     printf("GPRS Timer 2 - Test 1: %d\n", parse_gprs_timer(test1, 2));
 //     printf("GPRS Timer 2 - Test 2: %d\n", parse_gprs_timer(test2, 2));

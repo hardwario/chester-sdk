@@ -656,3 +656,58 @@ int ctr_lte_v2_parse_urc_xgps(const char *s, struct ctr_lte_v2_gnss_update *upda
 
 	return 0;
 }
+
+int ctr_lte_v2_parse_cgcont(const char *s, struct cgdcont_param *param)
+{
+	/* 0,"IP","iot.1nce.net","10.52.2.149",0,0 */
+	if (!s || !param) {
+		return -EINVAL;
+	}
+
+	memset(param, 0, sizeof(*param));
+	param->cid = -1; /* Default CID is -1 (not set) */
+
+	const char *p = s;
+
+	bool def;
+	long num;
+
+	if (!(p = ctr_lte_v2_tok_num(p, &def, &num)) || !def) {
+		LOG_ERR("Failed to parse CID");
+		return -EINVAL;
+	}
+
+	param->cid = (int)num;
+
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
+		LOG_ERR("Failed to parse PDN type");
+		return -EINVAL;
+	}
+
+	if (!(p = ctr_lte_v2_tok_str(p, &def, param->pdn_type, sizeof(param->pdn_type))) || !def) {
+		LOG_ERR("Failed to parse PDN type");
+		return -EINVAL;
+	}
+
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
+		LOG_ERR("Failed to parse APN");
+		return -EINVAL;
+	}
+
+	if (!(p = ctr_lte_v2_tok_str(p, &def, param->apn, sizeof(param->apn))) || !def) {
+		LOG_ERR("Failed to parse APN");
+		return -EINVAL;
+	}
+
+	if (!(p = ctr_lte_v2_tok_sep(p))) {
+		LOG_ERR("Failed to parse address");
+		return -EINVAL;
+	}
+
+	if (!(p = ctr_lte_v2_tok_str(p, &def, param->addr, sizeof(param->addr))) || !def) {
+		LOG_ERR("Failed to parse address");
+		return -EINVAL;
+	}
+
+	return 0;
+}

@@ -44,7 +44,7 @@
 LOG_MODULE_REGISTER(ctr_lte_v2_flow, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 
 #define XSLEEP_PAUSE         K_MSEC(100)
-#define BOOT_TIMEOUT         K_SECONDS(5)
+#define BOOT_TIMEOUT         K_SECONDS(10)
 #define SEND_CSCON_1_TIMEOUT K_SECONDS(30)
 #define SEND_CSCON_0_TIMEOUT K_SECONDS(30)
 
@@ -95,7 +95,7 @@ static void process_urc(const char *line)
 	} else if (!strncmp(line, "%XTIME:", 7)) {
 		m_event_delegate_cb(CTR_LTE_V2_EVENT_XTIME);
 
-	} else if (!strncmp(line, "+CEREG: ", 8)) {
+	} else if (!strncmp(line, "+CEREG: ", 8) && line[10] == '"') { /* Ignore CEREG requests */
 		int ret;
 		struct ctr_lte_v2_cereg_param cereg_param;
 
@@ -232,8 +232,6 @@ static int fill_bands(char *bands)
 			LOG_ERR("Invalid number format");
 			return -EINVAL;
 		}
-
-		LOG_INF("Band: %ld", band);
 
 		int n = len - band; /* band 1 is first 1 in bands from right */
 		if (n < 0) {
@@ -626,7 +624,34 @@ int ctr_lte_v2_flow_sim_fplmn(void)
 	return 0;
 }
 
-int ctr_lte_v2_flow_open_socket(void)
+static int get_pdn_ip_ctx(struct cgdcont_param *cgdcont)
+{
+	int ret;
+	char tmp[200] = {0};
+	int lines = ctr_lte_v2_talk_at_cgdcont_q(&m_talk, tmp, sizeof(tmp));
+	char *line = tmp;
+	for (int i = 0; i < lines; i++) {
+		ret = ctr_lte_v2_parse_cgcont(line, cgdcont);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_parse_cgcont` failed: %d", ret);
+			return ret;
+		}
+
+		LOG_INF("cgdcont: cid: %d, pdn type: %s, apn: %s, addr: %s", cgdcont->cid,
+			cgdcont->pdn_type, cgdcont->apn, cgdcont->addr);
+
+		if (cgdcont->cid != -1 && strlen(cgdcont->pdn_type) == 2 &&
+		    strcmp(cgdcont->pdn_type, "IP") == 0 && strlen(cgdcont->apn) > 0 &&
+		    strlen(cgdcont->addr) > 0) {
+			return 0;
+		}
+
+		line = &tmp[strlen(line) + 1]; /* Move to next line */
+	}
+	return -EINVAL; /* No CGDCONT found */
+}
+
+static int open_socket(void)
 {
 	int ret;
 
@@ -639,12 +664,25 @@ int ctr_lte_v2_flow_open_socket(void)
 
 	LOG_INF("COPS: %s", cops);
 
+	/* Debugging AT commands */
+	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CEREG?");
 	ctr_lte_v2_talk_at_cmd(&m_talk, "AT%XCBAND");
 	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CEINFO?");
-	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CGDCONT?"); /* TODO: check ip */
+	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CGATT?");
+	ctr_lte_v2_talk_at_cmd(&m_talk, "AT+CGACT?");
+
+	struct cgdcont_param cgdcont;
+	ret = get_pdn_ip_ctx(&cgdcont);
+	if (ret) {
+		LOG_ERR("Call `get_pdn_ip_ctx` failed: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("addr: %s, port: %d, cid: %d", g_ctr_lte_v2_config.addr, CONFIG_CTR_LTE_V2_PORT,
+		cgdcont.cid);
 
 	char xsocket[64];
-	ret = ctr_lte_v2_talk_at_xsocket(&m_talk, 1, (int[]){2}, (int[]){0}, xsocket,
+	ret = ctr_lte_v2_talk_at_xsocket(&m_talk, 1, (int[]){2}, &cgdcont.cid, xsocket,
 					 sizeof(xsocket));
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_xsocket` failed: %d", ret);
@@ -683,6 +721,11 @@ int ctr_lte_v2_flow_open_socket(void)
 	}
 
 	return 0;
+}
+
+inline int ctr_lte_v2_flow_open_socket(void)
+{
+	return open_socket();
 }
 
 int ctr_lte_v2_flow_check(void)

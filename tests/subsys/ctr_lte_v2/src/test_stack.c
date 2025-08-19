@@ -82,8 +82,11 @@ ZTEST(stack, test_attach)
 		{"AT+CRSM=176,28539,0,0,12", "+CRSM: 144,0,\"FFFFFFFFFFFFFFFFFFFFFFFF\"", "OK"},
 		URC(100, "+CEREG: 5,\"B4DC\",\"000AE520\",9,0,18,\"00000000\",\"00111000\""),
 		{"AT+COPS?", "+COPS: 1,2,\"23003\",9", "OK"},
+		{"AT+CEREG?", "+CEREG: 5,5,\"B4DC\",\"000AE520\",9,0,18,\"00000000\",\"00111000\"", "OK"},
 		{"AT%XCBAND", "%XCBAND: 20", "OK"},
 		{"AT+CEINFO?", "+CEINFO: 0,1,C,8,1,-79,21", "OK"},
+		{"AT+CGATT?", "+CGATT: 1", "OK"},
+		{"AT+CGACT?", "+CGACT: 0,1", "OK"},
 		{"AT+CGDCONT?", "+CGDCONT: 0,\"IP\",\"hardwario\",\"172.28.0.139\",0,0", "OK"},
 		{"AT#XSOCKET=1,2,0", "#XSOCKET: 0,2,17", "OK"},
 		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG)

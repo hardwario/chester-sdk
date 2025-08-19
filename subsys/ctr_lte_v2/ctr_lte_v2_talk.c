@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2025 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -373,6 +373,39 @@ int ctr_lte_v2_talk_at_cgdcont(struct ctr_lte_v2_talk *talk, int p1, const char 
 	DIALOG_EXIT();
 
 	DIALOG_EPILOG /* clang-format on */
+}
+
+int ctr_lte_v2_talk_at_cgdcont_q(struct ctr_lte_v2_talk *talk, char *buf, size_t size)
+{
+	DIALOG_PROLOG /* clang-format off */
+
+	size_t used = 0;
+	int found = 0;
+
+	DIALOG_ENTER();
+	DIALOG_SEND_LINE("AT+CGDCONT?");
+	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_S, {
+		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
+		if (!strncmp(line, "+CGDCONT: ", 10) ) {
+			process_urc = false;
+			char *s = line + 10;
+			size_t s_len = strlen(s);
+			if (used + s_len + 1 > size) {
+				DIALOG_FREE_LINE(line, false);                                     \
+				DIALOG_ABORT(-ENOSPC);
+			}
+			memcpy(buf + used, s, s_len);
+			used += s_len;
+			buf[used++] = '\0';
+			found++;
+		} else {
+			DIALOG_LOOP_BREAK_ON_STR("OK");
+		}
+	});
+	DIALOG_EXIT();
+
+	/* clang-format on */
+	return found;
 }
 
 int ctr_lte_v2_talk_at_cgerep(struct ctr_lte_v2_talk *talk, int p1)

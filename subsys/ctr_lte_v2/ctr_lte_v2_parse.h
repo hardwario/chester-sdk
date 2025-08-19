@@ -31,6 +31,13 @@ struct xsocket_get_param {
 	int cid;
 };
 
+struct cgdcont_param {
+	int cid;          /* CID (context ID) */
+	char pdn_type[9]; /* "IP" or "IPV6" */
+	char apn[64];     /* Access Point Name */
+	char addr[16];    /* IPv4 address */
+};
+
 #define XSOCKET_PROTOCOL_UDP 17
 #define XSOCKET_TYPE_DGRAM   2
 #define XSOCKET_ROLE_CLIENT  0
@@ -45,6 +52,7 @@ int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *par
 int ctr_lte_v2_parse_urc_xmodemsleep(const char *s, int *p1, int *p2);
 int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param);
 int ctr_lte_v2_parse_urc_xgps(const char *s, struct ctr_lte_v2_gnss_update *update);
+int ctr_lte_v2_parse_cgcont(const char *s, struct cgdcont_param *param);
 
 #ifdef __cplusplus
 }

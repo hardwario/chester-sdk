@@ -39,6 +39,7 @@ int ctr_lte_v2_talk_at_cgauth(struct ctr_lte_v2_talk *talk, int p1, int *p2, con
 			      const char *p4);
 int ctr_lte_v2_talk_at_cgdcont(struct ctr_lte_v2_talk *talk, int p1, const char *p2,
 			       const char *p3);
+int ctr_lte_v2_talk_at_cgdcont_q(struct ctr_lte_v2_talk *talk, char *buf, size_t size);
 int ctr_lte_v2_talk_at_cgerep(struct ctr_lte_v2_talk *talk, int p1);
 int ctr_lte_v2_talk_at_cgsn(struct ctr_lte_v2_talk *talk, char *buf, size_t size);
 int ctr_lte_v2_talk_at_cimi(struct ctr_lte_v2_talk *talk, char *buf, size_t size);
