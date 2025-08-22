@@ -76,7 +76,7 @@ int main(void)
 		}
 
 		if (should_feed_watchdog()) {
-			LOG_INF("WDG feed");
+			LOG_DBG("WDG feed");
 
 			ret = ctr_wdog_feed(&g_app_wdog_channel);
 			if (ret) {
@@ -98,7 +98,6 @@ static bool should_feed_watchdog(void)
 	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
 
 		if (g_app_config.downlink_wdg_interval) {
-			LOG_INF("downlink_wdg_interval: %d", g_app_config.downlink_wdg_interval);
 			int64_t downlink_ts;
 			ret = ctr_cloud_get_last_seen_ts(&downlink_ts);
 
@@ -115,13 +114,11 @@ static bool should_feed_watchdog(void)
 			}
 
 			int64_t diff_ts = current_ts - downlink_ts;
-			LOG_INF("diff_ts: %lld", diff_ts);
 			if (diff_ts > g_app_config.downlink_wdg_interval) {
 				LOG_WRN("Downlink ts bigger than interval! %lld", diff_ts);
 				return false;
 			}
 		}
-		LOG_INF("Downlink ts OK");
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
 
