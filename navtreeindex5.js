@@ -1,5 +1,12 @@
 var NAVTREEINDEX5 =
 {
+"structctr__lte__v2__conn__param.html#a8914c8c5f38f97f9b8cd08544b09f391":[1,0,42,4],
+"structctr__lte__v2__conn__param.html#a9c9a007d477bc71c95e654a91e47bc1d":[1,0,42,7],
+"structctr__lte__v2__conn__param.html#ad8a7eb9645252db41faa4eafdf6b6fbf":[1,0,42,2],
+"structctr__lte__v2__conn__param.html#ada9e338bbb96d23357115d63f6b04a2e":[1,0,42,1],
+"structctr__lte__v2__conn__param.html#afee49014603a91f6f78fc16b61e36241":[1,0,42,8],
+"structctr__lte__v2__gnss__update.html":[1,0,43],
+"structctr__lte__v2__gnss__update.html#a12aa5c269895c83d7f733b68498eb188":[1,0,43,0],
 "structctr__lte__v2__gnss__update.html#a25219c22e4238fd803cdf021071155dc":[1,0,43,6],
 "structctr__lte__v2__gnss__update.html#a288c6b37be6a2fe0be6218a8460b7269":[1,0,43,4],
 "structctr__lte__v2__gnss__update.html#a49dfe07520409ee2fbc00faadaf55f7a":[1,0,43,1],
