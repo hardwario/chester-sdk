@@ -45,7 +45,7 @@ variants:
   features:
     - hardware-chester-sps30
 - name: CHESTER Radon
-  fw_bundle: com.hardwario.chester.app.radon
+  fw_bundle: com.hardwario.chester.app.clime.radon
   fw_name: hio-chester-radon
   fw_version: v3.0.0
   features:
