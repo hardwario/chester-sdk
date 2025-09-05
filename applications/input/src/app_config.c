@@ -128,13 +128,13 @@ static void print_trigger_input_type(const struct shell *shell)
 
 static void print_trigger_duration_active(const struct shell *shell)
 {
-	shell_print(shell, "app config trigger-duration-active %d",
+	shell_print(shell, "app config trigger-active-duration %d",
 		    m_app_config_interim.trigger_duration_active);
 }
 
 static void print_trigger_duration_inactive(const struct shell *shell)
 {
-	shell_print(shell, "app config trigger-duration-inactive %d",
+	shell_print(shell, "app config trigger-inactive-duration %d",
 		    m_app_config_interim.trigger_duration_inactive);
 }
 
@@ -1066,8 +1066,8 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 	SETTINGS_SET_SCALAR("trigger-input-type", trigger_input_type);
-	SETTINGS_SET_SCALAR("trigger-duration-active", trigger_duration_active);
-	SETTINGS_SET_SCALAR("trigger-duration-inactive", trigger_duration_inactive);
+	SETTINGS_SET_SCALAR("trigger-active-duration", trigger_duration_active);
+	SETTINGS_SET_SCALAR("trigger-inactive-duration", trigger_duration_inactive);
 	SETTINGS_SET_SCALAR("trigger-cooldown-time", trigger_cooldown_time);
 	SETTINGS_SET_SCALAR("trigger-report-active", trigger_report_active);
 	SETTINGS_SET_SCALAR("trigger-report-inactive", trigger_report_inactive);
@@ -1138,8 +1138,8 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 	EXPORT_FUNC_SCALAR("trigger-input-type", trigger_input_type);
-	EXPORT_FUNC_SCALAR("trigger-duration-active", trigger_duration_active);
-	EXPORT_FUNC_SCALAR("trigger-duration-inactive", trigger_duration_inactive);
+	EXPORT_FUNC_SCALAR("trigger-active-duration", trigger_duration_active);
+	EXPORT_FUNC_SCALAR("trigger-inactive-duration", trigger_duration_inactive);
 	EXPORT_FUNC_SCALAR("trigger-cooldown-time", trigger_cooldown_time);
 	EXPORT_FUNC_SCALAR("trigger-report-active", trigger_report_active);
 	EXPORT_FUNC_SCALAR("trigger-report-inactive", trigger_report_inactive);
