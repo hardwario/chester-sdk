@@ -11,9 +11,15 @@
 #include "app_send.h"
 
 /* CHESTER includes */
+#include <math.h>
 #include <chester/ctr_buf.h>
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_rtc.h>
+
+#include "app_data.h"
+#if defined(FEATURE_SUBSYSTEM_LRW)
+#include <chester/ctr_lrw.h>
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 /* Zephyr includes */
 #include <zephyr/init.h>
@@ -32,14 +38,265 @@
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
 
+#if defined(FEATURE_SUBSYSTEM_LRW)
+static int compose_lrw(struct ctr_buf *buf)
+{
+	int ret = 0;
+
+	ctr_buf_reset(buf);
+
+	app_data_lock();
+
+	uint8_t header = 0;
+
+	/* Flag BATT */
+	if (IS_ENABLED(CONFIG_CTR_BATT)) {
+		header |= BIT(0);
+	}
+
+	/* Flag ACCEL */
+	if (IS_ENABLED(CONFIG_CTR_ACCEL)) {
+		header |= BIT(1);
+	}
+
+	/* Flag THERM */
+	if (IS_ENABLED(CONFIG_CTR_THERM)) {
+		header |= BIT(2);
+	}
+
+	/* Flag HYGRO */
+	if (IS_ENABLED(FEATURE_HARDWARE_CHESTER_S2)) {
+		header |= BIT(3);
+	}
+
+	/* Flag W1_THERM */
+	if (IS_ENABLED(FEATURE_SUBSYSTEM_DS18B20)) {
+		header |= BIT(4);
+	}
+
+	/* Flag BLE_TAG */
+	if (IS_ENABLED(FEATURE_SUBSYSTEM_BLE_TAG)) {
+		header |= BIT(5);
+	}
+
+	/* Flag X0 */
+	if (IS_ENABLED(FEATURE_HARDWARE_CHESTER_X0_A)) {
+		header |= BIT(6);
+	}
+
+	ctr_buf_append_u8(buf, header);
+
+	/* Field BATT */
+	if (header & BIT(0)) {
+		if (isnan(g_app_data.system_voltage_rest)) {
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
+		} else {
+			uint16_t val = g_app_data.system_voltage_rest;
+			ret |= ctr_buf_append_u16_le(buf, val);
+		}
+
+		if (isnan(g_app_data.system_voltage_load)) {
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
+		} else {
+			uint16_t val = g_app_data.system_voltage_load;
+			ret |= ctr_buf_append_u16_le(buf, val);
+		}
+
+		if (isnan(g_app_data.system_current_load)) {
+			ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
+		} else {
+			uint8_t val = g_app_data.system_current_load;
+			ret |= ctr_buf_append_u8(buf, val);
+		}
+	}
+
+	/* Field ACCEL */
+	if (header & BIT(1)) {
+		if (g_app_data.accel_orientation == INT_MAX) {
+			ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
+		} else {
+			uint8_t val = g_app_data.accel_orientation;
+			ret |= ctr_buf_append_u8(buf, val);
+		}
+	}
+
+	/* Field THERM */
+	if (header & BIT(2)) {
+		if (isnan(g_app_data.therm_temperature)) {
+			ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
+		} else {
+			int16_t val = g_app_data.therm_temperature * 100.f;
+			ret |= ctr_buf_append_s16_le(buf, val);
+		}
+	}
+
+#if defined(FEATURE_HARDWARE_CHESTER_S2)
+	/* Field HYGRO */
+	if (header & BIT(3)) {
+		struct app_data_hygro *hygro = &g_app_data.hygro;
+
+		if (isnan(hygro->last_sample_temperature)) {
+			ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
+		} else {
+			ret |= ctr_buf_append_s16_le(buf, hygro->last_sample_temperature * 100.f);
+		}
+
+		if (isnan(hygro->last_sample_humidity)) {
+			ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
+		} else {
+			ret |= ctr_buf_append_u8(buf, hygro->last_sample_humidity * 2.f);
+		}
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
+
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
+	/* Field W1_THERM */
+	if (header & BIT(4)) {
+		float t[APP_DATA_W1_THERM_COUNT];
+
+		int count = 0;
+
+		for (size_t i = 0; i < APP_DATA_W1_THERM_COUNT; i++) {
+			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];
+
+			if (!sensor->serial_number) {
+				continue;
+			}
+
+			t[count++] = sensor->last_sample_temperature;
+		}
+
+		ret |= ctr_buf_append_u8(buf, count);
+
+		for (size_t i = 0; i < count; i++) {
+			if (isnan(t[i])) {
+				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
+			} else {
+				ret |= ctr_buf_append_s16_le(buf, t[i] * 100.f);
+			}
+		}
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
+	/* Field BLE_TAG */
+	if (header & BIT(5)) {
+		float temperature[CTR_BLE_TAG_COUNT];
+		float humidity[CTR_BLE_TAG_COUNT];
+
+		int count = 0;
+
+		for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+			struct app_data_ble_tag_sensor *tag = &g_app_data.ble_tag.sensor[i];
+
+			if (ctr_ble_tag_is_addr_empty(tag->addr)) {
+				continue;
+			}
+
+			temperature[count] = tag->last_sample_temperature;
+			humidity[count] = tag->last_sample_humidity;
+			count++;
+		}
+
+		ret |= ctr_buf_append_u8(buf, count);
+
+		for (size_t i = 0; i < count; i++) {
+			if (isnan(temperature[i])) {
+				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));
+			} else {
+				ret |= ctr_buf_append_s16_le(buf, temperature[i] * 100.f);
+			}
+
+			if (isnan(humidity[i])) {
+				ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
+			} else {
+				ret |= ctr_buf_append_u8(buf, humidity[i] * 2.f);
+			}
+		}
+	}
+
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+	/* Field X0 */
+	if (header & BIT(6)) {
+		for (int i = 0; i < APP_DATA_NUM_CHANNELS; i++) {
+			if (!g_app_data.counter[i]->last_value) {
+				ret |= ctr_buf_append_u16_le(buf, BIT_MASK(15));
+			} else {
+				ret |= ctr_buf_append_u16_le(buf,
+							     g_app_data.counter[i]->last_value);
+			}
+
+			if (!g_app_data.trigger[i]->event_count) {
+				ret |= ctr_buf_append_u16_le(buf, BIT_MASK(15));
+			} else {
+				ret |= ctr_buf_append_u16_le(buf,
+							     g_app_data.trigger[i]->event_count);
+			}
+
+			if (!g_app_data.voltage[i]->samples[g_app_data.voltage[i]->sample_count]) {
+				ret |= ctr_buf_append_u16_le(buf, BIT_MASK(15));
+			} else {
+				ret |= ctr_buf_append_u16_le(
+					buf,
+					g_app_data.voltage[i]->samples[g_app_data.voltage[i]
+									       ->sample_count] *
+						1000.f);
+			}
+
+			if (!g_app_data.current[i]->samples[g_app_data.current[i]->sample_count]) {
+				ret |= ctr_buf_append_u16_le(buf, BIT_MASK(15));
+			} else {
+				ret |= ctr_buf_append_u16_le(
+					buf,
+					g_app_data.current[i]->samples[g_app_data.current[i]
+									       ->sample_count] *
+						1000.f);
+			}
+		}
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
+
+	app_data_unlock();
+
+	if (ret) {
+		return -EFAULT;
+	}
+
+	return 0;
+}
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
+
 int app_send(void)
 {
 	int ret;
+
+#if defined(FEATURE_SUBSYSTEM_LRW)
+	CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 	switch (g_app_config.mode) {
 	case APP_CONFIG_MODE_NONE:
 		LOG_WRN("Application mode is set to none. Not sending data.");
 		break;
+#if defined(FEATURE_SUBSYSTEM_LRW)
+	case APP_CONFIG_MODE_LRW:
+		ret = compose_lrw(&lrw_buf);
+		if (ret) {
+			LOG_ERR("Call `compose_lrw` failed: %d", ret);
+			return ret;
+		}
+
+		struct ctr_lrw_send_opts lrw_opts = CTR_LRW_SEND_OPTS_DEFAULTS;
+		ret = ctr_lrw_send(&lrw_opts, ctr_buf_get_mem(&lrw_buf), ctr_buf_get_used(&lrw_buf),
+				   NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
+			return ret;
+		}
+		break;
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 #if defined(FEATURE_SUBSYSTEM_CLOUD)
 	case APP_CONFIG_MODE_LTE: {
 		CTR_BUF_DEFINE_STATIC(buf, 8 * 1024);

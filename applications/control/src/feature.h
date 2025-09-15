@@ -9,7 +9,6 @@
 
 #define FEATURE_HARDWARE_CHESTER_X0_A           1
 #define FEATURE_HARDWARE_CHESTER_X4_B           1
-#define FEATURE_HARDWARE_CHESTER_Z              1
 #define FEATURE_SUBSYSTEM_ACCEL                 1
 #define FEATURE_SUBSYSTEM_ADC                   1
 #define FEATURE_SUBSYSTEM_BATT                  1
@@ -28,6 +27,7 @@
 #define FEATURE_SUBSYSTEM_INFO                  1
 #define FEATURE_SUBSYSTEM_LED                   1
 #define FEATURE_SUBSYSTEM_LOG                   1
+#define FEATURE_SUBSYSTEM_LRW                   1
 #define FEATURE_SUBSYSTEM_LTE_V2                1
 #define FEATURE_SUBSYSTEM_RTC                   1
 #define FEATURE_SUBSYSTEM_SHELL                 1

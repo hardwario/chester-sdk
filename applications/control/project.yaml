@@ -44,6 +44,7 @@ features:
 - subsystem-tinycrypt-sha256
 - subsystem-zcbor
 - subsystem-lte-v2
+- subsystem-lrw
 - subsystem-ds18b20
 - subsystem-soil-sensor
 - hardware-chester-x0-a

@@ -79,7 +79,7 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_INT("w1-therm-interval-aggreg", m_config_interim.w1_therm_interval_aggreg, 1, 86400, "Get/Set ds18b20 aggreg interval in seconds .", 300),
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){"none", "lte"}), "Set communication mode", APP_CONFIG_MODE_LTE),
+	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){"none", "lte", "lrw"}), "Set communication mode", APP_CONFIG_MODE_NONE),
 
 	/* ### Preserved code "config" (begin) */
 	/* ^^^ Preserved code "config" (end) */

@@ -6,13 +6,13 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-set(ENV{FW_BUNDLE} "com.hardwario.chester.app.control.z")
-set(ENV{FW_VERSION} "v3.3.0")
-set(ENV{FW_NAME} "CHESTER Control Z")
+set(ENV{FW_BUNDLE} "com.hardwario.chester.app.control")
+set(ENV{FW_VERSION} "v3.0.0")
+set(ENV{FW_NAME} "CHESTER Control")
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-project(chester-control-z)
+project(chester-control)
 
 add_custom_command(
     COMMAND west gen-codec -d ../codec/cbor-decoder.yaml -e ../codec/cbor-encoder.yaml -o ../src/app_codec.h

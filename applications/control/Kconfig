@@ -20,22 +20,19 @@ config SHIELD_CTR_X4_B
 
 config CTR_X4
 	default y
-# HARDWARE-CHESTER-Z
-config SHIELD_CTR_Z
-	bool "Enable SHIELD_CTR_Z"
-	default y
-
-config CTR_Z
-	default y
-
-config I2C
-	default y
 # SUBSYSTEM-DS18B20
 config SHIELD_CTR_DS18B20
 	bool "Enable SHIELD_CTR_DS18B20"
 	default y
 
 config CTR_DS18B20
+	default y
+# SUBSYSTEM-LRW
+config SHIELD_CTR_LRW
+	bool "Enable SHIELD_CTR_LRW"
+	default y
+
+config CTR_LRW
 	default y
 # SUBSYSTEM-LTE-V2
 config SHIELD_CTR_LTE_V2

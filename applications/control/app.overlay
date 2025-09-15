@@ -23,10 +23,6 @@
 &ctr_x4_tla2021 {
 	status = "okay";
 };
-/* HARDWARE-CHESTER-Z  */
-&ctr_z {
-	status = "okay";
-};
 /* SUBSYSTEM-CLOUD  */
 / {
 	chosen {
@@ -130,6 +126,14 @@
 		resolution = <12>;
 		family-code = <0x28>;
 	};
+};
+/* SUBSYSTEM-LRW   */
+&ctr_lrw_if {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
 };
 /* SUBSYSTEM-LTE-V2  */
 / {
