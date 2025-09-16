@@ -50,6 +50,7 @@ struct app_config {
 	enum app_config_scan_ant scan_ant;
 	int poll_interval;
 	int downlink_wdg_interval;
+	bool cloud_decode;
 
 	enum app_config_mode mode;
 

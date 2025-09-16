@@ -47,6 +47,7 @@ const struct ctr_config_item items[] = {
 	
 	CTR_CONFIG_ITEM_INT("poll-interval", m_config_interim.poll_interval, 5, 1209600, "Get/Set poll interval in seconds.", 28800),
 	CTR_CONFIG_ITEM_INT("downlink-wdg-interval", m_config_interim.downlink_wdg_interval, 0, 1209600, "Get/Set poll interval in seconds.", 172800),
+	CTR_CONFIG_ITEM_BOOL("cloud-decode", m_config_interim.cloud_decode, "Get/Set cloud decode.", false),
 
 	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){"none", "lte"}), "Set communication mode", APP_CONFIG_MODE_LTE),
 

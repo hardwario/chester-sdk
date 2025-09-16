@@ -69,4 +69,8 @@ schema:
       - cycle:
       - part:
       - packets:
+          - data:
+          - rssi:
+      - packets_cloud_decode:
+          - $key: "packets"
           - $wmbus:

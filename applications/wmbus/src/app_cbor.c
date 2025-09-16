@@ -311,30 +311,66 @@ int encode(zcbor_state_t *zs, uint8_t *buf)
 		zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__PART);
 		zcbor_uint32_put(zs, index);
 
-		// Add 20 wM-BUS packets to every LTE packet
-		zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__PACKETS);
-		{
-			zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		static uint8_t packet[256];
 
-			for (int i = 0; i < 20; i++) {
-				size_t next_size;
-				ret = packet_get_next_size(&next_size);
-				if (next_size == 0) {
-					LOG_INF("packet_get_next_size == 0 -> break");
-					break;
+		// Add 20 wM-BUS packets to every LTE packet
+		if (g_app_config.cloud_decode) {
+			zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__PACKETS_CLOUD_DECODE);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				for (int i = 0; i < 20; i++) {
+					size_t next_size;
+					ret = packet_get_next_size(&next_size);
+					if (next_size == 0) {
+						LOG_INF("packet_get_next_size == 0 -> break");
+						break;
+					}
+
+					size_t len;
+					int rssi_dbm;
+					packet_pop(packet, sizeof(packet), &len, &rssi_dbm);
+					LOG_INF("packet_pop size %d, rssi %d", (int)len, rssi_dbm);
+
+					zcbor_int32_put(zs, rssi_dbm);
+					zcbor_bstr_encode_ptr(zs, packet, len > 255 ? 255 : len);
 				}
 
-				static uint8_t packet[256];
-				size_t len;
-				int rssi_dbm;
-				packet_pop(packet, sizeof(packet), &len, &rssi_dbm);
-				LOG_INF("packet_pop size %d, rssi %d", (int)len, rssi_dbm);
-
-				zcbor_int32_put(zs, rssi_dbm);
-				zcbor_bstr_encode_ptr(zs, packet, len > 255 ? 255 : len);
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 			}
+		} else {
+			zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__PACKETS);
+			{
+				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-			zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				for (int i = 0; i < 20; i++) {
+					size_t next_size;
+					ret = packet_get_next_size(&next_size);
+					if (next_size == 0) {
+						LOG_INF("packet_get_next_size == 0 -> break");
+						break;
+					}
+
+					zcbor_map_start_encode(zs,
+							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__PACKETS__DATA);
+
+					size_t len;
+					int rssi_dbm;
+					packet_pop(packet, sizeof(packet), &len, &rssi_dbm);
+					LOG_INF("packet_pop size %d, rssi %d", (int)len, rssi_dbm);
+
+					zcbor_bstr_encode_ptr(zs, packet, len > 255 ? 255 : len);
+
+					zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__PACKETS__RSSI);
+					zcbor_int32_put(zs, rssi_dbm);
+
+					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+
+				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
 		}
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);

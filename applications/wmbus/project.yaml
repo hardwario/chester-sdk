@@ -3,14 +3,13 @@ variants:
   - name: CHESTER wM-Bus
     fw_bundle: com.hardwario.chester.app.wmbus
     fw_name: hio-chester-wmbus
-    fw_version: v3.2.4-rc3
 project:
   variant: wMBus
   company: 2024 HARDWARIO a.s.
   license: "SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause"
   fw_name: CHESTER wM-Bus
   fw_bundle: com.hardwario.chester.app.wmbus
-  fw_version: v3.2.4-rc3
+  fw_version: v3.3.1
 features:
   - subsystem-accel
   - subsystem-batt
@@ -91,5 +90,9 @@ parameters:
     max: 1209600
     default: 172800
     help: "Get/Set poll interval in seconds"
+  - name: cloud-decode
+    type: bool
+    default: false
+    help: "Get/Set cloud decode"
 commands:
 extras:
