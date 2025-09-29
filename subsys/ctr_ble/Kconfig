@@ -1,12 +1,11 @@
 #
-# Copyright (c) 2023 HARDWARIO a.s.
+# Copyright (c) 2025 HARDWARIO a.s.
 #
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
 config CTR_BLE
 	bool "CTR_BLE"
-	select BOOTLOADER_MCUBOOT
 	select BT
 	select BT_CTLR
 	select BT_DEVICE_NAME_DYNAMIC
@@ -22,18 +21,8 @@ config CTR_BLE
 	select CTR_CONFIG
 	select CTR_INFO
 	select CTR_SHELL
-	select MCUMGR
-	select MCUMGR_GRP_IMG
-	select MCUMGR_GRP_OS
-	select MCUMGR_GRP_SHELL
-	select MCUMGR_TRANSPORT_BT
-	select MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
-	select MCUMGR_TRANSPORT_BT_REASSEMBLY
 	select SHELL_BACKEND_DUMMY
-	select IMG_MANAGER
-	select STREAM_FLASH
 	select NET_BUF
-	select OS_MGMT_MCUMGR_PARAMS
 	select ZCBOR
 
 if CTR_BLE
@@ -41,6 +30,32 @@ if CTR_BLE
 module = CTR_BLE
 module-str = CHESTER BLE Subsystem
 source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_BLE_DFU
+	bool "Enable DFU over BLE"
+	default y
+	select DFU_TARGET
+	select DFU_TARGET_STREAM
+	select DFU_TARGET_MCUBOOT
+	select IMG_MANAGER
+	select BOOTLOADER_MCUBOOT
+	select STREAM_FLASH
+	select STREAM_FLASH_ERASE
+	select MCUMGR
+	select MCUMGR_GRP_IMG
+	select MCUMGR_GRP_OS
+	select MCUMGR_GRP_SHELL
+	select MCUMGR_TRANSPORT_BT
+	select MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
+	select MCUMGR_TRANSPORT_BT_REASSEMBLY
+	select OS_MGMT_MCUMGR_PARAMS
+
+config CTR_BLE_CLIENT
+	bool "Enable BLE client"
+	default n
+	select BT_GATT_CLIENT
+	select BT_CENTRAL
+	select BT_SMP
 
 choice BT_CTLR_TX_PWR
 	default BT_CTLR_TX_PWR_PLUS_8

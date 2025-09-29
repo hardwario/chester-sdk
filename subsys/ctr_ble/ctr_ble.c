@@ -1,8 +1,10 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2025 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
+
+#include "ctr_ble_client.h"
 
 /* CHESTER includes */
 #include <chester/ctr_config.h>
@@ -19,6 +21,7 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/shell/shell_string_conv.h>
 
 #include <bluetooth/services/dfu_smp.h>
 #include <bluetooth/services/nus.h>
@@ -159,34 +162,72 @@ static void check_and_erase_bonds(void)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	if (err) {
-		LOG_ERR("Connection failed (reason: %u)", err);
+	if (conn == NULL) {
+		LOG_ERR("Connection object is NULL");
 		return;
 	}
 
-	LOG_INF("Connected");
+	struct bt_conn_info info;
+	int ret = bt_conn_get_info(conn, &info);
+	if (ret) {
+		LOG_ERR("Call `bt_conn_get_info` failed: %d", ret);
+		return;
+	}
 
-	m_current_conn = bt_conn_ref(conn);
+	if (info.role == BT_CONN_ROLE_PERIPHERAL) {
+		if (err) {
+			LOG_ERR("Connection failed (reason: %u)", err);
+			return;
+		}
 
+		LOG_INF("Connected");
+		m_current_conn = bt_conn_ref(conn);
 #if defined(CONFIG_SHELL_BT_NUS)
-	shell_bt_nus_enable(conn);
+		shell_bt_nus_enable(conn);
 #endif /* defined(CONFIG_SHELL_BT_NUS) */
+
+#if defined(CONFIG_CTR_BLE_CLIENT)
+	} else if (info.role == BT_CONN_ROLE_CENTRAL) {
+		ctr_ble_client_cb_connected(conn, err);
+#endif
+	}
 
 	check_and_erase_bonds();
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	LOG_INF("Disconnected (reason: %u)", reason);
+	if (conn == NULL) {
+		LOG_ERR("Connection object is NULL");
+		return;
+	}
+
+	struct bt_conn_info info;
+	int ret = bt_conn_get_info(conn, &info);
+	if (ret) {
+		LOG_ERR("Call `bt_conn_get_info` failed: %d", ret);
+		return;
+	}
+
+	if (info.role == BT_CONN_ROLE_PERIPHERAL) {
+		LOG_INF("Disconnected (reason: %u)", reason);
 
 #if defined(CONFIG_SHELL_BT_NUS)
-	shell_bt_nus_disable();
+		shell_bt_nus_disable();
 #endif /* defined(CONFIG_SHELL_BT_NUS) */
 
-	if (m_current_conn) {
-		bt_conn_unref(m_current_conn);
-		m_current_conn = NULL;
+		if (m_current_conn) {
+			bt_conn_unref(m_current_conn);
+			m_current_conn = NULL;
+		}
+
+#if defined(CONFIG_CTR_BLE_CLIENT)
+	} else if (info.role == BT_CONN_ROLE_CENTRAL) {
+		ctr_ble_client_cb_disconnected(conn, reason);
+#endif
 	}
+
+	bt_conn_unref(conn);
 
 	check_and_erase_bonds();
 }
@@ -194,6 +235,10 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 BT_CONN_CB_DEFINE(conn_cb) = {
 	.connected = connected,
 	.disconnected = disconnected,
+#if defined(CONFIG_CTR_BLE_CLIENT)
+	.le_param_req = ctr_ble_client_cb_le_param_req,
+	.le_param_updated = ctr_ble_client_cb_le_param_updated,
+#endif
 };
 
 static void auth_cancel(struct bt_conn *conn)
@@ -206,6 +251,9 @@ static void auth_cancel(struct bt_conn *conn)
 
 static struct bt_conn_auth_cb auth_cb = {
 	.cancel = auth_cancel,
+#if defined(CONFIG_CTR_BLE_CLIENT)
+	.passkey_entry = ctr_ble_client_cb_auth_passkey_entry,
+#endif
 };
 
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
@@ -276,7 +324,46 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+#if defined(CONFIG_CTR_BLE_CLIENT)
+static int cmd_neighbor_reboot(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+	if (argc < 3) {
+		shell_error(shell, "missing address or passkey");
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	char *addr = argv[1];
+	unsigned long passkey = shell_strtoul(argv[2], 10, &ret);
+	if (ret < 0) {
+		shell_error(shell, "invalid passkey: %s", argv[2]);
+		return ret;
+	}
+
+	ret = ctr_ble_client_neighbor_reboot(addr, passkey, shell);
+	if (ret) {
+		shell_error(shell, "ctr_ble_client_neighbor_reboot failed: %d", ret);
+		return ret;
+	}
+
+	shell_print(shell, "command succeeded");
+
+	return 0;
+}
+
+#endif
+
 /* clang-format off */
+#if defined(CONFIG_CTR_BLE_CLIENT)
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_neighbor,
+	SHELL_CMD_ARG(reboot, NULL,
+			"Reboot <addr> <passkey>",
+			cmd_neighbor_reboot, 3, 0),
+
+	SHELL_SUBCMD_SET_END);
+#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_ble,
@@ -285,6 +372,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "Configuration commands.",
 	              cmd_config, 1, 3),
 
+
+#if defined(CONFIG_CTR_BLE_CLIENT)
+	SHELL_CMD_ARG(neighbor, &sub_neighbor, "Neighbor commands.", print_help, 1, 0),
+#endif
 	SHELL_SUBCMD_SET_END
 );
 
