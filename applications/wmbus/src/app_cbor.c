@@ -289,7 +289,7 @@ int encode(zcbor_state_t *zs, uint8_t *buf)
 		zcbor_uint32_put(zs, g_app_config.scan_ant);*/
 
 		uint32_t diff_secs =
-			(g_app_data_scan_stop_timestamp - g_app_data_scan_start_timestamp) / 1000;
+			(g_app_data.scan_stop_timestamp - g_app_data.scan_start_timestamp) / 1000;
 		zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__SCAN_TIME);
 		zcbor_uint32_put(zs, diff_secs);
 
@@ -303,11 +303,11 @@ int encode(zcbor_state_t *zs, uint8_t *buf)
 		zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__DEVICES);
 		zcbor_uint32_put(zs, config_device_count);
 
-		atomic_val_t tran_count = atomic_get(&g_app_data_scan_transaction);
+		atomic_val_t tran_count = atomic_get(&g_app_data.scan_transaction);
 		zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__CYCLE);
 		zcbor_uint32_put(zs, tran_count);
 
-		atomic_val_t index = atomic_get(&g_app_data_send_index);
+		atomic_val_t index = atomic_get(&g_app_data.send_index);
 		zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__PART);
 		zcbor_uint32_put(zs, index);
 

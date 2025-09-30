@@ -1,6 +1,7 @@
 #include "app_config.h"
 #include "app_data.h"
 #include "app_handler.h"
+#include "app_shell.h"
 #include "app_work.h"
 #include "packet.h"
 #include "wmbus.h"
@@ -58,12 +59,17 @@ static int address_to_index(uint32_t address)
 
 void wmbus_parse_packet(uint8_t *packet, size_t len, wmbus_packet_meta *meta)
 {
-	meta->manufacturer_id = sys_get_be16(&packet[MBUS_OFFSET_MANUFACTURER]);
+	meta->manufacturer_id = sys_get_le16(&packet[MBUS_OFFSET_MANUFACTURER]);
 	meta->address_bcd = sys_get_le32(&packet[MBUS_OFFSET_ADDRESS]);
 	meta->device_type = packet[MBUS_OFFSET_ADDRESS_DEVICE_TYPE];
 	meta->device_version = packet[MBUS_OFFSET_ADDRESS_DEVICE_VERSION];
 	meta->address = wmbus_convert_bcd_to_uint32(meta->address_bcd);
 	meta->rssi_dbm = wmbus_convert_rssi_to_dbm(packet[len - 1]);
+
+	meta->manufacturer_name[0] = ((meta->manufacturer_id >> 10) & 0x1F) + 64;
+	meta->manufacturer_name[1] = ((meta->manufacturer_id >> 5) & 0x1F) + 64;
+	meta->manufacturer_name[2] = (meta->manufacturer_id & 0x1F) + 64;
+	meta->manufacturer_name[3] = '\0'; // null terminator
 }
 
 bool wmbus_set_and_check_address_flag(uint32_t address)
@@ -341,6 +347,35 @@ int wmbus_antenna_set(int ant)
 	return 0;
 }
 
+static int scan_all_check_and_add(uint32_t address)
+{
+	/* Check if address already exists */
+	for (int i = 0; i < DEVICE_MAX_COUNT; i++) {
+		if (g_app_config.address[i] == address) {
+			LOG_WRN("Address %d already exists", address);
+			return -EEXIST;
+		}
+	}
+
+	/* Find next empty */
+	int next_empty = -1;
+	for (int i = 0; i < DEVICE_MAX_COUNT; i++) {
+		if (g_app_config.address[i] == 0) {
+			next_empty = i;
+			break;
+		}
+	}
+
+	if (next_empty == -1) {
+		LOG_WRN("No empty position");
+		return -ENOSPC;
+	}
+
+	g_app_config.address[next_empty] = address;
+
+	return 0;
+}
+
 static int mbus_packet_handle(uint8_t *data, size_t len)
 {
 	int ret;
@@ -355,12 +390,25 @@ static int mbus_packet_handle(uint8_t *data, size_t len)
 
 	// TODO for debug log only our address
 	if (meta.address == 81763000) {
-		LOG_WRN("%d, RSSI %d, len %d", meta.address, meta.rssi_dbm, mbus_len);
+		LOG_WRN("%d, Mnf: %s, RSSI: %d, len: %d", meta.address, meta.manufacturer_name,
+			meta.rssi_dbm, mbus_len);
 	} else {
-		LOG_INF("%d, RSSI %d, len %d", meta.address, meta.rssi_dbm, mbus_len);
+		LOG_INF("%d, Mnf: %s, RSSI: %d, len: %d", meta.address, meta.manufacturer_name,
+			meta.rssi_dbm, mbus_len);
 	}
 
-	LOG_HEXDUMP_INF(mbus, mbus_len, "wM-BUS packet push");
+	struct shell *shell = app_shell_get();
+	if (shell) {
+		shell_print(shell, "%d, Mnf: %s, RSSI: %d, len: %d", meta.address,
+			    meta.manufacturer_name, meta.rssi_dbm, mbus_len);
+	}
+
+	// LOG_HEXDUMP_INF(mbus, mbus_len, "wM-BUS packet push");
+
+	// If no devices configured, add all received addresses to config before next step
+	if (g_app_data.scan_all) {
+		scan_all_check_and_add(meta.address);
+	}
 
 	/* Check if address matches */
 	if (wmbus_set_and_check_address_flag(meta.address)) {
@@ -371,11 +419,11 @@ static int mbus_packet_handle(uint8_t *data, size_t len)
 		}
 	}
 
-	if (wmbus_check_all_received_flags()) {
+	/* Check only when addresses are configured */
+	if (!g_app_data.scan_all && wmbus_check_all_received_flags()) {
 		/* All packets already received */
-		// atomic_set(&g_app_data_send_trigger, true);
 		app_work_send_trigger();
-		g_app_data_scan_stop_timestamp = k_uptime_get();
+		g_app_data.scan_stop_timestamp = k_uptime_get();
 	}
 
 	return 0;
@@ -515,6 +563,11 @@ int wmbus_init(void)
 		LOG_ERR("Failed initializing channel A0: %d", ret);
 		return ret;
 	}
+
+	/* When no devices configured, mark scan_all flag */
+	size_t device_count;
+	wmbus_get_config_device_count(&device_count);
+	g_app_data.scan_all = device_count == 0;
 
 	LOG_INF("Initialization end");
 

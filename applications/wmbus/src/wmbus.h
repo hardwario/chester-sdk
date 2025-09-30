@@ -21,6 +21,7 @@ typedef struct wmbus_packet_meta {
 	uint32_t address;
 	int rssi_dbm;
 	uint16_t manufacturer_id;
+	char manufacturer_name[4]; /* 3 chars + null termination */
 	uint32_t address_bcd;
 	uint8_t device_type;
 	uint8_t device_version;

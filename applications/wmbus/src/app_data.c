@@ -29,18 +29,6 @@ struct app_data g_app_data = {
 	.therm_temperature = NAN,
 };
 
-atomic_t g_app_data_antenna_dual = false;
-atomic_t g_app_data_scan_transaction = 0;
-atomic_t g_app_data_send_index = 0;
-
-/* Control triggers/flags */
-atomic_t g_app_data_scan_trigger = false;
-atomic_t g_app_data_working_flag = false;
-atomic_t g_app_data_send_flag = false;
-
-int64_t g_app_data_scan_start_timestamp;
-int64_t g_app_data_scan_stop_timestamp;
-
 static K_MUTEX_DEFINE(m_lock);
 
 void app_data_lock(void)

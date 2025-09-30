@@ -10,6 +10,8 @@
 /* CHESTER includes */
 #include <chester/ctr_led.h>
 #include <chester/ctr_wdog.h>
+#include <chester/ctr_cloud.h>
+#include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -21,6 +23,8 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 extern struct ctr_wdog_channel g_app_wdog_channel;
+
+static bool should_feed_watchdog(void);
 
 int main(void)
 {
@@ -35,27 +39,55 @@ int main(void)
 	}
 
 	for (;;) {
-		LOG_INF("Alive");
-#if defined(FEATURE_SUBSYSTEM_WDOG)
-		ret = ctr_wdog_feed(&g_app_wdog_channel);
-		if (ret) {
-			LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
-			k_oops();
-		}
-#endif /* defined(FEATURE_SUBSYSTEM_WDOG) */
-
-		if (g_app_config.mode == APP_CONFIG_MODE_NONE) {
-			ctr_led_set(CTR_LED_CHANNEL_Y, true);
-			k_sleep(K_MSEC(30));
-			ctr_led_set(CTR_LED_CHANNEL_Y, false);
-		} else {
-			ctr_led_set(CTR_LED_CHANNEL_G, true);
-			k_sleep(K_MSEC(30));
-			ctr_led_set(CTR_LED_CHANNEL_G, false);
-		}
-
 		k_sleep(K_SECONDS(5));
+		LOG_INF("Alive");
+
+		if (should_feed_watchdog()) {
+			LOG_DBG("WDG feed");
+
+			ret = ctr_wdog_feed(&g_app_wdog_channel);
+			if (ret) {
+				LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);
+				k_oops();
+			}
+		}
 	}
 
 	return 0;
+}
+
+static bool should_feed_watchdog(void)
+{
+
+#if defined(FEATURE_SUBSYSTEM_LTE_V2)
+	int ret;
+
+	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
+
+		if (g_app_config.downlink_wdg_interval) {
+			int64_t downlink_ts;
+			ret = ctr_cloud_get_last_seen_ts(&downlink_ts);
+
+			if (ret) {
+				LOG_WRN("No downlink timestamp");
+				return false;
+			}
+
+			int64_t current_ts;
+			ret = ctr_rtc_get_ts(&current_ts);
+			if (ret) {
+				LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+				return false;
+			}
+
+			int64_t diff_ts = current_ts - downlink_ts;
+			if (diff_ts > g_app_config.downlink_wdg_interval) {
+				LOG_WRN("Downlink ts bigger than interval! %lld", diff_ts);
+				return false;
+			}
+		}
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
+
+	return true;
 }

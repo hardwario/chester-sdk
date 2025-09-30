@@ -43,6 +43,13 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 }
 
 /* ### Preserved code "functions 1" (begin) */
+struct shell *m_shell = NULL;
+
+struct shell *app_shell_get(void)
+{
+	return m_shell;
+}
+
 static int cmd_on(const struct shell *shell, size_t argc, char **argv)
 {
 	wmbus_enable();
@@ -62,6 +69,7 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 {
+	m_shell = (struct shell *)shell;
 	app_work_scan_trigger();
 	return 0;
 }
@@ -74,7 +82,7 @@ static int cmd_timeout(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 {
-	// atomic_set(&g_app_data_send_trigger, true);
+	// atomic_set(&g_app_data.send_trigger, true);
 	app_work_send_trigger();
 	return 0;
 }
@@ -236,6 +244,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 
 SHELL_CMD_REGISTER(wm, &sub_wm, "wM-Bus debugging commands.", print_help);
+SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
 /* ^^^ Preserved code "functions 2" (end) */
 
 /* clang-format on */

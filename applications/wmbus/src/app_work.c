@@ -121,7 +121,7 @@ static void second_antenna_work_handler(struct k_work *work)
 {
 	int ret;
 
-	atomic_set(&g_app_data_antenna_dual, false);
+	atomic_set(&g_app_data.antenna_dual, false);
 
 	k_timer_stop(&m_scan_timeout_timer);
 
@@ -141,7 +141,7 @@ void app_work_scan_timeout(void)
 {
 	int ret;
 
-	if (g_app_data_antenna_dual) {
+	if (g_app_data.antenna_dual) {
 		// Dual antenna scan, switch antennas
 		ret = k_work_submit_to_queue(&m_work_q, &m_second_antenna_work);
 		if (ret < 0) {
@@ -150,7 +150,7 @@ void app_work_scan_timeout(void)
 	} else {
 		/* Stop timeout timer in case scan_timeout was triggered manually from shell */
 		k_timer_stop(&m_scan_timeout_timer);
-		g_app_data_scan_stop_timestamp = k_uptime_get();
+		g_app_data.scan_stop_timestamp = k_uptime_get();
 
 		app_work_send_trigger();
 	}
@@ -168,16 +168,16 @@ static void scan_trigger_work_handler(struct k_work *work)
 {
 	int ret;
 
-	if (atomic_get(&g_app_data_working_flag) == false) {
-		atomic_set(&g_app_data_working_flag, true);
-		atomic_set(&g_app_data_send_index, false);
-		atomic_inc(&g_app_data_scan_transaction);
+	if (atomic_get(&g_app_data.working_flag) == false) {
+		atomic_set(&g_app_data.working_flag, true);
+		atomic_set(&g_app_data.send_index, false);
+		atomic_inc(&g_app_data.scan_transaction);
 
 		/* If dual antenna is configured, set the flag for second scan with second antenna
 		 */
-		atomic_set(&g_app_data_antenna_dual, g_app_config.scan_ant == 1 ? true : false);
+		atomic_set(&g_app_data.antenna_dual, g_app_config.scan_ant == 1 ? true : false);
 
-		g_app_data_scan_start_timestamp = k_uptime_get();
+		g_app_data.scan_start_timestamp = k_uptime_get();
 		LOG_INF("Start scan");
 
 		packet_clear();
@@ -233,6 +233,13 @@ static void send_trigger_work_handler(struct k_work *work)
 	ret = wmbus_antenna_set(0);
 	if (ret) {
 		LOG_ERR("Call `wmbus_antenna_set` failed: %d", ret);
+	}
+
+	// Cleanup if no addresses configured, clean temporary list
+	if (g_app_data.scan_all) {
+		for (int i = 0; i < DEVICE_MAX_COUNT; i++) {
+			g_app_config.address[i] = 0;
+		}
 	}
 
 	ret = app_send();

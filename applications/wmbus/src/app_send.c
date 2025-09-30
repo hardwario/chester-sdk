@@ -39,9 +39,6 @@ LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
 #define WORK_Q_STACK_SIZE 4096
 #define WORK_Q_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
 
-extern atomic_t g_app_data_working_flag;
-extern atomic_t g_app_data_send_index;
-
 static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);
 static struct k_work_q m_work_q;
 
@@ -103,7 +100,7 @@ static void upload_data_work_handler(struct k_work *work)
 
 	LOG_WRN("Running UPLOAD DATA");
 
-	atomic_set(&g_app_data_send_flag, true);
+	atomic_set(&g_app_data.send_flag, true);
 
 #if defined(CONFIG_SHIELD_CTR_LTE_V2)
 	int ret;
@@ -142,7 +139,7 @@ static void upload_data_work_handler(struct k_work *work)
 		size_t wmbus_packet_len;
 		packet_get_next_size(&wmbus_packet_len);
 		if (wmbus_packet_len) {
-			atomic_inc(&g_app_data_send_index);
+			atomic_inc(&g_app_data.send_index);
 			LOG_INF("More data to be send ==============================");
 		} else {
 			LOG_INF("No more data to be send +++++++++++++++++++++++++++");
@@ -153,7 +150,7 @@ static void upload_data_work_handler(struct k_work *work)
 #endif /* defined(CONFIG_SHIELD_CTR_LTE_V2) */
 
 	/* All data sent */
-	atomic_set(&g_app_data_working_flag, false);
+	atomic_set(&g_app_data.working_flag, false);
 
 	LOG_WRN("Stopped UPLOAD DATA");
 }
@@ -165,7 +162,7 @@ static void clear_work_handler(struct k_work *work)
 
 	/* TODO clear wmbus payload and flags */
 	packet_clear();
-	atomic_set(&g_app_data_working_flag, 0);
+	atomic_set(&g_app_data.working_flag, 0);
 }
 
 static K_WORK_DEFINE(m_clear_work, clear_work_handler);

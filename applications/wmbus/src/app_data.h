@@ -32,22 +32,22 @@ struct app_data {
 	float accel_acceleration_z;
 	int accel_orientation;
 #endif /* defined(FEATURE_SUBSYSTEM_ACCEL) */
+
+	atomic_t antenna_dual;
+	atomic_t scan_transaction;
+	atomic_t send_index;
+
+	/* Control triggers/flags */
+	atomic_t scan_trigger;
+	atomic_t working_flag;
+	atomic_t send_flag;
+
+	int64_t scan_start_timestamp;
+	int64_t scan_stop_timestamp;
+	bool scan_all;
 };
 
 extern struct app_data g_app_data;
-
-extern atomic_t g_app_data_season_active;
-extern atomic_t g_app_data_antenna_dual;
-extern atomic_t g_app_data_scan_transaction;
-extern atomic_t g_app_data_send_index;
-
-/* Control triggers/flags */
-extern atomic_t g_app_data_scan_trigger;
-extern atomic_t g_app_data_working_flag;
-extern atomic_t g_app_data_send_flag;
-
-extern int64_t g_app_data_scan_start_timestamp;
-extern int64_t g_app_data_scan_stop_timestamp;
 
 void app_data_lock(void);
 void app_data_unlock(void);

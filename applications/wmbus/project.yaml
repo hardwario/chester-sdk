@@ -3,13 +3,14 @@ variants:
   - name: CHESTER wM-Bus
     fw_bundle: com.hardwario.chester.app.wmbus
     fw_name: hio-chester-wmbus
+    fw_version: v3.4.0
 project:
   variant: wMBus
   company: 2024 HARDWARIO a.s.
   license: "SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause"
   fw_name: CHESTER wM-Bus
   fw_bundle: com.hardwario.chester.app.wmbus
-  fw_version: v3.3.1
+  fw_version: v3.4.0
 features:
   - subsystem-accel
   - subsystem-batt

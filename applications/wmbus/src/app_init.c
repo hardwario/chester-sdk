@@ -47,14 +47,14 @@ void led_thread(void *param1, void *param2, void *param3)
 
 	for (;;) {
 
-		if (atomic_set(&g_app_data_send_flag, false)) {
+		if (atomic_set(&g_app_data.send_flag, false)) {
 			ctr_led_set(CTR_LED_CHANNEL_R, true);
 			k_sleep(K_MSEC(500));
 			ctr_led_set(CTR_LED_CHANNEL_R, false);
 			k_sleep(K_MSEC(500));
 		}
 
-		if (atomic_get(&g_app_data_working_flag)) {
+		if (atomic_get(&g_app_data.working_flag)) {
 			/* Faster yellow blink when scanning */
 			ctr_led_set(CTR_LED_CHANNEL_Y, true);
 			k_sleep(K_MSEC(50));
@@ -62,7 +62,7 @@ void led_thread(void *param1, void *param2, void *param3)
 
 			/* When dual antenna scan is used and second antenna is scanning, blink
 			 * twice*/
-			if (g_app_config.scan_ant == 1 && !g_app_data_antenna_dual) {
+			if (g_app_config.scan_ant == 1 && !g_app_data.antenna_dual) {
 				k_sleep(K_MSEC(200));
 
 				ctr_led_set(CTR_LED_CHANNEL_Y, true);
@@ -73,10 +73,15 @@ void led_thread(void *param1, void *param2, void *param3)
 
 			k_sleep(K_MSEC(2000));
 		} else {
-			/* Slow green blink when attached */
-			ctr_led_set(CTR_LED_CHANNEL_G, true);
-			k_sleep(K_MSEC(50));
-			ctr_led_set(CTR_LED_CHANNEL_G, false);
+			if (g_app_config.mode == APP_CONFIG_MODE_NONE) {
+				ctr_led_set(CTR_LED_CHANNEL_Y, true);
+				k_sleep(K_MSEC(30));
+				ctr_led_set(CTR_LED_CHANNEL_Y, false);
+			} else {
+				ctr_led_set(CTR_LED_CHANNEL_G, true);
+				k_sleep(K_MSEC(30));
+				ctr_led_set(CTR_LED_CHANNEL_G, false);
+			}
 			k_sleep(K_MSEC(5000));
 		}
 	}
