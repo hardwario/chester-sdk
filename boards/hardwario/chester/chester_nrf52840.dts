@@ -236,7 +236,7 @@
 		compatible = "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>,
-					<&gpio0 17 GPIO_ACTIVE_HIGH>;
+		            <&gpio0 17 GPIO_ACTIVE_HIGH>;
 		disconnect-sdo-sa0-pull-up;
 	};
 
@@ -286,7 +286,7 @@
 	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 
 	spi_flash0: at45db641e@0 {
-		compatible = "atmel,at45";
+		compatible = "hardwario,at45";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(15)>;
 		jedec-id = [ 1f 28 00  ];
