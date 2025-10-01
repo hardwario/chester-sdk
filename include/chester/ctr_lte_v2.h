@@ -43,6 +43,9 @@ enum ctr_lte_v2_cereg_param_act {
 	CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT = 9,
 };
 
+#define CTR_LTE_V2_CEREG_PARAM_ACTIVE_TIME_DISABLED      -1
+#define CTR_LTE_V2_CEREG_PARAM_PERIODIC_TAU_EXT_DISABLED -1
+
 struct ctr_lte_v2_cereg_param {
 	bool valid;
 	enum ctr_lte_v2_cereg_param_stat stat;

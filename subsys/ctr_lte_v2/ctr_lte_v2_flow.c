@@ -126,13 +126,13 @@ static void process_urc(const char *line)
 		m_event_delegate_cb(CTR_LTE_V2_EVENT_CSCON_1);
 
 	} else if (!strncmp(line, "%XMODEMSLEEP: ", 14)) {
-		int ret, p1, p2;
+		int ret, p1 = 0, p2 = 0;
 		ret = ctr_lte_v2_parse_urc_xmodemsleep(line + 14, &p1, &p2);
 		if (ret) {
 			LOG_WRN("Call `ctr_lte_v2_parse_urc_xmodemsleep` failed: %d", ret);
 			return;
 		}
-		if (p2 > 0) {
+		if (p2 > 0 || p1 == 4) { /* sleep time or flight mode */
 			m_event_delegate_cb(CTR_LTE_V2_EVENT_XMODMSLEEEP);
 		}
 	} else if (!strncmp(line, "#XGPS: ", 7)) {

@@ -74,28 +74,33 @@ enum fsm_state m_state;
 struct k_work_delayable m_timeout_work;
 struct k_work m_event_dispatch_work;
 uint8_t m_event_buf[8];
-bool m_cscon = false;
 struct ring_buf m_event_rb;
 K_MUTEX_DEFINE(m_event_rb_lock);
 
-static K_EVENT_DEFINE(m_states_event);
+#define FLAG_CSCON       BIT(0)
+#define FLAG_GNSS_ENABLE BIT(1)
+#define FLAG_CFUN4       BIT(2)
+atomic_t m_flag = ATOMIC_INIT(0);
+
 #define CONNECTED_BIT BIT(0)
 #define SEND_RECV_BIT BIT(1)
+static K_EVENT_DEFINE(m_states_event);
 
 K_MUTEX_DEFINE(m_send_recv_lock);
 struct ctr_lte_v2_send_recv_param *m_send_recv_param = NULL;
 
-struct ctr_lte_v2_metrics m_metrics;
 K_MUTEX_DEFINE(m_metrics_lock);
+struct ctr_lte_v2_metrics m_metrics;
 static uint32_t m_start = 0;
 static uint32_t m_start_cscon1 = 0;
 
-struct ctr_lte_v2_cereg_param m_cereg_param;
+struct ctr_lte_v2_cereg_param m_cereg_param = {0};
 
-atomic_t m_gnss_enable = ATOMIC_INIT(0);
+#if defined(CONFIG_CTR_LTE_V2_GNSS)
 atomic_ptr_t m_gnss_cb = ATOMIC_PTR_INIT(NULL);
 void *m_gnss_user_data = NULL;
 struct k_work m_gnss_work;
+#endif
 
 static struct fsm_state_desc *get_fsm_state(enum fsm_state state);
 
@@ -282,7 +287,7 @@ static void delegate_event(enum ctr_lte_v2_event event)
 
 static void event_handler(enum ctr_lte_v2_event event)
 {
-	LOG_DBG("event: %s, state: %s", ctr_lte_v2_event_str(event), fsm_state_str(m_state));
+	LOG_INF("event: %s, state: %s", ctr_lte_v2_event_str(event), fsm_state_str(m_state));
 
 	struct fsm_state_desc *fsm_state = get_fsm_state(m_state);
 	if (fsm_state && fsm_state->event_handler) {
@@ -296,35 +301,55 @@ static void event_handler(enum ctr_lte_v2_event event)
 	}
 }
 
-static void enter_state(enum fsm_state state)
+static inline int leaving_state(enum fsm_state next)
 {
-	int ret;
-
-	LOG_DBG("leaving state: %s", fsm_state_str(m_state));
 	struct fsm_state_desc *fsm_state = get_fsm_state(m_state);
 	if (fsm_state && fsm_state->on_leave) {
-		ret = fsm_state->on_leave();
+		LOG_INF("%s", fsm_state_str(m_state));
+		int ret = fsm_state->on_leave();
 		if (ret < 0) {
 			LOG_WRN("failed to leave state, error: %i", ret);
-			if (state != FSM_STATE_ERROR) {
+			if (next != FSM_STATE_ERROR) {
+				delegate_event(CTR_LTE_V2_EVENT_ERROR);
+			}
+			return ret;
+		}
+	}
+	return 0;
+}
+
+static void entering_state(struct fsm_state_desc *next_desc)
+{
+	LOG_INF("%s", fsm_state_str(next_desc->state));
+
+	m_state = next_desc->state;
+	if (next_desc->on_enter) {
+		int ret = next_desc->on_enter();
+		if (ret < 0) {
+			LOG_WRN("failed to enter state error: %i", ret);
+			if (next_desc->state != FSM_STATE_ERROR) {
 				delegate_event(CTR_LTE_V2_EVENT_ERROR);
 			}
 			return;
 		}
 	}
+}
 
-	m_state = state;
-	LOG_DBG("entering to state: %s", fsm_state_str(state));
-	fsm_state = get_fsm_state(state);
-	if (fsm_state && fsm_state->on_enter) {
-		ret = fsm_state->on_enter();
-		if (ret < 0) {
-			LOG_WRN("failed to enter state error: %i", ret);
-			if (state != FSM_STATE_ERROR) {
-				delegate_event(CTR_LTE_V2_EVENT_ERROR);
-			}
-			return;
-		}
+static void transition_state(enum fsm_state next)
+{
+	if (next == m_state) {
+		LOG_INF("no-op: already in %s", fsm_state_str(next));
+		return;
+	}
+
+	struct fsm_state_desc *next_desc = get_fsm_state(next);
+	if (!next_desc) {
+		LOG_ERR("Unknown state: %s %d", fsm_state_str(next), next);
+		return;
+	}
+
+	if (leaving_state(next) == 0) {
+		entering_state(next_desc);
 	}
 }
 
@@ -460,10 +485,11 @@ static void gnss_work_handler(struct k_work *item)
 
 int ctr_lte_v2_gnss_set_enable(bool enable)
 {
-	atomic_set(&m_gnss_enable, enable ? 1 : 0);
 	if (enable) {
+		atomic_set_bit(&m_flag, FLAG_GNSS_ENABLE);
 		delegate_event(CTR_LTE_V2_EVENT_XGPS_ENABLE);
 	} else {
+		atomic_clear_bit(&m_flag, FLAG_GNSS_ENABLE);
 		delegate_event(CTR_LTE_V2_EVENT_XGPS_DISABLE);
 	}
 	return 0;
@@ -474,7 +500,7 @@ int ctr_lte_v2_gnss_get_enable(bool *enable)
 	if (!enable) {
 		return -EINVAL;
 	}
-	*enable = atomic_get(&m_gnss_enable) ? true : false;
+	*enable = atomic_test_bit(&m_flag, FLAG_GNSS_ENABLE);
 	return 0;
 }
 
@@ -510,10 +536,10 @@ static int disabled_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_ENABLE:
-		enter_state(FSM_STATE_BOOT);
+		transition_state(FSM_STATE_BOOT);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -549,7 +575,7 @@ static int error_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_TIMEOUT:
-		enter_state(FSM_STATE_BOOT);
+		transition_state(FSM_STATE_BOOT);
 		break;
 	default:
 		break;
@@ -582,12 +608,12 @@ static int boot_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_READY:
-		enter_state(FSM_STATE_PREPARE);
+		transition_state(FSM_STATE_PREPARE);
 		break;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -638,15 +664,15 @@ static int prepare_event_handler(enum ctr_lte_v2_event event)
 			LOG_ERR("Call `ctr_lte_v2_flow_sim_fplmn` failed: %d", ret);
 			return ret;
 		}
-		enter_state(FSM_STATE_ATTACH);
+		transition_state(FSM_STATE_ATTACH);
 		break;
 	case CTR_LTE_V2_EVENT_RESET_LOOP:
-		enter_state(FSM_STATE_RESET_LOOP);
+		transition_state(FSM_STATE_RESET_LOOP);
 		break;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -685,10 +711,10 @@ static int reset_loop_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_TIMEOUT:
-		enter_state(FSM_STATE_ATTACH);
+		transition_state(FSM_STATE_ATTACH);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -749,10 +775,10 @@ static int retry_delay_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_TIMEOUT:
-		enter_state(FSM_STATE_BOOT);
+		transition_state(FSM_STATE_BOOT);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -793,17 +819,17 @@ static int attach_event_handler(enum ctr_lte_v2_event event)
 		m_metrics.attach_last_duration_ms = k_uptime_get_32() - m_start;
 		m_metrics.attach_duration_ms += m_metrics.attach_last_duration_ms;
 		k_mutex_unlock(&m_metrics_lock);
-		enter_state(FSM_STATE_OPEN_SOCKET);
+		transition_state(FSM_STATE_OPEN_SOCKET);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:
-		m_cscon = true;
+		atomic_set_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_0:
-		m_cscon = false;
+		atomic_clear_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_RESET_LOOP:
 		m_attach_retry_count = 0;
-		enter_state(FSM_STATE_RESET_LOOP);
+		transition_state(FSM_STATE_RESET_LOOP);
 		break;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
 		k_mutex_lock(&m_metrics_lock, K_FOREVER);
@@ -811,10 +837,10 @@ static int attach_event_handler(enum ctr_lte_v2_event event)
 		m_metrics.attach_last_duration_ms = k_uptime_get_32() - m_start;
 		m_metrics.attach_duration_ms += m_metrics.attach_last_duration_ms;
 		k_mutex_unlock(&m_metrics_lock);
-		enter_state(FSM_STATE_RETRY_DELAY);
+		transition_state(FSM_STATE_RETRY_DELAY);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -846,19 +872,19 @@ static int open_socket_event_handler(enum ctr_lte_v2_event event)
 	switch (event) {
 	case CTR_LTE_V2_EVENT_SOCKET_OPENED:
 		k_event_post(&m_states_event, CONNECTED_BIT);
-		enter_state(FSM_STATE_CONEVAL);
+		transition_state(FSM_STATE_CONEVAL);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:
-		m_cscon = true;
+		atomic_set_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_0:
-		m_cscon = false;
+		atomic_clear_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_DEREGISTERED:
-		enter_state(FSM_STATE_ATTACH);
+		transition_state(FSM_STATE_ATTACH);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -872,10 +898,21 @@ static int on_enter_ready(void)
 		delegate_event(CTR_LTE_V2_EVENT_SEND);
 	}
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
-	else if (atomic_get(&m_gnss_enable)) { /* Only one event delegate at a time */
+	else if (atomic_test_bit(&m_flag,
+				 FLAG_GNSS_ENABLE)) { /* Only one event delegate at a time */
 		delegate_event(CTR_LTE_V2_EVENT_XGPS_ENABLE);
 	}
 #endif
+	else {
+		int ret = ctr_lte_v2_state_get_cereg_param(&m_cereg_param);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_state_get_cereg_param` failed: %d", ret);
+			return ret;
+		}
+		if (m_cereg_param.active_time == -1) { /* PSM is not supported */
+			start_timer(K_MSEC(500));
+		}
+	}
 
 	return 0;
 }
@@ -884,6 +921,10 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_SEND:
+		if (atomic_test_bit(&m_flag, FLAG_CFUN4)) {
+			return 0; /* ignore SEND event */
+		}
+		stop_timer();
 		int ret = ctr_lte_v2_flow_check();
 		if (ret) {
 			LOG_ERR("Call `ctr_lte_v2_flow_check` failed: %d", ret);
@@ -893,30 +934,44 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 			}
 			return ret;
 		}
-		enter_state(FSM_STATE_SEND);
+		transition_state(FSM_STATE_SEND);
 		break;
 	case CTR_LTE_V2_EVENT_DEREGISTERED:
-		enter_state(FSM_STATE_ATTACH);
+		if (atomic_test_bit(&m_flag, FLAG_CFUN4)) {
+			return 0; /* ignore DEREGISTERED event */
+		}
+		transition_state(FSM_STATE_ATTACH);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:
-		m_cscon = true;
+		atomic_set_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_0:
-		m_cscon = false;
+		atomic_clear_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_XMODMSLEEEP:
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_XGPS_ENABLE:
-		if (atomic_get(&m_gnss_enable)) {
-			enter_state(FSM_STATE_GNSS);
+		if (atomic_test_bit(&m_flag, FLAG_GNSS_ENABLE)) {
+			transition_state(FSM_STATE_GNSS);
 			break;
 		}
 #endif
-		enter_state(FSM_STATE_SLEEP);
+		transition_state(FSM_STATE_SLEEP);
 		break;
+	case CTR_LTE_V2_EVENT_TIMEOUT:
+		if (m_cereg_param.active_time == -1) { /* if PSM is not supported */
+			LOG_WRN("PSM is not supported, disabling LTE modem to save power");
+			int ret = ctr_lte_v2_flow_cfun(4);
+			if (ret < 0) {
+				LOG_ERR("Call `ctr_lte_v2_flow_cfun` failed: %d", ret);
+				return ret;
+			}
+			atomic_set_bit(&m_flag, FLAG_CFUN4);
+			return 0;
+		}
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -951,7 +1006,7 @@ static int sleep_event_handler(enum ctr_lte_v2_event event)
 	case CTR_LTE_V2_EVENT_SEND:
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_XGPS_ENABLE:
-		enter_state(FSM_STATE_WAKEUP);
+		transition_state(FSM_STATE_WAKEUP);
 		break;
 	default:
 		break;
@@ -976,12 +1031,22 @@ static int wakeup_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_READY:
-		enter_state(FSM_STATE_READY);
+		if (atomic_test_bit(&m_flag, FLAG_CFUN4)) {
+			int ret = ctr_lte_v2_flow_cfun(1); /* Exit flight mode */
+			if (ret < 0) {
+				LOG_ERR("Call `ctr_lte_v2_flow_cfun` failed: %d", ret);
+				return ret;
+			}
+			atomic_clear_bit(&m_flag, FLAG_CFUN4);
+			transition_state(FSM_STATE_ATTACH);
+			return 0;
+		}
+		transition_state(FSM_STATE_READY);
 		break;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -1026,7 +1091,7 @@ static int on_enter_send(void)
 
 	start_timer(SEND_CSCON_1_TIMEOUT);
 
-	if (m_cscon) {
+	if (atomic_test_bit(&m_flag, FLAG_CSCON)) {
 		delegate_event(CTR_LTE_V2_EVENT_SEND);
 	}
 
@@ -1037,24 +1102,24 @@ static int send_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_CSCON_0:
-		m_cscon = false;
-		enter_state(FSM_STATE_READY);
+		atomic_clear_bit(&m_flag, FLAG_CSCON);
+		transition_state(FSM_STATE_READY);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:
-		m_cscon = true; /* Continue to send */
+		atomic_set_bit(&m_flag, FLAG_CSCON); /* Continue to send */
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_SEND:
 		stop_timer();
 		if (m_send_recv_param) {
 			if (m_send_recv_param->recv_buf) {
-				enter_state(FSM_STATE_RECEIVE);
+				transition_state(FSM_STATE_RECEIVE);
 			} else {
 				m_send_recv_param = NULL;
 				k_event_post(&m_states_event, SEND_RECV_BIT);
-				enter_state(FSM_STATE_CONEVAL);
+				transition_state(FSM_STATE_CONEVAL);
 			}
 		} else {
-			enter_state(FSM_STATE_READY);
+			transition_state(FSM_STATE_READY);
 		}
 		break;
 	case CTR_LTE_V2_EVENT_READY:
@@ -1063,13 +1128,13 @@ static int send_event_handler(enum ctr_lte_v2_event event)
 		k_mutex_lock(&m_metrics_lock, K_FOREVER);
 		m_metrics.uplink_errors++;
 		k_mutex_unlock(&m_metrics_lock);
-		enter_state(FSM_STATE_READY);
+		transition_state(FSM_STATE_READY);
 		break;
 	case CTR_LTE_V2_EVENT_DEREGISTERED:
-		enter_state(FSM_STATE_ATTACH);
+		transition_state(FSM_STATE_ATTACH);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -1112,9 +1177,7 @@ static int on_enter_receive(void)
 	m_metrics.downlink_bytes += *m_send_recv_param->recv_len;
 	k_mutex_unlock(&m_metrics_lock);
 
-	if (!m_send_recv_param->rai) {
-		delegate_event(CTR_LTE_V2_EVENT_RECV);
-	}
+	delegate_event(CTR_LTE_V2_EVENT_RECV);
 
 	m_send_recv_param = NULL;
 	k_event_post(&m_states_event, SEND_RECV_BIT);
@@ -1126,23 +1189,24 @@ static int receive_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_RECV:
+		if (!m_send_recv_param) {
+			transition_state(FSM_STATE_CONEVAL);
+			return 0;
+		}
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_READY:
 		__fallthrough;
-	case CTR_LTE_V2_EVENT_SEND:
-		__fallthrough;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
-		enter_state(FSM_STATE_READY);
+		transition_state(FSM_STATE_READY);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_0:
-		m_cscon = false;
-		enter_state(FSM_STATE_CONEVAL);
+		atomic_clear_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_DEREGISTERED:
-		enter_state(FSM_STATE_ATTACH);
+		transition_state(FSM_STATE_ATTACH);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -1169,19 +1233,19 @@ static int coneval_event_handler(enum ctr_lte_v2_event event)
 	case CTR_LTE_V2_EVENT_READY:
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
-		enter_state(FSM_STATE_READY);
+		transition_state(FSM_STATE_READY);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_0:
-		m_cscon = false;
+		atomic_clear_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:
-		m_cscon = true;
+		atomic_set_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_DEREGISTERED:
-		enter_state(FSM_STATE_ATTACH);
+		transition_state(FSM_STATE_ATTACH);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
-		enter_state(FSM_STATE_ERROR);
+		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
@@ -1228,9 +1292,9 @@ static int gnss_event_handler(enum ctr_lte_v2_event event)
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_XGPS_DISABLE:
 		if (m_cereg_param.active_time == -1) {
-			enter_state(FSM_STATE_ATTACH);
+			transition_state(FSM_STATE_ATTACH);
 		} else {
-			enter_state(FSM_STATE_READY);
+			transition_state(FSM_STATE_READY);
 		}
 		break;
 	default:
@@ -1290,8 +1354,6 @@ struct fsm_state_desc *get_fsm_state(enum fsm_state state)
 			return &m_fsm_states[i];
 		}
 	}
-
-	LOG_ERR("Unknown state %s %d", fsm_state_str(state), state);
 
 	return NULL;
 }

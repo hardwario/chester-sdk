@@ -6,6 +6,9 @@
 
 #include "ctr_lte_v2_state.h"
 
+/* CHESTER includes */
+#include <chester/ctr_lte_v2.h>
+
 /* Zephyr includes */
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
