@@ -5,6 +5,8 @@ var ctr__lte__v2_8h =
     [ "ctr_lte_v2_send_recv_param", "structctr__lte__v2__send__recv__param.html", "structctr__lte__v2__send__recv__param" ],
     [ "ctr_lte_v2_metrics", "structctr__lte__v2__metrics.html", "structctr__lte__v2__metrics" ],
     [ "ctr_lte_v2_gnss_update", "structctr__lte__v2__gnss__update.html", "structctr__lte__v2__gnss__update" ],
+    [ "CTR_LTE_V2_CEREG_PARAM_ACTIVE_TIME_DISABLED", "ctr__lte__v2_8h.html#ad171f8ec987181a7cc422e43a92a2cfe", null ],
+    [ "CTR_LTE_V2_CEREG_PARAM_PERIODIC_TAU_EXT_DISABLED", "ctr__lte__v2_8h.html#ae9de3f745578d2159ac49210994d9ca0", null ],
     [ "ctr_lte_v2_gnss_cb", "ctr__lte__v2_8h.html#a23e314c4091371dd233d7443a941a049", null ],
     [ "ctr_lte_v2_cereg_param_act", "ctr__lte__v2_8h.html#a36c152e447cf2947877e44eab9692de0", [
       [ "CTR_LTE_V2_CEREG_PARAM_ACT_UNKNOWN", "ctr__lte__v2_8h.html#a36c152e447cf2947877e44eab9692de0a1fbf4ba77d64e0d10047f1eecc51ed54", null ],
