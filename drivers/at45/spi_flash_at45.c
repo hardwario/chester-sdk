@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2025 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
