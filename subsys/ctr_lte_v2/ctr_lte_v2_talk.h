@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2025 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -74,8 +74,8 @@ int ctr_lte_v2_talk_at_xrecv(struct ctr_lte_v2_talk *talk, int timeout, char *bu
 int ctr_lte_v2_talk_at_xsim(struct ctr_lte_v2_talk *talk, int p1);
 int ctr_lte_v2_talk_at_xsleep(struct ctr_lte_v2_talk *talk, int p1);
 int ctr_lte_v2_talk_at_xslmver(struct ctr_lte_v2_talk *talk, char *buf, size_t size);
-int ctr_lte_v2_talk_at_xsocket(struct ctr_lte_v2_talk *talk, int p1, int *p2, int *p3, char *buf,
-			       size_t size);
+int ctr_lte_v2_talk_at_xsocket(struct ctr_lte_v2_talk *talk, int op, int *type, int *role, int *cid,
+			       char *buf, size_t size);
 int ctr_lte_v2_talk_at_xsocketopt(struct ctr_lte_v2_talk *talk, int p1, int p2, int *p3);
 int ctr_lte_v2_talk_at_xsystemmode(struct ctr_lte_v2_talk *talk, int p1, int p2, int p3, int p4);
 int ctr_lte_v2_talk_at_xtemp(struct ctr_lte_v2_talk *talk, int p1);

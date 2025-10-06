@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2025 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -145,49 +145,16 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 
 	shell_print(shell, "attached: %s", attached ? "yes" : "no");
 
+	const char *lte_cereg = "not available";
+	const char *lte_mode = "not available";
 	struct ctr_lte_v2_cereg_param cereg_param;
 	ctr_lte_v2_get_cereg_param(&cereg_param);
 	if (cereg_param.valid) {
-		switch (cereg_param.stat) {
-		case CTR_LTE_V2_CEREG_PARAM_STAT_NOT_REGISTERED:
-			shell_print(shell, "cereg: not registered");
-			break;
-		case CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME:
-			shell_print(shell, "cereg: registered home");
-			break;
-		case CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING:
-			shell_print(shell, "cereg: searching");
-			break;
-		case CTR_LTE_V2_CEREG_PARAM_STAT_REGISTRATION_DENIED:
-			shell_print(shell, "cereg: registration denied");
-			break;
-		case CTR_LTE_V2_CEREG_PARAM_STAT_UNKNOWN:
-			shell_print(shell, "cereg: unknown");
-			break;
-		case CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING:
-			shell_print(shell, "cereg: registered roaming");
-			break;
-		case CTR_LTE_V2_CEREG_PARAM_STAT_SIM_FAILURE:
-			shell_print(shell, "cereg: sim failure");
-			break;
-		default:
-			shell_print(shell, "cereg: unknown");
-			break;
-		}
-
-		switch (cereg_param.act) {
-		case CTR_LTE_V2_CEREG_PARAM_ACT_LTE:
-			shell_print(shell, "mode: lte-m");
-			break;
-		case CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT:
-			shell_print(shell, "mode: nb-iot");
-			break;
-		case CTR_LTE_V2_CEREG_PARAM_ACT_UNKNOWN:
-		default:
-			shell_print(shell, "act: unknown");
-			break;
-		}
+		lte_cereg = ctr_lte_v2_str_cereg_stat(cereg_param.stat);
+		lte_mode = ctr_lte_v2_str_act(cereg_param.act);
 	}
+	shell_print(shell, "cereg: %s", lte_cereg);
+	shell_print(shell, "mode: %s", lte_mode);
 
 	struct ctr_lte_v2_conn_param conn_param;
 	ctr_lte_v2_get_conn_param(&conn_param);
@@ -203,7 +170,7 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 		shell_print(shell, "earfcn: %d", conn_param.earfcn);
 	}
 
-	shell_print(shell, "state: %s", ctr_lte_v2_get_state());
+	shell_print(shell, "fsm-state: %s", ctr_lte_v2_get_state());
 
 	shell_print(shell, "command succeeded");
 
@@ -473,6 +440,27 @@ static int cmd_test_bypass(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_reconnect(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	if (g_ctr_lte_v2_config.test) {
+		shell_error(shell, "not supported in test mode");
+		return -ENOEXEC;
+	}
+
+	ret = ctr_lte_v2_reconnect();
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_reconnect` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_info(shell, "command succeeded");
+
+	return 0;
+}
+
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -544,6 +532,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(metrics, NULL,
 		     "Get LTE metrics.",
 	              cmd_metrics, 1, 0),
+
+	SHELL_CMD_ARG(reconnect, NULL,
+	              "Reconnect LTE modem.",
+	              cmd_reconnect, 1, 0),
 
 	SHELL_CMD_ARG(test, &sub_lte_test,
 	              "Test commands.",

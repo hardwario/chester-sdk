@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2025 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -7,6 +7,7 @@
 #include "ctr_lte_v2_config.h"
 #include "ctr_lte_v2_flow.h"
 #include "ctr_lte_v2_state.h"
+#include "ctr_lte_v2_str.h"
 
 /* CHESTER includes */
 #include <chester/ctr_lte_v2.h>
@@ -96,6 +97,14 @@ static uint32_t m_start_cscon1 = 0;
 
 struct ctr_lte_v2_cereg_param m_cereg_param = {0};
 
+#define ON_ERROR_MAX_FLOW_CHECK_RETRIES 3
+static struct {
+	enum fsm_state prev_state;
+	int flow_check_failures;
+	enum fsm_state on_timeout_state;
+	uint32_t timeout_s;
+} m_error_ctx = {0};
+
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
 atomic_ptr_t m_gnss_cb = ATOMIC_PTR_INIT(NULL);
 void *m_gnss_user_data = NULL;
@@ -171,73 +180,6 @@ const char *fsm_state_str(enum fsm_state state)
 	return "unknown";
 }
 
-const char *ctr_lte_v2_event_str(enum ctr_lte_v2_event event)
-{
-	switch (event) {
-	case CTR_LTE_V2_EVENT_ERROR:
-		return "error";
-	case CTR_LTE_V2_EVENT_TIMEOUT:
-		return "timeout";
-	case CTR_LTE_V2_EVENT_ENABLE:
-		return "enable";
-	case CTR_LTE_V2_EVENT_READY:
-		return "ready";
-	case CTR_LTE_V2_EVENT_SIMDETECTED:
-		return "simdetected";
-	case CTR_LTE_V2_EVENT_REGISTERED:
-		return "registered";
-	case CTR_LTE_V2_EVENT_DEREGISTERED:
-		return "deregistered";
-	case CTR_LTE_V2_EVENT_RESET_LOOP:
-		return "resetloop";
-	case CTR_LTE_V2_EVENT_SOCKET_OPENED:
-		return "socket_opened";
-	case CTR_LTE_V2_EVENT_XMODMSLEEEP:
-		return "xmodmsleep";
-	case CTR_LTE_V2_EVENT_CSCON_0:
-		return "cscon_0";
-	case CTR_LTE_V2_EVENT_CSCON_1:
-		return "cscon_1";
-	case CTR_LTE_V2_EVENT_XTIME:
-		return "xtime";
-	case CTR_LTE_V2_EVENT_SEND:
-		return "send";
-	case CTR_LTE_V2_EVENT_RECV:
-		return "recv";
-	case CTR_LTE_V2_EVENT_XGPS_ENABLE:
-		return "xgps_enable";
-	case CTR_LTE_V2_EVENT_XGPS_DISABLE:
-		return "xgps_disable";
-	case CTR_LTE_V2_EVENT_XGPS:
-		return "xgps";
-	}
-	return "unknown";
-}
-
-const char *ctr_lte_v2_coneval_result_str(int result)
-{
-	switch (result) {
-	case 0:
-		return "Connection pre-evaluation successful";
-	case 1:
-		return "Evaluation failed, no cell available";
-	case 2:
-		return "Evaluation failed, UICC not available";
-	case 3:
-		return "Evaluation failed, only barred cells available";
-	case 4:
-		return "Evaluation failed, busy";
-	case 5:
-		return "Evaluation failed, aborted because of higher priority operation";
-	case 6:
-		return "Evaluation failed, not registered";
-	case 7:
-		return "Evaluation failed, unspecified";
-	default:
-		return "Evaluation failed, unknown result";
-	}
-}
-
 const char *ctr_lte_v2_get_state(void)
 {
 	return fsm_state_str(m_state);
@@ -287,7 +229,7 @@ static void delegate_event(enum ctr_lte_v2_event event)
 
 static void event_handler(enum ctr_lte_v2_event event)
 {
-	LOG_INF("event: %s, state: %s", ctr_lte_v2_event_str(event), fsm_state_str(m_state));
+	LOG_INF("event: %s, state: %s", ctr_lte_v2_str_fsm_event(event), fsm_state_str(m_state));
 
 	struct fsm_state_desc *fsm_state = get_fsm_state(m_state);
 	if (fsm_state && fsm_state->event_handler) {
@@ -348,6 +290,15 @@ static void transition_state(enum fsm_state next)
 		return;
 	}
 
+	if (next == FSM_STATE_ERROR && m_state == FSM_STATE_ERROR) {
+		LOG_WRN("Already in error state, ignoring");
+		return;
+	}
+
+	if (m_state == FSM_STATE_ERROR) {
+		m_error_ctx.prev_state = m_state; /* Save previous state before error */
+	}
+
 	if (leaving_state(next) == 0) {
 		entering_state(next_desc);
 	}
@@ -381,6 +332,32 @@ int ctr_lte_v2_enable(void)
 		return -ENOTSUP;
 	}
 	delegate_event(CTR_LTE_V2_EVENT_ENABLE);
+	return 0;
+}
+
+int ctr_lte_v2_reconnect(void)
+{
+	if (g_ctr_lte_v2_config.test) {
+		LOG_WRN("LTE Test mode enabled");
+		return -ENOTSUP;
+	}
+
+	if (m_state == FSM_STATE_DISABLED) {
+		LOG_WRN("Cannot reconnect, LTE is disabled");
+		return -ENODEV;
+	}
+
+	stop_timer();
+
+	k_work_cancel(&m_event_dispatch_work);
+	k_mutex_lock(&m_event_rb_lock, K_FOREVER);
+	ring_buf_reset(&m_event_rb);
+	k_mutex_unlock(&m_event_rb_lock);
+
+	transition_state(FSM_STATE_DISABLED);
+
+	delegate_event(CTR_LTE_V2_EVENT_ENABLE);
+
 	return 0;
 }
 
@@ -549,6 +526,12 @@ static int disabled_event_handler(enum ctr_lte_v2_event event)
 
 static int on_leave_disabled(void)
 {
+	memset(&m_error_ctx, 0, sizeof(m_error_ctx));
+	m_attach_retry_count = 0;
+
+	atomic_clear_bit(&m_flag, FLAG_CSCON);
+	atomic_clear_bit(&m_flag, FLAG_CFUN4);
+
 	int ret = ctr_lte_v2_flow_rfmux_acquire();
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_flow_rfmux_acquire` failed: %d", ret);
@@ -559,14 +542,48 @@ static int on_leave_disabled(void)
 
 static int on_enter_error(void)
 {
+	m_error_ctx.on_timeout_state = FSM_STATE_BOOT; /* Default timeout state */
+
+	int ret = ctr_lte_v2_flow_check();
+	if (ret == 0) {
+		m_error_ctx.flow_check_failures = 0;
+		LOG_INF("Flow check successful, resuming operation in 5 seconds");
+		m_error_ctx.on_timeout_state = FSM_STATE_READY;
+		start_timer(K_SECONDS(5));
+		return 0;
+	}
+
 	k_event_clear(&m_states_event, CONNECTED_BIT);
 
-	int ret = ctr_lte_v2_flow_disable(true);
+	if (ret == -ENOTSOCK) {
+		m_error_ctx.flow_check_failures++;
+
+		LOG_INF("failed (attempt %d/%d): %d", m_error_ctx.flow_check_failures,
+			ON_ERROR_MAX_FLOW_CHECK_RETRIES, ret);
+
+		if (m_error_ctx.flow_check_failures < ON_ERROR_MAX_FLOW_CHECK_RETRIES) {
+			LOG_ERR("Socket error, retrying open in 5 seconds");
+			m_error_ctx.on_timeout_state = FSM_STATE_OPEN_SOCKET;
+			start_timer(K_SECONDS(5));
+			return 0;
+		}
+
+		LOG_ERR("Max retries reached, taking fallback action");
+		m_error_ctx.flow_check_failures = 0; /* Reset counter */
+	}
+
+	ret = ctr_lte_v2_flow_disable(true);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_flow_disable` failed: %d", ret);
 	}
 
-	start_timer(K_SECONDS(10)); /* TODO: retry timeout (progressive) */
+	m_error_ctx.timeout_s += 10;
+	if (m_error_ctx.timeout_s > 600) { /* Max 10 minutes */
+		m_error_ctx.timeout_s = 600;
+	}
+
+	LOG_INF("Waiting %u seconds before next reconnect attempt", m_error_ctx.timeout_s);
+	start_timer(K_SECONDS(m_error_ctx.timeout_s));
 
 	return 0;
 }
@@ -575,7 +592,7 @@ static int error_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_TIMEOUT:
-		transition_state(FSM_STATE_BOOT);
+		transition_state(m_error_ctx.on_timeout_state);
 		break;
 	default:
 		break;
@@ -856,6 +873,8 @@ static int on_leave_attach(void)
 
 static int on_enter_open_socket(void)
 {
+	k_event_clear(&m_states_event, CONNECTED_BIT);
+
 	int ret = ctr_lte_v2_flow_open_socket();
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_flow_open_socket` failed: %d", ret);
@@ -872,6 +891,7 @@ static int open_socket_event_handler(enum ctr_lte_v2_event event)
 	switch (event) {
 	case CTR_LTE_V2_EVENT_SOCKET_OPENED:
 		k_event_post(&m_states_event, CONNECTED_BIT);
+		m_error_ctx.timeout_s = 0; /* Reset error timeout counter on success */
 		transition_state(FSM_STATE_CONEVAL);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:
@@ -927,11 +947,6 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 		stop_timer();
 		int ret = ctr_lte_v2_flow_check();
 		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_flow_check` failed: %d", ret);
-			if (ret == -ENOTCONN) {
-				delegate_event(CTR_LTE_V2_EVENT_DEREGISTERED);
-				return 0;
-			}
 			return ret;
 		}
 		transition_state(FSM_STATE_SEND);
@@ -962,8 +977,13 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 	case CTR_LTE_V2_EVENT_TIMEOUT:
 		if (m_cereg_param.active_time == -1) { /* if PSM is not supported */
 			LOG_WRN("PSM is not supported, disabling LTE modem to save power");
-			int ret = ctr_lte_v2_flow_cfun(4);
-			if (ret < 0) {
+			int ret = ctr_lte_v2_flow_close_socket();
+			if (ret) {
+				LOG_ERR("Call `ctr_lte_v2_flow_close_socket` failed: %d", ret);
+				return ret;
+			}
+			ret = ctr_lte_v2_flow_cfun(4);
+			if (ret) {
 				LOG_ERR("Call `ctr_lte_v2_flow_cfun` failed: %d", ret);
 				return ret;
 			}

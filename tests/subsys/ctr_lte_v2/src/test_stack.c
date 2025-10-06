@@ -88,7 +88,7 @@ ZTEST(stack, test_attach)
 		{"AT+CGATT?", "+CGATT: 1", "OK"},
 		{"AT+CGACT?", "+CGACT: 0,1", "OK"},
 		{"AT+CGDCONT?", "+CGDCONT: 0,\"IP\",\"hardwario\",\"172.28.0.139\",0,0", "OK"},
-		{"AT#XSOCKET=1,2,0", "#XSOCKET: 0,2,17", "OK"},
+		{"AT#XSOCKET=1,2,0,0", "#XSOCKET: 0,2,17", "OK"},
 		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG)
 		{"AT#XCONNECT=\"46.101.214.168\",5003", "#XCONNECT: 1", "OK"},
 		#else

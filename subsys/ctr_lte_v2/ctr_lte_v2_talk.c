@@ -994,16 +994,16 @@ int ctr_lte_v2_talk_at_xslmver(struct ctr_lte_v2_talk *talk, char *buf, size_t s
 	DIALOG_EPILOG /* clang-format on */
 }
 
-int ctr_lte_v2_talk_at_xsocket(struct ctr_lte_v2_talk *talk, int p1, int *p2, int *p3, char *buf,
-			       size_t size)
+int ctr_lte_v2_talk_at_xsocket(struct ctr_lte_v2_talk *talk, int op, int *type, int *role, int *cid,
+			       char *buf, size_t size)
 {
 	DIALOG_PROLOG /* clang-format off */
 
 	DIALOG_ENTER();
-	if (!p2 && !p3) {
-		DIALOG_SEND_LINE("AT#XSOCKET=%d", p1);
-	} else if (p2 && p3) {
-		DIALOG_SEND_LINE("AT#XSOCKET=%d,%d,%d", p1, *p2, *p3);
+	if (!type && !role) {
+		DIALOG_SEND_LINE("AT#XSOCKET=%d", op);
+	} else if (type && role && cid) {
+		DIALOG_SEND_LINE("AT#XSOCKET=%d,%d,%d,%d", op, *type, *role, *cid);
 	} else {
 		DIALOG_ABORT(-EINVAL);
 	}

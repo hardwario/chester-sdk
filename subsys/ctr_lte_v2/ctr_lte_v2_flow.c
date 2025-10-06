@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2025 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -682,7 +682,8 @@ static int open_socket(void)
 		cgdcont.cid);
 
 	char xsocket[64];
-	ret = ctr_lte_v2_talk_at_xsocket(&m_talk, 1, (int[]){2}, &cgdcont.cid, xsocket,
+	/** open socket IPv4 UDP client */
+	ret = ctr_lte_v2_talk_at_xsocket(&m_talk, 1, (int[]){2}, (int[]){0}, &cgdcont.cid, xsocket,
 					 sizeof(xsocket));
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_xsocket` failed: %d", ret);
@@ -728,6 +729,29 @@ inline int ctr_lte_v2_flow_open_socket(void)
 	return open_socket();
 }
 
+static int close_socket(void)
+{
+	char xsocket[64];
+	int ret =
+		ctr_lte_v2_talk_at_xsocket(&m_talk, 0, NULL, NULL, NULL, xsocket, sizeof(xsocket));
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_xsocket` failed: %d", ret);
+		return ret;
+	}
+
+	if (strcmp(xsocket, "0,\"closed\"") != 0) {
+		LOG_ERR("Unexpected XSOCKET response: %s", xsocket);
+		return -ENOTSOCK;
+	}
+
+	return 0;
+}
+
+inline int ctr_lte_v2_flow_close_socket(void)
+{
+	return close_socket();
+}
+
 int ctr_lte_v2_flow_check(void)
 {
 	int ret;
@@ -745,7 +769,7 @@ int ctr_lte_v2_flow_check(void)
 
 	if (strcmp(resp, "1") != 0) {
 		LOG_ERR("Unexpected CFUN response: %s", resp);
-		return -ENOTCONN;
+		return -ENODEV;
 	}
 
 	/* Check network registration status */
@@ -759,7 +783,7 @@ int ctr_lte_v2_flow_check(void)
 
 	if (resp[0] == '0') {
 		LOG_ERR("CEREG unsubscribe unsolicited result codes");
-		return -ENOTCONN;
+		return -EOPNOTSUPP;
 	}
 
 	struct ctr_lte_v2_cereg_param cereg_param;
@@ -775,7 +799,7 @@ int ctr_lte_v2_flow_check(void)
 	if (cereg_param.stat != CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME &&
 	    cereg_param.stat != CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING) {
 		LOG_ERR("Unexpected CEREG response: %s", resp);
-		return -ENOTCONN;
+		return -ENETUNREACH;
 	}
 
 	/* Check if PDN is active */
@@ -789,7 +813,7 @@ int ctr_lte_v2_flow_check(void)
 
 	if (strcmp(resp, "1") != 0) {
 		LOG_ERR("Unexpected CGATT response: %s", resp);
-		return -ENOTCONN;
+		return -ENETDOWN;
 	}
 
 	/* Check PDN connections */
@@ -813,19 +837,19 @@ int ctr_lte_v2_flow_check(void)
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_cmd_with_resp_prefix` AT#XSOCKET failed: %d",
 			ret);
-		return ret;
+		return -ENOTSOCK;
 	}
 
 	struct xsocket_get_param xsocket_param;
 	ret = ctr_lte_v2_parse_xsocket_get(resp, &xsocket_param);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_parse_xsocket_get` failed: %d", ret);
-		return ret;
+		return -ENOTSOCK;
 	}
 
 	if (xsocket_param.type != XSOCKET_TYPE_DGRAM && xsocket_param.role != XSOCKET_ROLE_CLIENT) {
 		LOG_ERR("Unexpected XSOCKET response: %s", resp);
-		return -ENOTCONN;
+		return -ENOTSOCK;
 	}
 
 	return 0;
@@ -1047,7 +1071,7 @@ int ctr_lte_v2_flow_coneval(void)
 
 	if (conn_param.result != 0) {
 		LOG_WRN("Connection evaluation: %s",
-			ctr_lte_v2_coneval_result_str(conn_param.result));
+			ctr_lte_v2_str_coneval_result(conn_param.result));
 	}
 
 	ctr_lte_v2_state_set_conn_param(&conn_param);

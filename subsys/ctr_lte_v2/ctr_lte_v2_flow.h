@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2025 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -58,6 +58,7 @@ int ctr_lte_v2_flow_cfun(int cfun);
 int ctr_lte_v2_flow_sim_info(void);
 int ctr_lte_v2_flow_sim_fplmn(void);
 int ctr_lte_v2_flow_open_socket(void);
+int ctr_lte_v2_flow_close_socket(void);
 
 int ctr_lte_v2_flow_check(void);
 int ctr_lte_v2_flow_send(const struct ctr_lte_v2_send_recv_param *param);
