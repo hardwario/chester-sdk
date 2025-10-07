@@ -16,6 +16,7 @@ var modules =
     [ "Ctr_led", "group__ctr__led.html", "group__ctr__led" ],
     [ "ctr_lrw", "group__ctr__lrw.html", "group__ctr__lrw" ],
     [ "ctr_lte", "group__ctr__lte.html", "group__ctr__lte" ],
+    [ "ctr_lte_v2", "group__ctr__lte__v2.html", "group__ctr__lte__v2" ],
     [ "ctr_machine_probe", "group__ctr__machine__probe.html", "group__ctr__machine__probe" ],
     [ "ctr_rtc", "group__ctr__rtc.html", "group__ctr__rtc" ],
     [ "ctr_rtd", "group__ctr__rtd.html", "group__ctr__rtd" ],

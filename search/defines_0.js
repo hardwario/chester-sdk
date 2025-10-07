@@ -17,7 +17,5 @@ var searchData=
   ['ctr_5fble_5ftag_5fsensor_5fmask_5ftemperature_14',['CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE',['../ctr__ble__tag_8h.html#a1460aea61d04fc9c5ecc6ee644dc20d7',1,'ctr_ble_tag.h']]],
   ['ctr_5fble_5ftag_5fsensor_5fmask_5fvoltage_15',['CTR_BLE_TAG_SENSOR_MASK_VOLTAGE',['../ctr__ble__tag_8h.html#a049dc4c47e29cbc371ff7d738e402c25',1,'ctr_ble_tag.h']]],
   ['ctr_5fcloud_5ftransfer_5fbuf_5fsize_16',['CTR_CLOUD_TRANSFER_BUF_SIZE',['../ctr__cloud_8h.html#abe114fcd1fd4f3e6eb5827aa77e3b264',1,'ctr_cloud.h']]],
-  ['ctr_5flrw_5fsend_5fopts_5fdefaults_17',['CTR_LRW_SEND_OPTS_DEFAULTS',['../ctr__lrw__v2_8h.html#a93abac54c2d362aa6e5a55a316330bea',1,'ctr_lrw_v2.h']]],
-  ['ctr_5flte_5fv2_5fcereg_5fparam_5factive_5ftime_5fdisabled_18',['CTR_LTE_V2_CEREG_PARAM_ACTIVE_TIME_DISABLED',['../ctr__lte__v2_8h.html#ad171f8ec987181a7cc422e43a92a2cfe',1,'ctr_lte_v2.h']]],
-  ['ctr_5flte_5fv2_5fcereg_5fparam_5fperiodic_5ftau_5fext_5fdisabled_19',['CTR_LTE_V2_CEREG_PARAM_PERIODIC_TAU_EXT_DISABLED',['../ctr__lte__v2_8h.html#ae9de3f745578d2159ac49210994d9ca0',1,'ctr_lte_v2.h']]]
+  ['ctr_5flrw_5fsend_5fopts_5fdefaults_17',['CTR_LRW_SEND_OPTS_DEFAULTS',['../ctr__lrw__v2_8h.html#a93abac54c2d362aa6e5a55a316330bea',1,'ctr_lrw_v2.h']]]
 ];

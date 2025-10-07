@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>CHESTER SDK: ctr_lte_v2.h File Reference</title>
+<title>CHESTER SDK: ctr_lte_v2</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -68,7 +68,7 @@ $(function() {
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
-$(document).ready(function(){initNavTree('ctr__lte__v2_8h.html',''); initResizable(); });
+$(document).ready(function(){initNavTree('group__ctr__lte__v2.html',''); initResizable(); });
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -99,27 +99,12 @@ $(document).ready(function(){initNavTree('ctr__lte__v2_8h.html',''); initResizab
 <a href="#define-members">Macros</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
-  <div class="headertitle"><div class="title">ctr_lte_v2.h File Reference</div></div>
+  <div class="headertitle"><div class="title">ctr_lte_v2</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;zephyr/kernel.h&gt;</code><br />
-<code>#include &lt;stdbool.h&gt;</code><br />
-<code>#include &lt;stddef.h&gt;</code><br />
-<code>#include &lt;stdint.h&gt;</code><br />
-</div><div class="textblock"><div class="dynheader">
-Include dependency graph for ctr_lte_v2.h:</div>
-<div class="dyncontent">
-<div class="center"><img src="ctr__lte__v2_8h__incl.png" border="0" usemap="#actr__lte__v2_8h" alt=""/></div>
-<map name="actr__lte__v2_8h" id="actr__lte__v2_8h">
-<area shape="rect" title=" " alt="" coords="179,5,268,31"/>
-<area shape="rect" title=" " alt="" coords="5,79,113,104"/>
-<area shape="rect" title=" " alt="" coords="138,79,213,104"/>
-<area shape="rect" title=" " alt="" coords="237,79,305,104"/>
-<area shape="rect" title=" " alt="" coords="330,79,394,104"/>
-</map>
-</div>
-</div>
-<p><a href="ctr__lte__v2_8h_source.html">Go to the source code of this file.</a></p>
+
+<p>LTE modem control library.  
+<a href="#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Data Structures</h2></td></tr>
@@ -203,12 +188,429 @@ Functions</h2></td></tr>
 <tr class="memitem:gaf8fe5ad35409f167e3e777e448f2c549"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#gaf8fe5ad35409f167e3e777e448f2c549">ctr_lte_v2_str_act</a> (enum <a class="el" href="group__ctr__lte__v2.html#ga36c152e447cf2947877e44eab9692de0">ctr_lte_v2_cereg_param_act</a> act)</td></tr>
 <tr class="separator:gaf8fe5ad35409f167e3e777e448f2c549"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<p >LTE modem control library. </p>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="gad171f8ec987181a7cc422e43a92a2cfe" name="gad171f8ec987181a7cc422e43a92a2cfe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gad171f8ec987181a7cc422e43a92a2cfe">&#9670;&#160;</a></span>CTR_LTE_V2_CEREG_PARAM_ACTIVE_TIME_DISABLED</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_LTE_V2_CEREG_PARAM_ACTIVE_TIME_DISABLED&#160;&#160;&#160;-1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="gae9de3f745578d2159ac49210994d9ca0" name="gae9de3f745578d2159ac49210994d9ca0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gae9de3f745578d2159ac49210994d9ca0">&#9670;&#160;</a></span>CTR_LTE_V2_CEREG_PARAM_PERIODIC_TAU_EXT_DISABLED</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_LTE_V2_CEREG_PARAM_PERIODIC_TAU_EXT_DISABLED&#160;&#160;&#160;-1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="ga36c152e447cf2947877e44eab9692de0" name="ga36c152e447cf2947877e44eab9692de0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga36c152e447cf2947877e44eab9692de0">&#9670;&#160;</a></span>ctr_lte_v2_cereg_param_act</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="group__ctr__lte__v2.html#ga36c152e447cf2947877e44eab9692de0">ctr_lte_v2_cereg_param_act</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Access technology values (CEREG:AcT). </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="gga36c152e447cf2947877e44eab9692de0a1fbf4ba77d64e0d10047f1eecc51ed54" name="gga36c152e447cf2947877e44eab9692de0a1fbf4ba77d64e0d10047f1eecc51ed54"></a>CTR_LTE_V2_CEREG_PARAM_ACT_UNKNOWN&#160;</td><td class="fielddoc"><p >Unknown. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="gga36c152e447cf2947877e44eab9692de0a63f0c75fe6f3b254a6e0c40b537f03e8" name="gga36c152e447cf2947877e44eab9692de0a63f0c75fe6f3b254a6e0c40b537f03e8"></a>CTR_LTE_V2_CEREG_PARAM_ACT_LTE&#160;</td><td class="fielddoc"><p >LTE. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="gga36c152e447cf2947877e44eab9692de0afcbffa347d92c62678478877dbc53e39" name="gga36c152e447cf2947877e44eab9692de0afcbffa347d92c62678478877dbc53e39"></a>CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT&#160;</td><td class="fielddoc"><p >NB-IoT. </p>
+</td></tr>
+</table>
+
+</div>
+</div>
+<a id="ga5286895a249ddc7b9e8673a0e07390b8" name="ga5286895a249ddc7b9e8673a0e07390b8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga5286895a249ddc7b9e8673a0e07390b8">&#9670;&#160;</a></span>ctr_lte_v2_cereg_param_stat</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="group__ctr__lte__v2.html#ga5286895a249ddc7b9e8673a0e07390b8">ctr_lte_v2_cereg_param_stat</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Registration status values from +CEREG. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="gga5286895a249ddc7b9e8673a0e07390b8a91f4e1b3b8c60c5cddcb37f5b97d21dd" name="gga5286895a249ddc7b9e8673a0e07390b8a91f4e1b3b8c60c5cddcb37f5b97d21dd"></a>CTR_LTE_V2_CEREG_PARAM_STAT_NOT_REGISTERED&#160;</td><td class="fielddoc"><p >Not registered, not searching. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="gga5286895a249ddc7b9e8673a0e07390b8afe432fcdbef474c8f75112c751c3a8d8" name="gga5286895a249ddc7b9e8673a0e07390b8afe432fcdbef474c8f75112c751c3a8d8"></a>CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME&#160;</td><td class="fielddoc"><p >Registered in home network. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="gga5286895a249ddc7b9e8673a0e07390b8aa392d2bd6e7c23c978a79d3140e2e133" name="gga5286895a249ddc7b9e8673a0e07390b8aa392d2bd6e7c23c978a79d3140e2e133"></a>CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING&#160;</td><td class="fielddoc"><p >Searching for network. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="gga5286895a249ddc7b9e8673a0e07390b8a160bc74ba07870a193d51a0165423504" name="gga5286895a249ddc7b9e8673a0e07390b8a160bc74ba07870a193d51a0165423504"></a>CTR_LTE_V2_CEREG_PARAM_STAT_REGISTRATION_DENIED&#160;</td><td class="fielddoc"><p >Registration denied. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="gga5286895a249ddc7b9e8673a0e07390b8a4562bcc0cb501991873abdbcc5a91ce7" name="gga5286895a249ddc7b9e8673a0e07390b8a4562bcc0cb501991873abdbcc5a91ce7"></a>CTR_LTE_V2_CEREG_PARAM_STAT_UNKNOWN&#160;</td><td class="fielddoc"><p >Unknown status. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="gga5286895a249ddc7b9e8673a0e07390b8a5b36a4b666ec7f7642bfa87af3f864c7" name="gga5286895a249ddc7b9e8673a0e07390b8a5b36a4b666ec7f7642bfa87af3f864c7"></a>CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING&#160;</td><td class="fielddoc"><p >Registered, roaming. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="gga5286895a249ddc7b9e8673a0e07390b8ad1be013d9f6f219b40b8a94677944097" name="gga5286895a249ddc7b9e8673a0e07390b8ad1be013d9f6f219b40b8a94677944097"></a>CTR_LTE_V2_CEREG_PARAM_STAT_SIM_FAILURE&#160;</td><td class="fielddoc"><p >SIM failure. </p>
+</td></tr>
+</table>
+
+</div>
+</div>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="ga9a4dd2eefd353bf31c17bc4367c60b5a" name="ga9a4dd2eefd353bf31c17bc4367c60b5a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga9a4dd2eefd353bf31c17bc4367c60b5a">&#9670;&#160;</a></span>ctr_lte_v2_enable()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_enable </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Enable LTE modem and data connection. </p>
+<p >Performs initialization, configuration, and network attach.</p>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">0</td><td>Success. </td></tr>
+    <tr><td class="paramname">-ENOTSUP</td><td>Test mode is enabled. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ga8ebc16fca4e81b3b98a7c9e2b67bf5a4" name="ga8ebc16fca4e81b3b98a7c9e2b67bf5a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga8ebc16fca4e81b3b98a7c9e2b67bf5a4">&#9670;&#160;</a></span>ctr_lte_v2_get_cereg_param()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_get_cereg_param </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structctr__lte__v2__cereg__param.html">ctr_lte_v2_cereg_param</a> *&#160;</td>
+          <td class="paramname"><em>param</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga9861ebd72de329f1ef4eec4dba2c70f1" name="ga9861ebd72de329f1ef4eec4dba2c70f1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga9861ebd72de329f1ef4eec4dba2c70f1">&#9670;&#160;</a></span>ctr_lte_v2_get_conn_param()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_get_conn_param </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structctr__lte__v2__conn__param.html">ctr_lte_v2_conn_param</a> *&#160;</td>
+          <td class="paramname"><em>param</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga682e48d53179f1a18eeee3d18cf567ac" name="ga682e48d53179f1a18eeee3d18cf567ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga682e48d53179f1a18eeee3d18cf567ac">&#9670;&#160;</a></span>ctr_lte_v2_get_iccid()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_get_iccid </td>
+          <td>(</td>
+          <td class="paramtype">char **&#160;</td>
+          <td class="paramname"><em>iccid</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="gab28432793e6f6a169ad5254f847160f0" name="gab28432793e6f6a169ad5254f847160f0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gab28432793e6f6a169ad5254f847160f0">&#9670;&#160;</a></span>ctr_lte_v2_get_imei()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_get_imei </td>
+          <td>(</td>
+          <td class="paramtype">uint64_t *&#160;</td>
+          <td class="paramname"><em>imei</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="gad17e7b2b42a62e519f2d3d1ced4498af" name="gad17e7b2b42a62e519f2d3d1ced4498af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gad17e7b2b42a62e519f2d3d1ced4498af">&#9670;&#160;</a></span>ctr_lte_v2_get_imsi()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_get_imsi </td>
+          <td>(</td>
+          <td class="paramtype">uint64_t *&#160;</td>
+          <td class="paramname"><em>imsi</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga8ec2416f749cf174bb4c68068fba25b0" name="ga8ec2416f749cf174bb4c68068fba25b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga8ec2416f749cf174bb4c68068fba25b0">&#9670;&#160;</a></span>ctr_lte_v2_get_metrics()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_get_metrics </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structctr__lte__v2__metrics.html">ctr_lte_v2_metrics</a> *&#160;</td>
+          <td class="paramname"><em>metrics</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga8b41e1b25f51b8c3607b8277f3886480" name="ga8b41e1b25f51b8c3607b8277f3886480"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga8b41e1b25f51b8c3607b8277f3886480">&#9670;&#160;</a></span>ctr_lte_v2_get_modem_fw_version()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_get_modem_fw_version </td>
+          <td>(</td>
+          <td class="paramtype">char **&#160;</td>
+          <td class="paramname"><em>version</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga221f50b3e0ae35346bb9309d40b464f2" name="ga221f50b3e0ae35346bb9309d40b464f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga221f50b3e0ae35346bb9309d40b464f2">&#9670;&#160;</a></span>ctr_lte_v2_is_attached()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_is_attached </td>
+          <td>(</td>
+          <td class="paramtype">bool *&#160;</td>
+          <td class="paramname"><em>attached</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga706c1ed710c1beb2cc8cf1ae936ac294" name="ga706c1ed710c1beb2cc8cf1ae936ac294"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga706c1ed710c1beb2cc8cf1ae936ac294">&#9670;&#160;</a></span>ctr_lte_v2_reconnect()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_reconnect </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Disconnect and reconnect LTE modem. </p>
+<p >Useful for recovering from connection issues.</p>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">0</td><td>Success. </td></tr>
+    <tr><td class="paramname">-ENOTSUP</td><td>Test mode is enabled. </td></tr>
+    <tr><td class="paramname">-ENODEV</td><td>Modem is disabled. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ga9a85941ee750c49c5ce74c0b981f8273" name="ga9a85941ee750c49c5ce74c0b981f8273"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga9a85941ee750c49c5ce74c0b981f8273">&#9670;&#160;</a></span>ctr_lte_v2_send_recv()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_send_recv </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structctr__lte__v2__send__recv__param.html">ctr_lte_v2_send_recv_param</a> *&#160;</td>
+          <td class="paramname"><em>param</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="gaf8fe5ad35409f167e3e777e448f2c549" name="gaf8fe5ad35409f167e3e777e448f2c549"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaf8fe5ad35409f167e3e777e448f2c549">&#9670;&#160;</a></span>ctr_lte_v2_str_act()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char * ctr_lte_v2_str_act </td>
+          <td>(</td>
+          <td class="paramtype">enum <a class="el" href="group__ctr__lte__v2.html#ga36c152e447cf2947877e44eab9692de0">ctr_lte_v2_cereg_param_act</a>&#160;</td>
+          <td class="paramname"><em>act</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Convert access technology (AcT) to text. </p>
+
+</div>
+</div>
+<a id="gae379f2982c159acc317217e3a2601f72" name="gae379f2982c159acc317217e3a2601f72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gae379f2982c159acc317217e3a2601f72">&#9670;&#160;</a></span>ctr_lte_v2_str_cereg_stat()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char * ctr_lte_v2_str_cereg_stat </td>
+          <td>(</td>
+          <td class="paramtype">enum <a class="el" href="group__ctr__lte__v2.html#ga5286895a249ddc7b9e8673a0e07390b8">ctr_lte_v2_cereg_param_stat</a>&#160;</td>
+          <td class="paramname"><em>stat</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Convert +CEREG registration status to text. </p>
+
+</div>
+</div>
+<a id="ga46827298c0bda6d30f5280ad2c8d6520" name="ga46827298c0bda6d30f5280ad2c8d6520"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga46827298c0bda6d30f5280ad2c8d6520">&#9670;&#160;</a></span>ctr_lte_v2_str_cereg_stat_human()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char * ctr_lte_v2_str_cereg_stat_human </td>
+          <td>(</td>
+          <td class="paramtype">enum <a class="el" href="group__ctr__lte__v2.html#ga5286895a249ddc7b9e8673a0e07390b8">ctr_lte_v2_cereg_param_stat</a>&#160;</td>
+          <td class="paramname"><em>stat</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Convert +CEREG registration status to human-readable text. </p>
+
+</div>
+</div>
+<a id="ga84fe693ea37ee8b203ee97b1fa02471d" name="ga84fe693ea37ee8b203ee97b1fa02471d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga84fe693ea37ee8b203ee97b1fa02471d">&#9670;&#160;</a></span>ctr_lte_v2_str_coneval_result()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char * ctr_lte_v2_str_coneval_result </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>result</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Convert connection evaluation result code to string. </p>
+
+</div>
+</div>
+<a id="gacfb35b18305a8f77c790e8fb58def117" name="gacfb35b18305a8f77c790e8fb58def117"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gacfb35b18305a8f77c790e8fb58def117">&#9670;&#160;</a></span>ctr_lte_v2_wait_for_connected()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_lte_v2_wait_for_connected </td>
+          <td>(</td>
+          <td class="paramtype">k_timeout_t&#160;</td>
+          <td class="paramname"><em>timeout</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Wait for connection to be established. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">timeout</td><td>Maximum wait duration. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">0</td><td>Connected. </td></tr>
+    <tr><td class="paramname">-ENOTSUP</td><td>Test mode is enabled. </td></tr>
+    <tr><td class="paramname">-ETIMEDOUT</td><td>Timeout expired. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="ctr__lte__v2_8h.html">ctr_lte_v2.h</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.5 </li>
   </ul>
 </div>
