@@ -42,6 +42,10 @@ struct app_data {
 	atomic_t working_flag;
 	atomic_t send_flag;
 
+	atomic_t enroll_mode;
+	int enroll_timeout;
+	int enroll_rssi_threshold;
+
 	int64_t scan_start_timestamp;
 	int64_t scan_stop_timestamp;
 	bool scan_all;

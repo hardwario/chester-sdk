@@ -397,17 +397,33 @@ static int mbus_packet_handle(uint8_t *data, size_t len)
 			meta.rssi_dbm, mbus_len);
 	}
 
-	struct shell *shell = app_shell_get();
-	if (shell) {
-		shell_print(shell, "%d, Mnf: %s, RSSI: %d, len: %d", meta.address,
-			    meta.manufacturer_name, meta.rssi_dbm, mbus_len);
-	}
-
 	// LOG_HEXDUMP_INF(mbus, mbus_len, "wM-BUS packet push");
+
+	char enrolled_str[32] = "";
 
 	// If no devices configured, add all received addresses to config before next step
 	if (g_app_data.scan_all) {
-		scan_all_check_and_add(meta.address);
+		if (!g_app_data.enroll_mode) {
+			scan_all_check_and_add(meta.address);
+		} else {
+			// If in teach-mode, skip weak signals
+			if (meta.rssi_dbm >= g_app_data.enroll_rssi_threshold) {
+				scan_all_check_and_add(meta.address);
+				LOG_INF("Added in teach-mode %d dBm (threshold %d dBm)",
+					meta.rssi_dbm, g_app_data.enroll_rssi_threshold);
+				strncpy(enrolled_str, "saved", sizeof(enrolled_str));
+			} else {
+				LOG_INF("Weak RSSI %d dBm (threshold %d dBm)", meta.rssi_dbm,
+					g_app_data.enroll_rssi_threshold);
+				strncpy(enrolled_str, "weak", sizeof(enrolled_str));
+			}
+		}
+	}
+
+	struct shell *shell = app_shell_get();
+	if (shell) {
+		shell_print(shell, "%d, Mnf: %s, RSSI: %d, %s", meta.address,
+			    meta.manufacturer_name, meta.rssi_dbm, enrolled_str);
 	}
 
 	/* Check if address matches */

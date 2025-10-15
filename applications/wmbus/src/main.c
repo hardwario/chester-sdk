@@ -43,8 +43,6 @@ int main(void)
 		LOG_INF("Alive");
 
 		if (should_feed_watchdog()) {
-			LOG_DBG("WDG feed");
-
 			ret = ctr_wdog_feed(&g_app_wdog_channel);
 			if (ret) {
 				LOG_ERR("Call `ctr_wdog_feed` failed: %d", ret);

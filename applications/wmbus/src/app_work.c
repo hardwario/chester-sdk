@@ -9,6 +9,7 @@
 #include "app_init.h"
 #include "app_power.h"
 #include "app_send.h"
+#include "app_shell.h"
 #include "app_sensor.h"
 #include "app_work.h"
 #include "wmbus.h"
@@ -121,14 +122,23 @@ static void second_antenna_work_handler(struct k_work *work)
 {
 	int ret;
 
+	LOG_INF("Antenna set: 2");
+
 	atomic_set(&g_app_data.antenna_dual, false);
 
 	k_timer_stop(&m_scan_timeout_timer);
 
 	// Restart timeout timer
-	k_timer_start(&m_scan_timeout_timer, K_SECONDS(g_app_config.scan_timeout), K_FOREVER);
+	if (!g_app_data.enroll_mode) {
+		LOG_INF("Scan timeout %d s", g_app_config.scan_timeout);
+		k_timer_start(&m_scan_timeout_timer, K_SECONDS(g_app_config.scan_timeout),
+			      K_FOREVER);
+	} else {
+		LOG_INF("Enroll mode timeout %d s", g_app_data.enroll_timeout);
+		k_timer_start(&m_scan_timeout_timer, K_SECONDS(g_app_data.enroll_timeout),
+			      K_FOREVER);
+	}
 
-	LOG_INF("Antenna set: 2");
 	ret = wmbus_antenna_set(2);
 	if (ret) {
 		LOG_ERR("Call `wmbus_antenna_set` failed: %d", ret);
@@ -147,10 +157,23 @@ void app_work_scan_timeout(void)
 		if (ret < 0) {
 			LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
 		}
+
+		struct shell *shell = app_shell_get();
+		if (shell) {
+			shell_print(shell, "Switched antenna");
+		}
 	} else {
 		/* Stop timeout timer in case scan_timeout was triggered manually from shell */
 		k_timer_stop(&m_scan_timeout_timer);
 		g_app_data.scan_stop_timestamp = k_uptime_get();
+
+		struct shell *shell = app_shell_get();
+		if (shell) {
+			size_t device_count;
+			wmbus_get_config_device_count(&device_count);
+			shell_print(shell, "Enrolled devices: %d", device_count);
+			shell_print(shell, "Sending data, restarting...");
+		}
 
 		app_work_send_trigger();
 	}
@@ -183,9 +206,15 @@ static void scan_trigger_work_handler(struct k_work *work)
 		packet_clear();
 		wmbus_clear_address_flags();
 
-		LOG_INF("Scan timeout %d s", g_app_config.scan_timeout);
-		k_timer_start(&m_scan_timeout_timer, K_SECONDS(g_app_config.scan_timeout),
-			      K_FOREVER);
+		if (!g_app_data.enroll_mode) {
+			LOG_INF("Scan timeout %d s", g_app_config.scan_timeout);
+			k_timer_start(&m_scan_timeout_timer, K_SECONDS(g_app_config.scan_timeout),
+				      K_FOREVER);
+		} else {
+			LOG_INF("Enroll mode timeout %d s", g_app_data.enroll_timeout);
+			k_timer_start(&m_scan_timeout_timer, K_SECONDS(g_app_data.enroll_timeout),
+				      K_FOREVER);
+		}
 
 		LOG_INF("Antenna set: 1");
 		ret = wmbus_antenna_set(1);
@@ -208,6 +237,27 @@ static K_WORK_DEFINE(m_scan_trigger_work, scan_trigger_work_handler);
 void app_work_scan_trigger(void)
 {
 	int ret;
+
+	g_app_data.enroll_mode = false;
+
+	ret = k_work_submit_to_queue(&m_work_q, &m_scan_trigger_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
+	}
+}
+
+void app_work_scan_trigger_enroll(int timeout, int rssi_threshold)
+{
+	int ret;
+
+	g_app_data.enroll_mode = true;
+	g_app_data.enroll_timeout = timeout;
+	g_app_data.enroll_rssi_threshold = rssi_threshold;
+
+	// Force to scan all during teach-mode
+	g_app_data.scan_all = true;
+
+	app_config_clear_address();
 
 	ret = k_work_submit_to_queue(&m_work_q, &m_scan_trigger_work);
 	if (ret < 0) {
@@ -233,13 +283,6 @@ static void send_trigger_work_handler(struct k_work *work)
 	ret = wmbus_antenna_set(0);
 	if (ret) {
 		LOG_ERR("Call `wmbus_antenna_set` failed: %d", ret);
-	}
-
-	// Cleanup if no addresses configured, clean temporary list
-	if (g_app_data.scan_all) {
-		for (int i = 0; i < DEVICE_MAX_COUNT; i++) {
-			g_app_config.address[i] = 0;
-		}
 	}
 
 	ret = app_send();

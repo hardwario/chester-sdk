@@ -80,6 +80,40 @@ static int cmd_timeout(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_enroll(const struct shell *shell, size_t argc, char **argv)
+{
+
+	// wm enroll <timeout> <rssi_threshold>
+
+	m_shell = (struct shell *)shell;
+
+	int timeout = g_app_config.scan_timeout;
+	int rssi_threshold = -150; // default is the weakest value
+
+	if (argc >= 2) {
+		timeout = atoi(argv[1]);
+		if (timeout < 5 || timeout > 86400) {
+			shell_print(shell, "Invalid timeout value, expected 5-86400 seconds");
+			return -EINVAL;
+		}
+	}
+
+	if (argc >= 3) {
+		rssi_threshold = atoi(argv[2]);
+		if (rssi_threshold < -128 || rssi_threshold > 0) {
+			shell_print(shell, "Invalid RSSI threshold value, expected -128 to 0 dBm");
+			return -EINVAL;
+		}
+	}
+
+	shell_print(shell, "Enroll mode for %d seconds, RSSI threshold %d dBm", timeout,
+		    rssi_threshold);
+
+	app_work_scan_trigger_enroll(timeout, rssi_threshold);
+
+	return 0;
+}
+
 static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 {
 	// atomic_set(&g_app_data.send_trigger, true);
@@ -135,10 +169,10 @@ int cmd_packet_push(const struct shell *shell, size_t argc, char **argv)
 	};
 
 	/*static const uint8_t packet_10726875[] = {
-		0x34, 0x44, 0x68, 0x50, 0x75, 0x68, 0x72, 0x10, 0x94, 0x80, 0xa2, 0x0f, 0x9f, 0x2d,
-		0x00, 0x00, 0xa0, 0x2f, 0x00, 0x00, 0x11, 0x0f, 0x08, 0xfa, 0x07, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe,
+		0x34, 0x44, 0x68, 0x50, 0x75, 0x68, 0x72, 0x10, 0x94, 0x80, 0xa2, 0x0f,
+	0x9f, 0x2d, 0x00, 0x00, 0xa0, 0x2f, 0x00, 0x00, 0x11, 0x0f, 0x08, 0xfa, 0x07, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe,
 	};*/
 
 	ret = packet_push((uint8_t *)packet_81763000, sizeof(packet_81763000));
@@ -229,6 +263,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 	SHELL_CMD_ARG(scan, NULL, "Trigger manual wM-Bus scan.", cmd_scan, 0, 0),
 	SHELL_CMD_ARG(timeout, NULL, "Stop manual wM-Bus scan.", cmd_timeout, 0, 0),
+	SHELL_CMD_ARG(enroll, NULL, "Scan and save sensors around. wm enroll <timeout> <rssi_threshold>.", cmd_enroll, 0, 3),
+
 	SHELL_CMD_ARG(send, NULL, "Send data immediately.", cmd_send, 0, 0),
 	SHELL_CMD_ARG(weekday, NULL, "Get current weekday.", cmd_weekday, 0, 0),
 

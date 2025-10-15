@@ -67,6 +67,8 @@ int app_config_cmd_config_mode(const struct shell *shell, size_t argc, char **ar
 int app_config_cmd_config(const struct shell *shell, size_t argc, char **argv);
 
 /* ### Preserved code "functions" (begin) */
+int app_config_clear_address(void);
+int app_config_enroll_save(void);
 /* ^^^ Preserved code "functions" (end) */
 
 #ifdef __cplusplus

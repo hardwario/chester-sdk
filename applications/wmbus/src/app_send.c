@@ -107,52 +107,63 @@ static void upload_data_work_handler(struct k_work *work)
 
 	CTR_BUF_DEFINE_STATIC(buf, 4096);
 
-	/* repeat sending as long as we have wM-BUS packets in receive buffer */
-	while (1) {
+	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
+		/* repeat sending as long as we have wM-BUS packets in receive buffer */
+		while (1) {
 
-		ctr_buf_reset(&buf);
+			ctr_buf_reset(&buf);
 
-		ZCBOR_STATE_E(zs, 8, ctr_buf_get_mem(&buf), ctr_buf_get_free(&buf), 1);
+			ZCBOR_STATE_E(zs, 8, ctr_buf_get_mem(&buf), ctr_buf_get_free(&buf), 1);
 
-		ret = app_cbor_encode(zs, ctr_buf_get_mem(&buf));
-		if (ret) {
-			LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
-			break;
-		}
+			ret = app_cbor_encode(zs, ctr_buf_get_mem(&buf));
+			if (ret) {
+				LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
+				break;
+			}
 
-		size_t len = zs[0].payload_mut - ctr_buf_get_mem(&buf);
+			size_t len = zs[0].payload_mut - ctr_buf_get_mem(&buf);
 
-		ret = ctr_buf_seek(&buf, len);
-		if (ret) {
-			LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
-			break;
-		}
+			ret = ctr_buf_seek(&buf, len);
+			if (ret) {
+				LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
+				break;
+			}
 
-		LOG_INF("Calling `ctr_cloud_send`");
-		ret = ctr_cloud_send(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf));
-		if (ret) {
-			LOG_ERR("Call `ctr_cloud_send` failed: %d", ret);
-			break;
-		}
+			LOG_INF("Calling `ctr_cloud_send`");
+			ret = ctr_cloud_send(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf));
+			if (ret) {
+				LOG_ERR("Call `ctr_cloud_send` failed: %d", ret);
+				break;
+			}
 
-		/* Is there more data to send? */
-		size_t wmbus_packet_len;
-		packet_get_next_size(&wmbus_packet_len);
-		if (wmbus_packet_len) {
-			atomic_inc(&g_app_data.send_index);
-			LOG_INF("More data to be send ==============================");
-		} else {
-			LOG_INF("No more data to be send +++++++++++++++++++++++++++");
-			break;
+			/* Is there more data to send? */
+			size_t wmbus_packet_len;
+			packet_get_next_size(&wmbus_packet_len);
+			if (wmbus_packet_len) {
+				atomic_inc(&g_app_data.send_index);
+				LOG_INF("More data to be send ==============================");
+			} else {
+				LOG_INF("No more data to be send +++++++++++++++++++++++++++");
+				break;
+			}
 		}
 	}
-
 #endif /* defined(CONFIG_SHIELD_CTR_LTE_V2) */
 
 	/* All data sent */
 	atomic_set(&g_app_data.working_flag, false);
 
 	LOG_WRN("Stopped UPLOAD DATA");
+
+	/* Store data if in enroll mode */
+	if (g_app_data.enroll_mode) {
+		app_config_enroll_save();
+	}
+
+	// Cleanup if no addresses configured, clean temporary list
+	if (g_app_data.scan_all) {
+		app_config_clear_address();
+	}
 }
 
 static K_WORK_DEFINE(m_upload_data_work, upload_data_work_handler);

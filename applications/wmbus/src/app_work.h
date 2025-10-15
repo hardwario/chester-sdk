@@ -14,6 +14,7 @@ extern "C" {
 int app_work_init(void);
 void app_work_send_trigger(void);
 void app_work_scan_trigger(void);
+void app_work_scan_trigger_enroll(int timeout, int rssi_threshold);
 void app_work_scan_timeout(void);
 void app_work_poll_trigger(void);
 
