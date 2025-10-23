@@ -482,7 +482,9 @@ int ctr_config_h_set(const struct ctr_config_item *items, int nitems, const char
 	for (int i = 0; i < nitems; i++) {
 		if (settings_name_steq(key, items[i].name, &next) && !next) {
 			if (len != items[i].size) {
-				return -EINVAL;
+				LOG_WRN("Item '%s' size mismatch: expected %zu, got %zu",
+					items[i].name, items[i].size, len);
+				return 0;
 			}
 			ret = read_cb(cb_arg, items[i].variable, len);
 			if (ret < 0) {
@@ -493,7 +495,7 @@ int ctr_config_h_set(const struct ctr_config_item *items, int nitems, const char
 		}
 	}
 
-	return -ENOENT;
+	return 0;
 }
 
 int ctr_config_h_export(const struct ctr_config_item *items, int nitems,
