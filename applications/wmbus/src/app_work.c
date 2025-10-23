@@ -167,12 +167,15 @@ void app_work_scan_timeout(void)
 		k_timer_stop(&m_scan_timeout_timer);
 		g_app_data.scan_stop_timestamp = k_uptime_get();
 
-		struct shell *shell = app_shell_get();
-		if (shell) {
-			size_t device_count;
-			wmbus_get_config_device_count(&device_count);
-			shell_print(shell, "Enrolled devices: %d", device_count);
-			shell_print(shell, "Sending data, restarting...");
+		if (g_app_data.enroll_mode) {
+
+			struct shell *shell = app_shell_get();
+			if (shell) {
+				size_t device_count;
+				wmbus_get_config_device_count(&device_count);
+				shell_print(shell, "Enrolled devices: %d", device_count);
+				shell_print(shell, "Sending data, restarting...");
+			}
 		}
 
 		app_work_send_trigger();
