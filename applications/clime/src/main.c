@@ -6,6 +6,7 @@
 
 #include "app_init.h"
 #include "app_config.h"
+#include "app_iaq.h"
 
 /* CHESTER includes */
 #include <chester/ctr_cloud.h>

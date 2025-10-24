@@ -1476,7 +1476,7 @@ int app_sensor_pyranometer_sample(void)
 	pyranometer->irradiance_1_samples[pyranometer->sample_count] = CTR_ADC_MILLIVOLTS(sample_1);
 
 	LOG_INF("Irradiance 1 response: %.0f mV",
-		pyranometer->irradiance_1_samples[pyranometer->sample_count]);
+		(double)pyranometer->irradiance_1_samples[pyranometer->sample_count]);
 
 	uint16_t sample_2;
 	ret = ctr_adc_read(CTR_ADC_CHANNEL_B1, &sample_2);
@@ -1490,7 +1490,7 @@ int app_sensor_pyranometer_sample(void)
 	pyranometer->irradiance_2_samples[pyranometer->sample_count] = CTR_ADC_MILLIVOLTS(sample_2);
 
 	LOG_INF("Irradiance 2 response: %.0f mV",
-		pyranometer->irradiance_2_samples[pyranometer->sample_count]);
+		(double)pyranometer->irradiance_2_samples[pyranometer->sample_count]);
 
 	pyranometer->sample_count++;
 

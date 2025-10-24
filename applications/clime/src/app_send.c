@@ -328,9 +328,9 @@ static int compose_lrw(struct ctr_buf *buf)
 			}
 
 			if (isnan(sensor->last_moisture)) {
-				ret |= ctr_buf_append_u16(buf, BIT_MASK(16));
+				ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
 			} else {
-				ret |= ctr_buf_append_u16(buf, sensor->last_moisture);
+				ret |= ctr_buf_append_u16_le(buf, sensor->last_moisture);
 			}
 		}
 	}

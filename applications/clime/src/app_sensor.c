@@ -147,7 +147,7 @@ int app_sensor_iaq_sample(void)
 			temperature = NAN;
 			LOG_ERR("Call `ctr_s1_read_temperature` failed: %d", ret);
 		} else {
-			LOG_INF("Temperature: %.1f C", temperature);
+			LOG_INF("Temperature: %.1f C", (double)temperature);
 		}
 
 		ret = ctr_s1_read_humidity(dev, &humidity);
@@ -155,7 +155,7 @@ int app_sensor_iaq_sample(void)
 			humidity = NAN;
 			LOG_ERR("Call `ctr_s1_read_humidity` failed: %d", ret);
 		} else {
-			LOG_INF("Humidity: %.1f %%", humidity);
+			LOG_INF("Humidity: %.1f %%", (double)humidity);
 		}
 
 		ret = ctr_s1_read_illuminance(dev, &illuminance);
@@ -163,7 +163,7 @@ int app_sensor_iaq_sample(void)
 			illuminance = NAN;
 			LOG_ERR("Call `ctr_s1_read_illuminance` failed: %d", ret);
 		} else {
-			LOG_INF("Illuminance: %.0f lux", illuminance);
+			LOG_INF("Illuminance: %.0f lux", (double)illuminance);
 		}
 
 		ret = ctr_s1_read_altitude(dev, &altitude);
@@ -171,7 +171,7 @@ int app_sensor_iaq_sample(void)
 			altitude = NAN;
 			LOG_ERR("Call `ctr_s1_read_altitude` failed: %d", ret);
 		} else {
-			LOG_INF("Altitude: %.0f m", altitude);
+			LOG_INF("Altitude: %.0f m", (double)altitude);
 		}
 
 		ret = ctr_s1_read_pressure(dev, &pressure);
@@ -179,7 +179,7 @@ int app_sensor_iaq_sample(void)
 			pressure = NAN;
 			LOG_ERR("Call `ctr_s1_read_pressure` failed: %d", ret);
 		} else {
-			LOG_INF("Pressure: %.0f Pa", pressure);
+			LOG_INF("Pressure: %.0f Pa", (double)pressure);
 		}
 
 		ret = ctr_s1_read_co2_conc(dev, &co2_conc);
@@ -187,7 +187,7 @@ int app_sensor_iaq_sample(void)
 			co2_conc = NAN;
 			LOG_ERR("Call `ctr_s1_read_co2_conc` failed: %d", ret);
 		} else {
-			LOG_INF("CO2 conc.: %.0f ppm", co2_conc);
+			LOG_INF("CO2 conc.: %.0f ppm", (double)co2_conc);
 		}
 
 		app_data_lock();
@@ -610,7 +610,7 @@ int app_sensor_rtd_therm_sample(void)
 				LOG_WRN("Call `ctr_rtd_read` failed: %d", ret);
 				continue;
 			} else {
-				LOG_INF("Temperature: %.1f C", temperature);
+				LOG_INF("Temperature: %.1f C", (double)temperature);
 			}
 
 			app_data_lock();
@@ -713,7 +713,7 @@ int app_sensor_tc_therm_sample(void)
 				LOG_WRN("Call `ctr_tc_read` failed: %d", ret);
 				continue;
 			} else {
-				LOG_INF("Temperature: %.1f C", temperature);
+				LOG_INF("Temperature: %.1f C", (double)temperature);
 			}
 
 			app_data_lock();
@@ -932,16 +932,16 @@ int app_sensor_sps30_sample(void)
 			num_4_0 = NAN;
 			num_10_0 = NAN;
 		} else {
-			LOG_INF("SPS30: Mass Concentration PM1.0: %.2f ug/m3", pm_1_0);
-			LOG_INF("SPS30: Mass Concentration PM2.5: %.2f ug/m3", pm_2_5);
-			LOG_INF("SPS30: Mass Concentration PM4.0: %.2f ug/m3", pm_4_0);
-			LOG_INF("SPS30: Mass Concentration PM10.0: %.2f ug/m3", pm_10_0);
+			LOG_INF("SPS30: Mass Concentration PM1.0: %.2f ug/m3", (double)pm_1_0);
+			LOG_INF("SPS30: Mass Concentration PM2.5: %.2f ug/m3", (double)pm_2_5);
+			LOG_INF("SPS30: Mass Concentration PM4.0: %.2f ug/m3", (double)pm_4_0);
+			LOG_INF("SPS30: Mass Concentration PM10.0: %.2f ug/m3", (double)pm_10_0);
 
-			LOG_INF("SPS30: Number Concentration PM0.5: %.2f", num_0_5);
-			LOG_INF("SPS30: Number Concentration PM1.0: %.2f", num_1_0);
-			LOG_INF("SPS30: Number Concentration PM2.5: %.2f", num_2_5);
-			LOG_INF("SPS30: Number Concentration PM4.0: %.2f", num_4_0);
-			LOG_INF("SPS30: Number Concentration PM10.0: %.2f", num_10_0);
+			LOG_INF("SPS30: Number Concentration PM0.5: %.2f", (double)num_0_5);
+			LOG_INF("SPS30: Number Concentration PM1.0: %.2f", (double)num_1_0);
+			LOG_INF("SPS30: Number Concentration PM2.5: %.2f", (double)num_2_5);
+			LOG_INF("SPS30: Number Concentration PM4.0: %.2f", (double)num_4_0);
+			LOG_INF("SPS30: Number Concentration PM10.0: %.2f", (double)num_10_0);
 		}
 
 		app_data_lock();
