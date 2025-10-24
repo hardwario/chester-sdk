@@ -369,38 +369,33 @@ int app_work_init(void)
 	k_work_schedule_for_queue(&m_work_q, &m_power_work, K_SECONDS(60));
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+	k_work_schedule_for_queue(&m_work_q, &m_analog_sample_work, K_NO_WAIT);
 	k_work_schedule_for_queue(&m_work_q, &m_counter_aggreg_work,
 				  K_SECONDS(g_app_config.counter_interval_aggreg));
-	k_work_schedule_for_queue(&m_work_q, &m_analog_sample_work,
-				  K_SECONDS(g_app_config.analog_interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_analog_aggreg_work,
 				  K_SECONDS(g_app_config.analog_interval_aggreg));
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2)
-	k_work_schedule_for_queue(&m_work_q, &m_hygro_sample_work,
-				  K_SECONDS(g_app_config.hygro_interval_sample));
+	k_work_schedule_for_queue(&m_work_q, &m_hygro_sample_work, K_NO_WAIT);
 	k_work_schedule_for_queue(&m_work_q, &m_hygro_aggreg_work,
 				  K_SECONDS(g_app_config.hygro_interval_aggreg));
 #endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
-	k_work_schedule_for_queue(&m_work_q, &m_w1_therm_sample_work,
-				  K_SECONDS(g_app_config.w1_therm_interval_sample));
+	k_work_schedule_for_queue(&m_work_q, &m_w1_therm_sample_work, K_NO_WAIT);
 	k_work_schedule_for_queue(&m_work_q, &m_w1_therm_aggreg_work,
 				  K_SECONDS(g_app_config.w1_therm_interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
-	k_work_schedule_for_queue(&m_work_q, &m_soil_sensor_sample_work,
-				  K_SECONDS(g_app_config.w1_therm_interval_sample));
+	k_work_schedule_for_queue(&m_work_q, &m_soil_sensor_sample_work, K_NO_WAIT);
 	k_work_schedule_for_queue(&m_work_q, &m_soil_sensor_aggreg_work,
 				  K_SECONDS(g_app_config.w1_therm_interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
 #if defined(CONFIG_CTR_BLE_TAG)
-	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_sample_work,
-				  K_SECONDS(g_app_config.analog_interval_sample));
+	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_sample_work, K_NO_WAIT);
 	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_aggreg_work,
 				  K_SECONDS(g_app_config.analog_interval_aggreg));
 #endif /* defined(CONFIG_CTR_BLE_TAG) */

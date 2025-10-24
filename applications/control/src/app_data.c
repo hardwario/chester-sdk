@@ -25,6 +25,14 @@ struct app_data g_app_data = {
 	.accel_orientation = INT_MAX,
 	.therm_temperature = NAN,
 
+#if defined(FEATURE_HARDWARE_CHESTER_S2)
+	.hygro =
+		{
+			.last_sample_temperature = NAN,
+			.last_sample_humidity = NAN,
+		},
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
+
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 	.w1_therm.sensor[0 ... APP_DATA_W1_THERM_COUNT - 1] =
 		{
@@ -32,13 +40,13 @@ struct app_data g_app_data = {
 		},
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	.ble_tag.sensor[0 ... CTR_BLE_TAG_COUNT - 1] =
 		{
 			.last_sample_temperature = NAN,
 			.last_sample_humidity = NAN,
 		},
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 };
 
 static K_MUTEX_DEFINE(m_lock);

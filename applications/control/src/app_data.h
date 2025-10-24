@@ -106,6 +106,7 @@ struct app_data_counter {
 
 struct app_data_analog {
 	int64_t timestamp;
+	float last_sample;
 	int sample_count;
 	float samples[APP_DATA_ANALOG_MAX_SAMPLES];
 	int measurement_count;
@@ -122,6 +123,8 @@ struct app_data_hygro_measurement {
 };
 
 struct app_data_hygro {
+	float last_sample_temperature;
+	float last_sample_humidity;
 	int64_t timestamp;
 	int sample_count;
 	float samples_temperature[APP_DATA_HYGRO_MAX_SAMPLES];
@@ -250,9 +253,9 @@ struct app_data {
 	struct app_data_soil_sensor soil_sensor;
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(CONFIG_CTR_BLE_TAG)
+#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	struct app_data_ble_tag ble_tag;
-#endif /* defined(CONFIG_CTR_BLE_TAG) */
+#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 };
 
 extern struct app_data g_app_data;

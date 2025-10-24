@@ -12,6 +12,7 @@
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_edge.h>
 #include <chester/ctr_lte.h>
+#include <chester/ctr_lrw.h>
 #include <chester/drivers/ctr_z.h>
 
 #ifdef __cplusplus
@@ -32,6 +33,10 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *p
 
 void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val,
 			    void *user_data);
+
+#if defined(FEATURE_SUBSYSTEM_LRW)
+void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param);
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 #ifdef __cplusplus
 }

@@ -20,6 +20,7 @@
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_edge.h>
 #include <chester/ctr_led.h>
+#include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
 #include <chester/ctr_wdog.h>
 #include <chester/drivers/ctr_x0.h>
@@ -342,6 +343,7 @@ static int init_chester_x0_voltages(const struct device *dev)
 				return -ENOMEM;
 			}
 			memset(g_app_data.voltage[i], 0, sizeof(struct app_data_analog));
+			g_app_data.voltage[i]->last_sample = NAN;
 
 			/* Initialize channel */
 			ret = ctr_x0_set_mode(dev, x0_channel_lookup[i], CTR_X0_MODE_AI_INPUT);
@@ -385,6 +387,7 @@ static int init_chester_x0_currents(const struct device *dev)
 				return -ENOMEM;
 			}
 			memset(g_app_data.current[i], 0, sizeof(struct app_data_analog));
+			g_app_data.current[i]->last_sample = NAN;
 
 			/* Initialize channel */
 			ret = ctr_x0_set_mode(dev, x0_channel_lookup[i], CTR_X0_MODE_CL_INPUT);
@@ -524,6 +527,24 @@ int app_init(void)
 		return ret;
 	}
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
+
+#if defined(FEATURE_SUBSYSTEM_LRW)
+	if (g_app_config.mode == APP_CONFIG_MODE_LRW) {
+		ret = ctr_lrw_init(app_handler_lrw, NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_init` failed: %d", ret);
+			return ret;
+		}
+
+		ret = ctr_lrw_start(NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_start` failed: %d", ret);
+			return ret;
+		}
+
+		k_sleep(K_SECONDS(2));
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 #if defined(FEATURE_SUBSYSTEM_CLOUD)
 	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {

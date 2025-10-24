@@ -183,6 +183,7 @@ void app_sensor_counter_clear(void)
 	for (int i = 0; i < APP_DATA_NUM_CHANNELS; i++) {
 		if (g_app_data.counter[i]) {
 			g_app_data.counter[i]->measurement_count = 0;
+			g_app_data.counter[i]->delta = 0;
 		}
 	}
 
@@ -257,6 +258,7 @@ int app_sensor_voltage_sample(void)
 					*sample = NAN;
 					voltage->sample_count++;
 				}
+				voltage->last_sample = *sample;
 
 				app_data_unlock();
 
@@ -328,6 +330,7 @@ int app_sensor_current_sample(void)
 					*sample = NAN;
 					current->sample_count++;
 				}
+				current->last_sample = *sample;
 
 				app_data_unlock();
 			} else {
@@ -387,13 +390,15 @@ int app_sensor_hygro_sample(void)
 		temperature = NAN;
 		humidity = NAN;
 	} else {
-		LOG_INF("Temperature: %.2f °C", temperature);
-		LOG_INF("Humidity: %.2f %% RH", humidity);
+		LOG_INF("Temperature: %.2f °C", (double)temperature);
+		LOG_INF("Humidity: %.2f %% RH", (double)humidity);
 	}
 
 	app_data_lock();
 
 	if (g_app_data.hygro.sample_count < APP_DATA_HYGRO_MAX_SAMPLES) {
+		g_app_data.hygro.last_sample_temperature = temperature;
+		g_app_data.hygro.last_sample_humidity = humidity;
 		g_app_data.hygro.samples_temperature[g_app_data.hygro.sample_count] = temperature;
 		g_app_data.hygro.samples_humidity[g_app_data.hygro.sample_count] = humidity;
 		g_app_data.hygro.sample_count++;

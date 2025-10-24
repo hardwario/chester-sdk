@@ -491,8 +491,6 @@ static int encode(zcbor_state_t *zs)
 					zcbor_uint32_put(zs, CODEC_KEY_E_COUNTER__DELTA);
 					zcbor_uint64_put(zs, counter->delta);
 
-					counter->delta = 0;
-
 					zcbor_uint32_put(zs, CODEC_KEY_E_COUNTER__MEASUREMENTS);
 					{
 						zcbor_list_start_encode(
@@ -649,7 +647,7 @@ static int encode(zcbor_state_t *zs)
 		{
 			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-			zcbor_uint32_put(zs, CODEC_KEY_E_HYGROMETER__MEASUREMENTS_DIV);
+			zcbor_uint32_put(zs, CODEC_KEY_E_HYGROMETER__HUMIDITY__MEASUREMENTS_DIV);
 			{
 				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
