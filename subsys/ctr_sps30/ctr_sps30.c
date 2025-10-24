@@ -93,7 +93,7 @@ int ctr_sps30_read(float *mass_conc_pm_1_0, float *mass_conc_pm_2_5, float *mass
 			goto exit;
 		}
 		*mass_conc_pm_1_0 = sensor_value_to_double(&val);
-		LOG_DBG("Particulate Matter 1.0: %.2f ug/m3", *mass_conc_pm_1_0);
+		LOG_DBG("Particulate Matter 1.0: %.2f ug/m3", (double)*mass_conc_pm_1_0);
 	}
 
 	if (mass_conc_pm_2_5) {
@@ -103,7 +103,7 @@ int ctr_sps30_read(float *mass_conc_pm_1_0, float *mass_conc_pm_2_5, float *mass
 			goto exit;
 		}
 		*mass_conc_pm_2_5 = sensor_value_to_double(&val);
-		LOG_DBG("Particulate Matter 2.5: %.2f ug/m3", *mass_conc_pm_1_0);
+		LOG_DBG("Particulate Matter 2.5: %.2f ug/m3", (double)*mass_conc_pm_1_0);
 	}
 
 	if (mass_conc_pm_4_0) {
@@ -113,7 +113,7 @@ int ctr_sps30_read(float *mass_conc_pm_1_0, float *mass_conc_pm_2_5, float *mass
 			goto exit;
 		}
 		*mass_conc_pm_4_0 = sensor_value_to_double(&val);
-		LOG_DBG("Particulate Matter 4.0: %.2f ug/m3", *mass_conc_pm_1_0);
+		LOG_DBG("Particulate Matter 4.0: %.2f ug/m3", (double)*mass_conc_pm_1_0);
 	}
 
 	if (mass_conc_pm_10_0) {
@@ -123,7 +123,7 @@ int ctr_sps30_read(float *mass_conc_pm_1_0, float *mass_conc_pm_2_5, float *mass
 			goto exit;
 		}
 		*mass_conc_pm_10_0 = sensor_value_to_double(&val);
-		LOG_DBG("Particulate Matter 10.0: %.2f ug/m3", *mass_conc_pm_1_0);
+		LOG_DBG("Particulate Matter 10.0: %.2f ug/m3", (double)*mass_conc_pm_1_0);
 	}
 
 	if (num_conc_pm_0_5) {
@@ -134,7 +134,7 @@ int ctr_sps30_read(float *mass_conc_pm_1_0, float *mass_conc_pm_2_5, float *mass
 			goto exit;
 		}
 		*num_conc_pm_0_5 = sensor_value_to_double(&val);
-		LOG_DBG("Number concentration 0.5: %.2f", *num_conc_pm_0_5);
+		LOG_DBG("Number concentration 0.5: %.2f", (double)*num_conc_pm_0_5);
 	}
 
 	if (num_conc_pm_1_0) {
@@ -145,7 +145,7 @@ int ctr_sps30_read(float *mass_conc_pm_1_0, float *mass_conc_pm_2_5, float *mass
 			goto exit;
 		}
 		*num_conc_pm_1_0 = sensor_value_to_double(&val);
-		LOG_DBG("Number concentration 1.0: %.2f", *num_conc_pm_1_0);
+		LOG_DBG("Number concentration 1.0: %.2f", (double)*num_conc_pm_1_0);
 	}
 
 	if (num_conc_pm_2_5) {
@@ -156,7 +156,7 @@ int ctr_sps30_read(float *mass_conc_pm_1_0, float *mass_conc_pm_2_5, float *mass
 			goto exit;
 		}
 		*num_conc_pm_2_5 = sensor_value_to_double(&val);
-		LOG_DBG("Number concentration 2.5: %.2f", *num_conc_pm_2_5);
+		LOG_DBG("Number concentration 2.5: %.2f", (double)*num_conc_pm_2_5);
 	}
 
 	if (num_conc_pm_4_0) {
@@ -167,7 +167,7 @@ int ctr_sps30_read(float *mass_conc_pm_1_0, float *mass_conc_pm_2_5, float *mass
 			goto exit;
 		}
 		*num_conc_pm_4_0 = sensor_value_to_double(&val);
-		LOG_DBG("Number concentration 4.0: %.2f", *num_conc_pm_4_0);
+		LOG_DBG("Number concentration 4.0: %.2f", (double)*num_conc_pm_4_0);
 	}
 
 	if (num_conc_pm_10_0) {
@@ -178,7 +178,7 @@ int ctr_sps30_read(float *mass_conc_pm_1_0, float *mass_conc_pm_2_5, float *mass
 			goto exit;
 		}
 		*num_conc_pm_10_0 = sensor_value_to_double(&val);
-		LOG_DBG("Number concentration 10.0: %.2f", *num_conc_pm_10_0);
+		LOG_DBG("Number concentration 10.0: %.2f", (double)*num_conc_pm_10_0);
 	}
 
 exit:

@@ -61,16 +61,20 @@ static int cmd_sps30_read(const struct shell *shell, size_t argc, char **argv)
 			return ret;
 		}
 
-		shell_print(shell, "Mass Concentration PM1.0: %.2f ug/m3", mass_conc_pm_1_0);
-		shell_print(shell, "Mass Concentration PM2.5: %.2f ug/m3", mass_conc_pm_2_5);
-		shell_print(shell, "Mass Concentration PM4.0: %.2f ug/m3", mass_conc_pm_4_0);
-		shell_print(shell, "Mass Concentration PM10.0: %.2f ug/m3", mass_conc_pm_10_0);
+		shell_print(shell, "Mass Concentration PM1.0: %.2f ug/m3",
+			    (double)mass_conc_pm_1_0);
+		shell_print(shell, "Mass Concentration PM2.5: %.2f ug/m3",
+			    (double)mass_conc_pm_2_5);
+		shell_print(shell, "Mass Concentration PM4.0: %.2f ug/m3",
+			    (double)mass_conc_pm_4_0);
+		shell_print(shell, "Mass Concentration PM10.0: %.2f ug/m3",
+			    (double)mass_conc_pm_10_0);
 
-		shell_print(shell, "Number Concentration PM1.0: %.2f", num_conc_pm_0_5);
-		shell_print(shell, "Number Concentration PM1.0: %.2f", num_conc_pm_1_0);
-		shell_print(shell, "Number Concentration PM2.5: %.2f", num_conc_pm_2_5);
-		shell_print(shell, "Number Concentration PM4.0: %.2f", num_conc_pm_4_0);
-		shell_print(shell, "Number Concentration PM10.0: %.2f", num_conc_pm_10_0);
+		shell_print(shell, "Number Concentration PM1.0: %.2f", (double)num_conc_pm_0_5);
+		shell_print(shell, "Number Concentration PM1.0: %.2f", (double)num_conc_pm_1_0);
+		shell_print(shell, "Number Concentration PM2.5: %.2f", (double)num_conc_pm_2_5);
+		shell_print(shell, "Number Concentration PM4.0: %.2f", (double)num_conc_pm_4_0);
+		shell_print(shell, "Number Concentration PM10.0: %.2f", (double)num_conc_pm_10_0);
 	}
 
 	return 0;
