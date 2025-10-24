@@ -18,25 +18,25 @@ def build_app_variant(variant, version, docs_link, cwd):
     remark = variant.get('remark', '')
     print(f'{name}')
 
+    p = subprocess.Popen(['rm', '-rf', 'build/'], cwd=cwd)
+    p.wait()
+
+    p = subprocess.Popen(
+        ['west', 'chester-update', '--variant', name, '--version', version], cwd=cwd)
+    p.wait()
+
+    p = subprocess.Popen(['west', 'build'], cwd=cwd)
+    p.wait()
+
+    # Parse the output
+    unique_identifier = None
+    sharable_link = None
+
     if True:
-        p = subprocess.Popen(['rm', '-rf', 'build/'], cwd=cwd)
-        p.wait()
-
-        p = subprocess.Popen(
-            ['west', 'chester-update', '--variant', name, '--version', version], cwd=cwd)
-        p.wait()
-
-        p = subprocess.Popen(['west', 'build'], cwd=cwd)
-        p.wait()
-
         p = subprocess.Popen(['hardwario', 'chester', 'app', 'fw', 'upload',
                               '--name', fw_name, '--version', version], cwd=cwd,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         stdout, stderr = p.communicate()
-
-        # Parse the output
-        unique_identifier = None
-        sharable_link = None
 
         for line in stdout.splitlines():
             if line.startswith("Unique identifier:"):
