@@ -11,6 +11,7 @@
 #include <chester/ctr_ble_tag.h>
 #include <chester/ctr_lte.h>
 #include <chester/drivers/people_counter.h>
+#include <chester/application/ctr_data.h>
 
 /* Standard includes */
 #include <stdbool.h>
@@ -55,13 +56,6 @@ struct weight_measurement {
 	int32_t b2_raw;
 };
 
-struct app_data_aggreg {
-	float min;
-	float max;
-	float avg;
-	float mdn;
-};
-
 #if defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
 struct people_measurement {
 	int timestamp_offset;
@@ -73,8 +67,8 @@ struct people_measurement {
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 struct app_data_ble_tag_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
 };
 
 struct app_data_ble_tag_sensor {

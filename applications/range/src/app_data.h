@@ -11,6 +11,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_ble_tag.h>
+#include <chester/application/ctr_data.h>
 
 /* Standard includes */
 #include <stdbool.h>
@@ -50,20 +51,13 @@ struct app_data_backup {
 };
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-struct app_data_aggreg {
-	float min;
-	float max;
-	float avg;
-	float mdn;
-};
-
 #if defined(FEATURE_HARDWARE_CHESTER_MB7066_A) || defined(FEATURE_HARDWARE_CHESTER_MB7066_B)
 struct app_data_sonar {
 	int sample_count;
 	float samples[APP_DATA_MAX_SAMPLES];
 
 	int measurement_count;
-	struct app_data_aggreg measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	int64_t timestamp;
 };
@@ -86,8 +80,8 @@ struct app_data_hygro_event {
 };
 
 struct app_data_hygro_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
 };
 
 struct app_data_hygro {
@@ -110,7 +104,7 @@ struct app_data_hygro {
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 struct app_data_w1_therm_measurement {
-	struct app_data_aggreg temperature;
+	struct ctr_data_aggreg temperature;
 };
 
 struct app_data_w1_therm_sensor {
@@ -137,8 +131,8 @@ struct app_data_w1_therm {
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 struct app_data_ble_tag_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
 };
 
 struct app_data_ble_tag_sensor {

@@ -9,6 +9,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_ble_tag.h>
+#include <chester/application/ctr_data.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -31,13 +32,6 @@ extern "C" {
 #define APP_DATA_MAX_BLE_TAG_SAMPLES      16
 #define APP_DATA_MAX_BLE_TAG_MEASUREMENTS 16
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
-
-struct app_data_aggreg {
-	float min;
-	float max;
-	float avg;
-	float mdn;
-};
 
 #if defined(FEATURE_HARDWARE_CHESTER_Z)
 
@@ -84,8 +78,8 @@ struct app_data_button {
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 struct app_data_ble_tag_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
 };
 
 struct app_data_ble_tag_sensor {

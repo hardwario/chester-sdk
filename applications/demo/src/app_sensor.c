@@ -67,11 +67,6 @@ static void aggreg(float *samples, size_t count, float *min, float *max, float *
 	*mdn = samples[count / 2];
 }
 
-__unused static void aggreg_sample(float *samples, size_t count, struct app_data_aggreg *sample)
-{
-	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
-}
-
 int app_sensor_sample(void)
 {
 	int ret;

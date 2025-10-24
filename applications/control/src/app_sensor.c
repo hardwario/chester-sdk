@@ -76,7 +76,7 @@ __unused static void aggreg(float *samples, size_t count, float *minimum, float 
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A) || defined(FEATURE_SUBSYSTEM_DS18B20)
 
-__unused static void aggreg_sample(float *samples, size_t count, struct app_data_aggreg *sample)
+__unused static void aggreg_sample(float *samples, size_t count, struct ctr_data_aggreg *sample)
 {
 	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
 }
@@ -206,7 +206,7 @@ int static aggreg_analog(struct app_data_analog *analog)
 	}
 
 	if (analog->measurement_count < APP_DATA_ANALOG_MAX_MEASUREMENTS) {
-		struct app_data_aggreg *measurement =
+		struct ctr_data_aggreg *measurement =
 			&analog->measurements[analog->measurement_count];
 
 		aggreg_sample(analog->samples, analog->sample_count, measurement);

@@ -12,6 +12,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_ble_tag.h>
+#include <chester/application/ctr_data.h>
 
 /* Standard includes */
 #include <stdbool.h>
@@ -52,13 +53,6 @@ struct app_data_backup {
 };
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-struct app_data_aggreg {
-	float min;
-	float max;
-	float avg;
-	float mdn;
-};
-
 #if defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)
 
 struct app_data_meteo_wind_speed {
@@ -68,7 +62,7 @@ struct app_data_meteo_wind_speed {
 	float last_sample;
 
 	int measurement_count;
-	struct app_data_aggreg measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	int64_t timestamp;
 };
@@ -107,7 +101,7 @@ struct app_data_barometer_pressure {
 	float last_sample;
 
 	int measurement_count;
-	struct app_data_aggreg measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	int64_t timestamp;
 };
@@ -133,8 +127,8 @@ struct app_data_hygro_event {
 };
 
 struct app_data_hygro_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
 };
 
 struct app_data_hygro {
@@ -162,7 +156,7 @@ struct app_data_hygro {
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 
 struct app_data_w1_therm_measurement {
-	struct app_data_aggreg temperature;
+	struct ctr_data_aggreg temperature;
 };
 
 struct app_data_w1_therm_sensor {
@@ -190,8 +184,8 @@ struct app_data_w1_therm {
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 
 struct app_data_soil_sensor_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg moisture;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg moisture;
 };
 
 struct app_data_soil_sensor_sensor {
@@ -215,8 +209,8 @@ struct app_data_soil_sensor {
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 struct app_data_ble_tag_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
 };
 
 struct app_data_ble_tag_sensor {
@@ -257,32 +251,32 @@ struct app_data_lambrecht {
 	int measurement_count;
 
 	float wind_speed_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg wind_speed_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg wind_speed_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	float wind_direction_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg wind_direction_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg wind_direction_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	float temperature_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg temperature_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg temperature_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	float humidity_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg humidity_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg humidity_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	float dew_point_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg dew_point_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg dew_point_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	float pressure_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg pressure_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg pressure_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	float rainfall_total_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg rainfall_total_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg rainfall_total_measurements[APP_DATA_MAX_MEASUREMENTS];
 	float rainfall_total_sum;
 
 	float rainfall_intensity_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg rainfall_intensity_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg rainfall_intensity_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	float illuminance_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg illuminance_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg illuminance_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	int64_t timestamp;
 };
@@ -297,10 +291,10 @@ struct app_data_pyranometer {
 	int measurement_count;
 
 	float irradiance_1_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg irradiance_1_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg irradiance_1_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	float irradiance_2_samples[APP_DATA_MAX_SAMPLES];
-	struct app_data_aggreg irradiance_2_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg irradiance_2_measurements[APP_DATA_MAX_MEASUREMENTS];
 
 	int64_t timestamp;
 };

@@ -71,7 +71,7 @@ static void aggreg(float *samples, size_t count, float *min, float *max, float *
 	*mdn = samples[count / 2];
 }
 
-__unused static void aggreg_sample(float *samples, size_t count, struct app_data_aggreg *sample)
+__unused static void aggreg_sample(float *samples, size_t count, struct ctr_data_aggreg *sample)
 {
 	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
 }
@@ -158,7 +158,7 @@ int app_sensor_sonar_aggreg(void)
 	}
 
 	if (sonar->measurement_count < APP_DATA_MAX_MEASUREMENTS) {
-		struct app_data_aggreg *m = &sonar->measurements[sonar->measurement_count++];
+		struct ctr_data_aggreg *m = &sonar->measurements[sonar->measurement_count++];
 
 		aggreg_sample(sonar->samples, sonar->sample_count, m);
 

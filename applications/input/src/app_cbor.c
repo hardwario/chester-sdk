@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_SHIELD_CTR_X0_A)
 
-__unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *sample, float mul)
+__unused static void put_sample_mul(zcbor_state_t *zs, struct ctr_data_aggreg *sample, float mul)
 {
 	if (isnan(sample->min)) {
 		zcbor_nil_put(zs, NULL);
@@ -60,7 +60,7 @@ __unused static void put_sample_mul(zcbor_state_t *zs, struct app_data_aggreg *s
 	}
 }
 
-__unused static void put_sample(zcbor_state_t *zs, struct app_data_aggreg *sample)
+__unused static void put_sample(zcbor_state_t *zs, struct ctr_data_aggreg *sample)
 {
 	put_sample_mul(zs, sample, 1.f);
 }

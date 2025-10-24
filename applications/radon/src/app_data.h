@@ -11,6 +11,7 @@
 /* CHESTER includes */
 #include <chester/ctr_lte.h>
 #include <chester/ctr_ble_tag.h>
+#include <chester/application/ctr_data.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -27,13 +28,6 @@ extern "C" {
 #define APP_DATA_MAX_TAMPER_EVENTS 32
 #define APP_DATA_MAX_MEASUREMENTS  32
 #define APP_DATA_MAX_SAMPLES       32
-
-struct app_data_aggreg {
-	float min;
-	float max;
-	float avg;
-	float mdn;
-};
 
 #if defined(FEATURE_TAMPER)
 struct app_data_tamper_event {
@@ -54,8 +48,8 @@ struct app_data_tamper {
 #define APP_DATA_MAX_BLE_TAG_SAMPLES      16
 
 struct app_data_ble_tag_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
 };
 
 struct app_data_ble_tag_sensor {
@@ -106,8 +100,8 @@ struct app_data_radon {
 	float hum_samples[APP_DATA_MAX_SAMPLES];
 
 	int measurement_count;
-	struct app_data_aggreg temp_measurements[APP_DATA_MAX_MEASUREMENTS];
-	struct app_data_aggreg hum_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg temp_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg hum_measurements[APP_DATA_MAX_MEASUREMENTS];
 	uint32_t concentration_measurements[APP_DATA_MAX_MEASUREMENTS];
 	uint32_t daily_concentration_measurements[APP_DATA_MAX_MEASUREMENTS];
 

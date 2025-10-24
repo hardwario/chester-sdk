@@ -10,6 +10,7 @@
 /* CHESTER includes */
 #include <chester/ctr_ble_tag.h>
 #include <chester/ctr_lte.h>
+#include <chester/application/ctr_data.h>
 
 /* Standard includes */
 #include <stdbool.h>
@@ -82,21 +83,14 @@ struct app_data_backup {
 };
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
 
-struct app_data_aggreg {
-	float min;
-	float max;
-	float avg;
-	float mdn;
-};
-
 #if defined(FEATURE_HARDWARE_CHESTER_S1)
 struct app_data_iaq_sensors_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
-	struct app_data_aggreg illuminance;
-	struct app_data_aggreg altitude;
-	struct app_data_aggreg pressure;
-	struct app_data_aggreg co2_conc;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
+	struct ctr_data_aggreg illuminance;
+	struct ctr_data_aggreg altitude;
+	struct ctr_data_aggreg pressure;
+	struct ctr_data_aggreg co2_conc;
 
 	int motion_count;
 };
@@ -160,8 +154,8 @@ struct app_data_hygro_event {
 };
 
 struct app_data_hygro_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
 };
 
 struct app_data_hygro {
@@ -187,7 +181,7 @@ struct app_data_hygro {
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 struct app_data_w1_therm_measurement {
-	struct app_data_aggreg temperature;
+	struct ctr_data_aggreg temperature;
 };
 
 struct app_data_w1_therm_sensor {
@@ -213,7 +207,7 @@ struct app_data_w1_therm {
 
 #if defined(FEATURE_HARDWARE_CHESTER_RTD_A) || defined(FEATURE_HARDWARE_CHESTER_RTD_B)
 struct app_data_rtd_therm_measurement {
-	struct app_data_aggreg temperature;
+	struct ctr_data_aggreg temperature;
 };
 
 struct app_data_rtd_therm_sensor {
@@ -235,7 +229,7 @@ struct app_data_rtd_therm {
 
 #if defined(FEATURE_HARDWARE_CHESTER_TC_A) || defined(FEATURE_HARDWARE_CHESTER_TC_B)
 struct app_data_tc_therm_measurement {
-	struct app_data_aggreg temperature;
+	struct ctr_data_aggreg temperature;
 };
 
 struct app_data_tc_therm_sensor {
@@ -258,8 +252,8 @@ struct app_data_tc_therm {
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 
 struct app_data_soil_sensor_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg moisture;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg moisture;
 };
 
 struct app_data_soil_sensor_sensor {
@@ -285,21 +279,21 @@ struct app_data_soil_sensor {
 #if defined(FEATURE_HARDWARE_CHESTER_SPS30)
 
 struct app_data_sps30_measurement {
-	struct app_data_aggreg mass_conc_pm_1_0;
-	struct app_data_aggreg mass_conc_pm_2_5;
-	struct app_data_aggreg mass_conc_pm_4_0;
-	struct app_data_aggreg mass_conc_pm_10_0;
+	struct ctr_data_aggreg mass_conc_pm_1_0;
+	struct ctr_data_aggreg mass_conc_pm_2_5;
+	struct ctr_data_aggreg mass_conc_pm_4_0;
+	struct ctr_data_aggreg mass_conc_pm_10_0;
 
-	struct app_data_aggreg num_conc_pm_0_5;
-	struct app_data_aggreg num_conc_pm_1_0;
-	struct app_data_aggreg num_conc_pm_2_5;
-	struct app_data_aggreg num_conc_pm_4_0;
-	struct app_data_aggreg num_conc_pm_10_0;
+	struct ctr_data_aggreg num_conc_pm_0_5;
+	struct ctr_data_aggreg num_conc_pm_1_0;
+	struct ctr_data_aggreg num_conc_pm_2_5;
+	struct ctr_data_aggreg num_conc_pm_4_0;
+	struct ctr_data_aggreg num_conc_pm_10_0;
 };
 
 struct app_data_sps30 {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
 
 	float last_sample_mass_conc_pm_1_0;
 	float last_sample_mass_conc_pm_2_5;
@@ -335,8 +329,8 @@ struct app_data_sps30 {
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 struct app_data_ble_tag_measurement {
-	struct app_data_aggreg temperature;
-	struct app_data_aggreg humidity;
+	struct ctr_data_aggreg temperature;
+	struct ctr_data_aggreg humidity;
 };
 
 struct app_data_ble_tag_sensor {
@@ -373,8 +367,8 @@ struct app_data_radon {
 	float hum_samples[APP_DATA_MAX_SAMPLES];
 
 	int measurement_count;
-	struct app_data_aggreg temp_measurements[APP_DATA_MAX_MEASUREMENTS];
-	struct app_data_aggreg hum_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg temp_measurements[APP_DATA_MAX_MEASUREMENTS];
+	struct ctr_data_aggreg hum_measurements[APP_DATA_MAX_MEASUREMENTS];
 	uint32_t concentration_measurements[APP_DATA_MAX_MEASUREMENTS];
 	uint32_t daily_concentration_measurements[APP_DATA_MAX_MEASUREMENTS];
 
