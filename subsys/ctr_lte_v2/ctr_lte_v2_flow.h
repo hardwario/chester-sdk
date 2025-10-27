@@ -43,6 +43,14 @@ enum ctr_lte_v2_event {
 	CTR_LTE_V2_EVENT_XGPS,
 };
 
+/**
+ * @brief Attach/retry timeout configuration.
+ */
+struct ctr_lte_v2_attach_timeout {
+	k_timeout_t attach_timeout; /**< Max duration of the current attach attempt. */
+	k_timeout_t retry_delay;    /**< Delay before the *next* attempt (after a failure). */
+};
+
 typedef void (*ctr_lte_v2_flow_event_delegate_cb)(enum ctr_lte_v2_event event);
 typedef void (*ctr_lte_v2_flow_bypass_cb)(void *user_data, const uint8_t *data, size_t len);
 
@@ -70,6 +78,10 @@ int ctr_lte_v2_flow_wake_up_and_wait_on_ready(void);
 int ctr_lte_v2_flow_cmd_without_response(const char *s);
 int ctr_lte_v2_flow_bypass_set_cb(ctr_lte_v2_flow_bypass_cb cb, void *user_data);
 int ctr_lte_v2_flow_bypass_write(const uint8_t *data, const size_t len);
+
+struct ctr_lte_v2_attach_timeout ctr_lte_v2_flow_attach_policy_periodic(int attempt,
+									k_timeout_t pause);
+struct ctr_lte_v2_attach_timeout ctr_lte_v2_flow_attach_policy_progressive(int attempt);
 
 #ifdef __cplusplus
 }

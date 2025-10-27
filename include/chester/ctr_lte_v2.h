@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
 #ifndef CHESTER_INCLUDE_CTR_LTE_V2_H_
 #define CHESTER_INCLUDE_CTR_LTE_V2_H_
 
@@ -64,6 +70,18 @@ enum ctr_lte_v2_cereg_param_act {
 
 #define CTR_LTE_V2_CEREG_PARAM_ACTIVE_TIME_DISABLED      -1
 #define CTR_LTE_V2_CEREG_PARAM_PERIODIC_TAU_EXT_DISABLED -1
+
+/**
+ * @brief Attach policy for retry and timeout configuration.
+ */
+enum ctr_lte_v2_attach_policy {
+	CTR_LTE_V2_ATTACH_POLICY_AGGRESSIVE = 0,   /**< Aggressive attach. */
+	CTR_LTE_V2_ATTACH_POLICY_PERIODIC_2H = 1,  /**< Periodic attach every 2 hours. */
+	CTR_LTE_V2_ATTACH_POLICY_PERIODIC_6H = 2,  /**< Periodic attach every 6 hours. */
+	CTR_LTE_V2_ATTACH_POLICY_PERIODIC_12H = 3, /**< Periodic attach every 12 hours. */
+	CTR_LTE_V2_ATTACH_POLICY_PERIODIC_1D = 4,  /**< Periodic attach every 1 day. */
+	CTR_LTE_V2_ATTACH_POLICY_PROGRESSIVE = 5,  /**< Progressive attach. */
+};
 
 /**
  * @brief Decoded +CEREG parameters.
@@ -156,6 +174,8 @@ int ctr_lte_v2_wait_for_connected(k_timeout_t timeout);
 
 int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param);
 
+/* -------- Information getters -------- */
+
 // get information
 int ctr_lte_v2_get_imei(uint64_t *imei);
 int ctr_lte_v2_get_imsi(uint64_t *imsi);
@@ -166,7 +186,24 @@ int ctr_lte_v2_get_cereg_param(struct ctr_lte_v2_cereg_param *param);
 int ctr_lte_v2_get_metrics(struct ctr_lte_v2_metrics *metrics);
 int ctr_lte_v2_is_attached(bool *attached);
 
+/**
+ * @brief Get current attach information.
+ *
+ * @note This API is experimental and may change in future releases.
+ *
+ * @param attempt         Input: current attach attempt (0 for first).
+ * @param attach_timeout_sec Output: current attach timeout in seconds.
+ * @param retry_delay_sec    Output: current retry delay in seconds.
+ * @param remaining_sec      Output: remaining time for current timeout in seconds.
+ * @retval 0               Success.
+ */
+int ctr_lte_v2_get_curr_attach_info(int *attempt, int *attach_timeout_sec, int *retry_delay_sec,
+				    int *remaining_sec);
+
+/* -------- GNSS functions -------- */
+
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
+
 struct ctr_lte_v2_gnss_update {
 	float latitude;
 	float longitude;

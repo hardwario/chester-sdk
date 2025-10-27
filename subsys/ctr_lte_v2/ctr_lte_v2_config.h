@@ -1,11 +1,14 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2025 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
 #ifndef CHESTER_SUBSYS_CTR_LTE_V2_CONFIG_H_
 #define CHESTER_SUBSYS_CTR_LTE_V2_CONFIG_H_
+
+/* CHESTER includes */
+#include <chester/ctr_lte_v2.h>
 
 /* Zephyr includes */
 #include <zephyr/shell/shell.h>
@@ -40,6 +43,7 @@ struct ctr_lte_v2_config {
 	enum ctr_lte_v2_config_auth auth;
 	char username[32 + 1];
 	char password[32 + 1];
+	enum ctr_lte_v2_attach_policy attach_policy;
 
 	char addr[15 + 1];
 	bool modemtrace;

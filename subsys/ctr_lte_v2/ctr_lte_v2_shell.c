@@ -171,6 +171,27 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_print(shell, "fsm-state: %s", ctr_lte_v2_get_state());
+	if (strcmp(ctr_lte_v2_get_state(), "attach") == 0) {
+		int attempt, attach_timeout_sec, remaining_sec;
+		if (!ctr_lte_v2_get_curr_attach_info(&attempt, &attach_timeout_sec, NULL,
+						     &remaining_sec)) {
+			shell_print(shell, "attach-attempt: %d", attempt);
+			shell_print(shell, "attach-timeout: %d:%02d", attach_timeout_sec / 60,
+				    attach_timeout_sec % 60);
+			shell_print(shell, "attach-remaining: %d:%02d", remaining_sec / 60,
+				    remaining_sec % 60);
+		}
+	} else if (strcmp(ctr_lte_v2_get_state(), "retry_delay") == 0) {
+		int attempt, retry_delay_sec, remaining_sec;
+		if (!ctr_lte_v2_get_curr_attach_info(&attempt, NULL, &retry_delay_sec,
+						     &remaining_sec)) {
+			shell_print(shell, "attach-attempt: %d", attempt);
+			shell_print(shell, "retry-delay-timeout: %d:%02d", retry_delay_sec / 60,
+				    retry_delay_sec % 60);
+			shell_print(shell, "retry-delay-remaining: %d:%02d", remaining_sec / 60,
+				    remaining_sec % 60);
+		}
+	}
 
 	shell_print(shell, "command succeeded");
 

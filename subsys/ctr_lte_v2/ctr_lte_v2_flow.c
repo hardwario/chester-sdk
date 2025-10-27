@@ -25,9 +25,10 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net/socket_ncs.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/net/socket_ncs.h>
+#include <zephyr/sys/timeutil.h>
 
 /* Standard includes */
 #include <errno.h>
@@ -1211,4 +1212,48 @@ int ctr_lte_v2_flow_bypass_write(const uint8_t *data, const size_t len)
 	}
 
 	return 0;
+}
+
+struct ctr_lte_v2_attach_timeout ctr_lte_v2_flow_attach_policy_periodic(int attempt,
+									k_timeout_t pause)
+{
+	switch (attempt % 3) {
+	case 0:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(5), K_NO_WAIT};
+	case 1:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(5), K_NO_WAIT};
+	default: /* 2 */
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(50), pause};
+	}
+}
+
+struct ctr_lte_v2_attach_timeout ctr_lte_v2_flow_attach_policy_progressive(int attempt)
+{
+	switch (attempt) {
+	case 0:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(5), K_NO_WAIT};
+	case 1:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(5), K_NO_WAIT};
+	case 2:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(50), K_HOURS(1)};
+	case 3:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(5), K_MINUTES(5)};
+	case 4:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(45), K_HOURS(6)};
+	case 5:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(5), K_MINUTES(5)};
+	case 6:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(45), K_HOURS(24)};
+	case 7:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(5), K_MINUTES(5)};
+	case 8:
+		return (struct ctr_lte_v2_attach_timeout){K_MINUTES(45), K_HOURS(168)};
+	default: {
+		/* 9+: attach alternates 5m (odd), 45m (even) */
+		k_timeout_t attach = (attempt & 1) ? K_MINUTES(5) : K_MINUTES(45);
+		/* delay is determined by the NEXT attempt: for next=odd => 168h, otherwise 5m */
+		k_timeout_t delay = ((attempt + 1) & 1) ? K_HOURS(168) : K_MINUTES(5);
+		return (struct ctr_lte_v2_attach_timeout){attach, delay};
+	}
+	};
 }

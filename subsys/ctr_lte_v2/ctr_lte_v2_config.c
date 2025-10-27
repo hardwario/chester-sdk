@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 HARDWARIO a.s.
+ * Copyright (c) 2025 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
@@ -9,6 +9,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_config.h>
+#include <chester/ctr_lte_v2.h>
 
 /* Zephyr includes */
 #include <zephyr/init.h>
@@ -49,8 +50,27 @@ static struct {
 
 static uint32_t m_config_loaded = 0;
 
-static const char *m_enum_antenna_items[] = {"internal", "external"};
-static const char *m_enum_auth_items[] = {"none", "pap", "chap"};
+/* clang-format off */
+static const char *m_enum_antenna_items[] = {
+	[CTR_LTE_V2_CONFIG_ANTENNA_INT] = "internal",
+	[CTR_LTE_V2_CONFIG_ANTENNA_EXT] = "external"
+};
+
+static const char *m_enum_auth_items[] = {
+	[CTR_LTE_V2_CONFIG_AUTH_NONE] = "none",
+	[CTR_LTE_V2_CONFIG_AUTH_PAP] = "pap",
+	[CTR_LTE_V2_CONFIG_AUTH_CHAP] = "chap"
+};
+
+static const char *m_enum_attach_policy_items[] = {
+	[CTR_LTE_V2_ATTACH_POLICY_AGGRESSIVE] = "aggressive",
+	[CTR_LTE_V2_ATTACH_POLICY_PERIODIC_2H] = "periodic-2h",
+	[CTR_LTE_V2_ATTACH_POLICY_PERIODIC_6H] = "periodic-6h",
+	[CTR_LTE_V2_ATTACH_POLICY_PERIODIC_12H] = "periodic-12h",
+	[CTR_LTE_V2_ATTACH_POLICY_PERIODIC_1D] = "periodic-1d",
+	[CTR_LTE_V2_ATTACH_POLICY_PROGRESSIVE] = "progressive",
+};
+/* clang-format on */
 
 static int mode_parse_cb(const struct shell *shell, char *argv, const struct ctr_config_item *item);
 static int bands_parse_cb(const struct shell *shell, char *argv,
@@ -89,6 +109,9 @@ static struct ctr_config_item m_config_items[] = {
 	CTR_CONFIG_ITEM_STRING("password", m_config_interim.password, "password", ""),
 	CTR_CONFIG_ITEM_STRING("addr", m_config_interim.addr, "default IP address",
 			       CONFIG_CTR_LTE_V2_DEFAULT_ADDR),
+	CTR_CONFIG_ITEM_ENUM("attach-policy", m_config_interim.attach_policy,
+			     m_enum_attach_policy_items, "attach policy",
+			     CTR_LTE_V2_ATTACH_POLICY_PERIODIC_2H),
 	// CTR_CONFIG_ITEM_INT("port", m_config_interim.port, 1, 65536, "default UDP port", 5002),
 	CTR_CONFIG_ITEM_BOOL("modemtrace", m_config_interim.modemtrace, "enable modem trace",
 			     false),
