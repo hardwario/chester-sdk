@@ -1,5 +1,13 @@
 var NAVTREEINDEX5 =
 {
+"structctr__lte__link__driver__api.html#a7e4fd2ada882245ab9bd37ef940a6d32":[1,0,39,0],
+"structctr__lte__link__driver__api.html#a88f99435ea2263d3168d39b5cea2ada6":[1,0,39,5],
+"structctr__lte__link__driver__api.html#a8cf7925f18e7972b45c6f888c0f0d7bd":[1,0,39,12],
+"structctr__lte__link__driver__api.html#a9cd8ce177606bece6e777033c11cb66d":[1,0,39,6],
+"structctr__lte__link__driver__api.html#aa590be00e3997debaedfd06436c9eaad":[1,0,39,9],
+"structctr__lte__link__driver__api.html#aa9430db7c9d9a5232f18168a60f3f234":[1,0,39,15],
+"structctr__lte__link__driver__api.html#aaaab3e2bfc5d52bbc8f26f5cac8d8bde":[1,0,39,11],
+"structctr__lte__link__driver__api.html#ac2d023f5844d381d2ce182e4ce4a0dad":[1,0,39,10],
 "structctr__lte__link__driver__api.html#ac387018bf312ebda4336063a36f8874d":[1,0,39,1],
 "structctr__lte__link__driver__api.html#ad7f44640320f490193f2ad61f4f9a2b3":[1,0,39,3],
 "structctr__lte__link__driver__api.html#adca5021df679131bb7e9956b6c0e2ffb":[1,0,39,14],

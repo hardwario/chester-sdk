@@ -164,6 +164,18 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="memdesc:ga36c152e447cf2947877e44eab9692de0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Access technology values (CEREG:AcT).  <a href="group__ctr__lte__v2.html#ga36c152e447cf2947877e44eab9692de0">More...</a><br /></td></tr>
 <tr class="separator:ga36c152e447cf2947877e44eab9692de0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1255fdc6c390258bd02ea4a8d6e33cba"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga1255fdc6c390258bd02ea4a8d6e33cba">ctr_lte_v2_attach_policy</a> { <br />
+&#160;&#160;<a class="el" href="group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaafb4cc5b8a8d0717fea92e80f26d3552f">CTR_LTE_V2_ATTACH_POLICY_AGGRESSIVE</a> = 0
+, <a class="el" href="group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaad904350b92691a568a69149ee24c5503">CTR_LTE_V2_ATTACH_POLICY_PERIODIC_2H</a> = 1
+, <a class="el" href="group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaafdb32539b764e191fcbf047eacaa7d4d">CTR_LTE_V2_ATTACH_POLICY_PERIODIC_6H</a> = 2
+, <a class="el" href="group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaa5b36e608d70ca56761abf6de0a876821">CTR_LTE_V2_ATTACH_POLICY_PERIODIC_12H</a> = 3
+, <br />
+&#160;&#160;<a class="el" href="group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaa6d1a8d3aafb096fcc6e19d51d62fa5a9">CTR_LTE_V2_ATTACH_POLICY_PERIODIC_1D</a> = 4
+, <a class="el" href="group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaac2e3677e64b481d68d8d6ea207c97812">CTR_LTE_V2_ATTACH_POLICY_PROGRESSIVE</a> = 5
+<br />
+ }</td></tr>
+<tr class="memdesc:ga1255fdc6c390258bd02ea4a8d6e33cba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attach policy for retry and timeout configuration.  <a href="group__ctr__lte__v2.html#ga1255fdc6c390258bd02ea4a8d6e33cba">More...</a><br /></td></tr>
+<tr class="separator:ga1255fdc6c390258bd02ea4a8d6e33cba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -194,6 +206,9 @@ Functions</h2></td></tr>
 <tr class="separator:ga8ec2416f749cf174bb4c68068fba25b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga221f50b3e0ae35346bb9309d40b464f2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga221f50b3e0ae35346bb9309d40b464f2">ctr_lte_v2_is_attached</a> (bool *attached)</td></tr>
 <tr class="separator:ga221f50b3e0ae35346bb9309d40b464f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga9e9f53f807f79d20ba1de0a7906a6ca2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga9e9f53f807f79d20ba1de0a7906a6ca2">ctr_lte_v2_get_curr_attach_info</a> (int *attempt, int *attach_timeout_sec, int *retry_delay_sec, int *remaining_sec)</td></tr>
+<tr class="memdesc:ga9e9f53f807f79d20ba1de0a7906a6ca2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get current attach information.  <a href="group__ctr__lte__v2.html#ga9e9f53f807f79d20ba1de0a7906a6ca2">More...</a><br /></td></tr>
+<tr class="separator:ga9e9f53f807f79d20ba1de0a7906a6ca2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga84fe693ea37ee8b203ee97b1fa02471d"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga84fe693ea37ee8b203ee97b1fa02471d">ctr_lte_v2_str_coneval_result</a> (int result)</td></tr>
 <tr class="separator:ga84fe693ea37ee8b203ee97b1fa02471d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae379f2982c159acc317217e3a2601f72"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#gae379f2982c159acc317217e3a2601f72">ctr_lte_v2_str_cereg_stat</a> (enum <a class="el" href="group__ctr__lte__v2.html#ga5286895a249ddc7b9e8673a0e07390b8">ctr_lte_v2_cereg_param_stat</a> stat)</td></tr>

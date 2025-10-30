@@ -2,6 +2,14 @@ var ctr__lte__v2_8h =
 [
     [ "CTR_LTE_V2_CEREG_PARAM_ACTIVE_TIME_DISABLED", "group__ctr__lte__v2.html#gad171f8ec987181a7cc422e43a92a2cfe", null ],
     [ "CTR_LTE_V2_CEREG_PARAM_PERIODIC_TAU_EXT_DISABLED", "group__ctr__lte__v2.html#gae9de3f745578d2159ac49210994d9ca0", null ],
+    [ "ctr_lte_v2_attach_policy", "group__ctr__lte__v2.html#ga1255fdc6c390258bd02ea4a8d6e33cba", [
+      [ "CTR_LTE_V2_ATTACH_POLICY_AGGRESSIVE", "group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaafb4cc5b8a8d0717fea92e80f26d3552f", null ],
+      [ "CTR_LTE_V2_ATTACH_POLICY_PERIODIC_2H", "group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaad904350b92691a568a69149ee24c5503", null ],
+      [ "CTR_LTE_V2_ATTACH_POLICY_PERIODIC_6H", "group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaafdb32539b764e191fcbf047eacaa7d4d", null ],
+      [ "CTR_LTE_V2_ATTACH_POLICY_PERIODIC_12H", "group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaa5b36e608d70ca56761abf6de0a876821", null ],
+      [ "CTR_LTE_V2_ATTACH_POLICY_PERIODIC_1D", "group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaa6d1a8d3aafb096fcc6e19d51d62fa5a9", null ],
+      [ "CTR_LTE_V2_ATTACH_POLICY_PROGRESSIVE", "group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaac2e3677e64b481d68d8d6ea207c97812", null ]
+    ] ],
     [ "ctr_lte_v2_cereg_param_act", "group__ctr__lte__v2.html#ga36c152e447cf2947877e44eab9692de0", [
       [ "CTR_LTE_V2_CEREG_PARAM_ACT_UNKNOWN", "group__ctr__lte__v2.html#gga36c152e447cf2947877e44eab9692de0a1fbf4ba77d64e0d10047f1eecc51ed54", null ],
       [ "CTR_LTE_V2_CEREG_PARAM_ACT_LTE", "group__ctr__lte__v2.html#gga36c152e447cf2947877e44eab9692de0a63f0c75fe6f3b254a6e0c40b537f03e8", null ],
@@ -19,6 +27,7 @@ var ctr__lte__v2_8h =
     [ "ctr_lte_v2_enable", "group__ctr__lte__v2.html#ga9a4dd2eefd353bf31c17bc4367c60b5a", null ],
     [ "ctr_lte_v2_get_cereg_param", "group__ctr__lte__v2.html#ga8ebc16fca4e81b3b98a7c9e2b67bf5a4", null ],
     [ "ctr_lte_v2_get_conn_param", "group__ctr__lte__v2.html#ga9861ebd72de329f1ef4eec4dba2c70f1", null ],
+    [ "ctr_lte_v2_get_curr_attach_info", "group__ctr__lte__v2.html#ga9e9f53f807f79d20ba1de0a7906a6ca2", null ],
     [ "ctr_lte_v2_get_iccid", "group__ctr__lte__v2.html#ga682e48d53179f1a18eeee3d18cf567ac", null ],
     [ "ctr_lte_v2_get_imei", "group__ctr__lte__v2.html#gab28432793e6f6a169ad5254f847160f0", null ],
     [ "ctr_lte_v2_get_imsi", "group__ctr__lte__v2.html#gad17e7b2b42a62e519f2d3d1ced4498af", null ],
