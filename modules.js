@@ -1,5 +1,6 @@
 var modules =
 [
+    [ "ctr_data", "group__ctr__data.html", "group__ctr__data" ],
     [ "ctr_accel", "group__ctr__accel.html", "group__ctr__accel" ],
     [ "ctr_adc", "group__ctr__adc.html", "group__ctr__adc" ],
     [ "ctr_ble_tag", "group__ctr__ble__tag.html", "group__ctr__ble__tag" ],

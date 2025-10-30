@@ -12,5 +12,5 @@ var searchData=
   ['attach_5flast_5fduration_5fms_9',['attach_last_duration_ms',['../structctr__lte__v2__metrics.html#a660a60d817a9e3ddf8a39737847bff82',1,'ctr_lte_v2_metrics']]],
   ['attach_5flast_5fts_10',['attach_last_ts',['../structctr__lte__v2__metrics.html#a82d168dbf9e541d156479af445e041ba',1,'ctr_lte_v2_metrics']]],
   ['attach_5fok_11',['attach_ok',['../unionctr__lte__event__data.html#a8da345d2f9649f1c076f28431af1db34',1,'ctr_lte_event_data']]],
-  ['avg_12',['avg',['../structctr__k1__result.html#a70c5e54ad24f7effd3314cac5334e62e',1,'ctr_k1_result::avg()'],['../structctr__x7__result.html#a033a49094517500c84754aea0f3a22be',1,'ctr_x7_result::avg()']]]
+  ['avg_12',['avg',['../structctr__data__aggreg.html#a8d30d47cc9855c6be4f48f4c78d58c78',1,'ctr_data_aggreg::avg()'],['../structctr__k1__result.html#a70c5e54ad24f7effd3314cac5334e62e',1,'ctr_k1_result::avg()'],['../structctr__x7__result.html#a033a49094517500c84754aea0f3a22be',1,'ctr_x7_result::avg()']]]
 ];
