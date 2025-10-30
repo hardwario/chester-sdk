@@ -43,9 +43,9 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_INT("scan-weekday", m_config_interim.scan_weekday, 0, 6, "Get/Set scan weekday.", 3),
 	CTR_CONFIG_ITEM_INT("scan-day", m_config_interim.scan_day, 1, 31, "Get/Set scan day in the month.", 15),
 	CTR_CONFIG_ITEM_ENUM("scan-mode", m_config_interim.scan_mode, ((const char*[]){"off", "interval", "daily", "weekly", "monthly"}), "Get/Set scan mode", 0),
-
+	
 	CTR_CONFIG_ITEM_ENUM("scan-ant", m_config_interim.scan_ant, ((const char*[]){"single", "dual"}), "Get/Set scan antenna", 0),
-
+	
 	CTR_CONFIG_ITEM_INT("poll-interval", m_config_interim.poll_interval, 5, 1209600, "Get/Set poll interval in seconds.", 28800),
 	CTR_CONFIG_ITEM_INT("downlink-wdg-interval", m_config_interim.downlink_wdg_interval, 0, 1209600, "Get/Set poll interval in seconds.", 172800),
 	CTR_CONFIG_ITEM_BOOL("cloud-decode", m_config_interim.cloud_decode, "Get/Set cloud decode.", false),

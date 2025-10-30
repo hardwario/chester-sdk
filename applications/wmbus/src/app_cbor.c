@@ -64,49 +64,6 @@ int encode(zcbor_state_t *zs, uint8_t *buf)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	/*zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		char *vendor_name;
-		ctr_info_get_vendor_name(&vendor_name);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__VENDOR_NAME);
-		zcbor_tstr_put_term(zs, vendor_name);
-
-		char *product_name;
-		ctr_info_get_product_name(&product_name);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__PRODUCT_NAME);
-		zcbor_tstr_put_term(zs, product_name);
-
-		char *hw_variant;
-		ctr_info_get_hw_variant(&hw_variant);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__HW_VARIANT);
-		zcbor_tstr_put_term(zs, hw_variant);
-
-		char *hw_revision;
-		ctr_info_get_hw_revision(&hw_revision);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__HW_REVISION);
-		zcbor_tstr_put_term(zs, hw_revision);
-
-		char *fw_version;
-		ctr_info_get_fw_version(&fw_version);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__FW_VERSION);
-		zcbor_tstr_put_term(zs, fw_version);
-
-		char *serial_number;
-		ctr_info_get_serial_number(&serial_number);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__SERIAL_NUMBER);
-		zcbor_tstr_put_term(zs, serial_number);
-
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}*/
-
 	zcbor_uint32_put(zs, CODEC_KEY_E_STATE);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -311,7 +268,7 @@ int encode(zcbor_state_t *zs, uint8_t *buf)
 		zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__PART);
 		zcbor_uint32_put(zs, index);
 
-		static uint8_t packet[256];
+		static uint8_t packet[512];
 
 		// Add 20 wM-BUS packets to every LTE packet
 		if (g_app_config.cloud_decode) {
@@ -329,11 +286,13 @@ int encode(zcbor_state_t *zs, uint8_t *buf)
 
 					size_t len;
 					int rssi_dbm;
-					packet_pop(packet, sizeof(packet), &len, &rssi_dbm);
+					ret = packet_pop(packet, sizeof(packet), &len, &rssi_dbm);
 					LOG_INF("packet_pop size %d, rssi %d", (int)len, rssi_dbm);
-
-					zcbor_int32_put(zs, rssi_dbm);
-					zcbor_bstr_encode_ptr(zs, packet, len > 255 ? 255 : len);
+					if (!ret) {
+						zcbor_int32_put(zs, rssi_dbm);
+						zcbor_bstr_encode_ptr(zs, packet,
+								      len > 512 ? 512 : len);
+					}
 				}
 
 				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -354,18 +313,29 @@ int encode(zcbor_state_t *zs, uint8_t *buf)
 					zcbor_map_start_encode(zs,
 							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-					zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__PACKETS__DATA);
-
 					size_t len;
 					int rssi_dbm;
-					packet_pop(packet, sizeof(packet), &len, &rssi_dbm);
+					ret = packet_pop(packet, sizeof(packet), &len, &rssi_dbm);
 					LOG_INF("packet_pop size %d, rssi %d", (int)len, rssi_dbm);
 
-					zcbor_bstr_encode_ptr(zs, packet, len > 255 ? 255 : len);
+					if (!ret) {
+						zcbor_uint32_put(zs,
+								 CODEC_KEY_E_WMBUS__PACKETS__DATA);
+						zcbor_bstr_encode_ptr(zs, packet,
+								      len > 512 ? 512 : len);
 
-					zcbor_uint32_put(zs, CODEC_KEY_E_WMBUS__PACKETS__RSSI);
-					zcbor_int32_put(zs, rssi_dbm);
-
+						zcbor_uint32_put(zs,
+								 CODEC_KEY_E_WMBUS__PACKETS__RSSI);
+						zcbor_int32_put(zs, rssi_dbm);
+					} else {
+						// On pop error, print error
+						zcbor_uint32_put(zs,
+								 CODEC_KEY_E_WMBUS__PACKETS__DATA);
+						zcbor_uint32_put(zs, ret);
+						zcbor_uint32_put(zs,
+								 CODEC_KEY_E_WMBUS__PACKETS__RSSI);
+						zcbor_uint32_put(zs, 1000 + next_size);
+					}
 					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 				}
 

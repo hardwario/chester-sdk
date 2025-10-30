@@ -76,6 +76,9 @@ int packet_pop(uint8_t *buf, size_t buf_len, size_t *len, int *rssi_dbm)
 {
 	int ret;
 
+	*len = 0;
+	*rssi_dbm = 0;
+
 	size_t next_packet_size;
 	ret = packet_get_next_size(&next_packet_size);
 
@@ -85,7 +88,9 @@ int packet_pop(uint8_t *buf, size_t buf_len, size_t *len, int *rssi_dbm)
 	}
 
 	if (next_packet_size > buf_len) {
-		LOG_ERR("Target buffer too small");
+		LOG_ERR("Target buffer too small, skipping packet");
+		/* skip also RSSI, increment one */
+		packet_pop_offset += next_packet_size + 1;
 		return -ENOMEM;
 	}
 

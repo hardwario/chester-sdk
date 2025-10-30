@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-config VARIANT_CHESTER_WM_BUS
-    bool "Enable VARIANT_CHESTER_WM_BUS"
+config VARIANT_WMBUS
+    bool "Enable VARIANT_WMBUS"
     default y

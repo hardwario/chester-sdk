@@ -105,7 +105,7 @@ static void upload_data_work_handler(struct k_work *work)
 #if defined(CONFIG_SHIELD_CTR_LTE_V2)
 	int ret;
 
-	CTR_BUF_DEFINE_STATIC(buf, 4096);
+	CTR_BUF_DEFINE_STATIC(buf, 8 * 1024);
 
 	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
 		/* repeat sending as long as we have wM-BUS packets in receive buffer */
@@ -115,10 +115,9 @@ static void upload_data_work_handler(struct k_work *work)
 
 			ZCBOR_STATE_E(zs, 8, ctr_buf_get_mem(&buf), ctr_buf_get_free(&buf), 1);
 
-			ret = app_cbor_encode(zs, ctr_buf_get_mem(&buf));
-			if (ret) {
-				LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
-				break;
+			int ret_encode = app_cbor_encode(zs, ctr_buf_get_mem(&buf));
+			if (ret_encode) {
+				LOG_ERR("Call `app_cbor_encode` failed: %d", ret_encode);
 			}
 
 			size_t len = zs[0].payload_mut - ctr_buf_get_mem(&buf);
@@ -127,6 +126,20 @@ static void upload_data_work_handler(struct k_work *work)
 			if (ret) {
 				LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
 				break;
+			}
+
+			if (ret_encode) {
+				// Encoding failed, send error code
+				ctr_buf_reset(&buf);
+				ctr_buf_append_char(&buf, 'X');
+				ctr_buf_append_s32_le(&buf, ret_encode);
+
+				size_t count;
+				packet_get_pushed_count(&count);
+				ctr_buf_append_s32_le(&buf, count);
+
+				// Clear remaining wM-BUS packets
+				packet_clear();
 			}
 
 			LOG_INF("Calling `ctr_cloud_send`");
