@@ -79,7 +79,7 @@ static int cmd_rtd_read(const struct shell *shell, size_t argc, char **argv)
 			return ret;
 		}
 
-		shell_print(shell, "temperature: %.3f celsius", temperature);
+		shell_print(shell, "temperature: %.3f celsius", (double)temperature);
 	}
 
 	shell_print(shell, "command succeeded");
