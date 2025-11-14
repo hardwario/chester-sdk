@@ -114,10 +114,18 @@ Macros</h2></td></tr>
 <tr class="separator:aeafe1bf354f1551f5ab2843334a8ae47"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a690d6a420c16b5930c6cc22dac17c1fe"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__encode__lrw_8h.html#a690d6a420c16b5930c6cc22dac17c1fe">CTR_ENCODE_LRW_W1_THERM</a>(buf)</td></tr>
 <tr class="separator:a690d6a420c16b5930c6cc22dac17c1fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4938a20432de8c0445a722f790b84d23"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__encode__lrw_8h.html#a4938a20432de8c0445a722f790b84d23">CTR_ENCODE_LRW_RTD_THERM</a>(buf)</td></tr>
+<tr class="separator:a4938a20432de8c0445a722f790b84d23"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5190b23354fc1990bccdf70c85316a7b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__encode__lrw_8h.html#a5190b23354fc1990bccdf70c85316a7b">CTR_ENCODE_LRW_TC_THERM</a>(buf)</td></tr>
+<tr class="separator:a5190b23354fc1990bccdf70c85316a7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fa5f4015059a94c2d16ac79a033c75e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__encode__lrw_8h.html#a8fa5f4015059a94c2d16ac79a033c75e">CTR_ENCODE_LRW_BLE_TAG</a>(buf)</td></tr>
 <tr class="separator:a8fa5f4015059a94c2d16ac79a033c75e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a709f01badca7f045b19dc181ecdf4f52"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__encode__lrw_8h.html#a709f01badca7f045b19dc181ecdf4f52">CTR_ENCODE_LRW_SOIL_SENSOR</a>(buf)</td></tr>
+<tr class="separator:a709f01badca7f045b19dc181ecdf4f52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab3d73f31cbaf334c193822cbc82befe"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__encode__lrw_8h.html#aab3d73f31cbaf334c193822cbc82befe">CTR_ENCODE_LRW_X0</a>(buf)</td></tr>
 <tr class="separator:aab3d73f31cbaf334c193822cbc82befe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc31c3466665b1843921e940392c8281"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__encode__lrw_8h.html#afc31c3466665b1843921e940392c8281">CTR_ENCODE_LRW_S1</a>(buf)</td></tr>
+<tr class="separator:afc31c3466665b1843921e940392c8281"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a7bc7921bf61dd552725f6d2da16d820a" name="a7bc7921bf61dd552725f6d2da16d820a"></a>
@@ -234,6 +242,55 @@ Macros</h2></td></tr>
 </div><!-- fragment -->
 </div>
 </div>
+<a id="a4938a20432de8c0445a722f790b84d23" name="a4938a20432de8c0445a722f790b84d23"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4938a20432de8c0445a722f790b84d23">&#9670;&#160;</a></span>CTR_ENCODE_LRW_RTD_THERM</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_ENCODE_LRW_RTD_THERM</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">buf</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    <span class="keywordflow">do</span> {                                                                                       \</div>
+<div class="line">        ret |= <a class="code hl_function" href="group__ctr__buf.html#ga6f3c58ad1868e9f168ef0fc49661ec72">ctr_buf_append_u8</a>(buf, APP_DATA_RTD_THERM_COUNT);                           \</div>
+<div class="line">        for (<span class="keywordtype">int</span> i = 0; i &lt; APP_DATA_RTD_THERM_COUNT; i++) {                               \</div>
+<div class="line">            <span class="keyword">struct </span>app_data_rtd_therm_sensor *sensor =                                 \</div>
+<div class="line">                &amp;g_app_data.rtd_therm.sensor[i];                                   \</div>
+<div class="line">            if (isnan(sensor-&gt;last_sample_temperature)) {                              \</div>
+<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gab04252cb5971e9738077801ef0de5241">ctr_buf_append_s16_le</a>(buf, BIT_MASK(15));                   \</div>
+<div class="line">            } <span class="keywordflow">else</span> {                                                                   \</div>
+<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gab04252cb5971e9738077801ef0de5241">ctr_buf_append_s16_le</a>(                                      \</div>
+<div class="line">                    buf, sensor-&gt;last_sample_temperature * 100.f);             \</div>
+<div class="line">            }                                                                          \</div>
+<div class="line">        }                                                                                  \</div>
+<div class="line">    } <span class="keywordflow">while</span> (0)</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="afc31c3466665b1843921e940392c8281" name="afc31c3466665b1843921e940392c8281"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc31c3466665b1843921e940392c8281">&#9670;&#160;</a></span>CTR_ENCODE_LRW_S1</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_ENCODE_LRW_S1</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">buf</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="aeafe1bf354f1551f5ab2843334a8ae47" name="aeafe1bf354f1551f5ab2843334a8ae47"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aeafe1bf354f1551f5ab2843334a8ae47">&#9670;&#160;</a></span>CTR_ENCODE_LRW_S2</h2>
 
@@ -260,6 +317,84 @@ Macros</h2></td></tr>
 <div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#ga6f3c58ad1868e9f168ef0fc49661ec72">ctr_buf_append_u8</a>(buf, BIT_MASK(8));                                \</div>
 <div class="line">        } <span class="keywordflow">else</span> {                                                                           \</div>
 <div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#ga6f3c58ad1868e9f168ef0fc49661ec72">ctr_buf_append_u8</a>(buf, hygro-&gt;last_sample_humidity * 2.f);          \</div>
+<div class="line">        }                                                                                  \</div>
+<div class="line">    } <span class="keywordflow">while</span> (0)</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="a709f01badca7f045b19dc181ecdf4f52" name="a709f01badca7f045b19dc181ecdf4f52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a709f01badca7f045b19dc181ecdf4f52">&#9670;&#160;</a></span>CTR_ENCODE_LRW_SOIL_SENSOR</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_ENCODE_LRW_SOIL_SENSOR</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">buf</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    <span class="keywordflow">do</span> {                                                                                       \</div>
+<div class="line">        <span class="keywordtype">int</span> count = 0;                                                                     \</div>
+<div class="line">        for (<span class="keywordtype">int</span> i = 0; i &lt; APP_DATA_SOIL_SENSOR_COUNT; i++) {                             \</div>
+<div class="line">            <span class="keyword">struct </span>app_data_soil_sensor_sensor *sensor =                               \</div>
+<div class="line">                &amp;g_app_data.soil_sensor.sensor[i];                                 \</div>
+<div class="line">            if (sensor-&gt;serial_number == 0) {                                          \</div>
+<div class="line">                <span class="keywordflow">continue</span>;                                                          \</div>
+<div class="line">            }                                                                          \</div>
+<div class="line">            count++;                                                                   \</div>
+<div class="line">        }                                                                                  \</div>
+<div class="line">        ret |= <a class="code hl_function" href="group__ctr__buf.html#ga6f3c58ad1868e9f168ef0fc49661ec72">ctr_buf_append_u8</a>(buf, count);                                              \</div>
+<div class="line">        for (<span class="keywordtype">int</span> i = 0; i &lt; APP_DATA_SOIL_SENSOR_COUNT; i++) {                             \</div>
+<div class="line">            <span class="keyword">struct </span>app_data_soil_sensor_sensor *sensor =                               \</div>
+<div class="line">                &amp;g_app_data.soil_sensor.sensor[i];                                 \</div>
+<div class="line">            if (sensor-&gt;serial_number == 0) {                                          \</div>
+<div class="line">                <span class="keywordflow">continue</span>;                                                          \</div>
+<div class="line">            }                                                                          \</div>
+<div class="line">            if (isnan(sensor-&gt;last_temperature)) {                                     \</div>
+<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gab04252cb5971e9738077801ef0de5241">ctr_buf_append_s16_le</a>(buf, BIT_MASK(15));                   \</div>
+<div class="line">            } <span class="keywordflow">else</span> {                                                                   \</div>
+<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gab04252cb5971e9738077801ef0de5241">ctr_buf_append_s16_le</a>(buf,                                  \</div>
+<div class="line">                                 sensor-&gt;last_temperature * 100.f);    \</div>
+<div class="line">            }                                                                          \</div>
+<div class="line">            if (isnan(sensor-&gt;last_moisture)) {                                        \</div>
+<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, BIT_MASK(16));                   \</div>
+<div class="line">            } <span class="keywordflow">else</span> {                                                                   \</div>
+<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, sensor-&gt;last_moisture);          \</div>
+<div class="line">            }                                                                          \</div>
+<div class="line">        }                                                                                  \</div>
+<div class="line">    } <span class="keywordflow">while</span> (0)</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="a5190b23354fc1990bccdf70c85316a7b" name="a5190b23354fc1990bccdf70c85316a7b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5190b23354fc1990bccdf70c85316a7b">&#9670;&#160;</a></span>CTR_ENCODE_LRW_TC_THERM</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_ENCODE_LRW_TC_THERM</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">buf</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    <span class="keywordflow">do</span> {                                                                                       \</div>
+<div class="line">        ret |= <a class="code hl_function" href="group__ctr__buf.html#ga6f3c58ad1868e9f168ef0fc49661ec72">ctr_buf_append_u8</a>(buf, APP_DATA_TC_THERM_COUNT);                            \</div>
+<div class="line">        for (<span class="keywordtype">int</span> i = 0; i &lt; APP_DATA_TC_THERM_COUNT; i++) {                                \</div>
+<div class="line">            <span class="keyword">struct </span>app_data_tc_therm_sensor *sensor = &amp;g_app_data.tc_therm.sensor[i];  \</div>
+<div class="line">            if (isnan(sensor-&gt;last_sample_temperature)) {                              \</div>
+<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gab04252cb5971e9738077801ef0de5241">ctr_buf_append_s16_le</a>(buf, BIT_MASK(15));                   \</div>
+<div class="line">            } <span class="keywordflow">else</span> {                                                                   \</div>
+<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gab04252cb5971e9738077801ef0de5241">ctr_buf_append_s16_le</a>(                                      \</div>
+<div class="line">                    buf, sensor-&gt;last_sample_temperature * 100.f);             \</div>
+<div class="line">            }                                                                          \</div>
 <div class="line">        }                                                                                  \</div>
 <div class="line">    } <span class="keywordflow">while</span> (0)</div>
 </div><!-- fragment -->
