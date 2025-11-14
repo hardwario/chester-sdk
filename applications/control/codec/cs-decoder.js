@@ -3,6 +3,8 @@ var buffer;
 
 // Chirpstack v4
 function decodeUplink(input) {
+
+	// Keep for repeated unit tests
 	cursor = 0;
 
 	buffer = input.bytes || input;
@@ -89,11 +91,11 @@ function decode_accel(data) {
 }
 
 function decode_therm(data) {
-	data.therm = s16();
-	if (data.therm === 0x7fff) {
-		data.therm = null;
+	data.therm_temperature = s16();
+	if (data.therm_temperature === 0x7fff) {
+		data.therm_temperature = null;
 	} else {
-		data.therm /= 100;
+		data.therm_temperature /= 100;
 	}
 }
 

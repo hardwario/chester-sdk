@@ -1,5 +1,8 @@
 #!/usr/bin/bash
 
+# clean the build
+rm build/ -fr
+
 # build once
 west build -b native_posix
 

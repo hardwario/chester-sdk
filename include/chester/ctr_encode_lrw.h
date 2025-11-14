@@ -85,6 +85,35 @@
 		}                                                                                  \
 	} while (0)
 
+#define CTR_ENCODE_LRW_RTD_THERM(buf)                                                              \
+	do {                                                                                       \
+		ret |= ctr_buf_append_u8(buf, APP_DATA_RTD_THERM_COUNT);                           \
+		for (int i = 0; i < APP_DATA_RTD_THERM_COUNT; i++) {                               \
+			struct app_data_rtd_therm_sensor *sensor =                                 \
+				&g_app_data.rtd_therm.sensor[i];                                   \
+			if (isnan(sensor->last_sample_temperature)) {                              \
+				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));                   \
+			} else {                                                                   \
+				ret |= ctr_buf_append_s16_le(                                      \
+					buf, sensor->last_sample_temperature * 100.f);             \
+			}                                                                          \
+		}                                                                                  \
+	} while (0)
+
+#define CTR_ENCODE_LRW_TC_THERM(buf)                                                               \
+	do {                                                                                       \
+		ret |= ctr_buf_append_u8(buf, APP_DATA_TC_THERM_COUNT);                            \
+		for (int i = 0; i < APP_DATA_TC_THERM_COUNT; i++) {                                \
+			struct app_data_tc_therm_sensor *sensor = &g_app_data.tc_therm.sensor[i];  \
+			if (isnan(sensor->last_sample_temperature)) {                              \
+				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));                   \
+			} else {                                                                   \
+				ret |= ctr_buf_append_s16_le(                                      \
+					buf, sensor->last_sample_temperature * 100.f);             \
+			}                                                                          \
+		}                                                                                  \
+	} while (0)
+
 #define CTR_ENCODE_LRW_BLE_TAG(buf)                                                                \
 	do {                                                                                       \
 		float temperature[CTR_BLE_TAG_COUNT];                                              \
@@ -111,6 +140,38 @@
 				ret |= ctr_buf_append_u8(buf, BIT_MASK(8));                        \
 			} else {                                                                   \
 				ret |= ctr_buf_append_u8(buf, humidity[i] * 2.f);                  \
+			}                                                                          \
+		}                                                                                  \
+	} while (0)
+
+#define CTR_ENCODE_LRW_SOIL_SENSOR(buf)                                                            \
+	do {                                                                                       \
+		int count = 0;                                                                     \
+		for (int i = 0; i < APP_DATA_SOIL_SENSOR_COUNT; i++) {                             \
+			struct app_data_soil_sensor_sensor *sensor =                               \
+				&g_app_data.soil_sensor.sensor[i];                                 \
+			if (sensor->serial_number == 0) {                                          \
+				continue;                                                          \
+			}                                                                          \
+			count++;                                                                   \
+		}                                                                                  \
+		ret |= ctr_buf_append_u8(buf, count);                                              \
+		for (int i = 0; i < APP_DATA_SOIL_SENSOR_COUNT; i++) {                             \
+			struct app_data_soil_sensor_sensor *sensor =                               \
+				&g_app_data.soil_sensor.sensor[i];                                 \
+			if (sensor->serial_number == 0) {                                          \
+				continue;                                                          \
+			}                                                                          \
+			if (isnan(sensor->last_temperature)) {                                     \
+				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));                   \
+			} else {                                                                   \
+				ret |= ctr_buf_append_s16_le(buf,                                  \
+							     sensor->last_temperature * 100.f);    \
+			}                                                                          \
+			if (isnan(sensor->last_moisture)) {                                        \
+				ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                   \
+			} else {                                                                   \
+				ret |= ctr_buf_append_u16_le(buf, sensor->last_moisture);          \
 			}                                                                          \
 		}                                                                                  \
 	} while (0)
@@ -157,6 +218,48 @@
 						buf, g_app_data.current[i]->last_sample * 100.f);  \
 				}                                                                  \
 			}                                                                          \
+		}                                                                                  \
+	} while (0)
+
+/* TODO - encapsulate to own object? collision with mpt112 therm_temperature*/
+#define CTR_ENCODE_LRW_S1(buf)                                                                     \
+	do {                                                                                       \
+		struct app_data_iaq *iaqdata = &g_app_data.iaq;                                    \
+		if (isnan(iaqdata->sensors.last_temperature)) {                                    \
+			ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));                           \
+		} else {                                                                           \
+			int16_t val = iaqdata->sensors.last_temperature * 100.f;                   \
+			ret |= ctr_buf_append_s16_le(buf, val);                                    \
+		}                                                                                  \
+		if (isnan(iaqdata->sensors.last_humidity)) {                                       \
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                           \
+		} else {                                                                           \
+			uint16_t val = iaqdata->sensors.last_humidity * 100.f;                     \
+			ret |= ctr_buf_append_u16_le(buf, val);                                    \
+		}                                                                                  \
+		if (isnan(iaqdata->sensors.last_altitude)) {                                       \
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                           \
+		} else {                                                                           \
+			uint16_t val = iaqdata->sensors.last_altitude * 100.f;                     \
+			ret |= ctr_buf_append_u16_le(buf, val);                                    \
+		}                                                                                  \
+		if (isnan(iaqdata->sensors.last_co2_conc)) {                                       \
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                           \
+		} else {                                                                           \
+			uint16_t val = iaqdata->sensors.last_co2_conc;                             \
+			ret |= ctr_buf_append_u16_le(buf, val);                                    \
+		}                                                                                  \
+		if (isnan(iaqdata->sensors.last_illuminance)) {                                    \
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                           \
+		} else {                                                                           \
+			uint16_t val = iaqdata->sensors.last_illuminance * 100.f;                  \
+			ret |= ctr_buf_append_u16_le(buf, val);                                    \
+		}                                                                                  \
+		if (isnan(iaqdata->sensors.last_pressure)) {                                       \
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                           \
+		} else {                                                                           \
+			uint32_t val = iaqdata->sensors.last_pressure;                             \
+			ret |= ctr_buf_append_u16_le(buf, val);                                    \
 		}                                                                                  \
 	} while (0)
 

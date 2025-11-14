@@ -20,6 +20,11 @@ west-commands:
       - name: gen-codec
         class: GenerateCodec
         help: generate codec
+  - file: scripts/west_commands/lrw-decode/lrw-decode.py
+    commands:
+      - name: chester-lrw-decode
+        class: ChesterLRWDecode
+        help: decode LRW payload
   - file: scripts/west_commands/project_generator/project_generator_west.py
     commands:
       - name: chester-init

@@ -208,7 +208,7 @@ int ctr_tc_read(enum ctr_tc_channel channel, enum ctr_tc_type type, float *tempe
 	*temperature = get_temperature(result_v * 1000.f, temperature_cj);
 
 	LOG_INF("Raw: %" PRId32 "; (0x08%" PRIx32 ") U: %.6f V; T: %.6f C", result, result,
-		result_v, *temperature);
+		(double)result_v, (double)*temperature);
 
 	/* Result higher than 80mV is out of range */
 	if (result_v > 0.080f) {

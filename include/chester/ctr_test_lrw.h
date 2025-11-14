@@ -18,7 +18,7 @@
 	cJSON_AddNumberToObject(data, "hygro_humidity", g_app_data.hygro.last_sample_humidity);
 
 #define CTR_TEST_LRW_JSON_THERM(data)                                                              \
-	cJSON_AddNumberToObject(data, "therm", g_app_data.therm_temperature);
+	cJSON_AddNumberToObject(data, "therm_temperature", g_app_data.therm_temperature);
 
 #define CTR_TEST_LRW_JSON_ORIENTATION(data)                                                        \
 	if (g_app_data.accel_orientation == 0xff) {                                                \
@@ -101,6 +101,85 @@
 			}                                                                          \
 		}                                                                                  \
 		cJSON_AddItemToObject(data, "inputs_a", inputs_a);                                 \
+	} while (0)
+
+#define CTR_TEST_LRW_JSON_SOIL_SENSOR(data)                                                        \
+	do {                                                                                       \
+		cJSON *soil_sensor = cJSON_CreateArray();                                          \
+		for (int i = 0; i < APP_DATA_SOIL_SENSOR_COUNT; ++i) {                             \
+			if (g_app_data.soil_sensor.sensor[i].serial_number == 0x00) {              \
+				continue;                                                          \
+			}                                                                          \
+			cJSON *soil = cJSON_CreateObject();                                        \
+			cJSON_AddNumberToObject(                                                   \
+				soil, "temperature",                                               \
+				g_app_data.soil_sensor.sensor[i].last_temperature);                \
+			cJSON_AddNumberToObject(soil, "moisture",                                  \
+						g_app_data.soil_sensor.sensor[i].last_moisture);   \
+			cJSON_AddItemToArray(soil_sensor, soil);                                   \
+		}                                                                                  \
+		cJSON_AddItemToObject(data, "soil_sensors", soil_sensor);                          \
+	} while (0)
+
+#define CTR_TEST_LRW_JSON_RTD_THERMOMETERS(data)                                                   \
+	do {                                                                                       \
+		cJSON *rtd_therms = cJSON_CreateArray();                                           \
+		for (int i = 0; i < APP_DATA_RTD_THERM_COUNT; ++i) {                               \
+			cJSON_AddItemToArray(                                                      \
+				rtd_therms,                                                        \
+				cJSON_CreateNumber(                                                \
+					g_app_data.rtd_therm.sensor[i].last_sample_temperature));  \
+		}                                                                                  \
+		cJSON_AddItemToObject(data, "rtd_thermometers", rtd_therms);                       \
+	} while (0)
+
+#define CTR_TEST_LRW_JSON_TC_THERMOMETERS(data)                                                    \
+	do {                                                                                       \
+		cJSON *tc_therms = cJSON_CreateArray();                                            \
+		for (int i = 0; i < APP_DATA_TC_THERM_COUNT; ++i) {                                \
+			cJSON_AddItemToArray(                                                      \
+				tc_therms,                                                         \
+				cJSON_CreateNumber(                                                \
+					g_app_data.tc_therm.sensor[i].last_sample_temperature));   \
+		}                                                                                  \
+		cJSON_AddItemToObject(data, "tc_thermometers", tc_therms);                         \
+	} while (0)
+
+#define CTR_TEST_LRW_JSON_IAQ(data)                                                                \
+	do {                                                                                       \
+		struct app_data_iaq_sensors *sensors = &g_app_data.iaq.sensors;                    \
+		if (sensors->last_temperature == 0x7fff) {                                         \
+			cJSON_AddNullToObject(data, "therm_temperature");                          \
+		} else {                                                                           \
+			cJSON_AddNumberToObject(data, "therm_temperature",                         \
+						(double)sensors->last_temperature);                \
+		}                                                                                  \
+		if (sensors->last_humidity == 0xffff) {                                            \
+			cJSON_AddNullToObject(data, "hygro_humidity");                             \
+		} else {                                                                           \
+			cJSON_AddNumberToObject(data, "hygro_humidity", sensors->last_humidity);   \
+		}                                                                                  \
+		if (sensors->last_altitude == 0xffff) {                                            \
+			cJSON_AddNullToObject(data, "altitude");                                   \
+		} else {                                                                           \
+			cJSON_AddNumberToObject(data, "altitude", sensors->last_altitude);         \
+		}                                                                                  \
+		if (sensors->last_co2_conc == 0xffff) {                                            \
+			cJSON_AddNullToObject(data, "co2");                                        \
+		} else {                                                                           \
+			cJSON_AddNumberToObject(data, "co2", sensors->last_co2_conc);              \
+		}                                                                                  \
+		if (sensors->last_illuminance == 0xffff) {                                         \
+			cJSON_AddNullToObject(data, "illuminance");                                \
+		} else {                                                                           \
+			cJSON_AddNumberToObject(data, "illuminance", sensors->last_illuminance);   \
+		}                                                                                  \
+		if (sensors->last_pressure == 0xffff) {                                            \
+			cJSON_AddNullToObject(data, "pressure");                                   \
+		} else {                                                                           \
+			cJSON_AddNumberToObject(data, "pressure",                                  \
+						(double)(sensors->last_pressure));                 \
+		}                                                                                  \
 	} while (0)
 
 #endif /* CHESTER_INCLUDE_CTR_TEST_LRW_H_ */

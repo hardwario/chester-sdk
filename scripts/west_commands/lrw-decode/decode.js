@@ -6,11 +6,14 @@ See README.md for usage instructions
 
 const fs = require('fs');
 
+console.log("Current working directory:", process.cwd());
+
 // Include the decoder module
-const decoder = require('../cs-decoder.js');
+const decoder = require(process.cwd() + '/../cs-decoder.js');
 
 // Named arguments parser
 const args = process.argv.slice(2);
+
 function getArg(name, defaultValue) {
     const index = args.indexOf(`--${name}`);
     if (index !== -1 && index + 1 < args.length) {
@@ -62,7 +65,7 @@ if (getArg('folder', null)) {
     decode = decoder.decodeUplink({ bytes: buf });
 
     printDecode(decode);
-    compare(inputJson, decode);
+    //compare(inputJson, decode);
 
 } else {
     console.log("wrong parameters");
