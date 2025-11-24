@@ -8,3 +8,4 @@ scripts/west_commands/project_generator/__pycache__/*.pyc
 twister-out*
 .vscode/*
 .idea/
+__pycache__

@@ -8,9 +8,14 @@ const fs = require('fs');
 
 console.log("Current working directory:", process.cwd());
 
-// Include the decoder module
-const decoder = require(process.cwd() + '/../cs-decoder.js');
+let decoder;
 
+// Include the decoder module
+try {
+    decoder = require(process.cwd() + '/../cs-decoder.js');
+} catch {
+    decoder = require(process.cwd() + '/../decoder.js');
+}
 // Named arguments parser
 const args = process.argv.slice(2);
 
@@ -26,6 +31,9 @@ if (getArg('folder', null)) {
     const folder = getArg('folder', 'data/');
     const files = fs.readdirSync(folder);
 
+    const results = [];
+    let i = 0;
+
     files.forEach(file => {
         if (file.endsWith('.json')) {
             const base64File = `${folder}/${file.replace('.json', '.b64')}`;
@@ -36,13 +44,37 @@ if (getArg('folder', null)) {
 
             var hex = Buffer.from(base64, "base64").toString("hex");
             var buf = Buffer.from(hex, "hex");
-            decode = decoder.decodeUplink({ bytes: buf });
 
-            console.log(`Comparing files: ${base64File} and ${inputJsonFile}`);
+            console.log(`\nComparing files: ${base64File} and ${inputJsonFile}`);
+
+            console.log(`Base64 string: ${base64}`)
+
+            decode = decoder.decodeUplink({bytes : buf});
+
             printDecode(decode);
-            compare(inputJson, decode);
+            printInput(inputJson);
+
+            results[i] = compare(inputJson, decode);
+
+            console.log("\n===================================================================");
+
+            i++;
         }
     });
+
+    console.log("\nTest results:");
+    results.forEach((item, index) => {
+        if (item) {
+            console.log(`\tTest ${index}: \x1b[32mPASS\x1b[0m`);
+        } else {
+            console.log(`\tTest ${index}: \x1b[31mFAIL\x1b[0m`);
+        }
+    });
+
+    if (results.includes(false)) {
+        process.exit(1);
+    }
+
 } else if (getArg('b64', null) && getArg('json', null)) {
     const base64File = getArg('b64', "");
     const inputJsonFile = getArg('json', "");
@@ -52,9 +84,14 @@ if (getArg('folder', null)) {
 
     var hex = Buffer.from(base64, "base64").toString("hex");
     var buf = Buffer.from(hex, "hex");
-    decode = decoder.decodeUplink({ bytes: buf });
+
+    console.log(`Base64 string: ${base64}`)
+
+    decode = decoder.decodeUplink({bytes : buf});
 
     printDecode(decode);
+    printInput(inputJson);
+
     compare(inputJson, decode);
 
 } else if (getArg('b64str', null)) {
@@ -65,14 +102,24 @@ if (getArg('folder', null)) {
     decode = decoder.decodeUplink({ bytes: buf });
 
     printDecode(decode);
-    //compare(inputJson, decode);
+
+    //compare(inputJson, decode); // Erroneous - this function never works with a JSON
 
 } else {
     console.log("wrong parameters");
 }
 
+function printInput(input)
+{
+    if (getArg('print', null)) {
+        console.log("JSON input:")
+        console.log(JSON.stringify(input, null, 2));
+    }
+}
+
 function printDecode(decode) {
     if (getArg('print', null)) {
+        console.log("Decode output:")
         console.log(JSON.stringify(decode, null, 2));
     }
 }
@@ -85,11 +132,18 @@ function compare(inputJson, decode) {
 
         if (decodeStr === inputStr) {
             console.log('\x1b[32mComparison result: MATCH\x1b[0m');
+            return true;
         } else {
             console.log('\x1b[31mComparison result: DIFFER\x1b[0m');
             const decodeLines = decodeStr.split('\n');
             const inputLines = inputStr.split('\n');
             const maxLines = Math.max(decodeLines.length, inputLines.length);
+
+            console.log("Decode output:")
+            console.log(decodeStr);
+
+            console.log("JSON input:")
+            console.log(inputStr);
 
             for (let i = 0; i < maxLines; i++) {
                 const dLine = decodeLines[i] || '';
@@ -98,10 +152,11 @@ function compare(inputJson, decode) {
                     console.log(`Difference at line ${i + 1}:`);
                     console.log(`input  : ${iLine}`);
                     console.log(`decode : ${dLine}`);
-                    break;
+                    //break;
                 }
             }
-            process.exit(1);
+            return false;
+            //process.exit(1);
         }
     }
 }

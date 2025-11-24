@@ -182,4 +182,14 @@
 		}                                                                                  \
 	} while (0)
 
+#define CTR_TEST_LRW_JSON_METEO(data)                                                              \
+	cJSON_AddNumberToObject(data, "wind_speed", g_app_data.meteo.wind_speed.last_sample);      \
+	cJSON_AddNumberToObject(data, "wind_direction",                                            \
+				g_app_data.meteo.wind_direction.last_sample);                      \
+	cJSON_AddNumberToObject(data, "rainfall", g_app_data.meteo.rainfall.last_sample);
+
+#define CTR_TEST_LRW_JSON_BAROMETER_TAG(data)                                                      \
+	cJSON_AddNumberToObject(data, "barometer",                                                 \
+				g_app_data.barometer.pressure.last_sample / 1000.f);
+
 #endif /* CHESTER_INCLUDE_CTR_TEST_LRW_H_ */
