@@ -126,8 +126,32 @@ Macros</h2></td></tr>
 <tr class="separator:ae3b5241e7ba75f77ce5dc0c0d1460c96"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e04695bd35849b3eee6dfbc1dfce261"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__test__lrw_8h.html#a9e04695bd35849b3eee6dfbc1dfce261">CTR_TEST_LRW_JSON_IAQ</a>(data)</td></tr>
 <tr class="separator:a9e04695bd35849b3eee6dfbc1dfce261"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a96c6f2c350f00bd84651db6ca8626626"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__test__lrw_8h.html#a96c6f2c350f00bd84651db6ca8626626">CTR_TEST_LRW_JSON_METEO</a>(data)</td></tr>
+<tr class="separator:a96c6f2c350f00bd84651db6ca8626626"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3cd1ea356a2b9489cd6d105ea1aec0ac"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__test__lrw_8h.html#a3cd1ea356a2b9489cd6d105ea1aec0ac">CTR_TEST_LRW_JSON_BAROMETER_TAG</a>(data)</td></tr>
+<tr class="separator:a3cd1ea356a2b9489cd6d105ea1aec0ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="a3cd1ea356a2b9489cd6d105ea1aec0ac" name="a3cd1ea356a2b9489cd6d105ea1aec0ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3cd1ea356a2b9489cd6d105ea1aec0ac">&#9670;&#160;</a></span>CTR_TEST_LRW_JSON_BAROMETER_TAG</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_TEST_LRW_JSON_BAROMETER_TAG</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">data</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    cJSON_AddNumberToObject(data, <span class="stringliteral">&quot;barometer&quot;</span>,                                                 \</div>
+<div class="line">                g_app_data.barometer.pressure.last_sample / 1000.f);</div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="a4395b83e2c6b477336c28f6fcb145440" name="a4395b83e2c6b477336c28f6fcb145440"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4395b83e2c6b477336c28f6fcb145440">&#9670;&#160;</a></span>CTR_TEST_LRW_JSON_BATT</h2>
 
@@ -222,6 +246,28 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+</div>
+</div>
+<a id="a96c6f2c350f00bd84651db6ca8626626" name="a96c6f2c350f00bd84651db6ca8626626"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a96c6f2c350f00bd84651db6ca8626626">&#9670;&#160;</a></span>CTR_TEST_LRW_JSON_METEO</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_TEST_LRW_JSON_METEO</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">data</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    cJSON_AddNumberToObject(data, <span class="stringliteral">&quot;wind_speed&quot;</span>, g_app_data.meteo.wind_speed.last_sample);      \</div>
+<div class="line">    cJSON_AddNumberToObject(data, <span class="stringliteral">&quot;wind_direction&quot;</span>,                                            \</div>
+<div class="line">                g_app_data.meteo.wind_direction.last_sample);                      \</div>
+<div class="line">    cJSON_AddNumberToObject(data, <span class="stringliteral">&quot;rainfall&quot;</span>, g_app_data.meteo.rainfall.last_sample);</div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="a43accbae71dc2ea885dc0f8ad893e2b8" name="a43accbae71dc2ea885dc0f8ad893e2b8"></a>

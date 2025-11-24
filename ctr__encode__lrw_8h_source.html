@@ -362,7 +362,42 @@ $(document).ready(function(){initNavTree('ctr__encode__lrw_8h_source.html',''); 
 <div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span><span class="preprocessor">        }                                                                                  \</span></div>
 <div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span><span class="preprocessor">    } while (0)</span></div>
 <div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span> </div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span><span class="preprocessor">#endif </span><span class="comment">/* CHESTER_INCLUDE_CTR_ENCODE_LRW_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno"><a class="line" href="ctr__encode__lrw_8h.html#a275ecd8214bc90adcf081e766bc597b8">  266</a></span><span class="preprocessor">#define CTR_ENCODE_LRW_BAROMETER_TAG(buf)                                                          \</span></div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span><span class="preprocessor">    do {                                                                                       \</span></div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span><span class="preprocessor">        if (isnan(g_app_data.barometer.pressure.last_sample)) {                            \</span></div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span><span class="preprocessor">            ret |= ctr_buf_append_u32_le(buf, BIT64_MASK(32));                         \</span></div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span><span class="preprocessor">        } else {                                                                           \</span></div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span><span class="preprocessor">            ret |= ctr_buf_append_u32_le(buf,                                          \</span></div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span><span class="preprocessor">                             g_app_data.barometer.pressure.last_sample);   \</span></div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span><span class="preprocessor">        }                                                                                  \</span></div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span><span class="preprocessor">    } while (0)</span></div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span> </div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno"><a class="line" href="ctr__encode__lrw_8h.html#a0f62574baf872b28e0531b9bfd08276a">  276</a></span><span class="preprocessor">#define CTR_ENCODE_LRW_METEO(buf)                                                                  \</span></div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span><span class="preprocessor">    do {                                                                                       \</span></div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span><span class="preprocessor">        if (header &amp; BIT(3)) {                                                             \</span></div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span><span class="preprocessor">            struct app_data_meteo *meteo = &amp;g_app_data.meteo;                          \</span></div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span><span class="preprocessor">            if (isnan(meteo-&gt;wind_speed.last_sample)) {                                \</span></div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span><span class="preprocessor">                ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                   \</span></div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span><span class="preprocessor">            } else {                                                                   \</span></div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span><span class="preprocessor">                ret |= ctr_buf_append_u16_le(buf, meteo-&gt;wind_speed.last_sample *  \</span></div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span><span class="preprocessor">                                      100.f);                  \</span></div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span><span class="preprocessor">            }                                                                          \</span></div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span><span class="preprocessor">            if (isnan(meteo-&gt;wind_direction.last_sample)) {                            \</span></div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span><span class="preprocessor">                ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                   \</span></div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span><span class="preprocessor">            } else {                                                                   \</span></div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span><span class="preprocessor">                ret |= ctr_buf_append_u16_le(buf,                                  \</span></div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span><span class="preprocessor">                                 meteo-&gt;wind_direction.last_sample);   \</span></div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span><span class="preprocessor">            }                                                                          \</span></div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span><span class="preprocessor">            if (isnan(meteo-&gt;rainfall.last_sample)) {                                  \</span></div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span><span class="preprocessor">                ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                   \</span></div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span><span class="preprocessor">            } else {                                                                   \</span></div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span><span class="preprocessor">                ret |= ctr_buf_append_u16_le(buf,                                  \</span></div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span><span class="preprocessor">                                 meteo-&gt;rainfall.last_sample * 100.f); \</span></div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span><span class="preprocessor">            }                                                                          \</span></div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span><span class="preprocessor">        }                                                                                  \</span></div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span><span class="preprocessor">    } while (0)</span></div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span> </div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span><span class="preprocessor">#endif </span><span class="comment">/* CHESTER_INCLUDE_CTR_ENCODE_LRW_H_ */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
