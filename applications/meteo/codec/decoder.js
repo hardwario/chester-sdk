@@ -11,47 +11,49 @@ function decodeUplink(input) {
 
   var header = u8();
 
-  if (header & 0x80) {
+  if (header & BIT(7)) {
     header = header | (u8() << 8);
   }
 
   /* Flag BATT */
-  if ((header & 0x01) !== 0) {
+  if ((header & BIT(0)) !== 0) {
     decode_batt(data);
   }
 
   /* Flag ACCEL */
-  if ((header & 0x02) !== 0) {
+  if ((header & BIT(1)) !== 0) {
     decode_accel(data);
   }
 
   /* Flag THERM */
-  if ((header & 0x04) !== 0) {
+  if ((header & BIT(2)) !== 0) {
     decode_therm(data);
   }
 
   /* Flag METEO */
-  if ((header & 0x08) !== 0) {
+  if ((header & BIT(3)) !== 0) {
     decode_meteo(data);
   }
 
   /* Flag HYGRO */
-  if ((header & 0x10) !== 0) {
+  if ((header & BIT(4)) !== 0) {
     decode_hygro(data);
   }
 
   /* Flag W1 */
-  if ((header & 0x20) !== 0) {
+  if ((header & BIT(5)) !== 0) {
     decode_w1(data);
   }
 
   /* Flag BLE Tags */
-  if ((header & 0x40) !== 0) {
+  if ((header & BIT(6)) !== 0) {
     decode_ble_tags(data);
   }
 
+  // Bit 7 is reserved for extended header
+
   /* Flag Barometer tag */
-  if ((header & 0x0100) !== 0) {
+  if ((header & BIT(8)) !== 0) {
     decode_barometer_tag(data);
   }
 
@@ -206,6 +208,10 @@ function decode_barometer_tag(data) {
   } else {
     data.barometer = data.barometer / 1000;
   }
+}
+
+function BIT(index) {
+  return 1 << index;
 }
 
 function s8() {
