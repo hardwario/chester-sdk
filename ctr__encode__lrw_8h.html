@@ -289,26 +289,21 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">    <span class="keywordflow">do</span> {                                                                                       \</div>
-<div class="line">        if (header &amp; BIT(3)) {                                                             \</div>
-<div class="line">            <span class="keyword">struct </span>app_data_meteo *meteo = &amp;g_app_data.meteo;                          \</div>
-<div class="line">            if (isnan(meteo-&gt;wind_speed.last_sample)) {                                \</div>
-<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, BIT_MASK(16));                   \</div>
-<div class="line">            } <span class="keywordflow">else</span> {                                                                   \</div>
-<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, meteo-&gt;wind_speed.last_sample *  \</div>
-<div class="line">                                      100.f);                  \</div>
-<div class="line">            }                                                                          \</div>
-<div class="line">            if (isnan(meteo-&gt;wind_direction.last_sample)) {                            \</div>
-<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, BIT_MASK(16));                   \</div>
-<div class="line">            } <span class="keywordflow">else</span> {                                                                   \</div>
-<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf,                                  \</div>
-<div class="line">                                 meteo-&gt;wind_direction.last_sample);   \</div>
-<div class="line">            }                                                                          \</div>
-<div class="line">            if (isnan(meteo-&gt;rainfall.last_sample)) {                                  \</div>
-<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, BIT_MASK(16));                   \</div>
-<div class="line">            } <span class="keywordflow">else</span> {                                                                   \</div>
-<div class="line">                ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf,                                  \</div>
-<div class="line">                                 meteo-&gt;rainfall.last_sample * 100.f); \</div>
-<div class="line">            }                                                                          \</div>
+<div class="line">        <span class="keyword">struct </span>app_data_meteo *meteo = &amp;g_app_data.meteo;                                  \</div>
+<div class="line">        if (isnan(meteo-&gt;wind_speed.last_sample)) {                                        \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, BIT_MASK(16));                           \</div>
+<div class="line">        } <span class="keywordflow">else</span> {                                                                           \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, meteo-&gt;wind_speed.last_sample * 100.f);  \</div>
+<div class="line">        }                                                                                  \</div>
+<div class="line">        if (isnan(meteo-&gt;wind_direction.last_sample)) {                                    \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, BIT_MASK(16));                           \</div>
+<div class="line">        } <span class="keywordflow">else</span> {                                                                           \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, meteo-&gt;wind_direction.last_sample);      \</div>
+<div class="line">        }                                                                                  \</div>
+<div class="line">        if (isnan(meteo-&gt;rainfall.last_sample)) {                                          \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, BIT_MASK(16));                           \</div>
+<div class="line">        } <span class="keywordflow">else</span> {                                                                           \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, meteo-&gt;rainfall.last_sample * 100.f);    \</div>
 <div class="line">        }                                                                                  \</div>
 <div class="line">    } <span class="keywordflow">while</span> (0)</div>
 </div><!-- fragment -->
