@@ -275,26 +275,21 @@
 
 #define CTR_ENCODE_LRW_METEO(buf)                                                                  \
 	do {                                                                                       \
-		if (header & BIT(3)) {                                                             \
-			struct app_data_meteo *meteo = &g_app_data.meteo;                          \
-			if (isnan(meteo->wind_speed.last_sample)) {                                \
-				ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                   \
-			} else {                                                                   \
-				ret |= ctr_buf_append_u16_le(buf, meteo->wind_speed.last_sample *  \
-									  100.f);                  \
-			}                                                                          \
-			if (isnan(meteo->wind_direction.last_sample)) {                            \
-				ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                   \
-			} else {                                                                   \
-				ret |= ctr_buf_append_u16_le(buf,                                  \
-							     meteo->wind_direction.last_sample);   \
-			}                                                                          \
-			if (isnan(meteo->rainfall.last_sample)) {                                  \
-				ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                   \
-			} else {                                                                   \
-				ret |= ctr_buf_append_u16_le(buf,                                  \
-							     meteo->rainfall.last_sample * 100.f); \
-			}                                                                          \
+		struct app_data_meteo *meteo = &g_app_data.meteo;                                  \
+		if (isnan(meteo->wind_speed.last_sample)) {                                        \
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                           \
+		} else {                                                                           \
+			ret |= ctr_buf_append_u16_le(buf, meteo->wind_speed.last_sample * 100.f);  \
+		}                                                                                  \
+		if (isnan(meteo->wind_direction.last_sample)) {                                    \
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                           \
+		} else {                                                                           \
+			ret |= ctr_buf_append_u16_le(buf, meteo->wind_direction.last_sample);      \
+		}                                                                                  \
+		if (isnan(meteo->rainfall.last_sample)) {                                          \
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                           \
+		} else {                                                                           \
+			ret |= ctr_buf_append_u16_le(buf, meteo->rainfall.last_sample * 100.f);    \
 		}                                                                                  \
 	} while (0)
 
