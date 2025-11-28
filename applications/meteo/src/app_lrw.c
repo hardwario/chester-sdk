@@ -45,6 +45,7 @@ int app_lrw_encode(struct ctr_buf *buf)
 	header |= IS_ENABLED(FEATURE_SUBSYSTEM_BLE_TAG) ? BIT(6) : 0;
 	// Bit 7 is reserved for extended header
 	header |= IS_ENABLED(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG) ? BIT(8) : 0;
+	header |= IS_ENABLED(FEATURE_SUBSYSTEM_SOIL_SENSOR) ? BIT(9) : 0;
 
 	// If we used extended header
 	if (header >= BIT(8)) {
@@ -89,6 +90,10 @@ int app_lrw_encode(struct ctr_buf *buf)
 
 #if defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG)
 	CTR_ENCODE_LRW_BAROMETER_TAG(buf);
+#endif
+
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	CTR_ENCODE_LRW_SOIL_SENSOR(buf);
 #endif
 
 	app_data_unlock();

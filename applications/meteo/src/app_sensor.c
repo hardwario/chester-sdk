@@ -836,6 +836,8 @@ int app_sensor_soil_sensor_sample(void)
 			struct app_data_soil_sensor_sensor *sensor =
 				&g_app_data.soil_sensor.sensor[i];
 
+			sensor->last_temperature = temperature;
+			sensor->last_moisture = moisture;
 			sensor->samples_temperature[sensor->sample_count] = temperature;
 			sensor->samples_moisture[sensor->sample_count] = moisture;
 			sensor->serial_number = serial_number;

@@ -20,6 +20,7 @@ add_compile_definitions(FEATURE_SUBSYSTEM_BLE_TAG)
 #add_compile_definitions(FEATURE_HARDWARE_CHESTER_X0_A)
 add_compile_definitions(FEATURE_HARDWARE_CHESTER_METEO_A)
 add_compile_definitions(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG)
+add_compile_definitions(FEATURE_SUBSYSTEM_SOIL_SENSOR)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
 

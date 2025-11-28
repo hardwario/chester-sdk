@@ -167,6 +167,18 @@ ZTEST(app_meteo_lrw, test_positive)
 	CTR_TEST_LRW_JSON_BAROMETER_TAG(data)
 #endif
 
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	g_app_data.soil_sensor.sensor[0].last_moisture = 65534;
+	g_app_data.soil_sensor.sensor[0].last_temperature = 20.5f;
+	g_app_data.soil_sensor.sensor[0].serial_number = 0x123456789ABCDEF0;
+
+	g_app_data.soil_sensor.sensor[1].last_moisture = 65534;
+	g_app_data.soil_sensor.sensor[1].last_temperature = 21.5f;
+	g_app_data.soil_sensor.sensor[1].serial_number = 0x123456789ABCDEF1;
+
+	CTR_TEST_LRW_JSON_SOIL_SENSOR(data);
+#endif
+
 	create_output_files(__func__, root);
 
 	cJSON_Delete(root);
@@ -260,6 +272,18 @@ ZTEST(app_meteo_lrw, test_negative)
 	CTR_TEST_LRW_JSON_BAROMETER_TAG(data)
 #endif
 
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	g_app_data.soil_sensor.sensor[0].last_moisture = 3000;
+	g_app_data.soil_sensor.sensor[0].last_temperature = -20.5f;
+	g_app_data.soil_sensor.sensor[0].serial_number = 0x123456789ABCDEF0;
+
+	g_app_data.soil_sensor.sensor[1].last_moisture = 4000;
+	g_app_data.soil_sensor.sensor[1].last_temperature = -21.5f;
+	g_app_data.soil_sensor.sensor[1].serial_number = 0x123456789ABCDEF1;
+
+	CTR_TEST_LRW_JSON_SOIL_SENSOR(data);
+#endif
+
 	create_output_files(__func__, root);
 
 	cJSON_Delete(root);
@@ -351,6 +375,18 @@ ZTEST(app_meteo_lrw, test_null)
 	g_app_data.barometer.pressure.last_sample = NAN;
 
 	CTR_TEST_LRW_JSON_BAROMETER_TAG(data)
+#endif
+
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	g_app_data.soil_sensor.sensor[0].last_moisture = NAN;
+	g_app_data.soil_sensor.sensor[0].last_temperature = NAN;
+	g_app_data.soil_sensor.sensor[0].serial_number = 0x123456789ABCDEF0;
+
+	g_app_data.soil_sensor.sensor[1].last_moisture = NAN;
+	g_app_data.soil_sensor.sensor[1].last_temperature = NAN;
+	g_app_data.soil_sensor.sensor[1].serial_number = 0x123456789ABCDEF1;
+
+	CTR_TEST_LRW_JSON_SOIL_SENSOR(data);
 #endif
 
 	create_output_files(__func__, root);

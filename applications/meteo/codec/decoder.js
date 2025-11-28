@@ -57,6 +57,11 @@ function decodeUplink(input) {
     decode_barometer_tag(data);
   }
 
+    /* Flag Soil sensor */
+    if ((header & BIT(9)) !== 0) {
+        decode_soil_sensor(data);
+    }
+
   return { data: data };
 }
 
@@ -208,6 +213,32 @@ function decode_barometer_tag(data) {
   } else {
     data.barometer = data.barometer / 1000;
   }
+}
+
+function decode_soil_sensor(data) {
+    data.soil_sensors = [];
+
+    let count = u8();
+
+    for (let i = 0; i < count; i++) {
+        let sensor = {};
+
+        let temperature = s16();
+        if (temperature === 0x7fff) {
+            sensor.temperature = null;
+        } else {
+            sensor.temperature = temperature / 100;
+        }
+
+        let moisture = u16();
+        if (moisture === 0xffff) {
+            sensor.moisture = null;
+        } else {
+            sensor.moisture = moisture;
+        }
+
+        data.soil_sensors.push(sensor);
+    }
 }
 
 function BIT(index) {

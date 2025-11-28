@@ -194,6 +194,8 @@ struct app_data_soil_sensor_sensor {
 	int sample_count;
 	float samples_temperature[APP_DATA_MAX_SAMPLES];
 	float samples_moisture[APP_DATA_MAX_SAMPLES];
+	float last_temperature;
+	float last_moisture;
 
 	int measurement_count;
 	struct app_data_soil_sensor_measurement measurements[APP_DATA_MAX_MEASUREMENTS];
