@@ -76,6 +76,13 @@ struct app_data g_app_data = {
 		},
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+	.soil_sensor.sensor[0 ... APP_DATA_SOIL_SENSOR_COUNT - 1] = {
+		.last_temperature = NAN,
+		.last_moisture = NAN,
+	},
+#endif
+
 };
 
 static K_MUTEX_DEFINE(m_lock);
