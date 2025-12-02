@@ -1,5 +1,9 @@
 var NAVTREEINDEX5 =
 {
+"structctr__lte__data__eval__ok.html#af61036bf47f7560169eca1352e4a12a4":[0,16,9,0],
+"structctr__lte__data__send__err.html":[0,16,8],
+"structctr__lte__data__send__err.html#a8fd274a8a8046ec49b54fa1da61464b5":[0,16,8,0],
+"structctr__lte__data__send__ok.html":[0,16,7],
 "structctr__lte__data__send__ok.html#ae11da831a90c0c46d04f1f5900f6a7fa":[0,16,7,0],
 "structctr__lte__data__start__err.html":[0,16,2],
 "structctr__lte__data__start__err.html#afc838f0630969cb84d5ea3257631dd80":[0,16,2,0],

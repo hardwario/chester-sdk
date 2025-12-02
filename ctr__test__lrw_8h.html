@@ -130,8 +130,37 @@ Macros</h2></td></tr>
 <tr class="separator:a96c6f2c350f00bd84651db6ca8626626"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3cd1ea356a2b9489cd6d105ea1aec0ac"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__test__lrw_8h.html#a3cd1ea356a2b9489cd6d105ea1aec0ac">CTR_TEST_LRW_JSON_BAROMETER_TAG</a>(data)</td></tr>
 <tr class="separator:a3cd1ea356a2b9489cd6d105ea1aec0ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a544774ac69de4667a9417f8ceb032c32"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__test__lrw_8h.html#a544774ac69de4667a9417f8ceb032c32">CTR_TEST_LRW_JSON_BACKUP</a>(data)</td></tr>
+<tr class="separator:a544774ac69de4667a9417f8ceb032c32"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2eb5b48631c9ddf418443162d76d5efc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__test__lrw_8h.html#a2eb5b48631c9ddf418443162d76d5efc">CTR_TEST_LRW_JSON_PUSH</a>(data)</td></tr>
+<tr class="separator:a2eb5b48631c9ddf418443162d76d5efc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="a544774ac69de4667a9417f8ceb032c32" name="a544774ac69de4667a9417f8ceb032c32"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a544774ac69de4667a9417f8ceb032c32">&#9670;&#160;</a></span>CTR_TEST_LRW_JSON_BACKUP</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_TEST_LRW_JSON_BACKUP</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">data</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    cJSON *backup = cJSON_CreateObject();                                                      \</div>
+<div class="line">    cJSON_AddNumberToObject(backup, <span class="stringliteral">&quot;line_voltage&quot;</span>, g_app_data.backup.line_voltage);           \</div>
+<div class="line">    cJSON_AddNumberToObject(backup, <span class="stringliteral">&quot;battery_voltage&quot;</span>, g_app_data.backup.battery_voltage);     \</div>
+<div class="line">    cJSON_AddStringToObject(backup, <span class="stringliteral">&quot;backup_state&quot;</span>,                                            \</div>
+<div class="line">                g_app_data.backup.line_present ? <span class="stringliteral">&quot;connected&quot;</span> : <span class="stringliteral">&quot;disconnected&quot;</span>);    \</div>
+<div class="line">                                                                                                   \</div>
+<div class="line">    cJSON_AddItemToObject(data, <span class="stringliteral">&quot;backup&quot;</span>, backup);</div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="a3cd1ea356a2b9489cd6d105ea1aec0ac" name="a3cd1ea356a2b9489cd6d105ea1aec0ac"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3cd1ea356a2b9489cd6d105ea1aec0ac">&#9670;&#160;</a></span>CTR_TEST_LRW_JSON_BAROMETER_TAG</h2>
 
@@ -291,6 +320,24 @@ Macros</h2></td></tr>
 <div class="line">        cJSON_AddNumberToObject(data, <span class="stringliteral">&quot;orientation&quot;</span>, g_app_data.accel_orientation);        \</div>
 <div class="line">    }</div>
 </div><!-- fragment -->
+</div>
+</div>
+<a id="a2eb5b48631c9ddf418443162d76d5efc" name="a2eb5b48631c9ddf418443162d76d5efc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2eb5b48631c9ddf418443162d76d5efc">&#9670;&#160;</a></span>CTR_TEST_LRW_JSON_PUSH</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_TEST_LRW_JSON_PUSH</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">data</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
 </div>
 </div>
 <a id="a5239e4464df3f65998d9ffa4681fadbd" name="a5239e4464df3f65998d9ffa4681fadbd"></a>

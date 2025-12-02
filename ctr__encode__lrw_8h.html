@@ -130,6 +130,10 @@ Macros</h2></td></tr>
 <tr class="separator:a275ecd8214bc90adcf081e766bc597b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f62574baf872b28e0531b9bfd08276a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__encode__lrw_8h.html#a0f62574baf872b28e0531b9bfd08276a">CTR_ENCODE_LRW_METEO</a>(buf)</td></tr>
 <tr class="separator:a0f62574baf872b28e0531b9bfd08276a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb99a98b031dd846d8f3f9b0d4b31689"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__encode__lrw_8h.html#afb99a98b031dd846d8f3f9b0d4b31689">CTR_ENCODE_LRW_BACKUP</a>(buf)</td></tr>
+<tr class="separator:afb99a98b031dd846d8f3f9b0d4b31689"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a85f07f51f37508f18f8b50858197d2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__encode__lrw_8h.html#a2a85f07f51f37508f18f8b50858197d2">CTR_ENCODE_LRW_PUSH</a>(buf)</td></tr>
+<tr class="separator:a2a85f07f51f37508f18f8b50858197d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a7bc7921bf61dd552725f6d2da16d820a" name="a7bc7921bf61dd552725f6d2da16d820a"></a>
@@ -156,6 +160,42 @@ Macros</h2></td></tr>
 <div class="line">        }                                                                                  \</div>
 <div class="line">    } <span class="keywordflow">while</span> (0)</div>
 <div class="ttc" id="agroup__ctr__buf_html_ga6f3c58ad1868e9f168ef0fc49661ec72"><div class="ttname"><a href="group__ctr__buf.html#ga6f3c58ad1868e9f168ef0fc49661ec72">ctr_buf_append_u8</a></div><div class="ttdeci">int ctr_buf_append_u8(struct ctr_buf *buf, uint8_t val)</div></div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="afb99a98b031dd846d8f3f9b0d4b31689" name="afb99a98b031dd846d8f3f9b0d4b31689"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afb99a98b031dd846d8f3f9b0d4b31689">&#9670;&#160;</a></span>CTR_ENCODE_LRW_BACKUP</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_ENCODE_LRW_BACKUP</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">buf</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    <span class="keywordflow">do</span> {                                                                                       \</div>
+<div class="line">        <span class="keyword">struct </span>app_data_backup *backup = &amp;g_app_data.backup;                               \</div>
+<div class="line">                                                                                                   \</div>
+<div class="line">        if (isnan(backup-&gt;line_voltage)) {                                                 \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, BIT_MASK(16));                           \</div>
+<div class="line">        } <span class="keywordflow">else</span> {                                                                           \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, backup-&gt;line_voltage * 1000.0f);         \</div>
+<div class="line">        }                                                                                  \</div>
+<div class="line">                                                                                                   \</div>
+<div class="line">        if (isnan(backup-&gt;battery_voltage)) {                                              \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, BIT_MASK(16));                           \</div>
+<div class="line">        } <span class="keywordflow">else</span> {                                                                           \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, backup-&gt;battery_voltage * 1000.0f);      \</div>
+<div class="line">        }                                                                                  \</div>
+<div class="line">                                                                                                   \</div>
+<div class="line">        ret |= <a class="code hl_function" href="group__ctr__buf.html#ga6f3c58ad1868e9f168ef0fc49661ec72">ctr_buf_append_u8</a>(buf, backup-&gt;line_present ? 1 : 0);                       \</div>
+<div class="line">    } <span class="keywordflow">while</span> (0)</div>
+<div class="ttc" id="agroup__ctr__buf_html_gada6acb11d9fe2dfe9fc49fd9e1e2462f"><div class="ttname"><a href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a></div><div class="ttdeci">int ctr_buf_append_u16_le(struct ctr_buf *buf, uint16_t val)</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -221,7 +261,6 @@ Macros</h2></td></tr>
 <div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#ga6f3c58ad1868e9f168ef0fc49661ec72">ctr_buf_append_u8</a>(buf, val);                                        \</div>
 <div class="line">        }                                                                                  \</div>
 <div class="line">    } <span class="keywordflow">while</span> (0)</div>
-<div class="ttc" id="agroup__ctr__buf_html_gada6acb11d9fe2dfe9fc49fd9e1e2462f"><div class="ttname"><a href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a></div><div class="ttdeci">int ctr_buf_append_u16_le(struct ctr_buf *buf, uint16_t val)</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -305,6 +344,39 @@ Macros</h2></td></tr>
 <div class="line">        } <span class="keywordflow">else</span> {                                                                           \</div>
 <div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, meteo-&gt;rainfall.last_sample * 100.f);    \</div>
 <div class="line">        }                                                                                  \</div>
+<div class="line">    } <span class="keywordflow">while</span> (0)</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="a2a85f07f51f37508f18f8b50858197d2" name="a2a85f07f51f37508f18f8b50858197d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a85f07f51f37508f18f8b50858197d2">&#9670;&#160;</a></span>CTR_ENCODE_LRW_PUSH</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_ENCODE_LRW_PUSH</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">buf</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    <span class="keywordflow">do</span> {                                                                                       \</div>
+<div class="line">        uint16_t button_events = 0;                                                        \</div>
+<div class="line">                                                                                                   \</div>
+<div class="line">        for (<span class="keywordtype">size_t</span> i = 0; i &lt; APP_DATA_BUTTON_COUNT; i++) {                               \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, g_app_data.button[i].click_count);       \</div>
+<div class="line">            ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, g_app_data.button[i].hold_count);        \</div>
+<div class="line">                                                                                                   \</div>
+<div class="line">            for (<span class="keywordtype">size_t</span> j = 0; j &lt; g_app_data.button[i].event_count; j++) {            \</div>
+<div class="line">                button_events |= BIT(2 * i)                                        \</div>
+<div class="line">                         &lt;&lt; g_app_data.button[i].events[j].type;           \</div>
+<div class="line">            }                                                                          \</div>
+<div class="line">        }                                                                                  \</div>
+<div class="line">                                                                                                   \</div>
+<div class="line">        ret |= <a class="code hl_function" href="group__ctr__buf.html#gada6acb11d9fe2dfe9fc49fd9e1e2462f">ctr_buf_append_u16_le</a>(buf, button_events);                                  \</div>
 <div class="line">    } <span class="keywordflow">while</span> (0)</div>
 </div><!-- fragment -->
 </div>
