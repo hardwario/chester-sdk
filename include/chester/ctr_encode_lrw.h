@@ -293,4 +293,40 @@
 		}                                                                                  \
 	} while (0)
 
+#define CTR_ENCODE_LRW_BACKUP(buf)                                                                 \
+	do {                                                                                       \
+		struct app_data_backup *backup = &g_app_data.backup;                               \
+                                                                                                   \
+		if (isnan(backup->line_voltage)) {                                                 \
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                           \
+		} else {                                                                           \
+			ret |= ctr_buf_append_u16_le(buf, backup->line_voltage * 1000.0f);         \
+		}                                                                                  \
+                                                                                                   \
+		if (isnan(backup->battery_voltage)) {                                              \
+			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));                           \
+		} else {                                                                           \
+			ret |= ctr_buf_append_u16_le(buf, backup->battery_voltage * 1000.0f);      \
+		}                                                                                  \
+                                                                                                   \
+		ret |= ctr_buf_append_u8(buf, backup->line_present ? 1 : 0);                       \
+	} while (0)
+
+#define CTR_ENCODE_LRW_PUSH(buf)                                                                   \
+	do {                                                                                       \
+		uint16_t button_events = 0;                                                        \
+                                                                                                   \
+		for (size_t i = 0; i < APP_DATA_BUTTON_COUNT; i++) {                               \
+			ret |= ctr_buf_append_u16_le(buf, g_app_data.button[i].click_count);       \
+			ret |= ctr_buf_append_u16_le(buf, g_app_data.button[i].hold_count);        \
+                                                                                                   \
+			for (size_t j = 0; j < g_app_data.button[i].event_count; j++) {            \
+				button_events |= BIT(2 * i)                                        \
+						 << g_app_data.button[i].events[j].type;           \
+			}                                                                          \
+		}                                                                                  \
+                                                                                                   \
+		ret |= ctr_buf_append_u16_le(buf, button_events);                                  \
+	} while (0)
+
 #endif /* CHESTER_INCLUDE_CTR_ENCODE_LRW_H_ */

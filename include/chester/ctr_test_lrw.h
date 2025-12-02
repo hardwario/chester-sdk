@@ -192,4 +192,82 @@
 	cJSON_AddNumberToObject(data, "barometer",                                                 \
 				g_app_data.barometer.pressure.last_sample / 1000.f);
 
+#define CTR_TEST_LRW_JSON_BACKUP(data)                                                             \
+	cJSON *backup = cJSON_CreateObject();                                                      \
+	cJSON_AddNumberToObject(backup, "line_voltage", g_app_data.backup.line_voltage);           \
+	cJSON_AddNumberToObject(backup, "battery_voltage", g_app_data.backup.battery_voltage);     \
+	cJSON_AddStringToObject(backup, "backup_state",                                            \
+				g_app_data.backup.line_present ? "connected" : "disconnected");    \
+                                                                                                   \
+	cJSON_AddItemToObject(data, "backup", backup);
+
+#define CTR_TEST_LRW_JSON_PUSH(data)                                                               \
+	cJSON *buttons = cJSON_CreateArray();                                                      \
+                                                                                                   \
+	cJSON *button_x = cJSON_CreateObject();                                                    \
+	cJSON *button_1 = cJSON_CreateObject();                                                    \
+	cJSON *button_2 = cJSON_CreateObject();                                                    \
+	cJSON *button_3 = cJSON_CreateObject();                                                    \
+	cJSON *button_4 = cJSON_CreateObject();                                                    \
+                                                                                                   \
+	cJSON_AddItemReferenceToArray(buttons, button_x);                                          \
+	cJSON_AddItemReferenceToArray(buttons, button_1);                                          \
+	cJSON_AddItemReferenceToArray(buttons, button_2);                                          \
+	cJSON_AddItemReferenceToArray(buttons, button_3);                                          \
+	cJSON_AddItemReferenceToArray(buttons, button_4);                                          \
+                                                                                                   \
+	uint16_t button_events = 0;                                                                \
+                                                                                                   \
+	for (size_t i = 0; i < APP_DATA_BUTTON_COUNT; i++) {                                       \
+		cJSON_AddNumberToObject(cJSON_GetArrayItem(buttons, i), "press_count",             \
+					g_app_data.button[i].click_count);                         \
+		cJSON_AddNumberToObject(cJSON_GetArrayItem(buttons, i), "hold_count",              \
+					g_app_data.button[i].hold_count);                          \
+                                                                                                   \
+		for (size_t j = 0; j < g_app_data.button[i].event_count; j++) {                    \
+			button_events |= BIT(2 * i) << g_app_data.button[i].events[j].type;        \
+		}                                                                                  \
+	}                                                                                          \
+                                                                                                   \
+	cJSON_AddItemToObject(cJSON_GetArrayItem(buttons, 0), "press_event",                       \
+			      ((button_events & 0x0001) != 0) ? cJSON_CreateTrue()                 \
+							      : cJSON_CreateFalse());              \
+	cJSON_AddItemToObject(cJSON_GetArrayItem(buttons, 0), "hold_event",                        \
+			      ((button_events & 0x0002) != 0) ? cJSON_CreateTrue()                 \
+							      : cJSON_CreateFalse());              \
+                                                                                                   \
+	cJSON_AddItemToObject(cJSON_GetArrayItem(buttons, 1), "press_event",                       \
+			      ((button_events & 0x0004) != 0) ? cJSON_CreateTrue()                 \
+							      : cJSON_CreateFalse());              \
+	cJSON_AddItemToObject(cJSON_GetArrayItem(buttons, 1), "hold_event",                        \
+			      ((button_events & 0x0008) != 0) ? cJSON_CreateTrue()                 \
+							      : cJSON_CreateFalse());              \
+                                                                                                   \
+	cJSON_AddItemToObject(cJSON_GetArrayItem(buttons, 2), "press_event",                       \
+			      ((button_events & 0x0010) != 0) ? cJSON_CreateTrue()                 \
+							      : cJSON_CreateFalse());              \
+	cJSON_AddItemToObject(cJSON_GetArrayItem(buttons, 2), "hold_event",                        \
+			      ((button_events & 0x0020) != 0) ? cJSON_CreateTrue()                 \
+							      : cJSON_CreateFalse());              \
+                                                                                                   \
+	cJSON_AddItemToObject(cJSON_GetArrayItem(buttons, 3), "press_event",                       \
+			      ((button_events & 0x0040) != 0) ? cJSON_CreateTrue()                 \
+							      : cJSON_CreateFalse());              \
+	cJSON_AddItemToObject(cJSON_GetArrayItem(buttons, 3), "hold_event",                        \
+			      ((button_events & 0x0080) != 0) ? cJSON_CreateTrue()                 \
+							      : cJSON_CreateFalse());              \
+                                                                                                   \
+	cJSON_AddItemToObject(cJSON_GetArrayItem(buttons, 4), "press_event",                       \
+			      ((button_events & 0x0100) != 0) ? cJSON_CreateTrue()                 \
+							      : cJSON_CreateFalse());              \
+	cJSON_AddItemToObject(cJSON_GetArrayItem(buttons, 4), "hold_event",                        \
+			      ((button_events & 0x0200) != 0) ? cJSON_CreateTrue()                 \
+							      : cJSON_CreateFalse());              \
+                                                                                                   \
+	cJSON_AddItemToObject(data, "button_x", cJSON_GetArrayItem(buttons, 0));                   \
+	cJSON_AddItemToObject(data, "button_1", cJSON_GetArrayItem(buttons, 1));                   \
+	cJSON_AddItemToObject(data, "button_2", cJSON_GetArrayItem(buttons, 2));                   \
+	cJSON_AddItemToObject(data, "button_3", cJSON_GetArrayItem(buttons, 3));                   \
+	cJSON_AddItemToObject(data, "button_4", cJSON_GetArrayItem(buttons, 4));
+
 #endif /* CHESTER_INCLUDE_CTR_TEST_LRW_H_ */
