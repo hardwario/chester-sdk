@@ -625,8 +625,12 @@ class ProjectGenerator:
                                 r"^(\s*)", existing_block_content
                             ).group(1)
                     new_block_content += end_block(indentation, block_name)
+
                     new_content = re.sub(
-                        block_pattern, new_block_content, new_content, flags=re.DOTALL
+                        block_pattern,
+                        lambda _: new_block_content,
+                        new_content,
+                        flags=re.DOTALL
                     )
                 return new_content
 
