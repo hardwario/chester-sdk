@@ -18,6 +18,13 @@ config SHIELD_CTR_S2
 
 config CTR_HYGRO
 	default y
+# SUBSYSTEM-DS18B20
+config SHIELD_CTR_DS18B20
+	bool "Enable SHIELD_CTR_DS18B20"
+	default y
+
+config CTR_DS18B20
+	default y
 # SUBSYSTEM-LRW
 config SHIELD_CTR_LRW
 	bool "Enable SHIELD_CTR_LRW"

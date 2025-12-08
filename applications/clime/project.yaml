@@ -27,11 +27,6 @@ variants:
   fw_version: v3.0.0
   features:
     - hardware-chester-rtd-a
-- name: CHESTER Clime 1W
-  fw_bundle: com.hardwario.chester.app.clime.1w
-  fw_name: hio-chester-clime-1w
-  fw_version: v3.0.0
-  remark:
 - name: CHESTER Clime TC
   fw_bundle: com.hardwario.chester.app.clime.tc
   fw_name: hio-chester-clime-tc
@@ -83,7 +78,7 @@ features:
   - subsystem-zcbor
   - subsystem-lte-v2
   - subsystem-lrw
-  #- subsystem-ds18b20
+  - subsystem-ds18b20
   - subsystem-soil-sensor
   - chester-app-report-jitter
 #- chester-app-tamper
