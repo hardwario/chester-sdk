@@ -183,3 +183,30 @@ int ctr_cloud_util_delete_firmware_update_id(void)
 	return settings_delete("cloud/firmware/update_id");
 }
 
+void ctr_cloud_util_adjust_metrics_ts(struct ctr_cloud_metrics *metrics, int64_t offset)
+{
+	if (metrics->uplink_last_ts > 0) {
+		metrics->uplink_last_ts += offset;
+	}
+	if (metrics->uplink_error_last_ts > 0) {
+		metrics->uplink_error_last_ts += offset;
+	}
+	if (metrics->downlink_last_ts > 0) {
+		metrics->downlink_last_ts += offset;
+	}
+	if (metrics->downlink_error_last_ts > 0) {
+		metrics->downlink_error_last_ts += offset;
+	}
+	if (metrics->poll_last_ts > 0) {
+		metrics->poll_last_ts += offset;
+	}
+	if (metrics->uplink_data_last_ts > 0) {
+		metrics->uplink_data_last_ts += offset;
+	}
+	if (metrics->downlink_data_last_ts > 0) {
+		metrics->downlink_data_last_ts += offset;
+	}
+	if (metrics->recv_shell_last_ts > 0) {
+		metrics->recv_shell_last_ts += offset;
+	}
+}

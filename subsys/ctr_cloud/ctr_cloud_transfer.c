@@ -43,11 +43,7 @@ static uint16_t m_last_recv_sequence;
 static uint8_t m_token[16];
 static struct ctr_cloud_packet m_pck_send;
 static struct ctr_cloud_packet m_pck_recv;
-static struct ctr_cloud_transfer_metrics m_metrics = {
-	.uplink_last_ts = -1,
-	.downlink_last_ts = -1,
-};
-static K_MUTEX_DEFINE(m_lock_metrics);
+static ctr_cloud_transfer_cb m_cb;
 
 static int transfer(struct ctr_cloud_packet *pck_send, struct ctr_cloud_packet *pck_recv, bool rai)
 {
@@ -143,7 +139,7 @@ static int transfer(struct ctr_cloud_packet *pck_send, struct ctr_cloud_packet *
 	return 0;
 }
 
-int ctr_cloud_transfer_init(uint32_t serial_number, uint8_t token[16])
+int ctr_cloud_transfer_init(uint32_t serial_number, uint8_t token[16], ctr_cloud_transfer_cb cb)
 {
 	memset(&m_pck_send, 0, sizeof(m_pck_send));
 	memset(&m_pck_recv, 0, sizeof(m_pck_recv));
@@ -154,7 +150,7 @@ int ctr_cloud_transfer_init(uint32_t serial_number, uint8_t token[16])
 	m_sequence = 0;
 	m_last_recv_sequence = 0;
 
-	ctr_cloud_transfer_reset_metrics();
+	m_cb = cb;
 
 	ctr_lte_v2_enable();
 
@@ -170,27 +166,6 @@ int ctr_cloud_transfer_wait_for_ready(k_timeout_t timeout)
 		LOG_ERR("Call `ctr_lte_v2_wait_for_connected` failed: %d", ret);
 		return ret;
 	}
-
-	return 0;
-}
-
-int ctr_cloud_transfer_reset_metrics(void)
-{
-	k_mutex_lock(&m_lock_metrics, K_FOREVER);
-	memset(&m_metrics, 0, sizeof(m_metrics));
-	k_mutex_unlock(&m_lock_metrics);
-	return 0;
-}
-
-int ctr_cloud_transfer_get_metrics(struct ctr_cloud_transfer_metrics *metrics)
-{
-	if (!metrics) {
-		return -EINVAL;
-	}
-
-	k_mutex_lock(&m_lock_metrics, K_FOREVER);
-	memcpy(metrics, &m_metrics, sizeof(m_metrics));
-	k_mutex_unlock(&m_lock_metrics);
 
 	return 0;
 }
@@ -301,20 +276,15 @@ exit:
 		m_last_recv_sequence = 0;
 	}
 
-	k_mutex_lock(&m_lock_metrics, K_FOREVER);
-	if (res) {
-		m_metrics.uplink_errors++;
-	} else {
-		m_metrics.uplink_count++;
-		m_metrics.uplink_bytes += ctr_buf_get_used(buf);
-		m_metrics.uplink_fragments += fragments;
-		ret = ctr_rtc_get_ts(&m_metrics.uplink_last_ts);
-
-		if (ret) {
-			LOG_WRN("Call `ctr_rtc_get_ts` failed: %d", ret);
-		}
+	if (m_cb) {
+		struct ctr_cloud_transfer_event_data data = {
+			.fragments = fragments,
+			.bytes = ctr_buf_get_used(buf),
+		};
+		m_cb(res ? CTR_CLOUD_TRANSFER_EVENT_UPLINK_ERROR
+			 : CTR_CLOUD_TRANSFER_EVENT_UPLINK_OK,
+		     &data);
 	}
-	k_mutex_unlock(&m_lock_metrics);
 
 	return res;
 }
@@ -433,27 +403,21 @@ exit:
 		m_last_recv_sequence = 0;
 	}
 
-	k_mutex_lock(&m_lock_metrics, K_FOREVER);
-	if (res) {
-		m_metrics.downlink_errors++;
-	} else {
-		if (part) {
-			m_metrics.downlink_count++;
-			m_metrics.downlink_fragments += part;
-			m_metrics.downlink_bytes += ctr_buf_get_used(buf) - buf_used;
-			ret = ctr_rtc_get_ts(&m_metrics.downlink_last_ts);
-			if (ret) {
-				LOG_WRN("Call `ctr_rtc_get_ts` failed: %d", ret);
-			}
+	if (m_cb) {
+		enum ctr_cloud_transfer_event event;
+		if (res) {
+			event = CTR_CLOUD_TRANSFER_EVENT_DOWNLINK_ERROR;
+		} else if (part) {
+			event = CTR_CLOUD_TRANSFER_EVENT_DOWNLINK_OK;
 		} else {
-			m_metrics.poll_count++;
-			ret = ctr_rtc_get_ts(&m_metrics.poll_last_ts);
-			if (ret) {
-				LOG_WRN("Call `ctr_rtc_get_ts` failed: %d", ret);
-			}
+			event = CTR_CLOUD_TRANSFER_EVENT_POLL;
 		}
+		struct ctr_cloud_transfer_event_data data = {
+			.fragments = part,
+			.bytes = ctr_buf_get_used(buf) - buf_used,
+		};
+		m_cb(event, &data);
 	}
-	k_mutex_unlock(&m_lock_metrics);
 
 	return res;
 }

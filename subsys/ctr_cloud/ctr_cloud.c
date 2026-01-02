@@ -51,7 +51,53 @@ static struct ctr_cloud_session m_session;
 static k_timeout_t m_poll_period = K_NO_WAIT;
 
 static K_MUTEX_DEFINE(m_lock_state);
-static int64_t m_state_last_seen_ts = 0;
+
+static struct ctr_cloud_metrics m_metrics = {
+	.uplink_last_ts = -1,
+	.uplink_error_last_ts = -1,
+	.downlink_last_ts = -1,
+	.downlink_error_last_ts = -1,
+	.poll_last_ts = -1,
+	.uplink_data_last_ts = -1,
+	.downlink_data_last_ts = -1,
+	.recv_shell_last_ts = -1,
+};
+static K_MUTEX_DEFINE(m_lock_metrics);
+
+static void transfer_cb(enum ctr_cloud_transfer_event event,
+			const struct ctr_cloud_transfer_event_data *data)
+{
+	k_mutex_lock(&m_lock_metrics, K_FOREVER);
+
+	switch (event) {
+	case CTR_CLOUD_TRANSFER_EVENT_UPLINK_OK:
+		m_metrics.uplink_count++;
+		m_metrics.uplink_bytes += data->bytes;
+		m_metrics.uplink_fragments += data->fragments;
+		ctr_rtc_get_ts(&m_metrics.uplink_last_ts);
+		break;
+	case CTR_CLOUD_TRANSFER_EVENT_UPLINK_ERROR:
+		m_metrics.uplink_errors++;
+		ctr_rtc_get_ts(&m_metrics.uplink_error_last_ts);
+		break;
+	case CTR_CLOUD_TRANSFER_EVENT_DOWNLINK_OK:
+		m_metrics.downlink_count++;
+		m_metrics.downlink_bytes += data->bytes;
+		m_metrics.downlink_fragments += data->fragments;
+		ctr_rtc_get_ts(&m_metrics.downlink_last_ts);
+		break;
+	case CTR_CLOUD_TRANSFER_EVENT_DOWNLINK_ERROR:
+		m_metrics.downlink_errors++;
+		ctr_rtc_get_ts(&m_metrics.downlink_error_last_ts);
+		break;
+	case CTR_CLOUD_TRANSFER_EVENT_POLL:
+		m_metrics.poll_count++;
+		ctr_rtc_get_ts(&m_metrics.poll_last_ts);
+		break;
+	}
+
+	k_mutex_unlock(&m_lock_metrics);
+}
 
 static int process_downlink(struct ctr_buf *buf, struct ctr_buf *upbuf)
 {
@@ -83,6 +129,18 @@ static int process_downlink(struct ctr_buf *buf, struct ctr_buf *upbuf)
 
 		k_mutex_unlock(&m_lock_state);
 
+		int64_t old_ts;
+		ctr_rtc_get_ts(&old_ts);
+
+		ret = ctr_rtc_set_ts(m_session.timestamp);
+		if (ret) {
+			LOG_WRN("Call `ctr_rtc_set_ts` failed: %d", ret);
+		} else {
+			k_mutex_lock(&m_lock_metrics, K_FOREVER);
+			ctr_cloud_util_adjust_metrics_ts(&m_metrics, m_session.timestamp - old_ts);
+			k_mutex_unlock(&m_lock_metrics);
+		}
+
 		LOG_INF("Session id %d", m_session.id);
 		LOG_INF("Session decoder_hash %08llx", m_session.decoder_hash);
 		LOG_INF("Session encoder_hash %08llx", m_session.encoder_hash);
@@ -91,24 +149,8 @@ static int process_downlink(struct ctr_buf *buf, struct ctr_buf *upbuf)
 		LOG_INF("Session device_id: %s", m_session.device_id);
 		LOG_INF("Session device_name: %s", m_session.device_name);
 
-		ret = ctr_rtc_set_ts(m_session.timestamp);
-		if (ret) {
-			LOG_ERR("Call `ctr_rtc_set_ts` failed: %d", ret);
-			return ret;
-		}
-
-		k_mutex_lock(&m_lock_state, K_FOREVER);
-
-		ret = ctr_rtc_get_ts(&m_state_last_seen_ts);
-
-		if (ret) {
-			LOG_WRN("Call `ctr_rtc_get_ts` failed: %d", ret);
-		}
-
-		k_mutex_unlock(&m_lock_state);
-
 		break;
-	case DL_SET_TIMESTAMP:
+	case DL_SET_TIMESTAMP: {
 		LOG_DBG("Received timestamp");
 		uint64_t ts;
 		ret = ctr_cloud_msg_unpack_set_timestamp(buf, &ts);
@@ -116,12 +158,20 @@ static int process_downlink(struct ctr_buf *buf, struct ctr_buf *upbuf)
 			LOG_ERR("Call `ctr_cloud_msg_unpack_set_timestamp` failed: %d", ret);
 			return ret;
 		}
+
+		int64_t old_ts;
+		ctr_rtc_get_ts(&old_ts);
+
 		ret = ctr_rtc_set_ts(ts);
 		if (ret) {
-			LOG_ERR("Call `ctr_rtc_set_ts` failed: %d", ret);
-			return ret;
+			LOG_WRN("Call `ctr_rtc_set_ts` failed: %d", ret);
+		} else {
+			k_mutex_lock(&m_lock_metrics, K_FOREVER);
+			ctr_cloud_util_adjust_metrics_ts(&m_metrics, (int64_t)ts - old_ts);
+			k_mutex_unlock(&m_lock_metrics);
 		}
 		break;
+	}
 	case DL_DOWNLOAD_CONFIG:
 		LOG_DBG("Received config");
 
@@ -139,6 +189,12 @@ static int process_downlink(struct ctr_buf *buf, struct ctr_buf *upbuf)
 		break;
 	case DL_DOWNLOAD_DATA:
 		LOG_DBG("Received data");
+
+		k_mutex_lock(&m_lock_metrics, K_FOREVER);
+		m_metrics.downlink_data_count++;
+		ctr_rtc_get_ts(&m_metrics.downlink_data_last_ts);
+		k_mutex_unlock(&m_lock_metrics);
+
 		if (m_user_cb) {
 			union ctr_cloud_event_data data = {
 				.recv.buf = &p[1],
@@ -152,6 +208,12 @@ static int process_downlink(struct ctr_buf *buf, struct ctr_buf *upbuf)
 		break;
 	case DL_DOWNLOAD_SHELL:
 		LOG_DBG("Received shell");
+
+		k_mutex_lock(&m_lock_metrics, K_FOREVER);
+		m_metrics.recv_shell_count++;
+		ctr_rtc_get_ts(&m_metrics.recv_shell_last_ts);
+		k_mutex_unlock(&m_lock_metrics);
+
 		struct ctr_cloud_msg_dlshell msg;
 		ret = ctr_cloud_msg_unpack_dlshell(buf, &msg);
 		if (ret) {
@@ -217,16 +279,6 @@ static int transfer(struct ctr_buf *buf)
 			return ret;
 		}
 		ctr_buf_reset(buf);
-
-		k_mutex_lock(&m_lock_state, K_FOREVER);
-
-		ret = ctr_rtc_get_ts(&m_state_last_seen_ts);
-
-		if (ret) {
-			LOG_WRN("Call `ctr_rtc_get_ts` failed: %d", ret);
-		}
-
-		k_mutex_unlock(&m_lock_state);
 	}
 
 	if (has_downlink) {
@@ -237,16 +289,6 @@ static int transfer(struct ctr_buf *buf)
 			LOG_ERR("Call `ctr_cloud_transfer_downlink` failed: %d", ret);
 			return ret;
 		}
-
-		k_mutex_lock(&m_lock_state, K_FOREVER);
-
-		ret = ctr_rtc_get_ts(&m_state_last_seen_ts);
-
-		if (ret) {
-			LOG_WRN("Call `ctr_rtc_get_ts` failed: %d", ret);
-		}
-
-		k_mutex_unlock(&m_lock_state);
 
 		struct ctr_buf upbuf = {
 			.mem = ctr_buf_get_mem(buf) + ctr_buf_get_used(buf),
@@ -629,7 +671,7 @@ int ctr_cloud_init(struct ctr_cloud_options *options)
 		return -EINVAL;
 	}
 
-	ret = ctr_cloud_transfer_init(serial_number, token);
+	ret = ctr_cloud_transfer_init(serial_number, token, transfer_cb);
 	if (ret) {
 		LOG_ERR("Call `ctr_cloud_transfer_init` failed: %d", ret);
 		return ret;
@@ -779,6 +821,11 @@ int ctr_cloud_send(const void *buf, size_t len)
 		return ret;
 	}
 
+	k_mutex_lock(&m_lock_metrics, K_FOREVER);
+	m_metrics.uplink_data_count++;
+	ctr_rtc_get_ts(&m_metrics.uplink_data_last_ts);
+	k_mutex_unlock(&m_lock_metrics);
+
 	k_mutex_unlock(&m_lock);
 
 	LOG_INF("Request SEND finished");
@@ -821,9 +868,38 @@ int ctr_cloud_get_last_seen_ts(int64_t *ts)
 
 	ASERT_SESSION_AND_OPTIONS(&m_lock_state)
 
-	*ts = m_state_last_seen_ts;
-
 	k_mutex_unlock(&m_lock_state);
+
+	k_mutex_lock(&m_lock_metrics, K_FOREVER);
+
+	int64_t last_seen = 0;
+	if (m_metrics.uplink_last_ts > last_seen) {
+		last_seen = m_metrics.uplink_last_ts;
+	}
+	if (m_metrics.downlink_last_ts > last_seen) {
+		last_seen = m_metrics.downlink_last_ts;
+	}
+	if (m_metrics.poll_last_ts > last_seen) {
+		last_seen = m_metrics.poll_last_ts;
+	}
+
+	k_mutex_unlock(&m_lock_metrics);
+
+	*ts = last_seen;
+
+	return 0;
+}
+
+int ctr_cloud_get_metrics(struct ctr_cloud_metrics *metrics)
+{
+	if (!metrics) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&m_lock_metrics, K_FOREVER);
+	memcpy(metrics, &m_metrics, sizeof(m_metrics));
+	ctr_rtc_get_ts(&metrics->timestamp);
+	k_mutex_unlock(&m_lock_metrics);
 
 	return 0;
 }

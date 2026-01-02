@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "ctr_cloud_transfer.h"
 #include "ctr_cloud_util.h"
 #include "ctr_cloud_msg.h"
 
@@ -24,6 +23,36 @@
 #include <string.h>
 
 LOG_MODULE_REGISTER(ctr_cloud_shell, CONFIG_CTR_CLOUD_LOG_LEVEL);
+
+static void print_ts(const struct shell *shell, const char *name, int64_t ts, int64_t now)
+{
+	if (ts < 0) {
+		shell_print(shell, "%s: -1 (never)", name);
+		return;
+	}
+
+	/* Check if timestamp is before 2020 (time not synced yet) */
+	if (ts < 1577836800LL || now < 1577836800LL) {
+		shell_print(shell, "%s: %lld (not synced)", name, ts);
+		return;
+	}
+
+	int64_t ago_sec = now - ts;
+
+	if (ago_sec < 0) {
+		ago_sec = 0;
+	}
+
+	int hours = ago_sec / 3600;
+	int mins = (ago_sec % 3600) / 60;
+	int secs = ago_sec % 60;
+
+	if (hours > 0) {
+		shell_print(shell, "%s: %lld (%d:%02d:%02d ago)", name, ts, hours, mins, secs);
+	} else {
+		shell_print(shell, "%s: %lld (%d:%02d ago)", name, ts, mins, secs);
+	}
+}
 
 static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 {
@@ -63,25 +92,35 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	struct ctr_cloud_transfer_metrics metrics;
-	ret = ctr_cloud_transfer_get_metrics(&metrics);
+	struct ctr_cloud_metrics metrics;
+	ret = ctr_cloud_get_metrics(&metrics);
 	if (ret) {
-		shell_error(shell, "ctr_cloud_transfer_get_metrics failed: %d", ret);
+		shell_error(shell, "ctr_cloud_get_metrics failed: %d", ret);
 		return ret;
 	}
 
-	shell_print(shell, "uplink messages: %u", metrics.uplink_count);
+	int64_t now = metrics.timestamp;
+
+	shell_print(shell, "uplink count: %u", metrics.uplink_count);
 	shell_print(shell, "uplink fragments: %u", metrics.uplink_fragments);
 	shell_print(shell, "uplink bytes: %u", metrics.uplink_bytes);
+	print_ts(shell, "uplink last ts", metrics.uplink_last_ts, now);
 	shell_print(shell, "uplink errors: %u", metrics.uplink_errors);
-	shell_print(shell, "uplink last ts: %lld", metrics.uplink_last_ts);
-	shell_print(shell, "downlink messages: %u", metrics.downlink_count);
+	print_ts(shell, "uplink error last ts", metrics.uplink_error_last_ts, now);
+	shell_print(shell, "downlink count: %u", metrics.downlink_count);
 	shell_print(shell, "downlink fragments: %u", metrics.downlink_fragments);
 	shell_print(shell, "downlink bytes: %u", metrics.downlink_bytes);
+	print_ts(shell, "downlink last ts", metrics.downlink_last_ts, now);
 	shell_print(shell, "downlink errors: %u", metrics.downlink_errors);
-	shell_print(shell, "downlink last ts: %lld", metrics.downlink_last_ts);
+	print_ts(shell, "downlink error last ts", metrics.downlink_error_last_ts, now);
 	shell_print(shell, "poll count: %u", metrics.poll_count);
-	shell_print(shell, "poll last ts: %lld", metrics.poll_last_ts);
+	print_ts(shell, "poll last ts", metrics.poll_last_ts, now);
+	shell_print(shell, "uplink data count: %u", metrics.uplink_data_count);
+	print_ts(shell, "uplink data last ts", metrics.uplink_data_last_ts, now);
+	shell_print(shell, "downlink data count: %u", metrics.downlink_data_count);
+	print_ts(shell, "downlink data last ts", metrics.downlink_data_last_ts, now);
+	shell_print(shell, "recv shell count: %u", metrics.recv_shell_count);
+	print_ts(shell, "recv shell last ts", metrics.recv_shell_last_ts, now);
 
 	shell_print(shell, "command succeeded");
 

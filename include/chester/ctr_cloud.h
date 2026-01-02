@@ -19,6 +19,45 @@ extern "C" {
 
 #define CTR_CLOUD_TRANSFER_BUF_SIZE (16 * 1024)
 
+/**
+ * @brief Cloud communication metrics.
+ *
+ * Timestamps *_last_ts are Unix timestamps in seconds
+ * (see @c ctr_rtc_get_ts()). Value -1 indicates that the
+ * event has never occurred.
+ */
+struct ctr_cloud_metrics {
+	int64_t timestamp; /**< Timestamp when metrics were retrieved (sec). */
+
+	uint32_t uplink_count;     /**< Number of uplink messages. */
+	uint32_t uplink_bytes;     /**< Total uplink bytes. */
+	uint32_t uplink_fragments; /**< Number of uplink fragments. */
+	int64_t uplink_last_ts;    /**< Timestamp of last successful uplink (sec). */
+
+	uint32_t uplink_errors;       /**< Uplink error count. */
+	int64_t uplink_error_last_ts; /**< Timestamp of last uplink error (sec). */
+
+	uint32_t downlink_count;     /**< Number of downlink messages. */
+	uint32_t downlink_fragments; /**< Number of downlink fragments. */
+	uint32_t downlink_bytes;     /**< Total downlink bytes. */
+	int64_t downlink_last_ts;    /**< Timestamp of last successful downlink (sec). */
+
+	uint32_t downlink_errors;       /**< Downlink error count. */
+	int64_t downlink_error_last_ts; /**< Timestamp of last downlink error (sec). */
+
+	uint32_t poll_count;  /**< Number of poll operations. */
+	int64_t poll_last_ts; /**< Timestamp of last poll (sec). */
+
+	uint32_t uplink_data_count;  /**< Number of data messages sent. */
+	int64_t uplink_data_last_ts; /**< Timestamp of last data message sent (sec). */
+
+	uint32_t downlink_data_count;  /**< Number of data messages received. */
+	int64_t downlink_data_last_ts; /**< Timestamp of last data message received (sec). */
+
+	uint32_t recv_shell_count;  /**< Number of shell commands received. */
+	int64_t recv_shell_last_ts; /**< Timestamp of last shell command received (sec). */
+};
+
 struct ctr_cloud_options {
 	uint64_t decoder_hash;
 	uint64_t encoder_hash;
@@ -62,9 +101,32 @@ int ctr_cloud_set_callback(ctr_cloud_cb user_cb, void *user_data);
 int ctr_cloud_set_poll_interval(k_timeout_t interval);
 int ctr_cloud_poll_immediately(void);
 
-int ctr_cloud_send(const void *buf, size_t len);
+int ctr_cloud_send(const void *buf, size_t len); // TODO add timeout
 
+/**
+ * @brief Get timestamp of last successful cloud communication.
+ *
+ * Returns the most recent timestamp from uplink, downlink, or poll operations.
+ *
+ * @param[out] ts Pointer to store the timestamp (Unix timestamp in sec).
+ *                Returns 0 if no communication has occurred yet.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid argument (NULL pointer).
+ * @retval -EPERM Cloud not initialized or session not established.
+ */
 int ctr_cloud_get_last_seen_ts(int64_t *ts);
+
+/**
+ * @brief Get cloud communication metrics.
+ *
+ * @param[out] metrics Pointer to structure to fill with metrics data.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid argument (NULL pointer).
+ */
+int ctr_cloud_get_metrics(struct ctr_cloud_metrics *metrics);
+
 int ctr_cloud_firmware_update(const char *firmwareId);
 int ctr_cloud_recv(void);
 

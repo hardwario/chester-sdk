@@ -10,9 +10,11 @@
 /* Standard includes */
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
+#include <chester/ctr_cloud.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -21,27 +23,25 @@
 extern "C" {
 #endif
 
-struct ctr_cloud_transfer_metrics {
-	uint32_t uplink_count;
-	uint32_t uplink_bytes;
-	uint32_t uplink_fragments;
-	uint32_t uplink_errors;
-	int64_t uplink_last_ts;
-
-	uint32_t downlink_count;
-	uint32_t downlink_fragments;
-	uint32_t downlink_bytes;
-	uint32_t downlink_errors;
-	int64_t downlink_last_ts;
-
-	uint32_t poll_count;
-	int64_t poll_last_ts;
+enum ctr_cloud_transfer_event {
+	CTR_CLOUD_TRANSFER_EVENT_UPLINK_OK,
+	CTR_CLOUD_TRANSFER_EVENT_UPLINK_ERROR,
+	CTR_CLOUD_TRANSFER_EVENT_DOWNLINK_OK,
+	CTR_CLOUD_TRANSFER_EVENT_DOWNLINK_ERROR,
+	CTR_CLOUD_TRANSFER_EVENT_POLL,
 };
 
-int ctr_cloud_transfer_init(uint32_t serial_number, uint8_t token[16]);
+struct ctr_cloud_transfer_event_data {
+	uint32_t fragments;
+	uint32_t bytes;
+};
+
+typedef void (*ctr_cloud_transfer_cb)(enum ctr_cloud_transfer_event event,
+				      const struct ctr_cloud_transfer_event_data *data);
+
+int ctr_cloud_transfer_init(uint32_t serial_number, uint8_t token[16],
+			    ctr_cloud_transfer_cb cb);
 int ctr_cloud_transfer_wait_for_ready(k_timeout_t timeout);
-int ctr_cloud_transfer_reset_metrics(void);
-int ctr_cloud_transfer_get_metrics(struct ctr_cloud_transfer_metrics *metrics);
 int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink);
 int ctr_cloud_transfer_downlink(struct ctr_buf *buf, bool *has_downlink);
 

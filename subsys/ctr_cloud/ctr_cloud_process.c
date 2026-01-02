@@ -216,6 +216,20 @@ int ctr_cloud_process_dlfirmware(struct ctr_cloud_msg_dlfirmware *dlfirmware, st
 					      dfu_target_callback_handler);
 			if (ret) {
 				LOG_ERR("dfu_target_init failed: %d", ret);
+
+				struct ctr_cloud_upfirmware upfirmware = {
+					.target = "app",
+					.type = "error",
+					.id = dlfirmware->id,
+					.offset = offset,
+					.error = "image size too big"};
+
+				ret = ctr_cloud_msg_pack_firmware(buf, &upfirmware);
+				if (ret) {
+					LOG_ERR("ctr_cloud_msg_pack_firmware failed: %d", ret);
+					return ret;
+				}
+
 				return ret;
 			}
 		} else {

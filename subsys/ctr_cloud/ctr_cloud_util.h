@@ -35,6 +35,8 @@ int ctr_cloud_util_get_firmware_update_id(ctr_cloud_uuid_t uuid);
 
 int ctr_cloud_util_delete_firmware_update_id(void);
 
+void ctr_cloud_util_adjust_metrics_ts(struct ctr_cloud_metrics *metrics, int64_t offset);
+
 #ifdef __cplusplus
 }
 #endif
