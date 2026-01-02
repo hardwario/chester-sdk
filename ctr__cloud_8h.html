@@ -122,6 +122,9 @@ Include dependency graph for ctr_cloud.h:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__cloud__metrics.html">ctr_cloud_metrics</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cloud communication metrics.  <a href="structctr__cloud__metrics.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__cloud__options.html">ctr_cloud_options</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__cloud__session.html">ctr_cloud_session</a></td></tr>
@@ -165,7 +168,11 @@ Functions</h2></td></tr>
 <tr class="memitem:aa0c4e2160d1ac600bdb8175e984d6b57"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__cloud_8h.html#aa0c4e2160d1ac600bdb8175e984d6b57">ctr_cloud_send</a> (const void *buf, size_t len)</td></tr>
 <tr class="separator:aa0c4e2160d1ac600bdb8175e984d6b57"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2262feb6a5347ec78075e7d052db8de6"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__cloud_8h.html#a2262feb6a5347ec78075e7d052db8de6">ctr_cloud_get_last_seen_ts</a> (int64_t *ts)</td></tr>
+<tr class="memdesc:a2262feb6a5347ec78075e7d052db8de6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get timestamp of last successful cloud communication.  <a href="ctr__cloud_8h.html#a2262feb6a5347ec78075e7d052db8de6">More...</a><br /></td></tr>
 <tr class="separator:a2262feb6a5347ec78075e7d052db8de6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3465cc9d07cd2af17e6f8888d566fdb4"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__cloud_8h.html#a3465cc9d07cd2af17e6f8888d566fdb4">ctr_cloud_get_metrics</a> (struct <a class="el" href="structctr__cloud__metrics.html">ctr_cloud_metrics</a> *metrics)</td></tr>
+<tr class="memdesc:a3465cc9d07cd2af17e6f8888d566fdb4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get cloud communication metrics.  <a href="ctr__cloud_8h.html#a3465cc9d07cd2af17e6f8888d566fdb4">More...</a><br /></td></tr>
+<tr class="separator:a3465cc9d07cd2af17e6f8888d566fdb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4683d4f35d815dca3ee3997743d1c7e3"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__cloud_8h.html#a4683d4f35d815dca3ee3997743d1c7e3">ctr_cloud_firmware_update</a> (const char *firmwareId)</td></tr>
 <tr class="separator:a4683d4f35d815dca3ee3997743d1c7e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af447022770b94f4c8d8d0e66b2a3216c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ctr__cloud_8h.html#af447022770b94f4c8d8d0e66b2a3216c">ctr_cloud_recv</a> (void)</td></tr>
@@ -254,6 +261,56 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Get timestamp of last successful cloud communication. </p>
+<p >Returns the most recent timestamp from uplink, downlink, or poll operations.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">ts</td><td>Pointer to store the timestamp (Unix timestamp in sec). Returns 0 if no communication has occurred yet.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">0</td><td>Success. </td></tr>
+    <tr><td class="paramname">-EINVAL</td><td>Invalid argument (NULL pointer). </td></tr>
+    <tr><td class="paramname">-EPERM</td><td>Cloud not initialized or session not established. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a3465cc9d07cd2af17e6f8888d566fdb4" name="a3465cc9d07cd2af17e6f8888d566fdb4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3465cc9d07cd2af17e6f8888d566fdb4">&#9670;&#160;</a></span>ctr_cloud_get_metrics()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_cloud_get_metrics </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="structctr__cloud__metrics.html">ctr_cloud_metrics</a> *&#160;</td>
+          <td class="paramname"><em>metrics</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get cloud communication metrics. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">metrics</td><td>Pointer to structure to fill with metrics data.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">0</td><td>Success. </td></tr>
+    <tr><td class="paramname">-EINVAL</td><td>Invalid argument (NULL pointer). </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>

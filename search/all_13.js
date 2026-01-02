@@ -2,7 +2,7 @@ var searchData=
 [
   ['tac_0',['tac',['../structctr__lte__v2__cereg__param.html#abdb34047ff9c41826803840828a5dadd',1,'ctr_lte_v2_cereg_param']]],
   ['timeout_1',['timeout',['../structctr__lte__v2__send__recv__param.html#aa15707a6209e097aca5928d0fdc67587',1,'ctr_lte_v2_send_recv_param']]],
-  ['timestamp_2',['timestamp',['../structctr__cloud__session.html#af9a2737390bbf603feaf6ec82095bd9f',1,'ctr_cloud_session']]],
+  ['timestamp_2',['timestamp',['../structctr__cloud__metrics.html#acd125f64b7c54d139384501aa72a1985',1,'ctr_cloud_metrics::timestamp()'],['../structctr__cloud__session.html#af9a2737390bbf603feaf6ec82095bd9f',1,'ctr_cloud_session::timestamp()']]],
   ['total_5ftime_5fadult_3',['total_time_adult',['../structpeople__counter__measurement.html#a0dde8a143310ed846e099ea143dedc12',1,'people_counter_measurement']]],
   ['total_5ftime_5fchild_4',['total_time_child',['../structpeople__counter__measurement.html#ae879a2392b1886567dede346126320e6',1,'people_counter_measurement']]],
   ['tsp_5',['tsp',['../structctr__pm3006s__measurement.html#a426a54adb0a34cd15e1b3d49704e1b1a',1,'ctr_pm3006s_measurement']]],

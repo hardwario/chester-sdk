@@ -1,5 +1,6 @@
 var ctr__cloud_8h =
 [
+    [ "ctr_cloud_metrics", "structctr__cloud__metrics.html", "structctr__cloud__metrics" ],
     [ "ctr_cloud_options", "structctr__cloud__options.html", "structctr__cloud__options" ],
     [ "ctr_cloud_session", "structctr__cloud__session.html", "structctr__cloud__session" ],
     [ "ctr_cloud_event_data_recv", "structctr__cloud__event__data__recv.html", "structctr__cloud__event__data__recv" ],
@@ -12,6 +13,7 @@ var ctr__cloud_8h =
     ] ],
     [ "ctr_cloud_firmware_update", "ctr__cloud_8h.html#a4683d4f35d815dca3ee3997743d1c7e3", null ],
     [ "ctr_cloud_get_last_seen_ts", "ctr__cloud_8h.html#a2262feb6a5347ec78075e7d052db8de6", null ],
+    [ "ctr_cloud_get_metrics", "ctr__cloud_8h.html#a3465cc9d07cd2af17e6f8888d566fdb4", null ],
     [ "ctr_cloud_init", "ctr__cloud_8h.html#abef7de6d0872cc11b20769e231f05636", null ],
     [ "ctr_cloud_is_initialized", "ctr__cloud_8h.html#a67530edec97bc3439e8028347ad705b4", null ],
     [ "ctr_cloud_poll_immediately", "ctr__cloud_8h.html#a4166799a60c69eee73ae72b07cf82f6a", null ],

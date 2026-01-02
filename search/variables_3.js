@@ -17,8 +17,12 @@ var searchData=
   ['device_5fid_14',['device_id',['../structctr__cloud__session.html#a37f35811a7dcb6dc9b2b242d9319a22e',1,'ctr_cloud_session']]],
   ['device_5fname_15',['device_name',['../structctr__cloud__session.html#adbbf98320428da9b6c0c6dc43db06b49',1,'ctr_cloud_session']]],
   ['disable_5fuart_16',['disable_uart',['../structctr__lrw__link__driver__api.html#a9a0ff856cf6b83f98e0406967bb39b9c',1,'ctr_lrw_link_driver_api::disable_uart()'],['../structctr__lte__link__driver__api.html#a7e4fd2ada882245ab9bd37ef940a6d32',1,'ctr_lte_link_driver_api::disable_uart()']]],
-  ['downlink_5fbytes_17',['downlink_bytes',['../structctr__lte__v2__metrics.html#ac29d69a6c9c82981937fcaa36b3097d8',1,'ctr_lte_v2_metrics']]],
-  ['downlink_5fcount_18',['downlink_count',['../structctr__lte__v2__metrics.html#ae3b74726f7551052748541f211a160a6',1,'ctr_lte_v2_metrics']]],
-  ['downlink_5ferrors_19',['downlink_errors',['../structctr__lte__v2__metrics.html#ad9dfb9ab7ac4eb28dbf240abfcac1cc3',1,'ctr_lte_v2_metrics']]],
-  ['downlink_5flast_5fts_20',['downlink_last_ts',['../structctr__lte__v2__metrics.html#a0ce192e3d4b0c916e0bff6632cdba48e',1,'ctr_lte_v2_metrics']]]
+  ['downlink_5fbytes_17',['downlink_bytes',['../structctr__cloud__metrics.html#a0129ceca0e0d525b4deecf8cda5d4050',1,'ctr_cloud_metrics::downlink_bytes()'],['../structctr__lte__v2__metrics.html#ac29d69a6c9c82981937fcaa36b3097d8',1,'ctr_lte_v2_metrics::downlink_bytes()']]],
+  ['downlink_5fcount_18',['downlink_count',['../structctr__cloud__metrics.html#ade3c4d239201d139788779982cc58235',1,'ctr_cloud_metrics::downlink_count()'],['../structctr__lte__v2__metrics.html#ae3b74726f7551052748541f211a160a6',1,'ctr_lte_v2_metrics::downlink_count()']]],
+  ['downlink_5fdata_5fcount_19',['downlink_data_count',['../structctr__cloud__metrics.html#ad2118d62a083a91520d084cdf76d849f',1,'ctr_cloud_metrics']]],
+  ['downlink_5fdata_5flast_5fts_20',['downlink_data_last_ts',['../structctr__cloud__metrics.html#ae88463c689c8530bbc9755e52c7721ea',1,'ctr_cloud_metrics']]],
+  ['downlink_5ferror_5flast_5fts_21',['downlink_error_last_ts',['../structctr__cloud__metrics.html#a777affeb8a8ce358bfe61407c9ee4033',1,'ctr_cloud_metrics']]],
+  ['downlink_5ferrors_22',['downlink_errors',['../structctr__cloud__metrics.html#afaff5444fdd0a0bcdbe1f9c7a0a315d2',1,'ctr_cloud_metrics::downlink_errors()'],['../structctr__lte__v2__metrics.html#ad9dfb9ab7ac4eb28dbf240abfcac1cc3',1,'ctr_lte_v2_metrics::downlink_errors()']]],
+  ['downlink_5ffragments_23',['downlink_fragments',['../structctr__cloud__metrics.html#a24c15a0e8deb514c678b167475eef6b5',1,'ctr_cloud_metrics']]],
+  ['downlink_5flast_5fts_24',['downlink_last_ts',['../structctr__cloud__metrics.html#aeb735c69fe8d48a34a3a53fa241b6f11',1,'ctr_cloud_metrics::downlink_last_ts()'],['../structctr__lte__v2__metrics.html#a0ce192e3d4b0c916e0bff6632cdba48e',1,'ctr_lte_v2_metrics::downlink_last_ts()']]]
 ];
