@@ -227,7 +227,12 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 #endif
 	}
 
-	bt_conn_unref(conn);
+	/* NOTE: Do NOT call bt_conn_unref(conn) on the callback parameter!
+	 * The conn pointer passed to disconnected callback is managed by the
+	 * Zephyr BLE stack, which will unref it after all callbacks return.
+	 * See zephyr/subsys/bluetooth/host/conn.c:2248-2253 (deferred_work).
+	 * Only unref connections that YOUR code explicitly ref'd (like m_current_conn).
+	 */
 
 	check_and_erase_bonds();
 }
