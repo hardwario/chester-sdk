@@ -174,6 +174,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:gacfb35b18305a8f77c790e8fb58def117"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wait for connection to be established.  <a href="group__ctr__lte__v2.html#gacfb35b18305a8f77c790e8fb58def117">More...</a><br /></td></tr>
 <tr class="separator:gacfb35b18305a8f77c790e8fb58def117"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga9a85941ee750c49c5ce74c0b981f8273"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga9a85941ee750c49c5ce74c0b981f8273">ctr_lte_v2_send_recv</a> (const struct <a class="el" href="structctr__lte__v2__send__recv__param.html">ctr_lte_v2_send_recv_param</a> *param)</td></tr>
+<tr class="memdesc:ga9a85941ee750c49c5ce74c0b981f8273"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send data and optionally receive response.  <a href="group__ctr__lte__v2.html#ga9a85941ee750c49c5ce74c0b981f8273">More...</a><br /></td></tr>
 <tr class="separator:ga9a85941ee750c49c5ce74c0b981f8273"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gab28432793e6f6a169ad5254f847160f0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#gab28432793e6f6a169ad5254f847160f0">ctr_lte_v2_get_imei</a> (uint64_t *imei)</td></tr>
 <tr class="separator:gab28432793e6f6a169ad5254f847160f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -596,6 +597,27 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Send data and optionally receive response. </p>
+<p >Sends data to the network and optionally waits for a response.</p>
+<p >Uses soft timeout: when timeout expires, FSM completes current operation gracefully before returning. The timeout signals "finish when you can", not an immediate abort. Return code reflects actual result of the operation.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">param</td><td>Send/receive parameters (see <a class="el" href="structctr__lte__v2__send__recv__param.html">ctr_lte_v2_send_recv_param</a>).</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">0</td><td>Success. </td></tr>
+    <tr><td class="paramname">-ETIMEDOUT</td><td>Operation timed out (returned after FSM completed gracefully). </td></tr>
+    <tr><td class="paramname">-ECONNRESET</td><td>Connection was reset (CSCON=0 received during send). </td></tr>
+    <tr><td class="paramname">-ENETDOWN</td><td>Network is down (deregistered from network). </td></tr>
+    <tr><td class="paramname">-EIO</td><td>I/O error (send/receive failed or general error). </td></tr>
+    <tr><td class="paramname">-EFAULT</td><td>FSM stuck (internal error, STOP_BIT not received in 30s). </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
