@@ -111,7 +111,10 @@ struct ctr_lte_v2_send_recv_param {
 	size_t *recv_len;     /**< Output: number of received bytes (can not be null if is set
 			       * recv_buf).
 			       */
-	k_timeout_t timeout;  /**< Timeout for the operation. */
+	k_timeout_t timeout;  /**< Soft timeout for the operation. When timeout expires, FSM
+			       * completes current operation gracefully before returning.
+			       * Not a hard abort - signals "finish when you can".
+			       */
 };
 
 /**
@@ -172,6 +175,24 @@ int ctr_lte_v2_reconnect(void);
  */
 int ctr_lte_v2_wait_for_connected(k_timeout_t timeout);
 
+/**
+ * @brief Send data and optionally receive response.
+ *
+ * Sends data to the network and optionally waits for a response.
+ *
+ * Uses soft timeout: when timeout expires, FSM completes current operation
+ * gracefully before returning. The timeout signals "finish when you can",
+ * not an immediate abort. Return code reflects actual result of the operation.
+ *
+ * @param param  Send/receive parameters (see @ref ctr_lte_v2_send_recv_param).
+ *
+ * @retval 0          Success.
+ * @retval -ETIMEDOUT Operation timed out (returned after FSM completed gracefully).
+ * @retval -ECONNRESET Connection was reset (CSCON=0 received during send).
+ * @retval -ENETDOWN  Network is down (deregistered from network).
+ * @retval -EIO       I/O error (send/receive failed or general error).
+ * @retval -EFAULT    FSM stuck (internal error, STOP_BIT not received in 30s).
+ */
 int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param);
 
 /* -------- Information getters -------- */

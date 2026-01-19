@@ -26,7 +26,7 @@
 
 #define DT_DRV_COMPAT hardwario_ctr_lte_link
 
-LOG_MODULE_REGISTER(ctr_lte_link, CONFIG_CTR_LTE_LINK_LOG_LEVEL);
+LOG_MODULE_REGISTER(ctr_lte_link, LOG_LEVEL_INF);
 
 #define RESET_DELAY   K_MSEC(100)
 #define RESET_PAUSE   K_SECONDS(3)
@@ -67,6 +67,9 @@ struct ctr_lte_link_data {
 	struct mock_link_item *items;
 	size_t items_count;
 	size_t items_index;
+
+	const char *pending_rx_data;
+	size_t pending_rx_data_len;
 };
 
 static inline struct ctr_lte_link_data *get_data(const struct device *dev)
@@ -165,6 +168,19 @@ static void urc_dispatch_work_handler(struct k_work *work)
 			data->items_index++;
 			if (item->rx) {
 				rx(data->dev, item->rx);
+
+				/* If URC starts with #XRECV:, store rx2 as pending data */
+				if (strncmp(item->rx, "#XRECV:", 7) == 0 && item->rx2) {
+					int expected_len = 0;
+					sscanf(item->rx + 7, " %d", &expected_len);
+					zassert_equal(
+						(size_t)expected_len, strlen(item->rx2),
+						"XRECV len mismatch: header says %d, data is %zu",
+						expected_len, strlen(item->rx2));
+
+					data->pending_rx_data = item->rx2;
+					data->pending_rx_data_len = strlen(item->rx2);
+				}
 			}
 			if (data->items_index < data->items_count) {
 				item = &data->items[data->items_index];
@@ -437,20 +453,38 @@ static int ctr_lte_link_send_data_(const struct device *dev, k_timeout_t timeout
 static int ctr_lte_link_recv_data_(const struct device *dev, k_timeout_t timeout, void *buf,
 				   size_t size, size_t *len)
 {
+	struct ctr_lte_link_data *data = get_data(dev);
 
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+	LOG_INF("size: %d pending: %d", size, data->pending_rx_data_len);
 
-	if (!get_data(dev)->enabled) {
-		k_mutex_unlock(&get_data(dev)->lock);
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	if (!data->enabled) {
+		k_mutex_unlock(&data->lock);
 		return -EBUSY;
 	}
 
-	if (!get_data(dev)->in_data_mode) {
-		k_mutex_unlock(&get_data(dev)->lock);
+	if (!data->in_data_mode) {
+		k_mutex_unlock(&data->lock);
 		return -EPERM;
 	}
 
-	k_mutex_unlock(&get_data(dev)->lock);
+	*len = 0;
+
+	if (data->pending_rx_data && data->pending_rx_data_len > 0) {
+		size_t copy_len = data->pending_rx_data_len;
+		if (copy_len > size) {
+			copy_len = size;
+		}
+		memcpy(buf, data->pending_rx_data, copy_len);
+		*len = copy_len;
+
+		data->pending_rx_data = NULL;
+		data->pending_rx_data_len = 0;
+		rx(dev, "OK"); // Simulate OK after XRECV data is read
+	}
+
+	k_mutex_unlock(&data->lock);
 
 	return 0;
 }
@@ -504,6 +538,8 @@ DT_INST_FOREACH_STATUS_OKAY(CTR_LTE_LINK_INIT)
 
 void mock_ctr_lte_link_start(struct mock_link_item *items, size_t count)
 {
+	LOG_INF("Mock CTR LTE LINK start");
+
 	const struct device *dev = DEVICE_DT_INST_GET(0);
 
 	if (!device_is_ready(dev)) {
