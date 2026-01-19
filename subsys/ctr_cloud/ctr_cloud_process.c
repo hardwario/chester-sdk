@@ -40,6 +40,23 @@
 
 LOG_MODULE_REGISTER(ctr_cloud_process, CONFIG_CTR_CLOUD_LOG_LEVEL);
 
+static bool is_ignored_config_cmd(const char *cmd)
+{
+	static const char *ignored_cmds[] = {
+		"config save",
+		"config reset",
+		"config show",
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(ignored_cmds); i++) {
+		if (strcmp(cmd, ignored_cmds[i]) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int ctr_cloud_process_dlconfig(struct ctr_cloud_msg_dlconfig *config)
 {
 	LOG_INF("Received config: num lines: %d", config->lines);
@@ -62,6 +79,11 @@ int ctr_cloud_process_dlconfig(struct ctr_cloud_msg_dlconfig *config)
 		const char *cmd = ctr_buf_get_mem(&line);
 
 		LOG_INF("Command %d: %s", i, cmd);
+
+		if (is_ignored_config_cmd(cmd)) {
+			LOG_WRN("Ignoring command: %s", cmd);
+			continue;
+		}
 
 		shell_backend_dummy_clear_output(sh);
 
