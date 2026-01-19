@@ -11,14 +11,15 @@ var ctr__cloud_8h =
       [ "CTR_CLOUD_EVENT_CONNECTED", "ctr__cloud_8h.html#ae9f21191732369f25b2cf64bfb891653a6a591cd179e20c23c98e3373025ac431", null ],
       [ "CTR_CLOUD_EVENT_RECV", "ctr__cloud_8h.html#ae9f21191732369f25b2cf64bfb891653a19d314576f4d517db85bfe85d9450941", null ]
     ] ],
+    [ "ctr_cloud_downlink", "ctr__cloud_8h.html#a5385a33d085257f2fa01325d904294f1", null ],
     [ "ctr_cloud_firmware_update", "ctr__cloud_8h.html#a4683d4f35d815dca3ee3997743d1c7e3", null ],
     [ "ctr_cloud_get_last_seen_ts", "ctr__cloud_8h.html#a2262feb6a5347ec78075e7d052db8de6", null ],
     [ "ctr_cloud_get_metrics", "ctr__cloud_8h.html#a3465cc9d07cd2af17e6f8888d566fdb4", null ],
     [ "ctr_cloud_init", "ctr__cloud_8h.html#abef7de6d0872cc11b20769e231f05636", null ],
     [ "ctr_cloud_is_initialized", "ctr__cloud_8h.html#a67530edec97bc3439e8028347ad705b4", null ],
     [ "ctr_cloud_poll_immediately", "ctr__cloud_8h.html#a4166799a60c69eee73ae72b07cf82f6a", null ],
-    [ "ctr_cloud_recv", "ctr__cloud_8h.html#af447022770b94f4c8d8d0e66b2a3216c", null ],
     [ "ctr_cloud_send", "ctr__cloud_8h.html#aa0c4e2160d1ac600bdb8175e984d6b57", null ],
+    [ "ctr_cloud_send_data", "ctr__cloud_8h.html#aa1abdd4a380356427bbb524cec0f1f0b", null ],
     [ "ctr_cloud_set_callback", "ctr__cloud_8h.html#ac89d49138115a39edefad9167a6fa83a", null ],
     [ "ctr_cloud_set_poll_interval", "ctr__cloud_8h.html#a216ec4558998a1ff43701696f13ef5a5", null ],
     [ "ctr_cloud_wait_initialized", "ctr__cloud_8h.html#ac8e5c9c675aaf4a20aa0a0a03610ca64", null ]
