@@ -101,7 +101,37 @@ int ctr_cloud_set_callback(ctr_cloud_cb user_cb, void *user_data);
 int ctr_cloud_set_poll_interval(k_timeout_t interval);
 int ctr_cloud_poll_immediately(void);
 
-int ctr_cloud_send(const void *buf, size_t len); // TODO add timeout
+/**
+ * @brief Send data to the cloud with timeout.
+ *
+ * Uses soft timeout: when timeout expires, the underlying LTE operation
+ * completes gracefully before returning. The timeout signals "finish when
+ * you can", not an immediate abort.
+ *
+ * @param buf     Pointer to data buffer.
+ * @param len     Length of data to send.
+ * @param timeout Soft timeout for the operation.
+ *
+ * @retval 0          Success.
+ * @retval -EINVAL    Invalid argument (NULL buffer or zero length).
+ * @retval -ETIMEDOUT Operation timed out.
+ * @retval -EIO       I/O error.
+ */
+int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout);
+
+/**
+ * @brief Send data to the cloud (blocking, no timeout).
+ *
+ * Equivalent to ctr_cloud_send_data() with K_FOREVER timeout.
+ *
+ * @param buf  Pointer to data buffer.
+ * @param len  Length of data to send.
+ *
+ * @retval 0       Success.
+ * @retval -EINVAL Invalid argument.
+ * @retval -EIO    I/O error.
+ */
+int ctr_cloud_send(const void *buf, size_t len);
 
 /**
  * @brief Get timestamp of last successful cloud communication.
@@ -128,7 +158,21 @@ int ctr_cloud_get_last_seen_ts(int64_t *ts);
 int ctr_cloud_get_metrics(struct ctr_cloud_metrics *metrics);
 
 int ctr_cloud_firmware_update(const char *firmwareId);
-int ctr_cloud_recv(void);
+
+/**
+ * @brief Download pending data from the cloud.
+ *
+ * Uses soft timeout: when timeout expires, the underlying LTE operation
+ * completes gracefully before returning. The timeout applies only to the
+ * initial download - any required response upload uses K_FOREVER.
+ *
+ * @param timeout Soft timeout for the download operation.
+ *
+ * @retval 0          Success.
+ * @retval -ETIMEDOUT Operation timed out.
+ * @retval -EIO       I/O error.
+ */
+int ctr_cloud_downlink(k_timeout_t timeout);
 
 #ifdef __cplusplus
 }

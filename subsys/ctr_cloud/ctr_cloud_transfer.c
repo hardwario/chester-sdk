@@ -45,7 +45,8 @@ static struct ctr_cloud_packet m_pck_send;
 static struct ctr_cloud_packet m_pck_recv;
 static ctr_cloud_transfer_cb m_cb;
 
-static int transfer(struct ctr_cloud_packet *pck_send, struct ctr_cloud_packet *pck_recv, bool rai)
+static int transfer(struct ctr_cloud_packet *pck_send, struct ctr_cloud_packet *pck_recv, bool rai,
+		    k_timeout_t timeout)
 {
 	int ret;
 	struct ctr_buf *pck_buf = &m_buf_0;
@@ -84,7 +85,7 @@ static int transfer(struct ctr_cloud_packet *pck_send, struct ctr_cloud_packet *
 		.recv_buf = NULL,
 		.recv_size = 0,
 		.recv_len = &len,
-		.timeout = K_FOREVER, // todo timeout
+		.timeout = timeout,
 	};
 
 	if (pck_recv) {
@@ -170,7 +171,7 @@ int ctr_cloud_transfer_wait_for_ready(k_timeout_t timeout)
 	return 0;
 }
 
-int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink)
+int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink, k_timeout_t timeout)
 {
 	int ret = 0;
 	int res = 0;
@@ -214,7 +215,7 @@ restart:
 		}
 
 		bool rai = m_pck_send.flags & CTR_CLOUD_PACKET_FLAG_LAST;
-		ret = transfer(&m_pck_send, &m_pck_recv, rai);
+		ret = transfer(&m_pck_send, &m_pck_recv, rai, timeout);
 		if (ret) {
 			LOG_ERR("Call `transfer` failed: %d", ret);
 			res = ret;
@@ -289,7 +290,7 @@ exit:
 	return res;
 }
 
-int ctr_cloud_transfer_downlink(struct ctr_buf *buf, bool *has_downlink)
+int ctr_cloud_transfer_downlink(struct ctr_buf *buf, bool *has_downlink, k_timeout_t timeout)
 {
 	int ret;
 	int res = 0;
@@ -320,7 +321,7 @@ restart:
 		if (quit) {
 			bool rai = has_downlink ? !*has_downlink
 						: true; /* use RAI if no downlink is expected */
-			ret = transfer(&m_pck_send, NULL, rai);
+			ret = transfer(&m_pck_send, NULL, rai, timeout);
 			if (ret) {
 				LOG_ERR("Call `transfer` failed: %d", ret);
 				res = ret;
@@ -330,7 +331,7 @@ restart:
 		}
 
 		bool rai = part == 0;
-		ret = transfer(&m_pck_send, &m_pck_recv, rai);
+		ret = transfer(&m_pck_send, &m_pck_recv, rai, timeout);
 		if (ret) {
 			LOG_ERR("Call `transfer` failed: %d", ret);
 			res = ret;

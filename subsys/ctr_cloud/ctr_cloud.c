@@ -34,6 +34,9 @@
 #define WORK_Q_STACK_SIZE     4096
 #define WORK_Q_PRIORITY       K_LOWEST_APPLICATION_THREAD_PRIO
 
+#define POLL_TIMEOUT     K_MINUTES(1)
+#define POLL_RETRY_DELAY K_MINUTES(5)
+
 LOG_MODULE_REGISTER(ctr_cloud, CONFIG_CTR_CLOUD_LOG_LEVEL);
 
 static K_MUTEX_DEFINE(m_lock);
@@ -248,72 +251,38 @@ static int process_downlink(struct ctr_buf *buf, struct ctr_buf *upbuf)
 	return 0;
 }
 
+static void poll_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(m_poll_dwork, poll_work_handler);
+
 static void poll_work_handler(struct k_work *work)
 {
-	int ret = ctr_cloud_recv();
+	int ret = ctr_cloud_downlink(POLL_TIMEOUT);
 	if (ret) {
-		LOG_ERR("Call `ctr_cloud_recv` failed: %d", ret);
-		return;
+		LOG_ERR("Call `ctr_cloud_downlink` failed: %d, retry scheduled", ret);
+		k_work_schedule_for_queue(&m_work_q, &m_poll_dwork, POLL_RETRY_DELAY);
 	}
 }
 
-static K_WORK_DEFINE(m_poll_work, poll_work_handler);
-
 static void poll_timer_handler(struct k_timer *timer)
 {
-	k_work_submit_to_queue(&m_work_q, &m_poll_work);
+	k_work_schedule_for_queue(&m_work_q, &m_poll_dwork, K_NO_WAIT);
 }
 
 static K_TIMER_DEFINE(m_poll_timer, poll_timer_handler, NULL);
 
-static int transfer(struct ctr_buf *buf)
+static int uplink(struct ctr_buf *buf, k_timeout_t timeout)
 {
 	int ret;
+	bool has_downlink = false;
 
-	bool has_downlink = ctr_buf_get_used(buf) == 0;
-
-	if (ctr_buf_get_used(buf) > 0) {
-		ret = ctr_cloud_transfer_uplink(buf, &has_downlink);
-		if (ret) {
-			LOG_ERR("Call `transfer_uplink` for buf failed: %d", ret);
-			return ret;
-		}
-		ctr_buf_reset(buf);
+	ret = ctr_cloud_transfer_uplink(buf, &has_downlink, timeout);
+	if (ret) {
+		LOG_ERR("Call `ctr_cloud_transfer_uplink` failed: %d", ret);
+		return ret;
 	}
 
 	if (has_downlink) {
-		has_downlink = false;
-
-		ret = ctr_cloud_transfer_downlink(buf, &has_downlink);
-		if (ret) {
-			LOG_ERR("Call `ctr_cloud_transfer_downlink` failed: %d", ret);
-			return ret;
-		}
-
-		struct ctr_buf upbuf = {
-			.mem = ctr_buf_get_mem(buf) + ctr_buf_get_used(buf),
-			.size = ctr_buf_get_free(buf),
-			.len = 0,
-		};
-
-		ret = process_downlink(buf, &upbuf);
-		if (ret) {
-			LOG_ERR("Call `process_downlink` failed: %d", ret);
-			return ret;
-		}
-
-		if (ctr_buf_get_used(&upbuf) > 0) {
-			ret = ctr_cloud_transfer_uplink(&upbuf, &has_downlink);
-			if (ret) {
-				LOG_ERR("Call `ctr_cloud_transfer_uplink` for upbuf failed: %d",
-					ret);
-				return ret;
-			}
-		}
-	}
-
-	if (has_downlink) {
-		k_work_submit_to_queue(&m_work_q, &m_poll_work);
+		k_work_schedule_for_queue(&m_work_q, &m_poll_dwork, K_NO_WAIT);
 	}
 
 	return 0;
@@ -334,6 +303,7 @@ static int transfer(struct ctr_buf *buf)
 static int create_session(void)
 {
 	int ret;
+	bool has_downlink = false;
 
 	k_mutex_lock(&m_lock, K_FOREVER);
 
@@ -346,14 +316,40 @@ static int create_session(void)
 		return ret;
 	}
 
-	ret = transfer(&m_transfer_buf);
+	ret = ctr_cloud_transfer_uplink(&m_transfer_buf, &has_downlink, K_FOREVER);
 	if (ret) {
-		LOG_ERR("Call `transfer` failed: %d", ret);
+		LOG_ERR("Call `ctr_cloud_transfer_uplink` failed: %d", ret);
+		k_mutex_unlock(&m_lock);
+		return ret;
+	}
+
+	if (!has_downlink) {
+		LOG_ERR("No session response from server");
+		k_mutex_unlock(&m_lock);
+		return -EIO;
+	}
+
+	ctr_buf_reset(&m_transfer_buf);
+
+	ret = ctr_cloud_transfer_downlink(&m_transfer_buf, &has_downlink, K_FOREVER);
+	if (ret) {
+		LOG_ERR("Call `ctr_cloud_transfer_downlink` failed: %d", ret);
+		k_mutex_unlock(&m_lock);
+		return ret;
+	}
+
+	ret = process_downlink(&m_transfer_buf, NULL);
+	if (ret) {
+		LOG_ERR("Call `process_downlink` failed: %d", ret);
 		k_mutex_unlock(&m_lock);
 		return ret;
 	}
 
 	k_mutex_unlock(&m_lock);
+
+	if (has_downlink) {
+		k_work_schedule_for_queue(&m_work_q, &m_poll_dwork, K_NO_WAIT);
+	}
 
 	return 0;
 }
@@ -391,7 +387,7 @@ static int upload_decoder(void)
 			return ret;
 		}
 
-		ret = transfer(&m_transfer_buf);
+		ret = uplink(&m_transfer_buf, K_FOREVER);
 		if (ret) {
 			LOG_ERR("Call `transfer` failed: %d", ret);
 			k_mutex_unlock(&m_lock);
@@ -441,7 +437,7 @@ static int upload_encoder(void)
 			return ret;
 		}
 
-		ret = transfer(&m_transfer_buf);
+		ret = uplink(&m_transfer_buf, K_FOREVER);
 		if (ret) {
 			LOG_ERR("Call `transfer` failed: %d", ret);
 			k_mutex_unlock(&m_lock);
@@ -494,7 +490,7 @@ static int upload_config(void)
 	if (m_session.config_hash != hash) {
 		LOG_INF("Uploading config hash: %08llx", hash);
 
-		ret = transfer(&m_transfer_buf);
+		ret = uplink(&m_transfer_buf, K_FOREVER);
 		if (ret) {
 			LOG_ERR("Call `transfer` failed: %d", ret);
 			k_mutex_unlock(&m_lock);
@@ -555,7 +551,7 @@ static int firmware_confirmed(void)
 		return ret;
 	}
 
-	ret = transfer(&m_transfer_buf);
+	ret = uplink(&m_transfer_buf, K_FOREVER);
 	if (ret) {
 		LOG_ERR("Call `transfer` failed: %d", ret);
 		k_mutex_unlock(&m_lock);
@@ -743,7 +739,7 @@ int ctr_cloud_set_callback(ctr_cloud_cb user_cb, void *user_data)
 // 		return ret;
 // 	}
 
-// 	ret = transfer(&m_transfer_buf);
+// 	ret = uplink(&m_transfer_buf, K_FOREVER);
 // 	if (ret) {
 // 		LOG_ERR("Call `transfer` failed: %d", ret);
 // 		k_mutex_unlock(&m_lock);
@@ -774,12 +770,12 @@ int ctr_cloud_set_poll_interval(k_timeout_t interval)
 
 int ctr_cloud_poll_immediately(void)
 {
-	k_work_submit_to_queue(&m_work_q, &m_poll_work);
+	k_work_schedule_for_queue(&m_work_q, &m_poll_dwork, K_NO_WAIT);
 
 	return 0;
 }
 
-int ctr_cloud_send(const void *buf, size_t len)
+int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout)
 {
 	int ret;
 
@@ -787,7 +783,13 @@ int ctr_cloud_send(const void *buf, size_t len)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&m_lock, K_FOREVER);
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+
+	ret = k_mutex_lock(&m_lock, timeout);
+	if (ret) {
+		LOG_WRN("Failed to acquire lock: %d", ret);
+		return ret;
+	}
 
 	LOG_INF("Request SEND started");
 
@@ -814,7 +816,7 @@ int ctr_cloud_send(const void *buf, size_t len)
 		return ret;
 	}
 
-	ret = transfer(&m_transfer_buf);
+	ret = uplink(&m_transfer_buf, sys_timepoint_timeout(end));
 	if (ret) {
 		LOG_ERR("Call `transfer` failed: %d", ret);
 		k_mutex_unlock(&m_lock);
@@ -833,25 +835,62 @@ int ctr_cloud_send(const void *buf, size_t len)
 	return 0;
 }
 
-int ctr_cloud_recv(void)
+int ctr_cloud_send(const void *buf, size_t len)
+{
+	return ctr_cloud_send_data(buf, len, K_FOREVER);
+}
+
+int ctr_cloud_downlink(k_timeout_t timeout)
 {
 	int ret;
+	bool has_downlink = false;
+	k_timepoint_t end = sys_timepoint_calc(timeout);
 
-	k_mutex_lock(&m_lock, K_FOREVER);
+	ret = k_mutex_lock(&m_lock, timeout);
+	if (ret) {
+		LOG_WRN("Failed to acquire lock: %d", ret);
+		return ret;
+	}
 
 	LOG_DBG("Request RECV started");
 
 	ctr_buf_reset(&m_transfer_buf);
 
-	ret = transfer(&m_transfer_buf);
-
+	ret = ctr_cloud_transfer_downlink(&m_transfer_buf, &has_downlink,
+					  sys_timepoint_timeout(end));
 	if (ret) {
-		LOG_ERR("Call `transfer` failed: %d", ret);
+		LOG_WRN("Call `ctr_cloud_transfer_downlink` failed: %d", ret);
 		k_mutex_unlock(&m_lock);
 		return ret;
 	}
 
+	struct ctr_buf upbuf = {
+		.mem = ctr_buf_get_mem(&m_transfer_buf) + ctr_buf_get_used(&m_transfer_buf),
+		.size = ctr_buf_get_free(&m_transfer_buf),
+		.len = 0,
+	};
+
+	ret = process_downlink(&m_transfer_buf, &upbuf);
+	if (ret) {
+		LOG_WRN("Call `process_downlink` failed: %d", ret);
+		k_mutex_unlock(&m_lock);
+		return ret;
+	}
+
+	if (ctr_buf_get_used(&upbuf) > 0) {
+		ret = ctr_cloud_transfer_uplink(&upbuf, &has_downlink, K_FOREVER);
+		if (ret) {
+			LOG_WRN("Call `ctr_cloud_transfer_uplink` for response failed: %d", ret);
+			k_mutex_unlock(&m_lock);
+			return ret;
+		}
+	}
+
 	k_mutex_unlock(&m_lock);
+
+	if (has_downlink) {
+		k_work_schedule_for_queue(&m_work_q, &m_poll_dwork, K_NO_WAIT);
+	}
 
 	LOG_DBG("Request RECV finished");
 
@@ -939,7 +978,7 @@ int ctr_cloud_firmware_update(const char *firmware)
 		return ret;
 	}
 
-	ret = transfer(&m_transfer_buf);
+	ret = uplink(&m_transfer_buf, K_FOREVER);
 
 	if (ret) {
 		LOG_ERR("Call `transfer` failed: %d", ret);

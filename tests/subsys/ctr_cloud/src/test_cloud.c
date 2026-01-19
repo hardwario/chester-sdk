@@ -109,8 +109,8 @@ ZTEST(subsus_ctr_cloud_2_cloud, test_boot)
 
 	printf("\ntest: last downlink ts: %lld\n", ts);
 
-	ctr_cloud_recv(); // poll without data
-	ctr_cloud_recv(); // poll shell
+	ctr_cloud_downlink(K_FOREVER); // poll without data
+	ctr_cloud_downlink(K_FOREVER); // poll shell
 
 	k_sleep(K_MSEC(300));
 }

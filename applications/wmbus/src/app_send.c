@@ -75,9 +75,9 @@ static void poll_work_handler(struct k_work *work)
 
 	LOG_WRN("Running RECV");
 
-	ret = ctr_cloud_recv();
+	ret = ctr_cloud_downlink(K_FOREVER);
 	if (ret) {
-		LOG_ERR("Call `ctr_cloud_recv` failed: %d", ret);
+		LOG_ERR("Call `ctr_cloud_downlink` failed: %d", ret);
 		return;
 	}
 

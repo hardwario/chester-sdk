@@ -348,7 +348,7 @@ int ctr_cloud_process_dlfirmware(struct ctr_cloud_msg_dlfirmware *dlfirmware, st
 			return ret;
 		}
 
-		ret = ctr_cloud_transfer_uplink(buf, NULL);
+		ret = ctr_cloud_transfer_uplink(buf, NULL, K_FOREVER);
 		if (ret) {
 			LOG_ERR("Call `ctr_cloud_transfer_uplink` for upbuf failed: %d", ret);
 			return ret;

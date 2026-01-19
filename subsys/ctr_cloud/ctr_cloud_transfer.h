@@ -42,8 +42,8 @@ typedef void (*ctr_cloud_transfer_cb)(enum ctr_cloud_transfer_event event,
 int ctr_cloud_transfer_init(uint32_t serial_number, uint8_t token[16],
 			    ctr_cloud_transfer_cb cb);
 int ctr_cloud_transfer_wait_for_ready(k_timeout_t timeout);
-int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink);
-int ctr_cloud_transfer_downlink(struct ctr_buf *buf, bool *has_downlink);
+int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink, k_timeout_t timeout);
+int ctr_cloud_transfer_downlink(struct ctr_buf *buf, bool *has_downlink, k_timeout_t timeout);
 
 #ifdef __cplusplus
 }
