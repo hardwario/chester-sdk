@@ -60,7 +60,7 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_INT("people-counter-adult-border", m_config_interim.people_counter_adult_border, 0, 8, "Get/Set People Counter adult border.", 4),
 #endif /* defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER) */
 
-	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){"none", "lte"}), "Set communication mode", APP_CONFIG_MODE_LTE),
+	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){"none", "lte", "lrw"}), "Set communication mode", APP_CONFIG_MODE_NONE),
 
 	/* ### Preserved code "config" (begin) */
 	/* ^^^ Preserved code "config" (end) */

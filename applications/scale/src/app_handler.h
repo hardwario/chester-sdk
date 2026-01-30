@@ -27,6 +27,10 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 			    void *user_data);
 #endif /* defined(CONFIG_SHIELD_BUTTON) */
 
+#if defined(FEATURE_SUBSYSTEM_LRW)
+void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param);
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
+
 #ifdef __cplusplus
 }
 #endif

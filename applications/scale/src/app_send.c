@@ -7,6 +7,7 @@
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
+#include "app_lrw.h"
 #include "app_send.h"
 
 /* CHESTER includes */
@@ -41,6 +42,26 @@ int app_send(void)
 	case APP_CONFIG_MODE_NONE:
 		LOG_WRN("Application mode is set to none. Not sending data.");
 		break;
+#if defined(FEATURE_SUBSYSTEM_LRW)
+	case APP_CONFIG_MODE_LRW: {
+		CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
+
+		ret = app_lrw_encode(&lrw_buf);
+		if (ret) {
+			LOG_ERR("Call `app_lrw_encode` failed: %d", ret);
+			return ret;
+		}
+
+		struct ctr_lrw_send_opts lrw_opts = CTR_LRW_SEND_OPTS_DEFAULTS;
+		ret = ctr_lrw_send(&lrw_opts, ctr_buf_get_mem(&lrw_buf),
+				   ctr_buf_get_used(&lrw_buf), NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
+			return ret;
+		}
+		break;
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 #if defined(FEATURE_SUBSYSTEM_CLOUD)
 	case APP_CONFIG_MODE_LTE: {
 		CTR_BUF_DEFINE_STATIC(buf, 8 * 1024);
