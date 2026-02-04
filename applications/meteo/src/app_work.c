@@ -13,6 +13,9 @@
 #include "app_cbor.h"
 #include "app_send.h"
 #include "feature.h"
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+#include "app_modbus.h"
+#endif
 
 /* Zephyr includes */
 #include <zephyr/device.h>
@@ -47,38 +50,41 @@ static void send_work_handler(struct k_work *work)
 		return;
 	}
 
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+	app_modbus_clear();
+#endif
+
 #if defined(FEATURE_HARDWARE_CHESTER_Z)
 	app_backup_clear();
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)
+#if defined(CONFIG_CTR_METEO)
 	app_sensor_meteo_clear();
-#endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)   \
-	*/
+#endif /* defined(CONFIG_CTR_METEO) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG)
+#if defined(CONFIG_MPL3115A2)
 	app_sensor_barometer_clear();
-#endif /* defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG) */
+#endif /* defined (CONFIG_MPL3115A2) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_S2)
+#if defined(CONFIG_CTR_HYGRO)
 	app_sensor_hygro_clear();
-#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
+#endif /* defined(CONFIG_CTR_HYGRO) */
 
-#if defined(FEATURE_SUBSYSTEM_DS18B20)
+#if defined(CONFIG_CTR_DS18B20)
 	app_sensor_w1_therm_clear();
-#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+#endif /* defined(CONFIG_CTR_DS18B20) */
 
-#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+#if defined(CONFIG_CTR_SOIL_SENSOR)
 	app_sensor_soil_sensor_clear();
-#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+#endif /* defined(CONFIG_CTR_SOIL_SENSOR) */
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	app_sensor_ble_tag_clear();
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
-#if defined(FEATURE_CHESTER_APP_LAMBRECHT)
+#if defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT)
 	app_sensor_lambrecht_clear();
-#endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+#endif /* defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT) */
 
 #if defined(CONFIG_APP_PYRANOMETER)
 	app_sensor_pyranometer_clear();
@@ -123,8 +129,7 @@ static void power_work_handler(struct k_work *work)
 
 static K_WORK_DELAYABLE_DEFINE(m_power_work, power_work_handler);
 
-#if defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)
-
+#if defined(CONFIG_CTR_METEO) || defined(FEATURE_HARDWARE_CHESTER_METEO_M)
 static void meteo_sample_work_handler(struct k_work *work)
 {
 	int ret;
@@ -132,10 +137,20 @@ static void meteo_sample_work_handler(struct k_work *work)
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
 				  K_SECONDS(g_app_config.interval_sample));
 
+#if defined(CONFIG_CTR_METEO)
 	ret = app_sensor_meteo_sample();
 	if (ret) {
 		LOG_ERR("Call `app_sensor_meteo_sample` failed: %d", ret);
 	}
+#endif /* defined(CONFIG_CTR_METEO) || defined(FEATURE_HARDWARE_CHESTER_METEO_M) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+	ret = app_modbus_sample();
+	if (ret) {
+		LOG_ERR("Call `app_modbus_sample` failed: %d", ret);
+	}
+
+#endif
 }
 
 static K_WORK_DELAYABLE_DEFINE(m_meteo_sample_work, meteo_sample_work_handler);
@@ -146,11 +161,20 @@ static void meteo_aggreg_work_handler(struct k_work *work)
 
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
 				  K_SECONDS(g_app_config.interval_aggreg));
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+	ret = app_modbus_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_modbus_aggreg` failed: %d", ret);
+	}
 
+#endif /*defined(FEATURE_HARDWARE_CHESTER_METEO_M) */
+
+#if defined(CONFIG_CTR_METEO)
 	ret = app_sensor_meteo_aggreg();
 	if (ret) {
 		LOG_ERR("Call `app_sensor_meteo_aggreg` failed: %d", ret);
 	}
+#endif /* defined(CONFIG_CTR_METEO)  */
 }
 
 static K_WORK_DELAYABLE_DEFINE(m_meteo_aggreg_work, meteo_aggreg_work_handler);
@@ -158,8 +182,7 @@ static K_WORK_DELAYABLE_DEFINE(m_meteo_aggreg_work, meteo_aggreg_work_handler);
 #endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)   \
 	*/
 
-#if defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG)
-
+#if defined(CONFIG_MPL3115A2)
 static void barometer_sample_work_handler(struct k_work *work)
 {
 	int ret;
@@ -190,7 +213,7 @@ static void barometer_aggreg_work_handler(struct k_work *work)
 
 static K_WORK_DELAYABLE_DEFINE(m_barometer_aggreg_work, barometer_aggreg_work_handler);
 
-#endif /* defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG) */
+#endif /* defined(CONFIG_MPL3115A2) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2)
 
@@ -354,7 +377,7 @@ static K_WORK_DELAYABLE_DEFINE(m_ble_tag_aggreg_work, ble_tag_aggreg_work_handle
 
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
-#if defined(FEATURE_CHESTER_APP_LAMBRECHT)
+#if defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT)
 
 static void lambrecht_sample_work_handler(struct k_work *work)
 {
@@ -386,7 +409,7 @@ static void lambrecht_aggreg_work_handler(struct k_work *work)
 
 static K_WORK_DELAYABLE_DEFINE(m_lambrecht_aggreg_work, lambrecht_aggreg_work_handler);
 
-#endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+#endif /* defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT) */
 
 #if defined(CONFIG_APP_PYRANOMETER)
 
@@ -433,41 +456,40 @@ int app_work_init(void)
 	k_work_schedule_for_queue(&m_work_q, &m_sample_work, K_NO_WAIT);
 	k_work_schedule_for_queue(&m_work_q, &m_power_work, K_SECONDS(60));
 
-#if defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)
+#if defined(CONFIG_CTR_METEO) || defined(FEATURE_HARDWARE_CHESTER_METEO_M)
 	k_work_schedule_for_queue(&m_work_q, &m_meteo_sample_work,
 				  K_SECONDS(g_app_config.interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_meteo_aggreg_work,
 				  K_SECONDS(g_app_config.interval_aggreg));
-#endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)   \
-	*/
+#endif /* defined(CONFIG_CTR_METEO) || defined(FEATURE_HARDWARE_CHESTER_METEO_M) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG)
+#if defined(CONFIG_MPL3115A2)
 	k_work_schedule_for_queue(&m_work_q, &m_barometer_sample_work,
 				  K_SECONDS(g_app_config.interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_barometer_aggreg_work,
 				  K_SECONDS(g_app_config.interval_aggreg));
-#endif /* defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG) */
+#endif /* defined(CONFIG_MPL3115A2) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_S2)
+#if defined(CONFIG_CTR_HYGRO)
 	k_work_schedule_for_queue(&m_work_q, &m_hygro_sample_work,
 				  K_SECONDS(g_app_config.interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_hygro_aggreg_work,
 				  K_SECONDS(g_app_config.interval_aggreg));
-#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
+#endif /* defined(CONFIG_CTR_HYGRO) */
 
-#if defined(FEATURE_SUBSYSTEM_DS18B20)
+#if defined(CONFIG_CTR_DS18B20)
 	k_work_schedule_for_queue(&m_work_q, &m_w1_therm_sample_work,
 				  K_SECONDS(g_app_config.interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_w1_therm_aggreg_work,
 				  K_SECONDS(g_app_config.interval_aggreg));
-#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+#endif /* defined(CONFIG_CTR_DS18B20) */
 
-#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+#if defined(CONFIG_CTR_SOIL_SENSOR)
 	k_work_schedule_for_queue(&m_work_q, &m_soil_sensor_sample_work,
 				  K_SECONDS(g_app_config.interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_soil_sensor_aggreg_work,
 				  K_SECONDS(g_app_config.interval_aggreg));
-#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+#endif /* defined(CONFIG_CTR_SOIL_SENSOR) */
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_sample_work,
@@ -476,12 +498,12 @@ int app_work_init(void)
 				  K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
-#if defined(FEATURE_CHESTER_APP_LAMBRECHT)
+#if defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT)
 	k_work_schedule_for_queue(&m_work_q, &m_lambrecht_sample_work,
 				  K_SECONDS(g_app_config.interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_lambrecht_aggreg_work,
 				  K_SECONDS(g_app_config.interval_aggreg));
-#endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+#endif /* defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT) */
 
 #if defined(CONFIG_APP_PYRANOMETER)
 	k_work_schedule_for_queue(&m_work_q, &m_pyranometer_sample_work,
@@ -495,15 +517,13 @@ int app_work_init(void)
 
 void app_work_aggreg(void)
 {
-#if defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)
+#if defined(CONFIG_CTR_METEO) || defined(FEATURE_HARDWARE_CHESTER_METEO_M)
 	k_work_reschedule_for_queue(&m_work_q, &m_meteo_aggreg_work, K_NO_WAIT);
-#endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)   \
-	*/
+#endif /* defined(CONFIG_CTR_METEO) || defined(FEATURE_HARDWARE_CHESTER_METEO_M) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG)
+#if defined(CONFIG_MPL3115A2)
 	k_work_reschedule_for_queue(&m_work_q, &m_barometer_aggreg_work, K_NO_WAIT);
-#endif /* defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG) */
-
+#endif /* defined(CONFIG_MPL3115A2) */
 #if defined(FEATURE_HARDWARE_CHESTER_S2)
 	k_work_reschedule_for_queue(&m_work_q, &m_hygro_aggreg_work, K_NO_WAIT);
 #endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
@@ -529,7 +549,7 @@ void app_work_sample(void)
 {
 	k_work_reschedule_for_queue(&m_work_q, &m_sample_work, K_NO_WAIT);
 
-#if defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)
+#if defined(CONFIG_CTR_METEO) || defined(FEATURE_HARDWARE_CHESTER_METEO_M)
 	k_work_reschedule_for_queue(&m_work_q, &m_meteo_sample_work, K_NO_WAIT);
 #endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)   \
 	*/
@@ -554,9 +574,9 @@ void app_work_sample(void)
 	k_work_reschedule_for_queue(&m_work_q, &m_ble_tag_sample_work, K_NO_WAIT);
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
-#if defined(FEATURE_CHESTER_APP_LAMBRECHT)
+#if defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT)
 	k_work_reschedule_for_queue(&m_work_q, &m_lambrecht_sample_work, K_NO_WAIT);
-#endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+#endif /* defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT) */
 
 #if defined(CONFIG_APP_PYRANOMETER)
 	k_work_reschedule_for_queue(&m_work_q, &m_pyranometer_sample_work, K_NO_WAIT);

@@ -9,6 +9,10 @@
 #include "app_send.h"
 #include "app_data.h"
 #include "app_lrw.h"
+#include "app_sensor.h"
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+#include "app_modbus.h"
+#endif
 #include "feature.h"
 
 /* Zephyr includes */

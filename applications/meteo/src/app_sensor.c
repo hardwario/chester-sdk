@@ -7,9 +7,11 @@
 #include "app_config.h"
 #include "app_data.h"
 #include "app_work.h"
-#include "app_lambrecht.h"
 #include "app_sensor.h"
 #include "feature.h"
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+#include "app_modbus.h"
+#endif
 
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
@@ -122,8 +124,7 @@ int app_sensor_sample(void)
 	return 0;
 }
 
-#if defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)
-
+#if defined(CONFIG_CTR_METEO)
 static int meteo_sample_wind_direction(void)
 {
 	int ret;
@@ -176,7 +177,8 @@ static int meteo_sample_wind_direction(void)
 
 	return 0;
 }
-
+#endif
+#if defined(CONFIG_CTR_METEO)
 static int meteo_sample_wind_speed(void)
 {
 	int ret;
@@ -217,7 +219,9 @@ static int meteo_sample_wind_speed(void)
 
 	return 0;
 }
+#endif
 
+#if defined(CONFIG_CTR_METEO)
 int app_sensor_meteo_sample(void)
 {
 	int ret;
@@ -232,9 +236,18 @@ int app_sensor_meteo_sample(void)
 		LOG_ERR("Call `meteo_sample_wind_speed` failed: %d", ret);
 	}
 
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+	ret = app_modbus_sample();
+	if (ret) {
+		LOG_ERR("Call `app_modbus_sample` failed: %d", ret);
+	}
+#endif
+
 	return 0;
 }
+#endif
 
+#if defined(CONFIG_CTR_METEO)
 static int meteo_aggreg_wind_speed(void)
 {
 	int ret;
@@ -270,7 +283,9 @@ static int meteo_aggreg_wind_speed(void)
 
 	return 0;
 }
+#endif
 
+#if defined(CONFIG_CTR_METEO)
 #if !defined(M_PI)
 #define M_PI 3.14159265f
 #endif
@@ -311,7 +326,9 @@ static float get_average_angle(float *array, size_t array_size)
 
 	return average;
 }
+#endif
 
+#if defined(CONFIG_CTR_METEO)
 static int meteo_aggreg_wind_direction(void)
 {
 	int ret;
@@ -349,7 +366,9 @@ static int meteo_aggreg_wind_direction(void)
 
 	return 0;
 }
+#endif
 
+#if defined(CONFIG_CTR_METEO)
 static int meteo_aggreg_rainfall(void)
 {
 	int ret;
@@ -398,7 +417,9 @@ static int meteo_aggreg_rainfall(void)
 
 	return 0;
 }
+#endif
 
+#if defined(CONFIG_CTR_METEO)
 int app_sensor_meteo_aggreg(void)
 {
 	int ret;
@@ -418,11 +439,22 @@ int app_sensor_meteo_aggreg(void)
 		LOG_ERR("Call `meteo_aggreg_rainfall` failed: %d", ret);
 	}
 
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+	ret = app_modbus_aggreg();
+	if (ret) {
+		LOG_ERR("Call `app_modbus_aggreg` failed: %d", ret);
+	}
+#endif
+
 	return 0;
 }
+#endif
 
+#if defined(CONFIG_CTR_METEO)
 int app_sensor_meteo_clear(void)
 {
+	int ret;
+
 	app_data_lock();
 
 	g_app_data.meteo.wind_speed.measurement_count = 0;
@@ -431,14 +463,20 @@ int app_sensor_meteo_clear(void)
 
 	app_data_unlock();
 
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+	ret = app_modbus_clear();
+	if (ret) {
+		LOG_ERR("Call `app_modbus_clear` failed: %d", ret);
+	}
+#endif
+
 	return 0;
 }
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)   \
 	*/
 
-#if defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG)
-
+#if defined(CONFIG_MPL3115A2)
 int app_sensor_barometer_sample(void)
 {
 	int ret;
@@ -534,10 +572,9 @@ int app_sensor_barometer_clear(void)
 	return 0;
 }
 
-#endif /* defined(FEATURE_HARDWARE_CHESTER_BAROMETER_TAG) */
+#endif /* defined(CONFIG_MPL3115A2) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_S2)
-
+#if defined(CONFIG_CTR_HYGRO)
 static void append_hygro_event(enum app_data_hygro_event_type type, float value)
 {
 	int ret;
@@ -710,10 +747,9 @@ int app_sensor_hygro_clear(void)
 	return 0;
 }
 
-#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
+#endif /* defined(CONFIG_CTR_HYGRO) */
 
-#if defined(FEATURE_SUBSYSTEM_DS18B20)
-
+#if defined(CONFIG_CTR_DS18B20)
 int app_sensor_w1_therm_sample(void)
 {
 	int ret;
@@ -812,8 +848,7 @@ int app_sensor_w1_therm_clear(void)
 
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
-
+#if defined(CONFIG_CTR_SOIL_SENSOR)
 int app_sensor_soil_sensor_sample(void)
 {
 	int ret;
@@ -917,7 +952,7 @@ int app_sensor_soil_sensor_clear(void)
 	return 0;
 }
 
-#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+#endif /* defined(CONFIG_CTR_SOIL_SENSOR) */
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 int app_sensor_ble_tag_sample(void)
@@ -1041,7 +1076,7 @@ int app_sensor_ble_tag_clear(void)
 
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
-#if defined(FEATURE_CHESTER_APP_LAMBRECHT)
+#if defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT)
 
 static int lambrecht_sample_wind_speed(void)
 {
@@ -1306,140 +1341,23 @@ static int lambrecht_sample_illuminance(void)
 
 int app_sensor_lambrecht_sample(void)
 {
-	int ret;
-
-	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
-
-	ret = app_lambrecht_enable();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_enable` failed: %d", ret);
-	}
-
-	ret = lambrecht_sample_wind_speed();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_sample_wind_speed` failed: %d", ret);
-	}
-
-	ret = lambrecht_sample_wind_direction();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_sample_wind_direction` failed: %d", ret);
-	}
-
-	ret = lambrecht_sample_temperature();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_sample_temperature` failed: %d", ret);
-	}
-
-	ret = lambrecht_sample_humidity();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_sample_humidity` failed: %d", ret);
-	}
-
-	ret = lambrecht_sample_dew_point();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_sample_dew_point` failed: %d", ret);
-	}
-
-	ret = lambrecht_sample_pressure();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_sample_pressure` failed: %d", ret);
-	}
-
-	ret = lambrecht_sample_rainfall_total();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_sample_rainfall_total` failed: %d", ret);
-	}
-
-	ret = lambrecht_sample_rainfall_intensity();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_sample_rainfall_intensity` failed: %d", ret);
-	}
-
-	ret = lambrecht_sample_illuminance();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_sample_illuminance` failed: %d", ret);
-	}
-
-	lambrecht->sample_count++;
-
-	ret = app_lambrecht_disable();
-	if (ret) {
-		LOG_ERR("Call `lambrecht_disable` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
+	/* Lambrecht sampling is now handled by app_modbus_sample() */
+	return app_modbus_sample();
 }
 
 int app_sensor_lambrecht_aggreg(void)
 {
-	int ret;
-
-	app_data_lock();
-
-	struct app_data_lambrecht *lambrecht = &g_app_data.lambrecht;
-
-	if (lambrecht->measurement_count < APP_DATA_MAX_MEASUREMENTS) {
-		ret = ctr_rtc_get_ts(&lambrecht->timestamp);
-		if (ret) {
-			LOG_ERR("Call `ctr_rtc-get_tc` failed: %d", ret);
-			app_data_unlock();
-			return ret;
-		}
-
-		aggreg_sample(lambrecht->wind_speed_samples, lambrecht->sample_count,
-			      &lambrecht->wind_speed_measurements[lambrecht->measurement_count]);
-		aggreg_sample(
-			lambrecht->wind_direction_samples, lambrecht->sample_count,
-			&lambrecht->wind_direction_measurements[lambrecht->measurement_count]);
-		aggreg_sample(lambrecht->temperature_samples, lambrecht->sample_count,
-			      &lambrecht->temperature_measurements[lambrecht->measurement_count]);
-		aggreg_sample(lambrecht->humidity_samples, lambrecht->sample_count,
-			      &lambrecht->humidity_measurements[lambrecht->measurement_count]);
-		aggreg_sample(lambrecht->dew_point_samples, lambrecht->sample_count,
-			      &lambrecht->dew_point_measurements[lambrecht->measurement_count]);
-		aggreg_sample(lambrecht->pressure_samples, lambrecht->sample_count,
-			      &lambrecht->pressure_measurements[lambrecht->measurement_count]);
-		aggreg_sample(
-			lambrecht->rainfall_total_samples, lambrecht->sample_count,
-			&lambrecht->rainfall_total_measurements[lambrecht->measurement_count]);
-		aggreg_sample(
-			lambrecht->rainfall_intensity_samples, lambrecht->sample_count,
-			&lambrecht->rainfall_intensity_measurements[lambrecht->measurement_count]);
-		aggreg_sample(lambrecht->illuminance_samples, lambrecht->sample_count,
-			      &lambrecht->illuminance_measurements[lambrecht->measurement_count]);
-
-		for (int i = 0; i < lambrecht->sample_count; i++) {
-			lambrecht->rainfall_total_sum += lambrecht->rainfall_total_samples[i];
-		}
-
-		lambrecht->sample_count = 0;
-		lambrecht->measurement_count++;
-
-	} else {
-		LOG_WRN("Measurement buffer full");
-		app_data_unlock();
-		return -ENOSPC;
-	}
-
-	app_data_unlock();
-
-	return 0;
+	/* Lambrecht aggregation is now handled by app_modbus_aggreg() */
+	return app_modbus_aggreg();
 }
 
 int app_sensor_lambrecht_clear(void)
 {
-	app_data_lock();
-
-	g_app_data.lambrecht.measurement_count = 0;
-	g_app_data.lambrecht.rainfall_total_sum = 0;
-
-	app_data_unlock();
-
-	return 0;
+	/* Lambrecht clear is now handled by app_modbus_clear() */
+	return app_modbus_clear();
 }
 
-#endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+#endif /* defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT) */
 
 #if defined(CONFIG_APP_PYRANOMETER)
 

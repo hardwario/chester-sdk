@@ -17,6 +17,9 @@
 #include <stdlib.h>
 
 /* ### Preserved code "includes" (begin) */
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+#include "app_modbus.h"
+#endif
 /* ^^^ Preserved code "includes" (end) */
 
 LOG_MODULE_REGISTER(app_shell, LOG_LEVEL_INF);
@@ -129,6 +132,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 					     app_config_cmd_config, 1, 3),
 
 /* ### Preserved code "subcmd" (begin) */
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+SHELL_CMD_ARG(modbus, NULL, "Read Modbus data. Optional: modbus sample",
+			   cmd_modbus_read, 1, 1),
+SHELL_CMD_ARG(modbus_set_sensecap, NULL, "Set SenseCAP address. Usage: ... <current> <new>", cmd_modbus_set_sensecap, 3, 0),
+SHELL_CMD_ARG(modbus_set_cubic, NULL, "Set Cubic PM address. Usage: ... <current> <new>", cmd_modbus_set_cubic, 3, 0),
+#endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_M) */
 /* ^^^ Preserved code "subcmd" (end) */
 
 			       SHELL_SUBCMD_SET_END);

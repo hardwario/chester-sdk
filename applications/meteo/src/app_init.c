@@ -9,9 +9,11 @@
 #include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
-#include "app_lambrecht.h"
 #include "app_work.h"
 #include "feature.h"
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+#include "app_modbus.h"
+#endif
 
 /* CHESTER includes */
 #include <chester/ctr_adc.h>
@@ -161,14 +163,6 @@ int app_init(void)
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_BUTTON) */
 
-#if defined(FEATURE_CHESTER_APP_LAMBRECHT)
-	ret = app_lambrecht_init();
-	if (ret) {
-		LOG_ERR("Call `app_lambrecht_init` failed: %d", ret);
-		return ret;
-	}
-#endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
-
 #if defined(CONFIG_APP_PYRANOMETER)
 	ret = ctr_gpio_set_mode(CTR_GPIO_CHANNEL_B3, CTR_GPIO_MODE_OUTPUT);
 	if (ret) {
@@ -189,22 +183,27 @@ int app_init(void)
 	}
 #endif /* defined(CONFIG_APP_PYRANOMETER) */
 
-#if defined(FEATURE_SUBSYSTEM_DS18B20)
+#if defined(CONFIG_CTR_DS18B20)
 	ret = ctr_ds18b20_scan();
 	if (ret) {
 		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+#endif /* defined(CONFIG_CTR_DS18B20) */
 
-#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+#if defined(CONFIG_CTR_SOIL_SENSOR)
 	ret = ctr_soil_sensor_scan();
 	if (ret) {
 		LOG_ERR("Call `ctr_soil_sensor_scan` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
-
+#endif /* defined(CONFIG_CTR_SOIL_SENSOR) */
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+	ret = app_modbus_init();
+	if (ret) {
+		LOG_WRN("Call `app_modbus_init` failed: %d. Sampling will be skipped.", ret);
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_M) */
 #if defined(FEATURE_SUBSYSTEM_CLOUD)
 	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
 		CODEC_CLOUD_OPTIONS_STATIC(copt);

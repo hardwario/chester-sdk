@@ -15,6 +15,28 @@
 #include <stddef.h>
 
 /* ### Preserved code "includes" (begin) */
+enum app_config_meteo_type {
+	APP_CONFIG_METEO_NONE = 0,
+	APP_CONFIG_METEO_LAMBRECHT = 1,
+	APP_CONFIG_METEO_SENSECAP_S1000 = 2,
+	APP_CONFIG_METEO_SENSECAP_S500 = 3,
+};
+
+enum app_config_pm_type {
+	APP_CONFIG_PM_NONE = 0,
+	APP_CONFIG_PM_CUBIC_6303 = 1,
+};
+
+enum app_config_modbus_parity {
+	APP_CONFIG_MODBUS_PARITY_NONE = 0,
+	APP_CONFIG_MODBUS_PARITY_ODD = 1,
+	APP_CONFIG_MODBUS_PARITY_EVEN = 2,
+};
+
+enum app_config_modbus_stop_bits {
+	APP_CONFIG_MODBUS_STOP_BITS_1 = 1, // Stop bits 1
+	APP_CONFIG_MODBUS_STOP_BITS_2 = 3, // Stop bits 2
+};
 /* ^^^ Preserved code "includes" (end) */
 
 #ifdef __cplusplus
@@ -56,6 +78,14 @@ struct app_config {
 	enum app_config_mode mode;
 
 	/* ### Preserved code "struct variables" (begin) */
+	enum app_config_meteo_type meteo_type;
+	enum app_config_pm_type pm_type;
+	int meteo_addr;
+	int pm_addr;
+	int modbus_baud;
+	int modbus_addr;
+	enum app_config_modbus_parity modbus_parity;
+	enum app_config_modbus_stop_bits modbus_stop_bits;
 	/* ^^^ Preserved code "struct variables" (end) */
 };
 

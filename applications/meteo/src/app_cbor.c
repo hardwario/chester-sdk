@@ -75,6 +75,12 @@ LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 static int encode(zcbor_state_t *zs)
 {
 	int ret;
+	uint64_t ts_now;
+	ret = ctr_rtc_get_ts(&ts_now);
+	if (ret) {
+		LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
+		return ret;
+	}
 
 	zs->constant_state->stop_on_error = true;
 
@@ -851,7 +857,7 @@ static int encode(zcbor_state_t *zs)
 
 	/* ### Preserved code "lambrecht_weather_station" (begin) */
 
-#if defined(FEATURE_CHESTER_APP_LAMBRECHT)
+#if defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT)
 	zcbor_uint32_put(zs, CODEC_KEY_E_LAMBRECHT_WEATHER_STATION);
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -1079,7 +1085,7 @@ static int encode(zcbor_state_t *zs)
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
-#endif /* defined(FEATURE_CHESTER_APP_LAMBRECHT) */
+#endif /* defined(CONFIG_FEATURE_CHESTER_APP_LAMBRECHT) */
 
 	/* ^^^ Preserved code "lambrecht_weather_station" (end) */
 
@@ -1137,6 +1143,447 @@ static int encode(zcbor_state_t *zs)
 #endif /* defined(CONFIG_APP_PYRANOMETER) */
 
 	/* ^^^ Preserved code "pyranometer" (end) */
+#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
+	if ((g_app_config.meteo_type == APP_CONFIG_METEO_SENSECAP_S1000) ||
+	    (g_app_config.meteo_type == APP_CONFIG_METEO_SENSECAP_S500)) {
+		zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			/* --- Air Temperature --- */
+			zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP__AIR_TEMPERATURE);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(
+					zs, CODEC_KEY_E_SENSECAP__AIR_TEMPERATURE__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.sensecap.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int i = 0; i < g_app_data.sensecap.measurement_count;
+					     i++) {
+						put_sample_mul(
+							zs,
+							&g_app_data.sensecap
+								 .air_temperature_measurements[i],
+							1000.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			/* --- Air Humidity --- */
+			zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP__AIR_HUMIDITY);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs,
+						 CODEC_KEY_E_SENSECAP__AIR_HUMIDITY__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.sensecap.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int i = 0; i < g_app_data.sensecap.measurement_count;
+					     i++) {
+						put_sample_mul(
+							zs,
+							&g_app_data.sensecap
+								 .air_humidity_measurements[i],
+							1000.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			/* --- Barometric Pressure --- */
+			zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP__BAROMETRIC_PRESSURE);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(
+					zs,
+					CODEC_KEY_E_SENSECAP__BAROMETRIC_PRESSURE__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.sensecap.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int i = 0; i < g_app_data.sensecap.measurement_count;
+					     i++) {
+						put_sample_mul(
+							zs,
+							&g_app_data.sensecap
+								 .barometric_pressure_measurements
+									 [i],
+							1000.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			/* --- Wind Direction Avg --- */
+			zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP__WIND_DIRECTION_AVG);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(
+					zs, CODEC_KEY_E_SENSECAP__WIND_DIRECTION_AVG__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.sensecap.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int i = 0; i < g_app_data.sensecap.measurement_count;
+					     i++) {
+						put_sample_mul(
+							zs,
+							&g_app_data.sensecap
+								 .wind_direction_avg_measurements
+									 [i],
+							1000.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			/* --- Wind Speed Avg --- */
+			zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP__WIND_SPEED_AVG);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(
+					zs, CODEC_KEY_E_SENSECAP__WIND_SPEED_AVG__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.sensecap.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int i = 0; i < g_app_data.sensecap.measurement_count;
+					     i++) {
+						put_sample_mul(
+							zs,
+							&g_app_data.sensecap
+								 .wind_speed_avg_measurements[i],
+							1000.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			/* Pouze pro S1000 */
+			if (g_app_config.meteo_type == APP_CONFIG_METEO_SENSECAP_S1000) {
+				/* --- Light Intensity --- */
+				zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP__LIGHT_INTENSITY);
+				{
+					zcbor_map_start_encode(zs,
+							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint32_put(
+						zs,
+						CODEC_KEY_E_SENSECAP__LIGHT_INTENSITY__MEASUREMENTS);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						zcbor_uint64_put(zs, g_app_data.sensecap.timestamp);
+						zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+						for (int i = 0;
+						     i < g_app_data.sensecap.measurement_count;
+						     i++) {
+							put_sample_mul(
+								zs,
+								&g_app_data.sensecap
+									 .light_intensity_measurements
+										 [i],
+								1000.f);
+						}
+
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+
+				/* --- Accumulated Rainfall --- */
+				zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP__ACCUMULATED_RAINFALL);
+				{
+					zcbor_map_start_encode(zs,
+							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint32_put(
+						zs,
+						CODEC_KEY_E_SENSECAP__ACCUMULATED_RAINFALL__MEASUREMENTS);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						zcbor_uint64_put(zs, g_app_data.sensecap.timestamp);
+						zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+						for (int i = 0;
+						     i < g_app_data.sensecap.measurement_count;
+						     i++) {
+							put_sample_mul(
+								zs,
+								&g_app_data.sensecap
+									 .accumulated_rainfall_measurements
+										 [i],
+								1000.f);
+						}
+
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+
+				/* --- PM2.5 --- */
+				zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP__PM2_5);
+				{
+					zcbor_map_start_encode(zs,
+							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint32_put(zs,
+							 CODEC_KEY_E_SENSECAP__PM2_5__MEASUREMENTS);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						zcbor_uint64_put(zs, g_app_data.sensecap.timestamp);
+						zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+						for (int i = 0;
+						     i < g_app_data.sensecap.measurement_count;
+						     i++) {
+							put_sample_mul(
+								zs,
+								&g_app_data.sensecap
+									 .pm2_5_measurements[i],
+								1000.f);
+						}
+
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+
+				/* --- PM10 --- */
+				zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP__PM10);
+				{
+					zcbor_map_start_encode(zs,
+							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint32_put(zs,
+							 CODEC_KEY_E_SENSECAP__PM10__MEASUREMENTS);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						zcbor_uint64_put(zs, g_app_data.sensecap.timestamp);
+						zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+						for (int i = 0;
+						     i < g_app_data.sensecap.measurement_count;
+						     i++) {
+							put_sample_mul(
+								zs,
+								&g_app_data.sensecap
+									 .pm10_measurements[i],
+								1000.f);
+						}
+
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+
+				/* --- CO2 --- */
+				zcbor_uint32_put(zs, CODEC_KEY_E_SENSECAP__CO2);
+				{
+					zcbor_map_start_encode(zs,
+							       ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint32_put(zs,
+							 CODEC_KEY_E_SENSECAP__CO2__MEASUREMENTS);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						zcbor_uint64_put(zs, g_app_data.sensecap.timestamp);
+						zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+						for (int i = 0;
+						     i < g_app_data.sensecap.measurement_count;
+						     i++) {
+							put_sample_mul(
+								zs,
+								&g_app_data.sensecap
+									 .co2_measurements[i],
+								1000.f);
+						}
+
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+					zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+	}
+
+	if (g_app_config.pm_type == APP_CONFIG_PM_CUBIC_6303) {
+		zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			/* --- TSP --- */
+			zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM__TSP);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM__TSP__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.cubic_pm.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int i = 0; i < g_app_data.cubic_pm.measurement_count;
+					     i++) {
+						put_sample_mul(
+							zs,
+							&g_app_data.cubic_pm.tsp_measurements[i],
+							1.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			/* --- PM1.0 --- */
+			zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM__PM1_0);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM__PM1_0__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.cubic_pm.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int i = 0; i < g_app_data.cubic_pm.measurement_count;
+					     i++) {
+						put_sample_mul(
+							zs,
+							&g_app_data.cubic_pm.pm1_0_measurements[i],
+							1.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			/* --- PM2.5 --- */
+			zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM__PM2_5);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM__PM2_5__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.cubic_pm.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int i = 0; i < g_app_data.cubic_pm.measurement_count;
+					     i++) {
+						put_sample_mul(
+							zs,
+							&g_app_data.cubic_pm.pm2_5_measurements[i],
+							1.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			/* --- PM10 --- */
+			zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM__PM10);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM__PM10__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.cubic_pm.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int i = 0; i < g_app_data.cubic_pm.measurement_count;
+					     i++) {
+						put_sample_mul(
+							zs,
+							&g_app_data.cubic_pm.pm10_measurements[i],
+							1.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			/* --- Gas Flow --- */
+			zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM__GAS_FLOW);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs, CODEC_KEY_E_CUBIC_PM__GAS_FLOW__MEASUREMENTS);
+				{
+					zcbor_list_start_encode(zs,
+								ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+					zcbor_uint64_put(zs, g_app_data.cubic_pm.timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int i = 0; i < g_app_data.cubic_pm.measurement_count;
+					     i++) {
+						put_sample_mul(zs,
+							       &g_app_data.cubic_pm
+									.gas_flow_measurements[i],
+							       100.f);
+					}
+
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		}
+	}
+
+#endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_M) */
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 

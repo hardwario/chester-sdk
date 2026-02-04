@@ -4,22 +4,37 @@ variants:
     fw_bundle: com.hardwario.chester.app.meteo
     fw_name: hio-chester-meteo
     fw_version: v3.0.2
+    features:
+      - hardware-chester-meteo-a
   - name: CHESTER Meteo Z
     fw_bundle: com.hardwario.chester.app.meteo.z
     fw_name: hio-chester-meteo-z
     fw_version: v3.0.2
     features:
       - hardware-chester-z
+      - hardware-chester-meteo-a
     remark: Support for CHESTER-Z
   - name: CHESTER Meteo P
     fw_bundle: com.hardwario.chester.app.meteo.p
     fw_name: hio-chester-meteo-p
     fw_version: v3.0.2
+    features:
+      - hardware-chester-meteo-a
     extras:
       - CONFIG_APP_PYRANOMETER=y
     remark: Support for pyranometer
+  - name: CHESTER Meteo M
+    fw_bundle: com.hardwario.chester.app.meteo.m
+    fw_name: hio-chester-meteo-m
+    fw_version: v3.0.2
+    features:
+      - hardware-chester-meteo-m
+      - hardware-chester-x2-modbus-a
+    extras:
+      - CONFIG_MODBUS_SERIAL=y
+    remark: Modbus variant supporting Lambrecht and Sensecap/OPM sensors (select via meteo-type)
 project:
-  variant: Meteo
+  variant: CHESTER Meteo
   company: 2024 HARDWARIO a.s.
   license: "SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause"
   fw_name: CHESTER Meteo
@@ -53,10 +68,11 @@ features:
   - subsystem-zcbor
   - hardware-chester-barometer-tag
   - subsystem-ds18b20
-  - hardware-chester-meteo-a
   - hardware-chester-s2
   - subsystem-soil-sensor
+  - hardware-chester-meteo-a
 #- hardware-chester-z
+
 parameters:
   - name: interval-sample
     type: int

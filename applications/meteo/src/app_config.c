@@ -63,7 +63,17 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){"none", "lte", "lrw"}), "Set communication mode", APP_CONFIG_MODE_NONE),
 
 	/* ### Preserved code "config" (begin) */
-	/* ^^^ Preserved code "config" (end) */
+        CTR_CONFIG_ITEM_ENUM("meteo-type", m_config_interim.meteo_type, ((const char*[]){"none", "lambrecht", "sensecap-s1000", "sensecap-s500"}), "Set connected meteo station type.", APP_CONFIG_METEO_NONE),
+        CTR_CONFIG_ITEM_ENUM("pm-type", m_config_interim.pm_type, ((const char*[]){"none", "cubic-6303"}), "Set connected PM sensor type.", APP_CONFIG_PM_NONE),
+        CTR_CONFIG_ITEM_INT("meteo-addr", m_config_interim.meteo_addr, 1, 247, "Set Modbus address of meteo station.", 1),
+        CTR_CONFIG_ITEM_INT("pm-addr", m_config_interim.pm_addr, 1, 247, "Set Modbus address of PM sensor.", 1),
+
+
+	CTR_CONFIG_ITEM_INT("modbus-baud", m_config_interim.modbus_baud, 1200, 19200, "Get/Set modbus baud rate.", 9600),
+        CTR_CONFIG_ITEM_INT("modbus-addr", m_config_interim.modbus_addr, 1, 247, "Get/Set modbus slave address.", 1),
+        CTR_CONFIG_ITEM_ENUM("modbus-parity", m_config_interim.modbus_parity, ((const char*[]){"none", "odd", "even", "mark", "space"}), "Get/Set modbus parity", APP_CONFIG_MODBUS_PARITY_NONE),
+        CTR_CONFIG_ITEM_ENUM("modbus-stop-bits", m_config_interim.modbus_stop_bits, ((const char*[]){"0_5", "1", "1_5", "2"}), "Get/Set modbus stop bits", APP_CONFIG_MODBUS_STOP_BITS_1),
+        /* ^^^ Preserved code "config" (end) */
 
 };
 /* clang-format on */
