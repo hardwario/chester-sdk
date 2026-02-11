@@ -1,0 +1,98 @@
+version: 1
+variants:
+- name: CHESTER Motion
+  fw_bundle: com.hardwario.chester.app.motion
+  fw_name: hio-chester-motion
+  fw_version: v3.0.1
+project:
+  variant: Motion
+  company: 2025 HARDWARIO a.s.
+  license: 'SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause'
+  fw_name: CHESTER Motion
+  fw_bundle: com.hardwario.chester.app.motion
+  fw_version: v3.0.0
+features:
+- subsystem-accel
+- subsystem-batt
+- subsystem-bluetooth
+- subsystem-buf
+- subsystem-button
+- subsystem-defaults
+- subsystem-info
+- subsystem-led
+- subsystem-log
+- subsystem-rtc
+- subsystem-shell
+- subsystem-therm
+- subsystem-wdog
+- subsystem-tinycrypt-sha256
+- subsystem-tinycrypt
+- subsystem-zcbor
+- subsystem-lte-v2
+- subsystem-cloud
+- chester-app-report-jitter
+parameters:
+- name: interval-sample
+  type: int
+  min: 1
+  max: 86400
+  default: 60
+  help: 'Get/Set sample interval in seconds'
+- name: interval-report
+  type: int
+  min: 30
+  max: 86400
+  default: 1800
+  help: 'Get/Set report interval in seconds'
+- name: interval-poll
+  type: int
+  min: 0
+  max: 86400
+  default: 0
+  help: 'Get/Set polling interval in seconds'
+- name: sensitivity
+  type: enum
+  valueset: [low, medium, high, individual]
+  default: medium
+  help: 'Set sensitivity (low, medium, high, individual)'
+- name: motion-sens
+  type: int
+  min: 1
+  max: 255
+  default: 64
+  help: 'Get/Set motion sensitivity (1-255)'
+- name: motion-blind
+  type: int
+  min: 0
+  max: 10
+  default: 2
+  help: 'Get/Set motion blind time in seconds (0-10)'
+- name: motion-pulse
+  type: int
+  min: 1
+  max: 10
+  default: 2
+  help: 'Get/Set motion pulse counter (1-10)'
+- name: motion-window
+  type: int
+  min: 0
+  max: 10
+  default: 2
+  help: 'Get/Set motion window time in seconds (0-10)'
+- name: service-mode-enabled
+  type: bool
+  default: false
+  help: 'Get/Set service mode enabled state'
+commands:
+- name: sample
+  callback: app_shell_sample_with_print(shell)
+  help: 'Sample immediately.'
+- name: send
+  callback: app_work_send()
+  help: 'Send data immediately.'
+# Custom commands in app_shell.c (Preserved code blocks):
+# - app motion detection [timeout_s] - Monitor motion detection in real-time
+# - app motion samples - Show motion samples
+extras:
+- CONFIG_ADC_TLA2021_INIT_PRIORITY=60
+- CONFIG_CTR_S3=y

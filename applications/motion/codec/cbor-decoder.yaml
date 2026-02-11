@@ -1,0 +1,56 @@
+version: 2
+type: decoder
+name: com.hardwario.chester.app.motion
+schema:
+    - message:
+          - version:
+          - sequence:
+          - timestamp:
+    - system:
+          - uptime:
+          - voltage_load:
+                - $div: 1000
+                - $fpp: 2
+          - voltage_rest:
+                - $div: 1000
+                - $fpp: 2
+          - current_load:
+    - network:
+          - parameter:
+                - eest:
+                - ecl:
+                - rsrp:
+                - rsrq:
+                - snr:
+                - plmn:
+                - cid:
+                - band:
+                - earfcn:
+    - thermometer:
+          - temperature:
+                - $div: 100
+                - $fpp: 2
+    - accelerometer:
+          - accel_x:
+                - $div: 1000
+                - $fpp: 2
+          - accel_y:
+                - $div: 1000
+                - $fpp: 2
+          - accel_z:
+                - $div: 1000
+                - $fpp: 2
+          - orientation:
+    - motion:
+          - totalizer:
+                - detect_left:
+                - detect_right:
+                - motion_left:
+                - motion_right:
+          - samples:
+              - $tso:
+                  - detect_left:
+                  - detect_right:
+                  - motion_left:
+                  - motion_right:
+

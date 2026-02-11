@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2025 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config VARIANT_MOTION
+    bool "Enable VARIANT_MOTION"
+    default y

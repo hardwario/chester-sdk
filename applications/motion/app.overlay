@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2025 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
+/* SUBSYSTEM-CLOUD  */
+/ {
+	chosen {
+		nordic,pm-ext-flash = &spi_flash0;
+	};
+};
+
+&spi_flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		littlefs_storage: partition@0 {
+			label = "littlefs_storage";
+
+			/*
+			 * This size doesn't matter due to Nordic's partition
+			 * manager; For the sake of consistency this should
+			 * match the configured size
+			 */
+			reg = <0x00000000 0x730000>;
+		};
+	};
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/lfs1";
+			partition = <&littlefs_storage>;
+			automount;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
+};
+/* SUBSYSTEM-LTE-V2  */
+/ {
+	chosen {
+		ctr,lte_link = &ctr_lte_link;
+	};
+};
+
+&uart0 {
+	status = "okay";
+
+	ctr_lte_link: ctr_lte_link {
+		compatible = "hardwario,ctr-lte-link";
+		status = "okay";
+		reset-gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		wakeup-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+/* ### Preserved code "overlay" (begin) */
+
+/ {
+	ctr_s3: ctr_s3 {
+		compatible = "hardwario,ctr-s3";
+		status = "okay";
+		left-si-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		left-dl-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		right-si-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		right-dl-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/* ^^^ Preserved code "overlay" (end) */
