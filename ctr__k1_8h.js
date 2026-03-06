@@ -13,6 +13,6 @@ var ctr__k1_8h =
       [ "CTR_K1_CHANNEL_3_DIFFERENTIAL", "group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247a8812042305dd9c517d6106c082f9a82a", null ],
       [ "CTR_K1_CHANNEL_4_DIFFERENTIAL", "group__ctr__k1.html#gga697216bcaca3b22cd906cd26f03b9247a8afd60295596df694c2600b77d1bc8a6", null ]
     ] ],
-    [ "ctr_k1_measure", "group__ctr__k1.html#ga347b856eb86e78a0bfa11930bd1bf253", null ],
+    [ "ctr_k1_measure", "group__ctr__k1.html#ga337fdc15107527d6a20cd897770959e2", null ],
     [ "ctr_k1_set_power", "group__ctr__k1.html#gaf632a5d8c5f475d7ef8639bb8ed996c5", null ]
 ];

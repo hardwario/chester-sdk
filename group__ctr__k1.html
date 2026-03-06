@@ -105,8 +105,6 @@ $(document).ready(function(){initNavTree('group__ctr__k1.html',''); initResizabl
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__k1__calibration.html">ctr_k1_calibration</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__k1__result.html">ctr_k1_result</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -139,8 +137,8 @@ Enumerations</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:gaf632a5d8c5f475d7ef8639bb8ed996c5"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__k1.html#gaf632a5d8c5f475d7ef8639bb8ed996c5">ctr_k1_set_power</a> (const struct device *dev, enum <a class="el" href="group__ctr__k1.html#ga697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channel, bool is_enabled)</td></tr>
 <tr class="separator:gaf632a5d8c5f475d7ef8639bb8ed996c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga347b856eb86e78a0bfa11930bd1bf253"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__k1.html#ga347b856eb86e78a0bfa11930bd1bf253">ctr_k1_measure</a> (const struct device *dev, const enum <a class="el" href="group__ctr__k1.html#ga697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channels[], size_t channels_count, const struct <a class="el" href="structctr__k1__calibration.html">ctr_k1_calibration</a> calibrations[], struct <a class="el" href="structctr__k1__result.html">ctr_k1_result</a> results[])</td></tr>
-<tr class="separator:ga347b856eb86e78a0bfa11930bd1bf253"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga337fdc15107527d6a20cd897770959e2"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__k1.html#ga337fdc15107527d6a20cd897770959e2">ctr_k1_measure</a> (const struct device *dev, const enum <a class="el" href="group__ctr__k1.html#ga697216bcaca3b22cd906cd26f03b9247">ctr_k1_channel</a> channels[], size_t channels_count, struct <a class="el" href="structctr__k1__result.html">ctr_k1_result</a> results[])</td></tr>
+<tr class="separator:ga337fdc15107527d6a20cd897770959e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Macro Definition Documentation</h2>
@@ -224,8 +222,8 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="ga347b856eb86e78a0bfa11930bd1bf253" name="ga347b856eb86e78a0bfa11930bd1bf253"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga347b856eb86e78a0bfa11930bd1bf253">&#9670;&#160;</a></span>ctr_k1_measure()</h2>
+<a id="ga337fdc15107527d6a20cd897770959e2" name="ga337fdc15107527d6a20cd897770959e2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga337fdc15107527d6a20cd897770959e2">&#9670;&#160;</a></span>ctr_k1_measure()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -250,12 +248,6 @@ Functions</h2></td></tr>
           <td></td>
           <td class="paramtype">size_t&#160;</td>
           <td class="paramname"><em>channels_count</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const struct <a class="el" href="structctr__k1__calibration.html">ctr_k1_calibration</a>&#160;</td>
-          <td class="paramname"><em>calibrations</em>[], </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

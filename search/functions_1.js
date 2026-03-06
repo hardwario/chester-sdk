@@ -109,7 +109,7 @@ var searchData=
   ['ctr_5finfo_5fget_5fserial_5fnumber_106',['ctr_info_get_serial_number',['../group__ctr__info.html#ga29a803bab4b2e14edd8350bd0fe2e808',1,'ctr_info.h']]],
   ['ctr_5finfo_5fget_5fserial_5fnumber_5fuint32_107',['ctr_info_get_serial_number_uint32',['../group__ctr__info.html#gaf1dfc3f5b4735c4b1a1ceb3fcc4708e3',1,'ctr_info.h']]],
   ['ctr_5finfo_5fget_5fvendor_5fname_108',['ctr_info_get_vendor_name',['../group__ctr__info.html#ga82fe1bd3f4990be5ddf1a1a07d57ad26',1,'ctr_info.h']]],
-  ['ctr_5fk1_5fmeasure_109',['ctr_k1_measure',['../group__ctr__k1.html#ga347b856eb86e78a0bfa11930bd1bf253',1,'ctr_k1.h']]],
+  ['ctr_5fk1_5fmeasure_109',['ctr_k1_measure',['../group__ctr__k1.html#ga337fdc15107527d6a20cd897770959e2',1,'ctr_k1.h']]],
   ['ctr_5fk1_5fset_5fpower_110',['ctr_k1_set_power',['../group__ctr__k1.html#gaf632a5d8c5f475d7ef8639bb8ed996c5',1,'ctr_k1.h']]],
   ['ctr_5fled_5fblink_111',['ctr_led_blink',['../group__ctr__led.html#ga83eb6d92a55e6b6bd3196502c4919b54',1,'ctr_led.h']]],
   ['ctr_5fled_5ffade_112',['ctr_led_fade',['../group__ctr__led.html#ga6d8268108cf84e5a7f1311e98661c33a',1,'ctr_led.h']]],

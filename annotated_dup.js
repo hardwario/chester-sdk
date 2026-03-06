@@ -15,7 +15,6 @@ var annotated_dup =
     [ "ctr_gnss_data_stop_ok", "structctr__gnss__data__stop__ok.html", "structctr__gnss__data__stop__ok" ],
     [ "ctr_gnss_data_update", "structctr__gnss__data__update.html", "structctr__gnss__data__update" ],
     [ "ctr_gnss_event_data", "unionctr__gnss__event__data.html", "unionctr__gnss__event__data" ],
-    [ "ctr_k1_calibration", "structctr__k1__calibration.html", "structctr__k1__calibration" ],
     [ "ctr_k1_result", "structctr__k1__result.html", "structctr__k1__result" ],
     [ "ctr_led_cmd", "structctr__led__cmd.html", "structctr__led__cmd" ],
     [ "ctr_led_seq", "structctr__led__seq.html", "structctr__led__seq" ],
