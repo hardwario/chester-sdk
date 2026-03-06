@@ -34,10 +34,34 @@
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 LOG_MODULE_REGISTER(app_send, LOG_LEVEL_DBG);
 
 #if defined(FEATURE_SUBSYSTEM_LRW)
+
+/* IEEE 754 half-precision float conversion */
+static uint16_t float_to_float16(float value)
+{
+	if (isnan(value)) {
+		return 0x7E00; /* NaN */
+	}
+
+	uint32_t f32;
+	memcpy(&f32, &value, sizeof(f32));
+
+	uint32_t sign = (f32 >> 16) & 0x8000;
+	int32_t exp = ((f32 >> 23) & 0xFF) - 127 + 15;
+	uint32_t mant = (f32 >> 13) & 0x3FF;
+
+	if (exp <= 0) {
+		return sign; /* Zero or denormalized */
+	} else if (exp >= 31) {
+		return sign | 0x7C00; /* Infinity */
+	}
+
+	return sign | (exp << 10) | mant;
+}
 
 static int compose_lrw(struct ctr_buf *buf)
 {
@@ -180,24 +204,19 @@ static int compose_lrw(struct ctr_buf *buf)
 #endif
 
 #if defined(FEATURE_HARDWARE_CHESTER_K1)
-	/* Field CHANNELS */
+	/* Field CHANNELS - raw_rms, raw_mean, calibrated (float16) */
 	for (int i = 0; i < APP_CONFIG_CHANNEL_COUNT; i++) {
 		if (g_app_config.channel_active[i]) {
 			struct app_data_channel *channel = &(g_app_data.channel[i]);
 
-			if (isnan(channel->last_sample_mean)) {
-				ret |= ctr_buf_append_s32_le(buf, BIT_MASK(31));
-			} else {
-				int32_t mean = channel->last_sample_mean * 1000.f;
-				ret |= ctr_buf_append_s32_le(buf, mean);
-			}
+			/* Raw RMS as float16 */
+			ret |= ctr_buf_append_u16_le(buf, float_to_float16(channel->last_sample_rms));
 
-			if (isnan(channel->last_sample_rms)) {
-				ret |= ctr_buf_append_s32_le(buf, BIT_MASK(31));
-			} else {
-				int32_t rms = channel->last_sample_rms * 1000.f;
-				ret |= ctr_buf_append_s32_le(buf, rms);
-			}
+			/* Raw Mean as float16 */
+			ret |= ctr_buf_append_u16_le(buf, float_to_float16(channel->last_sample_mean));
+
+			/* Calibrated as float16 */
+			ret |= ctr_buf_append_u16_le(buf, float_to_float16(channel->last_sample_calib));
 		}
 	}
 #endif /* defined(FEATURE_HARDWARE_CHESTER_K1) */

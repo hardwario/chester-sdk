@@ -386,8 +386,7 @@ static inline float convert_differential_to_millivolts(int16_t value)
 }
 
 static int ctr_k1_measure_(const struct device *dev, const enum ctr_k1_channel channels[],
-			   size_t channels_count, const struct ctr_k1_calibration calibrations[],
-			   struct ctr_k1_result results[])
+			   size_t channels_count, struct ctr_k1_result results[])
 {
 	int ret;
 
@@ -472,26 +471,9 @@ static int ctr_k1_measure_(const struct device *dev, const enum ctr_k1_channel c
 		return ret;
 	}
 
-	float raw_avg[MAX_CHANNEL_COUNT] = {0};
-	float raw_rms[MAX_CHANNEL_COUNT] = {0};
-
 	for (size_t i = 0; i < channels_count * MAX_SAMPLE_COUNT; i += channels_count) {
 		for (size_t j = 0; j < channels_count; j++) {
 			float x = convert[j](m_samples[i + j]);
-
-			raw_avg[j] += x;
-			raw_rms[j] += powf(x, 2);
-
-			if (!isnan(calibrations[j].x0) && !isnan(calibrations[j].y0) &&
-			    !isnan(calibrations[j].x1) && !isnan(calibrations[j].y1)) {
-				float x0 = calibrations[j].x0;
-				float y0 = calibrations[j].y0;
-				float x1 = calibrations[j].x1;
-				float y1 = calibrations[j].y1;
-
-				x = (y0 * (x1 - x) + y1 * (x - x0)) / (x1 - x0);
-			}
-
 			results[j].avg += x;
 			results[j].rms += powf(x, 2);
 		}
@@ -502,17 +484,11 @@ static int ctr_k1_measure_(const struct device *dev, const enum ctr_k1_channel c
 	for (size_t i = 0; i < channels_count; i++) {
 		unsigned ch = CTR_K1_CHANNEL_IDX(channels[i]) + 1;
 
-		raw_avg[i] = raw_avg[i] / MAX_SAMPLE_COUNT;
-		raw_rms[i] = sqrtf(raw_rms[i] / MAX_SAMPLE_COUNT);
-
-		LOG_DBG("Channel %u: AVG (raw): %+.1f", ch, (double)raw_avg[i]);
-		LOG_DBG("Channel %u: RMS (raw): %+.1f", ch, (double)raw_rms[i]);
-
 		results[i].avg = results[i].avg / MAX_SAMPLE_COUNT;
 		results[i].rms = sqrtf(results[i].rms / MAX_SAMPLE_COUNT);
 
-		LOG_DBG("Channel %u: AVG (cal): %+.1f", ch, (double)results[i].avg);
-		LOG_DBG("Channel %u: RMS (cal): %+.1f", ch, (double)results[i].rms);
+		LOG_DBG("Channel %u: AVG: %+.2f mV, RMS: %+.2f mV", ch, (double)results[i].avg,
+			(double)results[i].rms);
 	}
 
 	return 0;

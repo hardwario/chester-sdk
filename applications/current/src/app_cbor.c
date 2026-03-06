@@ -108,53 +108,6 @@ static int encode(zcbor_state_t *zs)
 
 	/* ^^^ Preserved code "message" (end) */
 
-	/* ### Preserved code "attribute" (begin) */
-
-	zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		char *vendor_name;
-		ctr_info_get_vendor_name(&vendor_name);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__VENDOR_NAME);
-		zcbor_tstr_put_term(zs, vendor_name, CONFIG_ZCBOR_MAX_STR_LEN);
-
-		char *product_name;
-		ctr_info_get_product_name(&product_name);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__PRODUCT_NAME);
-		zcbor_tstr_put_term(zs, product_name, CONFIG_ZCBOR_MAX_STR_LEN);
-
-		char *hw_variant;
-		ctr_info_get_hw_variant(&hw_variant);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__HW_VARIANT);
-		zcbor_tstr_put_term(zs, hw_variant, CONFIG_ZCBOR_MAX_STR_LEN);
-
-		char *hw_revision;
-		ctr_info_get_hw_revision(&hw_revision);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__HW_REVISION);
-		zcbor_tstr_put_term(zs, hw_revision, CONFIG_ZCBOR_MAX_STR_LEN);
-
-		char *fw_version;
-		ctr_info_get_fw_version(&fw_version);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__FW_VERSION);
-		zcbor_tstr_put_term(zs, fw_version, CONFIG_ZCBOR_MAX_STR_LEN);
-
-		char *serial_number;
-		ctr_info_get_serial_number(&serial_number);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_ATTRIBUTE__SERIAL_NUMBER);
-		zcbor_tstr_put_term(zs, serial_number, CONFIG_ZCBOR_MAX_STR_LEN);
-
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-	}
-
-	/* ^^^ Preserved code "attribute" (end) */
-
 	/* ### Preserved code "system" (begin) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM);
@@ -196,25 +149,81 @@ static int encode(zcbor_state_t *zs)
 	{
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-		uint64_t imei;
-		ret = ctr_lte_v2_get_imei(&imei);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_get_imei` failed: %d", ret);
-			return ret;
+		zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER);
+		{
+			zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+			static struct ctr_lte_v2_conn_param conn_param;
+			ret = ctr_lte_v2_get_conn_param(&conn_param);
+			if (ret) {
+				LOG_WRN("Call `ctr_lte_v2_get_conn_param` failed: %d", ret);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__EEST);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.eest);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__ECL);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.ecl);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__RSRP);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.rsrp);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__RSRQ);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.rsrq);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__SNR);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.snr);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__PLMN);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.plmn);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__CID);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.cid);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__BAND);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.band);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__PARAMETER__EARFCN);
+			if (conn_param.valid) {
+				zcbor_int32_put(zs, conn_param.earfcn);
+			} else {
+				zcbor_nil_put(zs, NULL);
+			}
+
+			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__IMEI);
-		zcbor_uint64_put(zs, imei);
-
-		uint64_t imsi;
-		ret = ctr_lte_v2_get_imsi(&imsi);
-		if (ret) {
-			LOG_ERR("Call `ctr_lte_get_imsi` failed: %d", ret);
-			return ret;
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK__IMSI);
-		zcbor_uint64_put(zs, imsi);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -353,20 +362,68 @@ static int encode(zcbor_state_t *zs)
 			zcbor_uint32_put(zs, CODEC_KEY_E_ANALOG_CHANNELS__CHANNEL);
 			zcbor_uint64_put(zs, i + 1);
 
-			zcbor_uint32_put(zs, CODEC_KEY_E_ANALOG_CHANNELS__MEASUREMENTS_DIV);
+			struct app_data_channel *ch = &g_app_data.channel[i];
+
+			/* Raw RMS measurements */
+			zcbor_uint32_put(zs, CODEC_KEY_E_ANALOG_CHANNELS__RAW_RMS);
 			{
-				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs,
+						 CODEC_KEY_E_ANALOG_CHANNELS__RAW_RMS__MEASUREMENTS_DIV);
+				{
+					zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint64_put(zs, ch->timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
 
-				struct app_data_channel *ch = &g_app_data.channel[i];
-				zcbor_uint64_put(zs, ch->timestamp);
-				zcbor_uint32_put(zs, g_app_config.channel_interval_aggreg);
-
-				for (int j = 0; j < g_app_data.channel[i].measurement_count; j++) {
-					put_sample(zs, &ch->measurements_mean[j]);
-					put_sample(zs, &ch->measurements_rms[j]);
+					for (int j = 0; j < ch->measurement_count; j++) {
+						put_sample_mul(zs, &ch->measurements_rms[j], 100.f);
+					}
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
 
-				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			/* Raw Mean measurements */
+			zcbor_uint32_put(zs, CODEC_KEY_E_ANALOG_CHANNELS__RAW_MEAN);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs,
+						 CODEC_KEY_E_ANALOG_CHANNELS__RAW_MEAN__MEASUREMENTS_DIV);
+				{
+					zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint64_put(zs, ch->timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int j = 0; j < ch->measurement_count; j++) {
+						put_sample_mul(zs, &ch->measurements_mean[j], 100.f);
+					}
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+			}
+
+			/* Calibration measurements */
+			zcbor_uint32_put(zs, CODEC_KEY_E_ANALOG_CHANNELS__CALIBRATION);
+			{
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+				int mode = APP_CONFIG_GET_CALIB_MODE(g_app_config, i);
+				zcbor_uint32_put(zs, CODEC_KEY_E_ANALOG_CHANNELS__CALIBRATION__MODE);
+				zcbor_uint32_put(zs, mode);
+
+				zcbor_uint32_put(
+					zs, CODEC_KEY_E_ANALOG_CHANNELS__CALIBRATION__MEASUREMENTS_DIV);
+				{
+					zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					zcbor_uint64_put(zs, ch->timestamp);
+					zcbor_uint32_put(zs, g_app_config.interval_aggreg);
+
+					for (int j = 0; j < ch->measurement_count; j++) {
+						put_sample_mul(zs, &ch->measurements_calib[j], 100.f);
+					}
+					zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				}
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 			}
 
 			zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -469,7 +526,7 @@ static int encode(zcbor_state_t *zs)
 
 						zcbor_uint64_put(zs, g_app_data.ble_tag.timestamp);
 						zcbor_uint32_put(
-							zs, g_app_config.channel_interval_aggreg);
+							zs, g_app_config.interval_aggreg);
 
 						for (int j = 0; j < sensor->measurement_count;
 						     j++) {
@@ -496,7 +553,7 @@ static int encode(zcbor_state_t *zs)
 
 						zcbor_uint64_put(zs, g_app_data.ble_tag.timestamp);
 						zcbor_uint32_put(
-							zs, g_app_config.channel_interval_aggreg);
+							zs, g_app_config.interval_aggreg);
 
 						for (int j = 0; j < sensor->measurement_count;
 						     j++) {

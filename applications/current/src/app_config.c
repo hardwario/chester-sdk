@@ -35,6 +35,8 @@ static struct app_config m_config_interim;
 
 /* clang-format off */
 const struct ctr_config_item items[] = {
+	CTR_CONFIG_ITEM_INT("interval-sample", m_config_interim.interval_sample, 1, 86400, "Get/Set sample interval in seconds.", 60),
+	CTR_CONFIG_ITEM_INT("interval-aggreg", m_config_interim.interval_aggreg, 1, 86400, "Get/Set aggregate interval in seconds.", 300),
 	CTR_CONFIG_ITEM_INT("interval-report", m_config_interim.interval_report, 30, 86400, "Get/Set report interval in seconds.", 900),
 	CTR_CONFIG_ITEM_INT("interval-poll", m_config_interim.interval_poll, 0, 86400, "Get/Set poll interval in seconds.", 0),
 	CTR_CONFIG_ITEM_INT("downlink-wdg-interval", m_config_interim.downlink_wdg_interval, 0, 1209600, "Get/Set downlink watchdog interval in seconds (disabled if 0).", 129600),
@@ -47,8 +49,6 @@ const struct ctr_config_item items[] = {
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_K1)
-	CTR_CONFIG_ITEM_INT("channel-interval-sample", m_config_interim.channel_interval_sample, 1, 86400, "Get/Set sample interval in seconds.", 60),
-	CTR_CONFIG_ITEM_INT("channel-interval-aggreg", m_config_interim.channel_interval_aggreg, 1, 86400, "Get/Set aggregate interval in seconds.", 300),
 	CTR_CONFIG_ITEM_BOOL("channel-active-1", m_config_interim.channel_active[0], "Get/Set channel activation.", false),
 	CTR_CONFIG_ITEM_BOOL("channel-active-2", m_config_interim.channel_active[1], "Get/Set channel activation.", false),
 	CTR_CONFIG_ITEM_BOOL("channel-active-3", m_config_interim.channel_active[2], "Get/Set channel activation.", false),
@@ -57,22 +57,30 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_BOOL("channel-differential-2", m_config_interim.channel_differential[1], "Get/Set channel differential mode.", false),
 	CTR_CONFIG_ITEM_BOOL("channel-differential-3", m_config_interim.channel_differential[2], "Get/Set channel differential mode.", false),
 	CTR_CONFIG_ITEM_BOOL("channel-differential-4", m_config_interim.channel_differential[3], "Get/Set channel differential mode.", false),
-	CTR_CONFIG_ITEM_INT("channel-calib-x0-1", m_config_interim.channel_calib_x0[0], -2147483648, 2147483647, "Get/Set channel X0 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-x0-2", m_config_interim.channel_calib_x0[1], -2147483648, 2147483647, "Get/Set channel X0 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-x0-3", m_config_interim.channel_calib_x0[2], -2147483648, 2147483647, "Get/Set channel X0 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-x0-4", m_config_interim.channel_calib_x0[3], -2147483648, 2147483647, "Get/Set channel X0 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-x1-1", m_config_interim.channel_calib_x1[0], -2147483648, 2147483647, "Get/Set channel X1 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-x1-2", m_config_interim.channel_calib_x1[1], -2147483648, 2147483647, "Get/Set channel X1 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-x1-3", m_config_interim.channel_calib_x1[2], -2147483648, 2147483647, "Get/Set channel X1 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-x1-4", m_config_interim.channel_calib_x1[3], -2147483648, 2147483647, "Get/Set channel X1 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-y0-1", m_config_interim.channel_calib_y0[0], -2147483648, 2147483647, "Get/Set channel Y0 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-y0-2", m_config_interim.channel_calib_y0[1], -2147483648, 2147483647, "Get/Set channel Y0 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-y0-3", m_config_interim.channel_calib_y0[2], -2147483648, 2147483647, "Get/Set channel Y0 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-y0-4", m_config_interim.channel_calib_y0[3], -2147483648, 2147483647, "Get/Set channel Y0 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-y1-1", m_config_interim.channel_calib_y1[0], -2147483648, 2147483647, "Get/Set channel Y1 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-y1-2", m_config_interim.channel_calib_y1[1], -2147483648, 2147483647, "Get/Set channel Y1 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-y1-3", m_config_interim.channel_calib_y1[2], -2147483648, 2147483647, "Get/Set channel Y1 calibration point.", 0),
-	CTR_CONFIG_ITEM_INT("channel-calib-y1-4", m_config_interim.channel_calib_y1[3], -2147483648, 2147483647, "Get/Set channel Y1 calibration point.", 0),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-x0-1", m_config_interim.channel_calib_x0[0], -1000000.0f, 1000000.0f, "Get/Set channel X0 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-x0-2", m_config_interim.channel_calib_x0[1], -1000000.0f, 1000000.0f, "Get/Set channel X0 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-x0-3", m_config_interim.channel_calib_x0[2], -1000000.0f, 1000000.0f, "Get/Set channel X0 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-x0-4", m_config_interim.channel_calib_x0[3], -1000000.0f, 1000000.0f, "Get/Set channel X0 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-x1-1", m_config_interim.channel_calib_x1[0], -1000000.0f, 1000000.0f, "Get/Set channel X1 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-x1-2", m_config_interim.channel_calib_x1[1], -1000000.0f, 1000000.0f, "Get/Set channel X1 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-x1-3", m_config_interim.channel_calib_x1[2], -1000000.0f, 1000000.0f, "Get/Set channel X1 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-x1-4", m_config_interim.channel_calib_x1[3], -1000000.0f, 1000000.0f, "Get/Set channel X1 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-y0-1", m_config_interim.channel_calib_y0[0], -1000000.0f, 1000000.0f, "Get/Set channel Y0 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-y0-2", m_config_interim.channel_calib_y0[1], -1000000.0f, 1000000.0f, "Get/Set channel Y0 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-y0-3", m_config_interim.channel_calib_y0[2], -1000000.0f, 1000000.0f, "Get/Set channel Y0 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-y0-4", m_config_interim.channel_calib_y0[3], -1000000.0f, 1000000.0f, "Get/Set channel Y0 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-y1-1", m_config_interim.channel_calib_y1[0], -1000000.0f, 1000000.0f, "Get/Set channel Y1 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-y1-2", m_config_interim.channel_calib_y1[1], -1000000.0f, 1000000.0f, "Get/Set channel Y1 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-y1-3", m_config_interim.channel_calib_y1[2], -1000000.0f, 1000000.0f, "Get/Set channel Y1 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_FLOAT("channel-calib-y1-4", m_config_interim.channel_calib_y1[3], -1000000.0f, 1000000.0f, "Get/Set channel Y1 calibration point.", 0.0f),
+	CTR_CONFIG_ITEM_ENUM("channel-calib-mode-1", m_config_interim.channel_calib_mode_1, ((const char*[]){"mean", "rms"}), "Get/Set channel 1 calibration mode", 1),
+	
+	CTR_CONFIG_ITEM_ENUM("channel-calib-mode-2", m_config_interim.channel_calib_mode_2, ((const char*[]){"mean", "rms"}), "Get/Set channel 2 calibration mode", 1),
+	
+	CTR_CONFIG_ITEM_ENUM("channel-calib-mode-3", m_config_interim.channel_calib_mode_3, ((const char*[]){"mean", "rms"}), "Get/Set channel 3 calibration mode", 1),
+	
+	CTR_CONFIG_ITEM_ENUM("channel-calib-mode-4", m_config_interim.channel_calib_mode_4, ((const char*[]){"mean", "rms"}), "Get/Set channel 4 calibration mode", 1),
+	
 #endif /* defined(FEATURE_HARDWARE_CHESTER_K1) */
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
@@ -89,6 +97,79 @@ const struct ctr_config_item items[] = {
 /* clang-format on */
 
 /* ### Preserved code "function" (begin) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_K1)
+int app_config_save_channel_calib(int channel)
+{
+	int ch = channel - 1;
+	char key[48];
+	int ret;
+	int mode_val;
+
+	/* Copy from g_app_config to m_config_interim */
+	m_config_interim.channel_calib_x0[ch] = g_app_config.channel_calib_x0[ch];
+	m_config_interim.channel_calib_y0[ch] = g_app_config.channel_calib_y0[ch];
+	m_config_interim.channel_calib_x1[ch] = g_app_config.channel_calib_x1[ch];
+	m_config_interim.channel_calib_y1[ch] = g_app_config.channel_calib_y1[ch];
+
+	switch (channel) {
+	case 1:
+		m_config_interim.channel_calib_mode_1 = g_app_config.channel_calib_mode_1;
+		mode_val = m_config_interim.channel_calib_mode_1;
+		break;
+	case 2:
+		m_config_interim.channel_calib_mode_2 = g_app_config.channel_calib_mode_2;
+		mode_val = m_config_interim.channel_calib_mode_2;
+		break;
+	case 3:
+		m_config_interim.channel_calib_mode_3 = g_app_config.channel_calib_mode_3;
+		mode_val = m_config_interim.channel_calib_mode_3;
+		break;
+	case 4:
+		m_config_interim.channel_calib_mode_4 = g_app_config.channel_calib_mode_4;
+		mode_val = m_config_interim.channel_calib_mode_4;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	snprintf(key, sizeof(key), SETTINGS_PFX "/channel-calib-x0-%d", channel);
+	ret = settings_save_one(key, &m_config_interim.channel_calib_x0[ch],
+				sizeof(m_config_interim.channel_calib_x0[0]));
+	if (ret) {
+		return ret;
+	}
+
+	snprintf(key, sizeof(key), SETTINGS_PFX "/channel-calib-y0-%d", channel);
+	ret = settings_save_one(key, &m_config_interim.channel_calib_y0[ch],
+				sizeof(m_config_interim.channel_calib_y0[0]));
+	if (ret) {
+		return ret;
+	}
+
+	snprintf(key, sizeof(key), SETTINGS_PFX "/channel-calib-x1-%d", channel);
+	ret = settings_save_one(key, &m_config_interim.channel_calib_x1[ch],
+				sizeof(m_config_interim.channel_calib_x1[0]));
+	if (ret) {
+		return ret;
+	}
+
+	snprintf(key, sizeof(key), SETTINGS_PFX "/channel-calib-y1-%d", channel);
+	ret = settings_save_one(key, &m_config_interim.channel_calib_y1[ch],
+				sizeof(m_config_interim.channel_calib_y1[0]));
+	if (ret) {
+		return ret;
+	}
+
+	snprintf(key, sizeof(key), SETTINGS_PFX "/channel-calib-mode-%d", channel);
+	ret = settings_save_one(key, &mode_val, sizeof(mode_val));
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* FEATURE_HARDWARE_CHESTER_K1 */
 
 int app_config_get_interval_report(void)
 {

@@ -39,13 +39,6 @@ int main(void)
 		CTR_K1_CHANNEL_4_DIFFERENTIAL,
 	};
 
-	static const struct ctr_k1_calibration calibrations[] = {
-		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
-		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
-		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
-		{.x0 = NAN, .y0 = NAN, .x1 = NAN, .y1 = NAN},
-	};
-
 #if 0
 	for (size_t i = 0; i < ARRAY_SIZE(channels); i++) {
 		ret = ctr_k1_set_power(dev, channels[i], true);
@@ -72,7 +65,7 @@ int main(void)
 #endif
 
 		struct ctr_k1_result results[ARRAY_SIZE(channels)] = {0};
-		ret = ctr_k1_measure(dev, channels, ARRAY_SIZE(channels), calibrations, results);
+		ret = ctr_k1_measure(dev, channels, ARRAY_SIZE(channels), results);
 		if (ret) {
 			LOG_ERR("Call `ctr_k1_measure` failed: %d", ret);
 			k_oops();

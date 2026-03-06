@@ -42,13 +42,6 @@ enum ctr_k1_channel {
 	CTR_K1_CHANNEL_4_DIFFERENTIAL = 7,
 };
 
-struct ctr_k1_calibration {
-	float x0;
-	float y0;
-	float x1;
-	float y1;
-};
-
 struct ctr_k1_result {
 	float avg;
 	float rms;
@@ -59,9 +52,7 @@ typedef int (*ctr_k1_api_set_power)(const struct device *dev, enum ctr_k1_channe
 				    bool is_enabled);
 /** @private */
 typedef int (*ctr_k1_api_measure)(const struct device *dev, const enum ctr_k1_channel channels[],
-				  size_t channels_count,
-				  const struct ctr_k1_calibration calibrations[],
-				  struct ctr_k1_result results[]);
+				  size_t channels_count, struct ctr_k1_result results[]);
 
 /** @private */
 struct ctr_k1_driver_api {
@@ -78,13 +69,11 @@ static inline int ctr_k1_set_power(const struct device *dev, enum ctr_k1_channel
 }
 
 static inline int ctr_k1_measure(const struct device *dev, const enum ctr_k1_channel channels[],
-				 size_t channels_count,
-				 const struct ctr_k1_calibration calibrations[],
-				 struct ctr_k1_result results[])
+				 size_t channels_count, struct ctr_k1_result results[])
 {
 	const struct ctr_k1_driver_api *api = (const struct ctr_k1_driver_api *)dev->api;
 
-	return api->measure(dev, channels, channels_count, calibrations, results);
+	return api->measure(dev, channels, channels_count, results);
 }
 
 /** @} */

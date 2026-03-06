@@ -75,6 +75,25 @@ __unused static void aggreg_sample(float *samples, size_t count, struct ctr_data
 	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
 }
 
+#if defined(FEATURE_HARDWARE_CHESTER_K1)
+static float calibrate(float raw, float x0, float y0, float x1, float y1)
+{
+	if (x1 == x0) {
+		return NAN;
+	}
+	return (y0 * (x1 - raw) + y1 * (raw - x0)) / (x1 - x0);
+}
+
+static void calibrate_aggreg(struct ctr_data_aggreg *src, struct ctr_data_aggreg *dst, float x0,
+			     float y0, float x1, float y1)
+{
+	dst->min = calibrate(src->min, x0, y0, x1, y1);
+	dst->max = calibrate(src->max, x0, y0, x1, y1);
+	dst->avg = calibrate(src->avg, x0, y0, x1, y1);
+	dst->mdn = calibrate(src->mdn, x0, y0, x1, y1);
+}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_K1) */
+
 int app_sensor_sample(void)
 {
 	int ret;
@@ -120,16 +139,9 @@ int app_sensor_analog_sample(void)
 	int err = 0;
 
 	enum ctr_k1_channel channels[APP_CONFIG_CHANNEL_COUNT] = {0};
-	struct ctr_k1_calibration calibrations[APP_CONFIG_CHANNEL_COUNT] = {0};
-
 	size_t channels_count = 0;
 
 	for (size_t i = 0; i < APP_CONFIG_CHANNEL_COUNT; i++) {
-		calibrations[i].x0 = NAN;
-		calibrations[i].y0 = NAN;
-		calibrations[i].x1 = NAN;
-		calibrations[i].y1 = NAN;
-
 		if (!g_app_config.channel_active[i]) {
 			continue;
 		}
@@ -143,22 +155,6 @@ int app_sensor_analog_sample(void)
 			channels[channels_count] = CTR_K1_CHANNEL_DIFFERENTIAL(i + 1);
 		} else {
 			channels[channels_count] = CTR_K1_CHANNEL_SINGLE_ENDED(i + 1);
-		}
-
-		int x0 = g_app_config.channel_calib_x0[i];
-		int y0 = g_app_config.channel_calib_y0[i];
-		int x1 = g_app_config.channel_calib_x1[i];
-		int y1 = g_app_config.channel_calib_y1[i];
-
-		if (x0 || y0 || x1 || y1) {
-			if (x1 - x0) {
-				calibrations[channels_count].x0 = x0;
-				calibrations[channels_count].y0 = y0;
-				calibrations[channels_count].x1 = x1;
-				calibrations[channels_count].y1 = y1;
-			} else {
-				LOG_WRN("Channel %u: Invalid calibration settings", i + 1);
-			}
 		}
 
 		channels_count++;
@@ -192,7 +188,7 @@ int app_sensor_analog_sample(void)
 	k_sleep(K_MSEC(100));
 
 	struct ctr_k1_result results[ARRAY_SIZE(channels)] = {0};
-	ret = ctr_k1_measure(dev, channels, channels_count, calibrations, results);
+	ret = ctr_k1_measure(dev, channels, channels_count, results);
 	if (ret) {
 		LOG_ERR("Call `ctr_k1_measure` failed: %d", ret);
 		err = ret;
@@ -208,17 +204,26 @@ int app_sensor_analog_sample(void)
 	}
 
 	for (size_t i = 0; i < channels_count; i++) {
-		struct app_data_channel *channel =
-			&g_app_data.channel[CTR_K1_CHANNEL_IDX(channels[i])];
+		int ch_idx = CTR_K1_CHANNEL_IDX(channels[i]);
+		struct app_data_channel *channel = &g_app_data.channel[ch_idx];
 		int sample_count = channel->sample_count;
 		channel->samples_mean[sample_count] = results[i].avg;
 		channel->samples_rms[sample_count] = results[i].rms;
 		channel->last_sample_mean = results[i].avg;
 		channel->last_sample_rms = results[i].rms;
 
-		LOG_INF("Channel %d: sample count: %d, mean: %.1f, rms: %.1f",
-			CTR_K1_CHANNEL_IDX(channels[i]) + 1, sample_count, (double)results[i].avg,
-			(double)results[i].rms);
+		/* Calculate calibrated value based on mode */
+		int mode = APP_CONFIG_GET_CALIB_MODE(g_app_config, ch_idx);
+		float raw = mode ? results[i].rms : results[i].avg;
+		float x0 = g_app_config.channel_calib_x0[ch_idx];
+		float y0 = g_app_config.channel_calib_y0[ch_idx];
+		float x1 = g_app_config.channel_calib_x1[ch_idx];
+		float y1 = g_app_config.channel_calib_y1[ch_idx];
+		channel->last_sample_calib = calibrate(raw, x0, y0, x1, y1);
+
+		LOG_INF("Channel %d: sample count: %d, mean: %.1f, rms: %.1f, calib: %.2f",
+			ch_idx + 1, sample_count, (double)results[i].avg, (double)results[i].rms,
+			(double)channel->last_sample_calib);
 	}
 
 	for (size_t i = 0; i < APP_CONFIG_CHANNEL_COUNT; i++) {
@@ -276,6 +281,21 @@ int app_sensor_analog_aggreg(void)
 			aggreg_sample(g_app_data.channel[i].samples_rms,
 				      g_app_data.channel[i].sample_count,
 				      &g_app_data.channel[i].measurements_rms[measurement_count]);
+
+			/* Calculate calibrated aggregates based on mode */
+			int mode = APP_CONFIG_GET_CALIB_MODE(g_app_config, i);
+			struct ctr_data_aggreg *raw_aggreg =
+				mode ? &g_app_data.channel[i].measurements_rms[measurement_count]
+				     : &g_app_data.channel[i].measurements_mean[measurement_count];
+
+			float x0 = g_app_config.channel_calib_x0[i];
+			float y0 = g_app_config.channel_calib_y0[i];
+			float x1 = g_app_config.channel_calib_x1[i];
+			float y1 = g_app_config.channel_calib_y1[i];
+
+			calibrate_aggreg(raw_aggreg,
+					 &g_app_data.channel[i].measurements_calib[measurement_count],
+					 x0, y0, x1, y1);
 
 			LOG_INF("Channel %d, count: %d", i + 1, measurement_count);
 

@@ -6,13 +6,6 @@ schema:
     - version:
     - sequence:
     - timestamp:
-  - attribute:
-    - vendor_name:
-    - product_name:
-    - hw_variant:
-    - hw_revision:
-    - fw_version:
-    - serial_number:
   - system:
     - uptime:
     - voltage_load:
@@ -23,8 +16,16 @@ schema:
       - $fpp: 2
     - current_load:
   - network:
-    - imei:
-    - imsi:
+    - parameter:
+      - eest:
+      - ecl:
+      - rsrp:
+      - rsrq:
+      - snr:
+      - plmn:
+      - cid:
+      - band:
+      - earfcn:
   - thermometer:
     - temperature:
       - $div: 100
@@ -42,7 +43,11 @@ schema:
     - orientation:
   - backup:
     - line_voltage:
+      - $div: 1000
+      - $fpp: 2
     - batt_voltage:
+      - $div: 1000
+      - $fpp: 2
     - state:
       - $enum:
         - "disconnected"
@@ -56,17 +61,58 @@ schema:
             - "connected"
   - analog_channels:
     - channel:
-    - measurements_div:
+    - raw_rms:
+      - measurements_div:
         - $key: "measurements"
         - $tsp:
-            - mean_min:
-            - mean_max:
-            - mean_avg:
-            - mean_mdn:
-            - rms_min:
-            - rms_max:
-            - rms_avg:
-            - rms_mdn:
+          - min:
+            - $div: 100
+            - $fpp: 2
+          - max:
+            - $div: 100
+            - $fpp: 2
+          - avg:
+            - $div: 100
+            - $fpp: 2
+          - mdn:
+            - $div: 100
+            - $fpp: 2
+    - raw_mean:
+      - measurements_div:
+        - $key: "measurements"
+        - $tsp:
+          - min:
+            - $div: 100
+            - $fpp: 2
+          - max:
+            - $div: 100
+            - $fpp: 2
+          - avg:
+            - $div: 100
+            - $fpp: 2
+          - mdn:
+            - $div: 100
+            - $fpp: 2
+    - calibration:
+      - mode:
+        - $enum:
+          - "avg"
+          - "rms"
+      - measurements_div:
+        - $key: "measurements"
+        - $tsp:
+          - min:
+            - $div: 100
+            - $fpp: 2
+          - max:
+            - $div: 100
+            - $fpp: 2
+          - avg:
+            - $div: 100
+            - $fpp: 2
+          - mdn:
+            - $div: 100
+            - $fpp: 2
   - w1_thermometers:
     - serial_number:
     - measurements_div:

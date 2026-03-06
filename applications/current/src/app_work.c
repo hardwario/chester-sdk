@@ -131,7 +131,7 @@ static void analog_sample_work_handler(struct k_work *work)
 	int ret;
 
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
-				  K_SECONDS(g_app_config.channel_interval_sample));
+				  K_SECONDS(g_app_config.interval_sample));
 
 	ret = app_sensor_analog_sample();
 	if (ret < 0) {
@@ -146,7 +146,7 @@ static void analog_aggreg_work_handler(struct k_work *work)
 	int ret;
 
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
-				  K_SECONDS(g_app_config.channel_interval_aggreg));
+				  K_SECONDS(g_app_config.interval_aggreg));
 
 	ret = app_sensor_analog_aggreg();
 	if (ret < 0) {
@@ -199,7 +199,7 @@ static void ble_tag_sample_work_handler(struct k_work *work)
 	int ret;
 
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
-				  K_SECONDS(g_app_config.channel_interval_sample));
+				  K_SECONDS(g_app_config.interval_sample));
 
 	ret = app_sensor_ble_tag_sample();
 	if (ret) {
@@ -214,7 +214,7 @@ static void ble_tag_aggreg_work_handler(struct k_work *work)
 	int ret;
 
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
-				  K_SECONDS(g_app_config.channel_interval_aggreg));
+				  K_SECONDS(g_app_config.interval_aggreg));
 
 	ret = app_sensor_ble_tag_aggreg();
 	if (ret) {
@@ -238,9 +238,9 @@ int app_work_init(void)
 
 #if defined(FEATURE_HARDWARE_CHESTER_K1)
 	k_work_schedule_for_queue(&m_work_q, &m_analog_sample_work,
-				  K_SECONDS(g_app_config.channel_interval_sample));
+				  K_SECONDS(g_app_config.interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_analog_aggreg_work,
-				  K_SECONDS(g_app_config.channel_interval_aggreg));
+				  K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_HARDWARE_CHESTER_K1) */
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
@@ -252,9 +252,9 @@ int app_work_init(void)
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_sample_work,
-				  K_SECONDS(g_app_config.channel_interval_sample));
+				  K_SECONDS(g_app_config.interval_sample));
 	k_work_schedule_for_queue(&m_work_q, &m_ble_tag_aggreg_work,
-				  K_SECONDS(g_app_config.channel_interval_aggreg));
+				  K_SECONDS(g_app_config.interval_aggreg));
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 	return 0;

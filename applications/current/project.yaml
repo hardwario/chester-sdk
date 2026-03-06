@@ -46,6 +46,18 @@ features:
 - subsystem-ds18b20
 #- hardware-chester-z
 parameters:
+- name: interval-sample
+  type: int
+  min: 1
+  max: 86400
+  default: 60
+  help: 'Get/Set sample interval in seconds'
+- name: interval-aggreg
+  type: int
+  min: 1
+  max: 86400
+  default: 300
+  help: 'Get/Set aggregate interval in seconds'
 - name: interval-report
   type: int
   min: 30
@@ -88,20 +100,6 @@ parameters:
   default: true
   help: 'Get/Set report when backup is inactive'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: channel-interval-sample
-  type: int
-  min: 1
-  max: 86400
-  default: 60
-  help: 'Get/Set sample interval in seconds'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
-- name: channel-interval-aggreg
-  type: int
-  min: 1
-  max: 86400
-  default: 300
-  help: 'Get/Set aggregate interval in seconds'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-active
   type: array[bool]
   len: 4
@@ -115,36 +113,60 @@ parameters:
   help: 'Get/Set channel differential mode'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-x0
-  type: array[int]
+  type: array[float]
   len: 4
-  min: -2147483648
-  max: 2147483647
+  min: -1000000
+  max: 1000000
   default: null
   help: 'Get/Set channel X0 calibration point'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-x1
-  type: array[int]
+  type: array[float]
   len: 4
-  min: -2147483648
-  max: 2147483647
+  min: -1000000
+  max: 1000000
   default: null
   help: 'Get/Set channel X1 calibration point'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-y0
-  type: array[int]
+  type: array[float]
   len: 4
-  min: -2147483648
-  max: 2147483647
+  min: -1000000
+  max: 1000000
   default: null
   help: 'Get/Set channel Y0 calibration point'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: channel-calib-y1
-  type: array[int]
+  type: array[float]
   len: 4
-  min: -2147483648
-  max: 2147483647
+  min: -1000000
+  max: 1000000
   default: null
   help: 'Get/Set channel Y1 calibration point'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
+- name: channel-calib-mode-1
+  type: enum
+  valueset: [mean, rms]
+  default: rms
+  help: 'Get/Set channel 1 calibration mode'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
+- name: channel-calib-mode-2
+  type: enum
+  valueset: [mean, rms]
+  default: rms
+  help: 'Get/Set channel 2 calibration mode'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
+- name: channel-calib-mode-3
+  type: enum
+  valueset: [mean, rms]
+  default: rms
+  help: 'Get/Set channel 3 calibration mode'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
+- name: channel-calib-mode-4
+  type: enum
+  valueset: [mean, rms]
+  default: rms
+  help: 'Get/Set channel 4 calibration mode'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_K1)
 - name: w1-therm-interval-sample
   type: int
