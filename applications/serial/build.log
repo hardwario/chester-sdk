@@ -1,0 +1,186 @@
+[0/1] Re-running CMake...
+Loading Zephyr default modules (Zephyr base (cached)).
+-- Application: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial
+-- CMake version: 4.0.3
+-- Using NCS Toolchain 2.9.20250402.48205110811 for building. (C:/ncs/toolchains/0b393f9e1b/cmake)
+-- Found Python3: C:/ncs/toolchains/0b393f9e1b/opt/bin/python.exe (found suitable version "3.12.4", minimum required is "3.8") found components: Interpreter
+-- Cache files will be written to: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/.cache
+-- Zephyr version: 3.7.99 (C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr)
+-- Found west (found suitable version "1.2.0", minimum required is "0.14.0")
+-- Board: chester, qualifiers: nrf52840
+-- Shield(s): ctr_x12_a
+-- Found host-tools: zephyr 0.17.0 (C:/ncs/toolchains/0b393f9e1b/opt/zephyr-sdk)
+-- Found toolchain: zephyr 0.17.0 (C:/ncs/toolchains/0b393f9e1b/opt/zephyr-sdk)
+-- Found BOARD.dts: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/boards/hardwario/chester/chester_nrf52840.dts
+-- Found devicetree overlay: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/boards/shields/ctr_x12_a/ctr_x12_a.overlay
+-- Found devicetree overlay: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/app.overlay
+-- Generated zephyr.dts: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/zephyr/zephyr.dts
+-- Generated devicetree_generated.h: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/zephyr/include/generated/zephyr/devicetree_generated.h
+-- Including generated dts.cmake file: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/zephyr/dts.cmake
+Parsing C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/Kconfig
+Loaded configuration 'C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/boards/hardwario/chester/chester_nrf52840_defconfig'
+Merged configuration 'C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/prj.conf'
+Configuration saved to 'C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/zephyr/.config'
+Kconfig header saved to 'C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/zephyr/include/generated/zephyr/autoconf.h'
+CMake Warning at C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/subsys/bluetooth/host/CMakeLists.txt:91 (message):
+  CONFIG_BT_FIXED_PASSKEY is enabled
+
+    A fixed passkey is easy to deduce during the pairing procedure, do not use in
+    production.
+
+
+-- Found Python3: C:/ncs/toolchains/0b393f9e1b/opt/bin/python.exe (found version "3.12.4") found components: Interpreter
+
+=== child image mcuboot -  begin ===
+loading initial cache file C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/mcuboot/child_image_preload.cmake
+Loading Zephyr default modules (Zephyr base (cached)).
+-- Application: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/boot/zephyr
+-- CMake version: 4.0.3
+-- Using NCS Toolchain 2.9.20250402.48205110811 for building. (C:/ncs/toolchains/0b393f9e1b/cmake)
+-- Cache files will be written to: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/.cache
+-- Zephyr version: 3.7.99 (C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr)
+-- Found west (found suitable version "1.2.0", minimum required is "0.14.0")
+-- Board: chester, qualifiers: nrf52840
+-- Found host-tools: zephyr 0.17.0 (C:/ncs/toolchains/0b393f9e1b/opt/zephyr-sdk)
+-- Found toolchain: zephyr 0.17.0 (C:/ncs/toolchains/0b393f9e1b/opt/zephyr-sdk)
+-- Found BOARD.dts: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/boards/hardwario/chester/chester_nrf52840.dts
+-- Found devicetree overlay: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/child_image/mcuboot/boards/chester_nrf52840.overlay
+-- Found devicetree overlay: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/child_image/mcuboot/boards/chester_nrf52840.overlay
+-- Generated zephyr.dts: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/mcuboot/zephyr/zephyr.dts
+-- Generated devicetree_generated.h: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/mcuboot/zephyr/include/generated/zephyr/devicetree_generated.h
+-- Including generated dts.cmake file: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/mcuboot/zephyr/dts.cmake
+Parsing C:/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/boot/zephyr/Kconfig
+Loaded configuration 'C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/mcuboot/zephyr/.config'
+No change to configuration in 'C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/mcuboot/zephyr/.config'
+No change to Kconfig header in 'C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/mcuboot/zephyr/include/generated/zephyr/autoconf.h'
+CMake Warning at C:/Users/matej/hardwario/github/chester-serial/chester-sdk/nrf/lib/flash_patch/CMakeLists.txt:8 (message):
+
+
+        ----------------------------------------------------------
+        --- WARNING: To maintain the integrity of secure boot, ---
+        --- enable CONFIG_DISABLE_FLASH_PATCH in production.   ---
+        ----------------------------------------------------------
+
+
+CMake Warning at C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/CMakeLists.txt:952 (message):
+  No SOURCES given to Zephyr library: ..__chester__lib__ctr_buf
+
+  Excluding target from build.
+
+
+CMake Warning at C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/CMakeLists.txt:952 (message):
+  No SOURCES given to Zephyr library: ..__chester__lib__ctr_util
+
+  Excluding target from build.
+
+
+CMake Deprecation Warning at C:/Users/matej/hardwario/github/chester-serial/chester-sdk/nrf/cmake/partition_manager.cmake:32 (message):
+
+
+            ---------------------------------------------------------------------
+            --- WARNING: Child and parent image functionality is deprecated   ---
+            --- and should be replaced with sysbuild. Child and parent image  ---
+            --- support remains only to allow existing customer applications  ---
+            --- to build and allow porting to sysbuild, it is no longer       ---
+            --- receiving updates or new features and it will not be possible ---
+            --- to build using child/parent image at all in nRF Connect SDK   ---
+            --- version 2.9 onwards.                                          ---
+            ---------------------------------------------------------------------
+Call Stack (most recent call first):
+  C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/cmake/modules/kernel.cmake:255 (include)
+  C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/cmake/modules/zephyr_default.cmake:142 (include)
+  C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)
+  C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)
+  CMakeLists.txt:12 (find_package)
+
+
+MCUBoot bootloader key file: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/root-ec-p256.pem
+-- Configuring done (38.0s)
+-- Generating done (3.9s)
+-- Build files have been written to: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/mcuboot
+=== child image mcuboot -  end ===
+
+CMake Warning at C:/Users/matej/hardwario/github/chester-serial/chester-sdk/nrf/modules/mcuboot/CMakeLists.txt:382 (message):
+
+
+          ---------------------------------------------------------
+          --- WARNING: Using default MCUBoot key, it should not ---
+          --- be used for production.                           ---
+          ---------------------------------------------------------
+          
+
+
+
+CMake Warning at C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/CMakeLists.txt:952 (message):
+  No SOURCES given to Zephyr library: ..__chester__drivers__adc
+
+  Excluding target from build.
+
+
+CMake Deprecation Warning at C:/Users/matej/hardwario/github/chester-serial/chester-sdk/nrf/cmake/partition_manager.cmake:32 (message):
+
+
+            ---------------------------------------------------------------------
+            --- WARNING: Child and parent image functionality is deprecated   ---
+            --- and should be replaced with sysbuild. Child and parent image  ---
+            --- support remains only to allow existing customer applications  ---
+            --- to build and allow porting to sysbuild, it is no longer       ---
+            --- receiving updates or new features and it will not be possible ---
+            --- to build using child/parent image at all in nRF Connect SDK   ---
+            --- version 2.9 onwards.                                          ---
+            ---------------------------------------------------------------------
+Call Stack (most recent call first):
+  C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/cmake/modules/kernel.cmake:255 (include)
+  C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/cmake/modules/zephyr_default.cmake:142 (include)
+  C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)
+  C:/Users/matej/hardwario/github/chester-serial/chester-sdk/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)
+  CMakeLists.txt:18 (find_package)
+
+
+-- Found partition manager static configuration: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/pm_static.yml
+Partition 'littlefs_storage' is not included in the dynamic resolving since it is statically defined.
+Partition 'mcuboot' is not included in the dynamic resolving since it is statically defined.
+Partition 'mcuboot_pad' is not included in the dynamic resolving since it is statically defined.
+Partition 'mcuboot_primary' is not included in the dynamic resolving since it is statically defined.
+Partition 'mcuboot_primary_app' is not included in the dynamic resolving since it is statically defined.
+Partition 'mcuboot_scratch' is not included in the dynamic resolving since it is statically defined.
+Partition 'mcuboot_secondary' is not included in the dynamic resolving since it is statically defined.
+Partition 'nvs_storage' is not included in the dynamic resolving since it is statically defined.
+-- Configuring done (87.5s)
+-- Generating done (5.9s)
+-- Build files have been written to: C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build
+[0/406] Performing build step for 'mcuboot_subimage'
+[1/29] Generating misc/generated/syscalls.json, misc/generated/struct_tags.json
+[2/29] Building C object zephyr/CMakeFiles/zephyr.dir/8436c3379d5df941d8912bbb27d0654b/chester-sdk/nrf/subsys/partition_manager/flash_map_partition_manager.c.obj
+[3/29] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/storage/flash_map/flash_map_layout.c.obj
+[4/29] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/storage/flash_map/flash_map.c.obj
+[5/29] Building C object zephyr/arch/arch/arm/core/mpu/CMakeFiles/arch__arm__core__mpu.dir/arm_mpu_regions.c.obj
+[6/29] Generating linker_zephyr_pre0.cmd
+[7/29] Building C object zephyr/lib/libc/common/CMakeFiles/lib__libc__common.dir/source/stdlib/malloc.c.obj
+[8/29] Building C object CMakeFiles/app.dir/C_/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/boot/bootutil/src/tlv.c.obj
+[9/29] Building C object CMakeFiles/app.dir/nrf_cleanup.c.obj
+[10/29] Building C object CMakeFiles/app.dir/C_/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/boot/bootutil/src/swap_move.c.obj
+[11/29] Linking C static library zephyr\arch\arch\arm\core\mpu\libarch__arm__core__mpu.a
+[12/29] Building C object CMakeFiles/app.dir/flash_map_extended.c.obj
+[13/29] Building C object CMakeFiles/app.dir/C_/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/boot/bootutil/src/bootutil_misc.c.obj
+[14/29] Building C object CMakeFiles/app.dir/C_/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/boot/bootutil/src/image_ecdsa.c.obj
+[15/29] Building C object CMakeFiles/app.dir/main.c.obj
+[16/29] Building C object CMakeFiles/app.dir/C_/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/boot/bootutil/src/image_validate.c.obj
+[17/29] Building C object CMakeFiles/app.dir/C_/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/boot/bootutil/src/swap_misc.c.obj
+[18/29] Building C object modules/mcuboot/boot/bootutil/zephyr/CMakeFiles/mcuboot_util.dir/881e81c99388c44b10bd36e3feac4af5/mcuboot/boot/bootutil/src/bootutil_public.c.obj
+[19/29] Linking C static library zephyr\lib\libc\common\liblib__libc__common.a
+[20/29] Linking C static library zephyr\libzephyr.a
+[21/29] Building C object CMakeFiles/app.dir/C_/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/boot/bootutil/src/swap_scratch.c.obj
+[22/29] Building C object CMakeFiles/app.dir/C_/Users/matej/hardwario/github/chester-serial/chester-sdk/bootloader/mcuboot/boot/bootutil/src/loader_legacy_child_parent.c.obj
+[23/29] Linking C static library modules\mcuboot\boot\bootutil\zephyr\libmcuboot_util.a
+[24/29] Linking C static library app\libapp.a
+[25/29] Linking C executable zephyr\zephyr_pre0.elf
+[26/29] Generating linker.cmd
+[27/29] Generating isr_tables.c, isr_tables_vt.ld, isr_tables_swi.ld
+[28/29] Building C object zephyr/CMakeFiles/zephyr_final.dir/isr_tables.c.obj
+[29/29] Linking C executable zephyr\zephyr.elf
+Memory region         Used Size  Region Size  %age Used
+           FLASH:       44220 B        48 KB     89.97%
+             RAM:      120960 B       256 KB     46.14%
+        IDT_LIST:          0 GB        32 KB      0.00%
+Generating files from C:/Users/matej/hardwario/github/chester-serial/chester-sdk/chester/applications/serial/build/mcuboot/zephyr/zephyr.elf for board: chester

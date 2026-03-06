@@ -1,0 +1,182 @@
+version: 2
+type: decoder
+name: com.hardwario.chester.app.serial
+schema:
+  - message:
+      - version:
+      - sequence:
+      - timestamp:
+  - attribute:
+      - vendor_name:
+      - product_name:
+      - hw_variant:
+      - hw_revision:
+      - fw_version:
+      - serial_number:
+  - system:
+      - uptime:
+      - voltage_rest:
+          - $div: 1000
+          - $fpp: 2
+      - voltage_load:
+          - $div: 1000
+          - $fpp: 2
+      - current_load:
+  - network:
+      - parameter:
+          - eest:
+          - ecl:
+          - rsrp:
+          - rsrq:
+          - snr:
+          - plmn:
+          - cid:
+          - band:
+          - earfcn:
+  - thermometer:
+      - temperature:
+          - $div: 100
+          - $fpp: 2
+  - accelerometer:
+      - accel_x:
+          - $div: 1000
+          - $fpp: 2
+      - accel_y:
+          - $div: 1000
+          - $fpp: 2
+      - accel_z:
+          - $div: 1000
+          - $fpp: 2
+      - orientation:
+  - devices:
+      - device:
+      - type:
+      - type_name:
+      - addr:
+      - data:
+          - timestamp:
+          - co2_percent:
+              - $div: 1000
+              - $fpp: 3
+          - temperature:
+              - $div: 100
+              - $fpp: 2
+          - pressure:
+              - $div: 10
+              - $fpp: 1
+          - voltage:
+              - $div: 100
+              - $fpp: 2
+          - current:
+              - $div: 1000
+              - $fpp: 3
+          - power:
+              - $div: 10
+              - $fpp: 1
+          - energy:
+          - frequency:
+              - $div: 100
+              - $fpp: 2
+          - energy_in:
+          - energy_out:
+          - voltage_l1:
+              - $div: 100
+              - $fpp: 2
+          - voltage_l2:
+              - $div: 100
+              - $fpp: 2
+          - voltage_l3:
+              - $div: 100
+              - $fpp: 2
+          - current_l1:
+              - $div: 1000
+              - $fpp: 3
+          - current_l2:
+              - $div: 1000
+              - $fpp: 3
+          - current_l3:
+              - $div: 1000
+              - $fpp: 3
+          - power_l1:
+              - $div: 10
+              - $fpp: 1
+          - power_l2:
+              - $div: 10
+              - $fpp: 1
+          - power_l3:
+              - $div: 10
+              - $fpp: 1
+          - power_total:
+              - $div: 10
+              - $fpp: 1
+          - card_uid:
+          - flow_s:
+              - $div: 10000
+              - $fpp: 4
+          - flow_m:
+              - $div: 10000
+              - $fpp: 4
+          - flow_h:
+              - $div: 10000
+              - $fpp: 4
+          - velocity:
+              - $div: 10000
+              - $fpp: 4
+          - total_positive:
+              - $div: 1000
+              - $fpp: 3
+          - total_negative:
+              - $div: 1000
+              - $fpp: 3
+          - total_net:
+              - $div: 1000
+              - $fpp: 3
+          - energy_hot:
+              - $div: 1000
+              - $fpp: 3
+          - energy_cold:
+              - $div: 1000
+              - $fpp: 3
+          - temp_inlet:
+              - $div: 100
+              - $fpp: 2
+          - temp_outlet:
+              - $div: 100
+              - $fpp: 2
+          - signal_quality:
+  - ble_tags:
+      - addr:
+      - rssi:
+      - voltage:
+          - $div: 100
+          - $fpp: 2
+      - temperature:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2
+      - humidity:
+          - measurements:
+              - $tsp:
+                  - min:
+                      - $div: 100
+                      - $fpp: 2
+                  - max:
+                      - $div: 100
+                      - $fpp: 2
+                  - avg:
+                      - $div: 100
+                      - $fpp: 2
+                  - mdn:
+                      - $div: 100
+                      - $fpp: 2

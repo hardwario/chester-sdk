@@ -1,0 +1,125 @@
+version: 1
+variants:
+  - name: CHESTER Serial RS-485
+    fw_bundle: com.hardwario.chester.app.serial.rs485
+    fw_name: hio-chester-serial-rs485
+    fw_version: v3.5.3
+    features:
+      - hardware-chester-x2-modbus-a
+    remark: RS-485 (multi-drop, max 8 devices)
+  - name: CHESTER Serial RS-232
+    fw_bundle: com.hardwario.chester.app.serial.rs232
+    fw_name: hio-chester-serial-rs232
+    fw_version: v3.5.3
+    features:
+      - hardware-chester-x12-a
+    remark: RS-232 (point-to-point, max 1 device)
+project:
+  variant: CHESTER Serial
+  company: 2026 HARDWARIO a.s.
+  license: "SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause"
+  fw_name: CHESTER Serial
+  fw_bundle: com.hardwario.chester.app.serial
+  fw_version: v3.5.3
+features:
+  - subsystem-accel
+  - subsystem-batt
+  - subsystem-ble
+  - subsystem-ble-tag
+  - subsystem-buf
+  - subsystem-button
+  - subsystem-cloud
+  - subsystem-config
+  - subsystem-defaults
+  - subsystem-info
+  - subsystem-led
+  - subsystem-log
+  - subsystem-rtc
+  - subsystem-shell
+  - subsystem-therm
+  - subsystem-wdog
+  - subsystem-tinycrypt
+  - subsystem-tinycrypt-sha256
+  - subsystem-zcbor
+  - subsystem-lte-v2
+  - subsystem-lrw
+  - hardware-chester-lte-v2
+parameters:
+  - name: interval-sample
+    type: int
+    min: 1
+    max: 86400
+    default: 60
+    help: "Sample interval in seconds"
+  - name: interval-aggreg
+    type: int
+    min: 1
+    max: 86400
+    default: 300
+    help: "Aggregation interval in seconds"
+  - name: interval-report
+    type: int
+    min: 0
+    max: 86400
+    default: 1800
+    help: "Report interval in seconds"
+  - name: interval-poll
+    type: int
+    min: 0
+    max: 86400
+    default: 0
+    help: "Polling interval in seconds (LTE only, 0 = disabled)"
+
+  # Serial settings
+  - name: serial-mode
+    type: enum
+    help: "Serial operation mode"
+    default: "transparent"
+    valueset:
+      - "transparent"
+      - "modbus"
+  - name: serial-baudrate
+    type: int
+    min: 1200
+    max: 115200
+    default: 9600
+    help: "Serial baudrate"
+  - name: serial-data-bits
+    type: int
+    min: 7
+    max: 9
+    default: 8
+    help: "Serial data bits"
+  - name: serial-parity
+    type: enum
+    help: "Serial parity"
+    default: "none"
+    valueset:
+      - "none"
+      - "odd"
+      - "even"
+  - name: serial-stop-bits
+    type: int
+    min: 1
+    max: 2
+    default: 1
+    help: "Serial stop bits"
+
+  # Device configuration (device1-8) is in preserved sections
+  # using STRING_PARSE_CB which project.yaml doesn't support
+
+commands:
+  - name: sample
+    callback: app_work_sample()
+    help: "Trigger immediate sampling"
+  - name: send
+    callback: app_work_send()
+    help: "Send data immediately"
+
+extras:
+  - CONFIG_MODBUS=y
+  - CONFIG_MODBUS_BUFFER_SIZE=256
+  - CONFIG_ADC_NRFX_SAADC=n
+  - CONFIG_ADC_SHELL=n
+  - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+  - CONFIG_UART_1_INTERRUPT_DRIVEN=n

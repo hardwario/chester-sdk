@@ -9,3 +9,5 @@ twister-out*
 .vscode/*
 .idea/
 __pycache__
+.claude
+build.log

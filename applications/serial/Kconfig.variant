@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2026 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config VARIANT_CHESTER_SERIAL
+    bool "Enable VARIANT_CHESTER_SERIAL"
+    default y
