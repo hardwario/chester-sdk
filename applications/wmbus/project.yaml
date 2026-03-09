@@ -97,3 +97,6 @@ parameters:
     help: "Get/Set cloud decode"
 commands:
 extras:
+- CONFIG_I2C_SHELL=y
+- CONFIG_MCUBOOT_SHELL=y
+- CONFIG_GPIO_SHELL=y

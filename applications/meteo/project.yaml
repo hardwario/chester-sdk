@@ -178,3 +178,6 @@ commands:
     help: "Aggregate data immediately"
 extras:
   - CONFIG_ADC_TLA2021_INIT_PRIORITY=60
+  - CONFIG_I2C_SHELL=y
+  - CONFIG_MCUBOOT_SHELL=y
+  - CONFIG_GPIO_SHELL=y
