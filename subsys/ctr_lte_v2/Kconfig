@@ -34,7 +34,7 @@ config CTR_LTE_V2_CONFIG_ANTENNA
 
 config CTR_LTE_V2_DEFAULT_MODE
 	string "CTR_LTE_V2_DEFAULT_MODE"
-	default "nb-iot"
+	default "lte-m,nb-iot"
 
 config CTR_LTE_V2_DEFAULT_BANDS
 	string "CTR_LTE_V2_DEFAULT_BANDS"
