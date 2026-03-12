@@ -160,6 +160,6 @@ static const struct m8_driver_api m8_driver_api = {
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, m8_init, NULL, &inst_##n##_data, &inst_##n##_config, POST_KERNEL, \
-			      CONFIG_I2C_INIT_PRIORITY, &m8_driver_api);
+			      CONFIG_GNSS_M8_INIT_PRIORITY, &m8_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(M8_INIT)

@@ -12,6 +12,14 @@ config GNSS_M8
 
 if GNSS_M8
 
+config GNSS_M8_INIT_PRIORITY
+	int "GNSS M8 init priority"
+	default I2C_INIT_PRIORITY
+	help
+	  GNSS M8 device driver initialization priority.
+	  Set higher than I2C bus and any GPIO expander init priority
+	  if the GNSS enable pin is on a GPIO expander (e.g., 80).
+
 module = GNSS_M8
 module-str = gnss_m8
 source "subsys/logging/Kconfig.template.log_config"
