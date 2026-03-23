@@ -15,4 +15,9 @@ module = CTR_W1
 module-str = CHESTER 1-Wire Subsystem
 source "subsys/logging/Kconfig.template.log_config"
 
+config CTR_W1_SHELL
+	bool "CTR_W1_SHELL"
+	depends on SHELL
+	default y
+
 endif # CTR_W1
