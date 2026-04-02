@@ -18,6 +18,16 @@ config SHIELD_CTR_S2
 
 config CTR_HYGRO
 	default y
+# HARDWARE-CHESTER-Z
+config SHIELD_CTR_Z
+	bool "Enable SHIELD_CTR_Z"
+	default y
+
+config CTR_Z
+	default y
+
+config I2C
+	default y
 # SUBSYSTEM-DS18B20
 config SHIELD_CTR_DS18B20
 	bool "Enable SHIELD_CTR_DS18B20"

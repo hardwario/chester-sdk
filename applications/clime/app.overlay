@@ -8,6 +8,10 @@
 &sht30_ext {
 	status = "okay";
 };
+/* HARDWARE-CHESTER-Z  */
+&ctr_z {
+	status = "okay";
+};
 /* SUBSYSTEM-CLOUD  */
 / {
 	chosen {

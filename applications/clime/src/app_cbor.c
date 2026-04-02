@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+#include "app_backup.h"
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_codec.h"
+#include "feature.h"
 
 /* CHESTER includes */
 #include <chester/ctr_cloud.h>
@@ -176,56 +178,88 @@ static int encode(zcbor_state_t *zs)
 #endif /* defined(FEATURE_CHESTER_APP_TAMPER) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-	zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP);
 	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		bool backup_active = false;
 
-		zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__LINE_VOLTAGE);
-		if (isnan(g_app_data.backup.line_voltage)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_int32_put(zs, g_app_data.backup.line_voltage * 1000.f);
+#if defined(FEATURE_HARDWARE_CHESTER_X10)
+		backup_active = true;
+#endif
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
+		if (app_backup_z_is_available()) {
+			backup_active = true;
 		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__BATT_VOLTAGE);
-		if (isnan(g_app_data.backup.battery_voltage)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_int32_put(zs, g_app_data.backup.battery_voltage * 1000.f);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__STATE);
-		zcbor_uint32_put(zs, g_app_data.backup.line_present ? 1 : 0);
-
-		if (g_app_data.backup.event_count) {
-			int64_t timestamp_abs = g_app_data.backup.events[0].timestamp;
-
-			zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__STATE__EVENTS);
+#endif
+		if (backup_active) {
+			zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP);
 			{
-				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-				/* TSO absolute timestamp */
-				zcbor_int64_put(zs, timestamp_abs);
-
-				for (int i = 0; i < g_app_data.backup.event_count; i++) {
-					/* TSO offset timestamp */
-					zcbor_int64_put(zs, g_app_data.backup.events[i].timestamp -
-								    timestamp_abs);
-					zcbor_uint32_put(
-						zs, g_app_data.backup.events[i].connected ? 1 : 0);
+				zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__LINE_VOLTAGE);
+				if (isnan(g_app_data.backup.line_voltage)) {
+					zcbor_nil_put(zs, NULL);
+				} else {
+					zcbor_int32_put(zs,
+							g_app_data.backup.line_voltage * 1000.f);
 				}
 
-				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-			}
-		} else {
-			zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__STATE__EVENTS);
-			{
-				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+				zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__BATT_VOLTAGE);
+				if (isnan(g_app_data.backup.battery_voltage)) {
+					zcbor_nil_put(zs, NULL);
+				} else {
+					zcbor_int32_put(
+						zs, g_app_data.backup.battery_voltage * 1000.f);
+				}
+
+				zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__STATE);
+				zcbor_uint32_put(zs,
+						 g_app_data.backup.line_present ? 1 : 0);
+
+				if (g_app_data.backup.event_count) {
+					int64_t timestamp_abs =
+						g_app_data.backup.events[0].timestamp;
+
+					zcbor_uint32_put(zs,
+							 CODEC_KEY_E_BACKUP__STATE__EVENTS);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						/* TSO absolute timestamp */
+						zcbor_int64_put(zs, timestamp_abs);
+
+						for (int i = 0;
+						     i < g_app_data.backup.event_count; i++) {
+							/* TSO offset timestamp */
+							zcbor_int64_put(
+								zs,
+								g_app_data.backup.events[i]
+										.timestamp -
+									timestamp_abs);
+							zcbor_uint32_put(
+								zs,
+								g_app_data.backup.events[i]
+										.connected
+									? 1
+									: 0);
+						}
+
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+				} else {
+					zcbor_uint32_put(zs,
+							 CODEC_KEY_E_BACKUP__STATE__EVENTS);
+					{
+						zcbor_list_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+						zcbor_list_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+				}
+
+				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 			}
 		}
-
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
 

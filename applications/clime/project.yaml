@@ -5,15 +5,8 @@ variants:
   fw_name: hio-chester-clime
   fw_version: v3.0.0
   features:
-  - hardware-chester-s2
-- name: CHESTER Clime Z
-  fw_bundle: com.hardwario.chester.app.clime.z
-  fw_name: hio-chester-clime-z
-  fw_version: v3.0.0
-  features:
   - hardware-chester-z
   - hardware-chester-s2
-  remark: Support for CHESTER-Z
 - name: CHESTER Clime IAQ
   fw_bundle: com.hardwario.chester.app.clime.iaq
   fw_name: hio-chester-clime-iaq
@@ -90,7 +83,7 @@ features:
 #- hardware-chester-x4-b
 #- hardware-chester-x4-a
 #- hardware-chester-x10
-#- hardware-chester-z
+  - hardware-chester-z
 #- hardware-chester-tc-a
 #- hardware-chester-tc-b
 parameters:

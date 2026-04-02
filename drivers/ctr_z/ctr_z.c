@@ -64,11 +64,9 @@ static int read(const struct device *dev, uint8_t reg, uint16_t *data)
 			*data = sys_be16_to_cpu(buf);
 			return ret;
 		}
-
-		LOG_WRN("Call `i2c_write_read` failed: %d", ret);
 	}
 
-	LOG_ERR("Call `i2c_write_read` failed: %d", ret);
+	LOG_WRN("Call `i2c_write_read` failed: %d", ret);
 
 	return ret;
 }
@@ -92,11 +90,9 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 		if (!ret) {
 			return ret;
 		}
-
-		LOG_WRN("Call `i2c_write` failed: %d", ret);
 	}
 
-	LOG_ERR("Call `i2c_write` failed: %d", ret);
+	LOG_WRN("Call `i2c_write` failed: %d", ret);
 
 	return ret;
 }
@@ -464,12 +460,26 @@ static int ctr_z_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	uint16_t reg_protocol;
-	ret = read(dev, REG_PROTOCOL, &reg_protocol);
-	if (ret) {
-		LOG_ERR("Call `read` failed: %d", ret);
-		return ret;
+	/* Probe device with up to 8 retries to detect presence */
+	uint8_t reg = REG_PROTOCOL;
+	uint16_t buf;
+
+	for (int i = 0; i < 8; i++) {
+		ret = i2c_write_read(get_config(dev)->i2c_dev, get_config(dev)->i2c_addr, &reg, 1,
+				     &buf, 2);
+		if (!ret) {
+			break;
+		}
 	}
+
+	if (ret) {
+		LOG_INF("CHESTER-Z not detected");
+		return -ENODEV;
+	}
+
+	uint16_t reg_protocol = sys_be16_to_cpu(buf);
+
+	LOG_INF("CHESTER-Z detected (protocol version: %u)", reg_protocol);
 
 #define INIT_REGISTER(reg, val)                                                                    \
 	ret = write(dev, reg, val);                                                                \

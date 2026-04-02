@@ -19,6 +19,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
 
 /* Standard includes */
 #include <errno.h>
@@ -29,9 +30,20 @@ LOG_MODULE_REGISTER(app_backup, LOG_LEVEL_DBG);
 
 #if defined(FEATURE_HARDWARE_CHESTER_Z)
 
+static bool m_chester_z_available;
+
+bool app_backup_z_is_available(void)
+{
+	return m_chester_z_available;
+}
+
 void handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, void *param)
 {
 	int ret;
+
+	if (!m_chester_z_available) {
+		return;
+	}
 
 	if (backup_event != CTR_Z_EVENT_DC_CONNECTED &&
 	    backup_event != CTR_Z_EVENT_DC_DISCONNECTED) {
@@ -87,75 +99,59 @@ int app_backup_init(void)
 	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		return -ENODEV;
+		LOG_INF("CHESTER-Z not detected");
+		m_chester_z_available = false;
+		return 0;
 	}
+
+	m_chester_z_available = true;
+	LOG_INF("CHESTER-Z detected");
 
 	ret = ctr_z_set_handler(dev, handler_ctr_z, NULL);
 	if (ret) {
-		LOG_ERR("Call `ctr_z_set_handler` failed: %d", ret);
-		return ret;
+		LOG_WRN("Call `ctr_z_set_handler` failed: %d", ret);
 	}
 
 	ret = ctr_z_enable_interrupts(dev);
 	if (ret) {
-		LOG_ERR("Call `ctr_z_enable_interrupts` failed: %d", ret);
-		return ret;
+		LOG_WRN("Call `ctr_z_enable_interrupts` failed: %d", ret);
 	}
 
 	uint32_t serial_number;
 	ret = ctr_z_get_serial_number(dev, &serial_number);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_serial_number` failed: %d", ret);
-		return ret;
+	if (!ret) {
+		LOG_INF("Serial number: %08x", serial_number);
 	}
-
-	LOG_INF("Serial number: %08x", serial_number);
 
 	uint16_t hw_revision;
 	ret = ctr_z_get_hw_revision(dev, &hw_revision);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_hw_revision` failed: %d", ret);
-		return ret;
+	if (!ret) {
+		LOG_INF("HW revision: %04x", hw_revision);
 	}
-
-	LOG_INF("HW revision: %04x", hw_revision);
 
 	uint32_t hw_variant;
 	ret = ctr_z_get_hw_variant(dev, &hw_variant);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_hw_variant` failed: %d", ret);
-		return ret;
+	if (!ret) {
+		LOG_INF("HW variant: %08x", hw_variant);
 	}
-
-	LOG_INF("HW variant: %08x", hw_variant);
 
 	uint32_t fw_version;
 	ret = ctr_z_get_fw_version(dev, &fw_version);
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_fw_version` failed: %d", ret);
-		return ret;
+	if (!ret) {
+		LOG_INF("FW version: %08x", fw_version);
 	}
-
-	LOG_INF("FW version: %08x", fw_version);
 
 	char vendor_name[32];
 	ret = ctr_z_get_vendor_name(dev, vendor_name, sizeof(vendor_name));
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_vendor_name` failed: %d", ret);
-		return ret;
+	if (!ret) {
+		LOG_INF("Vendor name: %s", vendor_name);
 	}
-
-	LOG_INF("Vendor name: %s", vendor_name);
 
 	char product_name[32];
 	ret = ctr_z_get_product_name(dev, product_name, sizeof(product_name));
-	if (ret) {
-		LOG_ERR("Call `ctr_z_get_product_name` failed: %d", ret);
-		return ret;
+	if (!ret) {
+		LOG_INF("Product name: %s", product_name);
 	}
-
-	LOG_INF("Product name: %s", product_name);
 
 	return 0;
 }
@@ -164,13 +160,11 @@ int app_backup_sample(void)
 {
 	int ret;
 
-	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
-
-	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
-		ret = -ENODEV;
-		goto error;
+	if (!m_chester_z_available) {
+		return 0;
 	}
+
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
 
 	struct ctr_z_status status;
 	ret = ctr_z_get_status(dev, &status);
@@ -216,6 +210,64 @@ error:
 
 	return ret;
 }
+
+static int cmd_backup_status(const struct shell *shell, size_t argc, char **argv)
+{
+	if (!app_backup_z_is_available()) {
+		shell_print(shell, "chester-z: not detected");
+		return 0;
+	}
+
+	shell_print(shell, "chester-z: detected");
+
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
+
+	uint32_t serial_number;
+	if (!ctr_z_get_serial_number(dev, &serial_number)) {
+		shell_print(shell, "serial number: %08x", serial_number);
+	}
+
+	uint16_t hw_revision;
+	if (!ctr_z_get_hw_revision(dev, &hw_revision)) {
+		shell_print(shell, "hw revision: %04x", hw_revision);
+	}
+
+	uint32_t hw_variant;
+	if (!ctr_z_get_hw_variant(dev, &hw_variant)) {
+		shell_print(shell, "hw variant: %08x", hw_variant);
+	}
+
+	uint32_t fw_version;
+	if (!ctr_z_get_fw_version(dev, &fw_version)) {
+		shell_print(shell, "fw version: %08x", fw_version);
+	}
+
+	struct ctr_z_status status;
+	if (!ctr_z_get_status(dev, &status)) {
+		shell_print(shell, "dc input: %s",
+			    status.dc_input_connected ? "connected" : "disconnected");
+	}
+
+	uint16_t vdc;
+	if (!ctr_z_get_vdc_mv(dev, &vdc)) {
+		shell_print(shell, "dc voltage: %u mV", vdc);
+	}
+
+	uint16_t vbat;
+	if (!ctr_z_get_vbat_mv(dev, &vbat)) {
+		shell_print(shell, "battery voltage: %u mV", vbat);
+	}
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_backup,
+	SHELL_CMD_ARG(status, NULL, "Show CHESTER-Z backup module status", cmd_backup_status, 1, 0),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_CMD_REGISTER(backup, &sub_backup, "Backup module commands", NULL);
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
