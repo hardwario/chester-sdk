@@ -227,8 +227,12 @@ int static aggreg_analog(struct app_data_analog *analog)
 	return 0;
 }
 
-static enum ctr_x0_channel x0_adc_lookup[] = {CTR_ADC_CHANNEL_A0, CTR_ADC_CHANNEL_A1,
-					      CTR_ADC_CHANNEL_A2, CTR_ADC_CHANNEL_A3};
+static enum ctr_x0_channel x0_adc_lookup[] = {
+	CTR_ADC_CHANNEL_A0, CTR_ADC_CHANNEL_A1, CTR_ADC_CHANNEL_A2, CTR_ADC_CHANNEL_A3,
+#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
+	CTR_ADC_CHANNEL_B0, CTR_ADC_CHANNEL_B1, CTR_ADC_CHANNEL_B2, CTR_ADC_CHANNEL_B3,
+#endif
+};
 
 int app_sensor_voltage_sample(void)
 {

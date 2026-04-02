@@ -188,8 +188,7 @@
 											  : 0x04;  \
 				}                                                                  \
 				ret |= ctr_buf_append_u8(buf, val);                                \
-			}                                                                          \
-			if (g_app_data.counter[i]) {                                               \
+			} else if (g_app_data.counter[i]) {                                        \
 				ret |= ctr_buf_append_u8(buf, APP_CONFIG_CHANNEL_MODE_COUNTER);    \
 				ret |= ctr_buf_append_u32_le(                                      \
 					buf, g_app_data.counter[i]->value > UINT32_MAX             \
@@ -199,8 +198,7 @@
 					buf, g_app_data.counter[i]->delta > UINT16_MAX             \
 						     ? UINT16_MAX                                  \
 						     : g_app_data.counter[i]->delta);              \
-			}                                                                          \
-			if (g_app_data.voltage[i]) {                                               \
+			} else if (g_app_data.voltage[i]) {                                        \
 				ret |= ctr_buf_append_u8(buf, APP_CONFIG_CHANNEL_MODE_VOLTAGE);    \
 				if (isnan(g_app_data.voltage[i]->last_sample)) {                   \
 					ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));           \
@@ -208,8 +206,7 @@
 					ret |= ctr_buf_append_u16_le(                              \
 						buf, g_app_data.voltage[i]->last_sample * 100.f);  \
 				}                                                                  \
-			}                                                                          \
-			if (g_app_data.current[i]) {                                               \
+			} else if (g_app_data.current[i]) {                                        \
 				ret |= ctr_buf_append_u8(buf, APP_CONFIG_CHANNEL_MODE_CURRENT);    \
 				if (isnan(g_app_data.current[i]->last_sample)) {                   \
 					ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));           \
@@ -217,6 +214,8 @@
 					ret |= ctr_buf_append_u16_le(                              \
 						buf, g_app_data.current[i]->last_sample * 100.f);  \
 				}                                                                  \
+			} else {                                                                   \
+				ret |= ctr_buf_append_u8(buf, APP_CONFIG_CHANNEL_MODE_DISABLED);   \
 			}                                                                          \
 		}                                                                                  \
 	} while (0)

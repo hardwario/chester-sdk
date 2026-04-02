@@ -129,8 +129,9 @@ struct app_config {
 	enum {{domain}}_config_{{ var }} {{ related['name'] | replace('-', '_') }}_{{ var }};
 			{%- endfor %}
 		{%- elif '{}' in var %}
-			{%- for related in param['valueset'] %}
-	enum {{domain}}_config_{{ var | replace('_{}', '') }} {{ var | replace('-', '_') | replace('{}', loop.index) }};
+			{%- set count = param['count'] | default(param['valueset'] | length) %}
+			{%- for i in range(count) %}
+	enum {{domain}}_config_{{ var | replace('_{}', '') }} {{ var | replace('-', '_') | replace('{}', i + 1) }};
 			{%- endfor %}
 		{%- else %}
 	enum {{domain}}_config_{{ var | replace('-', '_') }} {{ var | replace('-', '_') }};

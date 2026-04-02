@@ -8,7 +8,8 @@
 #define FEATURE_H_
 
 #define FEATURE_HARDWARE_CHESTER_X0_A           1
-#define FEATURE_HARDWARE_CHESTER_X4_B           1
+#define FEATURE_HARDWARE_CHESTER_X0_B           1
+#define FEATURE_HARDWARE_CHESTER_Z              1
 #define FEATURE_SUBSYSTEM_ACCEL                 1
 #define FEATURE_SUBSYSTEM_ADC                   1
 #define FEATURE_SUBSYSTEM_BATT                  1

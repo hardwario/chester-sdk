@@ -50,10 +50,14 @@ const struct ctr_config_item items[] = {
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
-	CTR_CONFIG_ITEM_ENUM("channel-mode-1", m_config_interim.channel_mode_1, ((const char*[]){"trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-1", APP_CONFIG_CHANNEL_MODE_TRIGGER),
-	CTR_CONFIG_ITEM_ENUM("channel-mode-2", m_config_interim.channel_mode_2, ((const char*[]){"trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-2", APP_CONFIG_CHANNEL_MODE_COUNTER),
-	CTR_CONFIG_ITEM_ENUM("channel-mode-3", m_config_interim.channel_mode_3, ((const char*[]){"trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-3", APP_CONFIG_CHANNEL_MODE_VOLTAGE),
-	CTR_CONFIG_ITEM_ENUM("channel-mode-4", m_config_interim.channel_mode_4, ((const char*[]){"trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-4", APP_CONFIG_CHANNEL_MODE_CURRENT),
+	CTR_CONFIG_ITEM_ENUM("channel-mode-1", m_config_interim.channel_mode_1, ((const char*[]){"disabled", "trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-1", APP_CONFIG_CHANNEL_MODE_DISABLED),
+	CTR_CONFIG_ITEM_ENUM("channel-mode-2", m_config_interim.channel_mode_2, ((const char*[]){"disabled", "trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-2", APP_CONFIG_CHANNEL_MODE_DISABLED),
+	CTR_CONFIG_ITEM_ENUM("channel-mode-3", m_config_interim.channel_mode_3, ((const char*[]){"disabled", "trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-3", APP_CONFIG_CHANNEL_MODE_DISABLED),
+	CTR_CONFIG_ITEM_ENUM("channel-mode-4", m_config_interim.channel_mode_4, ((const char*[]){"disabled", "trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-4", APP_CONFIG_CHANNEL_MODE_DISABLED),
+	CTR_CONFIG_ITEM_ENUM("channel-mode-5", m_config_interim.channel_mode_5, ((const char*[]){"disabled", "trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-5", APP_CONFIG_CHANNEL_MODE_DISABLED),
+	CTR_CONFIG_ITEM_ENUM("channel-mode-6", m_config_interim.channel_mode_6, ((const char*[]){"disabled", "trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-6", APP_CONFIG_CHANNEL_MODE_DISABLED),
+	CTR_CONFIG_ITEM_ENUM("channel-mode-7", m_config_interim.channel_mode_7, ((const char*[]){"disabled", "trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-7", APP_CONFIG_CHANNEL_MODE_DISABLED),
+	CTR_CONFIG_ITEM_ENUM("channel-mode-8", m_config_interim.channel_mode_8, ((const char*[]){"disabled", "trigger", "counter", "voltage", "current"}), "Get/Set channel-mode-8", APP_CONFIG_CHANNEL_MODE_DISABLED),
 	CTR_CONFIG_ITEM_ENUM("trigger-input-type", m_config_interim.trigger_input_type, ((const char*[]){"npn", "pnp"}), "Get/Set trigger input type", APP_CONFIG_INPUT_TYPE_NPN),
 	CTR_CONFIG_ITEM_ENUM("counter-input-type", m_config_interim.counter_input_type, ((const char*[]){"npn", "pnp"}), "Get/Set counter input type", APP_CONFIG_INPUT_TYPE_NPN),
 	CTR_CONFIG_ITEM_INT("trigger-duration-active", m_config_interim.trigger_duration_active, 0, 60000, "Get/Set event active duration in milliseconds.", 100),

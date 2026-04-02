@@ -4,6 +4,19 @@ variants:
   fw_bundle: com.hardwario.chester.app.control
   fw_name: hio-chester-control
   fw_version: v3.0.0
+  features:
+  - hardware-chester-x4-b
+- name: CHESTER Control 8Ch Z
+  fw_bundle: com.hardwario.chester.app.control.8ch.z
+  fw_name: hio-chester-control-8ch-z
+  fw_version: v3.0.0
+  features:
+  - hardware-chester-x0-b
+  - hardware-chester-z
+  parameters:
+  - name: channel-mode-{}
+    count: 8
+  remark: Support for second X0 module in slot B (8 channels) and CHESTER-Z
 - name: CHESTER Control Z
   fw_bundle: com.hardwario.chester.app.control.z
   fw_name: hio-chester-control-z
@@ -48,7 +61,6 @@ features:
 - subsystem-ds18b20
 - subsystem-soil-sensor
 - hardware-chester-x0-a
-- hardware-chester-x4-b
 #- hardware-chester-x0-a
 #- hardware-chester-s2
 #- hardware-chester-z
@@ -100,7 +112,10 @@ parameters:
   depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: channel-mode-{}
   type: enum
+  default: disabled
+  count: 4
   valueset:
+    - disabled
     - trigger
     - counter
     - voltage

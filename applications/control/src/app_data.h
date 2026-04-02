@@ -19,7 +19,11 @@
 /* TODO Delete */
 #include <zephyr/kernel.h>
 
+#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
+#define APP_DATA_NUM_CHANNELS 8
+#else
 #define APP_DATA_NUM_CHANNELS 4
+#endif
 
 #define APP_DATA_MAX_MEASUREMENTS 32
 #define APP_DATA_MAX_SAMPLES      32

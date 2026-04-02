@@ -30,10 +30,11 @@ enum app_config_mode {
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 
 enum app_config_channel_mode {
-	APP_CONFIG_CHANNEL_MODE_TRIGGER = 0,
-	APP_CONFIG_CHANNEL_MODE_COUNTER = 1,
-	APP_CONFIG_CHANNEL_MODE_VOLTAGE = 2,
-	APP_CONFIG_CHANNEL_MODE_CURRENT = 3,
+	APP_CONFIG_CHANNEL_MODE_DISABLED = 0,
+	APP_CONFIG_CHANNEL_MODE_TRIGGER = 1,
+	APP_CONFIG_CHANNEL_MODE_COUNTER = 2,
+	APP_CONFIG_CHANNEL_MODE_VOLTAGE = 3,
+	APP_CONFIG_CHANNEL_MODE_CURRENT = 4,
 };
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
@@ -67,6 +68,10 @@ struct app_config {
 	enum app_config_channel_mode channel_mode_2;
 	enum app_config_channel_mode channel_mode_3;
 	enum app_config_channel_mode channel_mode_4;
+	enum app_config_channel_mode channel_mode_5;
+	enum app_config_channel_mode channel_mode_6;
+	enum app_config_channel_mode channel_mode_7;
+	enum app_config_channel_mode channel_mode_8;
 	enum app_config_input_type trigger_input_type;
 	enum app_config_input_type counter_input_type;
 	int trigger_duration_active;

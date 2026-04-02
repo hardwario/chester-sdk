@@ -209,13 +209,22 @@ static int init_edge(struct ctr_edge *edge, ctr_edge_cb_t cb, const struct devic
 	return 0;
 }
 
-static enum ctr_x0_channel x0_channel_lookup[] = {CTR_X0_CHANNEL_1, CTR_X0_CHANNEL_2,
-						  CTR_X0_CHANNEL_3, CTR_X0_CHANNEL_4};
+static enum ctr_x0_channel x0_channel_lookup[] = {
+	CTR_X0_CHANNEL_1, CTR_X0_CHANNEL_2, CTR_X0_CHANNEL_3, CTR_X0_CHANNEL_4,
+#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
+	CTR_X0_CHANNEL_1, CTR_X0_CHANNEL_2, CTR_X0_CHANNEL_3, CTR_X0_CHANNEL_4,
+#endif
+};
 
-static enum ctr_x0_channel x0_adc_lookup[] = {CTR_ADC_CHANNEL_A0, CTR_ADC_CHANNEL_A1,
-					      CTR_ADC_CHANNEL_A2, CTR_ADC_CHANNEL_A3};
+static enum ctr_x0_channel x0_adc_lookup[] = {
+	CTR_ADC_CHANNEL_A0, CTR_ADC_CHANNEL_A1, CTR_ADC_CHANNEL_A2, CTR_ADC_CHANNEL_A3,
+#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
+	CTR_ADC_CHANNEL_B0, CTR_ADC_CHANNEL_B1, CTR_ADC_CHANNEL_B2, CTR_ADC_CHANNEL_B3,
+#endif
+};
 
-static int init_chester_x0_triggers(const struct device *dev)
+static int init_chester_x0_triggers(const struct device *dev, int ch_start, int ch_count,
+				    enum app_config_channel_mode *modes)
 {
 	int ret;
 
@@ -231,29 +240,24 @@ static int init_chester_x0_triggers(const struct device *dev)
 						? CTR_X0_MODE_NPN_INPUT
 						: CTR_X0_MODE_PNP_INPUT;
 
-	enum app_config_channel_mode config_channel_mode_lookup[] = {
-		g_app_config.channel_mode_1,
-		g_app_config.channel_mode_2,
-		g_app_config.channel_mode_3,
-		g_app_config.channel_mode_4,
-	};
+	for (int i = 0; i < ch_count; i++) {
+		int ch_idx = ch_start + i;
 
-	for (int i = 0; i < APP_DATA_NUM_CHANNELS; i++) {
-		if (config_channel_mode_lookup[i] == APP_CONFIG_CHANNEL_MODE_TRIGGER) {
-			LOG_INF("Initialize channel %d", i);
+		if (modes[i] == APP_CONFIG_CHANNEL_MODE_TRIGGER) {
+			LOG_INF("Initialize trigger channel %d", ch_idx);
 
 			/* Alloc memory */
-			g_app_data.trigger[i] = k_malloc(sizeof(struct app_data_trigger));
-			if (!g_app_data.trigger[i]) {
+			g_app_data.trigger[ch_idx] = k_malloc(sizeof(struct app_data_trigger));
+			if (!g_app_data.trigger[ch_idx]) {
 				LOG_ERR("Call `k_malloc` failed");
 				return -ENOMEM;
 			}
-			memset(g_app_data.trigger[i], 0, sizeof(struct app_data_trigger));
+			memset(g_app_data.trigger[ch_idx], 0, sizeof(struct app_data_trigger));
 
 			/* Initialize channel */
-			ret = init_edge(&g_app_data.trigger[i]->edge,
+			ret = init_edge(&g_app_data.trigger[ch_idx]->edge,
 					app_handler_edge_trigger_callback, dev,
-					x0_channel_lookup[i], trigger_mode,
+					x0_channel_lookup[ch_idx], trigger_mode,
 					g_app_config.trigger_duration_active,
 					g_app_config.trigger_duration_inactive,
 					g_app_config.trigger_cooldown_time, NULL);
@@ -267,7 +271,8 @@ static int init_chester_x0_triggers(const struct device *dev)
 	return 0;
 }
 
-static int init_chester_x0_counters(const struct device *dev)
+static int init_chester_x0_counters(const struct device *dev, int ch_start, int ch_count,
+				    enum app_config_channel_mode *modes)
 {
 	int ret;
 
@@ -283,29 +288,24 @@ static int init_chester_x0_counters(const struct device *dev)
 						? CTR_X0_MODE_NPN_INPUT
 						: CTR_X0_MODE_PNP_INPUT;
 
-	enum app_config_channel_mode config_channel_mode_lookup[] = {
-		g_app_config.channel_mode_1,
-		g_app_config.channel_mode_2,
-		g_app_config.channel_mode_3,
-		g_app_config.channel_mode_4,
-	};
+	for (int i = 0; i < ch_count; i++) {
+		int ch_idx = ch_start + i;
 
-	for (int i = 0; i < APP_DATA_NUM_CHANNELS; i++) {
-		if (config_channel_mode_lookup[i] == APP_CONFIG_CHANNEL_MODE_COUNTER) {
-			LOG_INF("Initialize channel %d", i);
+		if (modes[i] == APP_CONFIG_CHANNEL_MODE_COUNTER) {
+			LOG_INF("Initialize counter channel %d", ch_idx);
 
 			/* Alloc memory */
-			g_app_data.counter[i] = k_malloc(sizeof(struct app_data_counter));
-			if (!g_app_data.counter[i]) {
+			g_app_data.counter[ch_idx] = k_malloc(sizeof(struct app_data_counter));
+			if (!g_app_data.counter[ch_idx]) {
 				LOG_ERR("Call `k_malloc` failed");
 				return -ENOMEM;
 			}
-			memset(g_app_data.counter[i], 0, sizeof(struct app_data_counter));
+			memset(g_app_data.counter[ch_idx], 0, sizeof(struct app_data_counter));
 
 			/* Initialize channel */
-			ret = init_edge(&g_app_data.counter[i]->edge,
+			ret = init_edge(&g_app_data.counter[ch_idx]->edge,
 					app_handler_edge_counter_callback, dev,
-					x0_channel_lookup[i], counter_mode,
+					x0_channel_lookup[ch_idx], counter_mode,
 					g_app_config.counter_duration_active,
 					g_app_config.counter_duration_inactive,
 					g_app_config.counter_cooldown_time, NULL);
@@ -319,40 +319,37 @@ static int init_chester_x0_counters(const struct device *dev)
 	return 0;
 }
 
-static int init_chester_x0_voltages(const struct device *dev)
+static int init_chester_x0_voltages(const struct device *dev, int ch_start, int ch_count,
+				    enum app_config_channel_mode *modes)
 {
 	int ret;
 
 	LOG_INF("app_data_analog struct size %d", sizeof(struct app_data_analog));
 
-	enum app_config_channel_mode config_channel_mode_lookup[] = {
-		g_app_config.channel_mode_1,
-		g_app_config.channel_mode_2,
-		g_app_config.channel_mode_3,
-		g_app_config.channel_mode_4,
-	};
+	for (int i = 0; i < ch_count; i++) {
+		int ch_idx = ch_start + i;
 
-	for (int i = 0; i < APP_DATA_NUM_CHANNELS; i++) {
-		if (config_channel_mode_lookup[i] == APP_CONFIG_CHANNEL_MODE_VOLTAGE) {
-			LOG_INF("Initialize channel %d", i);
+		if (modes[i] == APP_CONFIG_CHANNEL_MODE_VOLTAGE) {
+			LOG_INF("Initialize voltage channel %d", ch_idx);
 
 			/* Alloc memory */
-			g_app_data.voltage[i] = k_malloc(sizeof(struct app_data_analog));
-			if (!g_app_data.voltage[i]) {
+			g_app_data.voltage[ch_idx] = k_malloc(sizeof(struct app_data_analog));
+			if (!g_app_data.voltage[ch_idx]) {
 				LOG_ERR("Call `k_malloc` failed");
 				return -ENOMEM;
 			}
-			memset(g_app_data.voltage[i], 0, sizeof(struct app_data_analog));
-			g_app_data.voltage[i]->last_sample = NAN;
+			memset(g_app_data.voltage[ch_idx], 0, sizeof(struct app_data_analog));
+			g_app_data.voltage[ch_idx]->last_sample = NAN;
 
 			/* Initialize channel */
-			ret = ctr_x0_set_mode(dev, x0_channel_lookup[i], CTR_X0_MODE_AI_INPUT);
+			ret = ctr_x0_set_mode(dev, x0_channel_lookup[ch_idx],
+					      CTR_X0_MODE_AI_INPUT);
 			if (ret) {
 				LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);
 				return ret;
 			}
 
-			ret = ctr_adc_init(x0_adc_lookup[i]);
+			ret = ctr_adc_init(x0_adc_lookup[ch_idx]);
 			if (ret) {
 				LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 				return ret;
@@ -363,40 +360,37 @@ static int init_chester_x0_voltages(const struct device *dev)
 	return 0;
 }
 
-static int init_chester_x0_currents(const struct device *dev)
+static int init_chester_x0_currents(const struct device *dev, int ch_start, int ch_count,
+				    enum app_config_channel_mode *modes)
 {
 	int ret;
 
 	LOG_INF("app_data_analog struct size %d", sizeof(struct app_data_analog));
 
-	enum app_config_channel_mode config_channel_mode_lookup[] = {
-		g_app_config.channel_mode_1,
-		g_app_config.channel_mode_2,
-		g_app_config.channel_mode_3,
-		g_app_config.channel_mode_4,
-	};
+	for (int i = 0; i < ch_count; i++) {
+		int ch_idx = ch_start + i;
 
-	for (int i = 0; i < APP_DATA_NUM_CHANNELS; i++) {
-		if (config_channel_mode_lookup[i] == APP_CONFIG_CHANNEL_MODE_CURRENT) {
-			LOG_INF("Initialize channel %d", i);
+		if (modes[i] == APP_CONFIG_CHANNEL_MODE_CURRENT) {
+			LOG_INF("Initialize current channel %d", ch_idx);
 
 			/* Alloc memory */
-			g_app_data.current[i] = k_malloc(sizeof(struct app_data_analog));
-			if (!g_app_data.current[i]) {
+			g_app_data.current[ch_idx] = k_malloc(sizeof(struct app_data_analog));
+			if (!g_app_data.current[ch_idx]) {
 				LOG_ERR("Call `k_malloc` failed");
 				return -ENOMEM;
 			}
-			memset(g_app_data.current[i], 0, sizeof(struct app_data_analog));
-			g_app_data.current[i]->last_sample = NAN;
+			memset(g_app_data.current[ch_idx], 0, sizeof(struct app_data_analog));
+			g_app_data.current[ch_idx]->last_sample = NAN;
 
 			/* Initialize channel */
-			ret = ctr_x0_set_mode(dev, x0_channel_lookup[i], CTR_X0_MODE_CL_INPUT);
+			ret = ctr_x0_set_mode(dev, x0_channel_lookup[ch_idx],
+					      CTR_X0_MODE_CL_INPUT);
 			if (ret) {
 				LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);
 				return ret;
 			}
 
-			ret = ctr_adc_init(x0_adc_lookup[i]);
+			ret = ctr_adc_init(x0_adc_lookup[ch_idx]);
 			if (ret) {
 				LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 				return ret;
@@ -433,34 +427,140 @@ static int init_chester_x0(void)
 
 	print_heap_stats();
 
-	ret = init_chester_x0_triggers(dev);
+	enum app_config_channel_mode modes_a[] = {
+		g_app_config.channel_mode_1,
+		g_app_config.channel_mode_2,
+		g_app_config.channel_mode_3,
+		g_app_config.channel_mode_4,
+	};
+
+	for (int i = 0; i < 4; i++) {
+		if (modes_a[i] == APP_CONFIG_CHANNEL_MODE_DISABLED) {
+			LOG_INF("Channel %d disabled", i + 1);
+			ret = ctr_x0_set_mode(dev, x0_channel_lookup[i],
+					      CTR_X0_MODE_DEFAULT);
+			if (ret) {
+				LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);
+				return ret;
+			}
+		}
+	}
+
+	ret = init_chester_x0_triggers(dev, 0, 4, modes_a);
 	if (ret) {
 		LOG_ERR("Call `init_chester_x0_triggers` failed: %d", ret);
 		return ret;
 	}
 
-	ret = init_chester_x0_counters(dev);
+	ret = init_chester_x0_counters(dev, 0, 4, modes_a);
 	if (ret) {
 		LOG_ERR("Call `init_chester_x0_counters` failed: %d", ret);
 		return ret;
 	}
 
-	ret = init_chester_x0_voltages(dev);
+	ret = init_chester_x0_voltages(dev, 0, 4, modes_a);
 	if (ret) {
 		LOG_ERR("Call `init_chester_x0_voltages` failed: %d", ret);
 		return ret;
 	}
 
-	ret = init_chester_x0_currents(dev);
+	ret = init_chester_x0_currents(dev, 0, 4, modes_a);
 	if (ret) {
 		LOG_ERR("Call `init_chester_x0_currents` failed: %d", ret);
 		return ret;
+	}
+
+	/* Clear spurious events from GPIO initialization */
+	for (int i = 0; i < 4; i++) {
+		if (g_app_data.trigger[i]) {
+			g_app_data.trigger[i]->event_count = 0;
+		}
+		if (g_app_data.counter[i]) {
+			g_app_data.counter[i]->value = 0;
+			g_app_data.counter[i]->delta = 0;
+		}
 	}
 
 	print_heap_stats();
 
 	return 0;
 }
+
+#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
+
+static int init_chester_x0_b(void)
+{
+	int ret;
+
+	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x0_b));
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Module X0_B not found (hardware not present)");
+		return 0;
+	}
+
+	print_heap_stats();
+
+	enum app_config_channel_mode modes_b[] = {
+		g_app_config.channel_mode_5,
+		g_app_config.channel_mode_6,
+		g_app_config.channel_mode_7,
+		g_app_config.channel_mode_8,
+	};
+
+	for (int i = 0; i < 4; i++) {
+		if (modes_b[i] == APP_CONFIG_CHANNEL_MODE_DISABLED) {
+			LOG_INF("Channel %d disabled", i + 5);
+			ret = ctr_x0_set_mode(dev, x0_channel_lookup[i],
+					      CTR_X0_MODE_DEFAULT);
+			if (ret) {
+				LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);
+				return ret;
+			}
+		}
+	}
+
+	ret = init_chester_x0_triggers(dev, 4, 4, modes_b);
+	if (ret) {
+		LOG_ERR("Call `init_chester_x0_triggers` (B) failed: %d", ret);
+		return ret;
+	}
+
+	ret = init_chester_x0_counters(dev, 4, 4, modes_b);
+	if (ret) {
+		LOG_ERR("Call `init_chester_x0_counters` (B) failed: %d", ret);
+		return ret;
+	}
+
+	ret = init_chester_x0_voltages(dev, 4, 4, modes_b);
+	if (ret) {
+		LOG_ERR("Call `init_chester_x0_voltages` (B) failed: %d", ret);
+		return ret;
+	}
+
+	ret = init_chester_x0_currents(dev, 4, 4, modes_b);
+	if (ret) {
+		LOG_ERR("Call `init_chester_x0_currents` (B) failed: %d", ret);
+		return ret;
+	}
+
+	/* Clear spurious events from GPIO initialization */
+	for (int i = 4; i < 8; i++) {
+		if (g_app_data.trigger[i]) {
+			g_app_data.trigger[i]->event_count = 0;
+		}
+		if (g_app_data.counter[i]) {
+			g_app_data.counter[i]->value = 0;
+			g_app_data.counter[i]->delta = 0;
+		}
+	}
+
+	print_heap_stats();
+
+	return 0;
+}
+
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_B) */
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
@@ -500,8 +600,14 @@ int app_init(void)
 	ret = init_chester_x0();
 	if (ret) {
 		LOG_ERR("Call `init_chester_x0` failed: %d", ret);
-		k_oops();
 	}
+
+#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
+	ret = init_chester_x0_b();
+	if (ret) {
+		LOG_ERR("Call `init_chester_x0_b` failed: %d", ret);
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_B) */
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)

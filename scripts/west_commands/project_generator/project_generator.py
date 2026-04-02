@@ -109,6 +109,19 @@ class ProjectGenerator:
                         for app_feature in app_variant["extras"]:
                             if app_feature not in project_data.get("extras", []):
                                 project_data["extras"].append(app_feature)
+                    if "parameters" in app_variant:
+                        # Merge variant parameters (override by name)
+                        if "parameters" not in project_data:
+                            project_data["parameters"] = []
+                        for param in app_variant["parameters"]:
+                            merged = False
+                            for i, base_param in enumerate(project_data["parameters"]):
+                                if base_param["name"] == param["name"]:
+                                    project_data["parameters"][i].update(param)
+                                    merged = True
+                                    break
+                            if not merged:
+                                project_data["parameters"].append(param)
             # Remove duplicates from project_data['features']
             if "features" in project_data and project_data["features"] is not None:
                 project_data["features"] = list(set(project_data["features"]))

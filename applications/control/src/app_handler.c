@@ -156,6 +156,10 @@ void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_even
 		LOG_INF("Counter: %llu", counter->value);
 
 		app_data_unlock();
+
+		ctr_led_set(CTR_LED_CHANNEL_Y, true);
+		k_sleep(K_MSEC(50));
+		ctr_led_set(CTR_LED_CHANNEL_Y, false);
 	}
 }
 

@@ -37,9 +37,12 @@ function decodeUplink(input) {
 	}
 
 	if (header & BIT(6)) {
-		decode_x0_a_inputs(data);
+		decode_x0_inputs(data, 'inputs_a', 4);
 	}
 
+	if (header & BIT(7)) {
+		decode_x0_inputs(data, 'inputs_b', 4);
+	}
 
 	return { data: data };
 }
@@ -164,53 +167,57 @@ function decode_ble_tags(data) {
 	}
 }
 
-function decode_x0_a_inputs(data) {
-	data.inputs_a = [];
-	for (i = 0; i < 4; i++) {
+function decode_x0_inputs(data, key, count) {
+	data[key] = [];
+	for (var i = 0; i < count; i++) {
 		var type = u8();
+		var input;
 		switch (type) {
-			case 0: // trigger
+			case 1: // trigger
 				var val = u8();
-				var input = {
+				input = {
 					type: 'trigger',
 					state: val & 0x01 ? true : false,
 					trigger_active: (val & 0x02) ? true : false,
 					trigger_inactive: (val & 0x04) ? true : false
 				};
 				break;
-			case 1: // counter
-				var input = {
+			case 2: // counter
+				input = {
 					type: 'counter',
 					count: u32(),
 					delta: u16()
 				};
 				break;
-			case 2: // voltage
+			case 3: // voltage
 				var value = u16();
 				if (value === 0xffff) {
 					value = null;
 				} else {
 					value = value / 100;
 				}
-				var input = {
+				input = {
 					type: 'voltage',
 					voltage: value
 				};
 				break;
-			case 3: // current
+			case 4: // current
 				var value = u16();
 				if (value === 0xffff) {
 					value = null;
 				} else {
 					value = value / 100;
 				}
-				var input = {
+				input = {
 					type: 'current',
 					current: value
 				};
 				break;
+			default: // disabled or unknown - skip
+				input = { type: 'disabled' };
+				break;
 		}
-		data.inputs_a.push(input);
+		data[key].push(input);
 	}
 }
 

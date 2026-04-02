@@ -38,6 +38,7 @@ int app_lrw_encode(struct ctr_buf *buf)
 	header |= IS_ENABLED(FEATURE_SUBSYSTEM_DS18B20) ? BIT(4) : 0;
 	header |= IS_ENABLED(FEATURE_SUBSYSTEM_BLE_TAG) ? BIT(5) : 0;
 	header |= IS_ENABLED(FEATURE_HARDWARE_CHESTER_X0_A) ? BIT(6) : 0;
+	header |= IS_ENABLED(FEATURE_HARDWARE_CHESTER_X0_B) ? BIT(7) : 0;
 
 	ctr_buf_append_u8(buf, header);
 

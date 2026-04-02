@@ -100,8 +100,14 @@ const struct ctr_config_item items[] = {
 	{#- ENUM  #}
 	{%- elif param['type'] == 'enum'%}
 		{%- if '{}' in param['name'] and not param['related']%}
-			{%- for val in param['valueset'] %}
-	CTR_CONFIG_ITEM_ENUM("{{ param['name'] | replace('{}', loop.index )}}", m_config_interim.{{param['name'] | replace('-','_') | replace('{}', loop.index)}}, ((const char*[]){ {%- for e_var in param['valueset'] %}"{{e_var}}"{% if not loop.last %}, {% endif %}{% endfor -%} }), "Get/Set {{ param['name'] | replace('{}', loop.index )}}", APP_CONFIG_{{ var | replace('{}', '') | upper}}{{val|  upper}}),
+			{%- set count = param['count'] | default(param['valueset'] | length) %}
+			{%- for i in range(count) %}
+			{%- if param['default'] is defined %}
+			{%- set val = param['default'] %}
+			{%- else %}
+			{%- set val = param['valueset'][i % (param['valueset'] | length)] %}
+			{%- endif %}
+	CTR_CONFIG_ITEM_ENUM("{{ param['name'] | replace('{}', i + 1 )}}", m_config_interim.{{param['name'] | replace('-','_') | replace('{}', i + 1)}}, ((const char*[]){ {%- for e_var in param['valueset'] %}"{{e_var}}"{% if not loop.last %}, {% endif %}{% endfor -%} }), "Get/Set {{ param['name'] | replace('{}', i + 1 )}}", APP_CONFIG_{{ var | replace('{}', '') | upper}}{{val|  upper}}),
 			{%- endfor -%}
 		{% elif param['related'] %}
 			{%- for related in param['related'] %}
