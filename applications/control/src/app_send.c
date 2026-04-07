@@ -47,7 +47,7 @@ int app_send(void)
 		break;
 
 #if defined(FEATURE_SUBSYSTEM_LRW)
-	case APP_CONFIG_MODE_LRW:
+	case APP_CONFIG_MODE_LRW: {
 
 		CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
 
@@ -64,7 +64,24 @@ int app_send(void)
 			LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
 			return ret;
 		}
+
+#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
+		ret = app_lrw_encode_x0b(&lrw_buf);
+		if (ret) {
+			LOG_ERR("Call `app_lrw_encode_x0b` failed: %d", ret);
+			return ret;
+		}
+
+		ret = ctr_lrw_send(&lrw_opts, ctr_buf_get_mem(&lrw_buf), ctr_buf_get_used(&lrw_buf),
+				   NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_lrw_send` (x0b) failed: %d", ret);
+			return ret;
+		}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_B) */
+
 		break;
+	}
 #endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 #if defined(FEATURE_SUBSYSTEM_CLOUD)
