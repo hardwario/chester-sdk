@@ -269,9 +269,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 SHELL_CMD_REGISTER(backup, &sub_backup, "Backup module commands", NULL);
 
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_X10)
+#elif defined(FEATURE_HARDWARE_CHESTER_X10)
 
 static void handler_ctr_x10(const struct device *dev, enum ctr_x10_event backup_event,
 			    void *user_data)
