@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import subprocess
 from datetime import datetime
@@ -8,6 +9,23 @@ import yaml
 
 
 # From 'chester-sdk/chester/applications' call '../scripts/deploy-v2.py'
+
+
+APPS = [
+    'clime',
+    'control',
+    'current',
+    'demo',
+    'meteo',
+    'motion',
+    'push',
+    'range',
+    'scale',
+    'serial',
+    'wmbus',
+]
+
+DEFAULT_VERSION = 'v3.5.1'
 
 
 def build_app_variant(variant, version, docs_link, cwd):
@@ -49,8 +67,8 @@ def build_app_variant(variant, version, docs_link, cwd):
     date_published = datetime.now().strftime("%Y-%m-%d")
 
     with open("docs.md", "a") as doc_file:
-        if "scale" in name.lower() or " demo" in name.lower():
-            # CHESTER Scale, Demo don't have catalog page
+        if " demo" in name.lower():
+            # CHESTER Demo doesn't have catalog page
             doc_file.write(f'| **{name}** ')
         else:
             doc_file.write(f'| [**{name}**]({docs_link_combined}) ')
@@ -75,16 +93,21 @@ def build_app(name, version):
 
 
 def main():
-    version = 'v3.3.0'
-    build_app('clime', version)
-    build_app('push', version)
-    build_app('control', version)
-    build_app('current', version)
-    build_app('scale', version)
-    build_app('meteo', version)
-    build_app('range', version)
-    build_app('demo', version)
-    build_app('wmbus', version)
+    parser = argparse.ArgumentParser(description='Deploy CHESTER applications')
+    parser.add_argument('--version', type=str, default=DEFAULT_VERSION,
+                        help=f'Firmware version (default: {DEFAULT_VERSION})')
+    parser.add_argument('--app', type=str, help='Build only specific app (e.g. clime)')
+    args = parser.parse_args()
+
+    apps = APPS
+    if args.app:
+        if args.app not in APPS:
+            print(f"Error: App '{args.app}' not found. Available: {', '.join(APPS)}")
+            return
+        apps = [args.app]
+
+    for app in apps:
+        build_app(app, args.version)
 
 
 if __name__ == '__main__':
