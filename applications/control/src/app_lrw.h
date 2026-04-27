@@ -14,7 +14,6 @@ extern "C" {
 #endif
 
 int app_lrw_encode(struct ctr_buf *buf);
-int app_lrw_encode_x0b(struct ctr_buf *buf);
 
 #ifdef __cplusplus
 }

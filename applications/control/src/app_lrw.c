@@ -21,8 +21,14 @@ LOG_MODULE_REGISTER(app_lrw, LOG_LEVEL_DBG);
 
 #if defined(FEATURE_SUBSYSTEM_LRW)
 
-static uint8_t get_header(void)
+int app_lrw_encode(struct ctr_buf *buf)
 {
+	int ret = 0;
+
+	ctr_buf_reset(buf);
+
+	app_data_lock();
+
 	uint8_t header = 0;
 
 	header |= IS_ENABLED(CONFIG_CTR_BATT) ? BIT(0) : 0;
@@ -31,13 +37,8 @@ static uint8_t get_header(void)
 	header |= IS_ENABLED(FEATURE_HARDWARE_CHESTER_S2) ? BIT(3) : 0;
 	header |= IS_ENABLED(FEATURE_SUBSYSTEM_DS18B20) ? BIT(4) : 0;
 	header |= IS_ENABLED(FEATURE_SUBSYSTEM_BLE_TAG) ? BIT(5) : 0;
-
-	return header;
-}
-
-static int encode_common(struct ctr_buf *buf, uint8_t header)
-{
-	int ret = 0;
+	header |= IS_ENABLED(FEATURE_HARDWARE_CHESTER_X0_A) ? BIT(6) : 0;
+	header |= IS_ENABLED(FEATURE_HARDWARE_CHESTER_X0_B) ? BIT(7) : 0;
 
 	ctr_buf_append_u8(buf, header);
 
@@ -65,24 +66,8 @@ static int encode_common(struct ctr_buf *buf, uint8_t header)
 	CTR_ENCODE_LRW_BLE_TAG(buf);
 #endif
 
-	return ret;
-}
-
-int app_lrw_encode(struct ctr_buf *buf)
-{
-	int ret = 0;
-
-	ctr_buf_reset(buf);
-
-	app_data_lock();
-
-	uint8_t header = get_header();
-	header |= IS_ENABLED(FEATURE_HARDWARE_CHESTER_X0_A) ? BIT(6) : 0;
-
-	ret |= encode_common(buf, header);
-
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
-	CTR_ENCODE_LRW_X0_A(buf);
+	CTR_ENCODE_LRW_X0(buf);
 #endif
 
 	app_data_unlock();
@@ -93,31 +78,4 @@ int app_lrw_encode(struct ctr_buf *buf)
 
 	return 0;
 }
-
-#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
-int app_lrw_encode_x0b(struct ctr_buf *buf)
-{
-	int ret = 0;
-
-	ctr_buf_reset(buf);
-
-	app_data_lock();
-
-	uint8_t header = get_header();
-	header |= BIT(7);
-
-	ret |= encode_common(buf, header);
-
-	CTR_ENCODE_LRW_X0_B(buf);
-
-	app_data_unlock();
-
-	if (ret) {
-		return -EFAULT;
-	}
-
-	return 0;
-}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_B) */
-
 #endif /* defined(FEATURE_SUBSYSTEM_LRW) */

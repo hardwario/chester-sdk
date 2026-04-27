@@ -94,6 +94,64 @@ static void send_with_rate_limit(void)
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 
+/* LED blink sequence: yellow 50ms, then off */
+CTR_LED_SEQ_DEFINE(m_led_blink_seq, CTR_LED_PRIO_LOW, false,
+	{.value = CTR_LED_CHANNEL_Y, .length = 50},
+	{.value = 0, .length = 0},
+);
+
+/* Rate limit: max 5 blinks/s (200ms cooldown) */
+static atomic_t m_led_rate_suppressed = false;
+
+static void led_rate_timer_handler(struct k_timer *timer)
+{
+	atomic_set(&m_led_rate_suppressed, false);
+}
+
+static K_TIMER_DEFINE(m_led_rate_timer, led_rate_timer_handler, NULL);
+
+/* 30-min activity window */
+static atomic_t m_led_blink_enabled = true;
+static atomic_t m_led_window_active = false;
+static int64_t m_led_last_event_uptime;
+
+static void led_window_timer_handler(struct k_timer *timer)
+{
+	atomic_set(&m_led_blink_enabled, false);
+}
+
+static K_TIMER_DEFINE(m_led_window_timer, led_window_timer_handler, NULL);
+
+static void led_blink_event(void)
+{
+	int64_t now = k_uptime_get();
+
+	if (!atomic_get(&m_led_blink_enabled)) {
+		/* Re-enable after 30 min of silence */
+		if ((now - m_led_last_event_uptime) >= (30 * 60 * 1000)) {
+			atomic_set(&m_led_blink_enabled, true);
+			atomic_set(&m_led_window_active, false);
+		}
+	}
+
+	m_led_last_event_uptime = now;
+
+	if (!atomic_get(&m_led_blink_enabled)) {
+		return;
+	}
+
+	/* Start 30-min window on first event in this period */
+	if (atomic_cas(&m_led_window_active, false, true)) {
+		k_timer_start(&m_led_window_timer, K_MINUTES(30), K_NO_WAIT);
+	}
+
+	/* Rate limit: skip if still in cooldown */
+	if (atomic_cas(&m_led_rate_suppressed, false, true)) {
+		ctr_led_play(ctr_led_mainboard, m_led_blink_seq);
+		k_timer_start(&m_led_rate_timer, K_MSEC(200), K_NO_WAIT);
+	}
+}
+
 void app_handler_edge_trigger_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
 				       void *user_data)
 {
@@ -137,9 +195,7 @@ void app_handler_edge_trigger_callback(struct ctr_edge *edge, enum ctr_edge_even
 
 	app_data_unlock();
 
-	ctr_led_set(CTR_LED_CHANNEL_Y, true);
-	k_sleep(K_MSEC(50));
-	ctr_led_set(CTR_LED_CHANNEL_Y, false);
+	led_blink_event();
 }
 
 void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
@@ -157,9 +213,7 @@ void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_even
 
 		app_data_unlock();
 
-		ctr_led_set(CTR_LED_CHANNEL_Y, true);
-		k_sleep(K_MSEC(50));
-		ctr_led_set(CTR_LED_CHANNEL_Y, false);
+		led_blink_event();
 	}
 }
 
