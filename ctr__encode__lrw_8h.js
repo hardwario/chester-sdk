@@ -14,7 +14,5 @@ var ctr__encode__lrw_8h =
     [ "CTR_ENCODE_LRW_TC_THERM", "ctr__encode__lrw_8h.html#a5190b23354fc1990bccdf70c85316a7b", null ],
     [ "CTR_ENCODE_LRW_THERM", "ctr__encode__lrw_8h.html#abf0ef56c56e9adf23c3b06f060e6cbf0", null ],
     [ "CTR_ENCODE_LRW_W1_THERM", "ctr__encode__lrw_8h.html#a690d6a420c16b5930c6cc22dac17c1fe", null ],
-    [ "CTR_ENCODE_LRW_X0", "ctr__encode__lrw_8h.html#aab3d73f31cbaf334c193822cbc82befe", null ],
-    [ "CTR_ENCODE_LRW_X0_A", "ctr__encode__lrw_8h.html#ad7faee059821544811ace7f7d9a75eb5", null ],
-    [ "CTR_ENCODE_LRW_X0_B", "ctr__encode__lrw_8h.html#a88c24d60b90a9b746a84243b69b454f7", null ]
+    [ "CTR_ENCODE_LRW_X0", "ctr__encode__lrw_8h.html#aab3d73f31cbaf334c193822cbc82befe", null ]
 ];
