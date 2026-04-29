@@ -46,6 +46,10 @@ static int m_hours = 0;
 static int m_minutes = 0;
 static int m_seconds = 0;
 
+static atomic_t m_synced = ATOMIC_INIT(0);
+static int64_t m_tick_uptime_ms = 0;
+static struct k_spinlock m_tick_lock;
+
 static int get_days_in_month(int year, int month)
 {
 	if (month < 1 || month > 12) {
@@ -132,6 +136,8 @@ int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm)
 
 	irq_enable(RTC2_IRQn);
 
+	atomic_set(&m_synced, 1);
+
 	k_event_post(&m_rtc_events, EVENT_RTC_SET);
 
 	return 0;
@@ -185,6 +191,36 @@ int ctr_rtc_set_ts(int64_t ts)
 	}
 
 	return 0;
+}
+
+int ctr_rtc_get_ts_ms(int64_t *ts_ms)
+{
+	int64_t sec;
+	int ret = ctr_rtc_get_ts(&sec);
+	if (ret) {
+		return ret;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&m_tick_lock);
+	int64_t tick_uptime = m_tick_uptime_ms;
+	k_spin_unlock(&m_tick_lock, key);
+
+	int64_t now_uptime = k_uptime_get();
+	int64_t sub_sec_ms = now_uptime - tick_uptime;
+	if (sub_sec_ms < 0) {
+		sub_sec_ms = 0;
+	}
+	if (sub_sec_ms > 999) {
+		sub_sec_ms = 999;
+	}
+
+	*ts_ms = sec * 1000 + sub_sec_ms;
+	return 0;
+}
+
+bool ctr_rtc_is_synced(void)
+{
+	return atomic_get(&m_synced) != 0;
 }
 
 int ctr_rtc_wait_set(k_timeout_t timeout)
@@ -332,6 +368,12 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type)
 	}
 
 	prescaler = 0;
+
+	{
+		k_spinlock_key_t key = k_spin_lock(&m_tick_lock);
+		m_tick_uptime_ms = k_uptime_get();
+		k_spin_unlock(&m_tick_lock, key);
+	}
 
 	if (++m_seconds < 60) {
 		return;

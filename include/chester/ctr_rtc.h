@@ -52,6 +52,36 @@ int ctr_rtc_get_ts(int64_t *ts);
 int ctr_rtc_set_ts(int64_t ts);
 int ctr_rtc_wait_set(k_timeout_t timeout);
 
+/**
+ * @brief Get current RTC timestamp in milliseconds since UNIX epoch.
+ *
+ * Combines the 1-second RTC tick with k_uptime_get() phase to derive
+ * sub-second resolution. The returned value is the unix timestamp in
+ * seconds multiplied by 1000, plus the milliseconds elapsed since the
+ * last RTC second tick (capped at 999).
+ *
+ * Like @ref ctr_rtc_get_ts(), the result may not represent real wall
+ * time if the RTC has never been set — use @ref ctr_rtc_is_synced()
+ * to verify the timestamp is meaningful.
+ *
+ * @param[out] ts_ms milliseconds since UNIX epoch
+ *
+ * @retval 0 on success
+ */
+int ctr_rtc_get_ts_ms(int64_t *ts_ms);
+
+/**
+ * @brief Check if the RTC has been set since boot.
+ *
+ * The RTC defaults to 1970-01-01 00:00:00 UTC at boot. This function
+ * returns true once @ref ctr_rtc_set_tm() or @ref ctr_rtc_set_ts() has
+ * been called (e.g. from LTE network time sync, BLE client setup, or
+ * shell command).
+ *
+ * @return true if the clock has been set, false otherwise
+ */
+bool ctr_rtc_is_synced(void);
+
 /** @} */
 
 #ifdef __cplusplus
