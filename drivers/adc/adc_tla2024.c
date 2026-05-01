@@ -15,7 +15,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util_macro.h>
 
-#define DT_DRV_COMPAT ti_tla2024
+#define DT_DRV_COMPAT hardwario_tla2024
 
 LOG_MODULE_REGISTER(tla2024, CONFIG_ADC_LOG_LEVEL);
 

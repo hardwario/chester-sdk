@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-description: Texas Instruments TLA2024 Low-Power ADC
+description: HARDWARIO variant of the Texas Instruments TLA2024 Low-Power ADC
 
-compatible: "ti,tla2024"
+compatible: "hardwario,tla2024"
 
 include: [i2c-device.yaml, adc-controller.yaml]
 

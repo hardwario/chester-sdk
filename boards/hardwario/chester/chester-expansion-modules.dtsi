@@ -179,7 +179,7 @@
 	};
 
 	ctr_x10_tla2024: ctr_x10_tla2024@49 {
-		compatible = "ti,tla2024";
+		compatible = "hardwario,tla2024";
 		status = "disabled";
 		reg = <0x49>;
 		#io-channel-cells = <4>;
