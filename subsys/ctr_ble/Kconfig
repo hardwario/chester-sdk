@@ -71,6 +71,9 @@ config BT_BUF_ACL_TX_COUNT
 config BT_BUF_ACL_TX_SIZE
 	default 251
 
+config BT_BUF_EVT_RX_COUNT
+	default 16
+
 config BT_CONN_TX_MAX
 	default 10
 
