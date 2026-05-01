@@ -53,16 +53,11 @@ static const struct ctr_config_item m_config_items[] = {
 			       "BLE passkey (empty or 6 digits)", ""),
 };
 
-/* clang-format off */
-#define ADV_OPT                                                                                    \
-	BT_LE_ADV_OPT_CONNECTABLE |                                                                \
-	BT_LE_ADV_OPT_SCANNABLE |                                                                  \
-	BT_LE_ADV_OPT_USE_NAME |                                                                   \
-	BT_LE_ADV_OPT_FORCE_NAME_IN_AD
-/* clang-format on */
+#define ADV_OPT (BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_SCANNABLE)
 
-static const struct bt_data m_ad[] = {
+static struct bt_data m_ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, NULL, 0),
 };
 
 static const struct bt_data m_sd[] = {
@@ -469,6 +464,10 @@ static int init(void)
 
 	const struct bt_le_adv_param *adv_param =
 		BT_LE_ADV_PARAM(ADV_OPT, BT_GAP_ADV_SLOW_INT_MIN, BT_GAP_ADV_SLOW_INT_MAX, NULL);
+
+	const char *adv_name = bt_get_name();
+	m_ad[1].data = (const uint8_t *)adv_name;
+	m_ad[1].data_len = strlen(adv_name);
 
 	ret = bt_le_adv_start(adv_param, m_ad, ARRAY_SIZE(m_ad), m_sd, ARRAY_SIZE(m_sd));
 	if (ret) {
