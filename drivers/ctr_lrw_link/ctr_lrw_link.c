@@ -159,9 +159,8 @@ static void receive_in_line_mode(const struct device *dev)
 	for (;;) {
 		char c;
 
-		size_t bytes_read;
-		ret = k_pipe_get(&data->rx_pipe, &c, 1, &bytes_read, 1, K_NO_WAIT);
-		if (ret) {
+		ret = k_pipe_read(&data->rx_pipe, (uint8_t *)&c, 1, K_NO_WAIT);
+		if (ret != 1) {
 			break;
 		}
 
@@ -188,7 +187,7 @@ static void rx_restart_work_handler(struct k_work *work)
 	struct ctr_lrw_link_data *data =
 		CONTAINER_OF(work, struct ctr_lrw_link_data, rx_restart_work);
 
-	k_pipe_flush(&data->rx_pipe);
+	k_pipe_reset(&data->rx_pipe);
 
 	atomic_set(&data->rx_line_synced, false);
 
@@ -215,7 +214,7 @@ static void rx_loss_work_handler(struct k_work *work)
 {
 	struct ctr_lrw_link_data *data = CONTAINER_OF(work, struct ctr_lrw_link_data, rx_loss_work);
 
-	k_pipe_flush(&data->rx_pipe);
+	k_pipe_reset(&data->rx_pipe);
 
 	atomic_set(&data->rx_line_synced, false);
 
@@ -250,12 +249,11 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 
 			LOG_HEXDUMP_DBG(rx->buf + rx->offset, rx->len, "RX buffer");
 
-			size_t bytes_written;
-			ret = k_pipe_put(&data->rx_pipe, rx->buf + rx->offset, rx->len,
-					 &bytes_written, rx->len, K_NO_WAIT);
+			ret = k_pipe_write(&data->rx_pipe, rx->buf + rx->offset, rx->len,
+					   K_NO_WAIT);
 
-			if (ret) {
-				LOG_ERR("Call `k_pipe_put` failed: %d", ret);
+			if (ret != (int)rx->len) {
+				LOG_ERR("Call `k_pipe_write` failed: %d", ret);
 				ret = k_work_submit(&data->rx_loss_work);
 				if (ret < 0) {
 					LOG_ERR("Call `k_work_submit` failed: %d", ret);
@@ -442,7 +440,7 @@ static int ctr_lrw_link_enable_uart_(const struct device *dev)
 	atomic_set(&get_data(dev)->stop_request, false);
 	atomic_set(&get_data(dev)->rx_line_synced, true);
 
-	k_pipe_flush(&get_data(dev)->rx_pipe);
+	k_pipe_reset(&get_data(dev)->rx_pipe);
 
 	purge_rx_fifo(dev);
 
@@ -556,13 +554,11 @@ static int ctr_lrw_link_exit_dialog_(const struct device *dev)
 
 	atomic_set(&get_data(dev)->in_dialog, false);
 
-	if (k_pipe_read_avail(&get_data(dev)->rx_pipe) > 0) {
-		ret = k_work_submit(&get_data(dev)->rx_receive_work);
-		if (ret < 0) {
-			LOG_ERR("Call `k_work_submit` failed: %d", ret);
-			k_mutex_unlock(&get_data(dev)->lock);
-			return ret;
-		}
+	ret = k_work_submit(&get_data(dev)->rx_receive_work);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_submit` failed: %d", ret);
+		k_mutex_unlock(&get_data(dev)->lock);
+		return ret;
 	}
 
 	k_mutex_unlock(&get_data(dev)->lock);
@@ -652,10 +648,9 @@ static int ctr_lrw_link_recv_line_(const struct device *dev, k_timeout_t timeout
 			}
 
 			char c;
-			size_t bytes_read;
-			ret = k_pipe_get(&get_data(dev)->rx_pipe, &c, 1, &bytes_read, 1,
-					 sys_timepoint_timeout(end));
-			if (ret) {
+			ret = k_pipe_read(&get_data(dev)->rx_pipe, (uint8_t *)&c, 1,
+					  sys_timepoint_timeout(end));
+			if (ret != 1) {
 				break;
 			}
 
