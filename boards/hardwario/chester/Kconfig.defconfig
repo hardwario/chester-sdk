@@ -6,9 +6,6 @@
 
 if BOARD_CHESTER_NRF52840
 
-config BT_CTLR
-	default BT
-
 config SHELL_BACKEND_SERIAL
 	default n
 

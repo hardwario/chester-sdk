@@ -7,7 +7,6 @@
 config CTR_BLE
 	bool "CTR_BLE"
 	select BT
-	select BT_CTLR
 	select BT_DEVICE_NAME_DYNAMIC
 	select BT_FIXED_PASSKEY
 	select BT_NUS
