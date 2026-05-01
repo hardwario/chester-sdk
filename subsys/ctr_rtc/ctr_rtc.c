@@ -380,9 +380,11 @@ SHELL_CMD_REGISTER(rtc, &sub_rtc, "RTC commands for date/time operations.", prin
 
 /* clang-format on */
 
-static void rtc_handler(nrfx_rtc_int_type_t int_type)
+static void rtc_handler(nrf_rtc_event_t event_type, void *p_context)
 {
-	if (int_type != NRFX_RTC_INT_TICK) {
+	ARG_UNUSED(p_context);
+
+	if (event_type != NRF_RTC_EVENT_TICK) {
 		return;
 	}
 
