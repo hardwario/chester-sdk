@@ -16,7 +16,6 @@ config CTR_BLE
 	select BT_SETTINGS
 	select BT_SMP
 	select BT_SMP_SC_ONLY
-	select BT_TINYCRYPT_ECC
 	select CRC
 	select CTR_CONFIG
 	select CTR_INFO
