@@ -11,8 +11,8 @@ config CTR_CLOUD
 	select CTR_INFO
 	select CTR_RTC
 	select EVENTS
-	select TINYCRYPT_SHA256
-	select TINYCRYPT
+	select NRF_SECURITY
+	select PSA_WANT_ALG_SHA_256
 	select ZCBOR
 	select ZCBOR_STOP_ON_ERROR
 	select SHELL

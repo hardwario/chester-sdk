@@ -15,8 +15,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
-#include <tinycrypt/constants.h>
-#include <tinycrypt/sha256.h>
+#include <psa/crypto.h>
 
 /* Standard includes */
 #include <errno.h>
@@ -29,32 +28,42 @@ LOG_MODULE_REGISTER(ctr_cloud_packet, CONFIG_CTR_CLOUD_LOG_LEVEL);
 static int calculate_packet_hash(uint8_t packet_hash[8], uint8_t claim_token[16],
 				 const uint8_t *buf, size_t len)
 {
-	int ret;
+	psa_status_t status;
 
-	struct tc_sha256_state_struct s;
-	ret = tc_sha256_init(&s);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_init` failed: %d", ret);
-		return ret;
+	status = psa_crypto_init();
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("Call `psa_crypto_init` failed: %d", status);
+		return -EIO;
 	}
 
-	ret = tc_sha256_update(&s, claim_token, 16);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_update` failed: %d", ret);
-		return ret;
+	psa_hash_operation_t op = PSA_HASH_OPERATION_INIT;
+	status = psa_hash_setup(&op, PSA_ALG_SHA_256);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("Call `psa_hash_setup` failed: %d", status);
+		return -EIO;
 	}
 
-	ret = tc_sha256_update(&s, buf, len);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_update` failed: %d", ret);
-		return ret;
+	status = psa_hash_update(&op, claim_token, 16);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("Call `psa_hash_update` failed: %d", status);
+		psa_hash_abort(&op);
+		return -EIO;
+	}
+
+	status = psa_hash_update(&op, buf, len);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("Call `psa_hash_update` failed: %d", status);
+		psa_hash_abort(&op);
+		return -EIO;
 	}
 
 	uint8_t digest[32];
-	ret = tc_sha256_final(digest, &s);
-	if (ret != TC_CRYPTO_SUCCESS) {
-		LOG_ERR("Call `tc_sha256_final` failed: %d", ret);
-		return ret;
+	size_t digest_len;
+	status = psa_hash_finish(&op, digest, sizeof(digest), &digest_len);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("Call `psa_hash_finish` failed: %d", status);
+		psa_hash_abort(&op);
+		return -EIO;
 	}
 
 	for (int i = 0; i < 8; i++) {
