@@ -490,8 +490,8 @@ static int init(void)
 	nrfx_rtc_tick_enable(&m_rtc, true);
 	nrfx_rtc_enable(&m_rtc);
 
-	IRQ_CONNECT(RTC2_IRQn, 0, nrfx_rtc_2_irq_handler, NULL, 0);
-	irq_enable(RTC2_IRQn);
+	IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_RTC_INST_GET(2)), 0, nrfx_rtc_irq_handler, &m_rtc, 0);
+	irq_enable(NRFX_IRQ_NUMBER_GET(NRF_RTC_INST_GET(2)));
 
 	return 0;
 }
