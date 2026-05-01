@@ -53,6 +53,7 @@ menuconfig MB7066_TIMER
 
 if !(MB7066_TIMER0 || MB7066_TIMER1 || MB7066_TIMER2 || MB7066_TIMER3 || MB7066_TIMER4)
 	config NRFX_TIMER0
+		bool
 		default y
 endif
 
