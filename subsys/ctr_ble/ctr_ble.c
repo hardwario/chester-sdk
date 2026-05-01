@@ -46,6 +46,8 @@ struct config {
 static struct config m_config_interim;
 static struct config m_config;
 
+static uint32_t m_passkey;
+
 static const struct ctr_config_item m_config_items[] = {
 	CTR_CONFIG_ITEM_STRING("passkey", m_config_interim.passkey,
 			       "BLE passkey (empty or 6 digits)", ""),
@@ -118,20 +120,21 @@ static int load_passkey(void)
 		passkey = 0;
 	}
 
-	if (passkey < 0 || passkey > 999999) {
+	if (passkey > 999999) {
 		LOG_ERR("Invalid passkey: %lu", passkey);
 		return -EINVAL;
 	}
 
-	ret = bt_passkey_set(passkey);
-	if (ret) {
-		LOG_ERR("Call `bt_passkey_set` failed: %d", ret);
-		return ret;
-	}
+	m_passkey = (uint32_t)passkey;
 
 	LOG_DBG("Set passkey: %06lu", passkey);
 
 	return 0;
+}
+
+static uint32_t auth_app_passkey(struct bt_conn *conn)
+{
+	return m_passkey;
 }
 
 static void bt_foreach_callback(const struct bt_bond_info *info, void *user_data)
@@ -256,6 +259,7 @@ static void auth_cancel(struct bt_conn *conn)
 
 static struct bt_conn_auth_cb auth_cb = {
 	.cancel = auth_cancel,
+	.app_passkey = auth_app_passkey,
 #if defined(CONFIG_CTR_BLE_CLIENT)
 	.passkey_entry = ctr_ble_client_cb_auth_passkey_entry,
 #endif
