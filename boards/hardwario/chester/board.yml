@@ -1,5 +1,6 @@
 board:
   name: chester
+  full_name: HARDWARIO CHESTER nRF52840
   vendor: hardwario
   socs:
   - name: nrf52840
