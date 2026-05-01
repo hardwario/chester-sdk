@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(ctr_rtc, CONFIG_CTR_RTC_LOG_LEVEL);
 
 static K_EVENT_DEFINE(m_rtc_events);
 
-static nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(2);
+static nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(NRF_RTC2);
 
 static struct onoff_client m_lfclk_cli;
 
