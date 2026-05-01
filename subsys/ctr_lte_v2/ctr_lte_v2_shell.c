@@ -406,7 +406,7 @@ static void flow_bypass_cb(void *user_data, const uint8_t *data, size_t len)
 	fprintf_ctx->fwrite(fprintf_ctx->user_ctx, data, len);
 }
 
-static void shell_bypass_cb(const struct shell *shell, uint8_t *data, size_t len)
+static void shell_bypass_cb(const struct shell *shell, uint8_t *data, size_t len, void *user_data)
 {
 	static char line[256];
 	static size_t line_len = 0;
@@ -418,7 +418,7 @@ static void shell_bypass_cb(const struct shell *shell, uint8_t *data, size_t len
 	if (strncmp((const char *)data, "+++", 3) == 0) {
 		shell_print(shell, "exiting bypass mode");
 		ctr_lte_v2_flow_bypass_set_cb(NULL, NULL);
-		shell_set_bypass(shell, NULL);
+		shell_set_bypass(shell, NULL, NULL);
 		return;
 	}
 
@@ -454,7 +454,7 @@ static int cmd_test_bypass(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	ctr_lte_v2_flow_bypass_set_cb(flow_bypass_cb, (void *)shell->fprintf_ctx);
-	shell_set_bypass(shell, shell_bypass_cb);
+	shell_set_bypass(shell, shell_bypass_cb, NULL);
 
 	shell_print(shell, "bypass mode enabled, for exit type +++");
 
