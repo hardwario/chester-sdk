@@ -36,8 +36,6 @@ features:
 - subsystem-therm
 - subsystem-wdog
 - subsystem-entropy-generator
-- subsystem-tinycrypt-sha256
-- subsystem-tinycrypt
 - subsystem-zcbor
 - subsystem-cloud
 - subsystem-lte-v2
@@ -110,7 +108,6 @@ commands:
 extras:
 - CONFIG_ADC_NRFX_SAADC=n
 - CONFIG_ADC_SHELL=n
-- CONFIG_ADC_TLA2021_INIT_PRIORITY=60
 - CONFIG_I2C_SHELL=y
 - CONFIG_MCUBOOT_SHELL=y
 - CONFIG_GPIO_SHELL=y

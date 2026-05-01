@@ -30,8 +30,6 @@
 #define FEATURE_SUBSYSTEM_RTC                   1
 #define FEATURE_SUBSYSTEM_SHELL                 1
 #define FEATURE_SUBSYSTEM_THERM                 1
-#define FEATURE_SUBSYSTEM_TINYCRYPT             1
-#define FEATURE_SUBSYSTEM_TINYCRYPT_SHA256      1
 #define FEATURE_SUBSYSTEM_WDOG                  1
 #define FEATURE_SUBSYSTEM_ZCBOR                 1
 

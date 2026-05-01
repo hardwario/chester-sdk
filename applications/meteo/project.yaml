@@ -62,8 +62,6 @@ features:
   - subsystem-rtc
   - subsystem-shell
   - subsystem-therm
-  - subsystem-tinycrypt
-  - subsystem-tinycrypt-sha256
   - subsystem-wdog
   - subsystem-zcbor
   - hardware-chester-barometer-tag
@@ -177,7 +175,6 @@ commands:
     callback: app_work_aggreg()
     help: "Aggregate data immediately"
 extras:
-  - CONFIG_ADC_TLA2021_INIT_PRIORITY=60
   - CONFIG_I2C_SHELL=y
   - CONFIG_MCUBOOT_SHELL=y
   - CONFIG_GPIO_SHELL=y

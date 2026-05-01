@@ -66,8 +66,6 @@ features:
   - subsystem-shell
   - subsystem-therm
   - subsystem-wdog
-  - subsystem-tinycrypt
-  - subsystem-tinycrypt-sha256
   - subsystem-zcbor
   - subsystem-lte-v2
   - subsystem-lrw
@@ -211,7 +209,6 @@ commands:
     callback: app_work_aggreg()
     help: "Aggregate data immediately"
 extras:
-  - CONFIG_ADC_TLA2021_INIT_PRIORITY=60
   - CONFIG_ADC_NRFX_SAADC=n
   - CONFIG_ADC_SHELL=n
   - CONFIG_NEWLIB_LIBC_NANO=n

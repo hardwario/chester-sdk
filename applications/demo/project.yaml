@@ -29,8 +29,6 @@ features:
 - subsystem-therm
 - subsystem-wdog
 - subsystem-entropy-generator
-- subsystem-tinycrypt
-- subsystem-tinycrypt-sha256
 - subsystem-zcbor
 - subsystem-lte-v2
 - chester-app-report-jitter
@@ -72,7 +70,6 @@ extras:
 - CONFIG_ADC_NRFX_SAADC=n
 - CONFIG_NEWLIB_LIBC_NANO=n
 - CONFIG_ADC_SHELL=n
-- CONFIG_ADC_TLA2021_INIT_PRIORITY=60
 - CONFIG_I2C_SHELL=y
 - CONFIG_MCUBOOT_SHELL=y
 - CONFIG_GPIO_SHELL=y

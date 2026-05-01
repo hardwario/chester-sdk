@@ -38,8 +38,6 @@ features:
   - subsystem-shell
   - subsystem-therm
   - subsystem-wdog
-  - subsystem-tinycrypt
-  - subsystem-tinycrypt-sha256
   - subsystem-zcbor
   - subsystem-lte-v2
   - subsystem-lrw
