@@ -22,7 +22,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/dfu/mcuboot.h>
 
-#include <tinycrypt/constants.h>
 
 /* Standard includes */
 #include <errno.h>

@@ -20,8 +20,6 @@
 #include <zephyr/logging/log.h>
 
 #if defined(FEATURE_SUBSYSTEM_LTE_V2)
-#include <tinycrypt/constants.h>
-#include <tinycrypt/sha256.h>
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>

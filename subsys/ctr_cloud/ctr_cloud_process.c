@@ -35,8 +35,6 @@
 
 /* CHESTER includes */
 #include <chester/ctr_config.h>
-#include <tinycrypt/constants.h>
-#include <tinycrypt/sha256.h>
 
 LOG_MODULE_REGISTER(ctr_cloud_process, CONFIG_CTR_CLOUD_LOG_LEVEL);
 

@@ -20,8 +20,6 @@
 /* Zephyr includes */
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <tinycrypt/constants.h>
-#include <tinycrypt/sha256.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
