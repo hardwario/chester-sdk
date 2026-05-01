@@ -8,7 +8,7 @@
 #include <chester/ctr_info.h>
 
 /* Nordic includes */
-#include <nrf52840.h>
+#include <soc.h>
 
 /* Zephyr includes */
 #if __has_include(<zephyr/app_version.h>)
