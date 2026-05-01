@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(ctr_rtc, CONFIG_CTR_RTC_LOG_LEVEL);
 
 static K_EVENT_DEFINE(m_rtc_events);
 
-static const nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(2);
+static nrfx_rtc_t m_rtc = NRFX_RTC_INSTANCE(2);
 
 static struct onoff_client m_lfclk_cli;
 
@@ -481,9 +481,9 @@ static int init(void)
 
 	nrfx_rtc_config_t config = NRFX_RTC_DEFAULT_CONFIG;
 	config.prescaler = 4095;
-	nrfx_err_t err = nrfx_rtc_init(&m_rtc, &config, rtc_handler);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_rtc_init` failed: %d", (int)err);
+	int err = nrfx_rtc_init(&m_rtc, &config, rtc_handler);
+	if (err) {
+		LOG_ERR("Call `nrfx_rtc_init` failed: %d", err);
 		return -EIO;
 	}
 
