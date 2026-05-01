@@ -9,7 +9,8 @@ menuconfig MB7066
 	default n
 	select GPIO
 	select NRFX_GPIOTE
-	select NRFX_PPI
+	select NRFX_GPPI
+	select NRFX_TIMER
 	help
 		Enable the drivers for MB7066 sensor
 

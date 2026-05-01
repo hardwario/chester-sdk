@@ -8,9 +8,8 @@
 
 /* Nordic includes */
 #include <hal/nrf_saadc.h>
-#include <nrf52840.h>
 #include <nrfx.h>
-#include <nrfx_ppi.h>
+#include <helpers/nrfx_gppi.h>
 #include <nrfx_saadc.h>
 #include <nrfx_timer.h>
 
@@ -29,7 +28,7 @@ LOG_MODULE_REGISTER(ctr_signal, CONFIG_CTR_SIGNAL_LOG_LEVEL);
 #define SAMPLE_COUNT                 500
 #define SAMPLE_TO_MILLIVOLTS(sample) (sample * 6 * 600 / 2048)
 
-static const nrfx_timer_t m_timer = NRFX_TIMER_INSTANCE(4);
+static nrfx_timer_t m_timer = NRFX_TIMER_INSTANCE(4);
 static nrf_saadc_value_t m_samples[SAMPLE_COUNT];
 static K_SEM_DEFINE(m_sem, 0, 1);
 
@@ -67,17 +66,17 @@ static void saadc_event_handler(nrfx_saadc_evt_t const *p_event)
 
 static int setup_timer(void)
 {
-	nrfx_err_t ret_nrfx;
+	int ret;
 
-	IRQ_CONNECT(TIMER1_IRQn, 0, nrfx_timer_1_irq_handler, NULL, 0);
+	IRQ_CONNECT(TIMER1_IRQn, 0, nrfx_timer_irq_handler, &m_timer, 0);
 	irq_enable(TIMER1_IRQn);
 
 	uint32_t base_frequency = NRF_TIMER_BASE_FREQUENCY_GET(m_timer.p_reg);
 	nrfx_timer_config_t timer_config = NRFX_TIMER_DEFAULT_CONFIG(base_frequency);
 
-	ret_nrfx = nrfx_timer_init(&m_timer, &timer_config, timer_event_handler);
-	if (ret_nrfx != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_timer_init` failed: 0x%08x", ret_nrfx);
+	ret = nrfx_timer_init(&m_timer, &timer_config, timer_event_handler);
+	if (ret) {
+		LOG_ERR("Call `nrfx_timer_init` failed: %d", ret);
 		return -EIO;
 	}
 
@@ -98,29 +97,18 @@ static int setup_saadc(void)
 
 static int setup_ppi(void)
 {
-	nrfx_err_t ret_nrfx;
+	nrfx_gppi_handle_t gppi_handle;
+	int err;
 
-	nrf_ppi_channel_t ppi_channel;
-
-	ret_nrfx = nrfx_ppi_channel_alloc(&ppi_channel);
-	if (ret_nrfx != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_ppi_channel_alloc` failed: 0x%08x", ret_nrfx);
+	err = nrfx_gppi_conn_alloc(
+		nrfx_timer_event_address_get(&m_timer, NRF_TIMER_EVENT_COMPARE0),
+		nrf_saadc_task_address_get(NRF_SAADC, NRF_SAADC_TASK_SAMPLE), &gppi_handle);
+	if (err) {
+		LOG_ERR("Call `nrfx_gppi_conn_alloc` failed: %d", err);
 		return -EIO;
 	}
 
-	ret_nrfx = nrfx_ppi_channel_assign(
-		ppi_channel, nrfx_timer_event_address_get(&m_timer, NRF_TIMER_EVENT_COMPARE0),
-		nrf_saadc_task_address_get(NRF_SAADC, NRF_SAADC_TASK_SAMPLE));
-	if (ret_nrfx != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_ppi_channel_assign` failed: 0x%08x", ret_nrfx);
-		return -EIO;
-	}
-
-	ret_nrfx = nrfx_ppi_channel_enable(ppi_channel);
-	if (ret_nrfx != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_ppi_channel_enable` failed: 0x%08x", ret_nrfx);
-		return -EIO;
-	}
+	nrfx_gppi_conn_enable(gppi_handle);
 
 	return 0;
 }
@@ -128,17 +116,16 @@ static int setup_ppi(void)
 static int measure(void)
 {
 	int ret;
-	nrfx_err_t ret_nrfx;
 
-	ret_nrfx = nrfx_saadc_init(NRFX_SAADC_DEFAULT_CONFIG_IRQ_PRIORITY);
-	if (ret_nrfx != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_saadc_init` failed: 0x%08x", ret_nrfx);
+	ret = nrfx_saadc_init(NRFX_SAADC_DEFAULT_CONFIG_IRQ_PRIORITY);
+	if (ret) {
+		LOG_ERR("Call `nrfx_saadc_init` failed: %d", ret);
 		return -EIO;
 	}
 
-	ret_nrfx = nrfx_saadc_offset_calibrate(saadc_event_handler);
-	if (ret_nrfx != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_saadc_calibrate_offset` failed: 0x%08x", ret_nrfx);
+	ret = nrfx_saadc_offset_calibrate(saadc_event_handler);
+	if (ret) {
+		LOG_ERR("Call `nrfx_saadc_calibrate_offset` failed: %d", ret);
 		return -EIO;
 	}
 
@@ -166,9 +153,9 @@ static int measure(void)
 		},
 	};
 
-	ret_nrfx = nrfx_saadc_channels_config(channels, ARRAY_SIZE(channels));
-	if (ret_nrfx != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_saadc_channels_config` failed: 0x%08x", ret_nrfx);
+	ret = nrfx_saadc_channels_config(channels, ARRAY_SIZE(channels));
+	if (ret) {
+		LOG_ERR("Call `nrfx_saadc_channels_config` failed: %d", ret);
 		return -EIO;
 	}
 
@@ -176,22 +163,22 @@ static int measure(void)
 	config.oversampling = NRF_SAADC_OVERSAMPLE_8X;
 	config.burst = NRF_SAADC_BURST_ENABLED;
 
-	ret_nrfx = nrfx_saadc_advanced_mode_set(BIT(0), NRF_SAADC_RESOLUTION_12BIT, &config,
-						saadc_event_handler);
-	if (ret_nrfx != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_saadc_advanced_mode_set` failed: 0x%08x", ret_nrfx);
+	ret = nrfx_saadc_advanced_mode_set(BIT(0), NRF_SAADC_RESOLUTION_12BIT, &config,
+					   saadc_event_handler);
+	if (ret) {
+		LOG_ERR("Call `nrfx_saadc_advanced_mode_set` failed: %d", ret);
 		return -EIO;
 	}
 
-	ret_nrfx = nrfx_saadc_buffer_set(m_samples, ARRAY_SIZE(m_samples));
-	if (ret_nrfx != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_saadc_buffer_set` failed: 0x%08x", ret_nrfx);
+	ret = nrfx_saadc_buffer_set(m_samples, ARRAY_SIZE(m_samples));
+	if (ret) {
+		LOG_ERR("Call `nrfx_saadc_buffer_set` failed: %d", ret);
 		return -EIO;
 	}
 
-	ret_nrfx = nrfx_saadc_mode_trigger();
-	if (ret_nrfx != NRFX_SUCCESS) {
-		LOG_ERR("Call `nrfx_saadc_mode_trigger` failed: 0x%08x", ret_nrfx);
+	ret = nrfx_saadc_mode_trigger();
+	if (ret) {
+		LOG_ERR("Call `nrfx_saadc_mode_trigger` failed: %d", ret);
 		return -EIO;
 	}
 

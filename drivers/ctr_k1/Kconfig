@@ -11,7 +11,7 @@ config CTR_K1
 	select GPIO
 	select GPIO_PCA953X
 	select I2C
-	select NRFX_PPI
+	select NRFX_GPPI
 	select NRFX_SAADC
 	select NRFX_TIMER
 	select NRFX_TIMER4

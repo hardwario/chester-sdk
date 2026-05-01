@@ -7,8 +7,7 @@
 config CTR_S3
 	bool "HARDWARIO CHESTER-S3 (Dual PIR Detector) Driver"
 	select GPIO
-	select NRFX_PWM0
-	select NRFX_PWM1
+	select NRFX_PWM
 
 if CTR_S3
 

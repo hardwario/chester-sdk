@@ -17,8 +17,8 @@
 /* NRFX includes */
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_timer.h>
+#include <helpers/nrfx_gppi.h>
 #include <nrfx_gpiote.h>
-#include <nrfx_ppi.h>
 #include <nrfx_timer.h>
 
 /* Standard includes */
@@ -31,9 +31,9 @@ LOG_MODULE_REGISTER(MB7066, CONFIG_MB7066_LOG_LEVEL);
 
 #define CHECKOUT(fn, ...)                                                                          \
 	do {                                                                                       \
-		nrfx_err_t err = fn(__VA_ARGS__);                                                  \
-		if (err != NRFX_SUCCESS) {                                                         \
-			LOG_ERR(#fn ": 0x%x", err);                                                \
+		int err = fn(__VA_ARGS__);                                                         \
+		if (err) {                                                                         \
+			LOG_ERR(#fn ": %d", err);                                                  \
 			return 1;                                                                  \
 		}                                                                                  \
 	} while (0)
@@ -42,7 +42,7 @@ struct mb7066_data {
 	const struct gpio_dt_spec *pin;
 
 	nrfx_timer_t timer;
-	nrf_ppi_channel_t ppi_chan;
+	nrfx_gppi_handle_t gppi_handle;
 	nrfx_gpiote_t gpiote;
 
 	bool measuring;
@@ -63,7 +63,7 @@ static int enable_measurement(const struct device *dev)
 	struct mb7066_data *data = dev->data;
 
 	nrfx_gpiote_trigger_enable(&data->gpiote, data->pin->pin, true);
-	CHECKOUT(nrfx_ppi_channel_enable, data->ppi_chan);
+	nrfx_gppi_conn_enable(data->gppi_handle);
 	nrfx_timer_enable(&data->timer);
 
 	return 0;
@@ -74,7 +74,7 @@ static int disable_measurement(const struct device *dev)
 	struct mb7066_data *data = dev->data;
 
 	nrfx_gpiote_trigger_disable(&data->gpiote, data->pin->pin);
-	CHECKOUT(nrfx_ppi_channel_disable, data->ppi_chan);
+	nrfx_gppi_conn_disable(data->gppi_handle);
 	nrfx_timer_disable(&data->timer);
 
 	return 0;
@@ -207,12 +207,13 @@ static int mb7066_init(const struct device *dev)
 	CHECKOUT(nrfx_timer_init, &data->timer, &timer_config, NULL);
 
 	/* setup PPI GPIOTE -> timer capture */
-	CHECKOUT(nrfx_ppi_channel_alloc, &data->ppi_chan);
-	CHECKOUT(nrfx_ppi_channel_assign, data->ppi_chan,
+	CHECKOUT(nrfx_gppi_conn_alloc,
 		 nrfx_gpiote_in_event_address_get(&data->gpiote, data->pin->pin),
-		 nrfx_timer_task_address_get(&data->timer, NRF_TIMER_TASK_CAPTURE0));
-	CHECKOUT(nrfx_ppi_channel_fork_assign, data->ppi_chan,
-		 nrfx_timer_task_address_get(&data->timer, NRF_TIMER_TASK_CLEAR));
+		 nrfx_timer_task_address_get(&data->timer, NRF_TIMER_TASK_CAPTURE0),
+		 &data->gppi_handle);
+	CHECKOUT(nrfx_gppi_ep_attach,
+		 nrfx_timer_task_address_get(&data->timer, NRF_TIMER_TASK_CLEAR),
+		 data->gppi_handle);
 	disable_measurement(dev);
 
 	nrfx_timer_enable(&data->timer);

@@ -372,8 +372,6 @@ static int ctr_s3_init(const struct device *dev)
 {
 	int ret;
 
-	nrfx_err_t status;
-
 	LOG_INF("System initialization");
 
 	k_mutex_init(&get_data(dev)->lock);
@@ -398,25 +396,17 @@ static int ctr_s3_init(const struct device *dev)
 	get_data(dev)->pwm_config_1.output_pins[0] = get_config(dev)->si_spec_1.pin;
 	get_data(dev)->pwm_config_1.top_value = 100;
 
-	status = nrfx_pwm_init(&get_data(dev)->pwm_0, &get_data(dev)->pwm_config_0, NULL,
-			       &get_data(dev)->pwm_0);
-
-	if (status != NRFX_SUCCESS) {
-		return -EIO;
+	ret = nrfx_pwm_init(&get_data(dev)->pwm_0, &get_data(dev)->pwm_config_0, NULL,
+			    &get_data(dev)->pwm_0);
+	if (ret) {
+		return ret;
 	}
 
-	status = nrfx_pwm_init(&get_data(dev)->pwm_1, &get_data(dev)->pwm_config_1, NULL,
-			       &get_data(dev)->pwm_1);
-
-	if (status != NRFX_SUCCESS) {
-		return -EIO;
+	ret = nrfx_pwm_init(&get_data(dev)->pwm_1, &get_data(dev)->pwm_config_1, NULL,
+			    &get_data(dev)->pwm_1);
+	if (ret) {
+		return ret;
 	}
-
-	IRQ_DIRECT_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_PWM_INST_GET(0)), IRQ_PRIO_LOWEST,
-			   NRFX_PWM_INST_HANDLER_GET(0), 0);
-
-	IRQ_DIRECT_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_PWM_INST_GET(1)), IRQ_PRIO_LOWEST,
-			   NRFX_PWM_INST_HANDLER_GET(1), 0);
 
 	ret = gpio_pin_configure_dt(&get_config(dev)->dl_spec_0, GPIO_INPUT);
 	if (ret) {
@@ -465,8 +455,8 @@ static const struct ctr_s3_driver_api ctr_s3_driver_api = {
 	};                                                                                         \
 	static struct ctr_s3_data inst_##n##_data = {                                              \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
-		.pwm_0 = NRFX_PWM_INSTANCE(0),                                                     \
-		.pwm_1 = NRFX_PWM_INSTANCE(1),                                                     \
+		.pwm_0 = NRFX_PWM_INSTANCE(NRF_PWM0),                                              \
+		.pwm_1 = NRFX_PWM_INSTANCE(NRF_PWM1),                                              \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, ctr_s3_init, NULL, &inst_##n##_data, &inst_##n##_config,          \
 			      POST_KERNEL, CONFIG_CTR_S3_INIT_PRIORITY, &ctr_s3_driver_api);
