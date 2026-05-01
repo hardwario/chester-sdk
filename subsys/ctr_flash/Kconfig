@@ -6,8 +6,8 @@
 
 config CTR_FLASH
 	bool "CTR_FLASH"
+	depends on FLASH
 	select FLASH_PAGE_LAYOUT
-	select FLASH
 	select PM_DEVICE
 	select SPI
 

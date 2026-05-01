@@ -15,3 +15,7 @@ CONFIG_USE_SEGGER_RTT=y
 
 # Enable GPIO
 CONFIG_GPIO=y
+
+# Enable internal flash
+CONFIG_FLASH=y
+CONFIG_FLASH_MAP=y

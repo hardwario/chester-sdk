@@ -7,10 +7,10 @@
 config CTR_CONFIG
 	bool "CTR_CONFIG"
 	depends on SHELL
+	depends on FLASH
+	depends on FLASH_MAP
 	select CTR_UTIL
 	select CBPRINTF_FP_SUPPORT
-	select FLASH
-	select FLASH_MAP
 	select NVS
 	select REBOOT
 	select SETTINGS
