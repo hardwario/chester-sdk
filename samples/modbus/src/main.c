@@ -36,7 +36,7 @@ static void init_modbus(void)
 			{
 				.baud = 9600,
 				.parity = UART_CFG_PARITY_NONE,
-				.stop_bits_client = UART_CFG_STOP_BITS_1,
+				.stop_bits = UART_CFG_STOP_BITS_1,
 			},
 	};
 

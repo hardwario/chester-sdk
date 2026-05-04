@@ -150,7 +150,7 @@ static int init(void)
 			{
 				.baud = g_ctr_radon_config.modbus_baud,
 				.parity = g_ctr_radon_config.modbus_parity,
-				.stop_bits_client = g_ctr_radon_config.modbus_stop_bits,
+				.stop_bits = g_ctr_radon_config.modbus_stop_bits,
 			},
 	};
 

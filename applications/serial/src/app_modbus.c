@@ -283,7 +283,7 @@ int app_modbus_init(void)
 			{
 				.baud = g_app_config.serial_baudrate,
 				.parity = (enum uart_config_parity)g_app_config.serial_parity,
-				.stop_bits_client =
+				.stop_bits =
 					(enum uart_config_stop_bits)g_app_config.serial_stop_bits,
 			},
 	};

@@ -90,7 +90,7 @@ int app_radon_init(void)
 			{
 				.baud = g_app_config.modbus_baud,
 				.parity = g_app_config.modbus_parity,
-				.stop_bits_client = g_app_config.modbus_stop_bits,
+				.stop_bits = g_app_config.modbus_stop_bits,
 			},
 	};
 
