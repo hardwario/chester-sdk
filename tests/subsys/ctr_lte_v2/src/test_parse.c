@@ -3,7 +3,7 @@
  *
  */
 
-/* west twister -p native_posix -c -i -j 1 --testsuite-root . -vv */
+/* west twister -p native_sim -c -i -j 1 --testsuite-root . -vv */
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>

@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 # build once
-west build -b native_posix
+west build -b native_sim
 
 mkdir -p data
 

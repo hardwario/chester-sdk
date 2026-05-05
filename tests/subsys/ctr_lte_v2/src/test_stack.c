@@ -1,5 +1,5 @@
-/* west twister --testsuite-root . -c -i -v -p native_posix */
-/* west build -b native_posix -- -DCONFIG_TEST_FEATURE_STACK=y && ./build/zephyr/zephyr.elf */
+/* west twister --testsuite-root . -c -i -v -p native_sim */
+/* west build -b native_sim -- -DCONFIG_TEST_FEATURE_STACK=y && ./build/zephyr/zephyr.elf */
 
 /*
  * Test cases (run sequentially, depend on each other):

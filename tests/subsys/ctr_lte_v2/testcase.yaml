@@ -2,9 +2,9 @@
 common:
   tags:
       - chester
-  platform_allow: native_posix
+  platform_allow: native_sim
   integration_platforms:
-    - native_posix
+    - native_sim
 
 tests:
   subsys.ctr_lte_v2.parser:

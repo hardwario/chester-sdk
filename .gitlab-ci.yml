@@ -31,7 +31,7 @@ variables:
 tests:
   extends: .build_template
   script:
-    - ./zephyr/scripts/twister --testsuite-root chester/tests -c -i -v -p native_posix
+    - ./zephyr/scripts/twister --testsuite-root chester/tests -c -i -v -p native_sim
 
 samples:
   extends: .build_template
