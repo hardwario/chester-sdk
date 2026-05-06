@@ -50,6 +50,10 @@ static atomic_t m_synced = ATOMIC_INIT(0);
 static int64_t m_tick_uptime_ms = 0;
 static struct k_spinlock m_tick_lock;
 
+static K_MUTEX_DEFINE(m_cb_lock);
+static ctr_rtc_event_cb m_event_cb;
+static void *m_event_user_data;
+
 static int get_days_in_month(int year, int month)
 {
 	if (month < 1 || month > 12) {
@@ -136,9 +140,20 @@ int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm)
 
 	irq_enable(RTC2_IRQn);
 
-	atomic_set(&m_synced, 1);
+	bool was_unsynced = atomic_cas(&m_synced, 0, 1);
 
 	k_event_post(&m_rtc_events, EVENT_RTC_SET);
+
+	if (was_unsynced) {
+		k_mutex_lock(&m_cb_lock, K_FOREVER);
+		ctr_rtc_event_cb cb = m_event_cb;
+		void *user_data = m_event_user_data;
+		k_mutex_unlock(&m_cb_lock);
+
+		if (cb) {
+			cb(CTR_RTC_EVENT_SYNC_ACQUIRED, user_data);
+		}
+	}
 
 	return 0;
 }
@@ -237,6 +252,16 @@ int ctr_rtc_wait_set(k_timeout_t timeout)
 	}
 
 	return -ETIMEDOUT;
+}
+
+int ctr_rtc_set_event_cb(ctr_rtc_event_cb cb, void *user_data)
+{
+	k_mutex_lock(&m_cb_lock, K_FOREVER);
+	m_event_cb = cb;
+	m_event_user_data = user_data;
+	k_mutex_unlock(&m_cb_lock);
+
+	return 0;
 }
 
 static int cmd_rtc_get(const struct shell *shell, size_t argc, char **argv)

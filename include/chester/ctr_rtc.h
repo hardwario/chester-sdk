@@ -46,11 +46,21 @@ struct ctr_rtc_tm {
 	int seconds;
 };
 
+enum ctr_rtc_event {
+	/* false→true transition of ctr_rtc_is_synced(). Fires once per power
+	 * cycle (or until reset), in the context of the caller of
+	 * ctr_rtc_set_tm/_set_ts. Handlers must be short and non-blocking. */
+	CTR_RTC_EVENT_SYNC_ACQUIRED,
+};
+
+typedef void (*ctr_rtc_event_cb)(enum ctr_rtc_event event, void *user_data);
+
 int ctr_rtc_get_tm(struct ctr_rtc_tm *tm);
 int ctr_rtc_set_tm(const struct ctr_rtc_tm *tm);
 int ctr_rtc_get_ts(int64_t *ts);
 int ctr_rtc_set_ts(int64_t ts);
 int ctr_rtc_wait_set(k_timeout_t timeout);
+int ctr_rtc_set_event_cb(ctr_rtc_event_cb cb, void *user_data);
 
 /**
  * @brief Get current RTC timestamp in milliseconds since UNIX epoch.
