@@ -24,8 +24,6 @@ void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_d
 
 void app_handler_edge_trigger_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
 				       void *user_data);
-void app_handler_edge_trigger2_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
-					void *user_data);
 void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_event edge_event,
 				       void *user_data);
 
