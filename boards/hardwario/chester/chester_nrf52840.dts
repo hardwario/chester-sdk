@@ -78,6 +78,7 @@
 
 	pwm_leds: pwm_leds {
 		compatible = "pwm-leds";
+		status = "disabled";
 
 		pwm_led_r: pwm_led_r {
 			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
