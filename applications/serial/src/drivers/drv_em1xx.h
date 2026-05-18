@@ -12,12 +12,15 @@
  * @brief Carlo Gavazzi EM1XX (EM111) single-phase energy meter driver
  *
  * Register map (INT32 Low Word First):
- * - Current:    0x0100 (/1000 A)
- * - Voltage:    0x0102 (/10 V)
- * - Power:      0x0106 (/10000 kW)
- * - Frequency:  0x0110 (/10 Hz)
- * - Energy IN:  0x0112 (/10 kWh)
- * - Energy OUT: 0x0116 (/10 kWh)
+ * - Current:        0x0100 (/1000 A)
+ * - Voltage:        0x0102 (/10 V)
+ * - Power:          0x0106 (/10000 kW)
+ * - Apparent power: 0x0108 (/10000 kVA)
+ * - Reactive power: 0x010A (/10000 kvar)
+ * - Power factor:   0x010C (/1000 PF)
+ * - Frequency:      0x0110 (/10 Hz)
+ * - Energy IN:      0x0112 (/10 kWh)
+ * - Energy OUT:     0x0116 (/10 kWh)
  *
  * Communication: 9600 baud, 8E1
  */
@@ -29,11 +32,14 @@
 extern "C" {
 #endif
 
-/* EM1XX data structure (1-phase, 6 values) */
+/* EM1XX data structure (1-phase, 9 values) */
 struct app_data_em1xx {
 	float current;        /* A */
 	float voltage;        /* V */
 	float power;          /* kW */
+	float power_apparent; /* kVA */
+	float power_reactive; /* kvar */
+	float power_factor;   /* PF (-1..1) */
 	float frequency;      /* Hz */
 	float energy_in;      /* kWh */
 	float energy_out;     /* kWh */
@@ -49,6 +55,9 @@ struct em1xx_sample {
 	float voltage;
 	float current;
 	float power;
+	float power_apparent;
+	float power_reactive;
+	float power_factor;
 	float frequency;
 	float energy_in;
 	float energy_out;

@@ -58,20 +58,25 @@ static int parse_parity(const char *str, char *parity, int *stop_bits)
 
 /* EM5XX Register addresses (INT32 LSW) */
 #define REG_CURRENT           0x00F8  /* /1000 A */
-#define REG_VOLTAGE           0x0102  /* /10 V */
 #define REG_POWER             0x0106  /* /10000 kW */
+#define REG_APPARENT          0x0108  /* /10000 kVA, sum */
+#define REG_REACTIVE          0x010A  /* /10000 kvar, sum */
+#define REG_PF                0x010C  /* /1000 PF, sum */
 #define REG_FREQUENCY         0x0110  /* /10 Hz */
 #define REG_ENERGY_IN         0x0112  /* /10 kWh */
 #define REG_ENERGY_OUT        0x0116  /* /10 kWh */
 #define REG_VOLTAGE_L1        0x0120  /* /10 V */
 #define REG_CURRENT_L1        0x0122  /* /1000 A */
 #define REG_POWER_L1          0x0124  /* /10000 kW */
+#define REG_PF_L1             0x012A  /* /1000 PF L1 */
 #define REG_VOLTAGE_L2        0x012E  /* /10 V */
 #define REG_CURRENT_L2        0x0130  /* /1000 A */
 #define REG_POWER_L2          0x0132  /* /10000 kW */
+#define REG_PF_L2             0x0138  /* /1000 PF L2 */
 #define REG_VOLTAGE_L3        0x013C  /* /10 V */
 #define REG_CURRENT_L3        0x013E  /* /1000 A */
 #define REG_POWER_L3          0x0140  /* /10000 kW */
+#define REG_PF_L3             0x0146  /* /1000 PF L3 */
 
 #define DEFAULT_ADDR          1
 
@@ -117,10 +122,11 @@ static int sample(void)
 	uint8_t addr;
 
 	/* Local variables for values */
-	float current, voltage, power, frequency, energy_in, energy_out;
-	float voltage_l1, current_l1, power_l1;
-	float voltage_l2, current_l2, power_l2;
-	float voltage_l3, current_l3, power_l3;
+	float current, power, frequency, energy_in, energy_out;
+	float power_apparent, power_reactive, power_factor;
+	float voltage_l1, current_l1, power_l1, power_factor_l1;
+	float voltage_l2, current_l2, power_l2, power_factor_l2;
+	float voltage_l3, current_l3, power_l3, power_factor_l3;
 
 	k_mutex_lock(&m_data_mutex, K_FOREVER);
 	addr = m_data.modbus_addr;
@@ -137,10 +143,15 @@ static int sample(void)
 		return ret;
 	}
 
-	/* Total values */
+	/* Total values (system voltage average is intentionally not read —
+	 * it's misleading on a 1-phase test rig; per-phase voltage_l1/l2/l3
+	 * carry the actual measurements)
+	 */
 	if (read_int32_lsw(addr, REG_CURRENT, &current, 1000.0f)) errors++;
-	if (read_int32_lsw(addr, REG_VOLTAGE, &voltage, 10.0f)) errors++;
 	if (read_int32_lsw(addr, REG_POWER, &power, 10000.0f)) errors++;
+	if (read_int32_lsw(addr, REG_APPARENT, &power_apparent, 10000.0f)) errors++;
+	if (read_int32_lsw(addr, REG_REACTIVE, &power_reactive, 10000.0f)) errors++;
+	if (read_int32_lsw(addr, REG_PF, &power_factor, 1000.0f)) errors++;
 	if (read_int32_lsw(addr, REG_FREQUENCY, &frequency, 10.0f)) errors++;
 	if (read_int32_lsw(addr, REG_ENERGY_IN, &energy_in, 10.0f)) errors++;
 	if (read_int32_lsw(addr, REG_ENERGY_OUT, &energy_out, 10.0f)) errors++;
@@ -149,16 +160,19 @@ static int sample(void)
 	if (read_int32_lsw(addr, REG_VOLTAGE_L1, &voltage_l1, 10.0f)) errors++;
 	if (read_int32_lsw(addr, REG_CURRENT_L1, &current_l1, 1000.0f)) errors++;
 	if (read_int32_lsw(addr, REG_POWER_L1, &power_l1, 10000.0f)) errors++;
+	if (read_int32_lsw(addr, REG_PF_L1, &power_factor_l1, 1000.0f)) errors++;
 
 	/* Phase L2 */
 	if (read_int32_lsw(addr, REG_VOLTAGE_L2, &voltage_l2, 10.0f)) errors++;
 	if (read_int32_lsw(addr, REG_CURRENT_L2, &current_l2, 1000.0f)) errors++;
 	if (read_int32_lsw(addr, REG_POWER_L2, &power_l2, 10000.0f)) errors++;
+	if (read_int32_lsw(addr, REG_PF_L2, &power_factor_l2, 1000.0f)) errors++;
 
 	/* Phase L3 */
 	if (read_int32_lsw(addr, REG_VOLTAGE_L3, &voltage_l3, 10.0f)) errors++;
 	if (read_int32_lsw(addr, REG_CURRENT_L3, &current_l3, 1000.0f)) errors++;
 	if (read_int32_lsw(addr, REG_POWER_L3, &power_l3, 10000.0f)) errors++;
+	if (read_int32_lsw(addr, REG_PF_L3, &power_factor_l3, 1000.0f)) errors++;
 
 	app_modbus_disable();
 
@@ -166,20 +180,25 @@ static int sample(void)
 	k_mutex_lock(&m_data_mutex, K_FOREVER);
 	if (errors == 0) {
 		m_data.current = current;
-		m_data.voltage = voltage;
 		m_data.power = power;
+		m_data.power_apparent = power_apparent;
+		m_data.power_reactive = power_reactive;
+		m_data.power_factor = power_factor;
 		m_data.frequency = frequency;
 		m_data.energy_in = energy_in;
 		m_data.energy_out = energy_out;
 		m_data.voltage_l1 = voltage_l1;
 		m_data.current_l1 = current_l1;
 		m_data.power_l1 = power_l1;
+		m_data.power_factor_l1 = power_factor_l1;
 		m_data.voltage_l2 = voltage_l2;
 		m_data.current_l2 = current_l2;
 		m_data.power_l2 = power_l2;
+		m_data.power_factor_l2 = power_factor_l2;
 		m_data.voltage_l3 = voltage_l3;
 		m_data.current_l3 = current_l3;
 		m_data.power_l3 = power_l3;
+		m_data.power_factor_l3 = power_factor_l3;
 		m_data.valid = true;
 		m_data.last_sample = k_uptime_get_32();
 		m_data.error_count = 0;
@@ -192,9 +211,11 @@ static int sample(void)
 			ctr_rtc_get_ts(&ts);
 
 			m_samples[m_sample_count].timestamp = ts;
-			m_samples[m_sample_count].voltage = voltage;
 			m_samples[m_sample_count].current = current;
 			m_samples[m_sample_count].power = power;
+			m_samples[m_sample_count].power_apparent = power_apparent;
+			m_samples[m_sample_count].power_reactive = power_reactive;
+			m_samples[m_sample_count].power_factor = power_factor;
 			m_samples[m_sample_count].frequency = frequency;
 			m_samples[m_sample_count].energy_in = energy_in;
 			m_samples[m_sample_count].energy_out = energy_out;
@@ -207,6 +228,9 @@ static int sample(void)
 			m_samples[m_sample_count].power_l1 = power_l1;
 			m_samples[m_sample_count].power_l2 = power_l2;
 			m_samples[m_sample_count].power_l3 = power_l3;
+			m_samples[m_sample_count].power_factor_l1 = power_factor_l1;
+			m_samples[m_sample_count].power_factor_l2 = power_factor_l2;
+			m_samples[m_sample_count].power_factor_l3 = power_factor_l3;
 			m_sample_count++;
 			LOG_DBG("EM5XX: Added sample %d to buffer", m_sample_count);
 		} else {
@@ -214,8 +238,8 @@ static int sample(void)
 		}
 		k_mutex_unlock(&m_samples_mutex);
 
-		LOG_INF("EM5XX: V=%.1f V, I=%.3f A, P=%.4f kW, E_in=%.1f kWh",
-			(double)voltage, (double)current, (double)power, (double)energy_in);
+		LOG_INF("EM5XX: I=%.3f A, P=%.4f kW, E_in=%.1f kWh",
+			(double)current, (double)power, (double)energy_in);
 	} else {
 		m_data.valid = false;
 		m_data.error_count++;
@@ -317,18 +341,26 @@ static void print_data(const struct shell *shell, int idx, int addr)
 	k_mutex_unlock(&m_data_mutex);
 
 	shell_print(shell, "[%d] EM5XX (EM540) @ addr %d:", idx, addr);
-	shell_print(shell, "  Voltage:    %.1f V (L1=%.1f L2=%.1f L3=%.1f)",
-		    (double)data_copy.voltage, (double)data_copy.voltage_l1,
-		    (double)data_copy.voltage_l2, (double)data_copy.voltage_l3);
-	shell_print(shell, "  Current:    %.3f A (L1=%.3f L2=%.3f L3=%.3f)",
-		    (double)data_copy.current, (double)data_copy.current_l1,
-		    (double)data_copy.current_l2, (double)data_copy.current_l3);
-	shell_print(shell, "  Power:      %.4f kW (L1=%.4f L2=%.4f L3=%.4f)",
-		    (double)data_copy.power, (double)data_copy.power_l1,
-		    (double)data_copy.power_l2, (double)data_copy.power_l3);
-	shell_print(shell, "  Frequency:  %.1f Hz", (double)data_copy.frequency);
-	shell_print(shell, "  Energy IN:  %.1f kWh", (double)data_copy.energy_in);
-	shell_print(shell, "  Energy OUT: %.1f kWh", (double)data_copy.energy_out);
+	shell_print(shell, "  voltage_l1:      %.1f V", (double)data_copy.voltage_l1);
+	shell_print(shell, "  voltage_l2:      %.1f V", (double)data_copy.voltage_l2);
+	shell_print(shell, "  voltage_l3:      %.1f V", (double)data_copy.voltage_l3);
+	shell_print(shell, "  current:         %.3f A", (double)data_copy.current);
+	shell_print(shell, "  current_l1:      %.3f A", (double)data_copy.current_l1);
+	shell_print(shell, "  current_l2:      %.3f A", (double)data_copy.current_l2);
+	shell_print(shell, "  current_l3:      %.3f A", (double)data_copy.current_l3);
+	shell_print(shell, "  frequency:       %.2f Hz", (double)data_copy.frequency);
+	shell_print(shell, "  power:           %.4f kW", (double)data_copy.power);
+	shell_print(shell, "  power_l1:        %.4f kW", (double)data_copy.power_l1);
+	shell_print(shell, "  power_l2:        %.4f kW", (double)data_copy.power_l2);
+	shell_print(shell, "  power_l3:        %.4f kW", (double)data_copy.power_l3);
+	shell_print(shell, "  power_apparent:  %.4f kVA", (double)data_copy.power_apparent);
+	shell_print(shell, "  power_reactive:  %.4f kvar", (double)data_copy.power_reactive);
+	shell_print(shell, "  power_factor:    %.3f", (double)data_copy.power_factor);
+	shell_print(shell, "  power_factor_l1: %.3f", (double)data_copy.power_factor_l1);
+	shell_print(shell, "  power_factor_l2: %.3f", (double)data_copy.power_factor_l2);
+	shell_print(shell, "  power_factor_l3: %.3f", (double)data_copy.power_factor_l3);
+	shell_print(shell, "  energy_in:       %.3f kWh", (double)data_copy.energy_in);
+	shell_print(shell, "  energy_out:      %.3f kWh", (double)data_copy.energy_out);
 }
 
 const struct app_device_driver em5xx_driver = {

@@ -242,7 +242,7 @@ static int modbus_sample_generic(uint8_t slave_addr)
 int app_modbus_init(void)
 {
 #if !HAS_MODBUS_SERIAL
-	LOG_WRN("Modbus serial device not available in device tree");
+	LOG_ERR("Modbus serial device not available in device tree");
 	return -ENOTSUP;
 #else
 	int ret;
@@ -324,11 +324,13 @@ int app_modbus_enable(void)
 	int ret;
 
 	if (m_serial_dev == NULL) {
-		m_serial_dev = DEVICE_DT_GET(MODBUS_DEVICE_NODE);
-		if (!device_is_ready(m_serial_dev)) {
-			LOG_ERR("Modbus device (SC16IS740) not ready");
+		const struct device *dev = DEVICE_DT_GET(MODBUS_DEVICE_NODE);
+		if (!device_is_ready(dev)) {
+			LOG_ERR("Modbus device (SC16IS740) not ready - chip absent or "
+				"wrong shield/firmware combination?");
 			return -ENODEV;
 		}
+		m_serial_dev = dev;
 	}
 
 	ret = pm_device_action_run(m_serial_dev, PM_DEVICE_ACTION_RESUME);
@@ -340,7 +342,7 @@ int app_modbus_enable(void)
 	LOG_DBG("Modbus interface enabled (%s)", SERIAL_IS_RS485 ? "RS-485" : "RS-232");
 	return 0;
 #else
-	LOG_WRN("No serial device (X2/X12) available in device tree");
+	LOG_ERR("No serial device (X2/X12) available in device tree");
 	return -ENOTSUP;
 #endif
 }
@@ -363,7 +365,7 @@ int app_modbus_disable(void)
 	LOG_DBG("Modbus interface disabled");
 	return 0;
 #else
-	LOG_WRN("No serial device (X2/X12) available in device tree");
+	LOG_ERR("No serial device (X2/X12) available in device tree");
 	return -ENOTSUP;
 #endif
 }
@@ -504,10 +506,10 @@ int app_modbus_sample(void)
 	int errors = 0;
 	int sampled = 0;
 
-	/* Enable Modbus interface */
+	/* Enable Modbus interface (returns -ENOTSUP if no shield) */
 	ret = app_modbus_enable();
 	if (ret) {
-		LOG_ERR("app_modbus_enable failed: %d", ret);
+		LOG_ERR("app_modbus_enable failed: %d (sample skipped)", ret);
 		return ret;
 	}
 
@@ -567,7 +569,14 @@ int cmd_modbus_read(const struct shell *shell, size_t argc, char **argv)
 	uint16_t data[32];
 	int ret;
 
-	app_modbus_enable();
+	ret = app_modbus_enable();
+	if (ret == -ENOTSUP) {
+		shell_error(shell, "Modbus hardware not available in this build");
+		return ret;
+	} else if (ret) {
+		shell_error(shell, "Failed to enable Modbus: %d", ret);
+		return ret;
+	}
 
 	if (use_holding) {
 		ret = app_modbus_read_holding_regs(slave_addr, reg_addr, count, data);
@@ -600,9 +609,16 @@ int cmd_modbus_write(const struct shell *shell, size_t argc, char **argv)
 	uint16_t reg_addr = (uint16_t)strtol(argv[2], NULL, 0);
 	uint16_t value = (uint16_t)strtol(argv[3], NULL, 0);
 
-	app_modbus_enable();
+	int ret = app_modbus_enable();
+	if (ret == -ENOTSUP) {
+		shell_error(shell, "Modbus hardware not available in this build");
+		return ret;
+	} else if (ret) {
+		shell_error(shell, "Failed to enable Modbus: %d", ret);
+		return ret;
+	}
 
-	int ret = app_modbus_write_holding_reg(slave_addr, reg_addr, value);
+	ret = app_modbus_write_holding_reg(slave_addr, reg_addr, value);
 
 	app_modbus_disable();
 

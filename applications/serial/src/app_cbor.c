@@ -127,11 +127,25 @@ static int encode_device_or_we_504(zcbor_state_t *zs, int device_idx)
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT);
 		zcbor_int32_put(zs, (int32_t)(samples[i].current * 1000.f));
 
+		/* Power/energy/PF as native float32 (kW, kVA, kvar, kWh, dimensionless) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power * 10.f));
+		zcbor_float32_put(zs, samples[i].power);
 
-		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY);
-		zcbor_uint64_put(zs, (uint64_t)samples[i].energy);
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_APPARENT);
+		zcbor_float32_put(zs, samples[i].power_apparent);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_REACTIVE);
+		zcbor_float32_put(zs, samples[i].power_reactive);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR);
+		zcbor_float32_put(zs, samples[i].power_factor);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FREQUENCY);
+		zcbor_int32_put(zs, (int32_t)(samples[i].frequency * 100.f));
+
+		/* OR-WE-504 reads only active import (no export register) */
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_IN);
+		zcbor_float32_put(zs, samples[i].energy_in);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -177,20 +191,48 @@ static int encode_device_or_we_516(zcbor_state_t *zs, int device_idx)
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L3);
 		zcbor_int32_put(zs, (int32_t)(samples[i].current_l3 * 1000.f));
 
+		/* OR-WE-516 power/energy as native float32 (kW, kVA, kvar, kWh) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L1);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power_l1 * 10.f));
+		zcbor_float32_put(zs, samples[i].power_l1);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L2);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power_l2 * 10.f));
+		zcbor_float32_put(zs, samples[i].power_l2);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L3);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power_l3 * 10.f));
+		zcbor_float32_put(zs, samples[i].power_l3);
 
-		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_TOTAL);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power * 10.f));
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER);
+		zcbor_float32_put(zs, samples[i].power);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_APPARENT);
+		zcbor_float32_put(zs, samples[i].power_apparent);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_REACTIVE);
+		zcbor_float32_put(zs, samples[i].power_reactive);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR);
+		zcbor_float32_put(zs, samples[i].power_factor);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L1);
+		zcbor_float32_put(zs, samples[i].power_factor_l1);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L2);
+		zcbor_float32_put(zs, samples[i].power_factor_l2);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L3);
+		zcbor_float32_put(zs, samples[i].power_factor_l3);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FREQUENCY);
+		zcbor_int32_put(zs, (int32_t)(samples[i].frequency * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY);
-		zcbor_uint64_put(zs, (uint64_t)samples[i].energy);
+		zcbor_float32_put(zs, samples[i].energy);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_IN);
+		zcbor_float32_put(zs, samples[i].energy_in);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_OUT);
+		zcbor_float32_put(zs, samples[i].energy_out);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -224,19 +266,27 @@ static int encode_device_em1xx(zcbor_state_t *zs, int device_idx)
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT);
 		zcbor_int32_put(zs, (int32_t)(samples[i].current * 1000.f));
 
-		/* EM1XX power is in kW, convert to W * 10 */
+		/* EM1XX power/energy/PF as native float32 (kW, kVA, kvar, kWh, dim) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power * 1000.f * 10.f));
+		zcbor_float32_put(zs, samples[i].power);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_APPARENT);
+		zcbor_float32_put(zs, samples[i].power_apparent);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_REACTIVE);
+		zcbor_float32_put(zs, samples[i].power_reactive);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR);
+		zcbor_float32_put(zs, samples[i].power_factor);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FREQUENCY);
 		zcbor_int32_put(zs, (int32_t)(samples[i].frequency * 100.f));
 
-		/* EM1XX energy is in kWh, convert to Wh */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_IN);
-		zcbor_uint64_put(zs, (uint64_t)(samples[i].energy_in * 1000.f));
+		zcbor_float32_put(zs, samples[i].energy_in);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_OUT);
-		zcbor_uint64_put(zs, (uint64_t)(samples[i].energy_out * 1000.f));
+		zcbor_float32_put(zs, samples[i].energy_out);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -264,23 +314,30 @@ static int encode_device_em5xx(zcbor_state_t *zs, int device_idx)
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
 		zcbor_uint64_put(zs, samples[i].timestamp);
 
-		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage * 100.f));
-
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT);
 		zcbor_int32_put(zs, (int32_t)(samples[i].current * 1000.f));
 
+		/* EM5XX power/energy/PF as native float32 (kW, kVA, kvar, kWh, dim) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power * 10.f));
+		zcbor_float32_put(zs, samples[i].power);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_APPARENT);
+		zcbor_float32_put(zs, samples[i].power_apparent);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_REACTIVE);
+		zcbor_float32_put(zs, samples[i].power_reactive);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR);
+		zcbor_float32_put(zs, samples[i].power_factor);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FREQUENCY);
 		zcbor_int32_put(zs, (int32_t)(samples[i].frequency * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_IN);
-		zcbor_uint64_put(zs, (uint64_t)samples[i].energy_in);
+		zcbor_float32_put(zs, samples[i].energy_in);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_OUT);
-		zcbor_uint64_put(zs, (uint64_t)samples[i].energy_out);
+		zcbor_float32_put(zs, samples[i].energy_out);
 
 		/* Per-phase data */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE_L1);
@@ -301,14 +358,25 @@ static int encode_device_em5xx(zcbor_state_t *zs, int device_idx)
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L3);
 		zcbor_int32_put(zs, (int32_t)(samples[i].current_l3 * 1000.f));
 
+		/* Per-phase power as native float32 (kW) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L1);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power_l1 * 10.f));
+		zcbor_float32_put(zs, samples[i].power_l1);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L2);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power_l2 * 10.f));
+		zcbor_float32_put(zs, samples[i].power_l2);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L3);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power_l3 * 10.f));
+		zcbor_float32_put(zs, samples[i].power_l3);
+
+		/* Per-phase power factor as native float32 */
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L1);
+		zcbor_float32_put(zs, samples[i].power_factor_l1);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L2);
+		zcbor_float32_put(zs, samples[i].power_factor_l2);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L3);
+		zcbor_float32_put(zs, samples[i].power_factor_l3);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -354,14 +422,36 @@ static int encode_device_iem3000(zcbor_state_t *zs, int device_idx)
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L3);
 		zcbor_int32_put(zs, (int32_t)(samples[i].current_l3 * 1000.f));
 
-		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_TOTAL);
-		zcbor_int32_put(zs, (int32_t)(samples[i].power * 10.f));
+		/* iEM3000 power/energy/PF as native float32 (kW, kVA, kvar, kWh, dim) */
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L1);
+		zcbor_float32_put(zs, samples[i].power_l1);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L2);
+		zcbor_float32_put(zs, samples[i].power_l2);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L3);
+		zcbor_float32_put(zs, samples[i].power_l3);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER);
+		zcbor_float32_put(zs, samples[i].power);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_APPARENT);
+		zcbor_float32_put(zs, samples[i].power_apparent);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_REACTIVE);
+		zcbor_float32_put(zs, samples[i].power_reactive);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR);
+		zcbor_float32_put(zs, samples[i].power_factor);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FREQUENCY);
+		zcbor_int32_put(zs, (int32_t)(samples[i].frequency * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_IN);
-		zcbor_uint64_put(zs, (uint64_t)samples[i].energy_in);
+		zcbor_float32_put(zs, samples[i].energy_in);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_OUT);
-		zcbor_uint64_put(zs, (uint64_t)samples[i].energy_out);
+		zcbor_float32_put(zs, samples[i].energy_out);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}

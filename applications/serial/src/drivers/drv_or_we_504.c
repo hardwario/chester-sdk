@@ -58,8 +58,13 @@ static int parse_parity(const char *str, char *parity, int *stop_bits)
 /* OR-WE-504 Register addresses */
 #define REG_VOLTAGE       0x0000  /* UINT16, /10 V */
 #define REG_CURRENT       0x0001  /* UINT16, /10 A */
-#define REG_POWER         0x0003  /* UINT16, W */
+#define REG_FREQUENCY     0x0002  /* UINT16, /10 Hz */
+#define REG_POWER         0x0003  /* INT16,  W (signed) */
+#define REG_REACTIVE      0x0004  /* INT16,  var (signed) */
+#define REG_APPARENT      0x0005  /* UINT16, VA */
+#define REG_PF            0x0006  /* INT16,  /1000 PF */
 #define REG_ENERGY        0x0007  /* UINT32 BE, Wh */
+#define REG_ENERGY_REACT  0x0009  /* UINT32 BE, varh */
 #define REG_ADDRESS       0x000F  /* Address configuration register */
 
 /* Default Modbus address */
@@ -117,7 +122,8 @@ static int sample(void)
 	uint8_t addr;
 
 	/* Local variables for values */
-	float voltage, current, power, energy;
+	float voltage, current, frequency, power, power_reactive, power_apparent, power_factor;
+	float energy_in, energy_reactive;
 
 	k_mutex_lock(&m_data_mutex, K_FOREVER);
 	addr = m_data.modbus_addr;
@@ -158,7 +164,19 @@ static int sample(void)
 	}
 	current = (float)regs[0] / 10.0f;
 
-	/* Read Power (0x0003) - UINT16 */
+	/* Read Frequency (0x0002) - UINT16, /10 Hz */
+	ret = app_modbus_read_holding_regs(addr, REG_FREQUENCY, 1, &regs[0]);
+	if (ret) {
+		LOG_ERR("Failed to read frequency: %d", ret);
+		k_mutex_lock(&m_data_mutex, K_FOREVER);
+		m_data.error_count++;
+		m_data.valid = false;
+		k_mutex_unlock(&m_data_mutex);
+		goto out;
+	}
+	frequency = (float)regs[0] / 10.0f;
+
+	/* Read Active power (0x0003) - INT16, W (signed) */
 	ret = app_modbus_read_holding_regs(addr, REG_POWER, 1, &regs[0]);
 	if (ret) {
 		LOG_ERR("Failed to read power: %d", ret);
@@ -168,9 +186,45 @@ static int sample(void)
 		k_mutex_unlock(&m_data_mutex);
 		goto out;
 	}
-	power = (float)regs[0];
+	power = (float)((int16_t)regs[0]) / 1000.0f;  /* W → kW */
 
-	/* Read Energy (0x0007) - UINT32 BE */
+	/* Read Reactive power (0x0004) - INT16, var (signed) */
+	ret = app_modbus_read_holding_regs(addr, REG_REACTIVE, 1, &regs[0]);
+	if (ret) {
+		LOG_ERR("Failed to read reactive power: %d", ret);
+		k_mutex_lock(&m_data_mutex, K_FOREVER);
+		m_data.error_count++;
+		m_data.valid = false;
+		k_mutex_unlock(&m_data_mutex);
+		goto out;
+	}
+	power_reactive = (float)((int16_t)regs[0]) / 1000.0f;  /* var → kvar */
+
+	/* Read Apparent power (0x0005) - UINT16, VA */
+	ret = app_modbus_read_holding_regs(addr, REG_APPARENT, 1, &regs[0]);
+	if (ret) {
+		LOG_ERR("Failed to read apparent power: %d", ret);
+		k_mutex_lock(&m_data_mutex, K_FOREVER);
+		m_data.error_count++;
+		m_data.valid = false;
+		k_mutex_unlock(&m_data_mutex);
+		goto out;
+	}
+	power_apparent = (float)regs[0] / 1000.0f;  /* VA → kVA */
+
+	/* Read Power factor (0x0006) - INT16, /1000 */
+	ret = app_modbus_read_holding_regs(addr, REG_PF, 1, &regs[0]);
+	if (ret) {
+		LOG_ERR("Failed to read power factor: %d", ret);
+		k_mutex_lock(&m_data_mutex, K_FOREVER);
+		m_data.error_count++;
+		m_data.valid = false;
+		k_mutex_unlock(&m_data_mutex);
+		goto out;
+	}
+	power_factor = (float)((int16_t)regs[0]) / 1000.0f;
+
+	/* Read Active energy (0x0007) - UINT32 BE Swapped long, Wh */
 	ret = app_modbus_read_holding_regs(addr, REG_ENERGY, 2, regs);
 	if (ret) {
 		LOG_ERR("Failed to read energy: %d", ret);
@@ -180,14 +234,31 @@ static int sample(void)
 		k_mutex_unlock(&m_data_mutex);
 		goto out;
 	}
-	energy = (float)decode_uint32_be(regs);
+	energy_in = (float)decode_uint32_be(regs) / 1000.0f;  /* Wh → kWh */
+
+	/* Read Reactive energy (0x0009) - UINT32 BE, varh */
+	ret = app_modbus_read_holding_regs(addr, REG_ENERGY_REACT, 2, regs);
+	if (ret) {
+		LOG_ERR("Failed to read reactive energy: %d", ret);
+		k_mutex_lock(&m_data_mutex, K_FOREVER);
+		m_data.error_count++;
+		m_data.valid = false;
+		k_mutex_unlock(&m_data_mutex);
+		goto out;
+	}
+	energy_reactive = (float)decode_uint32_be(regs) / 1000.0f;  /* varh → kvarh */
 
 	/* Update m_data atomically */
 	k_mutex_lock(&m_data_mutex, K_FOREVER);
 	m_data.voltage = voltage;
 	m_data.current = current;
+	m_data.frequency = frequency;
 	m_data.power = power;
-	m_data.energy = energy;
+	m_data.power_reactive = power_reactive;
+	m_data.power_apparent = power_apparent;
+	m_data.power_factor = power_factor;
+	m_data.energy_in = energy_in;
+	m_data.energy_reactive = energy_reactive;
 	m_data.valid = true;
 	m_data.last_sample = k_uptime_get_32();
 	m_data.error_count = 0;
@@ -202,8 +273,12 @@ static int sample(void)
 		m_samples[m_sample_count].timestamp = ts;
 		m_samples[m_sample_count].voltage = voltage;
 		m_samples[m_sample_count].current = current;
+		m_samples[m_sample_count].frequency = frequency;
 		m_samples[m_sample_count].power = power;
-		m_samples[m_sample_count].energy = energy;
+		m_samples[m_sample_count].power_reactive = power_reactive;
+		m_samples[m_sample_count].power_apparent = power_apparent;
+		m_samples[m_sample_count].power_factor = power_factor;
+		m_samples[m_sample_count].energy_in = energy_in;
 		m_sample_count++;
 		LOG_DBG("OR-WE-504: Added sample %d to buffer", m_sample_count);
 	} else {
@@ -211,8 +286,9 @@ static int sample(void)
 	}
 	k_mutex_unlock(&m_samples_mutex);
 
-	LOG_INF("OR-WE-504: V=%.1f V, I=%.1f A, P=%.0f W, E=%.0f Wh",
-		(double)voltage, (double)current, (double)power, (double)energy);
+	LOG_INF("OR-WE-504: V=%.1f V, I=%.1f A, F=%.1f Hz, P=%.0f W, S=%.0f VA, Q=%.0f var, PF=%.3f, E=%.0f Wh",
+		(double)voltage, (double)current, (double)frequency, (double)power,
+		(double)power_apparent, (double)power_reactive, (double)power_factor, (double)energy_in);
 
 out:
 	app_modbus_disable();
@@ -365,10 +441,14 @@ static void print_data(const struct shell *shell, int idx, int addr)
 	k_mutex_unlock(&m_data_mutex);
 
 	shell_print(shell, "[%d] OR-WE-504 @ addr %d:", idx, addr);
-	shell_print(shell, "  Voltage:  %.1f V", (double)data_copy.voltage);
-	shell_print(shell, "  Current:  %.2f A", (double)data_copy.current);
-	shell_print(shell, "  Power:    %.0f W", (double)data_copy.power);
-	shell_print(shell, "  Energy:   %.0f Wh", (double)data_copy.energy);
+	shell_print(shell, "  voltage:        %.1f V", (double)data_copy.voltage);
+	shell_print(shell, "  current:        %.3f A", (double)data_copy.current);
+	shell_print(shell, "  frequency:      %.2f Hz", (double)data_copy.frequency);
+	shell_print(shell, "  power:          %.4f kW", (double)data_copy.power);
+	shell_print(shell, "  power_apparent: %.4f kVA", (double)data_copy.power_apparent);
+	shell_print(shell, "  power_reactive: %.4f kvar", (double)data_copy.power_reactive);
+	shell_print(shell, "  power_factor:   %.3f", (double)data_copy.power_factor);
+	shell_print(shell, "  energy_in:      %.3f kWh", (double)data_copy.energy_in);
 }
 
 /* Driver registration */

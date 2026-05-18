@@ -153,8 +153,8 @@ static inline int encode_float16_le(struct ctr_buf *buf, float value)
 		ret |= encode_float16_le(buf, d->valid ? d->voltage : NAN);                        \
 		ret |= encode_float16_le(buf, d->valid ? d->current : NAN);                        \
 		ret |= encode_float16_le(buf, d->valid ? d->power : NAN);                          \
-		ret |= encode_float16_le(buf, d->valid ? 50.0f : NAN); /* Frequency placeholder */ \
-		float energy_kwh = d->valid ? (d->energy / 1000.0f) : NAN;                         \
+		ret |= encode_float16_le(buf, d->valid ? d->frequency : NAN);                      \
+		float energy_kwh = d->valid ? (d->energy_in / 1000.0f) : NAN;                      \
 		ret |= encode_float16_le(buf, energy_kwh); /* Energy in */                         \
 		ret |= encode_float16_le(buf, 0.0f);       /* Energy out (not supported) */        \
 	} while (0)
@@ -178,7 +178,7 @@ static inline int encode_float16_le(struct ctr_buf *buf, float value)
 		/* Totals */                                                                        \
 		ret |= encode_float16_le(buf, d->valid ? d->power : NAN);                          \
 		ret |= encode_float16_le(buf, d->valid ? d->frequency : NAN);                      \
-		ret |= encode_float16_le(buf, d->valid ? d->energy : NAN);                         \
+		ret |= encode_float16_le(buf, d->valid ? d->energy_in : NAN);                      \
 		ret |= encode_float16_le(buf, d->valid ? d->energy_out : NAN);                     \
 	} while (0)
 

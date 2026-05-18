@@ -22,17 +22,19 @@
 extern "C" {
 #endif
 
-/* EM5XX data structure (3-phase, 15 values) */
+/* EM5XX data structure (3-phase) */
 struct app_data_em5xx {
 	float current;
-	float voltage;
 	float power;
+	float power_apparent; /* sum, kVA */
+	float power_reactive; /* sum, kvar */
+	float power_factor;   /* sum PF */
 	float frequency;
 	float energy_in;
 	float energy_out;
-	float voltage_l1, current_l1, power_l1;
-	float voltage_l2, current_l2, power_l2;
-	float voltage_l3, current_l3, power_l3;
+	float voltage_l1, current_l1, power_l1, power_factor_l1;
+	float voltage_l2, current_l2, power_l2, power_factor_l2;
+	float voltage_l3, current_l3, power_l3, power_factor_l3;
 	uint8_t modbus_addr;
 	uint32_t last_sample;
 	uint32_t error_count;
@@ -42,15 +44,18 @@ struct app_data_em5xx {
 /* Sample entry for CBOR buffer */
 struct em5xx_sample {
 	uint64_t timestamp;
-	float voltage;
 	float current;
 	float power;
+	float power_apparent;
+	float power_reactive;
+	float power_factor;
 	float frequency;
 	float energy_in;
 	float energy_out;
 	float voltage_l1, voltage_l2, voltage_l3;
 	float current_l1, current_l2, current_l3;
 	float power_l1, power_l2, power_l3;
+	float power_factor_l1, power_factor_l2, power_factor_l3;
 };
 
 const struct app_data_em5xx *em5xx_get_data(void);

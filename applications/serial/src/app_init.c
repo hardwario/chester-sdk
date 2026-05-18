@@ -142,6 +142,11 @@ int app_init(void)
 	}
 #endif
 
+#if !APP_SERIAL_HW_PRESENT && !APP_MODBUS_HW_PRESENT
+	LOG_ERR("No serial/Modbus shield (CTR-X2/X12) in this build - "
+		"serial and Modbus subsystems are disabled");
+#endif
+
 	/* Check if any device is configured */
 	bool has_device = false;
 	bool has_modbus_device = false;
@@ -160,32 +165,53 @@ int app_init(void)
 		}
 	}
 
-	/* Initialize serial interface first (needed by device drivers) */
+#if APP_SERIAL_HW_PRESENT
+	/* Initialize serial interface first (needed by device drivers).
+	 * Non-fatal: if the SC16IS740 chip is not physically present (e.g.
+	 * RS-232 firmware flashed into a CHESTER with the X2 / RS-485 shield
+	 * or vice versa), serial communication stays disabled but boot continues.
+	 */
 	if (has_serial_device) {
 		ret = app_serial_init();
 		if (ret) {
-			LOG_ERR("app_serial_init failed: %d", ret);
-			return ret;
+			LOG_ERR("app_serial_init failed: %d - serial communication disabled",
+				ret);
+		} else {
+			LOG_INF("Serial interface initialized");
 		}
-		LOG_INF("Serial interface initialized");
 	}
+#else
+	if (has_serial_device) {
+		LOG_ERR("Configured device needs serial HW - not present, ignoring");
+	}
+#endif /* APP_SERIAL_HW_PRESENT */
 
-	/* Initialize device drivers (MicroSENS, etc.) */
+	/* Initialize device drivers (MicroSENS, etc.) - safe even without HW,
+	 * runtime calls are guarded by app_serial/app_modbus availability checks */
 	ret = app_device_init();
 	if (ret && ret != -EIO) {
 		LOG_ERR("app_device_init failed: %d", ret);
 		return ret;
 	}
 
-	/* Initialize Modbus for Modbus device types */
+#if APP_MODBUS_HW_PRESENT
+	/* Initialize Modbus for Modbus device types.
+	 * Non-fatal: same shield/firmware mismatch handling as serial init above.
+	 */
 	if (has_modbus_device) {
 		ret = app_modbus_init();
 		if (ret) {
-			LOG_ERR("app_modbus_init failed: %d", ret);
-			return ret;
+			LOG_ERR("app_modbus_init failed: %d - Modbus communication disabled",
+				ret);
+		} else {
+			LOG_INF("Modbus RTU client initialized");
 		}
-		LOG_INF("Modbus RTU client initialized");
 	}
+#else
+	if (has_modbus_device) {
+		LOG_ERR("Configured device needs Modbus HW - not present, ignoring");
+	}
+#endif /* APP_MODBUS_HW_PRESENT */
 
 	if (!has_device) {
 		LOG_INF("No device configured");

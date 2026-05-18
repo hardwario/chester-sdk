@@ -60,6 +60,9 @@ static int parse_parity(const char *str, char *parity, int *stop_bits)
 #define REG_CURRENT       0x0100  /* /1000 A */
 #define REG_VOLTAGE       0x0102  /* /10 V */
 #define REG_POWER         0x0106  /* /10000 kW */
+#define REG_APPARENT      0x0108  /* /10000 kVA */
+#define REG_REACTIVE      0x010A  /* /10000 kvar */
+#define REG_PF            0x010C  /* /1000 PF */
 #define REG_FREQUENCY     0x0110  /* /10 Hz */
 #define REG_ENERGY_IN     0x0112  /* /10 kWh */
 #define REG_ENERGY_OUT    0x0116  /* /10 kWh */
@@ -113,6 +116,7 @@ static int sample(void)
 
 	/* Local variables for values */
 	float current, voltage, power, frequency, energy_in, energy_out;
+	float power_apparent, power_reactive, power_factor;
 
 	/* Read Current (0x0100) */
 	ret = app_modbus_read_holding_regs(addr, REG_CURRENT, 2, regs);
@@ -152,6 +156,45 @@ static int sample(void)
 	}
 	val = decode_int32_lsw(regs);
 	power = (float)val / 10000.0f;
+
+	/* Read Apparent power (0x0108) */
+	ret = app_modbus_read_holding_regs(addr, REG_APPARENT, 2, regs);
+	if (ret) {
+		LOG_ERR("Failed to read apparent power: %d", ret);
+		k_mutex_lock(&m_data_mutex, K_FOREVER);
+		m_data.error_count++;
+		m_data.valid = false;
+		k_mutex_unlock(&m_data_mutex);
+		goto out;
+	}
+	val = decode_int32_lsw(regs);
+	power_apparent = (float)val / 10000.0f;
+
+	/* Read Reactive power (0x010A) */
+	ret = app_modbus_read_holding_regs(addr, REG_REACTIVE, 2, regs);
+	if (ret) {
+		LOG_ERR("Failed to read reactive power: %d", ret);
+		k_mutex_lock(&m_data_mutex, K_FOREVER);
+		m_data.error_count++;
+		m_data.valid = false;
+		k_mutex_unlock(&m_data_mutex);
+		goto out;
+	}
+	val = decode_int32_lsw(regs);
+	power_reactive = (float)val / 10000.0f;
+
+	/* Read Power factor (0x010C) */
+	ret = app_modbus_read_holding_regs(addr, REG_PF, 2, regs);
+	if (ret) {
+		LOG_ERR("Failed to read power factor: %d", ret);
+		k_mutex_lock(&m_data_mutex, K_FOREVER);
+		m_data.error_count++;
+		m_data.valid = false;
+		k_mutex_unlock(&m_data_mutex);
+		goto out;
+	}
+	val = decode_int32_lsw(regs);
+	power_factor = (float)val / 1000.0f;
 
 	/* Read Frequency (0x0110) */
 	ret = app_modbus_read_holding_regs(addr, REG_FREQUENCY, 2, regs);
@@ -197,6 +240,9 @@ static int sample(void)
 	m_data.current = current;
 	m_data.voltage = voltage;
 	m_data.power = power;
+	m_data.power_apparent = power_apparent;
+	m_data.power_reactive = power_reactive;
+	m_data.power_factor = power_factor;
 	m_data.frequency = frequency;
 	m_data.energy_in = energy_in;
 	m_data.energy_out = energy_out;
@@ -215,6 +261,9 @@ static int sample(void)
 		m_samples[m_sample_count].voltage = voltage;
 		m_samples[m_sample_count].current = current;
 		m_samples[m_sample_count].power = power;
+		m_samples[m_sample_count].power_apparent = power_apparent;
+		m_samples[m_sample_count].power_reactive = power_reactive;
+		m_samples[m_sample_count].power_factor = power_factor;
 		m_samples[m_sample_count].frequency = frequency;
 		m_samples[m_sample_count].energy_in = energy_in;
 		m_samples[m_sample_count].energy_out = energy_out;
@@ -348,12 +397,15 @@ static void print_data(const struct shell *shell, int idx, int addr)
 	k_mutex_unlock(&m_data_mutex);
 
 	shell_print(shell, "[%d] EM1XX (EM111) @ addr %d:", idx, addr);
-	shell_print(shell, "  Voltage:    %.1f V", (double)data_copy.voltage);
-	shell_print(shell, "  Current:    %.3f A", (double)data_copy.current);
-	shell_print(shell, "  Power:      %.4f kW", (double)data_copy.power);
-	shell_print(shell, "  Frequency:  %.1f Hz", (double)data_copy.frequency);
-	shell_print(shell, "  Energy IN:  %.1f kWh", (double)data_copy.energy_in);
-	shell_print(shell, "  Energy OUT: %.1f kWh", (double)data_copy.energy_out);
+	shell_print(shell, "  voltage:        %.1f V", (double)data_copy.voltage);
+	shell_print(shell, "  current:        %.3f A", (double)data_copy.current);
+	shell_print(shell, "  frequency:      %.2f Hz", (double)data_copy.frequency);
+	shell_print(shell, "  power:          %.4f kW", (double)data_copy.power);
+	shell_print(shell, "  power_apparent: %.4f kVA", (double)data_copy.power_apparent);
+	shell_print(shell, "  power_reactive: %.4f kvar", (double)data_copy.power_reactive);
+	shell_print(shell, "  power_factor:   %.3f", (double)data_copy.power_factor);
+	shell_print(shell, "  energy_in:      %.3f kWh", (double)data_copy.energy_in);
+	shell_print(shell, "  energy_out:     %.3f kWh", (double)data_copy.energy_out);
 }
 
 const struct app_device_driver em1xx_driver = {

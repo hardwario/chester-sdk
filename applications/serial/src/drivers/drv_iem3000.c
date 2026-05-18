@@ -245,7 +245,14 @@ static int sample(void)
 			m_samples[m_sample_count].current_l1 = current_l1;
 			m_samples[m_sample_count].current_l2 = current_l2;
 			m_samples[m_sample_count].current_l3 = current_l3;
+			m_samples[m_sample_count].power_l1 = power_l1;
+			m_samples[m_sample_count].power_l2 = power_l2;
+			m_samples[m_sample_count].power_l3 = power_l3;
 			m_samples[m_sample_count].power = power;
+			m_samples[m_sample_count].power_apparent = power_apparent;
+			m_samples[m_sample_count].power_reactive = power_reactive;
+			m_samples[m_sample_count].power_factor = power_factor;
+			m_samples[m_sample_count].frequency = frequency;
 			m_samples[m_sample_count].energy_in = energy_in;
 			m_samples[m_sample_count].energy_out = energy_out;
 			m_sample_count++;
@@ -358,23 +365,22 @@ static void print_data(const struct shell *shell, int idx, int addr)
 	k_mutex_unlock(&m_data_mutex);
 
 	shell_print(shell, "[%d] iEM3000 @ addr %d:", idx, addr);
-	shell_print(shell, "  Voltage:    L1=%.1f L2=%.1f L3=%.1f V",
-		    (double)data_copy.voltage_l1, (double)data_copy.voltage_l2,
-		    (double)data_copy.voltage_l3);
-	shell_print(shell, "  Current:    %.2f A (L1=%.2f L2=%.2f L3=%.2f)",
-		    (double)data_copy.current, (double)data_copy.current_l1,
-		    (double)data_copy.current_l2, (double)data_copy.current_l3);
-	shell_print(shell, "  Power:      %.1f W (L1=%.1f L2=%.1f L3=%.1f)",
-		    (double)data_copy.power, (double)data_copy.power_l1,
-		    (double)data_copy.power_l2, (double)data_copy.power_l3);
-	shell_print(shell, "  Reactive:   %.1f kVAR", (double)data_copy.power_reactive);
-	shell_print(shell, "  Apparent:   %.1f kVA", (double)data_copy.power_apparent);
-	shell_print(shell, "  PF:         %.3f", (double)data_copy.power_factor);
-	shell_print(shell, "  Frequency:  %.1f Hz", (double)data_copy.frequency);
-	shell_print(shell, "  Energy IN:  %.1f kWh", (double)data_copy.energy_in);
-	shell_print(shell, "  Energy OUT: %.1f kWh", (double)data_copy.energy_out);
-	shell_print(shell, "  Reactive E: IN=%.1f OUT=%.1f kvarh",
-		    (double)data_copy.energy_reactive_in, (double)data_copy.energy_reactive_out);
+	shell_print(shell, "  voltage_l1:     %.1f V", (double)data_copy.voltage_l1);
+	shell_print(shell, "  voltage_l2:     %.1f V", (double)data_copy.voltage_l2);
+	shell_print(shell, "  voltage_l3:     %.1f V", (double)data_copy.voltage_l3);
+	shell_print(shell, "  current_l1:     %.3f A", (double)data_copy.current_l1);
+	shell_print(shell, "  current_l2:     %.3f A", (double)data_copy.current_l2);
+	shell_print(shell, "  current_l3:     %.3f A", (double)data_copy.current_l3);
+	shell_print(shell, "  frequency:      %.2f Hz", (double)data_copy.frequency);
+	shell_print(shell, "  power_l1:       %.4f kW", (double)data_copy.power_l1);
+	shell_print(shell, "  power_l2:       %.4f kW", (double)data_copy.power_l2);
+	shell_print(shell, "  power_l3:       %.4f kW", (double)data_copy.power_l3);
+	shell_print(shell, "  power:          %.4f kW", (double)data_copy.power);
+	shell_print(shell, "  power_apparent: %.4f kVA", (double)data_copy.power_apparent);
+	shell_print(shell, "  power_reactive: %.4f kvar", (double)data_copy.power_reactive);
+	shell_print(shell, "  power_factor:   %.3f", (double)data_copy.power_factor);
+	shell_print(shell, "  energy_in:      %.3f kWh", (double)data_copy.energy_in);
+	shell_print(shell, "  energy_out:     %.3f kWh", (double)data_copy.energy_out);
 }
 
 const struct app_device_driver iem3000_driver = {

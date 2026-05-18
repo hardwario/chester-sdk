@@ -35,9 +35,9 @@ struct app_data_or_we_516 {
 	float power_reactive;
 	float power_apparent;
 	float power_factor;
-	float voltage_l1, current_l1, power_l1, energy_l1;
-	float voltage_l2, current_l2, power_l2, energy_l2;
-	float voltage_l3, current_l3, power_l3, energy_l3;
+	float voltage_l1, current_l1, power_l1, energy_l1, power_factor_l1;
+	float voltage_l2, current_l2, power_l2, energy_l2, power_factor_l2;
+	float voltage_l3, current_l3, power_l3, energy_l3, power_factor_l3;
 	uint8_t modbus_addr;
 	uint32_t last_sample;
 	uint32_t error_count;
@@ -51,7 +51,14 @@ struct or_we_516_sample {
 	float current_l1, current_l2, current_l3;
 	float power_l1, power_l2, power_l3;
 	float power;
-	float energy;
+	float power_apparent; /* sum, VA */
+	float power_reactive; /* sum, VAr */
+	float power_factor;   /* sum PF */
+	float power_factor_l1, power_factor_l2, power_factor_l3;
+	float frequency;
+	float energy;         /* total kWh */
+	float energy_in;      /* import kWh */
+	float energy_out;     /* export kWh */
 };
 
 const struct app_data_or_we_516 *or_we_516_get_data(void);

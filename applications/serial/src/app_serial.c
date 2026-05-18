@@ -117,7 +117,7 @@ static void uart_callback(const struct device *dev, void *user_data)
 int app_serial_init(void)
 {
 #if !HAS_SERIAL_DEVICE
-	LOG_WRN("No serial device (CTR-X2/X12) available in device tree");
+	LOG_ERR("No serial device (CTR-X2/X12) available in device tree");
 	return -ENOTSUP;
 #else
 	int ret;
@@ -131,10 +131,12 @@ int app_serial_init(void)
 		return ret;
 	}
 
-	/* Get UART device */
-	m_uart_dev = DEVICE_DT_GET(SERIAL_DEVICE_NODE);
-	if (!device_is_ready(m_uart_dev)) {
-		LOG_ERR("UART device not ready");
+	/* Get UART device (use local until init succeeds — keeps m_uart_dev
+	 * NULL on failure so app_serial_send() short-circuits safely)
+	 */
+	const struct device *uart_dev = DEVICE_DT_GET(SERIAL_DEVICE_NODE);
+	if (!device_is_ready(uart_dev)) {
+		LOG_ERR("UART device not ready (SC16IS740 chip absent or wrong shield?)");
 		return -ENODEV;
 	}
 
@@ -179,20 +181,23 @@ int app_serial_init(void)
 		break;
 	}
 
-	ret = uart_configure(m_uart_dev, &uart_cfg);
+	ret = uart_configure(uart_dev, &uart_cfg);
 	if (ret) {
 		LOG_ERR("uart_configure failed: %d", ret);
 		return ret;
 	}
 
 	/* Set up interrupt-driven UART */
-	ret = uart_irq_callback_user_data_set(m_uart_dev, uart_callback, NULL);
+	ret = uart_irq_callback_user_data_set(uart_dev, uart_callback, NULL);
 	if (ret) {
 		LOG_ERR("uart_irq_callback_user_data_set failed: %d", ret);
 		return ret;
 	}
 
-	uart_irq_rx_enable(m_uart_dev);
+	uart_irq_rx_enable(uart_dev);
+
+	/* Publish only after full init success */
+	m_uart_dev = uart_dev;
 
 	LOG_INF("Serial interface: %s, %d baud, %d-%c-%d",
 		SERIAL_INTERFACE_NAME,

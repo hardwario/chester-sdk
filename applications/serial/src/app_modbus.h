@@ -11,6 +11,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <zephyr/devicetree.h>
+
+/**
+ * @brief Compile-time check: is any UART bridge shield (CTR-X2 RS-485 or
+ *        CTR-X12 RS-232) present in the device tree?
+ *
+ * Use to skip Modbus initialization entirely on builds without a shield.
+ */
+#define APP_MODBUS_HW_PRESENT                                                                      \
+	(DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x2_sc16is740_a), okay) ||                             \
+	 DT_NODE_HAS_STATUS(DT_NODELABEL(ctr_x12_sc16is740_a), okay))
+
 /* Forward declarations */
 struct shell;
 

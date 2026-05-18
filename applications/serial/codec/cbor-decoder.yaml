@@ -71,8 +71,6 @@ schema:
               - $div: 1000
               - $fpp: 3
           - power:
-              - $div: 10
-              - $fpp: 1
           - energy:
           - frequency:
               - $div: 100
@@ -98,17 +96,8 @@ schema:
               - $div: 1000
               - $fpp: 3
           - power_l1:
-              - $div: 10
-              - $fpp: 1
           - power_l2:
-              - $div: 10
-              - $fpp: 1
           - power_l3:
-              - $div: 10
-              - $fpp: 1
-          - power_total:
-              - $div: 10
-              - $fpp: 1
           - card_uid:
           - flow_s:
               - $div: 10000
@@ -144,6 +133,12 @@ schema:
               - $div: 100
               - $fpp: 2
           - signal_quality:
+          - power_apparent:
+          - power_reactive:
+          - power_factor:
+          - power_factor_l1:
+          - power_factor_l2:
+          - power_factor_l3:
   - ble_tags:
       - addr:
       - rssi:
