@@ -45,12 +45,12 @@
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
-#define APP_DATA_W1_THERM_MAX_COUNT        10
+#define APP_DATA_W1_THERM_MAX_COUNT        5
 #define APP_DATA_W1_THERM_MAX_SAMPLES      32
 #define APP_DATA_W1_THERM_MAX_MEASUREMENTS 64
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#define APP_DATA_SOIL_SENSOR_MAX_COUNT 10
+#define APP_DATA_SOIL_SENSOR_MAX_COUNT 3
 
 #ifdef __cplusplus
 extern "C" {
