@@ -1106,6 +1106,15 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 		atomic_clear_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_XMODMSLEEEP:
+		/* Phase 2: if any consumer needs the modem reachable for
+		 * downlink (e.g. MQTT subscribe), refuse to enter FSM-level
+		 * SLEEP — that disables UART and makes the modem unreachable
+		 * until the next outgoing send_recv wakes it up. The network's
+		 * eDRX still handles power management on the RF side. */
+		if (any_consumer_keeps_modem_reachable()) {
+			LOG_DBG("XMODEMSLEEP ignored — consumer needs reachability");
+			return 0;
+		}
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_XGPS_ENABLE:
