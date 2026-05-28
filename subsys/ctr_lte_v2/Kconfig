@@ -76,6 +76,66 @@ config CTR_LTE_V2_GNSS
 	bool "CTR_LTE_V2_GNSS"
 	default y
 
+# === Phase 2: multi-consumer registration ===
+# Zero registered consumers ⇒ all new code paths are no-ops ⇒ behaviour is
+# bit-identical to pre-Phase-2.
+
+config CTR_LTE_V2_MAX_CONSUMERS
+	int "Max registered LTE consumers"
+	default 4
+	range 1 16
+	help
+	  Capacity of the runtime consumer registry used by
+	  ctr_lte_v2_consumer_register(). 4 is enough for ctr_cloud +
+	  belter_mqtt + future growth without overshooting RAM.
+
+# === Phase 2: idle profile (PSM vs eDRX-no-PSM) ===
+# The default (CTR_LTE_V2_IDLE_PROFILE_PSM) reproduces the pre-Phase-2
+# behaviour: AT+CPSMS=1,,,"00111000","00000000" issued during flow_prepare.
+# Existing builds that do not select the EDRX_NO_PSM variant compile and
+# behave bit-identically.
+
+choice CTR_LTE_V2_IDLE_PROFILE
+	prompt "LTE idle profile"
+	default CTR_LTE_V2_IDLE_PROFILE_PSM
+
+config CTR_LTE_V2_IDLE_PROFILE_PSM
+	bool "PSM (legacy, downlink unreachable during PSM)"
+	help
+	  AT+CPSMS=1,,,"00111000","00000000". Lowest idle current but the
+	  modem is unreachable for downlink during PSM. Use for upstream-
+	  only sensor workloads (e.g. HARDWARIO Cloud-only ctr_cloud).
+
+config CTR_LTE_V2_IDLE_PROFILE_EDRX_NO_PSM
+	bool "eDRX-no-PSM (reachable downlink, higher idle)"
+	help
+	  AT+CPSMS=0 + AT+CEDRXS=2,<act>,"<cycle>". Required for any
+	  consumer that needs downlink reachability inside one eDRX cycle
+	  (e.g. MQTT subscribe). Idle current is higher than PSM but the
+	  modem responds to paging within the configured cycle.
+
+endchoice
+
+config CTR_LTE_V2_EDRX_CYCLE_LTEM
+	string "eDRX cycle on LTE-M (4-bit binary)"
+	default "0001"
+	depends on CTR_LTE_V2_IDLE_PROFILE_EDRX_NO_PSM
+	help
+	  3GPP TS 24.008 Table 10.5.5.32 (eDRX value), AcT=4 / LTE-M.
+	  "0001" = 10.24 s (LTE-M minimum useful). "0010" = 20.48 s.
+	  "0011" = 40.96 s. Shorter cycle = lower downlink latency, higher
+	  idle current.
+
+config CTR_LTE_V2_EDRX_CYCLE_NBIOT
+	string "eDRX cycle on NB-IoT (4-bit binary)"
+	default "0010"
+	depends on CTR_LTE_V2_IDLE_PROFILE_EDRX_NO_PSM
+	help
+	  3GPP TS 24.008 Table 10.5.5.32, AcT=5 / NB-IoT. "0010" = 20.48 s
+	  is the NB-IoT minimum valid value. "0001" is invalid on NB-IoT
+	  and the network will silently refuse. See memory anchor
+	  project_nb_iot_edrx_encoding_per_rat.
+
 config HEAP_MEM_POOL_SIZE
 	int "HEAP_MEM_POOL_SIZE"
 	default 8192

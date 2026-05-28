@@ -240,6 +240,84 @@ int ctr_lte_v2_gnss_get_enable(bool *enable);
 int ctr_lte_v2_gnss_set_handler(ctr_lte_v2_gnss_cb callback, void *user_data);
 #endif
 
+/* -------- Multi-consumer registration (Phase 2) --------
+ *
+ * Allows additional subsystems (alongside ctr_cloud) to register URC handlers
+ * and lifecycle callbacks against the shared LTE modem. Zero registered
+ * consumers ⇒ all consumer code paths are dead and behaviour is bit-identical
+ * to the single-consumer (ctr_cloud-only) layout.
+ *
+ * Consumers register at runtime via ctr_lte_v2_consumer_register(). The
+ * struct passed in must live for the program's lifetime (typically
+ * `static const` at file scope). Max registered consumers is
+ * CONFIG_CTR_LTE_V2_MAX_CONSUMERS (default 4); register returns -ENOSPC
+ * past the cap.
+ *
+ * Locking: the registry is guarded by an internal mutex. Registration is
+ * expected to happen at consumer-init time (before the FSM enters READY),
+ * but late registration is safe — it just won't receive on_ready for
+ * already-passed transitions until the next re-attach.
+ */
+
+struct ctr_lte_v2_consumer {
+	/** Identifier used in logs. */
+	const char *name;
+
+	/** NULL-terminated array of URC prefixes this consumer claims
+	 *  (e.g. {"#XMQTTEVT:", "#XMQTTMSG:", NULL}). The existing hard-coded
+	 *  URC switch in process_urc takes precedence; only URCs that fall
+	 *  through it are offered to the consumer list. */
+	const char *const *urc_prefixes;
+
+	/** Invoked from process_urc context (link-driver RX work queue or FSM
+	 *  dialog loop). Must be non-blocking — copy the line and signal the
+	 *  consumer's own thread / work queue if heavy work is needed. */
+	void (*on_urc)(const char *line);
+
+	/** Edge-triggered: invoked when the modem first reaches connected
+	 *  (CONNECTED_BIT 0→1), and again after each re-attach. */
+	void (*on_ready)(void);
+
+	/** Edge-triggered: invoked before the modem leaves the connected state
+	 *  (CONNECTED_BIT 1→0). Consumer should drop its session if any. */
+	void (*on_offline)(void);
+
+	/** If true, the FSM keeps the modem reachable while this consumer is
+	 *  registered: the no-PSM auto-CFUN=4 fallback in READY state is
+	 *  suppressed. The network's eDRX still applies. */
+	bool keep_modem_reachable;
+};
+
+/**
+ * @brief Register a consumer with the LTE subsystem.
+ *
+ * The struct must live for the program's lifetime — typically `static const`
+ * at file scope. Idempotent: registering the same pointer twice is a no-op.
+ *
+ * @retval 0        Success.
+ * @retval -EINVAL  c is NULL.
+ * @retval -ENOSPC  CONFIG_CTR_LTE_V2_MAX_CONSUMERS already registered.
+ */
+int ctr_lte_v2_consumer_register(const struct ctr_lte_v2_consumer *c);
+
+/**
+ * @brief Read raw bytes from the LTE link.
+ *
+ * Used by consumers that need to read length-prefixed payload bytes
+ * arriving after a URC header (e.g. #XMQTTMSG followed by topic + payload).
+ * Must be called from thread context (not from on_urc directly — schedule
+ * a work item from on_urc and call this from the work handler).
+ *
+ * @param buf     Destination buffer.
+ * @param len     Number of bytes to read.
+ * @param timeout Maximum wait.
+ *
+ * @retval 0          Success — all `len` bytes read.
+ * @retval -ETIMEDOUT Timeout before all bytes arrived.
+ * @retval -ENOTCONN  Link disabled.
+ */
+int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout);
+
 /* -------- Utility functions -------- */
 
 /** Convert connection evaluation result code to string. */

@@ -580,6 +580,26 @@ int ctr_lte_v2_talk_at_cpsms(struct ctr_lte_v2_talk *talk, int *p1, const char *
 	DIALOG_EPILOG /* clang-format on */
 }
 
+int ctr_lte_v2_talk_at_cedrxs(struct ctr_lte_v2_talk *talk, int mode, int act_type,
+			      const char *cycle)
+{
+	DIALOG_PROLOG /* clang-format off */
+
+	DIALOG_ENTER();
+	if (cycle && cycle[0]) {
+		DIALOG_SEND_LINE("AT+CEDRXS=%d,%d,\"%s\"", mode, act_type, cycle);
+	} else {
+		DIALOG_SEND_LINE("AT+CEDRXS=%d,%d", mode, act_type);
+	}
+	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_S, {
+		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
+		DIALOG_LOOP_BREAK_ON_STR("OK");
+	});
+	DIALOG_EXIT();
+
+	DIALOG_EPILOG /* clang-format on */
+}
+
 int ctr_lte_v2_talk_at_cscon(struct ctr_lte_v2_talk *talk, int p1)
 {
 	DIALOG_PROLOG /* clang-format off */

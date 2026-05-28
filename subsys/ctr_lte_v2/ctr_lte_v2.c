@@ -118,6 +118,96 @@ struct k_work m_gnss_work;
 
 static struct fsm_state_desc *get_fsm_state(enum fsm_state state);
 
+/* === Phase 2: multi-consumer registration support ===
+ *
+ * All helpers below are no-ops when zero consumers are registered, preserving
+ * pre-Phase-2 behaviour exactly. Registration is mutex-guarded; dispatch is
+ * called only from the FSM work queue, which already serialises every
+ * CONNECTED_BIT transition. */
+
+static K_MUTEX_DEFINE(m_consumers_lock);
+static const struct ctr_lte_v2_consumer *m_consumers[CONFIG_CTR_LTE_V2_MAX_CONSUMERS];
+static size_t m_consumer_count = 0;
+static bool m_consumers_notified_ready = false;
+
+/* Internal accessor for the registry — used by ctr_lte_v2_flow.c::process_urc.
+ * The pointer is stable for the program's lifetime; the count may grow
+ * monotonically. Concurrent readers are safe because registration only
+ * appends (no reordering, no removal). */
+size_t ctr_lte_v2_consumers_get(const struct ctr_lte_v2_consumer *const **out)
+{
+	*out = m_consumers;
+	return m_consumer_count;
+}
+
+int ctr_lte_v2_consumer_register(const struct ctr_lte_v2_consumer *c)
+{
+	if (!c) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&m_consumers_lock, K_FOREVER);
+
+	for (size_t i = 0; i < m_consumer_count; i++) {
+		if (m_consumers[i] == c) {
+			k_mutex_unlock(&m_consumers_lock);
+			return 0; /* idempotent */
+		}
+	}
+
+	if (m_consumer_count >= ARRAY_SIZE(m_consumers)) {
+		k_mutex_unlock(&m_consumers_lock);
+		LOG_ERR("Consumer registry full (max %d)", (int)ARRAY_SIZE(m_consumers));
+		return -ENOSPC;
+	}
+
+	m_consumers[m_consumer_count++] = c;
+	LOG_INF("Registered consumer: %s", c->name ? c->name : "?");
+
+	k_mutex_unlock(&m_consumers_lock);
+	return 0;
+}
+
+static void dispatch_consumers_on_ready(void)
+{
+	if (m_consumers_notified_ready) {
+		return;
+	}
+	m_consumers_notified_ready = true;
+	for (size_t i = 0; i < m_consumer_count; i++) {
+		const struct ctr_lte_v2_consumer *c = m_consumers[i];
+		if (c->on_ready) {
+			LOG_DBG("dispatch on_ready: %s", c->name ? c->name : "?");
+			c->on_ready();
+		}
+	}
+}
+
+static void dispatch_consumers_on_offline(void)
+{
+	if (!m_consumers_notified_ready) {
+		return;
+	}
+	m_consumers_notified_ready = false;
+	for (size_t i = 0; i < m_consumer_count; i++) {
+		const struct ctr_lte_v2_consumer *c = m_consumers[i];
+		if (c->on_offline) {
+			LOG_DBG("dispatch on_offline: %s", c->name ? c->name : "?");
+			c->on_offline();
+		}
+	}
+}
+
+static bool any_consumer_keeps_modem_reachable(void)
+{
+	for (size_t i = 0; i < m_consumer_count; i++) {
+		if (m_consumers[i]->keep_modem_reachable) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static struct ctr_lte_v2_attach_timeout get_attach_timeout(int attempt)
 {
 	switch (g_ctr_lte_v2_config.attach_policy) {
@@ -587,6 +677,7 @@ static int on_enter_error(void)
 		return 0;
 	}
 
+	dispatch_consumers_on_offline();
 	k_event_clear(&m_states_event, CONNECTED_BIT);
 
 	if (ret == -ENOTSOCK) {
@@ -860,6 +951,7 @@ static int on_enter_attach(void)
 
 	m_start = k_uptime_get_32();
 
+	dispatch_consumers_on_offline();
 	k_event_clear(&m_states_event, CONNECTED_BIT);
 
 	struct ctr_lte_v2_attach_timeout timeout = get_attach_timeout(m_attach_retry_count);
@@ -917,6 +1009,7 @@ static int on_leave_attach(void)
 
 static int on_enter_open_socket(void)
 {
+	dispatch_consumers_on_offline();
 	k_event_clear(&m_states_event, CONNECTED_BIT);
 
 	int ret = ctr_lte_v2_flow_open_socket();
@@ -935,6 +1028,7 @@ static int open_socket_event_handler(enum ctr_lte_v2_event event)
 	switch (event) {
 	case CTR_LTE_V2_EVENT_SOCKET_OPENED:
 		k_event_post(&m_states_event, CONNECTED_BIT);
+		dispatch_consumers_on_ready();
 		m_error_ctx.timeout_s = 0; /* Reset error timeout counter on success */
 		transition_state(FSM_STATE_CONEVAL);
 		break;
@@ -974,7 +1068,11 @@ static int on_enter_ready(void)
 			return ret;
 		}
 		if (m_cereg_param.active_time == -1) { /* PSM is not supported */
-			start_timer(K_MSEC(500));
+			/* Phase 2: skip the auto-offline timer when a consumer
+			 * needs the modem reachable for downlink (e.g. MQTT). */
+			if (!any_consumer_keeps_modem_reachable()) {
+				start_timer(K_MSEC(500));
+			}
 		}
 	}
 
@@ -1020,6 +1118,12 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 		break;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
 		if (m_cereg_param.active_time == -1) { /* if PSM is not supported */
+			/* Phase 2: belt-and-braces. The on_enter_ready guard
+			 * normally prevents the timer from arming, but if any
+			 * future path arms it anyway, honour reachability. */
+			if (any_consumer_keeps_modem_reachable()) {
+				return 0;
+			}
 			LOG_WRN("PSM is not supported, disabling LTE modem to save power");
 			int ret = ctr_lte_v2_flow_close_socket();
 			if (ret) {

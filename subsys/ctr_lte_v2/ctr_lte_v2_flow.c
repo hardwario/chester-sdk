@@ -11,6 +11,10 @@
 #include "ctr_lte_v2_talk.h"
 #include "ctr_lte_v2_tok.h"
 
+/* Accessor for the consumer registry maintained in ctr_lte_v2.c.
+ * Internal, file-local prototype — not part of the public API. */
+size_t ctr_lte_v2_consumers_get(const struct ctr_lte_v2_consumer *const **out);
+
 /* CHESTER includes */
 #include <chester/ctr_lte_v2.h>
 #include <chester/ctr_rtc.h>
@@ -146,6 +150,27 @@ static void process_urc(const char *line)
 			}
 			ctr_lte_v2_state_set_gnss_update(&update);
 			m_event_delegate_cb(CTR_LTE_V2_EVENT_XGPS);
+		}
+	} else {
+		/* Phase 2: walk registered consumers for any unmatched prefix.
+		 * The existing hard-coded prefixes above take precedence — only
+		 * URCs that fell through every branch reach this loop. First
+		 * match wins. Zero registered consumers ⇒ this loop is empty
+		 * and behaviour is bit-identical to the legacy single-consumer
+		 * layout. */
+		const struct ctr_lte_v2_consumer *const *list;
+		size_t count = ctr_lte_v2_consumers_get(&list);
+		for (size_t i = 0; i < count; i++) {
+			const struct ctr_lte_v2_consumer *c = list[i];
+			if (!c->urc_prefixes || !c->on_urc) {
+				continue;
+			}
+			for (const char *const *p = c->urc_prefixes; *p; p++) {
+				if (!strncmp(line, *p, strlen(*p))) {
+					c->on_urc(line);
+					return;
+				}
+			}
 		}
 	}
 }
@@ -428,12 +453,37 @@ int ctr_lte_v2_flow_prepare(void)
 		return ret;
 	}
 
-	/* TODO Configurable? */
+#if defined(CONFIG_CTR_LTE_V2_IDLE_PROFILE_EDRX_NO_PSM)
+	/* PSM off, eDRX on — required for reachable downlink (Phase 2). */
+	ret = ctr_lte_v2_talk_at_cpsms(&m_talk, (int[]){0}, NULL, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cpsms` 0 failed: %d", ret);
+		return ret;
+	}
+	/* AcT type 4 = LTE-M; 5 = NB-IoT. Request appropriate cycle per RAT. */
+	{
+		const char *edrx_cycle;
+		int act_type;
+		if (strstr(g_ctr_lte_v2_config.mode, "lte-m")) {
+			act_type = 4;
+			edrx_cycle = CONFIG_CTR_LTE_V2_EDRX_CYCLE_LTEM;
+		} else {
+			act_type = 5;
+			edrx_cycle = CONFIG_CTR_LTE_V2_EDRX_CYCLE_NBIOT;
+		}
+		ret = ctr_lte_v2_talk_at_cedrxs(&m_talk, 2, act_type, edrx_cycle);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_talk_at_cedrxs` failed: %d", ret);
+			return ret;
+		}
+	}
+#else  /* CONFIG_CTR_LTE_V2_IDLE_PROFILE_PSM — default, bit-identical to pre-Phase-2 */
 	ret = ctr_lte_v2_talk_at_cpsms(&m_talk, (int[]){1}, "00111000", "00000000");
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_cpsms` failed: %d", ret);
 		return ret;
 	}
+#endif
 
 	ret = ctr_lte_v2_talk_at_ceppi(&m_talk, 1);
 	if (ret) {
@@ -1169,6 +1219,54 @@ int ctr_lte_v2_flow_cmd_without_response(const char *s)
 	}
 
 	return 0;
+}
+
+int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout)
+{
+	int ret;
+
+	if (!buf || !len) {
+		return -EINVAL;
+	}
+
+	if (!atomic_get(&m_started)) {
+		return -ENOTCONN;
+	}
+
+	/* Switch the link to data-mode for the duration of the read. The link
+	 * driver gates recv_data on in_data_mode; enter/exit_data_mode each
+	 * take the link mutex, so this is safe against concurrent AT dialogs.
+	 *
+	 * NOTE for callers: the line parser does not stop mid-byte. To capture
+	 * bytes that arrive immediately after a URC header (e.g. #XMQTTMSG),
+	 * the consumer's on_urc must call this synchronously *before* returning
+	 * — otherwise subsequent bytes are absorbed by the line parser and
+	 * lost. See `plans/2026-05-28-poc1-phase2-step0.5-consumer-api-proposal.md`
+	 * §5 for the design rationale. */
+	ret = ctr_lte_link_enter_data_mode(dev_lte_if);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_link_enter_data_mode` failed: %d", ret);
+		return ret;
+	}
+
+	size_t got = 0;
+	ret = ctr_lte_link_recv_data(dev_lte_if, timeout, buf, len, &got);
+	if (ret == 0 && got != len) {
+		ret = -ETIMEDOUT;
+	}
+	if (ret) {
+		LOG_WRN("Call `ctr_lte_link_recv_data` got %u/%u: %d", got, len, ret);
+	}
+
+	int ret2 = ctr_lte_link_exit_data_mode(dev_lte_if);
+	if (ret2) {
+		LOG_ERR("Call `ctr_lte_link_exit_data_mode` failed: %d", ret2);
+		if (!ret) {
+			ret = ret2;
+		}
+	}
+
+	return ret;
 }
 
 int ctr_lte_v2_flow_bypass_set_cb(ctr_lte_v2_flow_bypass_cb cb, void *user_data)

@@ -50,6 +50,8 @@ int ctr_lte_v2_talk_at_coneval(struct ctr_lte_v2_talk *talk, char *buf, size_t s
 int ctr_lte_v2_talk_at_cops_q(struct ctr_lte_v2_talk *talk, char *buf, size_t size);
 int ctr_lte_v2_talk_at_cops(struct ctr_lte_v2_talk *talk, int p1, int *p2, const char *p3);
 int ctr_lte_v2_talk_at_cpsms(struct ctr_lte_v2_talk *talk, int *p1, const char *p2, const char *p3);
+int ctr_lte_v2_talk_at_cedrxs(struct ctr_lte_v2_talk *talk, int mode, int act_type,
+			      const char *cycle);
 int ctr_lte_v2_talk_at_cscon(struct ctr_lte_v2_talk *talk, int p1);
 int ctr_lte_v2_talk_at_hwversion(struct ctr_lte_v2_talk *talk, char *buf, size_t size);
 int ctr_lte_v2_talk_at_mdmev(struct ctr_lte_v2_talk *talk, int p1);
