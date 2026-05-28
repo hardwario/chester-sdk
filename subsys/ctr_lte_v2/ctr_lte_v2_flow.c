@@ -1221,6 +1221,23 @@ int ctr_lte_v2_flow_cmd_without_response(const char *s)
 	return 0;
 }
 
+int ctr_lte_v2_consumer_at_cmd(const char *cmd, char *resp_buf, size_t resp_size)
+{
+	if (!cmd) {
+		return -EINVAL;
+	}
+
+	if (!atomic_get(&m_started)) {
+		return -ENOTCONN;
+	}
+
+	if (resp_buf && resp_size) {
+		resp_buf[0] = '\0';
+		return ctr_lte_v2_talk_at_cmd_with_resp(&m_talk, cmd, resp_buf, resp_size);
+	}
+	return ctr_lte_v2_talk_at_cmd(&m_talk, cmd);
+}
+
 int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout)
 {
 	int ret;

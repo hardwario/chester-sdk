@@ -301,6 +301,28 @@ struct ctr_lte_v2_consumer {
 int ctr_lte_v2_consumer_register(const struct ctr_lte_v2_consumer *c);
 
 /**
+ * @brief Issue an AT command from consumer context and wait for OK.
+ *
+ * Wraps the internal talk helper so consumers can inject arbitrary AT
+ * commands (e.g. AT#XMQTTCON, AT#XMQTTPUB) without reaching into
+ * ctr_lte_v2's private talk object. Blocks on the link-driver mutex
+ * for the duration of the dialog; safe across consumers because the
+ * link mutex serialises every outstanding AT line.
+ *
+ * @param cmd       AT command string (no trailing \r\n).
+ * @param resp_buf  Optional buffer for a single response line (the line
+ *                  the modem emits BEFORE OK, e.g. "+CFUN: 1"). NULL =
+ *                  no response capture.
+ * @param resp_size Size of resp_buf.
+ *
+ * @retval 0          Success.
+ * @retval -EILSEQ    Modem returned ERROR.
+ * @retval -ENOSPC    Response too large for buf.
+ * @retval -ETIMEDOUT Timed out (3s for short cmds, 30s for cfun-class).
+ */
+int ctr_lte_v2_consumer_at_cmd(const char *cmd, char *resp_buf, size_t resp_size);
+
+/**
  * @brief Read raw bytes from the LTE link.
  *
  * Used by consumers that need to read length-prefixed payload bytes
