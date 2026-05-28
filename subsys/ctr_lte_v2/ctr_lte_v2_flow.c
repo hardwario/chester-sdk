@@ -1266,13 +1266,36 @@ int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout)
 		return ret;
 	}
 
-	size_t got = 0;
-	ret = ctr_lte_link_recv_data(dev_lte_if, timeout, buf, len, &got);
-	if (ret == 0 && got != len) {
+	/* Loop, accepting partial reads, until we have `len` total or time out.
+	 * The underlying k_pipe_get with min_xfer=size doesn't reliably block
+	 * on partial fills in Zephyr 3.7. Min-xfer=1 (driver-internal) returns
+	 * whatever is available; we just accumulate. */
+	size_t total = 0;
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+	while (total < len) {
+		k_timeout_t remaining = sys_timepoint_timeout(end);
+		size_t got = 0;
+		ret = ctr_lte_link_recv_data(dev_lte_if, remaining, buf + total, len - total,
+					     &got);
+		if (ret == -EAGAIN || (ret == 0 && got == 0)) {
+			if (sys_timepoint_expired(end)) {
+				ret = -ETIMEDOUT;
+				break;
+			}
+			/* tiny pause before retry — UART bytes arrive in chunks */
+			k_sleep(K_MSEC(1));
+			continue;
+		}
+		if (ret) {
+			break;
+		}
+		total += got;
+	}
+	if (ret == 0 && total < len) {
 		ret = -ETIMEDOUT;
 	}
 	if (ret) {
-		LOG_WRN("Call `ctr_lte_link_recv_data` got %u/%u: %d", got, len, ret);
+		LOG_WRN("Call `ctr_lte_link_recv_data` got %u/%u: %d", total, len, ret);
 	}
 
 	int ret2 = ctr_lte_link_exit_data_mode(dev_lte_if);
