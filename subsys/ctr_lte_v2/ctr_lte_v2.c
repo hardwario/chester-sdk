@@ -168,6 +168,22 @@ int ctr_lte_v2_consumer_register(const struct ctr_lte_v2_consumer *c)
 	return 0;
 }
 
+/* Fire every registered consumer's on_prepare hook. Called from the FSM
+ * thread inside PREPARE while the modem is at CFUN=0 — the only window in
+ * which consumers may write to the modem key store. Unlike on_ready, this
+ * is NOT latched: it runs on every attach cycle, so consumer hooks must be
+ * idempotent (check-then-write). */
+static void dispatch_consumers_on_prepare(void)
+{
+	for (size_t i = 0; i < m_consumer_count; i++) {
+		const struct ctr_lte_v2_consumer *c = m_consumers[i];
+		if (c->on_prepare) {
+			LOG_DBG("dispatch on_prepare: %s", c->name ? c->name : "?");
+			c->on_prepare();
+		}
+	}
+}
+
 static void dispatch_consumers_on_ready(void)
 {
 	if (m_consumers_notified_ready) {
@@ -776,6 +792,10 @@ static int on_enter_prepare(void)
 		LOG_ERR("Call `ctr_lte_v2_flow_prepare` failed: %d", ret);
 		return ret;
 	}
+
+	/* Modem is at CFUN=0 here (flow_prepare's final step). Give consumers
+	 * their one chance to provision the key store before we go online. */
+	dispatch_consumers_on_prepare();
 
 	ret = ctr_lte_v2_flow_cfun(1);
 	if (ret) {

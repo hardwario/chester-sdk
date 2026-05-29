@@ -274,6 +274,20 @@ struct ctr_lte_v2_consumer {
 	 *  consumer's own thread / work queue if heavy work is needed. */
 	void (*on_urc)(const char *line);
 
+	/** Invoked once per attach cycle while the modem is OFFLINE — inside
+	 *  the FSM's PREPARE state, after the modem has been brought to
+	 *  CFUN=0 and before it is taken to CFUN=1 for attach. This is the
+	 *  only window in which credentials may be written to the modem key
+	 *  store (AT%CMNG=0/2 require CFUN=0/4). Use it for sec_tag
+	 *  provisioning (CA / client cert) or on-device key generation.
+	 *
+	 *  Runs in FSM-thread context with no link mutex held, so it MAY
+	 *  issue blocking AT dialogs via ctr_lte_v2_consumer_at_cmd(). Keep
+	 *  it short — it sits on the attach critical path and a long hook
+	 *  delays every (re)attach. Idempotent work (check-then-write) is
+	 *  expected: it fires on every attach, not just cold boot. */
+	void (*on_prepare)(void);
+
 	/** Edge-triggered: invoked when the modem first reaches connected
 	 *  (CONNECTED_BIT 0→1), and again after each re-attach. */
 	void (*on_ready)(void);

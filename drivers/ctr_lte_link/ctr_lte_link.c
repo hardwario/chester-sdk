@@ -39,7 +39,11 @@ LOG_MODULE_REGISTER(ctr_lte_link, CONFIG_CTR_LTE_LINK_LOG_LEVEL);
 #define TX_LINE_PREFIX ""
 #define TX_LINE_SUFFIX "\r\n"
 
-#define TX_LINE_BUF_SIZE 1024
+/* 2 KB (was 1024) so a full AT%CMNG=0 credential-write line carrying a
+ * ~1.2 KB PEM fits — the modem key store is provisioned in-firmware via
+ * the consumer on_prepare hook. RAM cost is ~1 KB on the single LTE-link
+ * device instance. */
+#define TX_LINE_BUF_SIZE 2048
 #define RX_LINE_BUF_SIZE 1024
 
 #define RX_HEAP_MEM_SIZE    4096
