@@ -75,33 +75,16 @@ static int init(void)
 		return -ENODEV;
 	}
 
-	struct sensor_value val_scale = {
-		.val1 = 128,
-		.val2 = 0,
-	};
-	ret = sensor_attr_set(m_dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_FULL_SCALE, &val_scale);
-	if (ret) {
-		LOG_ERR("Call `sensor_attr_set` failed (SENSOR_ATTR_FULL_SCALE): %d", ret);
-		m_dev->state->initialized = false;
-		k_sem_give(&m_lock);
-		return ret;
-	}
-
-	struct sensor_value val_freq = {
-		.val1 = 0,
-		.val2 = 250000,
-	};
-	ret = sensor_attr_set(m_dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_SAMPLING_FREQUENCY,
-			      &val_freq);
-	if (ret) {
-		LOG_ERR("Call `sensor_attr_set` failed (SENSOR_ATTR_SAMPLING_FREQUENCY): %d", ret);
-		m_dev->state->initialized = false;
-		k_sem_give(&m_lock);
-		return ret;
-	}
+	/*
+	 * Honor the sensor mode configured in the device tree (range and
+	 * conversion-rate, including conversion-rate = <0> for one-shot /
+	 * shutdown). Previously this init forced 128 °C range + 0.25 Hz
+	 * continuous, which would silently override one-shot mode.
+	 */
 
 	k_sem_give(&m_lock);
 
+	ARG_UNUSED(ret);
 	return 0;
 }
 

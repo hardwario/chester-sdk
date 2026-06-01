@@ -9,7 +9,7 @@ config CTR_THERM
 	select CBPRINTF_FP_SUPPORT if CTR_THERM_LOG_LEVEL_DBG || CTR_THERM_SHELL
 	select I2C
 	select SENSOR
-	select TMP112
+	select HIO_TMP112
 
 if CTR_THERM
 

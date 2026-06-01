@@ -13,5 +13,6 @@ if SENSOR
 
 rsource "mpl3115a2/Kconfig"
 rsource "sps30/Kconfig"
+rsource "tmp112/Kconfig"
 
 endif # SENSOR

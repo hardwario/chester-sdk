@@ -242,7 +242,8 @@
 	};
 
 	tmp112: tmp112@48 {
-		compatible = "ti,tmp112";
+		compatible = "hardwario,tmp112";
+		conversion-rate = <0>;
 		reg = <0x48>;
 	};
 
