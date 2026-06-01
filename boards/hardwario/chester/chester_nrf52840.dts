@@ -97,19 +97,6 @@
 		};
 	};
 
-	vbatt {
-		compatible = "voltage-divider";
-		io-channels = <&tla2021 0>;
-		output-ohms = <5000>;
-		full-ohms = <(10000 + 5000)>;
-
-		/*
-		 * The second GPIO is an optional 10 kOhm load resistor
-		 */
-		power-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>,
-		              <&gpio1 14 GPIO_ACTIVE_HIGH>;
-	};
-
 	ctr_rfmux_interface: ctr_rfmux_interface {
 		compatible = "skyworks,sky13335";
 
