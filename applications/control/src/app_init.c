@@ -564,6 +564,98 @@ static int init_chester_x0_b(void)
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
+#if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
+static int init_soil_sensor(void)
+{
+	int ret;
+
+	ret = ctr_soil_sensor_scan();
+	if (ret) {
+		LOG_ERR("Call `ctr_soil_sensor_scan` failed: %d", ret);
+		return ret;
+	}
+
+	int count = ctr_soil_sensor_get_count();
+
+	/*
+	 * The soil sensor array is heap-allocated (~1.3 KB per sensor) from the
+	 * shared system heap (CONFIG_HEAP_MEM_POOL_SIZE), which other subsystems
+	 * (e.g. the X0_A channels) also draw from. Cap the number we track so a
+	 * user connecting many sensors cannot exhaust the heap and starve the
+	 * rest of the application. Raise APP_DATA_SOIL_SENSOR_MAX_COUNT only
+	 * after confirming the heap budget can absorb the extra sensors.
+	 */
+	if (count > APP_DATA_SOIL_SENSOR_MAX_COUNT) {
+		LOG_WRN("Detected %d soil sensors, limiting to %d", count,
+			APP_DATA_SOIL_SENSOR_MAX_COUNT);
+		count = APP_DATA_SOIL_SENSOR_MAX_COUNT;
+	}
+
+	if (count > 0) {
+		size_t size = count * sizeof(struct app_data_soil_sensor_sensor);
+
+		g_app_data.soil_sensor.sensor = k_malloc(size);
+		if (!g_app_data.soil_sensor.sensor) {
+			LOG_ERR("Call `k_malloc` failed");
+			return -ENOMEM;
+		}
+		memset(g_app_data.soil_sensor.sensor, 0, size);
+	}
+
+	g_app_data.soil_sensor.sensor_count = count;
+
+	return 0;
+}
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
+
+#if defined(FEATURE_SUBSYSTEM_DS18B20)
+static int init_w1_therm(void)
+{
+	int ret;
+
+	ret = ctr_ds18b20_scan();
+	if (ret) {
+		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
+		return ret;
+	}
+
+	int count = ctr_ds18b20_get_count();
+
+	/*
+	 * The w1_therm array is heap-allocated (~1.2 KB per sensor) from the
+	 * shared system heap (CONFIG_HEAP_MEM_POOL_SIZE), which other subsystems
+	 * also draw from. Cap the number we track so a user connecting many
+	 * sensors cannot exhaust the heap and starve the rest of the
+	 * application. Raise APP_DATA_W1_THERM_MAX_COUNT only after confirming
+	 * the heap budget can absorb the extra sensors.
+	 */
+	if (count > APP_DATA_W1_THERM_MAX_COUNT) {
+		LOG_WRN("Detected %d w1 thermometers, limiting to %d", count,
+			APP_DATA_W1_THERM_MAX_COUNT);
+		count = APP_DATA_W1_THERM_MAX_COUNT;
+	}
+
+	if (count > 0) {
+		size_t size = count * sizeof(struct app_data_w1_therm_sensor);
+
+		g_app_data.w1_therm.sensor = k_malloc(size);
+		if (!g_app_data.w1_therm.sensor) {
+			LOG_ERR("Call `k_malloc` failed");
+			return -ENOMEM;
+		}
+		memset(g_app_data.w1_therm.sensor, 0, size);
+
+		for (int i = 0; i < count; i++) {
+			g_app_data.w1_therm.sensor[i].last_sample_temperature = NAN;
+		}
+	}
+
+	g_app_data.w1_therm.sensor_count = count;
+
+	return 0;
+}
+#endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
+
 int app_init(void)
 {
 	int ret;
@@ -611,17 +703,17 @@ int app_init(void)
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
-	ret = ctr_ds18b20_scan();
+	ret = init_w1_therm();
 	if (ret) {
-		LOG_ERR("Call `ctr_ds18b20_scan` failed: %d", ret);
+		LOG_ERR("Call `init_w1_therm` failed: %d", ret);
 		return ret;
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
-	ret = ctr_soil_sensor_scan();
+	ret = init_soil_sensor();
 	if (ret) {
-		LOG_ERR("Call `ctr_soil_sensor_scan` failed: %d", ret);
+		LOG_ERR("Call `init_soil_sensor` failed: %d", ret);
 		return ret;
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */

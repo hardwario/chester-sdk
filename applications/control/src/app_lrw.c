@@ -17,6 +17,34 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/*
+ * Local override of the SDK's CTR_ENCODE_LRW_W1_THERM: g_app_data.w1_therm.sensor
+ * is now a heap-allocated array of length sensor_count rather than a fixed
+ * APP_DATA_W1_THERM_COUNT array. Copied from chester/ctr_encode_lrw.h; intended
+ * to be upstreamed to the SDK (and the other apps) later.
+ */
+#undef CTR_ENCODE_LRW_W1_THERM
+#define CTR_ENCODE_LRW_W1_THERM(buf)                                                               \
+	do {                                                                                       \
+		float t[APP_DATA_W1_THERM_MAX_COUNT];                                              \
+		int count = 0;                                                                     \
+		for (size_t i = 0; i < g_app_data.w1_therm.sensor_count; i++) {                    \
+			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];  \
+			if (!sensor->serial_number) {                                              \
+				continue;                                                          \
+			}                                                                          \
+			t[count++] = sensor->last_sample_temperature;                              \
+		}                                                                                  \
+		ret |= ctr_buf_append_u8(buf, count);                                              \
+		for (size_t i = 0; i < count; i++) {                                               \
+			if (isnan(t[i])) {                                                         \
+				ret |= ctr_buf_append_s16_le(buf, BIT_MASK(15));                   \
+			} else {                                                                   \
+				ret |= ctr_buf_append_s16_le(buf, t[i] * 100.f);                   \
+			}                                                                          \
+		}                                                                                  \
+	} while (0)
+
 LOG_MODULE_REGISTER(app_lrw, LOG_LEVEL_DBG);
 
 #if defined(FEATURE_SUBSYSTEM_LRW)

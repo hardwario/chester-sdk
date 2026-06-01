@@ -478,7 +478,7 @@ int app_sensor_w1_therm_sample(void)
 	int ret;
 	uint64_t serial_number;
 
-	for (int i = 0; i < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
+	for (int i = 0; i < g_app_data.w1_therm.sensor_count; i++) {
 		if (g_app_data.w1_therm.sensor[i].sample_count < APP_DATA_W1_THERM_MAX_SAMPLES) {
 			float temperature = NAN;
 			ret = ctr_ds18b20_read(i, &serial_number, &temperature);
@@ -517,7 +517,7 @@ int app_sensor_w1_therm_aggreg(void)
 
 	app_data_lock();
 
-	for (int i = 0; i < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
+	for (int i = 0; i < w1_therm->sensor_count; i++) {
 		if (w1_therm->sensor[i].measurement_count == 0) {
 			ret = ctr_rtc_get_ts(&w1_therm->timestamp);
 			if (ret) {
@@ -555,7 +555,7 @@ int app_sensor_w1_therm_clear(void)
 {
 	app_data_lock();
 
-	for (int i = 0; i < MIN(APP_DATA_W1_THERM_COUNT, ctr_ds18b20_get_count()); i++) {
+	for (int i = 0; i < g_app_data.w1_therm.sensor_count; i++) {
 		g_app_data.w1_therm.sensor[i].measurement_count = 0;
 	}
 
@@ -572,7 +572,7 @@ int app_sensor_soil_sensor_sample(void)
 {
 	int ret;
 
-	for (int i = 0; i < MIN(APP_DATA_SOIL_SENSOR_COUNT, ctr_soil_sensor_get_count()); i++) {
+	for (int i = 0; i < g_app_data.soil_sensor.sensor_count; i++) {
 		if (g_app_data.soil_sensor.sensor[i].sample_count < APP_DATA_MAX_SAMPLES) {
 			uint64_t serial_number;
 			float temperature;
@@ -616,7 +616,7 @@ int app_sensor_soil_sensor_aggreg(void)
 
 	app_data_lock();
 
-	for (int i = 0; i < MIN(APP_DATA_SOIL_SENSOR_COUNT, ctr_soil_sensor_get_count()); i++) {
+	for (int i = 0; i < soil_sensor->sensor_count; i++) {
 		if (soil_sensor->sensor[i].measurement_count == 0) {
 			ret = ctr_rtc_get_ts(&soil_sensor->timestamp);
 			if (ret) {
@@ -660,7 +660,7 @@ int app_sensor_soil_sensor_clear(void)
 {
 	app_data_lock();
 
-	for (int i = 0; i < MIN(APP_DATA_SOIL_SENSOR_COUNT, ctr_soil_sensor_get_count()); i++) {
+	for (int i = 0; i < g_app_data.soil_sensor.sensor_count; i++) {
 		g_app_data.soil_sensor.sensor[i].measurement_count = 0;
 	}
 

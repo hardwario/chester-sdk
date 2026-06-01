@@ -45,12 +45,12 @@
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
-#define APP_DATA_W1_THERM_COUNT            10
+#define APP_DATA_W1_THERM_MAX_COUNT        10
 #define APP_DATA_W1_THERM_MAX_SAMPLES      32
 #define APP_DATA_W1_THERM_MAX_MEASUREMENTS 64
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#define APP_DATA_SOIL_SENSOR_COUNT 10
+#define APP_DATA_SOIL_SENSOR_MAX_COUNT 10
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,7 +151,8 @@ struct app_data_w1_therm_sensor {
 };
 
 struct app_data_w1_therm {
-	struct app_data_w1_therm_sensor sensor[APP_DATA_W1_THERM_COUNT];
+	struct app_data_w1_therm_sensor *sensor; /* heap-allocated array, length sensor_count */
+	size_t sensor_count;
 
 	int64_t timestamp;
 	atomic_t sample;
@@ -178,7 +179,8 @@ struct app_data_soil_sensor_sensor {
 };
 
 struct app_data_soil_sensor {
-	struct app_data_soil_sensor_sensor sensor[APP_DATA_SOIL_SENSOR_COUNT];
+	struct app_data_soil_sensor_sensor *sensor; /* heap-allocated array, length sensor_count */
+	size_t sensor_count;
 	int64_t timestamp;
 };
 

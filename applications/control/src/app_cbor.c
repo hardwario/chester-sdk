@@ -635,7 +635,7 @@ static int encode(zcbor_state_t *zs)
 	zcbor_uint32_put(zs, CODEC_KEY_E_W1_THERMOMETERS);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-		for (int i = 0; i < APP_DATA_W1_THERM_COUNT; i++) {
+		for (int i = 0; i < g_app_data.w1_therm.sensor_count; i++) {
 			struct app_data_w1_therm_sensor *sensor = &g_app_data.w1_therm.sensor[i];
 
 			if (!sensor->serial_number) {
@@ -676,7 +676,7 @@ static int encode(zcbor_state_t *zs)
 	zcbor_uint32_put(zs, CODEC_KEY_E_SOIL_SENSORS);
 	{
 		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-		for (int i = 0; i < APP_DATA_SOIL_SENSOR_COUNT; i++) {
+		for (int i = 0; i < g_app_data.soil_sensor.sensor_count; i++) {
 			struct app_data_soil_sensor_sensor *sensor =
 				&g_app_data.soil_sensor.sensor[i];
 
