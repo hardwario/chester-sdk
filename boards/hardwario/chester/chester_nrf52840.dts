@@ -296,6 +296,7 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	timer = <&timer1>;
 
 	ctr_lte_if: ctr_lte_if {
 		compatible = "hardwario,ctr-lte-if";
@@ -312,6 +313,7 @@
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	timer = <&timer2>;
 
 	ctr_lrw_if: ctr_lrw_if {
 		compatible = "hardwario,ctr-lrw-if";
