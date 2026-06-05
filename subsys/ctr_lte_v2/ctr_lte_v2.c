@@ -793,8 +793,19 @@ static int on_enter_prepare(void)
 		return ret;
 	}
 
-	/* Modem is at CFUN=0 here (flow_prepare's final step). Give consumers
-	 * their one chance to provision the key store before we go online. */
+	/* flow_prepare leaves the modem at CFUN=0. Bring it to CFUN=4 (offline:
+	 * core powered, RF off) for the consumer provisioning window: AT%CMNG works
+	 * at 0 or 4, but on-device key generation (AT%KEYGEN) needs the modem core
+	 * powered — at CFUN=0 the modem never answers it. RF stays off so we do not
+	 * attach before the key store is provisioned. */
+	ret = ctr_lte_v2_flow_cfun(4);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_flow_cfun(4)` failed: %d", ret);
+		return ret;
+	}
+
+	/* Give consumers their one chance to provision the key store before we go
+	 * online. */
 	dispatch_consumers_on_prepare();
 
 	ret = ctr_lte_v2_flow_cfun(1);

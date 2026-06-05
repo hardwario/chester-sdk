@@ -1238,6 +1238,20 @@ int ctr_lte_v2_consumer_at_cmd(const char *cmd, char *resp_buf, size_t resp_size
 	return ctr_lte_v2_talk_at_cmd(&m_talk, cmd);
 }
 
+int ctr_lte_v2_consumer_at_cmd_long(const char *cmd, char *resp_buf, size_t resp_size)
+{
+	if (!cmd || !resp_buf || !resp_size) {
+		return -EINVAL;
+	}
+
+	if (!atomic_get(&m_started)) {
+		return -ENOTCONN;
+	}
+
+	resp_buf[0] = '\0';
+	return ctr_lte_v2_talk_at_cmd_with_resp_long(&m_talk, cmd, resp_buf, resp_size);
+}
+
 int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout)
 {
 	int ret;
@@ -1298,6 +1312,86 @@ int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout)
 		LOG_WRN("Call `ctr_lte_link_recv_data` got %u/%u: %d", total, len, ret);
 	}
 
+	int ret2 = ctr_lte_link_exit_data_mode(dev_lte_if);
+	if (ret2) {
+		LOG_ERR("Call `ctr_lte_link_exit_data_mode` failed: %d", ret2);
+		if (!ret) {
+			ret = ret2;
+		}
+	}
+
+	return ret;
+}
+
+int ctr_lte_v2_consumer_at_cmd_raw(const char *cmd, uint8_t *buf, size_t buf_size,
+				   k_timeout_t timeout)
+{
+	int ret;
+
+	if (!cmd || !buf || buf_size < 2) {
+		return -EINVAL;
+	}
+
+	if (!atomic_get(&m_started)) {
+		return -ENOTCONN;
+	}
+
+	/* Enter data-mode FIRST, then send the command. Some native AT commands
+	 * (notably AT%KEYGEN: multi-second on-device EC keygen, ~500+ byte single
+	 * response line) are not read back reliably by the line-based dialog
+	 * parser. Capturing the raw bytes — exactly what `lte test bypass` does —
+	 * avoids that. Entering data-mode before the command is sent guarantees
+	 * the whole response lands in the raw pipe (the line parser never sees it).
+	 */
+	ret = ctr_lte_link_enter_data_mode(dev_lte_if);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_link_enter_data_mode` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_link_send_data(dev_lte_if, K_SECONDS(1), cmd, strlen(cmd));
+	if (ret == 0) {
+		ret = ctr_lte_link_send_data(dev_lte_if, K_SECONDS(1), "\r\n", 2);
+	}
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_link_send_data` failed: %d", ret);
+		goto exit_data_mode;
+	}
+
+	size_t total = 0;
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+	buf[0] = '\0';
+	while (total < buf_size - 1) {
+		size_t got = 0;
+		ret = ctr_lte_link_recv_data(dev_lte_if, sys_timepoint_timeout(end), buf + total,
+					     buf_size - 1 - total, &got);
+		if (got) {
+			total += got;
+			buf[total] = '\0';
+			/* Stop as soon as the AT response terminator arrives. base64url
+			 * payloads never contain a bare CRLF, so these only match the
+			 * real result line. */
+			if (strstr((char *)buf, "\r\nOK\r\n") ||
+			    strstr((char *)buf, "\r\nERROR") ||
+			    strstr((char *)buf, "\r\n+CME ERROR")) {
+				ret = 0;
+				break;
+			}
+		}
+		if (ret == -EAGAIN || (ret == 0 && got == 0)) {
+			if (sys_timepoint_expired(end)) {
+				ret = -ETIMEDOUT;
+				break;
+			}
+			k_sleep(K_MSEC(1)); /* UART bytes arrive in chunks */
+			continue;
+		}
+		if (ret) {
+			break;
+		}
+	}
+
+exit_data_mode:;
 	int ret2 = ctr_lte_link_exit_data_mode(dev_lte_if);
 	if (ret2) {
 		LOG_ERR("Call `ctr_lte_link_exit_data_mode` failed: %d", ret2);

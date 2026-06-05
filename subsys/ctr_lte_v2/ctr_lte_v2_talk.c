@@ -1252,6 +1252,26 @@ int ctr_lte_v2_talk_at_cmd_with_resp(struct ctr_lte_v2_talk *talk, const char *s
 	DIALOG_EPILOG /* clang-format on */
 }
 
+int ctr_lte_v2_talk_at_cmd_with_resp_long(struct ctr_lte_v2_talk *talk, const char *s, char *buf,
+					  size_t size)
+{
+	DIALOG_PROLOG /* clang-format off */
+
+	DIALOG_ENTER();
+	DIALOG_SEND_LINE("%s", s);
+	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_L, {
+		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
+		if (!DIALOG_LOOP_GATHER_GET_COUNT()) {
+			DIALOG_LOOP_GATHER(buf, size);
+		} else {
+			DIALOG_LOOP_BREAK_ON_STR("OK");
+		}
+	});
+	DIALOG_EXIT();
+
+	DIALOG_EPILOG /* clang-format on */
+}
+
 int ctr_lte_v2_talk_at_cmd_with_resp_prefix(struct ctr_lte_v2_talk *talk, const char *s, char *buf,
 					    size_t size, const char *pfx)
 {

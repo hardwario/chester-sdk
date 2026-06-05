@@ -337,6 +337,24 @@ int ctr_lte_v2_consumer_register(const struct ctr_lte_v2_consumer *c);
 int ctr_lte_v2_consumer_at_cmd(const char *cmd, char *resp_buf, size_t resp_size);
 
 /**
+ * @brief Issue an AT command from consumer context with a long (30s) response
+ *        timeout — for slow modem operations like AT%KEYGEN (on-device EC
+ *        keypair + CSR generation), which exceed the 3s default of
+ *        ctr_lte_v2_consumer_at_cmd() and would otherwise spuriously -ETIMEDOUT.
+ *
+ * Same contract as ctr_lte_v2_consumer_at_cmd() otherwise. resp_buf is
+ * mandatory here (these commands always return a response line before OK).
+ *
+ * @retval 0          Success.
+ * @retval -EINVAL    cmd/resp_buf NULL or resp_size 0.
+ * @retval -ENOTCONN  LTE subsystem not started.
+ * @retval -EILSEQ    Modem returned ERROR.
+ * @retval -ENOSPC    Response too large for buf.
+ * @retval -ETIMEDOUT Timed out after 30s.
+ */
+int ctr_lte_v2_consumer_at_cmd_long(const char *cmd, char *resp_buf, size_t resp_size);
+
+/**
  * @brief Read raw bytes from the LTE link.
  *
  * Used by consumers that need to read length-prefixed payload bytes
@@ -353,6 +371,34 @@ int ctr_lte_v2_consumer_at_cmd(const char *cmd, char *resp_buf, size_t resp_size
  * @retval -ENOTCONN  Link disabled.
  */
 int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout);
+
+/**
+ * @brief Issue an AT command and capture the raw response via the data-mode
+ *        path (no line parser), for native modem commands the line-based
+ *        dialog reader does not read back reliably — specifically AT%KEYGEN
+ *        (multi-second on-device EC keygen with a ~500+ byte single response
+ *        line). Mirrors what `lte test bypass` does, but callable from a
+ *        consumer (e.g. the on_prepare credential window).
+ *
+ * The link enters data-mode BEFORE the command is sent, so the entire
+ * response lands in the raw pipe. Reading stops as soon as the AT terminator
+ * (OK / ERROR / +CME ERROR) arrives or @p timeout elapses. The caller gets the
+ * raw bytes (which may include interleaved URCs) and parses the result line
+ * itself. Must run in thread context with exclusive modem access (e.g. inside
+ * an on_prepare hook, where the FSM thread is blocked).
+ *
+ * @param cmd      AT command string (no trailing CRLF — added internally).
+ * @param buf      Destination buffer; NUL-terminated on return.
+ * @param buf_size Size of @p buf (>= 2).
+ * @param timeout  Maximum wait for the response terminator.
+ *
+ * @retval 0          Success — terminator seen (inspect @p buf for the result).
+ * @retval -EINVAL    Bad arguments.
+ * @retval -ENOTCONN  Link disabled.
+ * @retval -ETIMEDOUT No terminator within @p timeout.
+ */
+int ctr_lte_v2_consumer_at_cmd_raw(const char *cmd, uint8_t *buf, size_t buf_size,
+				   k_timeout_t timeout);
 
 /* -------- Utility functions -------- */
 

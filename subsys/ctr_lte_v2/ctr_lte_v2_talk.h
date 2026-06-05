@@ -91,6 +91,8 @@ int ctr_lte_v2_talk_crsm_214(struct ctr_lte_v2_talk *talk);
 int ctr_lte_v2_talk_at_cmd(struct ctr_lte_v2_talk *talk, const char *s);
 int ctr_lte_v2_talk_at_cmd_with_resp(struct ctr_lte_v2_talk *talk, const char *s, char *buf,
 				     size_t size);
+int ctr_lte_v2_talk_at_cmd_with_resp_long(struct ctr_lte_v2_talk *talk, const char *s, char *buf,
+					  size_t size);
 int ctr_lte_v2_talk_at_cmd_with_resp_prefix(struct ctr_lte_v2_talk *talk, const char *s, char *buf,
 					    size_t size, const char *pfx);
 
