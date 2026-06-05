@@ -1272,8 +1272,7 @@ int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout)
 	 * bytes that arrive immediately after a URC header (e.g. #XMQTTMSG),
 	 * the consumer's on_urc must call this synchronously *before* returning
 	 * — otherwise subsequent bytes are absorbed by the line parser and
-	 * lost. See `plans/2026-05-28-poc1-phase2-step0.5-consumer-api-proposal.md`
-	 * §5 for the design rationale. */
+	 * lost. */
 	ret = ctr_lte_link_enter_data_mode(dev_lte_if);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_link_enter_data_mode` failed: %d", ret);
