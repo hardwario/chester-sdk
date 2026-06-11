@@ -28,6 +28,33 @@
 
 LOG_MODULE_REGISTER(app_measure, LOG_LEVEL_DBG);
 
+#if defined(FEATURE_HARDWARE_CHESTER_X3_B)
+/* Runtime presence of CHESTER-X3 in slot B (detected at startup) */
+static bool m_x3_b_present;
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X3_B) */
+
+int app_measure_init(void)
+{
+#if defined(FEATURE_HARDWARE_CHESTER_X3_B)
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_x3_b));
+
+	/*
+	 * The ADS122C04 ADCs on CHESTER-X3 are probed over I2C during driver
+	 * init; if the module is not installed in slot B the init fails and the
+	 * device stays not-ready. Use that as a runtime presence indicator.
+	 */
+	m_x3_b_present = device_is_ready(dev);
+
+	if (m_x3_b_present) {
+		LOG_INF("CHESTER-X3 detected in slot B");
+	} else {
+		LOG_INF("CHESTER-X3 not present in slot B (channels B1/B2 skipped)");
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X3_B) */
+
+	return 0;
+}
+
 #define MAX_REPETITIONS 5
 #define MAX_DIFFERENCE  100
 
@@ -236,7 +263,7 @@ int app_measure_weight(void)
 #endif
 
 #if defined(FEATURE_HARDWARE_CHESTER_X3_B)
-	if (g_app_config.channel_b1_active) {
+	if (m_x3_b_present && g_app_config.channel_b1_active) {
 		static int32_t b1_raw_prev = INT32_MAX;
 		ret = filter_weight("B1", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_1, &b1_raw,
 				    &b1_raw_prev);
@@ -248,7 +275,7 @@ int app_measure_weight(void)
 #endif
 
 #if defined(FEATURE_HARDWARE_CHESTER_X3_B)
-	if (g_app_config.channel_b2_active) {
+	if (m_x3_b_present && g_app_config.channel_b2_active) {
 		static int32_t b2_raw_prev = INT32_MAX;
 		ret = filter_weight("B2", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_2, &b2_raw,
 				    &b2_raw_prev);
@@ -381,12 +408,15 @@ int app_test_measure(const struct shell *sh)
 	}
 
 #if defined(FEATURE_HARDWARE_CHESTER_X3_B)
-	static int32_t b1_raw_prev = INT32_MAX;
-	ret = filter_weight("B1", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_1, &b1_raw, &b1_raw_prev);
-	if (ret) {
-		LOG_ERR("Call `filter_weight` failed (B1): %d", ret);
-		shell_error(sh, "channel measurement failed (b1)");
-		b1_raw = INT32_MAX;
+	if (m_x3_b_present) {
+		static int32_t b1_raw_prev = INT32_MAX;
+		ret = filter_weight("B1", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_1, &b1_raw,
+				    &b1_raw_prev);
+		if (ret) {
+			LOG_ERR("Call `filter_weight` failed (B1): %d", ret);
+			shell_error(sh, "channel measurement failed (b1)");
+			b1_raw = INT32_MAX;
+		}
 	}
 #endif
 
@@ -397,12 +427,15 @@ int app_test_measure(const struct shell *sh)
 	}
 
 #if defined(FEATURE_HARDWARE_CHESTER_X3_B)
-	static int32_t b2_raw_prev = INT32_MAX;
-	ret = filter_weight("B2", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_2, &b2_raw, &b2_raw_prev);
-	if (ret) {
-		LOG_ERR("Call `filter_weight` failed (B2): %d", ret);
-		shell_error(sh, "channel measurement failed (b2)");
-		b2_raw = INT32_MAX;
+	if (m_x3_b_present) {
+		static int32_t b2_raw_prev = INT32_MAX;
+		ret = filter_weight("B2", MEASURE_WEIGHT_SLOT_B, CTR_X3_CHANNEL_2, &b2_raw,
+				    &b2_raw_prev);
+		if (ret) {
+			LOG_ERR("Call `filter_weight` failed (B2): %d", ret);
+			shell_error(sh, "channel measurement failed (b2)");
+			b2_raw = INT32_MAX;
+		}
 	}
 #endif
 

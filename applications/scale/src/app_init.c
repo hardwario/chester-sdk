@@ -9,6 +9,7 @@
 #include "app_config.h"
 #include "app_handler.h"
 #include "app_init.h"
+#include "app_measure.h"
 #include "app_work.h"
 #include "app_data.h"
 
@@ -177,6 +178,12 @@ int app_init(void)
 #endif /* defined(FEATURE_SUBSYSTEM_CLOUD) */
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
+
+	ret = app_measure_init();
+	if (ret) {
+		LOG_ERR("Call `app_measure_init` failed: %d", ret);
+		return ret;
+	}
 
 #if defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
 	ret = init_people_counter();

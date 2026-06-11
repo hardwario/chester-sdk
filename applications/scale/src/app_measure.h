@@ -14,6 +14,7 @@
 extern "C" {
 #endif
 
+int app_measure_init(void);
 int app_measure_weight(void);
 int app_measure_people(void);
 int app_measure_clear(void);

@@ -18,6 +18,13 @@ config SHIELD_CTR_X3_A
 
 config CTR_X3
 	default y
+# HARDWARE-CHESTER-X3-B
+config SHIELD_CTR_X3_B
+	bool "Enable SHIELD_CTR_X3_B"
+	default y
+
+config CTR_X3
+	default y
 # SUBSYSTEM-LRW
 config SHIELD_CTR_LRW
 	bool "Enable SHIELD_CTR_LRW"

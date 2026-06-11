@@ -9,6 +9,7 @@
 
 #define FEATURE_CHESTER_APP_REPORT_JITTER       1
 #define FEATURE_HARDWARE_CHESTER_X3_A           1
+#define FEATURE_HARDWARE_CHESTER_X3_B           1
 #define FEATURE_SUBSYSTEM_ACCEL                 1
 #define FEATURE_SUBSYSTEM_BATT                  1
 #define FEATURE_SUBSYSTEM_BLE_TAG               1

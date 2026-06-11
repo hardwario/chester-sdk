@@ -20,6 +20,22 @@
 	gain = <7>;
 	vref = <1>;
 };
+/* HARDWARE-CHESTER-X3-B  */
+&ctr_x3_b {
+	status = "okay";
+};
+
+&ctr_x3_ads122c04_b1 {
+	status = "okay";
+	gain = <7>;
+	vref = <1>;
+};
+
+&ctr_x3_ads122c04_b2 {
+	status = "okay";
+	gain = <7>;
+	vref = <1>;
+};
 /* SUBSYSTEM-CLOUD  */
 / {
 	chosen {

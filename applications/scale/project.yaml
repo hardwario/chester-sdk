@@ -44,8 +44,8 @@ features:
 - subsystem-lrw
 - subsystem-cloud
 - hardware-chester-x3-a
+- hardware-chester-x3-b
 - chester-app-report-jitter
-#- hardware-chester-x3-b
 #- hardware-chester-z
 #- hardware-chester-people-counter
 parameters:
