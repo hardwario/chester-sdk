@@ -96,6 +96,9 @@ extern const struct app_device_driver promag_mf7s_driver;
 /* FlowT FT201 ultrasonic flowmeter driver */
 extern const struct app_device_driver flowt_ft201_driver;
 
+/* Piketronic RPP-R radon probe driver */
+extern const struct app_device_driver piketronic_rpp_driver;
+
 /* Shell command entries for energy meters */
 extern const union shell_cmd_entry or_we_504_shell_cmds;
 extern const union shell_cmd_entry em1xx_shell_cmds;
@@ -104,6 +107,7 @@ extern const union shell_cmd_entry em5xx_shell_cmds;
 extern const union shell_cmd_entry iem3000_shell_cmds;
 extern const union shell_cmd_entry promag_mf7s_shell_cmds;
 extern const union shell_cmd_entry flowt_ft201_shell_cmds;
+extern const union shell_cmd_entry piketronic_rpp_shell_cmds;
 
 #ifdef __cplusplus
 }

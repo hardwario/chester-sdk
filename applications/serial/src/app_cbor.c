@@ -22,6 +22,7 @@
 #include "drivers/drv_iem3000.h"
 #include "drivers/drv_promag_mf7s.h"
 #include "drivers/drv_flowt_ft201.h"
+#include "drivers/drv_piketronic_rpp.h"
 
 /* CHESTER includes */
 #include <chester/ctr_info.h>
@@ -552,6 +553,44 @@ static int encode_device_flowt_ft201(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
+static int encode_device_piketronic_rpp(zcbor_state_t *zs, int device_idx)
+{
+	struct piketronic_rpp_sample samples[MAX_SAMPLES];
+	int count = piketronic_rpp_get_samples(samples, MAX_SAMPLES);
+
+	if (count == 0) {
+		return 0;
+	}
+
+	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
+	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+	for (int i = 0; i < count; i++) {
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
+		zcbor_uint64_put(zs, samples[i].timestamp);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__RADON_CONCENTRATION);
+		zcbor_uint32_put(zs, samples[i].concentration);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__RADON_CONCENTRATION_DAY);
+		zcbor_uint32_put(zs, samples[i].concentration_day);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TEMPERATURE);
+		zcbor_int32_put(zs, (int32_t)samples[i].temperature * 100);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__HUMIDITY);
+		zcbor_uint32_put(zs, samples[i].humidity);
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+
+	zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+	return 0;
+}
+
 static int encode_devices(zcbor_state_t *zs)
 {
 	int device_count = 0;
@@ -617,6 +656,9 @@ static int encode_devices(zcbor_state_t *zs)
 			break;
 		case APP_DEVICE_TYPE_FLOWT_FT201:
 			encode_device_flowt_ft201(zs, i);
+			break;
+		case APP_DEVICE_TYPE_PIKETRONIC_RPP:
+			encode_device_piketronic_rpp(zs, i);
 			break;
 		default:
 			/* Unknown device type - skip measurements */

@@ -139,6 +139,9 @@ schema:
           - power_factor_l1:
           - power_factor_l2:
           - power_factor_l3:
+          - radon_concentration:
+          - radon_concentration_day:
+          - humidity:
   - ble_tags:
       - addr:
       - rssi:

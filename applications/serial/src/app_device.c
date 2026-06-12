@@ -24,6 +24,7 @@
 #include "drivers/drv_iem3000.h"
 #include "drivers/drv_promag_mf7s.h"
 #include "drivers/drv_flowt_ft201.h"
+#include "drivers/drv_piketronic_rpp.h"
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -50,6 +51,7 @@ static const char *const m_type_names[] = {
 	[APP_DEVICE_TYPE_IEM3000] = "iem3000",
 	[APP_DEVICE_TYPE_PROMAG_MF7S] = "promag_mf7s",
 	[APP_DEVICE_TYPE_FLOWT_FT201] = "flowt_ft201",
+	[APP_DEVICE_TYPE_PIKETRONIC_RPP] = "piketronic",
 };
 
 const struct app_device_driver *app_device_find_driver(enum app_device_type type)
@@ -71,6 +73,8 @@ const struct app_device_driver *app_device_find_driver(enum app_device_type type
 		return &promag_mf7s_driver;
 	case APP_DEVICE_TYPE_FLOWT_FT201:
 		return &flowt_ft201_driver;
+	case APP_DEVICE_TYPE_PIKETRONIC_RPP:
+		return &piketronic_rpp_driver;
 	default:
 		return NULL;
 	}
@@ -165,6 +169,9 @@ int app_device_sample(int device_idx)
 		break;
 	case APP_DEVICE_TYPE_FLOWT_FT201:
 		flowt_ft201_set_addr(addr);
+		break;
+	case APP_DEVICE_TYPE_PIKETRONIC_RPP:
+		piketronic_rpp_set_addr(addr);
 		break;
 	default:
 		/* RS232 devices (MicroSens) don't need address */
@@ -500,6 +507,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_device,
 	SHELL_CMD(iem3000, &iem3000_shell_cmds, "Schneider iEM3000 3-phase meter", NULL),
 	SHELL_CMD(promag_mf7s, &promag_mf7s_shell_cmds, "Promag MF7S RFID reader", NULL),
 	SHELL_CMD(flowt_ft201, &flowt_ft201_shell_cmds, "FlowT FT201 ultrasonic flowmeter", NULL),
+	SHELL_CMD(piketronic, &piketronic_rpp_shell_cmds, "Piketronic RPP-R radon probe", NULL),
 	/* Generic commands (use device index from config) */
 	SHELL_CMD_ARG(sample, NULL, "Sample device by index: sample <0-7>", cmd_device_sample_idx, 2, 0),
 	SHELL_CMD_ARG(reset, NULL, "Reset device by index: reset <0-7>", cmd_device_reset_idx, 2, 0),

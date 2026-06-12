@@ -49,6 +49,7 @@ target_sources(app PRIVATE src/drivers/drv_microsens_180hs.c)
 target_sources(app PRIVATE src/drivers/drv_or_we_504.c)
 target_sources(app PRIVATE src/drivers/drv_or_we_516.c)
 target_sources(app PRIVATE src/drivers/drv_promag_mf7s.c)
+target_sources(app PRIVATE src/drivers/drv_piketronic_rpp.c)
 target_sources(app PRIVATE src/main.c)
 
 target_precompile_headers(app PRIVATE src/feature.h)

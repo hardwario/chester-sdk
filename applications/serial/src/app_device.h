@@ -38,6 +38,7 @@ enum app_device_type {
 	APP_DEVICE_TYPE_IEM3000 = 10,   /* Schneider iEM3000 3-phase */
 	APP_DEVICE_TYPE_PROMAG_MF7S = 11, /* Promag MF7S RFID reader */
 	APP_DEVICE_TYPE_FLOWT_FT201 = 12, /* FlowT FT201 ultrasonic flowmeter */
+	APP_DEVICE_TYPE_PIKETRONIC_RPP = 13, /* Piketronic RPP-R radon probe */
 	APP_DEVICE_TYPE_COUNT, /* Number of types */
 };
 

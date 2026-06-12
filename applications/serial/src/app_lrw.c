@@ -18,6 +18,7 @@
 #include "drivers/drv_iem3000.h"
 #include "drivers/drv_promag_mf7s.h"
 #include "drivers/drv_flowt_ft201.h"
+#include "drivers/drv_piketronic_rpp.h"
 
 #include <chester/ctr_buf.h>
 #include <chester/ctr_encode_lrw.h>
@@ -235,6 +236,16 @@ static inline int encode_float16_le(struct ctr_buf *buf, float value)
 		ret |= ctr_buf_append_u8(buf, d->valid ? d->signal_quality : 0xFF);              \
 	} while (0)
 
+/* Piketronic RPP-R radon probe encoding macro (4×Float16 = 8 bytes) */
+#define ENCODE_PIKETRONIC_RPP_FLOAT16(buf)                                                         \
+	do {                                                                                       \
+		const struct app_data_piketronic_rpp *d = piketronic_rpp_get_data();               \
+		ret |= encode_float16_le(buf, d->valid ? (float)d->concentration : NAN);            \
+		ret |= encode_float16_le(buf, d->valid ? (float)d->concentration_day : NAN);        \
+		ret |= encode_float16_le(buf, d->valid ? (float)d->temperature : NAN);              \
+		ret |= encode_float16_le(buf, d->valid ? (float)d->humidity : NAN);                 \
+	} while (0)
+
 /**
  * @brief Encode single device into LoRaWAN payload
  *
@@ -337,6 +348,10 @@ int app_lrw_encode_single(struct ctr_buf *buf, int device_idx)
 
 	case APP_DEVICE_TYPE_FLOWT_FT201:
 		ENCODE_FLOWT_FT201_FLOAT16(buf); /* 13 bytes: 6×Float16 + 1B signal */
+		break;
+
+	case APP_DEVICE_TYPE_PIKETRONIC_RPP:
+		ENCODE_PIKETRONIC_RPP_FLOAT16(buf); /* 8 bytes: 4×Float16 */
 		break;
 
 	default:

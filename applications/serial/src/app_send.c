@@ -19,6 +19,7 @@
 #include "drivers/drv_or_we_516.h"
 #include "drivers/drv_promag_mf7s.h"
 #include "drivers/drv_flowt_ft201.h"
+#include "drivers/drv_piketronic_rpp.h"
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
@@ -156,6 +157,7 @@ int app_send(void)
 		iem3000_clear_samples();
 		promag_mf7s_clear_samples();
 		flowt_ft201_clear_samples();
+		piketronic_rpp_clear_samples();
 
 		break;
 	}

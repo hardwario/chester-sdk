@@ -35,6 +35,7 @@ var DEVICE_TYPE_EM5XX = 9;
 var DEVICE_TYPE_IEM3000 = 10;
 var DEVICE_TYPE_PROMAG_MF7S = 11;
 var DEVICE_TYPE_FLOWT_FT201 = 12;
+var DEVICE_TYPE_PIKETRONIC_RPP = 13;
 
 // ChirpStack v4
 function decodeUplink(input) {
@@ -189,6 +190,14 @@ function decode_serial_device(version) {
       device.type_name = "flowt_ft201";
       if (version === 1) {
         decode_flowt_ft201_float16(device.data);
+      } else {
+        device.data.error = "Legacy format not supported";
+      }
+      break;
+    case DEVICE_TYPE_PIKETRONIC_RPP:
+      device.type_name = "piketronic";
+      if (version === 1) {
+        decode_piketronic_rpp_float16(device.data);
       } else {
         device.data.error = "Legacy format not supported";
       }
@@ -528,6 +537,22 @@ function decode_flowt_ft201_float16(data) {
   if (data.signal_quality === 0xFF) {
     data.signal_quality = null;
   }
+}
+
+/**
+ * Piketronic RPP-R radon probe Float16 decoder (4×Float16 = 8 bytes)
+ * radon_concentration (Bq/m3, 1h avg), radon_concentration_day (Bq/m3, 1d avg),
+ * temperature (degC), humidity (%)
+ */
+function decode_piketronic_rpp_float16(data) {
+  data.radon_concentration = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.radon_concentration_day = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.temperature = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.humidity = float16_to_float32(buffer, cursor);
+  cursor += 2;
 }
 
 // ============================================================================
