@@ -15,6 +15,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/modbus/modbus.h>
 #include <zephyr/pm/device.h>
+/* Internal Modbus API: needed to raise the RTU frame timeout (no public setter)
+ * to work around the SC16IS7xx I2C-UART bridge RX batching, see app_modbus_init. */
+#include <modbus_internal.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -292,6 +295,22 @@ int app_modbus_init(void)
 	if (ret) {
 		LOG_ERR("modbus_init_client failed: %d", ret);
 		return ret;
+	}
+
+	/* The CHESTER X2 RS-485 front-end is an SC16IS7xx I2C-to-UART bridge that
+	 * delivers RX bytes in batched bursts with inter-batch gaps larger than the
+	 * standard 3.5-character Modbus-RTU end-of-frame silence (~2 ms at 19200
+	 * baud). That makes the RTU frame timer expire mid-frame and truncates
+	 * multi-byte responses (CRC / frame-length errors). There is no public API
+	 * for the RTU frame timeout, so raise it via the Modbus internal context. */
+	{
+		struct modbus_context *ctx = modbus_get_context(m_iface);
+
+		if (ctx != NULL && ctx->cfg != NULL && ctx->cfg->rtu_timeout < 50000) {
+			LOG_INF("Raising RTU frame timeout %u -> 50000 us (SC16IS7xx bridge)",
+				ctx->cfg->rtu_timeout);
+			ctx->cfg->rtu_timeout = 50000;
+		}
 	}
 
 	/* Enable Modbus device */

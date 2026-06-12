@@ -18,6 +18,10 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(chester-serial)
 
+# Access to the Zephyr Modbus internal API (modbus_internal.h) for the RTU
+# frame-timeout workaround in app_modbus.c (SC16IS7xx I2C-UART bridge RX batching).
+target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/subsys/modbus)
+
 add_custom_command(
     COMMAND west gen-codec -d ../codec/cbor-decoder.yaml -e ../codec/cbor-encoder.yaml -o ../src/app_codec.h
     OUTPUT ../src/app_codec.h
