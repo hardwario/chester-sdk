@@ -59,8 +59,11 @@ static inline uint32_t decode_u32(const uint16_t *regs)
 	return ((uint32_t)regs[1] << 16) | regs[0];
 }
 
-/* Decode a register-packed ASCII string (high byte first). out must hold
- * count*2 + 1 bytes. */
+/* Decode a register-packed ASCII string. Two characters per register, low
+ * byte first. out must hold count*2 + 1 bytes. The probe pads the unused part
+ * of a field with literal '.' characters (e.g. the serial reads as
+ * "24062....."), and may also leave non-printable bytes, so we drop any
+ * non-printable bytes and strip trailing '.'/space/null padding. */
 static void decode_ascii(const uint16_t *regs, int count, char *out)
 {
 	int j = 0;
@@ -69,8 +72,18 @@ static void decode_ascii(const uint16_t *regs, int count, char *out)
 		out[j++] = (char)(regs[i] >> 8);
 	}
 	out[j] = '\0';
-	/* Trim trailing spaces/nulls */
-	for (int k = j - 1; k >= 0 && (out[k] == ' ' || out[k] == '\0'); k--) {
+	/* Terminate at the first non-printable byte (drops junk padding) */
+	for (int k = 0; k < j; k++) {
+		unsigned char c = (unsigned char)out[k];
+		if (c < 0x20 || c > 0x7E) {
+			out[k] = '\0';
+			break;
+		}
+	}
+	/* Strip trailing padding: '.', spaces and nulls (the probe fills the
+	 * unused tail of the serial field with dots) */
+	for (int k = (int)strlen(out) - 1;
+	     k >= 0 && (out[k] == '.' || out[k] == ' ' || out[k] == '\0'); k--) {
 		out[k] = '\0';
 	}
 }
