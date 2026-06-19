@@ -7,8 +7,12 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 set(ENV{FW_BUNDLE} "com.hardwario.chester.app.meteo")
-set(ENV{FW_VERSION} "v3.0.2")
 set(ENV{FW_NAME} "CHESTER Meteo")
+
+# Derive firmware version from git (see scripts/version.cmake); the fallback is
+# used when git is unavailable at build time.
+set(FW_VERSION_FALLBACK "v3.0.2")
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/version.cmake)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 

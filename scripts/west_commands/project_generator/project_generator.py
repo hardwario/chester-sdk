@@ -937,7 +937,6 @@ class ProjectGenerator:
                 {"dir": "", "name": "Kconfig.variant",
                     "template": "k_config.variant.j2"},
                 {"dir": "", "name": "Kconfig", "template": "k_config.j2"},
-                {"dir": "", "name": "VERSION", "template": "VERSION.j2"},
             ]
 
             # Generate each file

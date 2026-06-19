@@ -11,11 +11,15 @@
 #include <nrf52840.h>
 
 /* Zephyr includes */
+#if __has_include(<zephyr/app_version.h>)
+#include <zephyr/app_version.h>
+#endif
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
+#include <zephyr/sys/util.h>
 
 /* Standard includes */
 #include <stdbool.h>
@@ -54,7 +58,7 @@ LOG_MODULE_REGISTER(ctr_info, CONFIG_CTR_INFO_LOG_LEVEL);
 
 #define FW_NAME_LENGTH 65
 
-#define FW_VERSION_LENGTH 17
+#define FW_VERSION_LENGTH 48
 
 #define SERIAL_NUMBER_OFFSET 0x3a
 #define SERIAL_NUMBER_LENGTH 11
@@ -237,13 +241,15 @@ int ctr_info_get_fw_name(char **fw_name)
 
 int ctr_info_get_fw_version(char **fw_version)
 {
-#if defined(FW_VERSION)
-	int ret;
+#if defined(APP_BUILD_VERSION)
 	static char buf[FW_VERSION_LENGTH];
-	ret = snprintf(buf, sizeof(buf), "%s", STRINGIFY(FW_VERSION));
-	if (ret != strlen(buf)) {
-		return -ENOSPC;
-	}
+
+	/* APP_BUILD_VERSION is the `git describe` output; fall back to the
+	 * semantic version string if git was unavailable at build time. The
+	 * value is truncated by snprintf if it does not fit the buffer. */
+	const char *build_version = STRINGIFY(APP_BUILD_VERSION);
+	snprintf(buf, sizeof(buf), "%s",
+		 build_version[0] != '\0' ? build_version : APP_VERSION_STRING);
 
 	*fw_version = buf;
 #else

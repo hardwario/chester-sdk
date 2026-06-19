@@ -10,10 +10,6 @@ if(DEFINED ENV{FW_NAME})
 add_definitions(-DFW_NAME=$ENV{FW_NAME})
 endif()
 
-if(DEFINED ENV{FW_VERSION})
-add_definitions(-DFW_VERSION=$ENV{FW_VERSION})
-endif()
-
 if (DEFINED ENV{FW_BUNDLE})
 add_definitions(-DFW_BUNDLE=$ENV{FW_BUNDLE})
 endif()

@@ -17,8 +17,12 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 set(ENV{FW_BUNDLE} "{{data['project']['fw_bundle']}}")
-set(ENV{FW_VERSION} "{{data['project']['fw_version']}}")
 set(ENV{FW_NAME} "{{data['project']['fw_name']}}")
+
+# Derive firmware version from git (see scripts/version.cmake); the fallback is
+# used when git is unavailable at build time.
+set(FW_VERSION_FALLBACK "{{data['project']['fw_version']}}")
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/version.cmake)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 

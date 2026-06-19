@@ -1,6 +1,7 @@
 .DS_Store
 .DS_Store?
 build/
+applications/*/VERSION
 doc/html
 doc/latex
 scripts/west_commands/__pycache__/*.pyc
