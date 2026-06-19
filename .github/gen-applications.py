@@ -18,8 +18,8 @@ if len(sys.argv) != 3:
 app = sys.argv[1]
 out = sys.argv[2]
 
-if out not in ['path', 'cmd']:
-    panic("Unknown out type supported: path, cmd")
+if out not in ['path', 'cmd', 'name']:
+    panic("Unknown out type supported: path, cmd, name")
 
 fw_bundle = f'{PREFIX}{app}'
 path = os.path.dirname(os.path.realpath(__file__))
@@ -37,6 +37,9 @@ if os.path.exists(project_yml_path):
         if out == 'cmd':
             print(f'rm -rf build && west chester-update && west build')
             sys.exit(0)
+        if out == 'name':
+            print(project['project']['fw_name'])
+            sys.exit(0)
 
     for variant in project['variants']:
         if variant['fw_bundle'] == fw_bundle:
@@ -44,6 +47,9 @@ if os.path.exists(project_yml_path):
             # sys.exit(0)
             if out == 'cmd':
                 print(f'rm -rf build && west chester-update --variant "{variant["name"]}" && west build')
+                sys.exit(0)
+            if out == 'name':
+                print(variant['fw_name'])
                 sys.exit(0)
 
     panic(f'Variant not found: {fw_bundle}')

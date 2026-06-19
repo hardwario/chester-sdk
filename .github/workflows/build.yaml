@@ -7,6 +7,8 @@ on:
         - '.*'
       branches-ignore:
         - 'gh-pages'
+      tags:
+        - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -19,11 +21,15 @@ jobs:
       short_sha: ${{ steps.short-sha.outputs.short-sha }}
       samples: ${{ steps.generate-matrix.outputs.samples }}
       applications: ${{ steps.generate-matrix.outputs.applications }}
+      ncs_version: ${{ steps.versions.outputs.ncs }}
+      zephyr_version: ${{ steps.versions.outputs.zephyr }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
         with:
           path: 'chester-sdk/chester'
+          fetch-depth: 0
+          fetch-tags: true
       - name: cache
         id: cache-chester-sdk
         uses: actions/cache@v4
@@ -54,6 +60,17 @@ jobs:
         run: |
           SHORT_SHA=$(git -C chester-sdk/chester rev-parse --short HEAD)
           echo short-sha=${SHORT_SHA} >> $GITHUB_OUTPUT
+      - name: versions
+        id: versions
+        run: |
+          NCS=$(cat chester-sdk/nrf/VERSION)
+          echo ncs=${NCS} >> $GITHUB_OUTPUT
+          ZEPHYR=$(awk -F' *= *' '
+            /^VERSION_MAJOR/ {major=$2}
+            /^VERSION_MINOR/ {minor=$2}
+            /^PATCHLEVEL/    {patch=$2}
+            END {printf "%s.%s.%s", major, minor, patch}' chester-sdk/zephyr/VERSION)
+          echo zephyr=${ZEPHYR} >> $GITHUB_OUTPUT
       - name: Generate Matrix
         id: generate-matrix
         working-directory: ./chester-sdk/chester
@@ -72,6 +89,9 @@ jobs:
       image: hardwario/nrf-connect-sdk-build:v2.9.0-1
     needs:
       - prepare
+    # Samples are compile-checks only; skip them on release tags so the app
+    # builds (and the release) aren't delayed competing for runners.
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     continue-on-error: true
     strategy:
       matrix:
@@ -121,6 +141,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: 'chester-sdk/chester'
+          fetch-depth: 0
+          fetch-tags: true
       - name: gen build command
         id: build-command
         working-directory: ./chester-sdk/chester
@@ -152,3 +174,73 @@ jobs:
       - name: build
         working-directory: ${{ steps.build-command.outputs.app_path }}
         run: ${{ steps.build-command.outputs.build_cmd }}
+      - name: stage firmware
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: ${{ steps.build-command.outputs.app_path }}
+        run: |
+          mkdir -p stage/build/zephyr
+          cd build/zephyr
+          # NOTE: zephyr.elf is deliberately NOT staged. The debug build's elf is
+          # ~17 MB, which pushes the multipart upload past the firmware server's
+          # reverse-proxy body-size limit (~10 MB), causing the upload to fail
+          # (HTTP 400 / TLS reset). The hex + app_update + manifest are all the
+          # distribution server needs; the elf would only add cloud symbolication.
+          # Re-add zephyr.elf here once the proxy limit is raised.
+          for f in merged.hex zephyr.hex app_update.bin \
+                   dfu_application.zip_manifest.json; do
+            [ -f "$f" ] && cp -v "$f" ../../stage/build/zephyr/
+          done
+          # sysbuild signed-binary fallback used by the upload tool
+          for f in ../*/zephyr/zephyr.signed.bin; do
+            [ -f "$f" ] && install -D "$f" "../../stage/build/$(echo "$f" | sed 's|^\.\./||')"
+          done
+          true
+      - name: upload firmware artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: fw-${{ matrix.application }}
+          path: ${{ steps.build-command.outputs.app_path }}/stage
+          retention-days: 1
+          if-no-files-found: error
+  # ------------------------
+  release:
+    runs-on: ubuntu-latest
+    container:
+      image: hardwario/nrf-connect-sdk-build:v2.9.0-1
+    needs:
+      - prepare
+      - build-app
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          path: 'chester-sdk/chester'
+      - name: download firmware artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: 'fw-*'
+      - name: install hardwario cli
+        run: pip install hardwario
+      - name: upload firmware and build notes
+        working-directory: ./chester-sdk/chester
+        env:
+          HARDWARIO_CLOUD_TOKEN: ${{ secrets.HARDWARIO_CLOUD_TOKEN }}
+        run: |
+          python3 .github/gen-release-notes.py \
+            --artifacts "${GITHUB_WORKSPACE}/artifacts" \
+            --version "${{ github.ref_name }}" \
+            --ncs "${{ needs.prepare.outputs.ncs_version }}" \
+            --zephyr "${{ needs.prepare.outputs.zephyr_version }}" \
+            --out "${GITHUB_WORKSPACE}/notes.md"
+      - name: create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body_path: notes.md
