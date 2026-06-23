@@ -64,7 +64,7 @@ int main(void)
 		LOG_INF("Alive");
 
 		/* For debug */
-		/* ctr_led_blink(ctr_led_mainboard, CTR_LED_CHANNEL_R, K_MSEC(500)); */
+		/* ctr_led_set(CTR_LED_CHANNEL_R, true); */
 
 		int ret = i2c_scan();
 		if (ret != 3) {

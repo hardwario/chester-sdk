@@ -19,16 +19,18 @@ extern "C" {
 
 /**
  * @addtogroup ctr_led
- * @brief Subsystem for sequencing LED commands
+ * @brief Subsystem for simple on/off control of the CHESTER LEDs
  * @{
  */
 
 /**
+ * @deprecated The LED sequencer API is deprecated; use ctr_led_set() instead.
  * @brief Shortcut to the CHESTER mainboard LED + the EXT LED
  */
-extern const struct device *ctr_led_mainboard;
+extern const struct device *ctr_led_mainboard __deprecated;
 
 /**
+ * @deprecated The LED sequencer API is deprecated; use ctr_led_set() instead.
  * @brief Value for an LED
  *
  * Each consecutive byte corresponds to one channel of the underlying LED, starting with the least
@@ -49,6 +51,7 @@ enum ctr_led_channel {
 };
 
 /**
+ * @deprecated The LED sequencer API is deprecated; use ctr_led_set() instead.
  * @brief LED Command
  */
 struct ctr_led_cmd {
@@ -58,6 +61,7 @@ struct ctr_led_cmd {
 };
 
 /**
+ * @deprecated The LED sequencer API is deprecated; use ctr_led_set() instead.
  * @brief Sequence priority
  */
 enum ctr_led_prio {
@@ -67,6 +71,7 @@ enum ctr_led_prio {
 };
 
 /**
+ * @deprecated The LED sequencer API is deprecated; use ctr_led_set() instead.
  * @brief LED command sequence
  */
 struct ctr_led_seq {
@@ -79,9 +84,11 @@ struct ctr_led_seq {
 };
 
 /**
+ * @deprecated The LED sequencer API is deprecated; use ctr_led_set() instead.
  * @brief Convenience macro for creating static sequences.
  */
 #define CTR_LED_SEQ_DEFINE(name, prio_arg, loop_arg, ...)                                          \
+	__DEPRECATED_MACRO                                                                          \
 	static const struct ctr_led_cmd name##__cmds[] = {__VA_ARGS__};                            \
 	static const struct ctr_led_seq name = {                                                   \
 		.cmds = name##__cmds,                                                              \
@@ -91,7 +98,14 @@ struct ctr_led_seq {
 	}
 
 /**
- * @brief Old API for controlling the mainboard LED. Do not use with the new API.
+ * @brief Set a mainboard LED channel on or off.
+ *
+ * This is the supported API for controlling the CHESTER LEDs.
+ *
+ * @param[in] channel LED channel to control
+ * @param[in] is_on   true to turn the channel on, false to turn it off
+ * @retval 0 on success
+ * @retval negative on error
  */
 static inline int ctr_led_set(enum ctr_led_channel channel, bool is_on)
 {
@@ -121,24 +135,27 @@ static inline int ctr_led_set(enum ctr_led_channel channel, bool is_on)
 }
 
 /**
+ * @deprecated The LED sequencer API is deprecated; use ctr_led_set() instead.
  * @brief Play a sequence.
  * @param[in] dev
  * @param[in] seq
  * @retval 0 on success
  * @retval negative on error
  */
-int ctr_led_play(const struct device *dev, struct ctr_led_seq seq);
+__deprecated int ctr_led_play(const struct device *dev, struct ctr_led_seq seq);
 
 /**
+ * @deprecated The LED sequencer API is deprecated; use ctr_led_set() instead.
  * @brief Stop a sequence.
  * @param[in] dev
  * @param[in] seq
  * @retval 0 on success
  * @retval negative on error
  */
-int ctr_led_stop(const struct device *dev, struct ctr_led_seq seq);
+__deprecated int ctr_led_stop(const struct device *dev, struct ctr_led_seq seq);
 
 /**
+ * @deprecated The LED sequencer API is deprecated; use ctr_led_set() instead.
  * @brief Set the LED to a color for the specified amount of time. This function call is blocking.
  * @param[in] dev
  * @param[in] color
@@ -146,9 +163,10 @@ int ctr_led_stop(const struct device *dev, struct ctr_led_seq seq);
  * @retval 0 on success
  * @retval negative on error
  */
-int ctr_led_blink(const struct device *dev, uint32_t color, k_timeout_t time);
+__deprecated int ctr_led_blink(const struct device *dev, uint32_t color, k_timeout_t time);
 
 /**
+ * @deprecated The LED sequencer API is deprecated; use ctr_led_set() instead.
  * @brief Fade the LED from one value to another. This function call is blocking.
  * @param[in] dev
  * @param[in] from
@@ -157,7 +175,8 @@ int ctr_led_blink(const struct device *dev, uint32_t color, k_timeout_t time);
  * @retval 0 on success
  * @retval negative on error
  */
-int ctr_led_fade(const struct device *dev, uint32_t from, uint32_t to, k_timeout_t length);
+__deprecated int ctr_led_fade(const struct device *dev, uint32_t from, uint32_t to,
+			      k_timeout_t length);
 
 /** @} */
 

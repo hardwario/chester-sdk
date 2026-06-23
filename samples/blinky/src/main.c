@@ -21,7 +21,9 @@ int main(void)
 		LOG_INF("Alive");
 
 		/* Control LED */
-		ctr_led_blink(ctr_led_mainboard, CTR_LED_CHANNEL_R, K_MSEC(500));
+		ctr_led_set(CTR_LED_CHANNEL_R, true);
+		k_sleep(K_MSEC(500));
+		ctr_led_set(CTR_LED_CHANNEL_R, false);
 
 		/* Wait 500 ms */
 		k_sleep(K_MSEC(500));

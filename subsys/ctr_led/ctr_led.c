@@ -284,7 +284,11 @@ int ctr_led_blink(const struct device *dev, uint32_t color, k_timeout_t length)
 		.prio = CTR_LED_PRIO_HIGH,
 	};
 
+	/* ctr_led_play() is deprecated but this is its internal implementation */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	int ret = ctr_led_play(dev, seq);
+#pragma GCC diagnostic pop
 	if (ret) {
 		LOG_ERR("Call `ctr_led_play` failed: %d", ret);
 		return ret;
@@ -316,7 +320,11 @@ int ctr_led_fade(const struct device *dev, uint32_t from, uint32_t to, k_timeout
 		.prio = CTR_LED_PRIO_HIGH,
 	};
 
+	/* ctr_led_play() is deprecated but this is its internal implementation */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	int ret = ctr_led_play(dev, seq);
+#pragma GCC diagnostic pop
 	if (ret) {
 		LOG_ERR("Call `ctr_led_play` failed: %d", ret);
 		return ret;

@@ -94,11 +94,13 @@ static void send_with_rate_limit(void)
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 
-/* LED blink sequence: yellow 50ms, then off */
-CTR_LED_SEQ_DEFINE(m_led_blink_seq, CTR_LED_PRIO_LOW, false,
-	{.value = CTR_LED_CHANNEL_Y, .length = 50},
-	{.value = 0, .length = 0},
-);
+/* LED blink: yellow on for 50ms, turned off by a one-shot timer (non-blocking) */
+static void led_off_timer_handler(struct k_timer *timer)
+{
+	ctr_led_set(CTR_LED_CHANNEL_Y, false);
+}
+
+static K_TIMER_DEFINE(m_led_off_timer, led_off_timer_handler, NULL);
 
 /* Rate limit: max 5 blinks/s (200ms cooldown) */
 static atomic_t m_led_rate_suppressed = false;
@@ -147,7 +149,8 @@ static void led_blink_event(void)
 
 	/* Rate limit: skip if still in cooldown */
 	if (atomic_cas(&m_led_rate_suppressed, false, true)) {
-		ctr_led_play(ctr_led_mainboard, m_led_blink_seq);
+		ctr_led_set(CTR_LED_CHANNEL_Y, true);
+		k_timer_start(&m_led_off_timer, K_MSEC(50), K_NO_WAIT);
 		k_timer_start(&m_led_rate_timer, K_MSEC(200), K_NO_WAIT);
 	}
 }

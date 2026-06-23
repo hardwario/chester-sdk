@@ -1,9 +1,0 @@
-/ {
-	zephyr,user {
-		ctr_leds = <&gpio_leds>, <&pwm_leds>;
-	};
-};
-
-&pwm_leds {
-	status = "okay";
-};
