@@ -7,3 +7,10 @@
 config ADC_TLA2024
 	bool "TI TLA2024 Low-Power ADC"
 	depends on I2C
+
+config ADC_TLA2024_INIT_PRIORITY
+	int "Priority for the driver initialization"
+	default 60
+	help
+	  Fine tune the priority for the driver initialization. Make sure it's
+	  higher (-> lower priority) than I2C_INIT_PRIORITY.

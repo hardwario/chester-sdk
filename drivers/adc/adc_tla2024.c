@@ -236,6 +236,8 @@ static const struct adc_driver_api tla2024_driver_api = {
 	};                                                                                         \
 	static struct tla2024_data inst_##n##_data = {};                                           \
 	DEVICE_DT_INST_DEFINE(n, &tla2024_init, NULL, &inst_##n##_data, &inst_##n##_config,        \
-			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &tla2024_driver_api);
+			      POST_KERNEL, CONFIG_ADC_TLA2024_INIT_PRIORITY, &tla2024_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TLA2024_INIT)
+
+BUILD_ASSERT(CONFIG_I2C_INIT_PRIORITY < CONFIG_ADC_TLA2024_INIT_PRIORITY);
