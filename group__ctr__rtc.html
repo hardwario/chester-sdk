@@ -96,6 +96,8 @@ $(document).ready(function(){initNavTree('group__ctr__rtc.html',''); initResizab
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
+<a href="#typedef-members">Typedefs</a> &#124;
+<a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">ctr_rtc</div></div>
 </div><!--header-->
@@ -105,6 +107,17 @@ $(document).ready(function(){initNavTree('group__ctr__rtc.html',''); initResizab
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__rtc__tm.html">ctr_rtc_tm</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:ga898f673c8acace61e65b001fcc389c67"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rtc.html#ga898f673c8acace61e65b001fcc389c67">ctr_rtc_event_cb</a>) (enum <a class="el" href="group__ctr__rtc.html#ga24fb253679146720ea037be2f911f305">ctr_rtc_event</a> event, void *user_data)</td></tr>
+<tr class="separator:ga898f673c8acace61e65b001fcc389c67"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:ga24fb253679146720ea037be2f911f305"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rtc.html#ga24fb253679146720ea037be2f911f305">ctr_rtc_event</a> { <a class="el" href="group__ctr__rtc.html#gga24fb253679146720ea037be2f911f305a112bf7d6b7a3c172a415801d7a310ae5">CTR_RTC_EVENT_SYNC_ACQUIRED</a>
+ }</td></tr>
+<tr class="separator:ga24fb253679146720ea037be2f911f305"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -118,6 +131,8 @@ Functions</h2></td></tr>
 <tr class="separator:ga15885a72026c71201e0b53cb4b8dcb39"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa24f5b099755cf8861580900d92ddd92"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rtc.html#gaa24f5b099755cf8861580900d92ddd92">ctr_rtc_wait_set</a> (k_timeout_t timeout)</td></tr>
 <tr class="separator:gaa24f5b099755cf8861580900d92ddd92"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2245c00f49e9f93916f379bd2af01858"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rtc.html#ga2245c00f49e9f93916f379bd2af01858">ctr_rtc_set_event_cb</a> (<a class="el" href="group__ctr__rtc.html#ga898f673c8acace61e65b001fcc389c67">ctr_rtc_event_cb</a> cb, void *user_data)</td></tr>
+<tr class="separator:ga2245c00f49e9f93916f379bd2af01858"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae6cc2183c92275661a8b9ac49e5aa53c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__rtc.html#gae6cc2183c92275661a8b9ac49e5aa53c">ctr_rtc_get_ts_ms</a> (int64_t *ts_ms)</td></tr>
 <tr class="memdesc:gae6cc2183c92275661a8b9ac49e5aa53c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get current RTC timestamp in milliseconds since UNIX epoch.  <a href="group__ctr__rtc.html#gae6cc2183c92275661a8b9ac49e5aa53c">More...</a><br /></td></tr>
 <tr class="separator:gae6cc2183c92275661a8b9ac49e5aa53c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -126,6 +141,39 @@ Functions</h2></td></tr>
 <tr class="separator:ga0d41923a74aa8d520af83c8753dc51e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a id="ga898f673c8acace61e65b001fcc389c67" name="ga898f673c8acace61e65b001fcc389c67"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga898f673c8acace61e65b001fcc389c67">&#9670;&#160;</a></span>ctr_rtc_event_cb</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef void(* ctr_rtc_event_cb) (enum <a class="el" href="group__ctr__rtc.html#ga24fb253679146720ea037be2f911f305">ctr_rtc_event</a> event, void *user_data)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="ga24fb253679146720ea037be2f911f305" name="ga24fb253679146720ea037be2f911f305"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga24fb253679146720ea037be2f911f305">&#9670;&#160;</a></span>ctr_rtc_event</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="group__ctr__rtc.html#ga24fb253679146720ea037be2f911f305">ctr_rtc_event</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="gga24fb253679146720ea037be2f911f305a112bf7d6b7a3c172a415801d7a310ae5" name="gga24fb253679146720ea037be2f911f305a112bf7d6b7a3c172a415801d7a310ae5"></a>CTR_RTC_EVENT_SYNC_ACQUIRED&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="ga389d5a44e6c658604c9af5907b099364" name="ga389d5a44e6c658604c9af5907b099364"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga389d5a44e6c658604c9af5907b099364">&#9670;&#160;</a></span>ctr_rtc_get_tm()</h2>
@@ -216,6 +264,34 @@ Functions</h2></td></tr>
 <p>Check if the RTC has been set since boot. </p>
 <p >The RTC defaults to 1970-01-01 00:00:00 UTC at boot. This function returns true once <a class="el" href="group__ctr__rtc.html#ga58f5ce68a97eefab6794fd248019fc47">ctr_rtc_set_tm()</a> or <a class="el" href="group__ctr__rtc.html#ga15885a72026c71201e0b53cb4b8dcb39">ctr_rtc_set_ts()</a> has been called (e.g. from LTE network time sync, BLE client setup, or shell command).</p>
 <dl class="section return"><dt>Returns</dt><dd>true if the clock has been set, false otherwise </dd></dl>
+
+</div>
+</div>
+<a id="ga2245c00f49e9f93916f379bd2af01858" name="ga2245c00f49e9f93916f379bd2af01858"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga2245c00f49e9f93916f379bd2af01858">&#9670;&#160;</a></span>ctr_rtc_set_event_cb()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_rtc_set_event_cb </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="group__ctr__rtc.html#ga898f673c8acace61e65b001fcc389c67">ctr_rtc_event_cb</a>&#160;</td>
+          <td class="paramname"><em>cb</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>user_data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
