@@ -178,23 +178,28 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         working-directory: ${{ steps.build-command.outputs.app_path }}
         run: |
-          mkdir -p stage/build/zephyr
-          cd build/zephyr
+          set -euo pipefail
+          # Sysbuild output layout (NCS v3.3+): the merged image and DFU bundle
+          # live at the top of build/, and the application image lives in the
+          # per-domain dir build/<app>/zephyr/.
           # NOTE: zephyr.elf is deliberately NOT staged. The debug build's elf is
           # ~17 MB, which pushes the multipart upload past the firmware server's
           # reverse-proxy body-size limit (~10 MB), causing the upload to fail
-          # (HTTP 400 / TLS reset). The hex + app_update + manifest are all the
-          # distribution server needs; the elf would only add cloud symbolication.
-          # Re-add zephyr.elf here once the proxy limit is raised.
-          for f in merged.hex zephyr.hex app_update.bin \
-                   dfu_application.zip_manifest.json; do
-            [ -f "$f" ] && cp -v "$f" ../../stage/build/zephyr/
-          done
-          # sysbuild signed-binary fallback used by the upload tool
-          for f in ../*/zephyr/zephyr.signed.bin; do
-            [ -f "$f" ] && install -D "$f" "../../stage/build/$(echo "$f" | sed 's|^\.\./||')"
-          done
-          true
+          # (HTTP 400 / TLS reset). The merged hex + DFU bundle + manifest are all
+          # the distribution server needs; the elf would only add cloud symbolication.
+          # Re-add the elf here once the proxy limit is raised.
+          # The application domain is the only non-mcuboot domain in build/.
+          app_domain=$(ls -d build/*/zephyr | grep -v '/mcuboot/zephyr$')
+          # Top-level merged image, DFU bundle and manifest.
+          install -D -t stage/build \
+            build/merged_*.hex \
+            build/dfu_application.zip \
+            build/dfu_application.zip_manifest.json
+          # Application image and signed update binaries.
+          install -D -t "stage/$app_domain" \
+            "$app_domain"/zephyr.hex \
+            "$app_domain"/zephyr.signed.bin \
+            "$app_domain"/zephyr.signed.hex
       - name: upload firmware artifact
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
