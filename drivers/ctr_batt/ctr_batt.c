@@ -312,7 +312,7 @@ static const struct ctr_batt_driver_api ctr_batt_driver_api = {
 		.adc_channel_cfg = {.gain = ADC_GAIN_1,                                            \
 				    .reference = ADC_REF_INTERNAL,                                 \
 				    .acquisition_time = ADC_ACQ_TIME_DEFAULT,                      \
-				    .channel_id = BIT(0),                                          \
+				    .channel_id = 0,                                               \
 				    .differential = 1},                                            \
 		.load_spec = GPIO_DT_SPEC_INST_GET(n, load_gpios),                                 \
 		.test_spec = GPIO_DT_SPEC_INST_GET(n, test_gpios),                                 \

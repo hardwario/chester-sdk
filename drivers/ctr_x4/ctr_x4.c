@@ -272,7 +272,7 @@ static const struct ctr_x4_driver_api ctr_x4_driver_api = {
 		.adc_channel_cfg = {.gain = ADC_GAIN_1,                                            \
 				    .reference = ADC_REF_INTERNAL,                                 \
 				    .acquisition_time = ADC_ACQ_TIME_DEFAULT,                      \
-				    .channel_id = BIT(0),                                          \
+				    .channel_id = 0,                                               \
 				    .differential = 1},                                            \
 		.line_measurement_interval = DT_INST_PROP(n, line_measurement_interval),           \
 		.line_threshold_min = DT_INST_PROP(n, line_threshold_min),                         \
