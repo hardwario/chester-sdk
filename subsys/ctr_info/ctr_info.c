@@ -241,7 +241,16 @@ int ctr_info_get_fw_name(char **fw_name)
 
 int ctr_info_get_fw_version(char **fw_version)
 {
-#if defined(APP_BUILD_VERSION)
+#if defined(FW_VERSION)
+#warning "Deprecated FW_VERSION is used. Please switch to git tag based versioning."
+	/* Explicit override for out-of-tree apps that set ENV{FW_VERSION}
+	 * instead of using scripts/version.cmake. */
+	static char buf[FW_VERSION_LENGTH];
+
+	snprintf(buf, sizeof(buf), "%s", STRINGIFY(FW_VERSION));
+
+	*fw_version = buf;
+#elif defined(APP_BUILD_VERSION)
 	static char buf[FW_VERSION_LENGTH];
 
 	/* APP_BUILD_VERSION is the `git describe` output; fall back to the
