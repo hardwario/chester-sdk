@@ -44,6 +44,18 @@ Synchronize West workspace (will take some time):
 west update
 ```
 
+Install the required Python packages for Zephyr, nRF Connect SDK, and CHESTER (run inside your Python virtual environment):
+
+```
+west packages pip --install
+```
+
+Install the Zephyr SDK (host tools and the ARM toolchain). The version is detected automatically from `zephyr/SDK_VERSION`:
+
+```
+west sdk install --toolchains arm-zephyr-eabi
+```
+
 Pre-configure the target board for West workspace:
 
 ```

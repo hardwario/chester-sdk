@@ -5,3 +5,7 @@ build:
     board_root: .
     dts_root: .
     snippet_root: .
+package-managers:
+  pip:
+    requirement-files:
+      - scripts/requirements.txt
