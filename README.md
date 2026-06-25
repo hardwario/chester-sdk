@@ -107,4 +107,4 @@ In the Visual Studio Code, open the user's settings and enable the option `edito
 - The author has a properly set name, surname and email address.
 - The commit message follows the format `domain: change` (e.g. `applications: tester: Add GPIO commands`).
 - The commit message is always in imperative format (starts with a verb).
-- Commit is signed with GPG and contains the `Signed-off-by: ...` sentence at the end.
+- Commit contains the `Signed-off-by: ...` sentence at the end.
