@@ -72,7 +72,7 @@ west flash
 
 ## Debugging application
 
-In order to interact with CHESTER, you can use the helper script `chester/scripts/rtt.sh`. This script will open RTT channel 0 for shell interaction and RTT channel 1 for device logs.
+In order to interact with CHESTRE, you can use our cli tool. Running `hardwario chester app console` will give you access to the device logs and shell.
 
 You can open GDB debug session with this command:
 
