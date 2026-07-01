@@ -941,6 +941,47 @@ int ctr_lte_v2_talk_at_xsend(struct ctr_lte_v2_talk *talk, const void *buf, size
 	DIALOG_EPILOG /* clang-format on */
 }
 
+int ctr_lte_v2_talk_at_xmqttpub_datamode(struct ctr_lte_v2_talk *talk, const char *topic, int qos,
+					 int retain, const void *buf, size_t len)
+{
+	DIALOG_PROLOG /* clang-format off */
+
+	char xdm[16] = {0};
+
+	DIALOG_ENTER();
+	/* Empty <msg> arg ("") makes SLM enter data-mode and take the payload raw.
+	 * A bare ,, (missing token) is rejected by the AT parser, so pass "". */
+	DIALOG_SEND_LINE("AT#XMQTTPUB=\"%s\",\"\",%d,%d", topic, qos, retain);
+	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_S, {
+		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
+		DIALOG_LOOP_BREAK_ON_STR("OK");
+	});
+	DIALOG_SEND_DATA(buf, len);
+	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_S, {
+		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
+		DIALOG_LOOP_BREAK_ON_PFX("#XDATAMODE: ", xdm, sizeof(xdm));
+	});
+	DIALOG_SEND_DATA("+++", 3);
+	if (!strlen(xdm)) {
+		DIALOG_ABORT(-EPIPE);
+	}
+	for (size_t i = 0; i < strlen(xdm); i++) {
+		if (!isdigit((int)xdm[i])) {
+			DIALOG_ABORT(-EPIPE);
+		}
+	}
+	if (len != strtol(xdm, NULL, 10)) {
+		DIALOG_ABORT(-EPIPE);
+	}
+	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_S, {
+		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
+		DIALOG_LOOP_BREAK_ON_STR("#XDATAMODE: 0");
+	});
+	DIALOG_EXIT();
+
+	DIALOG_EPILOG /* clang-format on */
+}
+
 int ctr_lte_v2_talk_at_xsend_string(struct ctr_lte_v2_talk *talk, const void *buf, size_t len)
 {
 	DIALOG_PROLOG /* clang-format off */

@@ -1238,6 +1238,20 @@ int ctr_lte_v2_consumer_at_cmd(const char *cmd, char *resp_buf, size_t resp_size
 	return ctr_lte_v2_talk_at_cmd(&m_talk, cmd);
 }
 
+int ctr_lte_v2_consumer_mqtt_publish_datamode(const char *topic, int qos, int retain,
+					      const void *buf, size_t len)
+{
+	if (!topic || !buf || !len) {
+		return -EINVAL;
+	}
+
+	if (!atomic_get(&m_started)) {
+		return -ENOTCONN;
+	}
+
+	return ctr_lte_v2_talk_at_xmqttpub_datamode(&m_talk, topic, qos, retain, buf, len);
+}
+
 int ctr_lte_v2_consumer_at_cmd_long(const char *cmd, char *resp_buf, size_t resp_size)
 {
 	if (!cmd || !resp_buf || !resp_size) {

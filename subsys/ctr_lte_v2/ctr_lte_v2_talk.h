@@ -71,6 +71,11 @@ int ctr_lte_v2_talk_at_xsendto(struct ctr_lte_v2_talk *talk, const char *p1, int
 			       const void *buf, size_t len);
 int ctr_lte_v2_talk_at_xsend(struct ctr_lte_v2_talk *talk, const void *buf, size_t len);
 int ctr_lte_v2_talk_at_xsend_string(struct ctr_lte_v2_talk *talk, const void *buf, size_t len);
+/* Publish an MQTT message via SLM data-mode (AT#XMQTTPUB="topic",,qos,retain),
+ * so the payload bytes are sent raw and may contain any byte (incl. ") — the
+ * naive quoted-arg parser of the inline form rejects " with -EILSEQ. */
+int ctr_lte_v2_talk_at_xmqttpub_datamode(struct ctr_lte_v2_talk *talk, const char *topic, int qos,
+					 int retain, const void *buf, size_t len);
 int ctr_lte_v2_talk_at_xrecv(struct ctr_lte_v2_talk *talk, int timeout, char *buf, size_t size,
 			     size_t *len);
 int ctr_lte_v2_talk_at_xsim(struct ctr_lte_v2_talk *talk, int p1);

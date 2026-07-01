@@ -337,6 +337,31 @@ int ctr_lte_v2_consumer_register(const struct ctr_lte_v2_consumer *c);
 int ctr_lte_v2_consumer_at_cmd(const char *cmd, char *resp_buf, size_t resp_size);
 
 /**
+ * @brief Publish an MQTT message via SLM data-mode.
+ *
+ * Sends AT#XMQTTPUB="<topic>",,<qos>,<retain> (empty <msg>), which makes SLM
+ * enter data-mode and take the payload as raw bytes. Unlike the inline
+ * quoted-arg form, the payload may contain any byte — notably " — which the
+ * naive quoted-arg parser otherwise rejects with -EILSEQ. Must run in thread
+ * context; serializes through the same modem dialog as ctr_lte_v2_consumer_at_cmd().
+ *
+ * @param topic  MQTT topic (must not contain ").
+ * @param qos    0, 1 or 2.
+ * @param retain 0 or 1.
+ * @param buf    Raw payload bytes.
+ * @param len    Payload length (> 0).
+ *
+ * @retval 0          Success — message handed to the modem's MQTT client.
+ * @retval -EINVAL    Bad arguments.
+ * @retval -ENOTCONN  Link disabled.
+ * @retval -EPIPE     Data-mode handshake mismatch.
+ * @retval -EILSEQ    Modem returned ERROR.
+ * @retval -ETIMEDOUT Timed out.
+ */
+int ctr_lte_v2_consumer_mqtt_publish_datamode(const char *topic, int qos, int retain,
+					      const void *buf, size_t len);
+
+/**
  * @brief Issue an AT command from consumer context with a long (30s) response
  *        timeout — for slow modem operations like AT%KEYGEN (on-device EC
  *        keypair + CSR generation), which exceed the 3s default of
