@@ -86,8 +86,10 @@ config CTR_LTE_V2_MAX_CONSUMERS
 	range 1 16
 	help
 	  Capacity of the runtime consumer registry used by
-	  ctr_lte_v2_consumer_register(). 4 is enough for ctr_cloud +
-	  belter_mqtt + future growth without overshooting RAM.
+	  ctr_lte_v2_consumer_register(). Size it to the number of
+	  subsystems that register against the shared LTE modem (e.g.
+	  ctr_cloud plus any application consumers). Each slot is one
+	  pointer; keep it small to bound RAM.
 
 # === Phase 2: idle profile (PSM vs eDRX-no-PSM) ===
 # The default (CTR_LTE_V2_IDLE_PROFILE_PSM) reproduces the pre-Phase-2
@@ -132,9 +134,9 @@ config CTR_LTE_V2_EDRX_CYCLE_NBIOT
 	depends on CTR_LTE_V2_IDLE_PROFILE_EDRX_NO_PSM
 	help
 	  3GPP TS 24.008 Table 10.5.5.32, AcT=5 / NB-IoT. "0010" = 20.48 s
-	  is the NB-IoT minimum valid value. "0001" is invalid on NB-IoT
-	  and the network will silently refuse. See memory anchor
-	  project_nb_iot_edrx_encoding_per_rat.
+	  is the NB-IoT minimum valid value. Note the encoding is RAT-specific:
+	  "0001" is valid on LTE-M but invalid on NB-IoT, where the network
+	  silently refuses it (no eDRX granted).
 
 config HEAP_MEM_POOL_SIZE
 	int "HEAP_MEM_POOL_SIZE"

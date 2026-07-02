@@ -941,17 +941,19 @@ int ctr_lte_v2_talk_at_xsend(struct ctr_lte_v2_talk *talk, const void *buf, size
 	DIALOG_EPILOG /* clang-format on */
 }
 
-int ctr_lte_v2_talk_at_xmqttpub_datamode(struct ctr_lte_v2_talk *talk, const char *topic, int qos,
-					 int retain, const void *buf, size_t len)
+int ctr_lte_v2_talk_send_datamode(struct ctr_lte_v2_talk *talk, const char *trigger_cmd,
+				  const void *buf, size_t len)
 {
 	DIALOG_PROLOG /* clang-format off */
 
 	char xdm[16] = {0};
 
 	DIALOG_ENTER();
-	/* Empty <msg> arg ("") makes SLM enter data-mode and take the payload raw.
-	 * A bare ,, (missing token) is rejected by the AT parser, so pass "". */
-	DIALOG_SEND_LINE("AT#XMQTTPUB=\"%s\",\"\",%d,%d", topic, qos, retain);
+	/* trigger_cmd is a caller-built AT command whose empty data argument puts
+	 * SLM into data-mode so the following bytes are taken raw (e.g.
+	 * AT#XMQTTPUB="topic","",qos,retain, or AT#XSEND=""). It must end without
+	 * CRLF; SEND_LINE adds it. */
+	DIALOG_SEND_LINE("%s", trigger_cmd);
 	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_S, {
 		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
 		DIALOG_LOOP_BREAK_ON_STR("OK");
@@ -961,6 +963,11 @@ int ctr_lte_v2_talk_at_xmqttpub_datamode(struct ctr_lte_v2_talk *talk, const cha
 		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
 		DIALOG_LOOP_BREAK_ON_PFX("#XDATAMODE: ", xdm, sizeof(xdm));
 	});
+	/* Escape data-mode. LIMITATION: SLM's data-mode terminates on the literal
+	 * bytes "+++"; a payload that itself contains "+++" is truncated there and
+	 * its tail is fed to the AT parser. The length check below turns that into
+	 * a detectable -EPIPE rather than a silent short publish, but callers whose
+	 * payloads may contain "+++" need a length-framed transport instead. */
 	DIALOG_SEND_DATA("+++", 3);
 	if (!strlen(xdm)) {
 		DIALOG_ABORT(-EPIPE);

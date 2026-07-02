@@ -319,9 +319,14 @@ int ctr_lte_v2_consumer_register(const struct ctr_lte_v2_consumer *c);
  *
  * Wraps the internal talk helper so consumers can inject arbitrary AT
  * commands (e.g. AT#XMQTTCON, AT#XMQTTPUB) without reaching into
- * ctr_lte_v2's private talk object. Blocks on the link-driver mutex
- * for the duration of the dialog; safe across consumers because the
- * link mutex serialises every outstanding AT line.
+ * ctr_lte_v2's private talk object. The command is executed on the LTE
+ * subsystem's single work queue — the same queue that runs every FSM
+ * dialog and ctr_cloud's send_recv — so a consumer's AT exchange is
+ * serialised against the FSM and never interleaves response lines with it.
+ * Blocks until the command completes (the caller thread waits while the
+ * work queue runs it; may be delayed behind an in-flight FSM transition).
+ * A call made from a consumer callback that already runs on that work queue
+ * (e.g. on_prepare) executes inline.
  *
  * @param cmd       AT command string (no trailing \r\n).
  * @param resp_buf  Optional buffer for a single response line (the line
@@ -332,40 +337,47 @@ int ctr_lte_v2_consumer_register(const struct ctr_lte_v2_consumer *c);
  * @retval 0          Success.
  * @retval -EILSEQ    Modem returned ERROR.
  * @retval -ENOSPC    Response too large for buf.
- * @retval -ETIMEDOUT Timed out (3s for short cmds, 30s for cfun-class).
+ * @retval -ETIMEDOUT Timed out (short response timeout, ~3s). For slow
+ *                    commands (CFUN class, keygen) use
+ *                    ctr_lte_v2_consumer_at_cmd_long(), which waits ~30s.
  */
 int ctr_lte_v2_consumer_at_cmd(const char *cmd, char *resp_buf, size_t resp_size);
 
 /**
- * @brief Publish an MQTT message via SLM data-mode.
+ * @brief Send raw bytes to the modem via SLM data-mode.
  *
- * Sends AT#XMQTTPUB="<topic>",,<qos>,<retain> (empty <msg>), which makes SLM
- * enter data-mode and take the payload as raw bytes. Unlike the inline
- * quoted-arg form, the payload may contain any byte — notably " — which the
- * naive quoted-arg parser otherwise rejects with -EILSEQ. Must run in thread
- * context; serializes through the same modem dialog as ctr_lte_v2_consumer_at_cmd().
+ * @p trigger_cmd is a caller-built AT command whose empty data argument makes
+ * SLM enter data-mode and take the following bytes raw — for example
+ * `AT#XMQTTPUB="<topic>","",<qos>,<retain>` to publish an MQTT message, or
+ * `AT#XSEND=""` to send on a socket. Unlike the inline quoted-arg forms, the
+ * payload may contain any byte — notably `"` — that the naive quoted-arg parser
+ * would reject with -EILSEQ. Executed on the LTE subsystem work queue, same as
+ * ctr_lte_v2_consumer_at_cmd(), so it is serialised against FSM dialogs.
  *
- * @param topic  MQTT topic (must not contain ").
- * @param qos    0, 1 or 2.
- * @param retain 0 or 1.
- * @param buf    Raw payload bytes.
- * @param len    Payload length (> 0).
+ * LIMITATION: SLM's data-mode escape is the literal byte sequence "+++"; a
+ * payload that itself contains "+++" is truncated at that offset. This call
+ * detects the resulting short transfer and returns -EPIPE rather than silently
+ * publishing a short message, but a payload that may contain "+++" needs a
+ * length-framed transport instead.
  *
- * @retval 0          Success — message handed to the modem's MQTT client.
+ * @param trigger_cmd AT command that enters data-mode (no trailing CRLF).
+ * @param buf         Raw payload bytes.
+ * @param len         Payload length (> 0).
+ *
+ * @retval 0          Success — payload accepted by the modem.
  * @retval -EINVAL    Bad arguments.
  * @retval -ENOTCONN  Link disabled.
- * @retval -EPIPE     Data-mode handshake mismatch.
+ * @retval -EPIPE     Data-mode handshake mismatch (incl. a "+++"-truncated payload).
  * @retval -EILSEQ    Modem returned ERROR.
  * @retval -ETIMEDOUT Timed out.
  */
-int ctr_lte_v2_consumer_mqtt_publish_datamode(const char *topic, int qos, int retain,
-					      const void *buf, size_t len);
+int ctr_lte_v2_consumer_send_datamode(const char *trigger_cmd, const void *buf, size_t len);
 
 /**
  * @brief Issue an AT command from consumer context with a long (30s) response
- *        timeout — for slow modem operations like AT%KEYGEN (on-device EC
- *        keypair + CSR generation), which exceed the 3s default of
- *        ctr_lte_v2_consumer_at_cmd() and would otherwise spuriously -ETIMEDOUT.
+ *        timeout — for slow modem operations (e.g. on-device key generation)
+ *        that exceed the short default of ctr_lte_v2_consumer_at_cmd() and
+ *        would otherwise spuriously -ETIMEDOUT.
  *
  * Same contract as ctr_lte_v2_consumer_at_cmd() otherwise. resp_buf is
  * mandatory here (these commands always return a response line before OK).
@@ -384,8 +396,15 @@ int ctr_lte_v2_consumer_at_cmd_long(const char *cmd, char *resp_buf, size_t resp
  *
  * Used by consumers that need to read length-prefixed payload bytes
  * arriving after a URC header (e.g. #XMQTTMSG followed by topic + payload).
- * Must be called from thread context (not from on_urc directly — schedule
- * a work item from on_urc and call this from the work handler).
+ *
+ * Call this SYNCHRONOUSLY from your on_urc handler, before it returns: the
+ * bytes to capture are the ones immediately following the URC header line,
+ * and if control returns to the link's line parser first they are consumed
+ * as lines and lost. Unlike the AT-command entry points, this is deliberately
+ * not marshalled onto the work queue — it must run in the on_urc handler. The
+ * link driver does not dispatch URCs while an FSM dialog is active, so this
+ * read never begins mid-dialog; and the UART ISR fills the RX pipe
+ * independently, so draining it here does not stall byte delivery.
  *
  * @param buf     Destination buffer.
  * @param len     Number of bytes to read.
@@ -399,18 +418,18 @@ int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout);
 
 /**
  * @brief Issue an AT command and capture the raw response via the data-mode
- *        path (no line parser), for native modem commands the line-based
- *        dialog reader does not read back reliably — specifically AT%KEYGEN
- *        (multi-second on-device EC keygen with a ~500+ byte single response
- *        line). Mirrors what `lte test bypass` does, but callable from a
- *        consumer (e.g. the on_prepare credential window).
+ *        path (no line parser), for native modem commands whose response the
+ *        line-based dialog reader does not read back reliably — e.g. a
+ *        multi-second command returning a single large (~500+ byte) response
+ *        line, such as on-device key generation.
  *
- * The link enters data-mode BEFORE the command is sent, so the entire
- * response lands in the raw pipe. Reading stops as soon as the AT terminator
+ * The link enters data-mode BEFORE the command is sent, so the entire response
+ * lands in the raw pipe. Reading stops as soon as the AT terminator
  * (OK / ERROR / +CME ERROR) arrives or @p timeout elapses. The caller gets the
  * raw bytes (which may include interleaved URCs) and parses the result line
- * itself. Must run in thread context with exclusive modem access (e.g. inside
- * an on_prepare hook, where the FSM thread is blocked).
+ * itself. Executed on the LTE subsystem work queue (serialised against FSM
+ * dialogs); runs inline when called from a consumer callback already on that
+ * queue (e.g. on_prepare).
  *
  * @param cmd      AT command string (no trailing CRLF — added internally).
  * @param buf      Destination buffer; NUL-terminated on return.
@@ -420,6 +439,7 @@ int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout);
  * @retval 0          Success — terminator seen (inspect @p buf for the result).
  * @retval -EINVAL    Bad arguments.
  * @retval -ENOTCONN  Link disabled.
+ * @retval -ENOMEM    Response filled buf before a terminator arrived (truncated).
  * @retval -ETIMEDOUT No terminator within @p timeout.
  */
 int ctr_lte_v2_consumer_at_cmd_raw(const char *cmd, uint8_t *buf, size_t buf_size,

@@ -15,6 +15,11 @@
  * Internal, file-local prototype — not part of the public API. */
 size_t ctr_lte_v2_consumers_get(const struct ctr_lte_v2_consumer *const **out);
 
+/* Run fn(arg) on the FSM work queue (the single AT-bus owner) and return its
+ * result — serialises consumer AT against FSM dialogs. Defined in ctr_lte_v2.c.
+ * Internal, file-local prototype. */
+int ctr_lte_v2_run_on_bus(int (*fn)(void *arg), void *arg);
+
 /* CHESTER includes */
 #include <chester/ctr_lte_v2.h>
 #include <chester/ctr_rtc.h>
@@ -460,20 +465,26 @@ int ctr_lte_v2_flow_prepare(void)
 		LOG_ERR("Call `ctr_lte_v2_talk_at_cpsms` 0 failed: %d", ret);
 		return ret;
 	}
-	/* AcT type 4 = LTE-M; 5 = NB-IoT. Request appropriate cycle per RAT. */
-	{
-		const char *edrx_cycle;
-		int act_type;
-		if (strstr(g_ctr_lte_v2_config.mode, "lte-m")) {
-			act_type = 4;
-			edrx_cycle = CONFIG_CTR_LTE_V2_EDRX_CYCLE_LTEM;
-		} else {
-			act_type = 5;
-			edrx_cycle = CONFIG_CTR_LTE_V2_EDRX_CYCLE_NBIOT;
-		}
-		ret = ctr_lte_v2_talk_at_cedrxs(&m_talk, 2, act_type, edrx_cycle);
+	/* eDRX is requested per Access Technology (AcT 4 = LTE-M, 5 = NB-IoT),
+	 * and each RAT has its own valid cycle encoding. The RAT that will
+	 * actually attach is not known yet at prepare time, so request eDRX for
+	 * every RAT enabled in `mode` — the network applies the value matching
+	 * whichever RAT it attaches on. Requesting only one RAT's value would
+	 * leave the other RAT with no eDRX (the network silently refuses a value
+	 * that is invalid for the RAT it attached on). */
+	if (strstr(g_ctr_lte_v2_config.mode, "lte-m")) {
+		ret = ctr_lte_v2_talk_at_cedrxs(&m_talk, 2, 4,
+						CONFIG_CTR_LTE_V2_EDRX_CYCLE_LTEM);
 		if (ret) {
-			LOG_ERR("Call `ctr_lte_v2_talk_at_cedrxs` failed: %d", ret);
+			LOG_ERR("Call `ctr_lte_v2_talk_at_cedrxs` (LTE-M) failed: %d", ret);
+			return ret;
+		}
+	}
+	if (strstr(g_ctr_lte_v2_config.mode, "nb-iot")) {
+		ret = ctr_lte_v2_talk_at_cedrxs(&m_talk, 2, 5,
+						CONFIG_CTR_LTE_V2_EDRX_CYCLE_NBIOT);
+		if (ret) {
+			LOG_ERR("Call `ctr_lte_v2_talk_at_cedrxs` (NB-IoT) failed: %d", ret);
 			return ret;
 		}
 	}
@@ -1221,6 +1232,27 @@ int ctr_lte_v2_flow_cmd_without_response(const char *s)
 	return 0;
 }
 
+/* Consumer AT entry points are marshalled onto the FSM work queue (the single
+ * AT-bus owner) via ctr_lte_v2_run_on_bus(), so they never interleave their
+ * request/response lines with an in-flight FSM dialog. Each `do_*` runs on the
+ * bus thread; the public wrapper validates args and passes an arg struct. */
+
+struct at_cmd_args {
+	const char *cmd;
+	char *resp_buf;
+	size_t resp_size;
+};
+
+static int do_at_cmd(void *arg)
+{
+	struct at_cmd_args *a = arg;
+	if (a->resp_buf && a->resp_size) {
+		a->resp_buf[0] = '\0';
+		return ctr_lte_v2_talk_at_cmd_with_resp(&m_talk, a->cmd, a->resp_buf, a->resp_size);
+	}
+	return ctr_lte_v2_talk_at_cmd(&m_talk, a->cmd);
+}
+
 int ctr_lte_v2_consumer_at_cmd(const char *cmd, char *resp_buf, size_t resp_size)
 {
 	if (!cmd) {
@@ -1231,17 +1263,25 @@ int ctr_lte_v2_consumer_at_cmd(const char *cmd, char *resp_buf, size_t resp_size
 		return -ENOTCONN;
 	}
 
-	if (resp_buf && resp_size) {
-		resp_buf[0] = '\0';
-		return ctr_lte_v2_talk_at_cmd_with_resp(&m_talk, cmd, resp_buf, resp_size);
-	}
-	return ctr_lte_v2_talk_at_cmd(&m_talk, cmd);
+	struct at_cmd_args a = {.cmd = cmd, .resp_buf = resp_buf, .resp_size = resp_size};
+	return ctr_lte_v2_run_on_bus(do_at_cmd, &a);
 }
 
-int ctr_lte_v2_consumer_mqtt_publish_datamode(const char *topic, int qos, int retain,
-					      const void *buf, size_t len)
+struct datamode_args {
+	const char *trigger_cmd;
+	const void *buf;
+	size_t len;
+};
+
+static int do_send_datamode(void *arg)
 {
-	if (!topic || !buf || !len) {
+	struct datamode_args *a = arg;
+	return ctr_lte_v2_talk_send_datamode(&m_talk, a->trigger_cmd, a->buf, a->len);
+}
+
+int ctr_lte_v2_consumer_send_datamode(const char *trigger_cmd, const void *buf, size_t len)
+{
+	if (!trigger_cmd || !buf || !len) {
 		return -EINVAL;
 	}
 
@@ -1249,7 +1289,15 @@ int ctr_lte_v2_consumer_mqtt_publish_datamode(const char *topic, int qos, int re
 		return -ENOTCONN;
 	}
 
-	return ctr_lte_v2_talk_at_xmqttpub_datamode(&m_talk, topic, qos, retain, buf, len);
+	struct datamode_args a = {.trigger_cmd = trigger_cmd, .buf = buf, .len = len};
+	return ctr_lte_v2_run_on_bus(do_send_datamode, &a);
+}
+
+static int do_at_cmd_long(void *arg)
+{
+	struct at_cmd_args *a = arg;
+	a->resp_buf[0] = '\0';
+	return ctr_lte_v2_talk_at_cmd_with_resp_long(&m_talk, a->cmd, a->resp_buf, a->resp_size);
 }
 
 int ctr_lte_v2_consumer_at_cmd_long(const char *cmd, char *resp_buf, size_t resp_size)
@@ -1262,8 +1310,8 @@ int ctr_lte_v2_consumer_at_cmd_long(const char *cmd, char *resp_buf, size_t resp
 		return -ENOTCONN;
 	}
 
-	resp_buf[0] = '\0';
-	return ctr_lte_v2_talk_at_cmd_with_resp_long(&m_talk, cmd, resp_buf, resp_size);
+	struct at_cmd_args a = {.cmd = cmd, .resp_buf = resp_buf, .resp_size = resp_size};
+	return ctr_lte_v2_run_on_bus(do_at_cmd_long, &a);
 }
 
 int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout)
@@ -1278,15 +1326,16 @@ int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout)
 		return -ENOTCONN;
 	}
 
-	/* Switch the link to data-mode for the duration of the read. The link
-	 * driver gates recv_data on in_data_mode; enter/exit_data_mode each
-	 * take the link mutex, so this is safe against concurrent AT dialogs.
-	 *
-	 * NOTE for callers: the line parser does not stop mid-byte. To capture
-	 * bytes that arrive immediately after a URC header (e.g. #XMQTTMSG),
-	 * the consumer's on_urc must call this synchronously *before* returning
-	 * — otherwise subsequent bytes are absorbed by the line parser and
-	 * lost. */
+	/* Downlink payload capture. Unlike the AT-command entry points, this is
+	 * NOT marshalled onto the bus work queue: it must run synchronously in
+	 * the consumer's on_urc handler, because the bytes to capture are the
+	 * ones arriving right after the URC header line and the line parser would
+	 * otherwise absorb them. The link driver suppresses URC dispatch while an
+	 * FSM dialog is in progress (process_line only calls the consumer while
+	 * !in_dialog), so this read cannot begin in the middle of an FSM dialog;
+	 * and the UART async ISR fills rx_pipe independently, so draining it here
+	 * does not stall byte delivery. Entering data-mode makes the parser stop
+	 * line-splitting and hand raw bytes to recv_data. */
 	ret = ctr_lte_link_enter_data_mode(dev_lte_if);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_link_enter_data_mode` failed: %d", ret);
@@ -1336,18 +1385,21 @@ int ctr_lte_v2_consumer_read_raw(uint8_t *buf, size_t len, k_timeout_t timeout)
 	return ret;
 }
 
-int ctr_lte_v2_consumer_at_cmd_raw(const char *cmd, uint8_t *buf, size_t buf_size,
-				   k_timeout_t timeout)
+struct at_cmd_raw_args {
+	const char *cmd;
+	uint8_t *buf;
+	size_t buf_size;
+	k_timeout_t timeout;
+};
+
+static int do_at_cmd_raw(void *arg)
 {
+	struct at_cmd_raw_args *a = arg;
+	const char *cmd = a->cmd;
+	uint8_t *buf = a->buf;
+	size_t buf_size = a->buf_size;
+	k_timeout_t timeout = a->timeout;
 	int ret;
-
-	if (!cmd || !buf || buf_size < 2) {
-		return -EINVAL;
-	}
-
-	if (!atomic_get(&m_started)) {
-		return -ENOTCONN;
-	}
 
 	/* Enter data-mode FIRST, then send the command. Some native AT commands
 	 * (notably AT%KEYGEN: multi-second on-device EC keygen, ~500+ byte single
@@ -1372,6 +1424,7 @@ int ctr_lte_v2_consumer_at_cmd_raw(const char *cmd, uint8_t *buf, size_t buf_siz
 	}
 
 	size_t total = 0;
+	bool terminator_seen = false;
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	buf[0] = '\0';
 	while (total < buf_size - 1) {
@@ -1381,12 +1434,12 @@ int ctr_lte_v2_consumer_at_cmd_raw(const char *cmd, uint8_t *buf, size_t buf_siz
 		if (got) {
 			total += got;
 			buf[total] = '\0';
-			/* Stop as soon as the AT response terminator arrives. base64url
-			 * payloads never contain a bare CRLF, so these only match the
-			 * real result line. */
+			/* Stop as soon as the AT response terminator arrives. A bare
+			 * CRLF-framed OK/ERROR only appears on the real result line. */
 			if (strstr((char *)buf, "\r\nOK\r\n") ||
 			    strstr((char *)buf, "\r\nERROR") ||
 			    strstr((char *)buf, "\r\n+CME ERROR")) {
+				terminator_seen = true;
 				ret = 0;
 				break;
 			}
@@ -1403,6 +1456,15 @@ int ctr_lte_v2_consumer_at_cmd_raw(const char *cmd, uint8_t *buf, size_t buf_siz
 			break;
 		}
 	}
+	if (ret == 0 && !terminator_seen) {
+		/* Loop exited because the buffer filled before the terminator
+		 * arrived — the response is truncated. Report it instead of
+		 * returning a partial buffer as success (a truncated result line
+		 * would be parsed as complete by the caller). */
+		ret = -ENOMEM;
+		LOG_WRN("raw AT response truncated at %u bytes (no terminator)",
+			(unsigned)total);
+	}
 
 exit_data_mode:;
 	int ret2 = ctr_lte_link_exit_data_mode(dev_lte_if);
@@ -1414,6 +1476,22 @@ exit_data_mode:;
 	}
 
 	return ret;
+}
+
+int ctr_lte_v2_consumer_at_cmd_raw(const char *cmd, uint8_t *buf, size_t buf_size,
+				   k_timeout_t timeout)
+{
+	if (!cmd || !buf || buf_size < 2) {
+		return -EINVAL;
+	}
+
+	if (!atomic_get(&m_started)) {
+		return -ENOTCONN;
+	}
+
+	struct at_cmd_raw_args a = {
+		.cmd = cmd, .buf = buf, .buf_size = buf_size, .timeout = timeout};
+	return ctr_lte_v2_run_on_bus(do_at_cmd_raw, &a);
 }
 
 int ctr_lte_v2_flow_bypass_set_cb(ctr_lte_v2_flow_bypass_cb cb, void *user_data)

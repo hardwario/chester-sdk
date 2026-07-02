@@ -330,9 +330,7 @@ restart:
 			break;
 		}
 
-		/* Do not set RAI during downlink — multi-fragment transfers
-		 * need the connection to stay open until the last fragment. */
-		bool rai = false;
+		bool rai = part == 0;
 		ret = transfer(&m_pck_send, &m_pck_recv, rai, timeout);
 		if (ret) {
 			LOG_ERR("Call `transfer` failed: %d", ret);
