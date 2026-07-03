@@ -173,52 +173,139 @@ void handle_dc_event(enum ctr_z_event backup_event)
 	app_data_unlock();
 }
 
+struct app_handler_button_action {
+	enum ctr_z_event event;
+	enum ctr_z_led_channel led_channel;
+	struct ctr_z_led_param led_param;
+	enum ctr_z_buzzer_command buzzer_command;
+	bool is_hold;
+	bool exclusive; /* turn off any other lit button LED first (flip-mode) */
+};
+
 #if defined(FEATURE_CHESTER_APP_FLIP_MODE)
-static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
-			 enum ctr_z_led_channel led_channel,
-			 enum ctr_z_buzzer_command buzzer_command,
-			 enum app_data_button_event_type button_event,
-			 struct app_data_button *button)
+
+/* CHESTER Push FM: a press lights that button's LED steady and turns off any
+ * other lit button LED (radio-button style); hold is not tracked separately.
+ */
+#define APP_HANDLER_BUTTON_ACTIONS_PER_BUTTON 1
+
+#define BUTTON_ACTION_PRESS(button_index)                                                         \
+	{                                                                                          \
+		.event = CTR_Z_EVENT_BUTTON_##button_index##_PRESS,                               \
+		.led_channel = CTR_Z_LED_CHANNEL_##button_index##_R,                              \
+		.led_param = {CTR_Z_LED_BRIGHTNESS_HIGH, CTR_Z_LED_COMMAND_NONE,                  \
+			      CTR_Z_LED_PATTERN_ON},                                              \
+		.buzzer_command = CTR_Z_BUZZER_COMMAND_1X_1_2,                                    \
+		.is_hold = false,                                                                 \
+		.exclusive = true,                                                                \
+	}
+
+static const struct app_handler_button_action
+	m_button_actions[APP_DATA_BUTTON_COUNT][APP_HANDLER_BUTTON_ACTIONS_PER_BUTTON] = {
+		{BUTTON_ACTION_PRESS(0)},
+		{BUTTON_ACTION_PRESS(1)},
+		{BUTTON_ACTION_PRESS(2)},
+		{BUTTON_ACTION_PRESS(3)},
+		{BUTTON_ACTION_PRESS(4)},
+};
+
+#undef BUTTON_ACTION_PRESS
+
 #else
-static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
-			 enum ctr_z_led_channel led_channel, enum ctr_z_led_command led_command,
-			 enum ctr_z_buzzer_command buzzer_command,
-			 enum app_data_button_event_type button_event,
-			 struct app_data_button *button)
+
+/* CHESTER Push: click and hold are tracked and signalled independently. */
+#define APP_HANDLER_BUTTON_ACTIONS_PER_BUTTON 2
+
+#define BUTTON_ACTION_CLICK(button_index)                                                         \
+	{                                                                                          \
+		.event = CTR_Z_EVENT_BUTTON_##button_index##_CLICK,                               \
+		.led_channel = CTR_Z_LED_CHANNEL_##button_index##_G,                              \
+		.led_param = {CTR_Z_LED_BRIGHTNESS_HIGH, CTR_Z_LED_COMMAND_1X_1_2,                \
+			      CTR_Z_LED_PATTERN_OFF},                                             \
+		.buzzer_command = CTR_Z_BUZZER_COMMAND_1X_1_2,                                    \
+		.is_hold = false,                                                                 \
+		.exclusive = false,                                                               \
+	}
+
+#define BUTTON_ACTION_HOLD(button_index)                                                          \
+	{                                                                                          \
+		.event = CTR_Z_EVENT_BUTTON_##button_index##_HOLD,                                \
+		.led_channel = CTR_Z_LED_CHANNEL_##button_index##_R,                              \
+		.led_param = {CTR_Z_LED_BRIGHTNESS_HIGH, CTR_Z_LED_COMMAND_2X_1_2,                \
+			      CTR_Z_LED_PATTERN_OFF},                                             \
+		.buzzer_command = CTR_Z_BUZZER_COMMAND_2X_1_2,                                    \
+		.is_hold = true,                                                                  \
+		.exclusive = false,                                                               \
+	}
+
+static const struct app_handler_button_action
+	m_button_actions[APP_DATA_BUTTON_COUNT][APP_HANDLER_BUTTON_ACTIONS_PER_BUTTON] = {
+		{BUTTON_ACTION_CLICK(0), BUTTON_ACTION_HOLD(0)},
+		{BUTTON_ACTION_CLICK(1), BUTTON_ACTION_HOLD(1)},
+		{BUTTON_ACTION_CLICK(2), BUTTON_ACTION_HOLD(2)},
+		{BUTTON_ACTION_CLICK(3), BUTTON_ACTION_HOLD(3)},
+		{BUTTON_ACTION_CLICK(4), BUTTON_ACTION_HOLD(4)},
+};
+
+#undef BUTTON_ACTION_CLICK
+#undef BUTTON_ACTION_HOLD
+
 #endif /* defined(FEATURE_CHESTER_APP_FLIP_MODE) */
+
+/* Turns off the previously lit exclusive-mode LED channel (if any and if
+ * different from `channel`), so callers never need to blank all channels. */
+static int handler_led_clear_previous(const struct device *dev, enum ctr_z_led_channel channel)
+{
+	static bool m_lit_valid;
+	static enum ctr_z_led_channel m_lit_channel;
+	int ret = 0;
+
+	if (m_lit_valid && m_lit_channel != channel) {
+		struct ctr_z_led_param led_param = {
+			.brightness = CTR_Z_LED_BRIGHTNESS_OFF,
+			.command = CTR_Z_LED_COMMAND_NONE,
+			.pattern = CTR_Z_LED_PATTERN_OFF,
+		};
+
+		ret = ctr_z_set_led(dev, m_lit_channel, &led_param);
+		if (ret) {
+			LOG_ERR("Call `ctr_z_set_led` failed: %d", ret);
+		}
+	}
+
+	m_lit_channel = channel;
+	m_lit_valid = true;
+
+	return ret;
+}
+
+static int handle_button(const struct device *dev, enum ctr_z_event event,
+			  const struct app_handler_button_action *action,
+			  struct app_data_button *button)
 {
 	int ret;
 
-	if (event != match) {
+	if (event != action->event) {
 		return 0;
 	}
-
-	static const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ctr_z));
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");
 		return -ENODEV;
 	}
 
-	struct ctr_z_led_param led_param = {
-		.brightness = CTR_Z_LED_BRIGHTNESS_HIGH,
-#if defined(FEATURE_CHESTER_APP_FLIP_MODE)
-		.command = CTR_Z_LED_COMMAND_NONE,
-		.pattern = CTR_Z_LED_PATTERN_ON,
-#else
-		.command = led_command,
-		.pattern = CTR_Z_LED_PATTERN_OFF,
-#endif /* defined(FEATURE_CHESTER_APP_FLIP_MODE) */
-	};
+	if (action->exclusive) {
+		handler_led_clear_previous(dev, action->led_channel);
+	}
 
-	ret = ctr_z_set_led(dev, led_channel, &led_param);
+	ret = ctr_z_set_led(dev, action->led_channel, &action->led_param);
 	if (ret) {
 		LOG_ERR("Call `ctr_z_set_led` failed: %d", ret);
 		return ret;
 	}
 
 	struct ctr_z_buzzer_param buzzer_param = {
-		.command = buzzer_command,
+		.command = action->buzzer_command,
 		.pattern = CTR_Z_BUZZER_PATTERN_OFF,
 	};
 
@@ -228,41 +315,33 @@ static int handle_button(enum ctr_z_event event, enum ctr_z_event match,
 		return ret;
 	}
 
-	bool button_event_type_is_click = true;
-
-	if (event == CTR_Z_EVENT_BUTTON_0_HOLD || event == CTR_Z_EVENT_BUTTON_1_HOLD ||
-	    event == CTR_Z_EVENT_BUTTON_2_HOLD || event == CTR_Z_EVENT_BUTTON_3_HOLD ||
-	    event == CTR_Z_EVENT_BUTTON_4_HOLD) {
-		button_event_type_is_click = false;
-	}
-
 	app_data_lock();
 
 	if (button->event_count < APP_DATA_MAX_BUTTON_EVENTS) {
-		struct app_data_button_event *event = &button->events[button->event_count];
+		struct app_data_button_event *event_slot = &button->events[button->event_count];
 
-		ret = ctr_rtc_get_ts(&event->timestamp);
+		ret = ctr_rtc_get_ts(&event_slot->timestamp);
 		if (ret) {
 			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
 			app_data_unlock();
 			return ret;
 		}
 
-		event->type = button_event_type_is_click ? 0 : 1;
+		event_slot->type = action->is_hold ? APP_DATA_BUTTON_EVENT_X_HOLD
+						    : APP_DATA_BUTTON_EVENT_X_CLICK;
 		button->event_count++;
 
 		LOG_INF("Event count: %d", button->event_count);
-		LOG_INF("Button event: %d", button_event);
 	} else {
 		LOG_WRN("Event full");
 		app_data_unlock();
 		return -ENOSPC;
 	}
 
-	if (button_event_type_is_click) {
-		atomic_inc(&button->click_count);
-	} else {
+	if (action->is_hold) {
 		atomic_inc(&button->hold_count);
+	} else {
+		atomic_inc(&button->click_count);
 	}
 
 	app_data_unlock();
@@ -278,99 +357,17 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 
 	LOG_INF("Event: %d", event);
 
-#if defined(FEATURE_CHESTER_APP_FLIP_MODE)
-
-#define CLEAR_LED(button)                                                                          \
-	do {                                                                                       \
-		struct ctr_z_led_param led_param = {                                               \
-			.brightness = CTR_Z_LED_BRIGHTNESS_OFF,                                    \
-			.command = CTR_Z_LED_COMMAND_NONE,                                         \
-			.pattern = CTR_Z_LED_PATTERN_OFF,                                          \
-		};                                                                                 \
-		ret = ctr_z_set_led(dev, CTR_Z_LED_CHANNEL_##button##_R, &led_param);              \
-		if (ret) {                                                                         \
-			LOG_ERR("Call `ctr_z_set_led` failed: %d", ret);                           \
-		}                                                                                  \
-	} while (0)
-
-	if (event == CTR_Z_EVENT_BUTTON_0_PRESS || event == CTR_Z_EVENT_BUTTON_1_PRESS ||
-	    event == CTR_Z_EVENT_BUTTON_2_PRESS || event == CTR_Z_EVENT_BUTTON_3_PRESS ||
-	    event == CTR_Z_EVENT_BUTTON_4_PRESS) {
-		CLEAR_LED(0);
-		CLEAR_LED(1);
-		CLEAR_LED(2);
-		CLEAR_LED(3);
-		CLEAR_LED(4);
+	for (int btn_idx = 0; btn_idx < APP_DATA_BUTTON_COUNT; btn_idx++) {
+		for (int i = 0; i < APP_HANDLER_BUTTON_ACTIONS_PER_BUTTON; i++) {
+			ret = handle_button(dev, event, &m_button_actions[btn_idx][i],
+					     &g_app_data.button[btn_idx]);
+			if (ret < 0) {
+				LOG_ERR("Call `handle_button` failed: %d", ret);
+			} else if (ret) {
+				goto apply;
+			}
+		}
 	}
-
-#undef CLEAR_LED
-
-#define HANDLE_PRESS(button_index, button_event)                                                   \
-	do {                                                                                       \
-		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button_index##_PRESS,              \
-				    CTR_Z_LED_CHANNEL_##button_index##_R,                          \
-				    CTR_Z_BUZZER_COMMAND_1X_1_2, button_event,                     \
-				    &g_app_data.button[button_index]);                             \
-		if (ret < 0) {                                                                     \
-			LOG_ERR("Call `handle_button` failed: %d", ret);                           \
-		} else if (ret) {                                                                  \
-			goto apply;                                                                \
-		}                                                                                  \
-	} while (0)
-
-	HANDLE_PRESS(0, APP_DATA_BUTTON_EVENT_X_CLICK);
-	HANDLE_PRESS(1, APP_DATA_BUTTON_EVENT_1_CLICK);
-	HANDLE_PRESS(2, APP_DATA_BUTTON_EVENT_2_CLICK);
-	HANDLE_PRESS(3, APP_DATA_BUTTON_EVENT_3_CLICK);
-	HANDLE_PRESS(4, APP_DATA_BUTTON_EVENT_4_CLICK);
-
-#undef HANDLE_PRESS
-
-#else
-
-#define HANDLE_CLICK(button_index, button_event)                                                   \
-	do {                                                                                       \
-		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button_index##_CLICK,              \
-				    CTR_Z_LED_CHANNEL_##button_index##_G,                          \
-				    CTR_Z_LED_COMMAND_1X_1_2, CTR_Z_BUZZER_COMMAND_1X_1_2,         \
-				    button_event, &g_app_data.button[button_index]);               \
-		if (ret < 0) {                                                                     \
-			LOG_ERR("Call `handle_button` failed: %d", ret);                           \
-		} else if (ret) {                                                                  \
-			goto apply;                                                                \
-		}                                                                                  \
-	} while (0)
-
-	HANDLE_CLICK(0, APP_DATA_BUTTON_EVENT_X_CLICK);
-	HANDLE_CLICK(1, APP_DATA_BUTTON_EVENT_1_CLICK);
-	HANDLE_CLICK(2, APP_DATA_BUTTON_EVENT_2_CLICK);
-	HANDLE_CLICK(3, APP_DATA_BUTTON_EVENT_3_CLICK);
-	HANDLE_CLICK(4, APP_DATA_BUTTON_EVENT_4_CLICK);
-
-#undef HANDLE_CLICK
-
-#define HANDLE_HOLD(button_index, button_event)                                                    \
-	do {                                                                                       \
-		ret = handle_button(event, CTR_Z_EVENT_BUTTON_##button_index##_HOLD,               \
-				    CTR_Z_LED_CHANNEL_##button_index##_R,                          \
-				    CTR_Z_LED_COMMAND_2X_1_2, CTR_Z_BUZZER_COMMAND_2X_1_2,         \
-				    button_event, &g_app_data.button[button_index]);               \
-		if (ret < 0) {                                                                     \
-			LOG_ERR("Call `handle_button` failed: %d", ret);                           \
-		} else if (ret) {                                                                  \
-			goto apply;                                                                \
-		}                                                                                  \
-	} while (0)
-
-	HANDLE_HOLD(0, APP_DATA_BUTTON_EVENT_X_HOLD);
-	HANDLE_HOLD(1, APP_DATA_BUTTON_EVENT_1_HOLD);
-	HANDLE_HOLD(2, APP_DATA_BUTTON_EVENT_2_HOLD);
-	HANDLE_HOLD(3, APP_DATA_BUTTON_EVENT_3_HOLD);
-	HANDLE_HOLD(4, APP_DATA_BUTTON_EVENT_4_HOLD);
-
-#undef HANDLE_HOLD
-
-#endif /* defined(FEATURE_CHESTER_APP_FLIP_MODE) */
 
 	switch (event) {
 	case CTR_Z_EVENT_DEVICE_RESET:
