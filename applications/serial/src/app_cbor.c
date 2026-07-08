@@ -23,6 +23,7 @@
 #include "drivers/drv_promag_mf7s.h"
 #include "drivers/drv_flowt_ft201.h"
 #include "drivers/drv_piketronic_rpp.h"
+#include "drivers/drv_solax_g3.h"
 
 /* CHESTER includes */
 #include <chester/ctr_info.h>
@@ -591,6 +592,67 @@ static int encode_device_piketronic_rpp(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
+static int encode_device_solax_g3(zcbor_state_t *zs, int device_idx)
+{
+	struct solax_g3_sample samples[MAX_SAMPLES];
+	int count = solax_g3_get_samples(samples, MAX_SAMPLES);
+
+	if (count == 0) {
+		return 0;
+	}
+
+	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
+	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+	for (int i = 0; i < count; i++) {
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
+		zcbor_uint64_put(zs, samples[i].timestamp);
+
+		/* Powers in W as raw int32 (negatives -> CBOR negative int) */
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__PV1_POWER);
+		zcbor_int32_put(zs, (int32_t)samples[i].pv1_power);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__PV2_POWER);
+		zcbor_int32_put(zs, (int32_t)samples[i].pv2_power);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__BAT_POWER);
+		zcbor_int32_put(zs, (int32_t)samples[i].bat_power);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__BAT_TEMP);
+		zcbor_int32_put(zs, (int32_t)samples[i].bat_temp);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__BAT_SOC);
+		zcbor_int32_put(zs, (int32_t)samples[i].bat_soc);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FEEDIN_POWER);
+		zcbor_int32_put(zs, (int32_t)samples[i].feedin_power);
+
+		/* Energies as int32(kWh x 100), codec applies $div:100 $fpp:2 */
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FEEDIN_ENERGY);
+		zcbor_int32_put(zs, (int32_t)(samples[i].feedin_energy * 100.f));
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CONSUME_ENERGY);
+		zcbor_int32_put(zs, (int32_t)(samples[i].consume_energy * 100.f));
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__EPS_POWER_L1);
+		zcbor_int32_put(zs, (int32_t)samples[i].eps_power_l1);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__EPS_POWER_L2);
+		zcbor_int32_put(zs, (int32_t)samples[i].eps_power_l2);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__EPS_POWER_L3);
+		zcbor_int32_put(zs, (int32_t)samples[i].eps_power_l3);
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+
+	zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+	return 0;
+}
+
 static int encode_devices(zcbor_state_t *zs)
 {
 	int device_count = 0;
@@ -659,6 +721,9 @@ static int encode_devices(zcbor_state_t *zs)
 			break;
 		case APP_DEVICE_TYPE_PIKETRONIC_RPP:
 			encode_device_piketronic_rpp(zs, i);
+			break;
+		case APP_DEVICE_TYPE_SOLAX_G3:
+			encode_device_solax_g3(zs, i);
 			break;
 		default:
 			/* Unknown device type - skip measurements */

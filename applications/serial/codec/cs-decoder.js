@@ -36,6 +36,7 @@ var DEVICE_TYPE_IEM3000 = 10;
 var DEVICE_TYPE_PROMAG_MF7S = 11;
 var DEVICE_TYPE_FLOWT_FT201 = 12;
 var DEVICE_TYPE_PIKETRONIC_RPP = 13;
+var DEVICE_TYPE_SOLAX_G3 = 14;
 
 // ChirpStack v4
 function decodeUplink(input) {
@@ -198,6 +199,14 @@ function decode_serial_device(version) {
       device.type_name = "piketronic";
       if (version === 1) {
         decode_piketronic_rpp_float16(device.data);
+      } else {
+        device.data.error = "Legacy format not supported";
+      }
+      break;
+    case DEVICE_TYPE_SOLAX_G3:
+      device.type_name = "solax_g3";
+      if (version === 1) {
+        decode_solax_g3_float16(device.data);
       } else {
         device.data.error = "Legacy format not supported";
       }
@@ -555,6 +564,35 @@ function decode_piketronic_rpp_float16(data) {
   cursor += 2;
 }
 
+/**
+ * SolaX X3-Hybrid G3 Float16 decoder (customer set, 11x Float16 = 22 bytes)
+ * Order must match ENCODE_SOLAX_G3_FLOAT16 in app_lrw.c
+ */
+function decode_solax_g3_float16(data) {
+  data.pv1_power = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.pv2_power = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.bat_power = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.bat_temp = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.bat_soc = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.feedin_power = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.feedin_energy = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.consume_energy = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.eps_power_l1 = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.eps_power_l2 = float16_to_float32(buffer, cursor);
+  cursor += 2;
+  data.eps_power_l3 = float16_to_float32(buffer, cursor);
+  cursor += 2;
+}
+
 // ============================================================================
 // Helper functions
 // ============================================================================
@@ -617,6 +655,7 @@ if (typeof module !== "undefined") {
     decode_iem3000_float16: decode_iem3000_float16,
     decode_promag_mf7s: decode_promag_mf7s,
     decode_flowt_ft201_float16: decode_flowt_ft201_float16,
+    decode_solax_g3_float16: decode_solax_g3_float16,
     float16_to_float32: float16_to_float32,
     s8: s8,
     u8: u8,

@@ -20,6 +20,7 @@
 #include "drivers/drv_promag_mf7s.h"
 #include "drivers/drv_flowt_ft201.h"
 #include "drivers/drv_piketronic_rpp.h"
+#include "drivers/drv_solax_g3.h"
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
@@ -158,6 +159,7 @@ int app_send(void)
 		promag_mf7s_clear_samples();
 		flowt_ft201_clear_samples();
 		piketronic_rpp_clear_samples();
+		solax_g3_clear_samples();
 
 		break;
 	}

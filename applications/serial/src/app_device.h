@@ -39,6 +39,7 @@ enum app_device_type {
 	APP_DEVICE_TYPE_PROMAG_MF7S = 11, /* Promag MF7S RFID reader */
 	APP_DEVICE_TYPE_FLOWT_FT201 = 12, /* FlowT FT201 ultrasonic flowmeter */
 	APP_DEVICE_TYPE_PIKETRONIC_RPP = 13, /* Piketronic RPP-R radon probe */
+	APP_DEVICE_TYPE_SOLAX_G3 = 14,    /* SolaX X3-Hybrid G3 inverter */
 	APP_DEVICE_TYPE_COUNT, /* Number of types */
 };
 
@@ -145,6 +146,7 @@ struct app_data_em5xx;
 struct app_data_iem3000;
 struct app_data_promag_mf7s;
 struct app_data_flowt_ft201;
+struct app_data_solax_g3;
 
 /**
  * @brief Get MicroSens 180-HS sensor data
@@ -171,6 +173,7 @@ const struct app_data_em5xx *app_device_get_em5xx_data(void);
 const struct app_data_iem3000 *app_device_get_iem3000_data(void);
 const struct app_data_promag_mf7s *app_device_get_promag_mf7s_data(void);
 const struct app_data_flowt_ft201 *app_device_get_flowt_ft201_data(void);
+const struct app_data_solax_g3 *app_device_get_solax_g3_data(void);
 
 #ifdef __cplusplus
 }

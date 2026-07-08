@@ -142,6 +142,21 @@ schema:
           - radon_concentration:
           - radon_concentration_day:
           - humidity:
+          - pv1_power:
+          - pv2_power:
+          - bat_power:
+          - bat_temp:
+          - bat_soc:
+          - feedin_power:
+          - feedin_energy:
+              - $div: 100
+              - $fpp: 2
+          - consume_energy:
+              - $div: 100
+              - $fpp: 2
+          - eps_power_l1:
+          - eps_power_l2:
+          - eps_power_l3:
   - ble_tags:
       - addr:
       - rssi:

@@ -19,6 +19,7 @@
 #include "drivers/drv_promag_mf7s.h"
 #include "drivers/drv_flowt_ft201.h"
 #include "drivers/drv_piketronic_rpp.h"
+#include "drivers/drv_solax_g3.h"
 
 #include <chester/ctr_buf.h>
 #include <chester/ctr_encode_lrw.h>
@@ -246,6 +247,23 @@ static inline int encode_float16_le(struct ctr_buf *buf, float value)
 		ret |= encode_float16_le(buf, d->valid ? (float)d->humidity : NAN);                 \
 	} while (0)
 
+/* SolaX X3-Hybrid G3 customer set (11×Float16 = 22 bytes) */
+#define ENCODE_SOLAX_G3_FLOAT16(buf)                                                               \
+	do {                                                                                       \
+		const struct app_data_solax_g3 *d = solax_g3_get_data();                           \
+		ret |= encode_float16_le(buf, d->valid ? d->pv1_power : NAN);                      \
+		ret |= encode_float16_le(buf, d->valid ? d->pv2_power : NAN);                      \
+		ret |= encode_float16_le(buf, d->valid ? d->bat_power : NAN);                      \
+		ret |= encode_float16_le(buf, d->valid ? d->bat_temp : NAN);                       \
+		ret |= encode_float16_le(buf, d->valid ? d->bat_soc : NAN);                        \
+		ret |= encode_float16_le(buf, d->valid ? d->feedin_power : NAN);                   \
+		ret |= encode_float16_le(buf, d->valid ? d->feedin_energy_total : NAN);            \
+		ret |= encode_float16_le(buf, d->valid ? d->consume_energy_total : NAN);           \
+		ret |= encode_float16_le(buf, d->valid ? d->eps_power_l1 : NAN);                   \
+		ret |= encode_float16_le(buf, d->valid ? d->eps_power_l2 : NAN);                   \
+		ret |= encode_float16_le(buf, d->valid ? d->eps_power_l3 : NAN);                   \
+	} while (0)
+
 /**
  * @brief Encode single device into LoRaWAN payload
  *
@@ -352,6 +370,10 @@ int app_lrw_encode_single(struct ctr_buf *buf, int device_idx)
 
 	case APP_DEVICE_TYPE_PIKETRONIC_RPP:
 		ENCODE_PIKETRONIC_RPP_FLOAT16(buf); /* 8 bytes: 4×Float16 */
+		break;
+
+	case APP_DEVICE_TYPE_SOLAX_G3:
+		ENCODE_SOLAX_G3_FLOAT16(buf); /* 22 bytes: 11×Float16 */
 		break;
 
 	default:
