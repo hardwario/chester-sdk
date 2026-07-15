@@ -29,21 +29,13 @@ LOG_MODULE_REGISTER(drv_piketronic_rpp, LOG_LEVEL_DBG);
 #define REG_TEMPERATURE        4  /* signed int8 in low byte */
 #define REG_HUMIDITY           5  /* UINT */
 #define REG_CONCENTRATION_DAY  17 /* UINT32 (L at 17, H at 18) */
-#define REG_LIMIT              33 /* UINT (writable) */
-#define REG_RECORD_INTERVAL    36 /* UINT (writable) */
-#define REG_SPECTRUM_INTERVAL  37 /* UINT (writable) */
-#define REG_ALGORITHM          38 /* UINT (writable) */
+#define REG_LIMIT              33 /* UINT, read-only here (no write support) */
+#define REG_RECORD_INTERVAL    36 /* UINT, read-only here (no write support) */
+#define REG_SPECTRUM_INTERVAL  37 /* UINT, read-only here (no write support) */
+#define REG_ALGORITHM          38 /* UINT, read-only here (no write support) */
 #define REG_IDENT_DEVICE       60 /* 10 ASCII */
 #define REG_IDENT_VERSION      65 /* 10 ASCII */
 #define REG_IDENT_SERIAL       70 /* 10 ASCII */
-
-/* Calibration registers - writing these corrupts factory calibration.
- * Per the official register map (RPP-R_rs485_modbus_communication.pdf),
- * register 33 (REG_LIMIT) is documented as a normal writable alarm threshold,
- * not calibration - but this driver deliberately keeps the whole 28-35 range
- * blocked (including 33), so REG_LIMIT is not writable through this driver. */
-#define REG_CALIB_FIRST        28
-#define REG_CALIB_LAST         35
 
 static struct app_data_piketronic_rpp m_data = {
 	.modbus_addr = DEFAULT_ADDR,
@@ -90,17 +82,6 @@ static void decode_ascii(const uint16_t *regs, int count, char *out)
 	     k >= 0 && (out[k] == '.' || out[k] == ' ' || out[k] == '\0'); k--) {
 		out[k] = '\0';
 	}
-}
-
-/* Reject writes to the whole protected register block (see comment above
- * REG_CALIB_FIRST) - they must never be written by this driver. */
-static int safe_write_reg(uint8_t addr, uint16_t reg, uint16_t val)
-{
-	if (reg >= REG_CALIB_FIRST && reg <= REG_CALIB_LAST) {
-		LOG_ERR("Refusing to write calibration register %u", reg);
-		return -EPERM;
-	}
-	return app_modbus_write_holding_reg(addr, reg, val);
 }
 
 /* Forward declaration */
@@ -299,61 +280,9 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-/* Write one of the safe setting registers: limit / record / spectrum / mode */
-static int write_setting(const struct shell *shell, size_t argc, char **argv, uint16_t reg,
-			 const char *what)
-{
-	if (argc < 3) {
-		shell_error(shell, "Usage: device piketronic %s <addr> <value>", what);
-		return -EINVAL;
-	}
-
-	uint8_t addr = (uint8_t)strtol(argv[1], NULL, 0);
-	if (addr < 1 || addr > 247) {
-		shell_error(shell, "Invalid address (1-247)");
-		return -EINVAL;
-	}
-	uint16_t val = (uint16_t)strtol(argv[2], NULL, 0);
-
-	int ret = app_modbus_enable();
-	if (ret) {
-		shell_error(shell, "Failed to enable Modbus: %d", ret);
-		return ret;
-	}
-	ret = safe_write_reg(addr, reg, val);
-	app_modbus_disable();
-
-	if (ret) {
-		shell_error(shell, "Write failed: %d", ret);
-		return ret;
-	}
-	shell_print(shell, "Set %s = %u on addr %d", what, val, addr);
-	return 0;
-}
-
-static int cmd_limit(const struct shell *shell, size_t argc, char **argv)
-{
-	return write_setting(shell, argc, argv, REG_LIMIT, "limit");
-}
-
-static int cmd_interval(const struct shell *shell, size_t argc, char **argv)
-{
-	return write_setting(shell, argc, argv, REG_RECORD_INTERVAL, "interval");
-}
-
-static int cmd_mode(const struct shell *shell, size_t argc, char **argv)
-{
-	return write_setting(shell, argc, argv, REG_ALGORITHM, "mode");
-}
-
 static const struct shell_static_entry piketronic_rpp_subcmds[] = {
 	SHELL_CMD_ARG(sample, NULL, "Read values: sample <addr>", cmd_sample, 2, 0),
 	SHELL_CMD_ARG(config, NULL, "Set sampling address: config <addr>", cmd_config, 2, 0),
-	SHELL_CMD_ARG(limit, NULL, "Set alarm limit: limit <addr> <bq>", cmd_limit, 3, 0),
-	SHELL_CMD_ARG(interval, NULL, "Set record interval (min): interval <addr> <min>",
-		      cmd_interval, 3, 0),
-	SHELL_CMD_ARG(mode, NULL, "Set calc mode: mode <addr> <0=RnA|1..255=RnA+RnC>", cmd_mode, 3,
-		      0),
 	SHELL_SUBCMD_SET_END
 };
 
