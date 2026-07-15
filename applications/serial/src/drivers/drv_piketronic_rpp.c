@@ -37,7 +37,11 @@ LOG_MODULE_REGISTER(drv_piketronic_rpp, LOG_LEVEL_DBG);
 #define REG_IDENT_VERSION      65 /* 10 ASCII */
 #define REG_IDENT_SERIAL       70 /* 10 ASCII */
 
-/* Calibration registers - writing these corrupts factory calibration */
+/* Calibration registers - writing these corrupts factory calibration.
+ * Per the official register map (RPP-R_rs485_modbus_communication.pdf),
+ * register 33 (REG_LIMIT) is documented as a normal writable alarm threshold,
+ * not calibration - but this driver deliberately keeps the whole 28-35 range
+ * blocked (including 33), so REG_LIMIT is not writable through this driver. */
 #define REG_CALIB_FIRST        28
 #define REG_CALIB_LAST         35
 
@@ -88,7 +92,8 @@ static void decode_ascii(const uint16_t *regs, int count, char *out)
 	}
 }
 
-/* Reject calibration registers - they must never be written by this driver */
+/* Reject writes to the whole protected register block (see comment above
+ * REG_CALIB_FIRST) - they must never be written by this driver. */
 static int safe_write_reg(uint8_t addr, uint16_t reg, uint16_t val)
 {
 	if (reg >= REG_CALIB_FIRST && reg <= REG_CALIB_LAST) {
