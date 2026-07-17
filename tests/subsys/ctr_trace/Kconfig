@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2026 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+menu "Test Features"
+
+config TEST_FEATURE_LAYOUT
+	bool "Test retained-region layout math and fault decision"
+	default n
+
+config TEST_FEATURE_RING
+	bool "Test the log ring buffer and fault snapshot"
+	default n
+
+config TEST_FEATURE_REASON
+	bool "Test the reset-record ring"
+	default n
+
+config TEST_FEATURE_SHELL
+	bool "Test the trace shell command interface"
+	default n
+
+endmenu
+
+# Include Zephyr's Kconfig
+source "Kconfig"

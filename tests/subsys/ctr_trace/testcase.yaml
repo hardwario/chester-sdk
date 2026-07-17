@@ -1,0 +1,20 @@
+
+common:
+  tags:
+    - chester
+  platform_allow: native_sim
+  integration_platforms:
+    - native_sim
+
+tests:
+  subsys.ctr_trace.layout:
+    extra_args: CONFIG_TEST_FEATURE_LAYOUT=y
+
+  subsys.ctr_trace.ring:
+    extra_args: CONFIG_TEST_FEATURE_RING=y
+
+  subsys.ctr_trace.reason:
+    extra_args: CONFIG_TEST_FEATURE_REASON=y
+
+  subsys.ctr_trace.shell:
+    extra_args: CONFIG_TEST_FEATURE_SHELL=y

@@ -1,0 +1,21 @@
+/ {
+	chosen {
+		ctr,trace_mem = &ctr_trace_mem;
+	};
+
+	/* Plain container carrying #address-cells/#size-cells so the child's reg
+	 * parses. No `zephyr,memory-region`/`mmio-sram` so native_sim does not try
+	 * to allocate a fixed-address linker region. The real driver is disabled
+	 * (see boards/native_sim.conf); src/mock_retmem.c provides the device. The
+	 * reg size below feeds ctr_trace's compile-time region-size assertion and
+	 * must match MOCK_RETMEM_SIZE. */
+	ctr_trace_container {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ctr_trace_mem: retainedmem@0 {
+			compatible = "zephyr,retained-ram";
+			reg = <0x0 0x2000>;
+		};
+	};
+};

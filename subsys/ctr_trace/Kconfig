@@ -1,0 +1,55 @@
+#
+# Copyright (c) 2026 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+# Indirection so the comma in the chosen property name is not parsed as a
+# Kconfig macro argument separator.
+DT_CHOSEN_CTR_TRACE_MEM := ctr,trace_mem
+
+config CTR_TRACE
+	bool "CTR_TRACE"
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_CTR_TRACE_MEM))
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_CTR_TRACE_MEM))
+	depends on RETAINED_MEM
+	depends on HWINFO
+	depends on LOG
+	# Needs the full logging backend API (log_backend_enable, log_output_*),
+	# which minimal logging (e.g. in the MCUboot image) does not provide.
+	depends on !LOG_MODE_MINIMAL
+	help
+	  Post-mortem debug subsystem: keeps a log ring buffer, a pre-fault log
+	  snapshot and a boot/reset record ring in retained RAM (the chosen
+	  `ctr,trace_mem` device). Inspected over the `trace` shell command.
+
+	  The fatal-error handler persists a fault marker from a context with
+	  interrupts locked, so CONFIG_RETAINED_MEM_MUTEX_FORCE_DISABLE=y is
+	  required (enforced by a build assertion).
+
+if CTR_TRACE
+
+module = CTR_TRACE
+module-str = CHESTER Trace Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_TRACE_RESET_REASON_COUNT
+	int "Number of boot/reset records retained"
+	default 8
+	range 1 256
+	help
+	  Number of boot/reset records kept in retained RAM. The rest of the
+	  retained region is split evenly between the primary log ring buffer
+	  and the pre-fault snapshot buffer. A build assertion fails if the
+	  region cannot hold this many records plus two usable log buffers.
+
+config CTR_TRACE_INIT_PRIORITY
+	int "Initialization priority"
+	default APPLICATION_INIT_PRIORITY
+
+config CTR_TRACE_SHELL
+	bool "CTR_TRACE_SHELL"
+	depends on SHELL
+	default y
+
+endif # CTR_TRACE

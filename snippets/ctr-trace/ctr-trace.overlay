@@ -1,0 +1,37 @@
+/*
+ * Reserve 8 KiB of retained RAM at the top of SRAM for the ctr_trace
+ * post-mortem debug subsystem. The region survives a warm reset (but not power
+ * loss), holding the log ring buffer, the pre-fault snapshot and the boot/reset
+ * records.
+ *
+ * SRAM is 256 KiB at 0x20000000. sram0 is shrunk to 248 KiB and the top 8 KiB
+ * (0x2003E000..0x2003FFFF) is carved out as a retained memory-region.
+ */
+
+/ {
+	chosen {
+		ctr,trace_mem = &ctr_trace_mem;
+	};
+
+	sram_ctr_trace: memory@2003e000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2003e000 DT_SIZE_K(8)>;
+		zephyr,memory-region = "CTR_TRACE";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* The retained_mem driver derives its region from the parent
+		 * memory-region node above; the reg here mirrors that size so
+		 * ctr_trace's compile-time size assertion can read it. */
+		ctr_trace_mem: retainedmem@0 {
+			compatible = "zephyr,retained-ram";
+			reg = <0x0 DT_SIZE_K(8)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(248)>;
+};
