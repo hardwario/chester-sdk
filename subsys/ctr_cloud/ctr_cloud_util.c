@@ -18,7 +18,6 @@
 #include <stdio.h>
 
 /* Zephyr includes */
-#include <zephyr/fs/nvs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>

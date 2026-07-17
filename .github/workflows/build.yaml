@@ -16,7 +16,7 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     container:
-      image: hardwario/nrf-connect-sdk-build:v2.9.0-1
+      image: hardwario/nrf-connect-sdk-build:v3.4.0-1
     outputs:
       short_sha: ${{ steps.short-sha.outputs.short-sha }}
       samples: ${{ steps.generate-matrix.outputs.samples }}

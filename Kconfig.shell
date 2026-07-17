@@ -25,6 +25,14 @@ config KERNEL_SHELL
 config SHELL_BACKEND_DUMMY_BUF_SIZE
 	default 4096 if CTR_SHELL
 
+# Zephyr 4.4 added a stack-allocated bypass read buffer whose default equals
+# SEGGER_RTT_BUFFER_SIZE_DOWN (4096) on the RTT backend, which is not smaller
+# than SHELL_STACK_SIZE and trips the BUILD_ASSERT in shell.c. Bound it well
+# below the stack size; the bypass path (ctr_lte_v2 modem passthrough) only
+# needs a modest per-read chunk.
+config SHELL_BYPASS_READ_BUF_SIZE
+	default 1024 if CTR_SHELL
+
 config SHELL_CMD_BUFF_SIZE
 	default 256 if CTR_SHELL
 
