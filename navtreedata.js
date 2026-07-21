@@ -25,6 +25,7 @@
 var NAVTREE =
 [
   [ "CHESTER SDK", "index.html", [
+    [ "Deprecated List", "deprecated.html", null ],
     [ "Modules", "modules.html", "modules" ],
     [ "Data Structures", "annotated.html", [
       [ "Data Structures", "annotated.html", "annotated_dup" ],
@@ -54,10 +55,10 @@ var NAVTREEINDEX =
 [
 "annotated.html",
 "ctr__test__lrw_8h.html#a5c6d373ae2e46645c888576f2ec42fd5",
-"group__ctr__edge.html#gaaa7748419dcf468ccd0d54e28d85003f",
-"group__ctr__rtd.html#gga017e0067eba5ce9c25b98dc89c3394d4ac6fe19d9e6f9071d29d097b67b2e4068",
-"group__ctr__z.html#gga1be5ac01700fc5f77e2d4acdd8b4183ba9b2232821c135e9df788c87c163e43d8",
-"structctr__lrw__link__driver__api.html#a4abb6f4a3b64b5ea81b9fff2e275f852"
+"group__ctr__edge.html#ga6699a0878cb9864a1cfed38b70c17faa",
+"group__ctr__rtd.html#gga017e0067eba5ce9c25b98dc89c3394d4a2f7b77261e6ca66a85d18310245dbf62",
+"group__ctr__z.html#gga1be5ac01700fc5f77e2d4acdd8b4183ba69b28e618925c92b87c07f942addb1e5",
+"structctr__lrw__link__driver__api.html#a20a01963d6d4546602e3ff0ad8953c25"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

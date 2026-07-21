@@ -24,6 +24,7 @@
 */
 var menudata={children:[
 {text:"Main Page",url:"index.html"},
+{text:"Related Pages",url:"pages.html"},
 {text:"Modules",url:"modules.html"},
 {text:"Data Structures",url:"annotated.html",children:[
 {text:"Data Structures",url:"annotated.html"},
@@ -85,7 +86,8 @@ var menudata={children:[
 {text:"File List",url:"files.html"},
 {text:"Globals",url:"globals.html",children:[
 {text:"All",url:"globals.html",children:[
-{text:"c",url:"globals.html#index_c"},
+{text:"_",url:"globals.html#index__5F"},
+{text:"c",url:"globals_c.html#index_c"},
 {text:"d",url:"globals_d.html#index_d"},
 {text:"m",url:"globals_m.html#index_m"},
 {text:"p",url:"globals_p.html#index_p"},

@@ -4,12 +4,13 @@ var indexSectionsWithContent =
   1: "cps",
   2: "cdmps",
   3: "_cdmps",
-  4: "abcdefghijlmnopqrstuvwxy",
+  4: "_abcdefghijlmnopqrstuvwxy",
   5: "c",
   6: "cds",
   7: "cds",
   8: "crt",
-  9: "cdmp"
+  9: "cdmp",
+  10: "d"
 };
 
 var indexSectionNames =
@@ -23,7 +24,8 @@ var indexSectionNames =
   6: "enums",
   7: "enumvalues",
   8: "defines",
-  9: "groups"
+  9: "groups",
+  10: "pages"
 };
 
 var indexSectionLabels =
@@ -37,6 +39,7 @@ var indexSectionLabels =
   6: "Enumerations",
   7: "Enumerator",
   8: "Macros",
-  9: "Modules"
+  9: "Modules",
+  10: "Pages"
 };
 

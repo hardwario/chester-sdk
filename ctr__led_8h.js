@@ -14,10 +14,10 @@ var ctr__led_8h =
       [ "CTR_LED_PRIO_MEDIUM", "group__ctr__led.html#ggabfac96d6b2bb9848f0d596929c4408b7a2acc199f750898342cd5ce32ee57f5be", null ],
       [ "CTR_LED_PRIO_HIGH", "group__ctr__led.html#ggabfac96d6b2bb9848f0d596929c4408b7ac3c3bdabfa66d57fcb81515103e69ddb", null ]
     ] ],
-    [ "ctr_led_blink", "group__ctr__led.html#ga83eb6d92a55e6b6bd3196502c4919b54", null ],
-    [ "ctr_led_fade", "group__ctr__led.html#ga6d8268108cf84e5a7f1311e98661c33a", null ],
-    [ "ctr_led_play", "group__ctr__led.html#gabbd263f80f98ae9d87457337b0b193de", null ],
+    [ "ctr_led_blink", "group__ctr__led.html#ga8052655a9dc1cd151d1114a7c28c87b8", null ],
+    [ "ctr_led_fade", "group__ctr__led.html#ga8e385ad0cb3b08d852610748921dc21b", null ],
+    [ "ctr_led_play", "group__ctr__led.html#gad4dff3da4d368b4f125fd348c637be19", null ],
     [ "ctr_led_set", "group__ctr__led.html#ga32bec2142a6226d1909e30cd7f1cb84a", null ],
-    [ "ctr_led_stop", "group__ctr__led.html#ga50ecabd0edb3be7f4f93298135e82b0a", null ],
-    [ "ctr_led_mainboard", "group__ctr__led.html#ga782db3d0d936c469e2ec97c06a46d3da", null ]
+    [ "ctr_led_stop", "group__ctr__led.html#ga364c1b76de3f18f9a2edd25913c4a61e", null ],
+    [ "__deprecated", "group__ctr__led.html#gac58d5b9eada5d4376fff5906c31d9008", null ]
 ];
