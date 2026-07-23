@@ -158,6 +158,18 @@ static void check_and_erase_bonds(void)
 	}
 }
 
+static int adv_start(void)
+{
+	const struct bt_le_adv_param *adv_param =
+		BT_LE_ADV_PARAM(ADV_OPT, BT_GAP_ADV_SLOW_INT_MIN, BT_GAP_ADV_SLOW_INT_MAX, NULL);
+
+	const char *adv_name = bt_get_name();
+	m_ad[1].data = (const uint8_t *)adv_name;
+	m_ad[1].data_len = strlen(adv_name);
+
+	return bt_le_adv_start(adv_param, m_ad, ARRAY_SIZE(m_ad), m_sd, ARRAY_SIZE(m_sd));
+}
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (conn == NULL) {
@@ -235,9 +247,25 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	check_and_erase_bonds();
 }
 
+static void recycled(void)
+{
+	/* Fires for both roles once a connection object is freed; there is no
+	 * conn/role available here by design. We simply re-arm advertising.
+	 * For a recycled central connection (ctr_ble_client neighbor reboot)
+	 * the advertiser is still running, so -EALREADY is expected and benign.
+	 */
+	int ret = adv_start();
+	if (ret == -EALREADY) {
+		LOG_DBG("Advertising already running");
+	} else if (ret) {
+		LOG_ERR("Call `adv_start` failed: %d", ret);
+	}
+}
+
 BT_CONN_CB_DEFINE(conn_cb) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled,
 #if defined(CONFIG_CTR_BLE_CLIENT)
 	.le_param_req = ctr_ble_client_cb_le_param_req,
 	.le_param_updated = ctr_ble_client_cb_le_param_updated,
@@ -462,16 +490,9 @@ static int init(void)
 	}
 #endif /* defined(CONFIG_SHELL_BT_NUS) */
 
-	const struct bt_le_adv_param *adv_param =
-		BT_LE_ADV_PARAM(ADV_OPT, BT_GAP_ADV_SLOW_INT_MIN, BT_GAP_ADV_SLOW_INT_MAX, NULL);
-
-	const char *adv_name = bt_get_name();
-	m_ad[1].data = (const uint8_t *)adv_name;
-	m_ad[1].data_len = strlen(adv_name);
-
-	ret = bt_le_adv_start(adv_param, m_ad, ARRAY_SIZE(m_ad), m_sd, ARRAY_SIZE(m_sd));
+	ret = adv_start();
 	if (ret) {
-		LOG_ERR("Call `bt_le_adv_start` failed: %d", ret);
+		LOG_ERR("Call `adv_start` failed: %d", ret);
 		return ret;
 	}
 
