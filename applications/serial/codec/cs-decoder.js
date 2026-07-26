@@ -655,6 +655,7 @@ if (typeof module !== "undefined") {
     decode_iem3000_float16: decode_iem3000_float16,
     decode_promag_mf7s: decode_promag_mf7s,
     decode_flowt_ft201_float16: decode_flowt_ft201_float16,
+    decode_piketronic_rpp_float16: decode_piketronic_rpp_float16,
     decode_solax_g3_float16: decode_solax_g3_float16,
     float16_to_float32: float16_to_float32,
     s8: s8,
