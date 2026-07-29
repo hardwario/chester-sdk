@@ -17,8 +17,6 @@
 extern "C" {
 #endif
 
-#define CTR_CLOUD_TRANSFER_BUF_SIZE (16 * 1024)
-
 /**
  * @brief Cloud communication metrics.
  *

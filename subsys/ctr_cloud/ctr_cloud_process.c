@@ -371,7 +371,7 @@ int ctr_cloud_process_dlfirmware(struct ctr_cloud_msg_dlfirmware *dlfirmware, st
 			.type = "next",
 			.id = dlfirmware->id,
 			.offset = offset,
-			.max_length = ((CTR_CLOUD_TRANSFER_BUF_SIZE - 50) / 256) * 256,
+			.max_length = ((CONFIG_CTR_CLOUD_TRANSFER_BUF_SIZE - 50) / 256) * 256,
 		};
 
 		ret = ctr_cloud_msg_pack_firmware(buf, &upfirmware);

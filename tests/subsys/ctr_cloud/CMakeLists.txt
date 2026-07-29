@@ -5,6 +5,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(test)
 
 add_compile_definitions(CONFIG_CTR_CLOUD_LOG_LEVEL=4)
+add_compile_definitions(CONFIG_CTR_CLOUD_TRANSFER_BUF_SIZE=16384)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../subsys/ctr_cloud)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../subsys/ctr_cloud/ctr_cloud_packet.c)

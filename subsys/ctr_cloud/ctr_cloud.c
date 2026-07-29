@@ -39,7 +39,7 @@
 LOG_MODULE_REGISTER(ctr_cloud, CONFIG_CTR_CLOUD_LOG_LEVEL);
 
 static K_MUTEX_DEFINE(m_lock);
-CTR_BUF_DEFINE_STATIC(m_transfer_buf, CTR_CLOUD_TRANSFER_BUF_SIZE);
+CTR_BUF_DEFINE_STATIC(m_transfer_buf, CONFIG_CTR_CLOUD_TRANSFER_BUF_SIZE);
 
 static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);
 static struct k_work_q m_work_q;

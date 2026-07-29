@@ -56,7 +56,7 @@ config LOG_BACKEND_RTT_BUFFER
 	depends on CTR_LOG
 
 config LOG_BACKEND_RTT_BUFFER_SIZE
-	default 4096
+	default 2048
 	depends on CTR_LOG
 
 config LOG_BACKEND_RTT_MESSAGE_SIZE
