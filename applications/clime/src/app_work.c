@@ -81,9 +81,10 @@ static void send_work_handler(struct k_work *work)
 			return;
 		}
 
-		ret = ctr_cloud_send(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf));
+		ret = ctr_cloud_send_data(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf),
+					  K_SECONDS(g_app_config.send_timeout));
 		if (ret) {
-			LOG_ERR("Call `ctr_cloud_send` failed: %d", ret);
+			LOG_ERR("Call `ctr_cloud_send_data` failed: %d", ret);
 			return;
 		}
 	}

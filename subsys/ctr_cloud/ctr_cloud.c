@@ -9,6 +9,8 @@
 #include "ctr_cloud_transfer.h"
 #include "ctr_cloud_process.h"
 #include "ctr_cloud_util.h"
+#include "ctr_cloud_config.h"
+#include "ctr_cloud_spool.h"
 
 /* CHESTER includes */
 #include <chester/ctr_buf.h>
@@ -774,6 +776,85 @@ int ctr_cloud_poll_immediately(void)
 	return 0;
 }
 
+static int frame_reset(void)
+{
+	int ret;
+
+	ctr_buf_reset(&m_transfer_buf);
+
+	ret = ctr_buf_append_u8(&m_transfer_buf, UL_UPLOAD_DATA);
+	if (ret) {
+		LOG_ERR("Call `ctr_buf_append_u8` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_buf_append_u64_be(&m_transfer_buf, m_options->decoder_hash);
+	if (ret) {
+		LOG_ERR("Call `ctr_buf_append_u64` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int frame_send(k_timeout_t timeout)
+{
+	int ret;
+
+	ret = uplink(&m_transfer_buf, timeout);
+	if (ret) {
+		LOG_ERR("Call `transfer` failed: %d", ret);
+		return ret;
+	}
+
+	k_mutex_lock(&m_lock_metrics, K_FOREVER);
+	m_metrics.uplink_data_count++;
+	ctr_rtc_get_ts(&m_metrics.uplink_data_last_ts);
+	k_mutex_unlock(&m_lock_metrics);
+
+	return 0;
+}
+
+#if defined(CONFIG_CTR_CLOUD_SPOOL)
+
+/* Uplink works again - drain messages spooled during previous failures */
+static void drain_spool(k_timepoint_t end)
+{
+	int ret;
+	ctr_cloud_spool_id id;
+
+	while (!ctr_cloud_spool_peek(&id)) {
+		/* Spooled messages hold the complete frame - send as-is */
+		ctr_buf_reset(&m_transfer_buf);
+
+		ret = ctr_cloud_spool_load(id, &m_transfer_buf);
+		if (ret) {
+			LOG_ERR("Call `ctr_cloud_spool_load` failed: %d", ret);
+
+			/* Unreadable message would block draining forever - drop it */
+			ret = ctr_cloud_spool_delete(id);
+			if (ret) {
+				return;
+			}
+			continue;
+		}
+
+		ret = frame_send(sys_timepoint_timeout(end));
+		if (ret) {
+			return;
+		}
+
+		ret = ctr_cloud_spool_delete(id);
+		if (ret) {
+			return;
+		}
+
+		LOG_INF("Spooled message sent and deleted: %llu", id);
+	}
+}
+
+#endif /* defined(CONFIG_CTR_CLOUD_SPOOL) */
+
 int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout)
 {
 	int ret;
@@ -792,40 +873,57 @@ int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout)
 
 	LOG_INF("Request SEND started");
 
-	ctr_buf_reset(&m_transfer_buf);
-
-	ret = ctr_buf_append_u8(&m_transfer_buf, UL_UPLOAD_DATA);
+	ret = frame_reset();
+	if (!ret) {
+		ret = ctr_buf_append_mem(&m_transfer_buf, buf, len);
+		if (ret) {
+			LOG_ERR("Call `ctr_buf_append_mem` failed: %d", ret);
+		}
+	}
 	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u8` failed: %d", ret);
 		k_mutex_unlock(&m_lock);
 		return ret;
 	}
 
-	ret = ctr_buf_append_u64_be(&m_transfer_buf, m_options->decoder_hash);
+#if defined(CONFIG_CTR_CLOUD_SPOOL)
+	/* The spool acts as a send buffer - every message is stored first
+	 * (as the complete frame) and removed only once it has been sent */
+	ctr_cloud_spool_id id;
+	bool spooled = true;
+
+	ret = ctr_cloud_spool_save(ctr_buf_get_mem(&m_transfer_buf),
+				   ctr_buf_get_used(&m_transfer_buf), &id);
 	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u64` failed: %d", ret);
+		LOG_WRN("Call `ctr_cloud_spool_save` failed: %d (sending without spool)", ret);
+		spooled = false;
+	}
+#endif
+
+	/* Send the current (newest) message first - its frame is still in the
+	 * transfer buffer, so there is no need to load it back from the spool */
+	ret = frame_send(sys_timepoint_timeout(end));
+	if (ret) {
+#if defined(CONFIG_CTR_CLOUD_SPOOL)
+		if (spooled) {
+			LOG_INF("Unsent message kept in spool: %llu", id);
+		}
+#endif
 		k_mutex_unlock(&m_lock);
 		return ret;
 	}
 
-	ret = ctr_buf_append_mem(&m_transfer_buf, buf, len);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_mem` failed: %d", ret);
-		k_mutex_unlock(&m_lock);
-		return ret;
+#if defined(CONFIG_CTR_CLOUD_SPOOL)
+	if (spooled) {
+		ret = ctr_cloud_spool_delete(id);
+		if (ret) {
+			LOG_ERR("Call `ctr_cloud_spool_delete` failed: %d", ret);
+		} else {
+			/* Uplink works - send the remaining messages, oldest first */
+			drain_spool(end);
+		}
+		ret = 0;
 	}
-
-	ret = uplink(&m_transfer_buf, sys_timepoint_timeout(end));
-	if (ret) {
-		LOG_ERR("Call `transfer` failed: %d", ret);
-		k_mutex_unlock(&m_lock);
-		return ret;
-	}
-
-	k_mutex_lock(&m_lock_metrics, K_FOREVER);
-	m_metrics.uplink_data_count++;
-	ctr_rtc_get_ts(&m_metrics.uplink_data_last_ts);
-	k_mutex_unlock(&m_lock_metrics);
+#endif
 
 	k_mutex_unlock(&m_lock);
 

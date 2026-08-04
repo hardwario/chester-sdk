@@ -115,6 +115,12 @@ parameters:
   max: 1209600
   default: 129600
   help: "Get/Set downlink watchdog interval in seconds (disabled if 0)"
+- name: send-timeout
+  type: int
+  min: 1
+  max: 3600
+  default: 120
+  help: 'Get/Set send timeout in seconds'
 - name: iaq-led-thr-warning
   type: float
   min: -40.0

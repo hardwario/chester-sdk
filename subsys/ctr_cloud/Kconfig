@@ -33,4 +33,26 @@ config CTR_CLOUD_TRANSFER_BUF_SIZE
 	int "Cloud transfer buffer size in bytes"
 	default 16384
 
+config CTR_CLOUD_CONFIG
+	bool
+
+config CTR_CLOUD_SPOOL
+	bool "Enable CLOUD message spool"
+	select CTR_CLOUD_CONFIG
+
+if CTR_CLOUD_SPOOL
+
+choice
+	prompt "CLOUD spool storage backend"
+	default CTR_CLOUD_SPOOL_BACKEND_LITTLEFS
+
+config CTR_CLOUD_SPOOL_BACKEND_LITTLEFS
+	bool "LittleFS backend"
+	select FILE_SYSTEM
+	select FILE_SYSTEM_LITTLEFS
+
+endchoice
+
+endif # CTR_CLOUD_SPOOL
+
 endif # CTR_CLOUD

@@ -6,8 +6,11 @@
 
 #include "ctr_cloud_util.h"
 #include "ctr_cloud_msg.h"
+#include "ctr_cloud_config.h"
+#include "ctr_cloud_spool.h"
 
 /* CHESTER includes */
+#include <chester/ctr_buf.h>
 #include <chester/ctr_cloud.h>
 
 /* Zephyr includes */
@@ -20,6 +23,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(ctr_cloud_shell, CONFIG_CTR_CLOUD_LOG_LEVEL);
@@ -169,6 +173,77 @@ static int cmd_poll(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+#if defined(CONFIG_CTR_CLOUD_SPOOL)
+
+static int cmd_spool_count(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	int count;
+	ret = ctr_cloud_spool_count(&count);
+	if (ret) {
+		shell_error(shell, "ctr_cloud_spool_count failed: %d", ret);
+		return ret;
+	}
+
+	shell_print(shell, "spool messages: %d", count);
+
+	return 0;
+}
+
+static int cmd_spool_fake(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	long n = strtol(argv[1], NULL, 10);
+	if (n < 1 || n > 100) {
+		shell_error(shell, "invalid count (expected 1-100)");
+		return -EINVAL;
+	}
+
+	for (long i = 1; i <= n; i++) {
+		CTR_BUF_DEFINE(buf, 1 + 8 + 16);
+
+		ctr_buf_append_u8(&buf, UL_UPLOAD_DATA);
+		ctr_buf_append_u64_be(&buf, 0); /* fake decoder hash */
+
+		/* 16 payload bytes, all set to the fake message number */
+		for (int j = 0; j < 16; j++) {
+			ctr_buf_append_u8(&buf, (uint8_t)i);
+		}
+
+		ret = ctr_cloud_spool_save(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf), NULL);
+		if (ret) {
+			shell_error(shell, "ctr_cloud_spool_save failed: %d", ret);
+			return ret;
+		}
+
+		/* Filenames have millisecond resolution - keep them unique */
+		k_sleep(K_MSEC(2));
+	}
+
+	shell_print(shell, "created %ld fake message(s)", n);
+
+	return 0;
+}
+
+static int cmd_spool_clean(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	ret = ctr_cloud_spool_clear();
+	if (ret) {
+		shell_error(shell, "ctr_cloud_spool_clear failed: %d", ret);
+		return ret;
+	}
+
+	shell_print(shell, "command succeeded");
+
+	return 0;
+}
+
+#endif /* defined(CONFIG_CTR_CLOUD_SPOOL) */
+
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -190,8 +265,31 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cloud_firmware,
 
 			       SHELL_SUBCMD_SET_END);
 
+#if defined(CONFIG_CTR_CLOUD_SPOOL)
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_cloud_spool,
+
+			       SHELL_CMD_ARG(count, NULL, "Get number of spooled messages.",
+					     cmd_spool_count, 1, 0),
+			       SHELL_CMD_ARG(fake, NULL,
+					     "Create fake spooled messages (format: <count>).",
+					     cmd_spool_fake, 2, 0),
+			       SHELL_CMD_ARG(clean, NULL, "Delete all spooled messages.",
+					     cmd_spool_clean, 1, 0),
+
+			       SHELL_SUBCMD_SET_END);
+
+#endif /* defined(CONFIG_CTR_CLOUD_SPOOL) */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_cloud, SHELL_CMD_ARG(state, NULL, "Get CLOUD state.", cmd_state, 1, 0),
+	sub_cloud,
+#if defined(CONFIG_CTR_CLOUD_CONFIG)
+	SHELL_CMD_ARG(config, NULL, "Configuration commands.", ctr_cloud_config_cmd, 1, 3),
+#endif
+#if defined(CONFIG_CTR_CLOUD_SPOOL)
+	SHELL_CMD_ARG(spool, &sub_cloud_spool, "Spool commands.", print_help, 1, 0),
+#endif
+	SHELL_CMD_ARG(state, NULL, "Get CLOUD state.", cmd_state, 1, 0),
 	SHELL_CMD_ARG(metrics, NULL, "Get CLOUD metrics.", cmd_metrics, 1, 0),
 	SHELL_CMD_ARG(poll, NULL, "Poll CLOUD.", cmd_poll, 1, 0),
 	SHELL_CMD_ARG(firmware, &sub_cloud_firmware, "Firmware commands.", print_help, 1, 0),
