@@ -8,7 +8,7 @@ config CTR_DEFAULTS
 	bool "CTR_DEFAULTS"
 
 config IDLE_STACK_SIZE
-	default 2048 if CTR_DEFAULTS
+	default 512 if CTR_DEFAULTS
 
 config ISR_STACK_SIZE
 	default 4096 if CTR_DEFAULTS
