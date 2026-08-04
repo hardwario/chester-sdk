@@ -86,7 +86,7 @@ jobs:
   build-sample:
     runs-on: ubuntu-latest
     container:
-      image: hardwario/nrf-connect-sdk-build:v2.9.0-1
+      image: hardwario/nrf-connect-sdk-build:v3.4.0-1
     needs:
       - prepare
     # Samples are compile-checks only; skip them on release tags so the app
@@ -127,7 +127,7 @@ jobs:
   build-app:
     runs-on: ubuntu-latest
     container:
-      image: hardwario/nrf-connect-sdk-build:v2.9.0-1
+      image: hardwario/nrf-connect-sdk-build:v3.4.0-1
     needs:
       - prepare
     continue-on-error: true
@@ -212,7 +212,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     container:
-      image: hardwario/nrf-connect-sdk-build:v2.9.0-1
+      image: hardwario/nrf-connect-sdk-build:v3.4.0-1
     needs:
       - prepare
       - build-app
