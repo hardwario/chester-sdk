@@ -1,0 +1,5 @@
+*
+!.gitignore
+!memory_trend.py
+!memory_trend.html.tmpl
+!memory-trend.html
