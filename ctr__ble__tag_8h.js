@@ -2,6 +2,10 @@ var ctr__ble__tag_8h =
 [
     [ "CTR_BLE_TAG_COUNT", "ctr__ble__tag_8h.html#a4b0e9dada1db70c8f0a1cf2ce67d5ba3", null ],
     [ "CTR_BLE_TAG_DATA_TIMEOUT_INTERVALS", "ctr__ble__tag_8h.html#aed7e7cc5ebe999cf4e86df86489de1b4", null ],
+    [ "CTR_BLE_TAG_DISCOVER_MAX_DEVICES", "ctr__ble__tag_8h.html#aba01bcbae322f324afbcf3437c08b7a7", null ],
+    [ "CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_DEFAULT", "ctr__ble__tag_8h.html#a34097ff2eea40d3d90c15462b7b0d44f", null ],
+    [ "CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MAX", "ctr__ble__tag_8h.html#a2303d4301d2a6972fc8770c5932fd401", null ],
+    [ "CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MIN", "ctr__ble__tag_8h.html#a98e0656712f0206e681dbf57fca8827b", null ],
     [ "CTR_BLE_TAG_ENROLL_RSSI_THRESHOLD", "ctr__ble__tag_8h.html#a73a24ad8ccf425def26a695a4c9c4506", null ],
     [ "CTR_BLE_TAG_ENROLL_TIMEOUT_SEC", "ctr__ble__tag_8h.html#af9ae7d1893e666653b6f768d599609b0", null ],
     [ "CTR_BLE_TAG_SCAN_MAX_TIME", "ctr__ble__tag_8h.html#a55003a22867f2546d165874399d036b0", null ],
