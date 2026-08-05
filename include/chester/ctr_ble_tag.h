@@ -32,6 +32,14 @@ extern "C" {
 
 #define CTR_BLE_TAG_SCAN_MAX_TIME 0x4000
 
+#define CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MIN     1
+#define CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MAX     300
+#define CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_DEFAULT 60
+/* Unique tags one discovery scan can report. Costs BT_ADDR_SIZE per entry. A real room comes
+ * close to this - the test unit sees 29 to 31 - so a scan that fills the table says so rather
+ * than dropping the rest in silence. */
+#define CTR_BLE_TAG_DISCOVER_MAX_DEVICES         32
+
 #define CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE          BIT(0)
 #define CTR_BLE_TAG_SENSOR_MASK_HUMIDITY             BIT(1)
 #define CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED      BIT(2)

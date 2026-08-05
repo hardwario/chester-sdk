@@ -76,6 +76,39 @@ struct ble_tag_data {
 static struct ble_tag_data m_tag_data[CTR_BLE_TAG_COUNT];
 static K_MUTEX_DEFINE(m_tag_data_lock);
 
+/* `tag read all` prints each device the moment it is first seen, directly from discover_cb, so
+ * no per-device sensor state needs to be retained. Only the address is kept, purely to dedupe
+ * repeat adverts from the same tag during the scan window and to report a final unique count. */
+static uint8_t m_discover_seen[CTR_BLE_TAG_DISCOVER_MAX_DEVICES][BT_ADDR_SIZE];
+static size_t m_discover_seen_count;
+static bool m_discover_full;
+static K_MUTEX_DEFINE(m_discover_lock);
+
+/* `tag read all` needs two delays - one waiting for a scan opportunity, one for the scan window
+ * itself - and nothing else, because the adverts arrive on the BT RX thread through discover_cb.
+ * So it runs as a two-step delayed work item, which supplies both delays and the terminating
+ * timer, on the system workqueue - rather than on a thread whose whole purpose is to sleep. */
+#define DISCOVER_SCAN_LOCK_ATTEMPTS 30
+
+enum discover_step {
+	DISCOVER_STEP_START,
+	DISCOVER_STEP_STOP,
+};
+
+static atomic_t m_discover_busy;
+static enum discover_step m_discover_step;
+static int m_discover_attempts;
+
+static void discover_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(m_discover_work, discover_work_handler);
+
+struct discover_req {
+	const struct shell *shell;
+	int timeout_sec;
+};
+
+static struct discover_req m_discover_req;
+
 static int m_enroll_threshold;
 static char m_enroll_addr_str[BT_ADDR_SIZE * 2 + 1];
 
@@ -388,6 +421,88 @@ static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 			magnet_detected, moving, movement_event_count, low_battery, roll, pitch);
 }
 
+static void discover_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+			struct net_buf_simple *buf)
+{
+	int ret;
+
+	float temperature = NAN;
+	float humidity = NAN;
+	float voltage = NAN;
+	bool magnet_detected = false;
+	bool moving = false;
+	float movement_event_count = 0;
+	bool low_battery = false;
+	float roll = 0;
+	float pitch = 0;
+
+	int16_t sensor_mask =
+		parse_data(buf, &temperature, &humidity, &voltage, &magnet_detected, &moving,
+			   &movement_event_count, &low_battery, &roll, &pitch);
+
+	if (sensor_mask < 0) {
+		/* Not a HARDWARIO BLE tag advertisement */
+		return;
+	}
+
+	k_mutex_lock(&m_discover_lock, K_FOREVER);
+
+	for (size_t i = 0; i < m_discover_seen_count; i++) {
+		if (memcmp(m_discover_seen[i], addr->a.val, BT_ADDR_SIZE) == 0) {
+			/* Already printed on first sighting */
+			k_mutex_unlock(&m_discover_lock);
+			return;
+		}
+	}
+
+	if (m_discover_seen_count >= CTR_BLE_TAG_DISCOVER_MAX_DEVICES) {
+		/* Table full. Report it once rather than dropping in silence: otherwise the
+		 * closing count reads as the complete picture and a consumer has no way to
+		 * tell that nearby tags were left out. */
+		if (!m_discover_full) {
+			m_discover_full = true;
+			shell_fprintf(m_discover_req.shell, SHELL_NORMAL,
+				      "reached the %d tag limit, further tags not reported\n",
+				      CTR_BLE_TAG_DISCOVER_MAX_DEVICES);
+		}
+
+		k_mutex_unlock(&m_discover_lock);
+		return;
+	}
+
+	memcpy(m_discover_seen[m_discover_seen_count], addr->a.val, BT_ADDR_SIZE);
+	size_t index = m_discover_seen_count++;
+
+	k_mutex_unlock(&m_discover_lock);
+
+	uint8_t swap_addr[BT_ADDR_SIZE];
+	char addr_str[BT_ADDR_SIZE * 2 + 1];
+
+	sys_memcpy_swap(swap_addr, addr->a.val, BT_ADDR_SIZE);
+
+	ret = ctr_buf2hex(swap_addr, BT_ADDR_SIZE, addr_str, sizeof(addr_str), false);
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
+		return;
+	}
+
+	const struct shell *shell = m_discover_req.shell;
+
+	shell_fprintf(shell, SHELL_NORMAL, "found %zu: addr: %s / rssi: %d dBm", index, addr_str,
+		      rssi);
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
+		shell_fprintf(shell, SHELL_NORMAL, " / voltage: %.2f V",
+			      (double)(voltage / 1000.f));
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
+		shell_fprintf(shell, SHELL_NORMAL, " / temperature: %.2f C", (double)temperature);
+	}
+
+	shell_fprintf(shell, SHELL_NORMAL, "\n");
+}
+
 static void start_scan_work_handler(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(m_start_scan_work, start_scan_work_handler);
 
@@ -479,41 +594,41 @@ int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int8_t *rss
 		*rssi = m_tag_data[slot].rssi;
 	}
 
-	if (voltage && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
+	if (voltage && m_tag_data[slot].sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
 		*voltage = m_tag_data[slot].voltage / 1000.f;
 	}
 
-	if (temperature && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
+	if (temperature && m_tag_data[slot].sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
 		*temperature = m_tag_data[slot].temperature;
 	}
 
-	if (humidity && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
+	if (humidity && m_tag_data[slot].sensor_mask & CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
 		*humidity = m_tag_data[slot].humidity;
 	}
 
-	if (magnet_detected && m_tag_data[slot].sensor_mask &&
+	if (magnet_detected && m_tag_data[slot].sensor_mask &
 	    CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED) {
 		*magnet_detected = m_tag_data[slot].magnet_detected;
 	}
 
-	if (moving && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_MOVING) {
+	if (moving && m_tag_data[slot].sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVING) {
 		*moving = m_tag_data[slot].moving;
 	}
 
-	if (movement_event_count && m_tag_data[slot].sensor_mask &&
+	if (movement_event_count && m_tag_data[slot].sensor_mask &
 	    CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT) {
 		*movement_event_count = m_tag_data[slot].movement_event_count;
 	}
 
-	if (roll && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_ROLL) {
+	if (roll && m_tag_data[slot].sensor_mask & CTR_BLE_TAG_SENSOR_MASK_ROLL) {
 		*roll = m_tag_data[slot].roll;
 	}
 
-	if (pitch && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_PITCH) {
+	if (pitch && m_tag_data[slot].sensor_mask & CTR_BLE_TAG_SENSOR_MASK_PITCH) {
 		*pitch = m_tag_data[slot].pitch;
 	}
 
-	if (low_battery && m_tag_data[slot].sensor_mask && CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY) {
+	if (low_battery && m_tag_data[slot].sensor_mask & CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY) {
 		*low_battery = m_tag_data[slot].low_battery;
 	}
 
@@ -1007,6 +1122,79 @@ static int cmd_config_clear_tags(const struct shell *shell, size_t argc, char **
 	return 0;
 }
 
+/* Both steps of `tag read all`, run on the system workqueue. START waits for a scan opportunity,
+ * retrying by rescheduling itself instead of sleeping, then opens the scan and arms the window.
+ * STOP closes the scan and reports. Neither step may ever block: the queue is shared. */
+static void discover_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	const struct shell *shell = m_discover_req.shell;
+	int ret;
+
+	if (m_discover_step == DISCOVER_STEP_STOP) {
+		ret = bt_le_scan_stop();
+
+		k_mutex_unlock(&m_scan_lock);
+
+		if (ret) {
+			LOG_ERR("Call `bt_le_scan_stop` failed: %d", ret);
+			shell_error(shell, "command failed");
+			atomic_clear(&m_discover_busy);
+			return;
+		}
+
+		shell_print(shell, "scan finished");
+
+		k_mutex_lock(&m_discover_lock, K_FOREVER);
+		size_t found = m_discover_seen_count;
+		k_mutex_unlock(&m_discover_lock);
+
+		shell_print(shell, "discovered %zu BLE tag(s)", found);
+		shell_print(shell, "command succeeded");
+
+		/* Cleared last — guards reuse of the work item by the next invocation. */
+		atomic_clear(&m_discover_busy);
+		return;
+	}
+
+	if (k_mutex_lock(&m_scan_lock, K_NO_WAIT) != 0) {
+		if (--m_discover_attempts <= 0) {
+			shell_print(shell, "waiting timed out");
+			shell_error(shell, "command failed");
+			atomic_clear(&m_discover_busy);
+			return;
+		}
+
+		shell_print(shell, "waiting for scan opportunity...");
+		k_work_reschedule(&m_discover_work, K_SECONDS(2));
+		return;
+	}
+
+	k_mutex_lock(&m_discover_lock, K_FOREVER);
+	m_discover_seen_count = 0;
+	m_discover_full = false;
+	k_mutex_unlock(&m_discover_lock);
+
+	shell_print(shell, "discovering all nearby BLE tags for %d s...",
+		    m_discover_req.timeout_sec);
+
+	struct bt_le_scan_param param = SCAN_PARAMS_DEFAULTS;
+	param.options = BT_LE_SCAN_OPT_NONE;
+
+	ret = bt_le_scan_start(&param, discover_cb);
+	if (ret) {
+		LOG_ERR("Call `bt_le_scan_start` failed: %d", ret);
+		shell_error(shell, "command failed");
+		k_mutex_unlock(&m_scan_lock);
+		atomic_clear(&m_discover_busy);
+		return;
+	}
+
+	m_discover_step = DISCOVER_STEP_STOP;
+	k_work_reschedule(&m_discover_work, K_SECONDS(m_discover_req.timeout_sec));
+}
+
 static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
@@ -1015,6 +1203,44 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 		shell_print(shell, "tag functionality is disabled");
 		shell_error(shell, "command aborted");
 		return -EPERM;
+	}
+
+	if (argc >= 2) {
+		if (strcmp(argv[1], "all") != 0) {
+			shell_error(shell, "unknown parameter: %s", argv[1]);
+			shell_help(shell);
+			return -EINVAL;
+		}
+
+		int timeout_sec = CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_DEFAULT;
+
+		if (argc == 3) {
+			long v = strtol(argv[2], NULL, 10);
+			if (v < CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MIN ||
+			    v > CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MAX) {
+				shell_error(shell, "timeout out of range [%d:%d]",
+					    CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MIN,
+					    CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MAX);
+				return -EINVAL;
+			}
+			timeout_sec = (int)v;
+		}
+
+		/* Discover runs asynchronously on the system workqueue; the command returns
+		 * immediately and results are printed as the scan progresses. */
+		if (!atomic_cas(&m_discover_busy, 0, 1)) {
+			shell_error(shell, "discover already in progress");
+			return -EBUSY;
+		}
+
+		m_discover_req.shell = shell;
+		m_discover_req.timeout_sec = timeout_sec;
+		m_discover_step = DISCOVER_STEP_START;
+		m_discover_attempts = DISCOVER_SCAN_LOCK_ATTEMPTS;
+
+		k_work_reschedule(&m_discover_work, K_NO_WAIT);
+
+		return 0;
 	}
 
 	for (int i = 30; i; i--) {
@@ -1588,7 +1814,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				  "Configuration commands.",
 				  print_help, 1, 0),
 	SHELL_CMD_ARG(enroll, NULL, "Enroll a device nearby (12 seconds) <threshold (-128:0)>.", cmd_enroll, 1, 1),
-	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (12 seconds).", cmd_scan, 1, 0),
+	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (12s), or all nearby tags: read [all [timeout 1-300s]].", cmd_scan, 1, 2),
 	SHELL_CMD_ARG(show, NULL, "Show cached readings of enrolled devices.", cmd_show, 1, 0),
 
 	SHELL_SUBCMD_SET_END
