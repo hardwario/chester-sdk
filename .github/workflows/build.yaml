@@ -178,7 +178,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         working-directory: ${{ steps.build-command.outputs.app_path }}
         run: |
-          set -euo pipefail
+          set -eu
           # Sysbuild output layout (NCS v3.3+): the merged image and DFU bundle
           # live at the top of build/, and the application image lives in the
           # per-domain dir build/<app>/zephyr/.
