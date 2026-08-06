@@ -1,5 +1,2 @@
-hardwario
-hardwario-chester
-hardwario-cloud
-hardwario-common
+hardwario>=1.7.0
 cbor2
