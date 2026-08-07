@@ -63,14 +63,18 @@ jobs:
       - name: versions
         id: versions
         run: |
-          NCS=$(cat chester-sdk/nrf/VERSION)
-          echo ncs=${NCS} >> $GITHUB_OUTPUT
-          ZEPHYR=$(awk -F' *= *' '
-            /^VERSION_MAJOR/ {major=$2}
-            /^VERSION_MINOR/ {minor=$2}
-            /^PATCHLEVEL/    {patch=$2}
-            END {printf "%s.%s.%s", major, minor, patch}' chester-sdk/zephyr/VERSION)
-          echo zephyr=${ZEPHYR} >> $GITHUB_OUTPUT
+          # Both nrf/VERSION and zephyr/VERSION are Kconfig-style "key = value"
+          # files; NCS switched to this format in v3.x, where `cat` yielded the
+          # whole file as the version string.
+          ver() {
+            awk -F' *= *' '
+              /^VERSION_MAJOR/ {major=$2}
+              /^VERSION_MINOR/ {minor=$2}
+              /^PATCHLEVEL/    {patch=$2}
+              END {printf "%s.%s.%s", major, minor, patch}' "$1"
+          }
+          echo ncs=$(ver chester-sdk/nrf/VERSION) >> $GITHUB_OUTPUT
+          echo zephyr=$(ver chester-sdk/zephyr/VERSION) >> $GITHUB_OUTPUT
       - name: Generate Matrix
         id: generate-matrix
         working-directory: ./chester-sdk/chester

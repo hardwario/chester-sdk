@@ -21,6 +21,8 @@ import sys
 
 import yaml
 
+from hardwario.chester.utils import find_hex
+
 PREFIX = 'com.hardwario.chester.app.'
 HERE = os.path.dirname(os.path.realpath(__file__))
 APPS_DIR = os.path.join(HERE, '../applications')
@@ -81,13 +83,20 @@ def main():
     parser.add_argument('--out', help='Write notes to this file (default: stdout)')
     args = parser.parse_args()
 
-    rows = []
+    # Pre-flight: resolve and check every variant before uploading anything, so
+    # a failed build or a project.yaml mismatch cannot leave a half-published
+    # version on the firmware server. find_hex() is the same discovery the
+    # upload itself performs, so a present-but-empty artifact dir is caught too.
+    pending = []
     for suffix in matrix_applications():
         artifact = os.path.join(args.artifacts, f'fw-{suffix}')
-        if not os.path.isdir(artifact):
-            panic(f'Missing firmware artifact for {suffix} ({artifact}); '
+        if not find_hex(artifact, True):
+            panic(f'Missing firmware for {suffix} ({artifact}); '
                   f'a build variant likely failed — refusing to publish a partial release')
-        variant = variant_for(suffix)
+        pending.append((artifact, variant_for(suffix)))
+
+    rows = []
+    for artifact, variant in pending:
         identifier, link = upload(variant['fw_name'], args.version, artifact)
         rows.append((variant['name'], link, identifier))
         print(f'uploaded {variant["fw_name"]} -> {link}', file=sys.stderr)
