@@ -147,6 +147,21 @@ jobs:
           path: 'chester-sdk/chester'
           fetch-depth: 0
           fetch-tags: true
+      - name: restore annotated tag
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: ./chester-sdk/chester
+        run: |
+          set -eu
+          # actions/checkout re-fetches the ref being checked out as
+          # `+<sha>:refs/tags/<tag>`, which overwrites the annotated tag object
+          # with a lightweight ref pointing straight at the commit. `git describe`
+          # without --tags only considers annotated tags, so it skips the release
+          # tag and names the *previous* one: the firmware gets stamped
+          # v4.0.0-rc1-3-g404d6ffe3a07 instead of v4.0.0-rc2. This feeds Zephyr's
+          # APP_BUILD_VERSION (ctr_info_get_fw_version) and scripts/version.cmake.
+          # Re-fetching refs/tags/* restores the annotated objects.
+          git fetch --force origin '+refs/tags/*:refs/tags/*'
+          echo "firmware version: $(git describe --abbrev=12 --always)"
       - name: gen build command
         id: build-command
         working-directory: ./chester-sdk/chester
