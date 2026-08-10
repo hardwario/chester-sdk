@@ -78,7 +78,7 @@ static int bands_parse_cb(const struct shell *shell, char *argv,
 static int network_parse_cb(const struct shell *shell, char *argv,
 			    const struct ctr_config_item *item);
 
-static struct ctr_config_item m_config_items[] = {
+static const struct ctr_config_item m_config_items[] = {
 	CTR_CONFIG_ITEM_BOOL("test", m_config_interim.test, "LTE V2 test", false),
 	CTR_CONFIG_ITEM_ENUM("antenna", m_config_interim.antenna, m_enum_antenna_items,
 			     "antenna type", CONFIG_CTR_LTE_V2_CONFIG_ANTENNA),

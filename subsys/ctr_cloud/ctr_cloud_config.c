@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(ctr_cloud_config, CONFIG_CTR_CLOUD_LOG_LEVEL);
 struct ctr_cloud_config g_ctr_cloud_config;
 static struct ctr_cloud_config m_config_interim;
 
-static struct ctr_config_item m_config_items[] = {
+static const struct ctr_config_item m_config_items[] = {
 #if defined(CONFIG_CTR_CLOUD_SPOOL)
 	CTR_CONFIG_ITEM_INT("spool-size", m_config_interim.spool_size, 0, 100,
 			    "maximum number of messages stored in the spool", 10),

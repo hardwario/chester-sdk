@@ -10,7 +10,7 @@ struct ctr_radon_config g_ctr_radon_config;
 static struct ctr_radon_config m_config_interim;
 
 /* clang-format off */
-static struct ctr_config_item m_config_items[] = {
+static const struct ctr_config_item m_config_items[] = {
 	CTR_CONFIG_ITEM_INT("modbus-baud", m_config_interim.modbus_baud, 1200, 19200, "Get/Set modbus baudrate.", 19200),
 	CTR_CONFIG_ITEM_INT("modbus-addr", m_config_interim.modbus_addr, 1, 247, "Get/Set modbus slave address.", 1),
 	CTR_CONFIG_ITEM_ENUM("modbus-parity", m_config_interim.modbus_parity, ((const char *[]){ "none", "odd", "even" }), "Set modbus parity", UART_CFG_PARITY_EVEN),
