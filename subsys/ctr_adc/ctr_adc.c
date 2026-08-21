@@ -38,7 +38,15 @@ int ctr_adc_init(enum ctr_adc_channel channel)
 		.channel_id = (uint8_t)channel,
 		.differential = 0,
 #if defined(CONFIG_ADC_CONFIGURABLE_INPUTS)
-		.input_positive = SAADC_CH_PSELP_PSELP_AnalogInput0 + (uint8_t)channel
+		/*
+		 * `ctr_adc_channel` enum values are the SAADC analog-input (AINx) indices.
+		 * Since NCS-3.4 (Zephyr 4.4.1) the nrfx-based SAADC driver takes
+		 * `input_positive` as the AIN index directly (0-based). The previous
+		 * `SAADC_CH_PSELP_PSELP_AnalogInput0 + channel` added a base of 1, which the
+		 * new driver double-counts, shifting every channel to the neighbouring
+		 * (floating) AIN and returning wrong/erratic values. Pass the index directly.
+		 */
+		.input_positive = (uint8_t)channel
 #endif
 	};
 
@@ -86,7 +94,12 @@ int ctr_adc_read(enum ctr_adc_channel channel, uint16_t *sample)
 		.buffer_size = sizeof(*sample),
 		.resolution = 12,
 		.oversampling = 4,
-		.calibrate = true,
+		/*
+		 * Do NOT calibrate per read: on NCS-3.4 the nrfx SAADC calibrate-then-sample
+		 * path contaminates the oversampled result. The SAADC's uncalibrated offset is
+		 * small; reads are accurate without it (verified against a reference meter).
+		 */
+		.calibrate = false,
 	};
 
 	ret = adc_read(m_dev, &sequence);
