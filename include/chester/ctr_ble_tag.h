@@ -18,13 +18,17 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_CTR_BLE_TAG_32_SLOTS)
-#define CTR_BLE_TAG_COUNT 32
+#if defined(CONFIG_CTR_BLE_TAG_SLOTS)
+#define CTR_BLE_TAG_COUNT CONFIG_CTR_BLE_TAG_SLOTS
 #else
+/* Subsystem disabled - keep the historical default so consumers guarded only by
+ * a feature macro still compile. */
 #define CTR_BLE_TAG_COUNT 8
 #endif
 
 #define CTR_BLE_TAG_ENROLL_TIMEOUT_SEC 12
+
+#define CTR_BLE_TAG_READ_TIMEOUT_SEC 12
 
 #define CTR_BLE_TAG_ENROLL_RSSI_THRESHOLD -40
 
@@ -32,13 +36,17 @@ extern "C" {
 
 #define CTR_BLE_TAG_SCAN_MAX_TIME 0x4000
 
-#define CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MIN     1
-#define CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MAX     300
-#define CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_DEFAULT 60
+/* Bounds shared by every operator-driven scan: discovery, sampling and enrolment. */
+#define CTR_BLE_TAG_SCAN_TIMEOUT_SEC_MIN 1
+#define CTR_BLE_TAG_SCAN_TIMEOUT_SEC_MAX 300
+
+#define CTR_BLE_TAG_DISCOVERY_TIMEOUT_SEC_DEFAULT 60
+#define CTR_BLE_TAG_SAMPLE_TIMEOUT_SEC_DEFAULT    60
+
 /* Unique tags one discovery scan can report. Costs BT_ADDR_SIZE per entry. A real room comes
  * close to this - the test unit sees 29 to 31 - so a scan that fills the table says so rather
  * than dropping the rest in silence. */
-#define CTR_BLE_TAG_DISCOVER_MAX_DEVICES         32
+#define CTR_BLE_TAG_DISCOVER_MAX_DEVICES 32
 
 #define CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE          BIT(0)
 #define CTR_BLE_TAG_SENSOR_MASK_HUMIDITY             BIT(1)

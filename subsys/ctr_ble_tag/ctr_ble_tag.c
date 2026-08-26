@@ -6,7 +6,6 @@
 
 /* CHESTER includes */
 #include <chester/ctr_ble_tag.h>
-#include <chester/ctr_buf.h>
 #include <chester/ctr_config.h>
 #include <chester/ctr_info.h>
 #include <chester/ctr_util.h>
@@ -35,6 +34,18 @@ LOG_MODULE_REGISTER(ctr_ble_tag, CONFIG_CTR_BLE_TAG_LOG_LEVEL);
 
 #define SETTINGS_PFX "ble_tag"
 
+/* Module name the config items report. ctr_config_show_item() prints
+ * `<module> config <name> <value>`, and the shell root of this subsystem is `tag`,
+ * so the items have to say `tag` for those lines to be valid set commands. The
+ * settings subtree stays SETTINGS_PFX: h_set() and h_export() below are hand-rolled
+ * and never derive a storage key from item->module, unlike ctr_config_h_export(). */
+#define ITEM_MODULE "tag"
+
+/* Per-slot storage key. Deliberately kept as the original hand-written `addr-N`
+ * so that settings written by earlier firmware keep loading unchanged. */
+#define SLOT_KEY_FMT  "addr-%zu"
+#define SLOT_KEY_SIZE (sizeof("addr-") + 2)
+
 #define SCAN_PARAMS_DEFAULTS                                                                       \
 	{                                                                                          \
 		.type = BT_LE_SCAN_TYPE_ACTIVE,                                                    \
@@ -50,12 +61,176 @@ struct config {
 	uint8_t addr[CTR_BLE_TAG_COUNT][BT_ADDR_SIZE];
 };
 
-static struct config m_config_interim = {
-	.scan_interval = 300,
-	.scan_duration = 12,
-};
+static struct config m_config_interim;
 
 static struct config m_config;
+
+/* Text mirror of m_config_interim.addr[], in human byte order - what the `slot-N`
+ * config items show and parse. The binary array stays the single source of truth for
+ * the radio, so nothing in storage, in the accept list or in any memcmp() site had to
+ * change. Deliberately not a member of `struct config`: h_commit() memcpy()s that
+ * whole struct into m_config, which would pay for the mirror twice.
+ *
+ * The two representations are only ever written together, by slot_set(). */
+static char m_addr_str[CTR_BLE_TAG_COUNT][BT_ADDR_SIZE * 2 + 1];
+
+/* Serialises edits to the pair above. Enrolment writes them from the Bluetooth RX thread
+ * while the shell can be writing them too, and slot_set() has to update both together.
+ * Held before m_tag_data_lock wherever both are needed. */
+static K_MUTEX_DEFINE(m_config_lock);
+
+/* Re-render the text mirror of one slot from its binary address. */
+static void slot_addr_str_render(size_t slot)
+{
+	int ret;
+	uint8_t swap_addr[BT_ADDR_SIZE];
+
+	if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
+		m_addr_str[slot][0] = '\0';
+		return;
+	}
+
+	sys_memcpy_swap(swap_addr, m_config_interim.addr[slot], BT_ADDR_SIZE);
+
+	ret = ctr_buf2hex(swap_addr, BT_ADDR_SIZE, m_addr_str[slot], sizeof(m_addr_str[slot]),
+			  false);
+	if (ret < 0) {
+		LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
+		m_addr_str[slot][0] = '\0';
+	}
+}
+
+/* The only writer of a slot address. Pass NULL to clear the slot. Keeping both
+ * representations in one place is the whole invariant behind the text mirror. */
+static void slot_set(size_t slot, const uint8_t *addr)
+{
+	k_mutex_lock(&m_config_lock, K_FOREVER);
+
+	if (addr == NULL) {
+		memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
+	} else {
+		memcpy(m_config_interim.addr[slot], addr, BT_ADDR_SIZE);
+	}
+
+	slot_addr_str_render(slot);
+
+	k_mutex_unlock(&m_config_lock);
+}
+
+/* Locate the slot holding a BLE-order address. Reports the index through `slot` when
+ * given, so callers that only need "is it enrolled" can pass NULL. */
+static bool slot_find_addr(const uint8_t *addr, size_t *slot)
+{
+	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		if (memcmp(m_config_interim.addr[i], addr, BT_ADDR_SIZE) == 0) {
+			if (slot != NULL) {
+				*slot = i;
+			}
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* True when an edited slot has not been applied yet, so the committed configuration - and
+ * with it the accept list the radio follows - still differs from what the shell reports. */
+static bool slots_staged(void)
+{
+	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		if (memcmp(m_config.addr[i], m_config_interim.addr[i], BT_ADDR_SIZE) != 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Slots of the active configuration that hold a tag. */
+static size_t enrolled_count(void)
+{
+	size_t n = 0;
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (!ctr_ble_tag_is_addr_empty(m_config.addr[slot])) {
+			n++;
+		}
+	}
+
+	return n;
+}
+
+/* Locate the lowest unoccupied slot, on the same terms as slot_find_addr(). */
+static bool slot_find_free(size_t *slot)
+{
+	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[i])) {
+			if (slot != NULL) {
+				*slot = i;
+			}
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static int slot_parse_cb(const struct shell *shell, char *argv, const struct ctr_config_item *item);
+static void print_slot(const struct shell *shell, size_t slot);
+
+/* The shared CTR_CONFIG_ITEM_* macros hardcode `.module = SETTINGS_PFX`, which would
+ * print `ble_tag config ...` and not match the `tag` shell root, so the items are
+ * declared here with ITEM_MODULE instead. */
+#define TAG_CONFIG_ITEM_BOOL(_name_d, _var, _help, _default)                                       \
+	{                                                                                          \
+		.module = ITEM_MODULE,                                                             \
+		.name = _name_d,                                                                   \
+		.type = CTR_CONFIG_TYPE_BOOL,                                                      \
+		.variable = &_var,                                                                 \
+		.size = sizeof(_var),                                                              \
+		.help = _help,                                                                     \
+		.default_bool = _default,                                                          \
+	}
+
+#define TAG_CONFIG_ITEM_INT(_name_d, _var, _min, _max, _help, _default)                            \
+	{                                                                                          \
+		.module = ITEM_MODULE,                                                             \
+		.name = _name_d,                                                                   \
+		.type = CTR_CONFIG_TYPE_INT,                                                       \
+		.variable = &_var,                                                                 \
+		.size = sizeof(_var),                                                              \
+		.min = _min,                                                                       \
+		.max = _max,                                                                       \
+		.help = _help,                                                                     \
+		.default_int = _default,                                                           \
+	}
+
+#define TAG_CONFIG_ITEM_SLOT(_i, _)                                                                \
+	{                                                                                          \
+		.module = ITEM_MODULE,                                                             \
+		.name = "slot-" #_i,                                                               \
+		.type = CTR_CONFIG_TYPE_STRING,                                                    \
+		.variable = m_addr_str[_i],                                                        \
+		.size = sizeof(m_addr_str[_i]),                                                    \
+		.help = "BLE tag address of slot " #_i                                             \
+			" (12 hex digits, empty clears it, `tag apply` to take effect).",          \
+		.default_string = "",                                                              \
+		.parse_cb = slot_parse_cb,                                                         \
+	}
+
+/* clang-format off */
+static const struct ctr_config_item m_config_items[] = {
+	TAG_CONFIG_ITEM_BOOL("enabled", m_config_interim.enabled,
+			     "Enable or disable the BLE tag scanner.", false),
+	TAG_CONFIG_ITEM_INT("scan-interval", m_config_interim.scan_interval, 1, 86400,
+			    "BLE tag scanner scan interval in seconds.", 300),
+	TAG_CONFIG_ITEM_INT("scan-duration", m_config_interim.scan_duration, 1, 86400,
+			    "BLE tag scanner scan duration in seconds.", 12),
+
+	/* LISTIFY's separator has to stay parenthesised, which clang-format rewrites. */
+	LISTIFY(CTR_BLE_TAG_COUNT, TAG_CONFIG_ITEM_SLOT, (,)),
+};
+/* clang-format on */
 
 struct ble_tag_data {
 	bool valid;
@@ -76,7 +251,7 @@ struct ble_tag_data {
 static struct ble_tag_data m_tag_data[CTR_BLE_TAG_COUNT];
 static K_MUTEX_DEFINE(m_tag_data_lock);
 
-/* `tag read all` prints each device the moment it is first seen, directly from discover_cb, so
+/* `tag discovery` prints each device the moment it is first seen, directly from discover_cb, so
  * no per-device sensor state needs to be retained. Only the address is kept, purely to dedupe
  * repeat adverts from the same tag during the scan window and to report a final unique count. */
 static uint8_t m_discover_seen[CTR_BLE_TAG_DISCOVER_MAX_DEVICES][BT_ADDR_SIZE];
@@ -84,35 +259,66 @@ static size_t m_discover_seen_count;
 static bool m_discover_full;
 static K_MUTEX_DEFINE(m_discover_lock);
 
-/* `tag read all` needs two delays - one waiting for a scan opportunity, one for the scan window
- * itself - and nothing else, because the adverts arrive on the BT RX thread through discover_cb.
- * So it runs as a two-step delayed work item, which supplies both delays and the terminating
- * timer, on the system workqueue - rather than on a thread whose whole purpose is to sleep. */
-#define DISCOVER_SCAN_LOCK_ATTEMPTS 30
+/* Own queue, not the system workqueue and not m_scan_work_q: the SCAN_JOB_ENROLL STOP step
+ * calls apply(), which can block for several seconds waiting out a contended m_scan_lock.
+ * That can never be allowed to stall the system workqueue (shared with everything, including
+ * BT HCI), and scan_lock_acquire() must not run on m_scan_work_q -- its own handlers hold
+ * m_scan_lock across two work items on that queue's single thread, and k_mutex is recursive
+ * for its owner, so a lock attempt from that same thread would succeed immediately and wrongly
+ * while a scan is genuinely still running. Only job_work_handler() is ever queued here. */
+static struct k_work_q m_job_work_q;
+static K_THREAD_STACK_DEFINE(m_job_work_q_stack, 2048);
 
-enum discover_step {
-	DISCOVER_STEP_START,
-	DISCOVER_STEP_STOP,
+/* An operator-driven scan needs two delays - one waiting for a scan opportunity, one for the
+ * window itself - and nothing else, because the adverts arrive on the BT RX thread through the
+ * per-kind callback. So a job runs as a two-step delayed work item, which supplies both delays
+ * and the terminating timer, on the dedicated m_job_work_q above rather than on a thread whose
+ * whole purpose would be to sleep. Sampling and enrolment can still finish early: their
+ * callbacks reschedule the item, which replaces the pending window timeout. */
+#define SCAN_JOB_LOCK_ATTEMPTS 30
+
+enum scan_job_step {
+	SCAN_JOB_STEP_START,
+	SCAN_JOB_STEP_STOP,
 };
 
-static atomic_t m_discover_busy;
-static enum discover_step m_discover_step;
-static int m_discover_attempts;
+enum scan_job_kind {
+	SCAN_JOB_DISCOVERY,
+	SCAN_JOB_SAMPLE,
+	SCAN_JOB_ENROLL,
+};
 
-static void discover_work_handler(struct k_work *work);
-static K_WORK_DELAYABLE_DEFINE(m_discover_work, discover_work_handler);
-
-struct discover_req {
+/* An operator-driven scan can run for up to CTR_BLE_TAG_SCAN_TIMEOUT_SEC_MAX, so it is carried
+ * out off the shell's thread: blocking a watchdog-monitored thread that long would trip it.
+ * One job at a time, guarded by m_job_busy. */
+struct scan_job {
 	const struct shell *shell;
+	enum scan_job_kind kind;
 	int timeout_sec;
+	int rssi_threshold; /* SCAN_JOB_ENROLL only */
 };
 
-static struct discover_req m_discover_req;
+static struct scan_job m_job;
+static atomic_t m_job_busy;
+static enum scan_job_step m_job_step;
+static int m_job_attempts;
 
-static int m_enroll_threshold;
-static char m_enroll_addr_str[BT_ADDR_SIZE * 2 + 1];
+/* Enrolled slots a sample is waiting for. Computed by the START step, reported by STOP. */
+static size_t m_job_target;
 
-static K_SEM_DEFINE(m_has_enrolled_sem, 0, 1);
+static void job_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(m_job_work, job_work_handler);
+
+/* Called by a scan callback once the job has everything it was waiting for: rescheduling the
+ * work item replaces its pending window timeout, so sampling and enrolment finish early instead
+ * of burning the rest of the window. Safe from the BT RX thread. */
+static void job_finish_early(void)
+{
+	k_work_reschedule_for_queue(&m_job_work_q, &m_job_work, K_NO_WAIT);
+}
+
+/* Tags enrolled by the running SCAN_JOB_ENROLL. */
+static size_t m_enroll_count;
 
 static K_MUTEX_DEFINE(m_scan_lock);
 
@@ -363,8 +569,6 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		      struct net_buf_simple *buf)
 {
-	int ret;
-
 	float temperature = NAN;
 	float humidity = NAN;
 	float voltage = NAN;
@@ -383,39 +587,31 @@ static void enroll_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		return;
 	}
 
-	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-		if (!memcmp(addr->a.val, m_config_interim.addr[slot], BT_ADDR_SIZE)) {
-			return;
+	/* Enrol every tag close enough to be the one in the operator's hand, not just the
+	 * first: provisioning a room otherwise costs one scan window per tag. Held across
+	 * the lookup and the write so a concurrent shell edit cannot claim the same slot. */
+	k_mutex_lock(&m_config_lock, K_FOREVER);
+
+	if (rssi >= m_job.rssi_threshold && !slot_find_addr(addr->a.val, NULL)) {
+		size_t slot;
+
+		if (slot_find_free(&slot)) {
+			slot_set(slot, addr->a.val);
+			m_enroll_count++;
+
+			LOG_INF("Enrolled: %s", m_addr_str[slot]);
+			shell_print(m_job.shell, "enrolled addr: %s -> slot %zu", m_addr_str[slot],
+				    slot);
+		}
+
+		/* Nothing more can be enrolled, so do not hold the radio for the rest of
+		 * the window. */
+		if (!slot_find_free(NULL)) {
+			job_finish_early();
 		}
 	}
 
-	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-		if (rssi < m_enroll_threshold) {
-			break;
-		}
-
-		if (!ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
-			continue;
-		}
-
-		memcpy(m_config_interim.addr[slot], (void *)addr->a.val, BT_ADDR_SIZE);
-
-		uint8_t swap_addr[BT_ADDR_SIZE];
-		sys_memcpy_swap(swap_addr, m_config_interim.addr[slot], BT_ADDR_SIZE);
-
-		ret = ctr_buf2hex(swap_addr, BT_ADDR_SIZE, m_enroll_addr_str,
-				  sizeof(m_enroll_addr_str), false);
-		if (ret < 0) {
-			LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
-			return;
-		}
-
-		LOG_INF("Enrolled: %s", m_enroll_addr_str);
-
-		k_sem_give(&m_has_enrolled_sem);
-
-		break;
-	}
+	k_mutex_unlock(&m_config_lock);
 
 	update_tag_data(addr, rssi, true, sensor_mask, temperature, humidity, voltage,
 			magnet_detected, moving, movement_event_count, low_battery, roll, pitch);
@@ -461,7 +657,7 @@ static void discover_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		 * tell that nearby tags were left out. */
 		if (!m_discover_full) {
 			m_discover_full = true;
-			shell_fprintf(m_discover_req.shell, SHELL_NORMAL,
+			shell_fprintf(m_job.shell, SHELL_NORMAL,
 				      "reached the %d tag limit, further tags not reported\n",
 				      CTR_BLE_TAG_DISCOVER_MAX_DEVICES);
 		}
@@ -486,7 +682,10 @@ static void discover_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		return;
 	}
 
-	const struct shell *shell = m_discover_req.shell;
+	/* Same segments and order as print_slot(), so a discovered tag and an enrolled one
+	 * render identically and a consumer needs only one parser. Written out segment by
+	 * segment rather than assembled in a buffer, which keeps 256 B off the stack. */
+	const struct shell *shell = m_job.shell;
 
 	shell_fprintf(shell, SHELL_NORMAL, "found %zu: addr: %s / rssi: %d dBm", index, addr_str,
 		      rssi);
@@ -498,6 +697,37 @@ static void discover_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 
 	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
 		shell_fprintf(shell, SHELL_NORMAL, " / temperature: %.2f C", (double)temperature);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
+		shell_fprintf(shell, SHELL_NORMAL, " / humidity: %.2f %%", (double)humidity);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED) {
+		shell_fprintf(shell, SHELL_NORMAL, " / magnetic sensor: %s",
+			      magnet_detected ? "detected" : "not detected");
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVING) {
+		shell_fprintf(shell, SHELL_NORMAL, " / moving: %s", moving ? "true" : "false");
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT) {
+		shell_fprintf(shell, SHELL_NORMAL, " / movement event count: %d",
+			      (int)movement_event_count);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_ROLL) {
+		shell_fprintf(shell, SHELL_NORMAL, " / roll: %.2f", (double)roll);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_PITCH) {
+		shell_fprintf(shell, SHELL_NORMAL, " / pitch: %.2f", (double)pitch);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY) {
+		shell_fprintf(shell, SHELL_NORMAL, " / low battery: %s",
+			      low_battery ? "true" : "false");
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "\n");
@@ -512,6 +742,24 @@ static K_WORK_DELAYABLE_DEFINE(m_stop_scan_work, stop_scan_work_handler);
 static void start_scan_work_handler(struct k_work *work)
 {
 	int ret;
+
+	/* `enabled` can be turned off after this item was already scheduled, so the
+	 * cancellation in apply() is not on its own enough to stop the cycle. */
+	if (!m_config.enabled) {
+		LOG_DBG("Scanner disabled, not starting scan");
+		return;
+	}
+
+	/* An empty accept list matches no advertiser, so with no tag enrolled the window would
+	 * spend scan_duration of radio time to learn nothing. Stop the cycle rather than
+	 * rescheduling: the active configuration only ever changes in apply() and in h_commit()
+	 * (the latter via settings_load() at boot), and both apply() itself and init() right
+	 * after settings_load() schedule this item afterwards, so enrolling a tag starts it
+	 * again. */
+	if (enrolled_count() == 0) {
+		LOG_DBG("No tag enrolled, not starting scan");
+		return;
+	}
 
 	LOG_DBG("Starting scan...");
 
@@ -556,6 +804,138 @@ static void stop_scan_work_handler(struct k_work *work)
 	k_mutex_unlock(&m_scan_lock);
 }
 
+/* Arm the controller's accept list from the active configuration. The controller
+ * rejects this while a scan is filtering on the list, so the caller must hold
+ * m_scan_lock, which is held for the whole of every scan window. */
+static int accept_list_rebuild(void)
+{
+	int ret;
+
+	ret = bt_le_filter_accept_list_clear();
+	if (ret) {
+		LOG_ERR("Call `bt_le_filter_accept_list_clear` failed: %d", ret);
+		return ret;
+	}
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (ctr_ble_tag_is_addr_empty(m_config.addr[slot])) {
+			continue;
+		}
+
+		bt_addr_le_t addr = {
+			.type = BT_ADDR_LE_PUBLIC,
+		};
+
+		memcpy(addr.a.val, m_config.addr[slot], BT_ADDR_SIZE);
+
+		ret = bt_le_filter_accept_list_add(&addr);
+		if (ret) {
+			LOG_ERR("Call `bt_le_filter_accept_list_add` failed: %d", ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+/* Take m_scan_lock, waiting out an in-progress scan window. Shared by every command that
+ * needs the radio or the accept list to itself, from the shell thread or the scan-job
+ * thread. Must NOT be called from m_scan_work_q: that queue's own handlers hold this lock
+ * across two work items, and k_mutex is recursive for its owner, so it would succeed
+ * immediately - and wrongly - while a scan is running. */
+static int scan_lock_acquire(const struct shell *shell)
+{
+	int ret;
+
+	for (int i = 30; i; i--) {
+		ret = k_mutex_lock(&m_scan_lock, K_NO_WAIT);
+		if (!ret) {
+			return 0;
+		}
+
+		if (i == 1) {
+			shell_print(shell, "waiting timed out");
+			return -EBUSY;
+		}
+
+		shell_print(shell, "waiting for scan opportunity...");
+
+		k_sleep(K_SECONDS(2));
+	}
+
+	return -EBUSY;
+}
+
+/* Make the edited configuration live without the cold reboot that `config save`
+ * performs: refresh the active copy, re-arm the accept list from it, and bring the
+ * periodic scan into line with `enabled`. */
+static int apply(const struct shell *shell)
+{
+	int ret;
+
+	ret = scan_lock_acquire(shell);
+	if (ret) {
+		return ret;
+	}
+
+	k_mutex_lock(&m_config_lock, K_FOREVER);
+	k_mutex_lock(&m_tag_data_lock, K_FOREVER);
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		/* Readings belong to the address that produced them, so a slot taken over
+		 * by a different tag must not inherit them. A slot that was empty is left
+		 * alone: it holds nothing to inherit, and enrolment stores the advert it
+		 * enrolled from before getting here. */
+		if (ctr_ble_tag_is_addr_empty(m_config.addr[slot])) {
+			continue;
+		}
+
+		if (memcmp(m_config.addr[slot], m_config_interim.addr[slot], BT_ADDR_SIZE) != 0) {
+			memset(&m_tag_data[slot], 0, sizeof(m_tag_data[slot]));
+		}
+	}
+
+	memcpy(&m_config, &m_config_interim, sizeof(m_config));
+
+	k_mutex_unlock(&m_tag_data_lock);
+	k_mutex_unlock(&m_config_lock);
+
+	ret = accept_list_rebuild();
+
+	k_mutex_unlock(&m_scan_lock);
+
+	if (ret) {
+		return ret;
+	}
+
+	/* The scan work is only ever scheduled while enabled, so a change of `enabled`
+	 * has to arm or disarm it here. k_work_schedule_for_queue() leaves an already
+	 * pending item alone, so an ongoing scan cycle is not disturbed. Done after
+	 * unlocking so the queue does not immediately block on m_scan_lock. */
+	if (m_config.enabled) {
+		k_work_schedule_for_queue(&m_scan_work_q, &m_start_scan_work, K_NO_WAIT);
+	} else {
+		(void)k_work_cancel_delayable(&m_start_scan_work);
+	}
+
+	return 0;
+}
+
+static int cmd_apply(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+
+	ret = apply(shell);
+	if (ret) {
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "command succeeded");
+
+	return 0;
+}
+
 int ctr_ble_tag_is_addr_empty(const uint8_t addr[BT_ADDR_SIZE])
 {
 	static const uint8_t empty_addr[BT_ADDR_SIZE] = {0};
@@ -567,7 +947,7 @@ int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int8_t *rss
 			    bool *moving, int *movement_event_count, float *roll, float *pitch,
 			    bool *low_battery, int16_t *sensor_mask, bool *valid)
 {
-	if (slot < 0 || slot >= CTR_BLE_TAG_COUNT) {
+	if (slot >= CTR_BLE_TAG_COUNT) {
 		return -EINVAL;
 	}
 
@@ -606,8 +986,8 @@ int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int8_t *rss
 		*humidity = m_tag_data[slot].humidity;
 	}
 
-	if (magnet_detected && m_tag_data[slot].sensor_mask &
-	    CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED) {
+	if (magnet_detected &&
+	    m_tag_data[slot].sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED) {
 		*magnet_detected = m_tag_data[slot].magnet_detected;
 	}
 
@@ -615,8 +995,8 @@ int ctr_ble_tag_read_cached(size_t slot, uint8_t addr[BT_ADDR_SIZE], int8_t *rss
 		*moving = m_tag_data[slot].moving;
 	}
 
-	if (movement_event_count && m_tag_data[slot].sensor_mask &
-	    CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT) {
+	if (movement_event_count &&
+	    m_tag_data[slot].sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT) {
 		*movement_event_count = m_tag_data[slot].movement_event_count;
 	}
 
@@ -670,40 +1050,15 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 		     sizeof(m_config_interim.scan_interval));
 	SETTINGS_SET("scan-duration", &m_config_interim.scan_duration,
 		     sizeof(m_config_interim.scan_duration));
-	SETTINGS_SET("addr-0", m_config_interim.addr[0], sizeof(m_config_interim.addr[0]));
-	SETTINGS_SET("addr-1", m_config_interim.addr[1], sizeof(m_config_interim.addr[1]));
-	SETTINGS_SET("addr-2", m_config_interim.addr[2], sizeof(m_config_interim.addr[2]));
-	SETTINGS_SET("addr-3", m_config_interim.addr[3], sizeof(m_config_interim.addr[3]));
-	SETTINGS_SET("addr-4", m_config_interim.addr[4], sizeof(m_config_interim.addr[4]));
-	SETTINGS_SET("addr-5", m_config_interim.addr[5], sizeof(m_config_interim.addr[5]));
-	SETTINGS_SET("addr-6", m_config_interim.addr[6], sizeof(m_config_interim.addr[6]));
-	SETTINGS_SET("addr-7", m_config_interim.addr[7], sizeof(m_config_interim.addr[7]));
-#if defined(CONFIG_CTR_BLE_TAG_32_SLOTS)
-	SETTINGS_SET("addr-8", m_config_interim.addr[8], sizeof(m_config_interim.addr[8]));
-	SETTINGS_SET("addr-9", m_config_interim.addr[9], sizeof(m_config_interim.addr[9]));
-	SETTINGS_SET("addr-10", m_config_interim.addr[10], sizeof(m_config_interim.addr[10]));
-	SETTINGS_SET("addr-11", m_config_interim.addr[11], sizeof(m_config_interim.addr[11]));
-	SETTINGS_SET("addr-12", m_config_interim.addr[12], sizeof(m_config_interim.addr[12]));
-	SETTINGS_SET("addr-13", m_config_interim.addr[13], sizeof(m_config_interim.addr[13]));
-	SETTINGS_SET("addr-14", m_config_interim.addr[14], sizeof(m_config_interim.addr[14]));
-	SETTINGS_SET("addr-15", m_config_interim.addr[15], sizeof(m_config_interim.addr[15]));
-	SETTINGS_SET("addr-16", m_config_interim.addr[16], sizeof(m_config_interim.addr[16]));
-	SETTINGS_SET("addr-17", m_config_interim.addr[17], sizeof(m_config_interim.addr[17]));
-	SETTINGS_SET("addr-18", m_config_interim.addr[18], sizeof(m_config_interim.addr[18]));
-	SETTINGS_SET("addr-19", m_config_interim.addr[19], sizeof(m_config_interim.addr[19]));
-	SETTINGS_SET("addr-20", m_config_interim.addr[20], sizeof(m_config_interim.addr[20]));
-	SETTINGS_SET("addr-21", m_config_interim.addr[21], sizeof(m_config_interim.addr[21]));
-	SETTINGS_SET("addr-22", m_config_interim.addr[22], sizeof(m_config_interim.addr[22]));
-	SETTINGS_SET("addr-23", m_config_interim.addr[23], sizeof(m_config_interim.addr[23]));
-	SETTINGS_SET("addr-24", m_config_interim.addr[24], sizeof(m_config_interim.addr[24]));
-	SETTINGS_SET("addr-25", m_config_interim.addr[25], sizeof(m_config_interim.addr[25]));
-	SETTINGS_SET("addr-26", m_config_interim.addr[26], sizeof(m_config_interim.addr[26]));
-	SETTINGS_SET("addr-27", m_config_interim.addr[27], sizeof(m_config_interim.addr[27]));
-	SETTINGS_SET("addr-28", m_config_interim.addr[28], sizeof(m_config_interim.addr[28]));
-	SETTINGS_SET("addr-29", m_config_interim.addr[29], sizeof(m_config_interim.addr[29]));
-	SETTINGS_SET("addr-30", m_config_interim.addr[30], sizeof(m_config_interim.addr[30]));
-	SETTINGS_SET("addr-31", m_config_interim.addr[31], sizeof(m_config_interim.addr[31]));
-#endif
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		char slot_key[SLOT_KEY_SIZE];
+
+		snprintf(slot_key, sizeof(slot_key), SLOT_KEY_FMT, slot);
+
+		SETTINGS_SET(slot_key, m_config_interim.addr[slot],
+			     sizeof(m_config_interim.addr[slot]));
+	}
 
 #undef SETTINGS_SET
 
@@ -713,6 +1068,13 @@ static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb
 static int h_commit(void)
 {
 	LOG_DBG("Loaded settings in full");
+
+	/* h_set() only fills the binary addresses, so the text mirror is brought up to
+	 * date here - the one place besides slot_set() where a slot address changes. */
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		slot_addr_str_render(slot);
+	}
+
 	memcpy(&m_config, &m_config_interim, sizeof(m_config));
 	return 0;
 }
@@ -729,63 +1091,126 @@ static int h_export(int (*export_func)(const char *name, const void *val, size_t
 		    sizeof(m_config_interim.scan_interval));
 	EXPORT_FUNC("scan-duration", &m_config_interim.scan_duration,
 		    sizeof(m_config_interim.scan_duration));
-	EXPORT_FUNC("addr-0", m_config_interim.addr[0], sizeof(m_config_interim.addr[0]));
-	EXPORT_FUNC("addr-1", m_config_interim.addr[1], sizeof(m_config_interim.addr[1]));
-	EXPORT_FUNC("addr-2", m_config_interim.addr[2], sizeof(m_config_interim.addr[2]));
-	EXPORT_FUNC("addr-3", m_config_interim.addr[3], sizeof(m_config_interim.addr[3]));
-	EXPORT_FUNC("addr-4", m_config_interim.addr[4], sizeof(m_config_interim.addr[4]));
-	EXPORT_FUNC("addr-5", m_config_interim.addr[5], sizeof(m_config_interim.addr[5]));
-	EXPORT_FUNC("addr-6", m_config_interim.addr[6], sizeof(m_config_interim.addr[6]));
-	EXPORT_FUNC("addr-7", m_config_interim.addr[7], sizeof(m_config_interim.addr[7]));
-#if defined(CONFIG_CTR_BLE_TAG_32_SLOTS)
-	EXPORT_FUNC("addr-8", m_config_interim.addr[8], sizeof(m_config_interim.addr[8]));
-	EXPORT_FUNC("addr-9", m_config_interim.addr[9], sizeof(m_config_interim.addr[9]));
-	EXPORT_FUNC("addr-10", m_config_interim.addr[10], sizeof(m_config_interim.addr[10]));
-	EXPORT_FUNC("addr-11", m_config_interim.addr[11], sizeof(m_config_interim.addr[11]));
-	EXPORT_FUNC("addr-12", m_config_interim.addr[12], sizeof(m_config_interim.addr[12]));
-	EXPORT_FUNC("addr-13", m_config_interim.addr[13], sizeof(m_config_interim.addr[13]));
-	EXPORT_FUNC("addr-14", m_config_interim.addr[14], sizeof(m_config_interim.addr[14]));
-	EXPORT_FUNC("addr-15", m_config_interim.addr[15], sizeof(m_config_interim.addr[15]));
-	EXPORT_FUNC("addr-16", m_config_interim.addr[16], sizeof(m_config_interim.addr[16]));
-	EXPORT_FUNC("addr-17", m_config_interim.addr[17], sizeof(m_config_interim.addr[17]));
-	EXPORT_FUNC("addr-18", m_config_interim.addr[18], sizeof(m_config_interim.addr[18]));
-	EXPORT_FUNC("addr-19", m_config_interim.addr[19], sizeof(m_config_interim.addr[19]));
-	EXPORT_FUNC("addr-20", m_config_interim.addr[20], sizeof(m_config_interim.addr[20]));
-	EXPORT_FUNC("addr-21", m_config_interim.addr[21], sizeof(m_config_interim.addr[21]));
-	EXPORT_FUNC("addr-22", m_config_interim.addr[22], sizeof(m_config_interim.addr[22]));
-	EXPORT_FUNC("addr-23", m_config_interim.addr[23], sizeof(m_config_interim.addr[23]));
-	EXPORT_FUNC("addr-24", m_config_interim.addr[24], sizeof(m_config_interim.addr[24]));
-	EXPORT_FUNC("addr-25", m_config_interim.addr[25], sizeof(m_config_interim.addr[25]));
-	EXPORT_FUNC("addr-26", m_config_interim.addr[26], sizeof(m_config_interim.addr[26]));
-	EXPORT_FUNC("addr-27", m_config_interim.addr[27], sizeof(m_config_interim.addr[27]));
-	EXPORT_FUNC("addr-28", m_config_interim.addr[28], sizeof(m_config_interim.addr[28]));
-	EXPORT_FUNC("addr-29", m_config_interim.addr[29], sizeof(m_config_interim.addr[29]));
-	EXPORT_FUNC("addr-30", m_config_interim.addr[30], sizeof(m_config_interim.addr[30]));
-	EXPORT_FUNC("addr-31", m_config_interim.addr[31], sizeof(m_config_interim.addr[31]));
-#endif
 
 #undef EXPORT_FUNC
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		char slot_key[sizeof(SETTINGS_PFX "/") + SLOT_KEY_SIZE];
+
+		snprintf(slot_key, sizeof(slot_key), SETTINGS_PFX "/" SLOT_KEY_FMT, slot);
+
+		(void)export_func(slot_key, m_config_interim.addr[slot],
+				  sizeof(m_config_interim.addr[slot]));
+	}
 
 	return 0;
 }
 
-static void print_enabled(const struct shell *shell)
+/* Validate and assign one `slot-N` item. Accepts bare or separated hex in either
+ * case, and an empty string to clear the slot. */
+static int slot_parse_cb(const struct shell *shell, char *argv, const struct ctr_config_item *item)
 {
-	const char *state = m_config_interim.enabled ? "true" : "false";
+	int ret;
+	uint8_t addr[BT_ADDR_SIZE];
+	char norm[BT_ADDR_SIZE * 2 + 1];
+	size_t norm_len = 0;
 
-	shell_print(shell, "tag config enabled %s", state);
+	const size_t slot = ((char *)item->variable - m_addr_str[0]) / sizeof(m_addr_str[0]);
+
+	if (argv[0] == '\0') {
+		slot_set(slot, NULL);
+		return 0;
+	}
+
+	/* ctr_hex2buf() takes bare hex digits, so the separators of a conventionally
+	 * written MAC have to be dropped before it sees the value. */
+	for (const char *p = argv; *p != '\0'; p++) {
+		if (*p == ':' || *p == '-') {
+			continue;
+		}
+
+		if (norm_len >= sizeof(norm) - 1) {
+			norm_len = sizeof(norm); /* Too long - reported below. */
+			break;
+		}
+
+		norm[norm_len++] = tolower((int)*p);
+	}
+
+	if (norm_len != BT_ADDR_SIZE * 2) {
+		shell_error(shell, "expected %d hex digits", BT_ADDR_SIZE * 2);
+		return -EINVAL;
+	}
+
+	norm[norm_len] = '\0';
+
+	ret = ctr_hex2buf(norm, addr, BT_ADDR_SIZE, false);
+	if (ret < 0) {
+		shell_error(shell, "expected %d hex digits", BT_ADDR_SIZE * 2);
+		return -EINVAL;
+	}
+
+	sys_mem_swap(addr, BT_ADDR_SIZE);
+
+	/* An all-zero address is the empty-slot sentinel, so it cannot be assigned. */
+	if (ctr_ble_tag_is_addr_empty(addr)) {
+		shell_error(shell, "use \"\" to clear a slot");
+		return -EINVAL;
+	}
+
+	/* Held across the whole check-then-write below, not just slot_set()'s own write, so
+	 * a concurrent enroll_cb() (Bluetooth RX thread) or another shell edit cannot observe
+	 * the pre-write state and claim the same address in a different slot. */
+	k_mutex_lock(&m_config_lock, K_FOREVER);
+
+	for (size_t i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		if (i == slot) {
+			continue;
+		}
+
+		if (memcmp(m_config_interim.addr[i], addr, BT_ADDR_SIZE) == 0) {
+			k_mutex_unlock(&m_config_lock);
+			shell_error(shell, "tag addr %s already assigned to slot %zu", norm, i);
+			return -EEXIST;
+		}
+	}
+
+	slot_set(slot, addr);
+
+	k_mutex_unlock(&m_config_lock);
+
+	return 0;
 }
 
-static void print_scan_interval(const struct shell *shell)
+/* `tag config <name> <value>` prints nothing on success (an invalid value still
+ * prints shell_error), matching the convention already used by ctr_ble.c and
+ * ctr_lte_v2_config.c. This is deliberate, not an oversight: Manager-App's
+ * config editor writes a slot with ChesterController.runShell(), which treats
+ * 600 ms of quiet as "done" rather than waiting for a command-succeeded
+ * marker -- chester_tag_controller.dart's comment on its `tag config slot-*`
+ * read says so explicitly ("print no end-of-command marker, so these are
+ * quiet-window reads, not marker reads"), and its save path writes each slot
+ * the same way. The long-running commands below (tag discovery/tag list
+ * sample/tag enroll) are the ones that must end in a command-succeeded /
+ * command-failed / command-aborted line, because they can go quiet for
+ * legitimate reasons for up to CTR_BLE_TAG_SCAN_TIMEOUT_SEC_MAX and the app's
+ * quiet-window reader would otherwise return early. */
+static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "tag config scan-interval %d", m_config_interim.scan_interval);
+	return ctr_config_cmd_config(m_config_items, ARRAY_SIZE(m_config_items), shell, argc, argv);
 }
 
-static void print_scan_duration(const struct shell *shell)
+static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "tag config scan-duration %d", m_config_interim.scan_duration);
+	for (size_t i = 0; i < ARRAY_SIZE(m_config_items); i++) {
+		ctr_config_show_item(shell, &m_config_items[i]);
+	}
+
+	return 0;
 }
 
+/* Backs the deprecated `tag config devices list` alias only - the slot list that
+ * `config show` reports now comes from the `slot-N` items. */
 static void print_tag_list(const struct shell *shell)
 {
 	int ret;
@@ -802,7 +1227,7 @@ static void print_tag_list(const struct shell *shell)
 			return;
 		}
 
-		shell_print(shell, "tag config devices addr %d %s", slot, addr_str);
+		shell_print(shell, "tag config devices addr %zu %s", slot, addr_str);
 	}
 }
 
@@ -810,37 +1235,6 @@ int ctr_ble_tag_enable(bool enabled)
 {
 	m_config_interim.enabled = enabled;
 	return 0;
-}
-
-static int cmd_config_enabled(const struct shell *shell, size_t argc, char **argv)
-{
-	if (argc == 1) {
-		print_enabled(shell);
-		shell_print(shell, "command succeeded");
-		return 0;
-	}
-
-	if (argc == 2) {
-		if (strcmp(argv[1], "true") == 0) {
-			ctr_ble_tag_enable(true);
-			shell_print(shell, "command succeeded");
-			return 0;
-		} else if (strcmp(argv[1], "false") == 0) {
-			ctr_ble_tag_enable(false);
-			shell_print(shell, "command succeeded");
-			return 0;
-		}
-
-		shell_print(shell, "invalid input");
-		shell_error(shell, "command failed");
-
-		return -EINVAL;
-	}
-
-	shell_error(shell, "command failed");
-	shell_help(shell);
-
-	return -EINVAL;
 }
 
 int ctr_ble_tag_set_scan_interval(int scan_interval)
@@ -859,39 +1253,6 @@ int ctr_ble_tag_get_scan_interval(void)
 	return m_config_interim.scan_interval;
 }
 
-static int cmd_config_scan_interval(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc == 1) {
-		print_scan_interval(shell);
-		shell_print(shell, "command succeeded");
-		return 0;
-	}
-
-	if (argc == 2) {
-		long val = strtol(argv[1], NULL, 10);
-
-		ret = ctr_ble_tag_set_scan_interval(val);
-		if (ret == -EINVAL) {
-			shell_print(shell, "invalid input");
-			shell_error(shell, "command failed");
-			return ret;
-		}
-
-		m_config_interim.scan_interval = val;
-
-		shell_print(shell, "command succeeded");
-
-		return 0;
-	}
-
-	shell_error(shell, "command failed");
-	shell_help(shell);
-
-	return -EINVAL;
-}
-
 int ctr_ble_tag_set_scan_duration(int scan_duration)
 {
 	if (scan_duration < 1 || scan_duration > 86400) {
@@ -906,39 +1267,6 @@ int ctr_ble_tag_set_scan_duration(int scan_duration)
 int ctr_ble_tag_get_scan_duration(void)
 {
 	return m_config_interim.scan_duration;
-}
-
-static int cmd_config_scan_duration(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (argc == 1) {
-		print_scan_duration(shell);
-		shell_print(shell, "command succeeded");
-		return 0;
-	}
-
-	if (argc == 2) {
-		long val = strtol(argv[1], NULL, 10);
-
-		ret = ctr_ble_tag_set_scan_duration(val);
-		if (ret == -EINVAL) {
-			shell_print(shell, "invalid input");
-			shell_error(shell, "command failed");
-			return ret;
-		}
-
-		m_config_interim.scan_duration = val;
-
-		shell_print(shell, "command succeeded");
-
-		return 0;
-	}
-
-	shell_error(shell, "command failed");
-	shell_help(shell);
-
-	return -EINVAL;
 }
 
 int ctr_ble_tag_add(char *addr_str)
@@ -957,23 +1285,33 @@ int ctr_ble_tag_add(char *addr_str)
 
 	int8_t empty_slot = -1;
 
+	/* Held across the whole check-then-write below, not just slot_set()'s own write,
+	 * so a concurrent enroll_cb() (Bluetooth RX thread) or slot_parse_cb() (shell) cannot
+	 * observe the pre-write state and claim the same address or slot. */
+	k_mutex_lock(&m_config_lock, K_FOREVER);
+
+	/* Every slot has to be inspected before a free one is picked, otherwise an
+	 * address already held in a later slot is not detected and gets added twice. */
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		if (memcmp(m_config_interim.addr[slot], addr, BT_ADDR_SIZE) == 0) {
 			LOG_WRN("Tag addr %s already exists", addr_str);
+			k_mutex_unlock(&m_config_lock);
 			return -EEXIST;
 		}
 
 		if (empty_slot == -1 && ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
 			empty_slot = slot;
-			break;
 		}
 	}
 
 	if (empty_slot != -1) {
-		memcpy(m_config_interim.addr[empty_slot], addr, BT_ADDR_SIZE);
+		slot_set(empty_slot, addr);
+		k_mutex_unlock(&m_config_lock);
 		LOG_INF("Tag addr %s added to slot %d", addr_str, empty_slot);
 		return empty_slot;
 	}
+
+	k_mutex_unlock(&m_config_lock);
 
 	LOG_ERR("No slot available");
 
@@ -983,13 +1321,6 @@ int ctr_ble_tag_add(char *addr_str)
 static int cmd_config_add_tag(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
-
-	if (argc > 2) {
-		shell_print(shell, "unknown parameter: %s", argv[1]);
-		shell_error(shell, "command failed");
-		shell_help(shell);
-		return -EINVAL;
-	}
 
 	ret = ctr_ble_tag_add(argv[1]);
 	if (ret == -EEXIST) {
@@ -1003,6 +1334,14 @@ static int cmd_config_add_tag(const struct shell *shell, size_t argc, char **arg
 	}
 
 	shell_print(shell, "tag addr %s added to slot %d", argv[1], ret);
+
+	/* Adding a tag is an action, not a staged edit, so it takes effect now. */
+	ret = apply(shell);
+	if (ret) {
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
 	shell_print(shell, "command succeeded");
 
 	return 0;
@@ -1024,8 +1363,8 @@ int ctr_ble_tag_remove_addr(char *addr_str)
 
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
 		if (memcmp(m_config_interim.addr[slot], addr, BT_ADDR_SIZE) == 0) {
-			memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
-			LOG_INF("Tag addr %s removed from slot %d", addr_str, slot);
+			slot_set(slot, NULL);
+			LOG_INF("Tag addr %s removed from slot %zu", addr_str, slot);
 			return slot;
 		}
 	}
@@ -1046,7 +1385,7 @@ int ctr_ble_tag_remove_slot(size_t slot)
 		return -ENOENT;
 	}
 
-	memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
+	slot_set(slot, NULL);
 
 	return 0;
 }
@@ -1055,13 +1394,8 @@ static int cmd_config_remove_tag(const struct shell *shell, size_t argc, char **
 {
 	int ret;
 
-	if (argc > 2) {
-		shell_print(shell, "unknown parameter: %s", argv[1]);
-		shell_error(shell, "command failed");
-		shell_help(shell);
-		return -EINVAL;
-	}
-
+	/* An argument longer than 2 characters is a MAC address, anything shorter is
+	 * a slot index - a slot index can never exceed 2 digits. */
 	if (strlen(argv[1]) > 2) {
 		ret = ctr_ble_tag_remove_addr(argv[1]);
 		if (ret == -ENOENT) {
@@ -1074,8 +1408,6 @@ static int cmd_config_remove_tag(const struct shell *shell, size_t argc, char **
 		}
 
 		shell_print(shell, "tag addr %s removed", argv[1]);
-		shell_print(shell, "command succeeded");
-		return 0;
 	} else {
 		int slot = strtol(argv[1], NULL, 10);
 		if (slot < 0 || slot >= CTR_BLE_TAG_COUNT) {
@@ -1091,10 +1423,17 @@ static int cmd_config_remove_tag(const struct shell *shell, size_t argc, char **
 		}
 
 		shell_print(shell, "slot %d removed", slot);
-		shell_print(shell, "command succeeded");
-
-		return 0;
 	}
+
+	ret = apply(shell);
+	if (ret) {
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_print(shell, "command succeeded");
+
+	return 0;
 }
 
 static int cmd_config_list_tags(const struct shell *shell, size_t argc, char **argv)
@@ -1109,30 +1448,99 @@ static int cmd_config_list_tags(const struct shell *shell, size_t argc, char **a
 void ctr_ble_tag_remove_all(void)
 {
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-		memset(m_config_interim.addr[slot], 0, BT_ADDR_SIZE);
+		slot_set(slot, NULL);
 	}
 }
 
 static int cmd_config_clear_tags(const struct shell *shell, size_t argc, char **argv)
 {
+	int ret;
+
 	ctr_ble_tag_remove_all();
+
+	ret = apply(shell);
+	if (ret) {
+		shell_error(shell, "command failed");
+		return ret;
+	}
 
 	shell_print(shell, "command succeeded");
 
 	return 0;
 }
 
-/* Both steps of `tag read all`, run on the system workqueue. START waits for a scan opportunity,
- * retrying by rescheduling itself instead of sleeping, then opens the scan and arms the window.
- * STOP closes the scan and reports. Neither step may ever block: the queue is shared. */
-static void discover_work_handler(struct k_work *work)
+/* Enrolled slots that have not reported since the running sample job cleared them. */
+static size_t sample_outstanding(void)
+{
+	size_t n = 0;
+
+	k_mutex_lock(&m_tag_data_lock, K_FOREVER);
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (ctr_ble_tag_is_addr_empty(m_config.addr[slot])) {
+			continue;
+		}
+
+		if (!m_tag_data[slot].valid) {
+			n++;
+		}
+	}
+
+	k_mutex_unlock(&m_tag_data_lock);
+
+	return n;
+}
+
+/* Set once a sample job has discarded the previous readings. Until then an advert must not
+ * be allowed to complete the job: nothing has been invalidated yet, so the outstanding
+ * count could already be zero and the job would return the very data it meant to refresh. */
+static bool m_sample_armed;
+
+static void sample_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+		      struct net_buf_simple *buf)
+{
+	scan_cb(addr, rssi, adv_type, buf);
+
+	/* Waiting for fresh values from every enrolled tag is the whole point of sampling,
+	 * so finish the moment the last one reports rather than sitting out the timeout. */
+	if (m_sample_armed && sample_outstanding() == 0) {
+		job_finish_early();
+	}
+}
+
+/* Discard the readings of every enrolled slot, so that what the sample reports can only be
+ * data that arrived during this scan. Deliberately called only once the scan is known to
+ * have started: these readings also feed ctr_ble_tag_read_cached(), so a command that
+ * cannot go ahead must not cost the application a reporting cycle. */
+static void sample_invalidate(void)
+{
+	k_mutex_lock(&m_tag_data_lock, K_FOREVER);
+
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		if (ctr_ble_tag_is_addr_empty(m_config.addr[slot])) {
+			continue;
+		}
+
+		m_tag_data[slot].valid = false;
+	}
+
+	k_mutex_unlock(&m_tag_data_lock);
+}
+
+/* Both steps of every operator-driven scan, run on the dedicated m_job_work_q. START waits for
+ * a scan opportunity, retrying by rescheduling itself rather than sleeping, then opens the scan
+ * and arms the window. STOP closes it and reports according to the job kind -- for
+ * SCAN_JOB_ENROLL that includes calling apply(), which can block this queue for several seconds;
+ * see m_job_work_q's own comment for why that is safe here and would not be on either of the
+ * other two queues in this file. */
+static void job_work_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	const struct shell *shell = m_discover_req.shell;
+	const struct shell *shell = m_job.shell;
 	int ret;
 
-	if (m_discover_step == DISCOVER_STEP_STOP) {
+	if (m_job_step == SCAN_JOB_STEP_STOP) {
 		ret = bt_le_scan_stop();
 
 		k_mutex_unlock(&m_scan_lock);
@@ -1140,59 +1548,185 @@ static void discover_work_handler(struct k_work *work)
 		if (ret) {
 			LOG_ERR("Call `bt_le_scan_stop` failed: %d", ret);
 			shell_error(shell, "command failed");
-			atomic_clear(&m_discover_busy);
+			atomic_clear(&m_job_busy);
 			return;
 		}
 
-		shell_print(shell, "scan finished");
+		switch (m_job.kind) {
+		case SCAN_JOB_DISCOVERY: {
+			k_mutex_lock(&m_discover_lock, K_FOREVER);
+			size_t found = m_discover_seen_count;
+			k_mutex_unlock(&m_discover_lock);
 
-		k_mutex_lock(&m_discover_lock, K_FOREVER);
-		size_t found = m_discover_seen_count;
-		k_mutex_unlock(&m_discover_lock);
+			shell_print(shell, "scan finished");
+			shell_print(shell, "discovered %zu BLE tag(s)", found);
+			break;
+		}
 
-		shell_print(shell, "discovered %zu BLE tag(s)", found);
+		case SCAN_JOB_SAMPLE:
+			for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+				print_slot(shell, slot);
+			}
+
+			shell_print(shell, "sampled %zu/%zu tag(s)",
+				    m_job_target - sample_outstanding(), m_job_target);
+			break;
+
+		case SCAN_JOB_ENROLL:
+			if (m_enroll_count == 0) {
+				shell_print(shell, "enrollment timed out");
+			}
+
+			shell_print(shell, "enrolled %zu tag(s)", m_enroll_count);
+
+			/* The scan lock was released above on purpose: apply() takes it itself,
+			 * and k_mutex is recursive for its owner. */
+			if (m_enroll_count > 0 && apply(shell) != 0) {
+				shell_error(shell, "command failed");
+				atomic_clear(&m_job_busy);
+				return;
+			}
+			break;
+
+		default:
+			break;
+		}
+
 		shell_print(shell, "command succeeded");
 
-		/* Cleared last — guards reuse of the work item by the next invocation. */
-		atomic_clear(&m_discover_busy);
+		/* Cleared last - guards reuse of the work item by the next invocation. */
+		atomic_clear(&m_job_busy);
 		return;
 	}
 
 	if (k_mutex_lock(&m_scan_lock, K_NO_WAIT) != 0) {
-		if (--m_discover_attempts <= 0) {
+		if (--m_job_attempts <= 0) {
 			shell_print(shell, "waiting timed out");
 			shell_error(shell, "command failed");
-			atomic_clear(&m_discover_busy);
+			atomic_clear(&m_job_busy);
 			return;
 		}
 
 		shell_print(shell, "waiting for scan opportunity...");
-		k_work_reschedule(&m_discover_work, K_SECONDS(2));
+		k_work_reschedule_for_queue(&m_job_work_q, &m_job_work, K_SECONDS(2));
 		return;
 	}
 
-	k_mutex_lock(&m_discover_lock, K_FOREVER);
-	m_discover_seen_count = 0;
-	m_discover_full = false;
-	k_mutex_unlock(&m_discover_lock);
-
-	shell_print(shell, "discovering all nearby BLE tags for %d s...",
-		    m_discover_req.timeout_sec);
-
 	struct bt_le_scan_param param = SCAN_PARAMS_DEFAULTS;
-	param.options = BT_LE_SCAN_OPT_NONE;
+	bt_le_scan_cb_t *cb;
 
-	ret = bt_le_scan_start(&param, discover_cb);
+	m_job_target = 0;
+
+	switch (m_job.kind) {
+	case SCAN_JOB_DISCOVERY:
+		k_mutex_lock(&m_discover_lock, K_FOREVER);
+		m_discover_seen_count = 0;
+		m_discover_full = false;
+		k_mutex_unlock(&m_discover_lock);
+
+		/* Every nearby tag, not just the enrolled ones. */
+		param.options = BT_LE_SCAN_OPT_NONE;
+		cb = discover_cb;
+
+		shell_print(shell, "discovering all nearby BLE tags for %d s...",
+			    m_job.timeout_sec);
+		break;
+
+	case SCAN_JOB_SAMPLE:
+		m_job_target = enrolled_count();
+		m_sample_armed = false;
+		cb = sample_cb;
+
+		if (m_job_target > 0) {
+			shell_print(shell, "sampling %zu enrolled tag(s), up to %d s...",
+				    m_job_target, m_job.timeout_sec);
+		}
+		break;
+
+	case SCAN_JOB_ENROLL:
+		m_enroll_count = 0;
+
+		/* Unfiltered: a tag that is not enrolled yet cannot be on the accept list. */
+		param.options = BT_LE_SCAN_OPT_NONE;
+		cb = enroll_cb;
+
+		shell_print(shell, "enrolling for up to %d s...", m_job.timeout_sec);
+		break;
+
+	default:
+		/* Unreachable, but a job must never end without a terminator line: a
+		 * streaming reader has nothing else to wait for. */
+		shell_error(shell, "command failed");
+		k_mutex_unlock(&m_scan_lock);
+		atomic_clear(&m_job_busy);
+		return;
+	}
+
+	/* Nothing to wait for - skip the radio entirely rather than idle for the window. */
+	if (m_job.kind == SCAN_JOB_SAMPLE && m_job_target == 0) {
+		k_mutex_unlock(&m_scan_lock);
+		shell_print(shell, "sampled 0/0 tag(s)");
+		shell_print(shell, "command succeeded");
+		atomic_clear(&m_job_busy);
+		return;
+	}
+
+	ret = bt_le_scan_start(&param, cb);
 	if (ret) {
 		LOG_ERR("Call `bt_le_scan_start` failed: %d", ret);
 		shell_error(shell, "command failed");
 		k_mutex_unlock(&m_scan_lock);
-		atomic_clear(&m_discover_busy);
+		atomic_clear(&m_job_busy);
 		return;
 	}
 
-	m_discover_step = DISCOVER_STEP_STOP;
-	k_work_reschedule(&m_discover_work, K_SECONDS(m_discover_req.timeout_sec));
+	if (m_job.kind == SCAN_JOB_SAMPLE) {
+		sample_invalidate();
+		m_sample_armed = true;
+	}
+
+	m_job_step = SCAN_JOB_STEP_STOP;
+	k_work_reschedule_for_queue(&m_job_work_q, &m_job_work, K_SECONDS(m_job.timeout_sec));
+}
+
+/* Parse an optional trailing timeout argument and hand the work to job_work_handler(). */
+static int job_start(const struct shell *shell, enum scan_job_kind kind, int default_timeout,
+		     const char *timeout_arg, int rssi_threshold)
+{
+	int timeout_sec = default_timeout;
+
+	if (timeout_arg != NULL) {
+		long v = strtol(timeout_arg, NULL, 10);
+
+		if (v < CTR_BLE_TAG_SCAN_TIMEOUT_SEC_MIN || v > CTR_BLE_TAG_SCAN_TIMEOUT_SEC_MAX) {
+			shell_print(shell, "timeout out of range [%d:%d]",
+				    CTR_BLE_TAG_SCAN_TIMEOUT_SEC_MIN,
+				    CTR_BLE_TAG_SCAN_TIMEOUT_SEC_MAX);
+			shell_error(shell, "command failed");
+			return -EINVAL;
+		}
+
+		timeout_sec = (int)v;
+	}
+
+	/* The scan runs asynchronously: this returns at once and the results, ending with a
+	 * terminator line, are printed as the job progresses. */
+	if (!atomic_cas(&m_job_busy, 0, 1)) {
+		shell_print(shell, "another scan is already in progress");
+		shell_error(shell, "command failed");
+		return -EBUSY;
+	}
+
+	m_job.shell = shell;
+	m_job.kind = kind;
+	m_job.timeout_sec = timeout_sec;
+	m_job.rssi_threshold = rssi_threshold;
+	m_job_step = SCAN_JOB_STEP_START;
+	m_job_attempts = SCAN_JOB_LOCK_ATTEMPTS;
+
+	k_work_reschedule_for_queue(&m_job_work_q, &m_job_work, K_NO_WAIT);
+
+	return 0;
 }
 
 static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
@@ -1205,6 +1739,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 		return -EPERM;
 	}
 
+	/* Undocumented alias of `tag discovery`, kept for one release. */
 	if (argc >= 2) {
 		if (strcmp(argv[1], "all") != 0) {
 			shell_error(shell, "unknown parameter: %s", argv[1]);
@@ -1212,53 +1747,15 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 			return -EINVAL;
 		}
 
-		int timeout_sec = CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_DEFAULT;
-
-		if (argc == 3) {
-			long v = strtol(argv[2], NULL, 10);
-			if (v < CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MIN ||
-			    v > CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MAX) {
-				shell_error(shell, "timeout out of range [%d:%d]",
-					    CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MIN,
-					    CTR_BLE_TAG_DISCOVER_TIMEOUT_SEC_MAX);
-				return -EINVAL;
-			}
-			timeout_sec = (int)v;
-		}
-
-		/* Discover runs asynchronously on the system workqueue; the command returns
-		 * immediately and results are printed as the scan progresses. */
-		if (!atomic_cas(&m_discover_busy, 0, 1)) {
-			shell_error(shell, "discover already in progress");
-			return -EBUSY;
-		}
-
-		m_discover_req.shell = shell;
-		m_discover_req.timeout_sec = timeout_sec;
-		m_discover_step = DISCOVER_STEP_START;
-		m_discover_attempts = DISCOVER_SCAN_LOCK_ATTEMPTS;
-
-		k_work_reschedule(&m_discover_work, K_NO_WAIT);
-
-		return 0;
+		return job_start(shell, SCAN_JOB_DISCOVERY,
+				 CTR_BLE_TAG_DISCOVERY_TIMEOUT_SEC_DEFAULT,
+				 argc == 3 ? argv[2] : NULL, 0);
 	}
 
-	for (int i = 30; i; i--) {
-		ret = k_mutex_lock(&m_scan_lock, K_NO_WAIT);
-		if (!ret) {
-			break;
-		}
-
-		if (i == 1) {
-			shell_print(shell, "waiting timed out");
-			shell_error(shell, "command failed");
-			return -EBUSY;
-
-		} else {
-			shell_print(shell, "waiting for scan opportunity...");
-		}
-
-		k_sleep(K_SECONDS(2));
+	ret = scan_lock_acquire(shell);
+	if (ret) {
+		shell_error(shell, "command failed");
+		return ret;
 	}
 
 	shell_print(shell, "scanning...");
@@ -1273,7 +1770,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	k_sleep(K_SECONDS(CTR_BLE_TAG_ENROLL_TIMEOUT_SEC));
+	k_sleep(K_SECONDS(CTR_BLE_TAG_READ_TIMEOUT_SEC));
 
 	ret = bt_le_scan_stop();
 	if (ret) {
@@ -1287,171 +1784,8 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 
 	shell_print(shell, "scan finished");
 
-	char _msg_buf[512];
-	char intermediate_buf[64];
-	struct ctr_buf msg_buf;
-	ctr_buf_init(&msg_buf, (void *)_msg_buf, 256);
-
 	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-		uint8_t addr[BT_ADDR_SIZE];
-		int8_t rssi;
-		float voltage;
-		float temperature;
-		float humidity;
-		bool magnet_detected;
-		bool moving;
-		int movement_event_count;
-		float roll;
-		float pitch;
-		bool low_battery;
-
-		int16_t sensor_mask;
-		bool valid;
-
-		ret = ctr_ble_tag_read_cached(slot, addr, &rssi, &voltage, &temperature, &humidity,
-					      &magnet_detected, &moving, &movement_event_count,
-					      &roll, &pitch, &low_battery, &sensor_mask, &valid);
-		if (ret) {
-			continue;
-		}
-
-		if (!valid) {
-			LOG_DBG("Data was invalid");
-			continue;
-		}
-
-		char addr_str[BT_ADDR_SIZE * 2 + 1];
-
-		ret = ctr_buf2hex(addr, BT_ADDR_SIZE, addr_str, sizeof(addr_str), false);
-		if (ret < 0) {
-			LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
-			shell_error(shell, "command failed");
-			return ret;
-		}
-
-		ctr_buf_fill(&msg_buf, 0);
-
-		sprintf(intermediate_buf, "slot %u: addr: %s ", slot, addr_str);
-		ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-		if (ret) {
-			LOG_ERR("Call `ctr_buf_append_str` failed");
-			shell_error(shell, "command failed");
-			return ret;
-		}
-		msg_buf.len--;
-
-		sprintf(intermediate_buf, "/ rssi: %d dBm ", rssi);
-		ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-		if (ret) {
-			LOG_ERR("Call `ctr_buf_append_str` failed");
-			shell_error(shell, "command failed");
-			return ret;
-		}
-		msg_buf.len--;
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
-			sprintf(intermediate_buf, "/ voltage: %.2f V ", (double)voltage);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
-			sprintf(intermediate_buf, "/ temperature: %.2f C ", (double)temperature);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
-			sprintf(intermediate_buf, "/ humidity: %.2f %% ", (double)humidity);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED) {
-			sprintf(intermediate_buf, "/ magnetic sensor: %s ",
-				magnet_detected ? "detected" : "not detected");
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVING) {
-			sprintf(intermediate_buf, "/ moving: %s ", moving ? "true" : "false");
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT) {
-			sprintf(intermediate_buf, "/ movement event count: %d ",
-				movement_event_count);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_ROLL) {
-			sprintf(intermediate_buf, "/ roll: %.2f ", (double)roll);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_PITCH) {
-			sprintf(intermediate_buf, "/ pitch: %.2f ", (double)pitch);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY) {
-			sprintf(intermediate_buf, "/ low battery: %s ",
-				low_battery ? "true" : "false");
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		shell_print(shell, "%s", ctr_buf_get_mem(&msg_buf));
+		print_slot(shell, slot);
 	}
 
 	shell_print(shell, "command succeeded");
@@ -1459,9 +1793,166 @@ static int cmd_scan(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_show(const struct shell *shell, size_t argc, char **argv)
+/* Print one slot as a single line. Every segment is either one `key: value` pair or one
+ * bare marker, separated by ` / `, and an unoccupied slot is reported rather than
+ * skipped, so a consumer can read the whole slot layout off this output. */
+static void print_slot(const struct shell *shell, size_t slot)
 {
 	int ret;
+
+	if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
+		shell_print(shell, "slot %zu: empty", slot);
+		return;
+	}
+
+	shell_fprintf(shell, SHELL_NORMAL, "slot %zu: addr: %s", slot, m_addr_str[slot]);
+
+	/* m_tag_data[] is indexed by slot, so readings may only be attributed to this
+	 * address while the committed configuration still agrees with the edited one.
+	 * Otherwise a slot reassigned since the last `config save` would report the
+	 * previous tag's readings under the new address. */
+	if (memcmp(m_config.addr[slot], m_config_interim.addr[slot], BT_ADDR_SIZE) != 0) {
+		shell_fprintf(shell, SHELL_NORMAL, " / not received data");
+		shell_fprintf(shell, SHELL_NORMAL, "\n");
+		return;
+	}
+
+	int8_t rssi = 0;
+	float voltage = NAN;
+	float temperature;
+	float humidity;
+	bool magnet_detected;
+	bool moving;
+	int movement_event_count;
+	float roll;
+	float pitch;
+	bool low_battery;
+
+	int16_t sensor_mask;
+	bool valid;
+
+	/* The address is taken from the configuration above, not from the cache. */
+	ret = ctr_ble_tag_read_cached(slot, NULL, &rssi, &voltage, &temperature, &humidity,
+				      &magnet_detected, &moving, &movement_event_count, &roll,
+				      &pitch, &low_battery, &sensor_mask, &valid);
+	if (ret) {
+		shell_fprintf(shell, SHELL_NORMAL, " / not received data");
+		shell_fprintf(shell, SHELL_NORMAL, "\n");
+		return;
+	}
+
+	if (!valid) {
+		shell_fprintf(shell, SHELL_NORMAL, " / not received data");
+
+		if ((rssi < 0) || (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE)) {
+			shell_fprintf(shell, SHELL_NORMAL, " / last received");
+		}
+	}
+
+	if (rssi < 0) {
+		shell_fprintf(shell, SHELL_NORMAL, " / rssi: %d dBm", rssi);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
+		shell_fprintf(shell, SHELL_NORMAL, " / voltage: %.2f V", (double)voltage);
+	}
+
+	/* Everything past this point is only meaningful for a reading that is current. */
+	if (!valid) {
+		shell_fprintf(shell, SHELL_NORMAL, "\n");
+		return;
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
+		shell_fprintf(shell, SHELL_NORMAL, " / temperature: %.2f C", (double)temperature);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
+		shell_fprintf(shell, SHELL_NORMAL, " / humidity: %.2f %%", (double)humidity);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED) {
+		shell_fprintf(shell, SHELL_NORMAL, " / magnetic sensor: %s",
+			      magnet_detected ? "detected" : "not detected");
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVING) {
+		shell_fprintf(shell, SHELL_NORMAL, " / moving: %s", moving ? "true" : "false");
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT) {
+		shell_fprintf(shell, SHELL_NORMAL, " / movement event count: %d",
+			      movement_event_count);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_ROLL) {
+		shell_fprintf(shell, SHELL_NORMAL, " / roll: %.2f", (double)roll);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_PITCH) {
+		shell_fprintf(shell, SHELL_NORMAL, " / pitch: %.2f", (double)pitch);
+	}
+
+	if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY) {
+		shell_fprintf(shell, SHELL_NORMAL, " / low battery: %s",
+			      low_battery ? "true" : "false");
+	}
+
+	shell_fprintf(shell, SHELL_NORMAL, "\n");
+}
+
+static int cmd_list_show(const struct shell *shell, size_t argc, char **argv)
+{
+	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
+		print_slot(shell, slot);
+	}
+
+	/* Which slots are occupied is configuration, not telemetry, so it stays
+	 * readable with the scanner off - `enabled` is false on a factory device, and
+	 * aborting here would leave a consumer unable to list the slot layout at all. */
+	if (!m_config.enabled) {
+		shell_print(shell, "tag subsystem is disabled");
+	}
+
+	shell_print(shell, "command succeeded");
+
+	return 0;
+}
+
+static int cmd_list_sample(const struct shell *shell, size_t argc, char **argv)
+{
+	if (!m_config.enabled) {
+		shell_print(shell, "tag subsystem is disabled");
+		shell_error(shell, "command aborted");
+		return -EPERM;
+	}
+
+	/* A staged slot cannot report: the scan follows the accept list, which is built from
+	 * the committed configuration. Say so, rather than leaving it silently absent from
+	 * the `sampled N/M` count while `tag list show` lists it. */
+	if (slots_staged()) {
+		shell_print(shell, "note: some slots are not applied yet, run `tag apply`");
+	}
+
+	return job_start(shell, SCAN_JOB_SAMPLE, CTR_BLE_TAG_SAMPLE_TIMEOUT_SEC_DEFAULT,
+			 argc == 2 ? argv[1] : NULL, 0);
+}
+
+static int cmd_discovery(const struct shell *shell, size_t argc, char **argv)
+{
+	if (!m_config.enabled) {
+		shell_print(shell, "tag subsystem is disabled");
+		shell_error(shell, "command aborted");
+		return -EPERM;
+	}
+
+	return job_start(shell, SCAN_JOB_DISCOVERY, CTR_BLE_TAG_DISCOVERY_TIMEOUT_SEC_DEFAULT,
+			 argc == 2 ? argv[1] : NULL, 0);
+}
+
+static int cmd_enroll(const struct shell *shell, size_t argc, char **argv)
+{
+	int rssi_threshold = CTR_BLE_TAG_ENROLL_RSSI_THRESHOLD;
 
 	if (!m_config.enabled) {
 		shell_print(shell, "tag subsystem is disabled");
@@ -1469,294 +1960,27 @@ static int cmd_show(const struct shell *shell, size_t argc, char **argv)
 		return -EPERM;
 	}
 
-	shell_print(shell, "cached data:");
+	if (argc >= 2) {
+		long v = strtol(argv[1], NULL, 10);
 
-	char _msg_buf[512];
-	char intermediate_buf[64];
-	struct ctr_buf msg_buf;
-	ctr_buf_init(&msg_buf, (void *)_msg_buf, 256);
-
-	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-		uint8_t addr[BT_ADDR_SIZE];
-		int8_t rssi = 0;
-		float voltage = NAN;
-		float temperature;
-		float humidity;
-		bool magnet_detected;
-		bool moving;
-		int movement_event_count;
-		float roll;
-		float pitch;
-		bool low_battery;
-
-		int16_t sensor_mask;
-		bool valid;
-
-		ret = ctr_ble_tag_read_cached(slot, addr, &rssi, &voltage, &temperature, &humidity,
-					      &magnet_detected, &moving, &movement_event_count,
-					      &roll, &pitch, &low_battery, &sensor_mask, &valid);
-		if (ret) {
-			continue;
-		}
-
-		char addr_str[BT_ADDR_SIZE * 2 + 1];
-
-		ret = ctr_buf2hex(addr, BT_ADDR_SIZE, addr_str, sizeof(addr_str), false);
-		if (ret < 0) {
-			LOG_ERR("Call `ctr_buf2hex` failed: %d", ret);
-			shell_error(shell, "command failed");
-			return ret;
-		}
-
-		ctr_buf_fill(&msg_buf, 0);
-
-		snprintf(intermediate_buf, 32, "slot %u: addr: %s ", slot, addr_str);
-		ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-		if (ret) {
-			LOG_ERR("Call `ctr_buf_append_str` failed");
-			shell_error(shell, "command failed");
-			return ret;
-		}
-		msg_buf.len--;
-
-		if (!valid) {
-			ret = ctr_buf_append_str(&msg_buf, "not received data ");
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-			if ((rssi < 0) || (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE)) {
-				ret = ctr_buf_append_str(&msg_buf, "/ last recveived ");
-				if (ret) {
-					LOG_ERR("Call `ctr_buf_append_str` failed");
-					shell_error(shell, "command failed");
-					return ret;
-				}
-				msg_buf.len--;
-			}
-		}
-
-		if (rssi < 0) {
-			snprintf(intermediate_buf, 32, "/ rssi: %d dBm ", rssi);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_VOLTAGE) {
-			snprintf(intermediate_buf, 32, "/ voltage: %.2f V ", (double)voltage);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (!valid) {
-			shell_print(shell, "%s", ctr_buf_get_mem(&msg_buf));
-			continue;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_TEMPERATURE) {
-			snprintf(intermediate_buf, 32, "/ temperature: %.2f C ",
-				 (double)temperature);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_HUMIDITY) {
-			snprintf(intermediate_buf, 32, "/ humidity: %.2f %% ", (double)humidity);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MAGNET_DETECTED) {
-			snprintf(intermediate_buf, 64, "/ magnetic sensor: %s ",
-				 magnet_detected ? "detected" : "not detected");
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVING) {
-			snprintf(intermediate_buf, 32, "/ moving: %s ", moving ? "true" : "false");
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_MOVEMENT_EVENT_COUNT) {
-			snprintf(intermediate_buf, 64, "/ movement event count: %d ",
-				 movement_event_count);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_ROLL) {
-			snprintf(intermediate_buf, 32, "/ roll: %.2f ", (double)roll);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_PITCH) {
-			snprintf(intermediate_buf, 32, "/ pitch: %.2f ", (double)pitch);
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		if (sensor_mask & CTR_BLE_TAG_SENSOR_MASK_LOW_BATTERY) {
-			snprintf(intermediate_buf, 32, "/ low battery: %s",
-				 low_battery ? "true" : "false");
-			ret = ctr_buf_append_str(&msg_buf, intermediate_buf);
-			if (ret) {
-				LOG_ERR("Call `ctr_buf_append_str` failed");
-				shell_error(shell, "command failed");
-				return ret;
-			}
-			msg_buf.len--;
-		}
-
-		shell_print(shell, "%s", ctr_buf_get_mem(&msg_buf));
-	}
-
-	shell_print(shell, "command succeeded");
-
-	return 0;
-}
-
-static int cmd_enroll(const struct shell *shell, size_t argc, char **argv)
-{
-	int ret;
-
-	if (!m_config.enabled) {
-		shell_print(shell, "tag subsystem is disabled");
-		shell_error(shell, "command aborted");
-		return 0;
-	}
-
-	m_enroll_threshold = CTR_BLE_TAG_ENROLL_RSSI_THRESHOLD;
-
-	if (argc == 2) {
-		int rssi_threshold = strtol(argv[1], NULL, 10);
-
-		if (rssi_threshold < -128 || rssi_threshold > 0) {
+		/* The threshold is what keeps enrolment to the tags physically at hand. */
+		if (v < -128 || v > 0) {
 			shell_print(shell, "invalid input, expected [-128:0]dbm");
 			shell_error(shell, "command failed");
-			return 0;
+			return -EINVAL;
 		}
 
-		m_enroll_threshold = rssi_threshold;
+		rssi_threshold = (int)v;
 	}
 
-	bool can_enroll = false;
-
-	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-		if (ctr_ble_tag_is_addr_empty(m_config_interim.addr[slot])) {
-			can_enroll = true;
-		}
-	}
-
-	if (!can_enroll) {
+	if (!slot_find_free(NULL)) {
 		shell_print(shell, "no slot available for enrollment");
 		shell_error(shell, "command failed");
 		return -ENOSPC;
 	}
 
-	for (int i = 30; i; i--) {
-		ret = k_mutex_lock(&m_scan_lock, K_NO_WAIT);
-		if (!ret) {
-			break;
-		}
-
-		if (i == 1) {
-			shell_print(shell, "waiting timed out");
-			shell_error(shell, "command failed");
-			return -EBUSY;
-
-		} else {
-			shell_print(shell, "waiting for enrollment opportunity...");
-		}
-
-		k_sleep(K_SECONDS(2));
-	}
-
-	shell_print(shell, "enrolling...");
-
-	struct bt_le_scan_param param = SCAN_PARAMS_DEFAULTS;
-	param.options = BT_LE_SCAN_OPT_NONE;
-
-	/* Start scan without filter */
-	ret = bt_le_scan_start(&param, enroll_cb);
-	if (ret) {
-		LOG_ERR("Call `bt_le_scan_start` failed %d", ret);
-		shell_error(shell, "command failed");
-		k_mutex_unlock(&m_scan_lock);
-		return ret;
-	}
-
-	ret = k_sem_take(&m_has_enrolled_sem, K_SECONDS(CTR_BLE_TAG_ENROLL_TIMEOUT_SEC));
-	if (!ret) {
-		shell_print(shell, "enrolled addr: %s", m_enroll_addr_str);
-	} else if (ret == -EAGAIN) {
-		shell_print(shell, "enrollment timed out");
-	} else {
-		LOG_ERR("Call `k_sem_take` failed %d", ret);
-	}
-
-	ret = bt_le_scan_stop();
-	if (ret) {
-		LOG_ERR("Call `bt_le_scan_stop` failed %d", ret);
-		shell_error(shell, "command failed");
-		k_mutex_unlock(&m_scan_lock);
-		return ret;
-	}
-
-	k_mutex_unlock(&m_scan_lock);
-
-	shell_print(shell, "command succeeded");
-
-	return 0;
+	return job_start(shell, SCAN_JOB_ENROLL, CTR_BLE_TAG_ENROLL_TIMEOUT_SEC,
+			 argc == 3 ? argv[2] : NULL, rssi_threshold);
 }
 
 static int print_help(const struct shell *shell, size_t argc, char **argv)
@@ -1772,38 +1996,40 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_config_show(const struct shell *shell, size_t argc, char **argv)
-{
-	print_enabled(shell);
-	print_scan_interval(shell);
-	print_scan_duration(shell);
-	print_tag_list(shell);
-
-	return 0;
-}
-
 /* clang-format off */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_tag_config_devices,
 
-	SHELL_CMD_ARG(add, NULL, "Add a device.", cmd_config_add_tag, 2, 0),
+	SHELL_CMD_ARG(add, NULL, "Add a device to the lowest free slot <MAC (12 hex digits)>.", cmd_config_add_tag, 2, 0),
 	SHELL_CMD_ARG(list, NULL, "List all devices.", cmd_config_list_tags, 1, 0),
-	SHELL_CMD_ARG(remove, NULL, "Remove a device.", cmd_config_remove_tag, 2, 0),
+	SHELL_CMD_ARG(remove, NULL, "Remove a device <MAC (12 hex digits) | slot (at most 2 digits)>.", cmd_config_remove_tag, 2, 0),
 	SHELL_CMD_ARG(clear, NULL, "Clear all devices.", cmd_config_clear_tags, 1, 0),
 
 	SHELL_SUBCMD_SET_END
 );
 
+/* `devices` is a deprecated alias of the `slot-N` config items, kept undocumented for
+ * one release so existing scripts keep working. It is the only named subcommand here:
+ * anything else after `tag config` finds no match and so falls through to cmd_config
+ * (the shell's has_last_handler path), which is what routes `tag config <name> [value]`
+ * and `tag config show` into ctr_config_cmd_config(). */
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_tag_config,
-	SHELL_CMD_ARG(show, NULL, "List current configuration.",cmd_config_show, 1, 0),
 
-	SHELL_CMD_ARG(enabled, NULL, "Enable or disable the BLE tag scanner.", cmd_config_enabled, 1, 1),
-	SHELL_CMD_ARG(scan-interval, NULL, "Set the BLE tag scanner scan interval (seconds).", cmd_config_scan_interval, 1, 1),
-	SHELL_CMD_ARG(scan-duration, NULL, "Set the BLE tag scanner scan duration (seconds).", cmd_config_scan_duration, 1, 1),
+	SHELL_CMD_ARG(devices, &sub_tag_config_devices, NULL, print_help, 1, 0),
+	SHELL_SUBCMD_SET_END
+);
 
-	SHELL_CMD_ARG(devices, &sub_tag_config_devices, "BLE tag scanner device commands.", print_help, 1, 0),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_tag_list,
+
+	SHELL_CMD_ARG(show, NULL, "Show every slot and its latest readings.", cmd_list_show, 1, 0),
+	SHELL_CMD_ARG(sample, NULL, "Wait for fresh readings from every enrolled tag <timeout (1-300) s, default 60>.", cmd_list_sample, 1, 1),
+	SHELL_CMD_ARG(add, NULL, "Add a tag to the lowest free slot <MAC (12 hex digits)>.", cmd_config_add_tag, 2, 0),
+	SHELL_CMD_ARG(remove, NULL, "Remove a tag <MAC (12 hex digits) | slot (at most 2 digits)>.", cmd_config_remove_tag, 2, 0),
+	SHELL_CMD_ARG(clear, NULL, "Clear all slots.", cmd_config_clear_tags, 1, 0),
+
 	SHELL_SUBCMD_SET_END
 );
 
@@ -1812,10 +2038,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 	SHELL_CMD_ARG(config, &sub_tag_config,
 				  "Configuration commands.",
-				  print_help, 1, 0),
-	SHELL_CMD_ARG(enroll, NULL, "Enroll a device nearby (12 seconds) <threshold (-128:0)>.", cmd_enroll, 1, 1),
-	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (12s), or all nearby tags: read [all [timeout 1-300s]].", cmd_scan, 1, 2),
-	SHELL_CMD_ARG(show, NULL, "Show cached readings of enrolled devices.", cmd_show, 1, 0),
+				  cmd_config, 1, 2),
+	SHELL_CMD_ARG(list, &sub_tag_list, "Enrolled tag commands.", print_help, 1, 0),
+	SHELL_CMD_ARG(apply, NULL, "Make edited configuration live without a reboot.", cmd_apply, 1, 0),
+	SHELL_CMD_ARG(discovery, NULL, "Report every nearby tag, enrolled or not <timeout (1-300) s, default 60>.", cmd_discovery, 1, 1),
+	SHELL_CMD_ARG(enroll, NULL, "Enroll every nearby tag into the free slots <threshold (-128:0) dBm, default -40> <timeout (1-300) s, default 12>.", cmd_enroll, 1, 2),
+	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (12 seconds).", cmd_scan, 1, 2),
+
+	/* Undocumented aliases of `tag list show` and `tag discovery`, kept for one release. */
+	SHELL_CMD_ARG(show, NULL, NULL, cmd_list_show, 1, 0),
 
 	SHELL_SUBCMD_SET_END
 );
@@ -1831,6 +2062,10 @@ static int init(void)
 	LOG_INF("System initialization");
 
 	memset(&m_tag_data, 0, sizeof(m_tag_data));
+
+	for (size_t i = 0; i < ARRAY_SIZE(m_config_items); i++) {
+		ctr_config_init_item(&m_config_items[i]);
+	}
 
 	static struct settings_handler sh = {
 		.name = SETTINGS_PFX,
@@ -1851,7 +2086,10 @@ static int init(void)
 		return ret;
 	}
 
-	ctr_config_append_show(SETTINGS_PFX, cmd_config_show);
+	/* Registered under the shell root, not SETTINGS_PFX: `config modules` is how a
+	 * consumer discovers which `<module> config` commands exist, and there is no
+	 * `ble_tag config` command. */
+	ctr_config_append_show(ITEM_MODULE, cmd_config_show);
 
 	ret = settings_load();
 	if (ret) {
@@ -1859,35 +2097,26 @@ static int init(void)
 		return ret;
 	}
 
-	ret = bt_le_filter_accept_list_clear();
+	ret = accept_list_rebuild();
 	if (ret) {
-		LOG_ERR("Call `bt_le_filter_accept_list_clear` failed: %d", ret);
+		LOG_ERR("Call `accept_list_rebuild` failed: %d", ret);
 		return ret;
 	}
 
-	for (size_t slot = 0; slot < CTR_BLE_TAG_COUNT; slot++) {
-		if (ctr_ble_tag_is_addr_empty(m_config.addr[slot])) {
-			continue;
-		}
+	/* Started unconditionally: `enabled` can be turned on at run time and
+	 * k_work_queue_start() cannot be called twice. The stack is reserved either
+	 * way, so an idle queue costs nothing but the thread itself. */
+	k_work_queue_start(&m_scan_work_q, m_scan_work_q_stack,
+			   K_THREAD_STACK_SIZEOF(m_scan_work_q_stack),
+			   K_LOWEST_APPLICATION_THREAD_PRIO, NULL);
 
-		bt_addr_le_t addr = {
-			.type = BT_ADDR_LE_PUBLIC,
-		};
-
-		memcpy(addr.a.val, m_config.addr[slot], BT_ADDR_SIZE);
-
-		ret = bt_le_filter_accept_list_add((const bt_addr_le_t *)&addr);
-		if (ret) {
-			LOG_ERR("Call `bt_le_filter_accept_list_add` failed: %d", ret);
-			return ret;
-		}
-	}
+	/* Separate from m_scan_work_q -- see m_job_work_q's own comment. Also started
+	 * unconditionally: an operator-driven scan can be requested regardless of `enabled`. */
+	k_work_queue_start(&m_job_work_q, m_job_work_q_stack,
+			   K_THREAD_STACK_SIZEOF(m_job_work_q_stack),
+			   K_LOWEST_APPLICATION_THREAD_PRIO, NULL);
 
 	if (m_config.enabled) {
-		k_work_queue_start(&m_scan_work_q, m_scan_work_q_stack,
-				   K_THREAD_STACK_SIZEOF(m_scan_work_q_stack),
-				   K_LOWEST_APPLICATION_THREAD_PRIO, NULL);
-
 		k_work_schedule_for_queue(&m_scan_work_q, &m_start_scan_work, K_NO_WAIT);
 	}
 

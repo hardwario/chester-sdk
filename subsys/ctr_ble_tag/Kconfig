@@ -5,14 +5,17 @@
 #
 
 config CTR_BLE_TAG
-    bool "CTR_BLE_TAG"
-    select BT
-    select CRC
-    select CTR_BUF
-    select CTR_CONFIG
-    select CTR_INFO
-    select CTR_SHELL
-    select CTR_UTIL
+	bool "CTR_BLE_TAG"
+	select BT
+	select CRC
+	select CTR_CONFIG
+	select CTR_INFO
+	select CTR_SHELL
+	select CTR_UTIL
+	# The shell prints sensor values, which needs float support in the cbprintf
+	# engine. It was previously inherited from whichever other subsystem the
+	# application happened to enable.
+	select CBPRINTF_FP_SUPPORT
 
 if CTR_BLE_TAG
 
@@ -21,9 +24,22 @@ module-str = CHESTER BLE Tag Subsystem
 source "subsys/logging/Kconfig.template.log_config"
 
 config CTR_BLE_TAG_32_SLOTS
-	# default is 8 slots
-	bool "CTR_BLE_TAG_32_SLOTS"
+	bool "CTR_BLE_TAG_32_SLOTS (deprecated)"
 	depends on CTR_BLE_TAG
 	default n
+	help
+	  Deprecated, use CTR_BLE_TAG_SLOTS instead. Kept so that out-of-tree
+	  configurations selecting 32 slots keep working.
+
+config CTR_BLE_TAG_SLOTS
+	int "Number of BLE tag slots"
+	depends on CTR_BLE_TAG
+	range 1 32
+	default 32 if CTR_BLE_TAG_32_SLOTS
+	default 8
+	help
+	  Each slot costs a per-slot aggregation buffer in every application
+	  that samples BLE tags, and grows the CBOR payload, so raise this
+	  deliberately and re-check RAM and uplink size.
 
 endif # CTR_BLE_TAG
