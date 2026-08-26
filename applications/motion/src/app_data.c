@@ -34,6 +34,7 @@ struct app_data g_app_data = {
 	.total_motion_left = 0,
 	.total_motion_right = 0,
 	.motion_sample_count = 0,
+	.passage_event_count = 0,
 };
 
 static K_MUTEX_DEFINE(m_lock);

@@ -68,11 +68,12 @@ int app_send(void)
 		}
 
 #if defined(CONFIG_CTR_S3)
-		/* Reset motion samples after successful send (keep totalizers) */
+		/* Reset samples and passage events after successful send (keep totalizers) */
 		app_data_lock();
 		g_app_data.motion_sample_count = 0;
+		g_app_data.passage_event_count = 0;
 		app_data_unlock();
-		LOG_DBG("Motion samples reset after send");
+		LOG_DBG("Motion samples and passage events reset after send");
 #endif /* defined(CONFIG_CTR_S3) */
 
 		break;

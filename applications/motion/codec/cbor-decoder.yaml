@@ -53,4 +53,12 @@ schema:
                   - detect_right:
                   - motion_left:
                   - motion_right:
+          - passages:
+              - $tso:
+                  - direction:
+                        - $enum:
+                            - "unknown"
+                            - "left_to_right"
+                            - "right_to_left"
+                  - delta_ms:
 

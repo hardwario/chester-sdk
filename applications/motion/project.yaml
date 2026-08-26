@@ -10,7 +10,7 @@ project:
   license: 'SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause'
   fw_name: CHESTER Motion
   fw_bundle: com.hardwario.chester.app.motion
-  fw_version: v3.0.0
+  fw_version: v3.0.1
 features:
 - subsystem-accel
 - subsystem-batt
@@ -88,9 +88,12 @@ commands:
 - name: send
   callback: app_work_send()
   help: 'Send data immediately.'
+- name: passages
+  callback: app_sensor_print_passages(shell)
+  help: 'Show passage events.'
 # Custom commands in app_shell.c (Preserved code blocks):
-# - app motion detection [timeout_s] - Monitor motion detection in real-time
-# - app motion samples - Show motion samples
+# - motion detection [timeout_s] - Monitor motion detection in real-time
+# - motion samples - Show motion samples
 extras:
 - CONFIG_CTR_S3=y
 - CONFIG_I2C_SHELL=y

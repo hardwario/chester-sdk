@@ -156,4 +156,38 @@ void app_sensor_print_last_sample(const struct shell *shell)
 	}
 	app_data_unlock();
 }
+
+void app_sensor_print_passages(const struct shell *shell)
+{
+	app_data_lock();
+
+	shell_print(shell, "Passage Events (%d total):", g_app_data.passage_event_count);
+
+	for (int i = 0; i < g_app_data.passage_event_count; i++) {
+		const struct app_data_passage_event *ev = &g_app_data.passage_events[i];
+		time_t ts = (time_t)ev->timestamp;
+		struct tm *tm_info = gmtime(&ts);
+		char time_buf[20];
+		strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info);
+
+		const char *dir_str;
+
+		switch (ev->direction) {
+		case APP_DATA_DIRECTION_LEFT_TO_RIGHT:
+			dir_str = "L->R";
+			break;
+		case APP_DATA_DIRECTION_RIGHT_TO_LEFT:
+			dir_str = "R->L";
+			break;
+		default:
+			dir_str = "?";
+			break;
+		}
+
+		shell_print(shell, "[%d] %s %s delta=%ums", i, time_buf, dir_str,
+			    (unsigned)ev->delta_ms);
+	}
+
+	app_data_unlock();
+}
 #endif /* defined(CONFIG_CTR_S3) */

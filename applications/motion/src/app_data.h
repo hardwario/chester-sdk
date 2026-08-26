@@ -7,7 +7,8 @@
 
 #include <zephyr/kernel.h>
 
-#define APP_DATA_MAX_MEASUREMENTS  30
+#define APP_DATA_MAX_MEASUREMENTS   30
+#define APP_DATA_MAX_PASSAGE_EVENTS 32
 
 
 #ifdef _cplusplus
@@ -23,6 +24,14 @@ enum app_data_direction {
 	APP_DATA_DIRECTION_RIGHT_TO_LEFT,
 };
 
+/* These values are wire-visible: motion.passages encodes `direction` as the
+ * index into the $enum list in codec/cbor-decoder.yaml. Keep the order here
+ * and there in sync ("unknown", "left_to_right", "right_to_left").
+ */
+BUILD_ASSERT(APP_DATA_DIRECTION_NONE == 0);
+BUILD_ASSERT(APP_DATA_DIRECTION_LEFT_TO_RIGHT == 1);
+BUILD_ASSERT(APP_DATA_DIRECTION_RIGHT_TO_LEFT == 2);
+
 
 struct app_data_measurement_value {
 	int detect_left;
@@ -35,6 +44,15 @@ struct app_data_measurement_value {
 struct app_data_measurement {
 	uint64_t timestamp;
 	struct app_data_measurement_value value;
+};
+
+
+struct app_data_passage_event {
+	/* UNIX timestamp in seconds, matching the motion.passages $tso base */
+	int64_t timestamp;
+	enum app_data_direction direction;
+	/* Time between the two sensor detections forming this passage */
+	uint16_t delta_ms;
 };
 
 struct app_data {
@@ -61,6 +79,9 @@ struct app_data {
 	struct app_data_measurement motion_samples[APP_DATA_MAX_MEASUREMENTS];
 	int motion_sample_count;
 	enum app_data_direction last_motion_direction;
+
+	int passage_event_count;
+	struct app_data_passage_event passage_events[APP_DATA_MAX_PASSAGE_EVENTS];
 #endif /* defined(CONFIG_CTR_S3) */
 	};
 

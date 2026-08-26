@@ -18,6 +18,7 @@ int app_sensor_sample(void);
 
 #if defined(CONFIG_CTR_S3)
 int cmd_motion_view(const struct shell *shell, size_t argc, char **argv);
+void app_sensor_print_passages(const struct shell *shell);
 void app_sensor_print_last_sample(const struct shell *shell);
 #endif
 

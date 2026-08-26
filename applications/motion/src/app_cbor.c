@@ -65,13 +65,6 @@ static int encode(zcbor_state_t *zs)
 		zcbor_uint32_put(zs, CODEC_KEY_E_MESSAGE__SEQUENCE);
 		zcbor_uint32_put(zs, sequence++);
 
-		/*uint64_t timestamp;
-		ret = ctr_rtc_get_ts(&timestamp);
-		if (ret) {
-			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
-			return ret;
-		}
-*/
 		zcbor_uint32_put(zs, CODEC_KEY_E_MESSAGE__TIMESTAMP);
 		zcbor_uint64_put(zs, timestamp);
 
@@ -315,6 +308,29 @@ static int encode(zcbor_state_t *zs)
                }
            }
 
+
+           zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+       }
+
+
+       zcbor_uint32_put(zs, CODEC_KEY_E_MOTION__PASSAGES);
+       {
+           zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+           if (g_app_data.passage_event_count > 0) {
+               int64_t timestamp_abs = g_app_data.passage_events[0].timestamp;
+
+               /* TSO absolute timestamp in seconds */
+               zcbor_int64_put(zs, timestamp_abs);
+
+               for (int i = 0; i < g_app_data.passage_event_count; i++) {
+                   /* TSO offset timestamp in seconds */
+                   zcbor_int64_put(zs,
+                       g_app_data.passage_events[i].timestamp - timestamp_abs);
+                   zcbor_uint32_put(zs, (uint32_t)g_app_data.passage_events[i].direction);
+                   zcbor_uint32_put(zs, g_app_data.passage_events[i].delta_ms);
+               }
+           }
 
            zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
        }

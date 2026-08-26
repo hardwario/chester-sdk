@@ -55,6 +55,19 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_passages(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "unknown parameter: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	app_sensor_print_passages(shell);
+
+	return 0;
+}
+
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -157,6 +170,7 @@ SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 
 SHELL_CMD_REGISTER(sample, NULL, "Sample immediately.", cmd_sample);
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
+SHELL_CMD_REGISTER(passages, NULL, "Show passage events.", cmd_passages);
 
 /* ### Preserved code "functions 2" (begin) */
 #if defined(CONFIG_CTR_S3)

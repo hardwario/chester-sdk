@@ -123,6 +123,50 @@ void app_handler_clear_detection_cb(void)
    m_detection_cb_user_data = NULL;
 }
 
+/* Record a completed passage and notify the detection callback. Must be called
+ * with the app data lock held.
+ */
+static void record_passage(enum app_data_direction direction)
+{
+	int64_t delta_ms = k_uptime_get() - m_first_detection_uptime;
+
+	if (delta_ms < 0 || delta_ms > UINT16_MAX) {
+		LOG_WRN("Passage delta out of range: %lld ms", delta_ms);
+		return;
+	}
+
+	if (g_app_data.passage_event_count >= APP_DATA_MAX_PASSAGE_EVENTS) {
+		LOG_WRN("Passage buffer full, dropping event");
+	} else {
+		int64_t timestamp = 0;
+		int ret = ctr_rtc_get_ts(&timestamp);
+
+		if (ret) {
+			LOG_WRN("Call `ctr_rtc_get_ts` failed: %d", ret);
+		}
+
+		int idx = g_app_data.passage_event_count;
+
+		g_app_data.passage_events[idx].timestamp = timestamp;
+		g_app_data.passage_events[idx].direction = direction;
+		g_app_data.passage_events[idx].delta_ms = (uint16_t)delta_ms;
+		g_app_data.passage_event_count = idx + 1;
+	}
+
+	if (m_detection_cb) {
+		struct app_detection_event ev = {
+			.direction = (int)direction,
+			.delta_ms = (int)delta_ms,
+			.detect_left = g_app_data.motion_count_l,
+			.detect_right = g_app_data.motion_count_r,
+			.motion_left = g_app_data.motion_count_left,
+			.motion_right = g_app_data.motion_count_right,
+		};
+
+		m_detection_cb(&ev, m_detection_cb_user_data);
+	}
+}
+
 void app_handler_ctr_s3(const struct device *dev, enum ctr_s3_event event, void *user_data)
 {
    if (g_app_config.service_mode_enabled) {
@@ -162,17 +206,7 @@ void app_handler_ctr_s3(const struct device *dev, enum ctr_s3_event event, void 
             k_timer_stop(&motion_state_timer);
             motion_state = STATE_IDLE;
 
-            if (m_detection_cb) {
-               struct app_detection_event ev = {
-                  .direction = 2,  /* R->L */
-                  .delta_ms = (int)(k_uptime_get() - m_first_detection_uptime),
-                  .detect_left = g_app_data.motion_count_l,
-                  .detect_right = g_app_data.motion_count_r,
-                  .motion_left = g_app_data.motion_count_left,
-                  .motion_right = g_app_data.motion_count_right,
-               };
-               m_detection_cb(&ev, m_detection_cb_user_data);
-            }
+            record_passage(APP_DATA_DIRECTION_RIGHT_TO_LEFT);
          }
 
          app_data_unlock();
@@ -198,17 +232,7 @@ void app_handler_ctr_s3(const struct device *dev, enum ctr_s3_event event, void 
             k_timer_stop(&motion_state_timer);
             motion_state = STATE_IDLE;
 
-            if (m_detection_cb) {
-               struct app_detection_event ev = {
-                  .direction = 1,  /* L->R */
-                  .delta_ms = (int)(k_uptime_get() - m_first_detection_uptime),
-                  .detect_left = g_app_data.motion_count_l,
-                  .detect_right = g_app_data.motion_count_r,
-                  .motion_left = g_app_data.motion_count_left,
-                  .motion_right = g_app_data.motion_count_right,
-               };
-               m_detection_cb(&ev, m_detection_cb_user_data);
-            }
+            record_passage(APP_DATA_DIRECTION_LEFT_TO_RIGHT);
          }
 
          app_data_unlock();
