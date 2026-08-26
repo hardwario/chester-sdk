@@ -717,14 +717,6 @@ config APP_LAMBRECHT
 	depends on SHIELD_CTR_X2_MODBUS_A
 {%- endif -%}
 
-{#- APP FLIP_MODE #}
-	{%- if feature == 'chester-app-flip-mode' %}
-# {{ feature | upper }}
-config APP_FLIP_MODE
-	bool "Enable SHIELD_APP_FLIP_MODE"
-	default y
-{%- endif -%}
-
 {#- TERMOCOUPLE_A #}
 	{%- if feature == 'hardware-chester-tc-a' %}
 # {{ feature | upper }}

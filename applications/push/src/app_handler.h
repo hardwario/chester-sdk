@@ -26,6 +26,9 @@ void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, v
 
 #if defined(FEATURE_HARDWARE_CHESTER_Z)
 void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *user_data);
+
+void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_data *data,
+			     void *param);
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_SUBSYSTEM_BUTTON)

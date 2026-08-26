@@ -415,6 +415,27 @@ static int encode(zcbor_state_t *zs)
 				zcbor_int32_put(zs, button->hold_count);
 
 				if (button->event_count) {
+					struct app_data_button_event *last_press =
+						&button->events[button->event_count - 1];
+
+					zcbor_uint32_put(zs, CODEC_KEY_E_BUTTONS__LAST_PRESS);
+					{
+						zcbor_map_start_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+						zcbor_uint32_put(
+							zs, CODEC_KEY_E_BUTTONS__LAST_PRESS__TYPE);
+						zcbor_uint32_put(zs, last_press->type);
+
+						zcbor_uint32_put(
+							zs,
+							CODEC_KEY_E_BUTTONS__LAST_PRESS__TIMESTAMP);
+						zcbor_int64_put(zs, last_press->timestamp);
+
+						zcbor_map_end_encode(
+							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+					}
+
 					int64_t timestamp_abs = button->events[0].timestamp;
 					zcbor_uint32_put(zs, CODEC_KEY_E_BUTTONS__EVENTS);
 					{
@@ -617,4 +638,75 @@ int app_cbor_encode(zcbor_state_t *zs)
 	app_data_unlock();
 
 	return 0;
+}
+
+static int decode(zcbor_state_t *zs, struct app_cbor_received *received)
+{
+	memset(received, 0, sizeof(struct app_cbor_received));
+
+	if (!zcbor_map_start_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	uint32_t key;
+	bool ok;
+
+	while (1) {
+		if (!zcbor_uint32_decode(zs, &key)) {
+			break;
+		}
+
+		switch (key) {
+
+		case CODEC_KEY_D_VERSION:
+			ok = zcbor_int32_decode(zs, &received->version);
+			received->has_version = true;
+			break;
+
+		case CODEC_KEY_D_LED_BUTTON_0:
+			ok = zcbor_int32_decode(zs, &received->led_button_0);
+			received->has_led_button_0 = true;
+			break;
+
+		case CODEC_KEY_D_LED_BUTTON_1:
+			ok = zcbor_int32_decode(zs, &received->led_button_1);
+			received->has_led_button_1 = true;
+			break;
+
+		case CODEC_KEY_D_LED_BUTTON_2:
+			ok = zcbor_int32_decode(zs, &received->led_button_2);
+			received->has_led_button_2 = true;
+			break;
+
+		case CODEC_KEY_D_LED_BUTTON_3:
+			ok = zcbor_int32_decode(zs, &received->led_button_3);
+			received->has_led_button_3 = true;
+			break;
+
+		case CODEC_KEY_D_LED_BUTTON_4:
+			ok = zcbor_int32_decode(zs, &received->led_button_4);
+			received->has_led_button_4 = true;
+			break;
+
+		default:
+			ok = zcbor_any_skip(zs, NULL);
+			break;
+		}
+
+		if (!ok) {
+			LOG_ERR("Encoding failed: %d", zcbor_peek_error(zs));
+			return -EBADMSG;
+		}
+	}
+
+	if (!zcbor_map_end_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+int app_cbor_decode(zcbor_state_t *zs, struct app_cbor_received *received)
+{
+	return decode(zs, received);
 }

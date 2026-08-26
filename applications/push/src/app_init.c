@@ -179,6 +179,14 @@ int app_init(void)
 			return ret;
 		}
 
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
+		ret = ctr_cloud_set_callback(app_handler_cloud_event, NULL);
+		if (ret) {
+			LOG_ERR("Call `ctr_cloud_set_callback` failed: %d", ret);
+			return ret;
+		}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
+
 		if (g_app_config.interval_poll > 0) {
 			ret = ctr_cloud_set_poll_interval(K_SECONDS(g_app_config.interval_poll));
 			if (ret) {

@@ -97,37 +97,12 @@ deploy_push() {
 
     cd push
 
-    # Check default prj.conf we expect
-    if grep -q "CONFIG_APP_FLIP_MODE=n" "prj.conf"; then
-        echo "String found ok"
-    else
-        echo "Default CONFIG_APP_FLIP_MODE=n string not found, update deploy script."
-        exit
-    fi
-
-    # Backup original prj.conf
-    cp prj.conf prj.conf.bak
-
     #
     # Build CHESTER Push
     #
-    cp CMakeLists.txt.bak CMakeLists.txt
     rm -rf build/
     FW_NAME="CHESTER Push" FW_VERSION=$FW_VERSION west build
     hardwario chester app fw upload --name "hio-chester-push" --version $FW_VERSION
-
-    #
-    # Build CHESTER Push FM
-    #
-    cp CMakeLists.txt.bak CMakeLists.txt
-    gawk -i inplace '{ gsub(/CONFIG_APP_FLIP_MODE=n*/, "CONFIG_APP_FLIP_MODE=y"); print }' prj.conf
-    rm -rf build/
-    FW_NAME="CHESTER Push FM" FW_VERSION=$FW_VERSION west build
-    hardwario chester app fw upload --name "hio-chester-push-fm" --version $FW_VERSION
-
-    # Recover original prj.conf
-    cp prj.conf.bak prj.conf
-    rm prj.conf.bak
 
     cd ..
 }

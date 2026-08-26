@@ -17,12 +17,18 @@
 #include <zephyr/shell/shell.h>
 
 /* Standard includes */
+#include <ctype.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 /* ### Preserved code "includes" (begin) */
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
+static int button_color_parse_cb(const struct shell *shell, char *argv,
+				  const struct ctr_config_item *item);
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 /* ^^^ Preserved code "includes" (end) */
 
 LOG_MODULE_REGISTER(app_config, LOG_LEVEL_DBG);
@@ -46,17 +52,124 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_INT("event-report-rate", m_config_interim.event_report_rate, 1, 3600, "Get/Set event report rate in reports per hour.", 30),
 	CTR_CONFIG_ITEM_BOOL("backup-report-connected", m_config_interim.backup_report_connected, "Get/Set report when backup is active.", true),
 	CTR_CONFIG_ITEM_BOOL("backup-report-disconnected", m_config_interim.backup_report_disconnected, "Get/Set report when backup is inactive.", true),
+	CTR_CONFIG_ITEM_ENUM("led-mode", m_config_interim.led_mode, ((const char*[]){"multiple", "single"}), "Get/Set button LED mode (multiple LEDs lit independently, or a single exclusive LED).", APP_CONFIG_LED_MODE_MULTIPLE),
+	CTR_CONFIG_ITEM_INT("led-timeout", m_config_interim.led_timeout, 0, 86400, "Get/Set button LED timeout in seconds (0 = stay lit until cleared by downlink).", 5),
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){"none", "lte", "lrw"}), "Set communication mode", APP_CONFIG_MODE_NONE),
 
 	/* ### Preserved code "config" (begin) */
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
+	/* Per-button LED color: click_color,hold_color, each a 24-bit RRGGBB hex color */
+	CTR_CONFIG_ITEM_STRING_PARSE_CB("button-x", m_config_interim.button_color_str[0],
+		"Button x: click_color,hold_color (24-bit RRGGBB hex, e.g. 00FF00,FF0000)", "00FF00,FF0000", button_color_parse_cb),
+	CTR_CONFIG_ITEM_STRING_PARSE_CB("button-1", m_config_interim.button_color_str[1],
+		"Button 1: click_color,hold_color (24-bit RRGGBB hex, e.g. 00FF00,FF0000)", "00FF00,FF0000", button_color_parse_cb),
+	CTR_CONFIG_ITEM_STRING_PARSE_CB("button-2", m_config_interim.button_color_str[2],
+		"Button 2: click_color,hold_color (24-bit RRGGBB hex, e.g. 00FF00,FF0000)", "00FF00,FF0000", button_color_parse_cb),
+	CTR_CONFIG_ITEM_STRING_PARSE_CB("button-3", m_config_interim.button_color_str[3],
+		"Button 3: click_color,hold_color (24-bit RRGGBB hex, e.g. 00FF00,FF0000)", "00FF00,FF0000", button_color_parse_cb),
+	CTR_CONFIG_ITEM_STRING_PARSE_CB("button-4", m_config_interim.button_color_str[4],
+		"Button 4: click_color,hold_color (24-bit RRGGBB hex, e.g. 00FF00,FF0000)", "00FF00,FF0000", button_color_parse_cb),
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 	/* ^^^ Preserved code "config" (end) */
 
 };
 /* clang-format on */
 
 /* ### Preserved code "function" (begin) */
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
+
+/* Parse exactly 6 hex digits ("RRGGBB") into a 24-bit color. */
+static int parse_hex_color(const char *str, struct app_config_led_color *color)
+{
+	if (strlen(str) != 6) {
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < 6; i++) {
+		if (!isxdigit((unsigned char)str[i])) {
+			return -EINVAL;
+		}
+	}
+
+	char byte_str[3] = {0};
+	unsigned long value;
+
+	memcpy(byte_str, &str[0], 2);
+	value = strtoul(byte_str, NULL, 16);
+	color->r = (uint8_t)value;
+
+	memcpy(byte_str, &str[2], 2);
+	value = strtoul(byte_str, NULL, 16);
+	color->g = (uint8_t)value;
+
+	memcpy(byte_str, &str[4], 2);
+	value = strtoul(byte_str, NULL, 16);
+	color->b = (uint8_t)value;
+
+	return 0;
+}
+
+/* Parse "click_color,hold_color" (each a 6-hex-digit RRGGBB color, e.g.
+ * "00FF00,FF0000") into click/hold colors. */
+static int parse_button_color_string(const char *input, struct app_config_led_color *click_color,
+				      struct app_config_led_color *hold_color)
+{
+	char buf[APP_CONFIG_BUTTON_COLOR_STR_SIZE];
+	char *saveptr;
+	char *part;
+
+	if (!input || !input[0]) {
+		return -EINVAL;
+	}
+
+	strncpy(buf, input, sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = '\0';
+
+	part = strtok_r(buf, ",", &saveptr);
+	if (!part || parse_hex_color(part, click_color)) {
+		return -EINVAL;
+	}
+
+	part = strtok_r(NULL, ",", &saveptr);
+	if (!part || parse_hex_color(part, hold_color)) {
+		return -EINVAL;
+	}
+
+	if (strtok_r(NULL, ",", &saveptr)) {
+		return -EINVAL; /* too many parts */
+	}
+
+	return 0;
+}
+
+/* Button color parse callback - validates and stores string */
+static int button_color_parse_cb(const struct shell *shell, char *argv,
+				  const struct ctr_config_item *item)
+{
+	size_t len = strlen(argv);
+
+	if (len >= item->size) {
+		shell_error(shell, "Value too long (max %d)", item->size - 1);
+		return -ENOMEM;
+	}
+
+	struct app_config_led_color click_color, hold_color;
+	int ret = parse_button_color_string(argv, &click_color, &hold_color);
+	if (ret) {
+		shell_error(shell, "Invalid format. Use: click_color,hold_color");
+		shell_print(shell, "  Each color is 6 hex digits, RRGGBB (e.g. 00FF00,FF0000)");
+		return ret;
+	}
+
+	strncpy(item->variable, argv, item->size - 1);
+	((char *)item->variable)[item->size - 1] = '\0';
+
+	return 0;
+}
+
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 /* ^^^ Preserved code "function" (end) */
 
 int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **argv)
@@ -94,6 +207,19 @@ static int h_commit(void)
 	LOG_DBG("Loaded settings in full");
 
 	/* ### Preserved code "h_commit" (begin) */
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
+	for (int i = 0; i < APP_DATA_BUTTON_COUNT; i++) {
+		if (parse_button_color_string(m_config_interim.button_color_str[i],
+					       &m_config_interim.button_click_color[i],
+					       &m_config_interim.button_hold_color[i])) {
+			LOG_WRN("Invalid button-%d color string, defaulting to off", i);
+			m_config_interim.button_click_color[i] =
+				(struct app_config_led_color){0, 0, 0};
+			m_config_interim.button_hold_color[i] =
+				(struct app_config_led_color){0, 0, 0};
+		}
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 	/* ^^^ Preserved code "h_commit" (end) */
 
 	memcpy(&g_app_config, &m_config_interim, sizeof(g_app_config));

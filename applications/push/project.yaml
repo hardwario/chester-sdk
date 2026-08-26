@@ -4,12 +4,6 @@ variants:
   fw_bundle: com.hardwario.chester.app.push
   fw_name: hio-chester-push
   fw_version: v3.0.0
-- name: CHESTER Push FM
-  fw_bundle: com.hardwario.chester.app.push.fm
-  fw_name: hio-chester-push-fm
-  fw_version: v3.0.0
-  features:
-  - chester-app-flip-mode
 project:
   variant: Push
   company: 2024 HARDWARIO a.s.
@@ -42,7 +36,6 @@ features:
 - subsystem-lrw
 - hardware-chester-s2
 - hardware-chester-z
-#- chester-app-flip-mode
 parameters:
 - name: interval-sample
   type: int
@@ -97,6 +90,21 @@ parameters:
   type: bool
   default: true
   help: 'Get/Set report when backup is inactive'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+- name: led-mode
+  type: enum
+  default: multiple
+  valueset:
+    - multiple
+    - single
+  help: 'Get/Set button LED mode (multiple LEDs lit independently, or a single exclusive LED)'
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
+- name: led-timeout
+  type: int
+  min: 0
+  max: 86400
+  default: 5
+  help: 'Get/Set button LED timeout in seconds (0 = stay lit until cleared by downlink)'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 commands:
 - name: sample

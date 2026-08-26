@@ -1,0 +1,16 @@
+version: 2
+type: encoder
+name: com.hardwario.chester.app.push
+schema:
+  - version:
+    - $type: int
+  - led_button_0:
+    - $type: int
+  - led_button_1:
+    - $type: int
+  - led_button_2:
+    - $type: int
+  - led_button_3:
+    - $type: int
+  - led_button_4:
+    - $type: int

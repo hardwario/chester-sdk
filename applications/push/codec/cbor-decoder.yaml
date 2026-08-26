@@ -78,6 +78,12 @@ schema:
         - $enum:
           - "clicked"
           - "held"
+  - last_press:
+    - type:
+      - $enum:
+        - "clicked"
+        - "held"
+    - timestamp:
 - tamper:
   - state:
     - $enum:
