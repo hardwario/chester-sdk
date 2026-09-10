@@ -22,13 +22,13 @@ import struct
 
 key_separator = '__'
 key_words_decoder = ('$key', '$div', '$mul', '$add',
-                     '$sub', '$fpp', '$tso', '$tsp', '$enum', '$mbus', '$wmbus')
+                     '$sub', '$fpp', '$tso', '$tsp', '$enum', '$rel', '$loc', '$mbus', '$wmbus')
 key_words_encoder = ('$div', '$mul', '$add', '$sub', '$fpp', '$enum', '$type')
 type_words = ('int', 'float', 'bool', 'string')
 
 
 def key_normalize(key):
-    return re.sub('[^A-Z\d]', '_', key.upper())
+    return re.sub('[^A-Z\\d]', '_', key.upper())
 
 
 def iter_items(items, prefix, key_words):
