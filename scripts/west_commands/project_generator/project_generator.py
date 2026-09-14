@@ -511,7 +511,6 @@ class ProjectGenerator:
                     if (
                         file.endswith(".c")
                         or file == "msg_key.h"
-                        or file == "app_codec.h"
                     ):
                         file_path = os.path.relpath(
                             os.path.join(root, file), src_dir)
@@ -844,8 +843,6 @@ class ProjectGenerator:
                 {"dir": "src", "name": "app_work.h", "template": "app_work.h.j2"},
                 {"dir": "src", "name": "app_cbor.c", "template": "app_cbor.c.j2"},
                 {"dir": "src", "name": "app_cbor.h", "template": "app_cbor.h.j2"},
-                {"dir": "src", "name": "app_codec.h",
-                    "template": "app_codec.h.j2"},
                 {"dir": "", "name": "sysbuild.conf",
                     "template": "sysbuild.conf.j2"},
                 {
