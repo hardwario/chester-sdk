@@ -7,25 +7,17 @@ variables:
   stage: build
   variables:
     GIT_STRATEGY: none
-    WEST_PATH: /shared-cache/west-path/chester-sdk-base
+    WEST_AUTO_CACHE: /shared-cache/west-auto
   before_script:
     - set -euo pipefail
-    - |
-      if [ ! -f "$WEST_PATH/done" ]; then
-        mkdir -p "$WEST_PATH"
-        west init -m https://github.com/hardwario/chester-sdk.git --manifest-rev main "$WEST_PATH"
-        cd "$WEST_PATH"
-        west update
-        rm -rf chester .west
-        date +%s > "$WEST_PATH/done"
-      fi
     - mkdir -p /build
     - cd /build
     - git clone -n "${CI_REPOSITORY_URL}" chester
     - git -C chester config advice.detachedHead false
     - git -C chester checkout "${CI_COMMIT_SHA}"
     - west init -l --mf west.yml chester
-    - west update --path-cache "$WEST_PATH"
+    # flock: concurrent jobs must not sync the shared mirrors at the same time
+    - flock -w 1800 "${WEST_AUTO_CACHE}.lock" west update --auto-cache "${WEST_AUTO_CACHE}"
     - west config build.board chester
 
 tests:
