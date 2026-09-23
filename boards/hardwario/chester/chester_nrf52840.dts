@@ -267,17 +267,17 @@
 	};
 };
 
-&spi1 {
+&spi3 {
 	status = "okay";
-	pinctrl-0 = <&spi1_default>;
-	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-0 = <&flash_spi_default>;
+	pinctrl-1 = <&flash_spi_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 
 	spi_flash0: at45db641e@0 {
 		compatible = "hardwario,at45";
 		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(15)>;
+		spi-max-frequency = <DT_FREQ_M(16)>;
 		jedec-id = [ 1f 28 00  ];
 		size = <DT_SIZE_M(64)>;
 		sector-size = <DT_SIZE_K(256)>;

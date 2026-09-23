@@ -16,8 +16,11 @@ LOG_MODULE_REGISTER(ctr_spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 #define DT_DRV_COMPAT hardwario_at45
 
 /* AT45 commands used by this driver: */
-/* - Continuous Array Read (Low Power Mode) */
-#define CMD_READ             0x01
+/* - Continuous Array Read (Low Frequency Mode, no dummy byte, up to fCAR2 = 40 MHz).
+ *   The Low Power Mode read (0x01) is limited to fCAR3 = 15 MHz, which is below
+ *   the SPIM3 speeds used on nRF52840. 0x0B (up to 85 MHz) needs a dummy byte.
+ */
+#define CMD_READ             0x03
 /* - Main Memory Byte/Page Program through Buffer 1 without Built-In Erase */
 #define CMD_WRITE            0x02
 /* - Read-Modify-Write */
@@ -88,6 +91,7 @@ struct spi_flash_at45_config {
 	uint16_t t_enter_dpd; /* in microseconds */
 	uint16_t t_exit_dpd;  /* in microseconds */
 	bool use_udpd;
+	bool suspend_bus;
 	uint8_t jedec_id[3];
 };
 
@@ -97,6 +101,51 @@ static const struct flash_parameters flash_at45_parameters = {
 };
 
 static int power_down_op(const struct device *dev, uint8_t opcode, uint32_t delay);
+
+/*
+ * nRF52840 anomaly 195: SPIM3 draws several hundred uA while it is enabled,
+ * even when idle. Suspend the SPI bus device whenever the flash is put to
+ * sleep so that the SPIM driver uninitializes the peripheral (which also
+ * applies the nrfx workaround) and resume it before waking the flash.
+ * Only done when the flash sits on the spi3 instance.
+ */
+static void bus_suspend(const struct device *dev)
+{
+#if defined(CONFIG_PM_DEVICE)
+	const struct spi_flash_at45_config *dev_config = dev->config;
+	int err;
+
+	if (!dev_config->suspend_bus) {
+		return;
+	}
+
+	err = pm_device_action_run(dev_config->bus.bus, PM_DEVICE_ACTION_SUSPEND);
+	if (err && err != -EALREADY) {
+		LOG_WRN("Failed to suspend SPI bus %s: %d", dev_config->bus.bus->name, err);
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static void bus_resume(const struct device *dev)
+{
+#if defined(CONFIG_PM_DEVICE)
+	const struct spi_flash_at45_config *dev_config = dev->config;
+	int err;
+
+	if (!dev_config->suspend_bus) {
+		return;
+	}
+
+	err = pm_device_action_run(dev_config->bus.bus, PM_DEVICE_ACTION_RESUME);
+	if (err && err != -EALREADY) {
+		LOG_WRN("Failed to resume SPI bus %s: %d", dev_config->bus.bus->name, err);
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
 
 static void acquire(const struct device *dev)
 {
@@ -110,6 +159,7 @@ static void acquire(const struct device *dev)
 	if (dev_data->is_sleeping) {
 		LOG_DBG("Wake-up");
 
+		bus_resume(dev);
 		power_down_op(dev, CMD_EXIT_DPD, dev_config->t_exit_dpd);
 		dev_data->is_sleeping = false;
 	}
@@ -540,6 +590,7 @@ static void sleep_work_handler(struct k_work *work)
 
 	power_down_op(dev, CMD_ENTER_UDPD, dev_config->t_enter_dpd);
 	dev_data->is_sleeping = true;
+	bus_suspend(dev);
 
 	k_sem_give(&dev_data->lock);
 }
@@ -663,6 +714,11 @@ static const struct flash_driver_api spi_flash_at45_api = {
 	IF_ENABLED(INST_HAS_WP_GPIO(idx), (static const struct gpio_dt_spec wp_##idx =             \
 						   GPIO_DT_SPEC_INST_GET(idx, wp_gpios);))
 
+/* True when the instance is attached to the SPIM3 peripheral (nRF52840 anomaly 195). */
+#define INST_BUS_IS_SPIM3(idx)                                                                     \
+	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(spi3)),                                            \
+		    (DT_SAME_NODE(DT_INST_BUS(idx), DT_NODELABEL(spi3))), (0))
+
 #define SPI_FLASH_AT45_INST(idx)                                                                   \
 	enum {                                                                                     \
 		INST_##idx##_BYTES = (DT_INST_PROP(idx, size) / 8),                                \
@@ -695,6 +751,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 		.t_enter_dpd = DIV_ROUND_UP(DT_INST_PROP(idx, enter_dpd_delay), NSEC_PER_USEC),    \
 		.t_exit_dpd = DIV_ROUND_UP(DT_INST_PROP(idx, exit_dpd_delay), NSEC_PER_USEC),      \
 		.use_udpd = DT_INST_PROP(idx, use_udpd),                                           \
+		.suspend_bus = IS_ENABLED(CONFIG_SOC_NRF52840) && INST_BUS_IS_SPIM3(idx),          \
 		.jedec_id = DT_INST_PROP(idx, jedec_id),                                           \
 	};                                                                                         \
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,                                                       \

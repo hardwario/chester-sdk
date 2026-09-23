@@ -40,6 +40,6 @@ config SPI_FLASH_AT45_INIT_PRIORITY
 
 config SPI_FLASH_AT45_SLEEP_TIMEOUT
 	int "Sleep timeout in ms"
-	default 5000
+	default 100
 
 endif # SPI_FLASH_AT45
