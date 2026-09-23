@@ -63,9 +63,13 @@ static void make_filename(ctr_cloud_spool_id id, char *name, size_t name_size)
 	gmtime_r(&ts, &tm);
 
 	/* ISO-8601-like name (dashes instead of colons); lexicographic order
-	 * equals chronological order, milliseconds avoid same-second collisions */
-	snprintf(name, name_size, "%04d-%02d-%02dT%02d-%02d-%02d-%03dZ", tm.tm_year + 1900,
-		 tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(id % 1000));
+	 * equals chronological order, milliseconds avoid same-second collisions;
+	 * the modulo operations bound the field widths for -Wformat-truncation */
+	snprintf(name, name_size, "%04u-%02u-%02uT%02u-%02u-%02u-%03uZ",
+		 (unsigned int)(tm.tm_year + 1900) % 10000, (unsigned int)(tm.tm_mon + 1) % 100,
+		 (unsigned int)tm.tm_mday % 100, (unsigned int)tm.tm_hour % 100,
+		 (unsigned int)tm.tm_min % 100, (unsigned int)tm.tm_sec % 100,
+		 (unsigned int)(id % 1000));
 }
 
 static int parse_filename(const char *name, ctr_cloud_spool_id *id)
