@@ -15,10 +15,6 @@
 #include "app_work.h"
 #include "feature.h"
 
-/* CHESTER includes */
-#include <chester/ctr_buf.h>
-#include <chester/ctr_cloud.h>
-
 /* Zephyr includes */
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -58,50 +54,10 @@ static void send_work_handler(struct k_work *work)
 
 	k_timer_start(&m_send_timer, K_MSEC(duration), K_FOREVER);
 
-#if defined(FEATURE_SUBSYSTEM_LTE_V2)
-
-	if (g_app_config.mode == APP_CONFIG_MODE_LTE) {
-		CTR_BUF_DEFINE_STATIC(buf, 8 * 1024);
-
-		ctr_buf_reset(&buf);
-
-		ZCBOR_STATE_E(zs, 8, ctr_buf_get_mem(&buf), ctr_buf_get_free(&buf), 1);
-
-		ret = app_cbor_encode(zs);
-		if (ret) {
-			LOG_ERR("Call `app_cbor_encode` failed: %d", ret);
-			return;
-		}
-
-		size_t len = zs[0].payload_mut - ctr_buf_get_mem(&buf);
-
-		ret = ctr_buf_seek(&buf, len);
-		if (ret) {
-			LOG_ERR("Call `ctr_buf_seek` failed: %d", ret);
-			return;
-		}
-
-		ret = ctr_cloud_send_data(ctr_buf_get_mem(&buf), ctr_buf_get_used(&buf),
-					  K_SECONDS(g_app_config.send_timeout));
-		if (ret) {
-			LOG_ERR("Call `ctr_cloud_send_data` failed: %d", ret);
-			return;
-		}
+	ret = app_send();
+	if (ret) {
+		LOG_ERR("Call `app_send` failed: %d", ret);
 	}
-
-#endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
-
-#if defined(FEATURE_SUBSYSTEM_LRW)
-
-	if (g_app_config.mode == APP_CONFIG_MODE_LRW) {
-
-		ret = app_send();
-		if (ret) {
-			LOG_ERR("Call `app_send` failed: %d", ret);
-		}
-	}
-
-#endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
 #if defined(FEATURE_CHESTER_APP_TAMPER)
 	app_tamper_clear();
