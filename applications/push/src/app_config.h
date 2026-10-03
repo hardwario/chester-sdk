@@ -13,10 +13,25 @@
 /* Standard includes */
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 
 /* ### Preserved code "includes" (begin) */
+#include <stdint.h>
 #include "app_data.h" /* for APP_DATA_BUTTON_COUNT, reused below */
+
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
+
+#define APP_CONFIG_BUTTON_COLOR_STR_SIZE 16 /* "RRGGBB,RRGGBB" + NUL, with room to spare */
+
+/* Full 24-bit color (8-bit brightness per R/G/B channel) -- CHESTER Z's LED
+ * driver takes an arbitrary 8-bit PWM brightness per channel, not just a few
+ * fixed presets, so button colors aren't limited to on/off per channel. */
+struct app_config_led_color {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+};
+
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 /* ^^^ Preserved code "includes" (end) */
 
 #ifdef __cplusplus
@@ -36,17 +51,6 @@ enum app_config_led_mode {
 	APP_CONFIG_LED_MODE_SINGLE = 1,
 };
 
-#define APP_CONFIG_BUTTON_COLOR_STR_SIZE 16 /* "RRGGBB,RRGGBB" + NUL, with room to spare */
-
-/* Full 24-bit color (8-bit brightness per R/G/B channel) -- CHESTER Z's LED
- * driver takes an arbitrary 8-bit PWM brightness per channel, not just a few
- * fixed presets, so button colors aren't limited to on/off per channel. */
-struct app_config_led_color {
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-};
-
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 struct app_config {
@@ -63,14 +67,16 @@ struct app_config {
 	bool backup_report_disconnected;
 	enum app_config_led_mode led_mode;
 	int led_timeout;
-	char button_color_str[APP_DATA_BUTTON_COUNT][APP_CONFIG_BUTTON_COLOR_STR_SIZE];
-	struct app_config_led_color button_click_color[APP_DATA_BUTTON_COUNT];
-	struct app_config_led_color button_hold_color[APP_DATA_BUTTON_COUNT];
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 	enum app_config_mode mode;
 
 	/* ### Preserved code "struct variables" (begin) */
+#if defined(FEATURE_HARDWARE_CHESTER_Z)
+	char button_color_str[APP_DATA_BUTTON_COUNT][APP_CONFIG_BUTTON_COLOR_STR_SIZE];
+	struct app_config_led_color button_click_color[APP_DATA_BUTTON_COUNT];
+	struct app_config_led_color button_hold_color[APP_DATA_BUTTON_COUNT];
+#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 	/* ^^^ Preserved code "struct variables" (end) */
 };
 
