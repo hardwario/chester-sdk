@@ -117,7 +117,7 @@ static void send_with_rate_limit(void)
 	LOG_INF("Hourly counter state: %d/%d", (int)atomic_get(&m_report_rate_hourly_counter),
 		g_app_config.event_report_rate);
 
-	if (atomic_get(&m_report_rate_hourly_counter) <= g_app_config.event_report_rate) {
+	if (atomic_get(&m_report_rate_hourly_counter) < g_app_config.event_report_rate) {
 		if (!atomic_get(&m_report_delay_timer_is_active)) {
 			LOG_INF("Starting delay timer");
 			k_timer_start(&m_report_delay_timer,
