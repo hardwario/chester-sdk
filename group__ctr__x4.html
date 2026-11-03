@@ -123,6 +123,7 @@ Enumerations</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:gaff5b0970bbf325d018867891142796a9"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#gaff5b0970bbf325d018867891142796a9">ctr_x4_set_handler</a> (const struct device *dev, ctr_x4_user_cb user_cb, void *user_data)</td></tr>
+<tr class="memdesc:gaff5b0970bbf325d018867891142796a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register an event handler.  <a href="group__ctr__x4.html#gaff5b0970bbf325d018867891142796a9">More...</a><br /></td></tr>
 <tr class="separator:gaff5b0970bbf325d018867891142796a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gab924ea8b4a4018cb2fd338aee3b3d331"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x4.html#gab924ea8b4a4018cb2fd338aee3b3d331">ctr_x4_set_output</a> (const struct device *dev, enum <a class="el" href="group__ctr__x4.html#ga86e282f4ec4b1f78f9a04f4368ef0082">ctr_x4_output</a> output, bool is_on)</td></tr>
 <tr class="separator:gab924ea8b4a4018cb2fd338aee3b3d331"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -302,6 +303,16 @@ Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Register an event handler. </p>
+<p >Adds <code>user_cb</code> to the device's handler list; it does not replace previously registered handlers. Call it once per listener, at initialization time.</p>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">0</td><td>on success </td></tr>
+    <tr><td class="paramname">-ENOMEM</td><td>if no handler slot is free </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>

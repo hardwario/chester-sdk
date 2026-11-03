@@ -112,6 +112,7 @@ Enumerations</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ga831320e6daa5647b2ac5f98306154d5d"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x10.html#ga831320e6daa5647b2ac5f98306154d5d">ctr_x10_set_handler</a> (const struct device *dev, ctr_x10_user_cb user_cb, void *user_data)</td></tr>
+<tr class="memdesc:ga831320e6daa5647b2ac5f98306154d5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register an event handler.  <a href="group__ctr__x10.html#ga831320e6daa5647b2ac5f98306154d5d">More...</a><br /></td></tr>
 <tr class="separator:ga831320e6daa5647b2ac5f98306154d5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8aa8da753d582622fdf608eaefdade0c"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__x10.html#ga8aa8da753d582622fdf608eaefdade0c">ctr_x10_get_line_voltage</a> (const struct device *dev, int *line_voltage_mv)</td></tr>
 <tr class="separator:ga8aa8da753d582622fdf608eaefdade0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -288,6 +289,16 @@ Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Register an event handler. </p>
+<p >Adds <code>user_cb</code> to the device's handler list; it does not replace previously registered handlers. Call it once per listener, at initialization time.</p>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">0</td><td>on success </td></tr>
+    <tr><td class="paramname">-ENOMEM</td><td>if no handler slot is free </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
