@@ -26,6 +26,22 @@
 &sht30_ext {
 	status = "okay";
 };
+/* HARDWARE-CHESTER-X2-MODBUS-A  */
+&ctr_x2_sc16is740_a {
+	status = "okay";
+	rts-control;
+
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		status = "okay";
+		de-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		re-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+	};
+};
+/* HARDWARE-CHESTER-Z  */
+&ctr_z {
+	status = "okay";
+};
 /* SUBSYSTEM-CLOUD  */
 / {
 	fstab {

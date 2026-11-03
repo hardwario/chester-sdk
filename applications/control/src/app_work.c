@@ -4,11 +4,9 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "app_backup.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_init.h"
-#include "app_power.h"
 #include "app_send.h"
 #include "app_sensor.h"
 #include "app_work.h"
@@ -52,10 +50,6 @@ static void send_work_handler(struct k_work *work)
 		LOG_ERR("Call `app_send` failed: %d", ret);
 	}
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	app_backup_clear();
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
-
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 	app_sensor_trigger_clear();
 	app_sensor_counter_clear();
@@ -88,13 +82,6 @@ static void sample_work_handler(struct k_work *work)
 
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work, K_SECONDS(60));
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	ret = app_backup_sample();
-	if (ret) {
-		LOG_ERR("Call `app_backup_sample` failed: %d", ret);
-	}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
-
 	ret = app_sensor_sample();
 	if (ret < 0) {
 		LOG_ERR("Call `app_sensor_sample` failed: %d", ret);
@@ -102,20 +89,6 @@ static void sample_work_handler(struct k_work *work)
 }
 
 static K_WORK_DELAYABLE_DEFINE(m_sample_work, sample_work_handler);
-
-static void power_work_handler(struct k_work *work)
-{
-	int ret;
-
-	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work, K_HOURS(12));
-
-	ret = app_power_sample();
-	if (ret < 0) {
-		LOG_ERR("Call `app_power_sample` failed: %d", ret);
-	}
-}
-
-static K_WORK_DELAYABLE_DEFINE(m_power_work, power_work_handler);
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 
@@ -277,32 +250,6 @@ static K_WORK_DELAYABLE_DEFINE(m_soil_sensor_aggreg_work, soil_sensor_aggreg_wor
 
 #endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-
-static void backup_work_handler(struct k_work *work)
-{
-	int ret;
-
-	ret = app_backup_sample();
-	if (ret) {
-		LOG_ERR("Call `app_backup_sample` failed: %d", ret);
-	}
-}
-
-static K_WORK_DEFINE(m_backup_work, backup_work_handler);
-
-void app_work_backup_update(void)
-{
-	int ret;
-
-	ret = k_work_submit_to_queue(&m_work_q, &m_backup_work);
-	if (ret < 0) {
-		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
-	}
-}
-
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
-
 #if defined(CONFIG_CTR_BLE_TAG)
 
 static void ble_tag_sample_work_handler(struct k_work *work)
@@ -366,7 +313,6 @@ int app_work_init(void)
 	/* Delay first report so ctr_z updates line_present */
 	k_work_schedule_for_queue(&m_work_q, &m_send_work, K_SECONDS(10));
 	k_work_schedule_for_queue(&m_work_q, &m_sample_work, K_NO_WAIT);
-	k_work_schedule_for_queue(&m_work_q, &m_power_work, K_SECONDS(60));
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 	k_work_schedule_for_queue(&m_work_q, &m_analog_sample_work, K_NO_WAIT);

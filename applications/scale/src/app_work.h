@@ -11,7 +11,6 @@
 extern "C" {
 #endif
 
-void app_work_backup_update(void);
 int app_work_init(void);
 void app_work_measure(void);
 void app_work_sample(void);

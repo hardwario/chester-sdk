@@ -67,9 +67,6 @@ struct app_data_ble_tag {
 /* Global application data - flat for system, nested for subsystems */
 struct app_data {
 	/* System measurements - FLAT (standard CHESTER pattern) */
-	float system_voltage_rest;
-	float system_voltage_load;
-	float system_current_load;
 	float therm_temperature;
 	float accel_acceleration_x;
 	float accel_acceleration_y;

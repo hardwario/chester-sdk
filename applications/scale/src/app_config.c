@@ -40,18 +40,13 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_INT("interval-sample", m_config_interim.interval_sample, 1, 86400, "Get/Set sample interval in seconds.", 60),
 	CTR_CONFIG_ITEM_INT("interval-aggreg", m_config_interim.interval_aggreg, 1, 86400, "Get/Set aggregate interval in seconds.", 300),
 	CTR_CONFIG_ITEM_INT("downlink-wdg-interval", m_config_interim.downlink_wdg_interval, 0, 1209600, "Get/Set downlink watchdog interval in seconds (disabled if 0).", 129600),
+	CTR_CONFIG_ITEM_INT("event-report-delay", m_config_interim.event_report_delay, 1, 86400, "Get/Set event report delay in seconds.", 1),
+	CTR_CONFIG_ITEM_INT("event-report-rate", m_config_interim.event_report_rate, 1, 3600, "Get/Set event report rate in reports per hour.", 30),
 	CTR_CONFIG_ITEM_BOOL("channel-a1-active", m_config_interim.channel_a1_active, "Get/Set channel A1 activation.", true),
 	CTR_CONFIG_ITEM_BOOL("channel-a2-active", m_config_interim.channel_a2_active, "Get/Set channel A2 activation.", true),
 	CTR_CONFIG_ITEM_BOOL("channel-b1-active", m_config_interim.channel_b1_active, "Get/Set channel B1 activation.", true),
 	CTR_CONFIG_ITEM_BOOL("channel-b2-active", m_config_interim.channel_b2_active, "Get/Set channel B2 activation.", true),
 	CTR_CONFIG_ITEM_INT("weight-measurement-interval", m_config_interim.weight_measurement_interval, 30, 86400, "Get/Set weight measurement interval in seconds.", 60),
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	CTR_CONFIG_ITEM_INT("event-report-delay", m_config_interim.event_report_delay, 1, 86400, "Get/Set event report delay in seconds.", 1),
-	CTR_CONFIG_ITEM_INT("event-report-rate", m_config_interim.event_report_rate, 1, 3600, "Get/Set event report rate in reports per hour.", 30),
-	CTR_CONFIG_ITEM_BOOL("backup-report-connected", m_config_interim.backup_report_connected, "Get/Set report when backup is active.", true),
-	CTR_CONFIG_ITEM_BOOL("backup-report-disconnected", m_config_interim.backup_report_disconnected, "Get/Set report when backup is inactive.", true),
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
 	CTR_CONFIG_ITEM_INT("people-measurement-interval", m_config_interim.people_measurement_interval, 5, 3600, "Get/Set people measurement interval in seconds.", 600),

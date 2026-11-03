@@ -37,8 +37,6 @@
 
 LOG_MODULE_REGISTER(app_sensor, LOG_LEVEL_DBG);
 
-#define BATT_TEST_INTERVAL_MSEC (12 * 60 * 60 * 1000)
-
 static int compare(const void *a, const void *b)
 {
 	float fa = *(const float *)a;

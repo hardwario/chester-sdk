@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "app_backup.h"
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
@@ -17,6 +16,7 @@
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
 #include <chester/drivers/ctr_z.h>
 
@@ -131,49 +131,21 @@ static void send_with_rate_limit(void)
 	}
 }
 
-void handle_dc_event(enum ctr_z_event backup_event)
+/*
+ * `ctr_power` already filters on its own `report-connected`/`report-disconnected`
+ * config before invoking this callback, so no further gating is needed here.
+ * Line/backup state is now fully owned by ctr_power (registered directly on
+ * ctr_z via its own multi-handler slot) -- this app no longer tracks DC events
+ * itself.
+ */
+#if defined(FEATURE_SUBSYSTEM_POWER)
+void app_handler_power_event(const struct ctr_power_event *event, void *user_data)
 {
-	int ret;
+	LOG_INF("Power line: %d", (int)event->line);
 
-	struct app_data_backup *backup = &g_app_data.backup;
-
-	app_data_lock();
-
-	backup->line_present = backup_event == CTR_Z_EVENT_DC_CONNECTED;
-
-	if (backup->event_count < APP_DATA_MAX_BACKUP_EVENTS) {
-		struct app_data_backup_event *event = &backup->events[backup->event_count];
-
-		ret = ctr_rtc_get_ts(&event->timestamp);
-		if (ret) {
-			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
-			app_data_unlock();
-			return;
-		}
-
-		event->connected = backup->line_present;
-		backup->event_count++;
-
-		LOG_INF("Event count: %d", backup->event_count);
-	} else {
-		LOG_WRN("Measurement full");
-		app_data_unlock();
-		return;
-	}
-
-	LOG_INF("Backup: %d", (int)backup->line_present);
-
-	if (g_app_config.backup_report_connected && backup_event == CTR_Z_EVENT_DC_CONNECTED) {
-		send_with_rate_limit();
-	}
-
-	if (g_app_config.backup_report_disconnected &&
-	    backup_event == CTR_Z_EVENT_DC_DISCONNECTED) {
-		send_with_rate_limit();
-	}
-
-	app_data_unlock();
+	send_with_rate_limit();
 }
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 struct app_handler_button_action {
 	enum ctr_z_event event;
@@ -510,17 +482,6 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 		LOG_INF("Event `CTR_Z_EVENT_DEVICE_RESET`");
 		goto apply;
 
-	case CTR_Z_EVENT_DC_CONNECTED:
-		LOG_INF("Event `CTR_Z_EVENT_DC_CONNECTED`");
-		app_work_backup_update();
-		handle_dc_event(event);
-		break;
-
-	case CTR_Z_EVENT_DC_DISCONNECTED:
-		LOG_INF("Event `CTR_Z_EVENT_DC_DISCONNECTED`");
-		app_work_backup_update();
-		handle_dc_event(event);
-		break;
 	default:
 		break;
 	}

@@ -63,8 +63,6 @@ struct app_config {
 #if defined(FEATURE_HARDWARE_CHESTER_Z)
 	int event_report_delay;
 	int event_report_rate;
-	bool backup_report_connected;
-	bool backup_report_disconnected;
 	enum app_config_led_mode led_mode;
 	int led_timeout;
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */

@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "app_backup.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_handler.h"
@@ -14,9 +13,9 @@
 /* CHESTER includes */
 #include <chester/ctr_led.h>
 #include <chester/ctr_lte.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_lrw.h>
-#include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -71,110 +70,18 @@ void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, v
 }
 #endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-static atomic_t m_report_rate_hourly_counter = 0;
-static atomic_t m_report_rate_timer_is_active = false;
-static atomic_t m_report_delay_timer_is_active = false;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-
-static void report_delay_timer_handler(struct k_timer *timer)
+#if defined(FEATURE_SUBSYSTEM_POWER)
+void app_handler_power_event(const struct ctr_power_event *event, void *user_data)
 {
-	app_work_send();
-	atomic_inc(&m_report_rate_hourly_counter);
-	atomic_set(&m_report_delay_timer_is_active, false);
+	LOG_INF("Power line: %d", (int)event->line);
+
+	/*
+	 * `ctr_power` already filters on `report-connected`/`report-disconnected` before
+	 * invoking this callback, so no further gating is needed here.
+	 */
+	app_work_send_with_rate_limit();
 }
-
-static K_TIMER_DEFINE(m_report_delay_timer, report_delay_timer_handler, NULL);
-
-static void report_rate_timer_handler(struct k_timer *timer)
-{
-	atomic_set(&m_report_rate_hourly_counter, 0);
-	atomic_set(&m_report_rate_timer_is_active, false);
-}
-
-static K_TIMER_DEFINE(m_report_rate_timer, report_rate_timer_handler, NULL);
-
-static void send_with_rate_limit(void)
-{
-	if (!atomic_get(&m_report_rate_timer_is_active)) {
-		k_timer_start(&m_report_rate_timer, K_HOURS(1), K_NO_WAIT);
-		atomic_set(&m_report_rate_timer_is_active, true);
-	}
-
-	LOG_INF("Hourly counter state: %d/%d", (int)atomic_get(&m_report_rate_hourly_counter),
-		g_app_config.event_report_rate);
-
-	if (atomic_get(&m_report_rate_hourly_counter) < g_app_config.event_report_rate) {
-		if (!atomic_set(&m_report_delay_timer_is_active, true)) {
-			LOG_INF("Starting delay timer");
-			k_timer_start(&m_report_delay_timer,
-				      K_SECONDS(g_app_config.event_report_delay), K_NO_WAIT);
-		} else {
-			LOG_INF("Delay timer already running");
-		}
-	} else {
-		LOG_WRN("Hourly counter exceeded");
-	}
-}
-
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-
-void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, void *param)
-{
-	int ret;
-
-	if (backup_event != CTR_Z_EVENT_DC_CONNECTED &&
-	    backup_event != CTR_Z_EVENT_DC_DISCONNECTED) {
-		return;
-	}
-
-	struct app_data_backup *backup = &g_app_data.backup;
-
-	app_work_backup_update();
-
-	app_data_lock();
-
-	backup->line_present = backup_event == CTR_Z_EVENT_DC_CONNECTED;
-
-	if (backup->event_count < APP_DATA_MAX_BACKUP_EVENTS) {
-		struct app_data_backup_event *event = &backup->events[backup->event_count];
-
-		ret = ctr_rtc_get_ts(&event->timestamp);
-		if (ret) {
-			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
-			app_data_unlock();
-			return;
-		}
-
-		event->connected = backup->line_present;
-		backup->event_count++;
-
-		LOG_INF("Event count: %d", backup->event_count);
-	} else {
-		LOG_WRN("Measurement full");
-		app_data_unlock();
-		return;
-	}
-
-	LOG_INF("Backup: %d", (int)backup->line_present);
-
-	if (g_app_config.backup_report_connected && backup_event == CTR_Z_EVENT_DC_CONNECTED) {
-		send_with_rate_limit();
-	}
-
-	if (g_app_config.backup_report_disconnected &&
-	    backup_event == CTR_Z_EVENT_DC_DISCONNECTED) {
-		send_with_rate_limit();
-	}
-
-	app_data_unlock();
-}
-
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 #if defined(FEATURE_SUBSYSTEM_BUTTON)
 

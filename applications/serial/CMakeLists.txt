@@ -6,8 +6,8 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-set(ENV{FW_BUNDLE} "com.hardwario.chester.app.serial")
-set(ENV{FW_NAME} "CHESTER Serial")
+set(ENV{FW_BUNDLE} "com.hardwario.chester.app.serial.rs232")
+set(ENV{FW_NAME} "CHESTER Serial RS-232")
 
 # Derive firmware version from git (see scripts/version.cmake); the fallback is
 # used when git is unavailable at build time.
@@ -16,15 +16,10 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/version.cmake)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-project(chester-serial)
+project(chester-serial-rs232)
 
 include(${ZEPHYR_CHESTER_MODULE_DIR}/scripts/app_codec.cmake)
 
-# Access to the Zephyr Modbus internal API (modbus_internal.h) for the RTU
-# frame-timeout workaround in app_modbus.c (SC16IS7xx I2C-UART bridge RX batching).
-target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/subsys/modbus)
-
-target_sources(app PRIVATE src/app_backup.c)
 target_sources(app PRIVATE src/app_cbor.c)
 target_sources(app PRIVATE src/app_config.c)
 target_sources(app PRIVATE src/app_data.c)
@@ -34,7 +29,6 @@ target_sources(app PRIVATE src/app_handler.c)
 target_sources(app PRIVATE src/app_init.c)
 target_sources(app PRIVATE src/app_lrw.c)
 target_sources(app PRIVATE src/app_modbus.c)
-target_sources(app PRIVATE src/app_power.c)
 target_sources(app PRIVATE src/app_send.c)
 target_sources(app PRIVATE src/app_sensor.c)
 target_sources(app PRIVATE src/app_serial.c)
@@ -47,12 +41,15 @@ target_sources(app PRIVATE src/drivers/drv_iem3000.c)
 target_sources(app PRIVATE src/drivers/drv_microsens_180hs.c)
 target_sources(app PRIVATE src/drivers/drv_or_we_504.c)
 target_sources(app PRIVATE src/drivers/drv_or_we_516.c)
-target_sources(app PRIVATE src/drivers/drv_promag_mf7s.c)
 target_sources(app PRIVATE src/drivers/drv_piketronic_rpp.c)
+target_sources(app PRIVATE src/drivers/drv_promag_mf7s.c)
 target_sources(app PRIVATE src/drivers/drv_solax_g3.c)
 target_sources(app PRIVATE src/main.c)
 
 target_precompile_headers(app PRIVATE src/feature.h)
 
 # ### Preserved code "cmake" (begin)
+# Access to the Zephyr Modbus internal API (modbus_internal.h) for the RTU
+# frame-timeout workaround in app_modbus.c (SC16IS7xx I2C-UART bridge RX batching).
+target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/subsys/modbus)
 # ^^^ Preserved code "cmake" (end)

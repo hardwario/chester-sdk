@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "app_backup.h"
 #include "app_config.h"
 #include "app_data.h"
 #include "app_handler.h"
@@ -19,9 +18,9 @@
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
 #include <chester/drivers/ctr_x4.h>
-#include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -77,6 +76,19 @@ void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, v
 		LOG_WRN("Unknown event: %d", event);
 	}
 }
+
+#if defined(FEATURE_SUBSYSTEM_POWER)
+void app_handler_power_event(const struct ctr_power_event *event, void *user_data)
+{
+	LOG_INF("Power line: %d", (int)event->line);
+
+	/*
+	 * `ctr_power` already filters on `report-connected`/`report-disconnected` before
+	 * invoking this callback, so no further gating is needed here.
+	 */
+	app_work_send_with_rate_limit();
+}
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S1)
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data)

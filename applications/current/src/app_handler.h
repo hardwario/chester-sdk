@@ -12,19 +12,19 @@
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
-#include <chester/drivers/ctr_z.h>
+#include <chester/ctr_power.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if defined(FEATURE_SUBSYSTEM_LRW)			
+#if defined(FEATURE_SUBSYSTEM_LRW)
 void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param);
 #endif /* defined(FEATURE_SUBSYSTEM_LRW) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *param);
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
+#if defined(FEATURE_SUBSYSTEM_POWER)
+void app_handler_power_event(const struct ctr_power_event *event, void *user_data);
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 #if defined(FEATURE_SUBSYSTEM_BUTTON)
 void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val,

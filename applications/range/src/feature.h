@@ -9,6 +9,7 @@
 
 #define FEATURE_CHESTER_APP_REPORT_JITTER       1
 #define FEATURE_HARDWARE_CHESTER_MB7066_A       1
+#define FEATURE_HARDWARE_CHESTER_Z              1
 #define FEATURE_SUBSYSTEM_ACCEL                 1
 #define FEATURE_SUBSYSTEM_BATT                  1
 #define FEATURE_SUBSYSTEM_BLE_TAG               1
@@ -24,6 +25,7 @@
 #define FEATURE_SUBSYSTEM_LED                   1
 #define FEATURE_SUBSYSTEM_LOG                   1
 #define FEATURE_SUBSYSTEM_LTE_V2                1
+#define FEATURE_SUBSYSTEM_POWER                 1
 #define FEATURE_SUBSYSTEM_RTC                   1
 #define FEATURE_SUBSYSTEM_SHELL                 1
 #define FEATURE_SUBSYSTEM_THERM                 1

@@ -17,9 +17,6 @@ extern "C" {
 
 struct app_data {
 	uint32_t sequence;
-	float system_voltage_rest;
-	float system_voltage_load;
-	float system_current_load;
 	float therm_temperature;
 	float accel_acceleration_x;
 	float accel_acceleration_y;

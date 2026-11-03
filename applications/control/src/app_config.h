@@ -52,26 +52,14 @@ struct app_config {
 	int interval_report;
 	int interval_poll;
 	int downlink_wdg_interval;
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X0_A)
 	int event_report_delay;
 	int event_report_rate;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X0_A) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	bool backup_report_connected;
-	bool backup_report_disconnected;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 	enum app_config_channel_mode channel_mode_1;
 	enum app_config_channel_mode channel_mode_2;
 	enum app_config_channel_mode channel_mode_3;
 	enum app_config_channel_mode channel_mode_4;
-	enum app_config_channel_mode channel_mode_5;
-	enum app_config_channel_mode channel_mode_6;
-	enum app_config_channel_mode channel_mode_7;
-	enum app_config_channel_mode channel_mode_8;
 	enum app_config_input_type trigger_input_type;
 	enum app_config_input_type counter_input_type;
 	int trigger_duration_active;

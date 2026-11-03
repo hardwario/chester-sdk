@@ -33,18 +33,13 @@ struct app_config {
 	int interval_sample;
 	int interval_aggreg;
 	int downlink_wdg_interval;
+	int event_report_delay;
+	int event_report_rate;
 	bool channel_a1_active;
 	bool channel_a2_active;
 	bool channel_b1_active;
 	bool channel_b2_active;
 	int weight_measurement_interval;
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	int event_report_delay;
-	int event_report_rate;
-	bool backup_report_connected;
-	bool backup_report_disconnected;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_PEOPLE_COUNTER)
 	int people_measurement_interval;

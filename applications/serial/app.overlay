@@ -4,6 +4,14 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+/* HARDWARE-CHESTER-X12-A  */
+&ctr_x12_sc16is740_a {
+	status = "okay";
+};
+/* HARDWARE-CHESTER-Z  */
+&ctr_z {
+	status = "okay";
+};
 /* SUBSYSTEM-CLOUD  */
 / {
 	fstab {

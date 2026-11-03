@@ -19,7 +19,6 @@
 
 #define APP_DATA_MAX_MEASUREMENTS  32
 #define APP_DATA_MAX_SAMPLES       32
-#define APP_DATA_MAX_BACKUP_EVENTS 32
 #define APP_DATA_MAX_HYGRO_EVENTS  32
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
@@ -35,21 +34,6 @@
 #ifdef _cplusplus
 extern "C" {
 #endif
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-struct app_data_backup_event {
-	int64_t timestamp;
-	bool connected;
-};
-
-struct app_data_backup {
-	float line_voltage;
-	float battery_voltage;
-	bool line_present;
-	int event_count;
-	struct app_data_backup_event events[APP_DATA_MAX_BACKUP_EVENTS];
-};
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_MB7066_A) || defined(FEATURE_HARDWARE_CHESTER_MB7066_B)
 struct app_data_sonar {
@@ -163,9 +147,6 @@ struct app_data_ble_tag {
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 struct app_data {
-	float system_voltage_rest;
-	float system_voltage_load;
-	float system_current_load;
 	float therm_temperature;
 	float accel_acceleration_x;
 	float accel_acceleration_y;
@@ -176,10 +157,6 @@ struct app_data {
 	struct app_data_sonar sonar;
 #endif /* defined(FEATURE_HARDWARE_CHESTER_MB7066_A) || defined(FEATURE_HARDWARE_CHESTER_MB7066_B) \
 	*/
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	struct app_data_backup backup;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2)
 	struct app_data_hygro hygro;

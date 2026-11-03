@@ -7,7 +7,6 @@
 #include "app_config.h"
 #include "app_data.h"
 #include "app_init.h"
-#include "app_power.h"
 #include "app_send.h"
 #include "app_shell.h"
 #include "app_sensor.h"
@@ -22,8 +21,8 @@
 #include <zephyr/random/random.h>
 
 /* CHESTER includes */
-#include <chester/ctr_rtc.h>
 #include <chester/ctr_cloud.h>
+#include <chester/ctr_rtc.h>
 
 /* Standard includes */
 #include <math.h>
@@ -397,24 +396,6 @@ static void sample_work_handler(struct k_work *work)
 
 static K_WORK_DELAYABLE_DEFINE(m_sample_work, sample_work_handler);
 
-#if defined(FEATURE_SUBSYSTEM_BATT)
-
-static void power_work_handler(struct k_work *work)
-{
-	int ret;
-
-	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work, K_HOURS(12));
-
-	ret = app_power_sample();
-	if (ret < 0) {
-		LOG_ERR("Call `app_power_sample` failed: %d", ret);
-	}
-}
-
-static K_WORK_DELAYABLE_DEFINE(m_power_work, power_work_handler);
-
-#endif /* defined(FEATURE_SUBSYSTEM_BATT) */
-
 int app_work_init(void)
 {
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
@@ -422,9 +403,6 @@ int app_work_init(void)
 	k_thread_name_set(&m_work_q.thread, "app_work");
 
 	k_work_schedule_for_queue(&m_work_q, &m_sample_work, K_NO_WAIT);
-#if defined(FEATURE_SUBSYSTEM_BATT)
-	k_work_schedule_for_queue(&m_work_q, &m_power_work, K_SECONDS(60));
-#endif /* defined(FEATURE_SUBSYSTEM_BATT) */
 
 	k_timer_start(&m_scheduler_loop_timer, K_NO_WAIT, K_SECONDS(1));
 

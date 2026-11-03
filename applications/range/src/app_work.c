@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "app_backup.h"
 #include "app_config.h"
 #include "app_init.h"
-#include "app_power.h"
 #include "app_send.h"
 #include "app_sensor.h"
 #include "app_work.h"
@@ -60,10 +58,6 @@ static void send_work_handler(struct k_work *work)
 	app_sensor_hygro_clear();
 #endif /* defined(FEATURE_HARDWARE_CHESTER_S2) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	app_backup_clear();
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
-
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 	app_sensor_w1_therm_clear();
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
@@ -82,13 +76,6 @@ static void sample_work_handler(struct k_work *work)
 	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work,
 				  K_SECONDS(g_app_config.interval_sample));
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	ret = app_backup_sample();
-	if (ret) {
-		LOG_ERR("Call `app_backup_sample` failed: %d", ret);
-	}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
-
 	ret = app_sensor_sample();
 	if (ret) {
 		LOG_ERR("Call `app_sensor_sample` failed: %d", ret);
@@ -96,20 +83,6 @@ static void sample_work_handler(struct k_work *work)
 }
 
 static K_WORK_DELAYABLE_DEFINE(m_sample_work, sample_work_handler);
-
-static void power_work_handler(struct k_work *work)
-{
-	int ret;
-
-	k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work, K_HOURS(12));
-
-	ret = app_power_sample();
-	if (ret) {
-		LOG_ERR("Call `app_power_sample` failed: %d", ret);
-	}
-}
-
-static K_WORK_DELAYABLE_DEFINE(m_power_work, power_work_handler);
 
 #if defined(FEATURE_HARDWARE_CHESTER_MB7066_A) || defined(FEATURE_HARDWARE_CHESTER_MB7066_B)
 static void sonar_sample_work_handler(struct k_work *work)
@@ -143,32 +116,6 @@ static void sonar_aggreg_work_handler(struct k_work *work)
 static K_WORK_DELAYABLE_DEFINE(m_sonar_aggreg_work, sonar_aggreg_work_handler);
 #endif /* defined(FEATURE_HARDWARE_CHESTER_MB7066_A) || defined(FEATURE_HARDWARE_CHESTER_MB7066_B) \
 	*/
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-
-static void backup_work_handler(struct k_work *work)
-{
-	int ret;
-
-	ret = app_backup_sample();
-	if (ret) {
-		LOG_ERR("Call `app_backup_sample` failed: %d", ret);
-	}
-}
-
-static K_WORK_DEFINE(m_backup_work, backup_work_handler);
-
-void app_work_backup_update(void)
-{
-	int ret;
-
-	ret = k_work_submit_to_queue(&m_work_q, &m_backup_work);
-	if (ret < 0) {
-		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
-	}
-}
-
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2)
 
@@ -281,7 +228,6 @@ int app_work_init(void)
 
 	k_work_schedule_for_queue(&m_work_q, &m_send_work, K_SECONDS(10));
 	k_work_schedule_for_queue(&m_work_q, &m_sample_work, K_NO_WAIT);
-	k_work_schedule_for_queue(&m_work_q, &m_power_work, K_SECONDS(60));
 
 #if defined(FEATURE_HARDWARE_CHESTER_MB7066_A) || defined(FEATURE_HARDWARE_CHESTER_MB7066_B)
 	k_work_schedule_for_queue(&m_work_q, &m_sonar_sample_work,
@@ -360,7 +306,6 @@ void app_work_send(void)
 	k_work_reschedule_for_queue(&m_work_q, &m_send_work, K_NO_WAIT);
 }
 
-#if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z)
 static atomic_t m_report_rate_hourly_counter = 0;
 static atomic_t m_report_rate_timer_is_active = false;
 static atomic_t m_report_delay_timer_is_active = false;
@@ -404,5 +349,3 @@ void app_work_send_with_rate_limit(void)
 		LOG_WRN("Hourly counter exceeded");
 	}
 }
-
-#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) */

@@ -7,6 +7,9 @@
 #ifndef CHESTER_INCLUDE_CTR_ENCODE_LRW_H_
 #define CHESTER_INCLUDE_CTR_ENCODE_LRW_H_
 
+/* Superseded by ctr_power_lrw_encode() in <chester/ctr_power.h>. Retained for
+ * out-of-tree applications that still carry g_app_data.system_voltage_*.
+ * New applications must not use this macro. */
 #define CTR_ENCODE_LRW_BATTERY(buf)                                                                \
 	do {                                                                                       \
 		if (isnan(g_app_data.system_voltage_rest)) {                                       \
@@ -292,6 +295,9 @@
 		}                                                                                  \
 	} while (0)
 
+/* Superseded by ctr_power_lrw_encode_external() in <chester/ctr_power.h>.
+ * Retained for out-of-tree applications that still carry g_app_data.backup.
+ * New applications must not use this macro. */
 #define CTR_ENCODE_LRW_BACKUP(buf)                                                                 \
 	do {                                                                                       \
 		struct app_data_backup *backup = &g_app_data.backup;                               \

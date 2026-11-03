@@ -48,15 +48,10 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_FLOAT("iaq-led-hst", m_config_interim.iaq_led_hst, -40.0f, 125.0f, "Get/Set hygro high temperature alarm threshold.", 50.0f),
 #endif /* defined(FEATURE_HARDWARE_CHESTER_S1) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
+#if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_SUBSYSTEM_POWER) || defined(FEATURE_CHESTER_APP_TAMPER)
 	CTR_CONFIG_ITEM_INT("event-report-delay", m_config_interim.event_report_delay, 1, 86400, "Get/Set event report delay in seconds.", 1),
 	CTR_CONFIG_ITEM_INT("event-report-rate", m_config_interim.event_report_rate, 1, 3600, "Get/Set event report rate in reports per hour.", 30),
-#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-	CTR_CONFIG_ITEM_BOOL("backup-report-connected", m_config_interim.backup_report_connected, "Get/Set report when backup is active.", true),
-	CTR_CONFIG_ITEM_BOOL("backup-report-disconnected", m_config_interim.backup_report_disconnected, "Get/Set report when backup is inactive.", true),
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_SUBSYSTEM_POWER) || defined(FEATURE_CHESTER_APP_TAMPER) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2)
 	CTR_CONFIG_ITEM_BOOL("hygro-t-alarm-hi-report", m_config_interim.hygro_t_alarm_hi_report, "Get/Set report when hygro high temperature alarm is crossed.", false),

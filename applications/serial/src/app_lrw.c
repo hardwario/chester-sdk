@@ -23,6 +23,7 @@
 
 #include <chester/ctr_buf.h>
 #include <chester/ctr_encode_lrw.h>
+#include <chester/ctr_power.h>
 
 #include <zcbor_common.h>
 
@@ -302,8 +303,8 @@ int app_lrw_encode_single(struct ctr_buf *buf, int device_idx)
 	LOG_DBG("Header: version=1, device_idx=%u", device_idx);
 
 	/* System data (8 bytes) */
-#if defined(CONFIG_CTR_BATT)
-	CTR_ENCODE_LRW_BATTERY(buf); /* 5 bytes */
+#if defined(FEATURE_SUBSYSTEM_POWER)
+	ret |= ctr_power_lrw_encode(buf); /* 5 bytes */
 #else
 	ret |= ctr_buf_append_u16_le(buf, 0);
 	ret |= ctr_buf_append_u16_le(buf, 0);

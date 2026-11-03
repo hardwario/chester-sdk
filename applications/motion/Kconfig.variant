@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-config VARIANT_CHESTER_MOTION
-    bool "Enable VARIANT_CHESTER_MOTION"
+config VARIANT_MOTION
+    bool "Enable VARIANT_MOTION"
     default y
-        

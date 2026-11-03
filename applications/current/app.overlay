@@ -30,6 +30,10 @@
 		ngpios = <8>;
 	};
 };
+/* HARDWARE-CHESTER-Z  */
+&ctr_z {
+	status = "okay";
+};
 /* SUBSYSTEM-CLOUD  */
 / {
 	fstab {

@@ -21,6 +21,7 @@ features:
 - subsystem-info
 - subsystem-led
 - subsystem-log
+- subsystem-power
 - subsystem-rtc
 - subsystem-shell
 - subsystem-therm
@@ -28,6 +29,7 @@ features:
 - subsystem-zcbor
 - subsystem-lte-v2
 - subsystem-cloud
+- hardware-chester-z
 - chester-app-report-jitter
 parameters:
 - name: interval-sample

@@ -22,7 +22,6 @@
 
 #define APP_DATA_MAX_MEASUREMENTS  32
 #define APP_DATA_MAX_SAMPLES       32
-#define APP_DATA_MAX_BACKUP_EVENTS 32
 #define APP_DATA_MAX_HYGRO_EVENTS  32
 
 #define APP_DATA_W1_THERM_COUNT    10
@@ -36,21 +35,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-struct app_data_backup_event {
-	int64_t timestamp;
-	bool connected;
-};
-
-struct app_data_backup {
-	float line_voltage;
-	float battery_voltage;
-	bool line_present;
-	int event_count;
-	struct app_data_backup_event events[APP_DATA_MAX_BACKUP_EVENTS];
-};
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
 struct app_data_sensecap {
@@ -385,9 +369,6 @@ struct app_data_pyranometer {
 #endif /* defined(CONFIG_APP_PYRANOMETER) */
 
 struct app_data {
-	float system_voltage_rest;
-	float system_voltage_load;
-	float system_current_load;
 	float therm_temperature;
 	float accel_acceleration_x;
 	float accel_acceleration_y;
@@ -399,10 +380,6 @@ struct app_data {
 	struct app_data_cubic_pm cubic_pm;
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X2_MODBUS_A ) ||                                        \
 	  defined(FEATURE_HARDWARE_CHESTER_METEO_M) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	struct app_data_backup backup;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_METEO_A) || defined(FEATURE_HARDWARE_CHESTER_METEO_B)
 	struct app_data_meteo meteo;

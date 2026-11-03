@@ -41,17 +41,12 @@ struct app_config {
 	float iaq_led_hst;
 #endif /* defined(FEATURE_HARDWARE_CHESTER_S1) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) ||                 \
-	defined(FEATURE_HARDWARE_CHESTER_X10)
+#if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_SUBSYSTEM_POWER) ||                    \
+	defined(FEATURE_CHESTER_APP_TAMPER)
 	int event_report_delay;
 	int event_report_rate;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) ||           \
-	  defined(FEATURE_HARDWARE_CHESTER_X10) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-	bool backup_report_connected;
-	bool backup_report_disconnected;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_SUBSYSTEM_POWER) ||              \
+	  defined(FEATURE_CHESTER_APP_TAMPER) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2)
 	bool hygro_t_alarm_hi_report;

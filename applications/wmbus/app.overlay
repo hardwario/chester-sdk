@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+/* HARDWARE-CHESTER-Z  */
+&ctr_z {
+	status = "okay";
+};
 /* SUBSYSTEM-CLOUD  */
 / {
 	fstab {

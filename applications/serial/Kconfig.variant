@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
 #
 
-config VARIANT_CHESTER_SERIAL
-    bool "Enable VARIANT_CHESTER_SERIAL"
+config VARIANT_CHESTER_SERIAL_RS_232
+    bool "Enable VARIANT_CHESTER_SERIAL_RS_232"
     default y

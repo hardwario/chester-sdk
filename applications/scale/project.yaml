@@ -4,13 +4,6 @@ variants:
   fw_bundle: com.hardwario.chester.app.scale
   fw_name: hio-chester-scale
   fw_version: v3.0.0
-- name: CHESTER Scale Z
-  fw_bundle: com.hardwario.chester.app.scale.z
-  fw_name: hio-chester-scale-z
-  fw_version: v3.0.0
-  features:
-  - hardware-chester-z
-  remark: Support for CHESTER-Z
 project:
   variant: Scale
   company: 2024 HARDWARIO a.s.
@@ -41,10 +34,11 @@ features:
 - subsystem-lte-v2
 - subsystem-lrw
 - subsystem-cloud
+- subsystem-power
 - hardware-chester-x3-a
 - hardware-chester-x3-b
 - chester-app-report-jitter
-#- hardware-chester-z
+- hardware-chester-z
 #- hardware-chester-people-counter
 parameters:
 - name: interval-report
@@ -83,24 +77,12 @@ parameters:
   max: 86400
   default: 1
   help: 'Get/Set event report delay in seconds'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: event-report-rate
   type: int
   min: 1
   max: 3600
   default: 30
   help: 'Get/Set event report rate in reports per hour'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: backup-report-connected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is active'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: backup-report-disconnected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is inactive'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: channel-a1-active
   type: bool
   default: true

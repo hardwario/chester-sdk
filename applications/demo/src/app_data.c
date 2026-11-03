@@ -19,9 +19,6 @@
 
 struct app_data g_app_data = {
 	.sequence = 0,
-	.system_voltage_rest = NAN,
-	.system_voltage_load = NAN,
-	.system_current_load = NAN,
 	.accel_acceleration_x = NAN,
 	.accel_acceleration_y = NAN,
 	.accel_acceleration_z = NAN,

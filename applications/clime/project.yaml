@@ -71,6 +71,7 @@ features:
   - subsystem-lrw
   - subsystem-ds18b20
   - subsystem-soil-sensor
+  - subsystem-power
   - chester-app-report-jitter
 #- chester-app-tamper
 #- hardware-chester-s1
@@ -148,24 +149,14 @@ parameters:
   max: 86400
   default: 1
   help: 'Get/Set event report delay in seconds'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_SUBSYSTEM_POWER) || defined(FEATURE_CHESTER_APP_TAMPER)
 - name: event-report-rate
   type: int
   min: 1
   max: 3600
   default: 30
   help: 'Get/Set event report rate in reports per hour'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-- name: backup-report-connected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is active'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-- name: backup-report-disconnected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is inactive'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
+  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_SUBSYSTEM_POWER) || defined(FEATURE_CHESTER_APP_TAMPER)
 - name: hygro-t-alarm-hi-report
   type: bool
   default: false

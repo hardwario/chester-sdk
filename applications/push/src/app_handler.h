@@ -11,6 +11,7 @@
 #include <chester/ctr_button.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_cloud.h>
+#include <chester/ctr_power.h>
 #include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
@@ -29,6 +30,10 @@ void app_handler_ctr_z(const struct device *dev, enum ctr_z_event event, void *u
 
 void app_handler_cloud_event(enum ctr_cloud_event event, union ctr_cloud_event_data *data,
 			     void *param);
+
+#if defined(FEATURE_SUBSYSTEM_POWER)
+void app_handler_power_event(const struct ctr_power_event *event, void *user_data);
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 #endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_SUBSYSTEM_BUTTON)

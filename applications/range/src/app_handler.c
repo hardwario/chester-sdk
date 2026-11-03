@@ -13,8 +13,8 @@
 /* CHESTER includes */
 #include <chester/ctr_button.h>
 #include <chester/ctr_led.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
-#include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -23,60 +23,18 @@
 
 LOG_MODULE_REGISTER(app_handler, LOG_LEVEL_DBG);
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-
-void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, void *param)
+#if defined(FEATURE_SUBSYSTEM_POWER)
+void app_handler_power_event(const struct ctr_power_event *event, void *user_data)
 {
-	int ret;
+	LOG_INF("Power line: %d", (int)event->line);
 
-	if (backup_event != CTR_Z_EVENT_DC_CONNECTED &&
-	    backup_event != CTR_Z_EVENT_DC_DISCONNECTED) {
-		return;
-	}
-
-	struct app_data_backup *backup = &g_app_data.backup;
-
-	app_work_backup_update();
-
-	app_data_lock();
-
-	backup->line_present = backup_event == CTR_Z_EVENT_DC_CONNECTED;
-
-	if (backup->event_count < APP_DATA_MAX_BACKUP_EVENTS) {
-		struct app_data_backup_event *event = &backup->events[backup->event_count];
-
-		ret = ctr_rtc_get_ts(&event->timestamp);
-		if (ret) {
-			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
-			app_data_unlock();
-			return;
-		}
-
-		event->connected = backup->line_present;
-		backup->event_count++;
-
-		LOG_INF("Event count: %d", backup->event_count);
-	} else {
-		LOG_WRN("Measurement full");
-		app_data_unlock();
-		return;
-	}
-
-	LOG_INF("Backup: %d", (int)backup->line_present);
-
-	if (g_app_config.backup_report_connected && backup_event == CTR_Z_EVENT_DC_CONNECTED) {
-		app_work_send_with_rate_limit();
-	}
-
-	if (g_app_config.backup_report_disconnected &&
-	    backup_event == CTR_Z_EVENT_DC_DISCONNECTED) {
-		app_work_send_with_rate_limit();
-	}
-
-	app_data_unlock();
+	/*
+	 * `ctr_power` already filters on `report-connected`/`report-disconnected` before
+	 * invoking this callback, so no further gating is needed here.
+	 */
+	app_work_send_with_rate_limit();
 }
-
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 #if defined(FEATURE_SUBSYSTEM_BUTTON)
 

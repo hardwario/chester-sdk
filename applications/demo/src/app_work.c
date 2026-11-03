@@ -6,7 +6,6 @@
 
 #include "app_config.h"
 #include "app_init.h"
-#include "app_power.h"
 #include "app_sensor.h"
 #include "app_cbor.h"
 #include "app_work.h"
@@ -124,30 +123,6 @@ static void sample_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_sample_timer, sample_timer_handler, NULL);
 
-static void power_work_handler(struct k_work *work)
-{
-	int ret;
-
-	ret = app_power_sample();
-	if (ret) {
-		LOG_ERR("Call `app_power_sample` failed: %d", ret);
-	}
-}
-
-static K_WORK_DEFINE(m_power_work, power_work_handler);
-
-static void power_timer_handler(struct k_timer *timer)
-{
-	int ret;
-
-	ret = k_work_submit_to_queue(&m_work_q, &m_power_work);
-	if (ret < 0) {
-		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
-	}
-}
-
-static K_TIMER_DEFINE(m_power_timer, power_timer_handler, NULL);
-
 static void gnss_handler(enum ctr_gnss_event event, union ctr_gnss_event_data *data,
 			 void *user_data)
 {
@@ -186,7 +161,6 @@ int app_work_init(void)
 
 	k_timer_start(&m_send_timer, K_SECONDS(10), K_FOREVER);
 	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
-	k_timer_start(&m_power_timer, K_SECONDS(60), K_HOURS(12));
 
 	ctr_gnss_set_handler(gnss_handler, NULL);
 

@@ -15,6 +15,7 @@
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_info.h>
 #include <chester/ctr_lrw.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
@@ -72,7 +73,7 @@ static int compose_lrw(struct ctr_buf *buf)
 	uint16_t header = 0;
 
 	/* Flag BATT */
-	if (IS_ENABLED(FEATURE_SUBSYSTEM_BATT)) {
+	if (IS_ENABLED(FEATURE_SUBSYSTEM_POWER)) {
 		header |= BIT(0);
 	}
 
@@ -91,10 +92,12 @@ static int compose_lrw(struct ctr_buf *buf)
 		header |= BIT(3);
 	}
 
+#if defined(FEATURE_SUBSYSTEM_POWER)
 	/* Flag BACKUP */
-	if (IS_ENABLED(FEATURE_HARDWARE_CHESTER_Z)) {
+	if (ctr_power_get_source() != CTR_POWER_SOURCE_NONE) {
 		header |= BIT(4);
 	}
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 	/* Flag CHANNELS */
 	if (IS_ENABLED(FEATURE_HARDWARE_CHESTER_K1)) {
@@ -109,26 +112,9 @@ static int compose_lrw(struct ctr_buf *buf)
 
 	/* Field BATT */
 	if (header & BIT(0)) {
-		if (isnan(g_app_data.system_voltage_rest)) {
-			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
-		} else {
-			uint16_t val = g_app_data.system_voltage_rest;
-			ret |= ctr_buf_append_u16_le(buf, val);
-		}
-
-		if (isnan(g_app_data.system_voltage_load)) {
-			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
-		} else {
-			uint16_t val = g_app_data.system_voltage_load;
-			ret |= ctr_buf_append_u16_le(buf, val);
-		}
-
-		if (isnan(g_app_data.system_current_load)) {
-			ret |= ctr_buf_append_u8(buf, BIT_MASK(8));
-		} else {
-			uint8_t val = g_app_data.system_current_load;
-			ret |= ctr_buf_append_u8(buf, val);
-		}
+#if defined(FEATURE_SUBSYSTEM_POWER)
+		ret |= ctr_power_lrw_encode(buf);
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 	}
 
 	/* Field ACCEL */
@@ -180,26 +166,12 @@ static int compose_lrw(struct ctr_buf *buf)
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_DS18B20) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
 	/* Field BACKUP */
 	if (header & BIT(4)) {
-		struct app_data_backup *backup = &g_app_data.backup;
-
-		if (isnan(backup->line_voltage)) {
-			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
-		} else {
-			ret |= ctr_buf_append_u16_le(buf, backup->line_voltage * 1000.0f);
-		}
-
-		if (isnan(backup->battery_voltage)) {
-			ret |= ctr_buf_append_u16_le(buf, BIT_MASK(16));
-		} else {
-			ret |= ctr_buf_append_u16_le(buf, backup->battery_voltage * 1000.0f);
-		}
-
-		ret |= ctr_buf_append_u8(buf, backup->line_present ? 1 : 0);
+#if defined(FEATURE_SUBSYSTEM_POWER)
+		ret |= ctr_power_lrw_encode_external(buf);
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 	}
-#endif
 
 #if defined(FEATURE_HARDWARE_CHESTER_K1)
 	/* Field CHANNELS - raw_rms, raw_mean, calibrated (float16) */

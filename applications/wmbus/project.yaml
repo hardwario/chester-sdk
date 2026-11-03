@@ -24,11 +24,13 @@ features:
   - subsystem-led
   - subsystem-log
   - subsystem-lte-v2
+  - subsystem-power
   - subsystem-rtc
   - subsystem-shell
   - subsystem-therm
   - subsystem-wdog
   - subsystem-zcbor
+  - hardware-chester-z
 parameters:
   - name: scan-timeout
     type: int

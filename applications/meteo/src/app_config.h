@@ -56,15 +56,10 @@ struct app_config {
 	int interval_poll;
 	int downlink_wdg_interval;
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_S2)
+#if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_SUBSYSTEM_POWER)
 	int event_report_delay;
 	int event_report_rate;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_S2) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	bool backup_report_connected;
-	bool backup_report_disconnected;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_SUBSYSTEM_POWER) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2)
 	bool hygro_t_alarm_hi_report;

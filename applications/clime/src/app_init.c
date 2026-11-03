@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "app_backup.h"
 #include "app_codec.h"
 #include "app_config.h"
 #include "app_data.h"
@@ -19,6 +18,7 @@
 #include <chester/ctr_ds18b20.h>
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_soil_sensor.h>
 #include <chester/ctr_wdog.h>
 #include <chester/drivers/ctr_s1.h>
@@ -226,13 +226,13 @@ int app_init(void)
 	}
 #endif /* defined(FEATURE_CHESTER_APP_TAMPER) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-	ret = app_backup_init();
+#if defined(FEATURE_SUBSYSTEM_POWER)
+	ret = ctr_power_init(app_handler_power_event, NULL);
 	if (ret) {
-		LOG_ERR("Call `app_backup_init` failed: %d", ret);
+		LOG_ERR("Call `ctr_power_init` failed: %d", ret);
 		return ret;
 	}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_X4_A) || defined(FEATURE_HARDWARE_CHESTER_X4_B)
 	ret = init_chester_x4();

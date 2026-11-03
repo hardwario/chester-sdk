@@ -10,7 +10,6 @@
 #include "app_data.h"
 
 /* CHESTER includes */
-#include <chester/ctr_cloud.h>
 #include <chester/ctr_info.h>
 #include <chester/ctr_lte_v2.h>
 #include <chester/ctr_rtc.h>
@@ -32,9 +31,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
-
 /* ### Preserved code "functions" (begin) */
+#include <chester/ctr_power.h>
+
 __unused static void put_sample_mul(zcbor_state_t *zs, struct ctr_data_aggreg *sample, float mul)
 {
 	if (isnan(sample->min)) {
@@ -72,6 +71,8 @@ __unused static void put_sample(zcbor_state_t *zs, struct ctr_data_aggreg *sampl
 }
 /* ^^^ Preserved code "functions" (end) */
 
+LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
+
 static int encode(zcbor_state_t *zs)
 {
 	int ret;
@@ -108,9 +109,6 @@ static int encode(zcbor_state_t *zs)
 
 	/* ^^^ Preserved code "message" (end) */
 
-	/* ### Preserved code "attribute" (begin) */
-	/* ^^^ Preserved code "attribute" (end) */
-
 	/* ### Preserved code "system" (begin) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM);
@@ -120,89 +118,22 @@ static int encode(zcbor_state_t *zs)
 		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__UPTIME);
 		zcbor_uint64_put(zs, k_uptime_get() / 1000);
 
-		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__VOLTAGE_REST);
-		if (isnan(g_app_data.system_voltage_rest)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_voltage_rest);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__VOLTAGE_LOAD);
-		if (isnan(g_app_data.system_voltage_load)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_voltage_load);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__CURRENT_LOAD);
-		if (isnan(g_app_data.system_current_load)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_current_load);
-		}
-
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
 	/* ^^^ Preserved code "system" (end) */
 
-	/* ### Preserved code "backup" (begin) */
+	/* ### Preserved code "power" (begin) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__LINE_VOLTAGE);
-		if (isnan(g_app_data.backup.line_voltage)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_int32_put(zs, g_app_data.backup.line_voltage * 1000.f);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__BATT_VOLTAGE);
-		if (isnan(g_app_data.backup.battery_voltage)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_int32_put(zs, g_app_data.backup.battery_voltage * 1000.f);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__STATE);
-		zcbor_uint32_put(zs, g_app_data.backup.line_present ? 1 : 0);
-
-		if (g_app_data.backup.event_count) {
-			int64_t timestamp_abs = g_app_data.backup.events[0].timestamp;
-
-			zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__EVENTS);
-			{
-				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-				/* TSO absolute timestamp */
-				zcbor_int64_put(zs, timestamp_abs);
-
-				for (int i = 0; i < g_app_data.backup.event_count; i++) {
-					/* TSO offset timestamp */
-					zcbor_int64_put(zs, g_app_data.backup.events[i].timestamp -
-								    timestamp_abs);
-					zcbor_uint32_put(
-						zs, g_app_data.backup.events[i].connected ? 1 : 0);
-				}
-
-				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-			}
-		} else {
-			zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__EVENTS);
-			{
-				zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-				zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-			}
-		}
-
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+#if defined(FEATURE_SUBSYSTEM_POWER)
+	ret = ctr_power_cbor_encode(zs);
+	if (ret) {
+		LOG_ERR("Call `ctr_power_cbor_encode` failed: %d", ret);
+		return ret;
 	}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
-	/* ^^^ Preserved code "backup" (end) */
+	/* ^^^ Preserved code "power" (end) */
 
 	/* ### Preserved code "network" (begin) */
 

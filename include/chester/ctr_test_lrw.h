@@ -7,6 +7,9 @@
 #ifndef CHESTER_INCLUDE_CTR_TEST_LRW_H_
 #define CHESTER_INCLUDE_CTR_TEST_LRW_H_
 
+/* Companion to CTR_ENCODE_LRW_BATTERY, superseded by ctr_power_lrw_encode().
+ * Retained for out-of-tree applications that still carry
+ * g_app_data.system_voltage_*. New applications must not use this macro. */
 #define CTR_TEST_LRW_JSON_BATT(data)                                                               \
 	cJSON_AddNumberToObject(data, "voltage_rest", g_app_data.system_voltage_rest / 1000.f);    \
 	cJSON_AddNumberToObject(data, "voltage_load", g_app_data.system_voltage_load / 1000.f);    \
@@ -192,6 +195,10 @@
 	cJSON_AddNumberToObject(data, "barometer",                                                 \
 				g_app_data.barometer.pressure.last_sample / 1000.f);
 
+/* Companion to CTR_ENCODE_LRW_BACKUP, superseded by
+ * ctr_power_lrw_encode_external(). Retained for out-of-tree applications
+ * that still carry g_app_data.backup. New applications must not use this
+ * macro. */
 #define CTR_TEST_LRW_JSON_BACKUP(data)                                                             \
 	cJSON *backup = cJSON_CreateObject();                                                      \
 	cJSON_AddNumberToObject(backup, "line_voltage", g_app_data.backup.line_voltage);           \

@@ -41,7 +41,9 @@ features:
   - subsystem-zcbor
   - subsystem-lte-v2
   - subsystem-lrw
+  - subsystem-power
   - hardware-chester-lte-v2
+  - hardware-chester-z
 parameters:
   - name: interval-sample
     type: int

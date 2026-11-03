@@ -28,6 +28,7 @@
 /* CHESTER includes */
 #include <chester/ctr_info.h>
 #include <chester/ctr_lte_v2.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_util.h>
 
@@ -964,31 +965,22 @@ static int encode(zcbor_state_t *zs)
 		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__UPTIME);
 		zcbor_uint64_put(zs, k_uptime_get() / 1000);
 
-		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__VOLTAGE_REST);
-		if (isnan(g_app_data.system_voltage_rest)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_voltage_rest);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__VOLTAGE_LOAD);
-		if (isnan(g_app_data.system_voltage_load)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_voltage_load);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__CURRENT_LOAD);
-		if (isnan(g_app_data.system_current_load)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_current_load);
-		}
-
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
 	/* ^^^ Preserved code "system" (end) */
+
+	/* ### Preserved code "power" (begin) */
+
+#if defined(FEATURE_SUBSYSTEM_POWER)
+	ret = ctr_power_cbor_encode(zs);
+	if (ret) {
+		LOG_ERR("Call `ctr_power_cbor_encode` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
+
+	/* ^^^ Preserved code "power" (end) */
 
 	/* ### Preserved code "network" (begin) */
 

@@ -18,6 +18,7 @@
 /* CHESTER includes */
 #include <chester/ctr_button.h>
 #include <chester/ctr_led.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_wdog.h>
 
 #if defined(FEATURE_SUBSYSTEM_CLOUD)
@@ -219,6 +220,14 @@ int app_init(void)
 
 	/* Note: Transmission mode (LTE/LRW/NONE) was already initialized above */
 	/* Data collection works independently, transmission depends on mode */
+
+#if defined(FEATURE_SUBSYSTEM_POWER)
+	ret = ctr_power_init(NULL, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_power_init` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 	/* Initialize work queue */
 	ret = app_work_init();

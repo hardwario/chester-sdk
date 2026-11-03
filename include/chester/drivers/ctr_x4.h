@@ -63,6 +63,15 @@ struct ctr_x4_driver_api {
 	ctr_x4_api_get_line_state get_line_state;
 };
 
+/**
+ * @brief Register an event handler.
+ *
+ * Adds @p user_cb to the device's handler list; it does not replace previously
+ * registered handlers. Call it once per listener, at initialization time.
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM if no handler slot is free
+ */
 static inline int ctr_x4_set_handler(const struct device *dev, ctr_x4_user_cb user_cb,
 				     void *user_data)
 {

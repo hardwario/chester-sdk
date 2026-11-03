@@ -36,6 +36,10 @@
 	gain = <7>;
 	vref = <1>;
 };
+/* HARDWARE-CHESTER-Z  */
+&ctr_z {
+	status = "okay";
+};
 /* SUBSYSTEM-CLOUD  */
 / {
 	fstab {

@@ -34,6 +34,7 @@ features:
 - subsystem-cloud
 - subsystem-lte-v2
 - subsystem-lrw
+- subsystem-power
 - hardware-chester-s2
 - hardware-chester-z
 parameters:
@@ -80,16 +81,6 @@ parameters:
   max: 3600
   default: 30
   help: 'Get/Set event report rate in reports per hour'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: backup-report-connected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is active'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: backup-report-disconnected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is inactive'
   depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: led-mode
   type: enum

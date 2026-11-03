@@ -15,11 +15,6 @@
 #include <stdbool.h>
 
 struct app_data g_app_data = {
-#if defined(FEATURE_SUBSYSTEM_BATT)
-	.system_voltage_rest = NAN,
-	.system_voltage_load = NAN,
-	.system_current_load = NAN,
-#endif /* defined(FEATURE_SUBSYSTEM_BATT) */
 #if defined(FEATURE_SUBSYSTEM_ACCEL)
 	.accel_acceleration_x = NAN,
 	.accel_acceleration_y = NAN,

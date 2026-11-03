@@ -17,22 +17,11 @@
 #include <math.h>
 
 struct app_data g_app_data = {
-	.system_voltage_rest = NAN,
-	.system_voltage_load = NAN,
-	.system_current_load = NAN,
 	.accel_acceleration_x = NAN,
 	.accel_acceleration_y = NAN,
 	.accel_acceleration_z = NAN,
 	.accel_orientation = INT_MAX,
 	.therm_temperature = NAN,
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	.backup =
-		{
-			.line_voltage = NAN,
-			.battery_voltage = NAN,
-		},
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_SUBSYSTEM_DS18B20)
 	.w1_therm.sensor[0 ... APP_DATA_W1_THERM_COUNT - 1] =

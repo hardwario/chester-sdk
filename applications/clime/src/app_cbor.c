@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "app_backup.h"
 #include "app_cbor.h"
 #include "app_config.h"
 #include "app_data.h"
@@ -15,6 +14,7 @@
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_info.h>
 #include <chester/ctr_lte_v2.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_util.h>
 
@@ -113,29 +113,16 @@ static int encode(zcbor_state_t *zs)
 		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__UPTIME);
 		zcbor_uint64_put(zs, k_uptime_get() / 1000);
 
-		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__VOLTAGE_REST);
-		if (isnan(g_app_data.system_voltage_rest)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_voltage_rest);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__VOLTAGE_LOAD);
-		if (isnan(g_app_data.system_voltage_load)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_voltage_load);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_SYSTEM__CURRENT_LOAD);
-		if (isnan(g_app_data.system_current_load)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_current_load);
-		}
-
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
+
+#if defined(FEATURE_SUBSYSTEM_POWER)
+	ret = ctr_power_cbor_encode(zs);
+	if (ret) {
+		LOG_ERR("Call `ctr_power_cbor_encode` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 #if defined(FEATURE_CHESTER_APP_TAMPER)
 	zcbor_uint32_put(zs, CODEC_KEY_E_TAMPER);
@@ -176,92 +163,6 @@ static int encode(zcbor_state_t *zs)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 #endif /* defined(FEATURE_CHESTER_APP_TAMPER) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-	{
-		bool backup_active = false;
-
-#if defined(FEATURE_HARDWARE_CHESTER_X10)
-		backup_active = true;
-#endif
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-		if (app_backup_z_is_available()) {
-			backup_active = true;
-		}
-#endif
-		if (backup_active) {
-			zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP);
-			{
-				zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-				zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__LINE_VOLTAGE);
-				if (isnan(g_app_data.backup.line_voltage)) {
-					zcbor_nil_put(zs, NULL);
-				} else {
-					zcbor_int32_put(zs,
-							g_app_data.backup.line_voltage * 1000.f);
-				}
-
-				zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__BATT_VOLTAGE);
-				if (isnan(g_app_data.backup.battery_voltage)) {
-					zcbor_nil_put(zs, NULL);
-				} else {
-					zcbor_int32_put(
-						zs, g_app_data.backup.battery_voltage * 1000.f);
-				}
-
-				zcbor_uint32_put(zs, CODEC_KEY_E_BACKUP__STATE);
-				zcbor_uint32_put(zs,
-						 g_app_data.backup.line_present ? 1 : 0);
-
-				if (g_app_data.backup.event_count) {
-					int64_t timestamp_abs =
-						g_app_data.backup.events[0].timestamp;
-
-					zcbor_uint32_put(zs,
-							 CODEC_KEY_E_BACKUP__STATE__EVENTS);
-					{
-						zcbor_list_start_encode(
-							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-						/* TSO absolute timestamp */
-						zcbor_int64_put(zs, timestamp_abs);
-
-						for (int i = 0;
-						     i < g_app_data.backup.event_count; i++) {
-							/* TSO offset timestamp */
-							zcbor_int64_put(
-								zs,
-								g_app_data.backup.events[i]
-										.timestamp -
-									timestamp_abs);
-							zcbor_uint32_put(
-								zs,
-								g_app_data.backup.events[i]
-										.connected
-									? 1
-									: 0);
-						}
-
-						zcbor_list_end_encode(
-							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-					}
-				} else {
-					zcbor_uint32_put(zs,
-							 CODEC_KEY_E_BACKUP__STATE__EVENTS);
-					{
-						zcbor_list_start_encode(
-							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-						zcbor_list_end_encode(
-							zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-					}
-				}
-
-				zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-			}
-		}
-	}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK);
 	{

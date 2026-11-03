@@ -22,7 +22,6 @@
 #define APP_DATA_MAX_MEASUREMENTS  32
 #define APP_DATA_MAX_SAMPLES       32
 #define APP_DATA_MAX_TAMPER_EVENTS 32
-#define APP_DATA_MAX_BACKUP_EVENTS 32
 #define APP_DATA_MAX_HYGRO_EVENTS  32
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
@@ -67,21 +66,6 @@ struct app_data_tamper {
 	struct app_data_tamper_event events[APP_DATA_MAX_TAMPER_EVENTS];
 };
 #endif /* defined(FEATURE_CHESTER_APP_TAMPER) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-struct app_data_backup_event {
-	int64_t timestamp;
-	bool connected;
-};
-
-struct app_data_backup {
-	float line_voltage;
-	float battery_voltage;
-	bool line_present;
-	int event_count;
-	struct app_data_backup_event events[APP_DATA_MAX_BACKUP_EVENTS];
-};
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S1)
 struct app_data_iaq_sensors_measurement {
@@ -377,9 +361,6 @@ struct app_data_radon {
 #endif /* defined(FEATURE_SUBSYSTEM_RADON) */
 
 struct app_data {
-	float system_voltage_rest;
-	float system_voltage_load;
-	float system_current_load;
 	float therm_temperature;
 	float accel_acceleration_x;
 	float accel_acceleration_y;
@@ -389,10 +370,6 @@ struct app_data {
 #if defined(FEATURE_CHESTER_APP_TAMPER)
 	struct app_data_tamper tamper;
 #endif /* defined(FEATURE_CHESTER_APP_TAMPER) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-	struct app_data_backup backup;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S1)
 	struct app_data_iaq iaq;

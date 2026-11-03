@@ -39,6 +39,13 @@ struct ctr_x4_config {
 	int line_threshold_max;
 };
 
+#define HANDLER_COUNT 3
+
+struct ctr_x4_handler {
+	ctr_x4_user_cb cb;
+	void *user_data;
+};
+
 struct ctr_x4_data {
 	struct k_mutex lock;
 	struct k_timer timer;
@@ -46,8 +53,8 @@ struct ctr_x4_data {
 	const struct device *dev;
 	struct adc_sequence adc_sequence;
 	int16_t adc_buf[1];
-	ctr_x4_user_cb user_cb;
-	void *user_data;
+	struct ctr_x4_handler handlers[HANDLER_COUNT];
+	int handler_count;
 	enum ctr_x4_line_state line_state;
 };
 
@@ -63,12 +70,21 @@ static inline struct ctr_x4_data *get_data(const struct device *dev)
 
 static int ctr_x4_set_handler_(const struct device *dev, ctr_x4_user_cb user_cb, void *user_data)
 {
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+	struct ctr_x4_data *data = get_data(dev);
 
-	get_data(dev)->user_cb = user_cb;
-	get_data(dev)->user_data = user_data;
+	if (data->handler_count >= (int)ARRAY_SIZE(data->handlers)) {
+		LOG_ERR("No free handler slot");
+		return -ENOMEM;
+	}
 
-	k_mutex_unlock(&get_data(dev)->lock);
+	/* Fill the slot before publishing it, so a concurrent dispatch never sees a
+	 * half-written entry. Registration is expected to happen at init time only.
+	 */
+	data->handlers[data->handler_count] = (struct ctr_x4_handler){
+		.cb = user_cb,
+		.user_data = user_data,
+	};
+	data->handler_count++;
 
 	return 0;
 }
@@ -170,14 +186,14 @@ static void work_handler(struct k_work *work)
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 	enum ctr_x4_line_state line_state = get_data(dev)->line_state;
 
+	bool dispatch = false;
+	enum ctr_x4_event event;
+
 	if (line_state == CTR_X4_LINE_STATE_CONNECTED || line_state == CTR_X4_LINE_STATE_UNKNOWN) {
 		if (voltage_mv < get_config(dev)->line_threshold_min) {
 			get_data(dev)->line_state = CTR_X4_LINE_STATE_DISCONNECTED;
-
-			if (get_data(dev)->user_cb) {
-				get_data(dev)->user_cb(dev, CTR_X4_EVENT_LINE_DISCONNECTED,
-						       get_data(dev)->user_data);
-			}
+			event = CTR_X4_EVENT_LINE_DISCONNECTED;
+			dispatch = true;
 		}
 	}
 
@@ -185,15 +201,20 @@ static void work_handler(struct k_work *work)
 	    line_state == CTR_X4_LINE_STATE_UNKNOWN) {
 		if (voltage_mv > get_config(dev)->line_threshold_max) {
 			get_data(dev)->line_state = CTR_X4_LINE_STATE_CONNECTED;
-
-			if (get_data(dev)->user_cb) {
-				get_data(dev)->user_cb(dev, CTR_X4_EVENT_LINE_CONNECTED,
-						       get_data(dev)->user_data);
-			}
+			event = CTR_X4_EVENT_LINE_CONNECTED;
+			dispatch = true;
 		}
 	}
 
 	k_mutex_unlock(&get_data(dev)->lock);
+
+	/* Dispatched outside the lock so a handler may call back into the driver. */
+	if (dispatch) {
+		for (int i = 0; i < get_data(dev)->handler_count; i++) {
+			get_data(dev)->handlers[i].cb(dev, event,
+						      get_data(dev)->handlers[i].user_data);
+		}
+	}
 }
 
 static int ctr_x4_init(const struct device *dev)

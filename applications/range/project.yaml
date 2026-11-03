@@ -4,13 +4,6 @@ variants:
   fw_bundle: com.hardwario.chester.app.range
   fw_name: hio-chester-range
   fw_version: v3.0.0
-- name: CHESTER Range Z
-  fw_bundle: com.hardwario.chester.app.range.z
-  fw_name: hio-chester-range-z
-  fw_version: v3.0.0
-  features:
-  - hardware-chester-z
-  remark: Support for CHESTER-Z
 project:
   variant: Range
   company: 2024 HARDWARIO a.s.
@@ -39,11 +32,12 @@ features:
 - subsystem-lte-v2
 - subsystem-cloud
 - subsystem-ds18b20
+- subsystem-power
 - hardware-chester-mb7066-a
 - chester-app-report-jitter
 #- hardware-chester-mb7066-b
 #- hardware-chester-s2
-#- hardware-chester-z
+- hardware-chester-z
 parameters:
 - name: interval-sample
   type: int
@@ -81,24 +75,12 @@ parameters:
   max: 86400
   default: 1
   help: 'Get/Set event report delay in seconds'
-  depends_on:  defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: event-report-rate
   type: int
   min: 1
   max: 3600
   default: 30
   help: 'Get/Set event report rate in reports per hour'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: backup-report-connected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is active'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: backup-report-disconnected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is inactive'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: hygro-t-alarm-hi-report
   type: bool
   default: false

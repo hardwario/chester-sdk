@@ -34,7 +34,6 @@
 #define APP_DATA_COUNTER_MAX_MEASUREMENTS 64
 
 #define APP_DATA_MAX_TRIGGER_EVENTS 128
-#define APP_DATA_MAX_BACKUP_EVENTS  64
 
 #define APP_DATA_HYGRO_MAX_SAMPLES      64
 #define APP_DATA_HYGRO_MAX_MEASUREMENTS 64
@@ -55,23 +54,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-
-struct app_data_backup_event {
-	int64_t timestamp;
-	bool connected;
-};
-
-struct app_data_backup {
-	float line_voltage;
-	float battery_voltage;
-	bool line_present;
-	int event_count;
-	struct app_data_backup_event events[APP_DATA_MAX_BACKUP_EVENTS];
-};
-
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 
@@ -221,18 +203,11 @@ struct app_data_ble_tag {
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 struct app_data {
-	float system_voltage_rest;
-	float system_voltage_load;
-	float system_current_load;
 	float therm_temperature;
 	float accel_acceleration_x;
 	float accel_acceleration_y;
 	float accel_acceleration_z;
 	int accel_orientation;
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	struct app_data_backup backup;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 	struct app_data_trigger *trigger[APP_DATA_NUM_CHANNELS];

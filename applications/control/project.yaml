@@ -6,24 +6,16 @@ variants:
   fw_version: v3.0.0
   features:
   - hardware-chester-x4-b
-- name: CHESTER Control 8Ch Z
-  fw_bundle: com.hardwario.chester.app.control.8ch.z
-  fw_name: hio-chester-control-8ch-z
+- name: CHESTER Control 8Ch
+  fw_bundle: com.hardwario.chester.app.control.8ch
+  fw_name: hio-chester-control-8ch
   fw_version: v3.0.0
   features:
   - hardware-chester-x0-b
-  - hardware-chester-z
   parameters:
   - name: channel-mode-{}
     count: 8
-  remark: Support for second X0 module in slot B (8 channels) and CHESTER-Z
-- name: CHESTER Control Z
-  fw_bundle: com.hardwario.chester.app.control.z
-  fw_name: hio-chester-control-z
-  fw_version: v3.0.0
-  features:
-  - hardware-chester-z
-  remark: Support for CHESTER-Z
+  remark: Support for second X0 module in slot B (8 channels)
 project:
   variant: Control
   company: 2024 HARDWARIO a.s.
@@ -58,10 +50,11 @@ features:
 - subsystem-lrw
 - subsystem-ds18b20
 - subsystem-soil-sensor
+- subsystem-power
 - hardware-chester-x0-a
+- hardware-chester-z
 #- hardware-chester-x0-a
 #- hardware-chester-s2
-#- hardware-chester-z
 #- hardware-chester-x4-a
 #- hardware-chester-x9-a
 #- hardware-chester-x9-b
@@ -90,24 +83,12 @@ parameters:
   max: 86400
   default: 5
   help: 'Get/Set event report delay in seconds'
-  depends_on:  defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X0_A)
 - name: event-report-rate
   type: int
   min: 1
   max: 3600
   default: 30
   help: 'Get/Set event report rate in reports per hour'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X0_A)
-- name: backup-report-connected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is active'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: backup-report-disconnected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is inactive'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: channel-mode-{}
   type: enum
   default: disabled

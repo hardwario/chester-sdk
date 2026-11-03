@@ -8,13 +8,41 @@ schema:
     - timestamp:
   - system:
     - uptime:
-    - voltage_rest:
-      - $div: 1000
-      - $fpp: 2
-    - voltage_load:
-      - $div: 1000
-      - $fpp: 2
-    - current_load:
+  - power:
+    - external:
+      - source:
+        - $enum:
+          - "none"
+          - "ctr-z"
+          - "ctr-x4-a"
+          - "ctr-x4-b"
+          - "ctr-x10"
+      - line:
+        - $enum:
+          - "unknown"
+          - "disconnected"
+          - "connected"
+      - line_voltage:
+        - $div: 1000
+        - $fpp: 2
+      - backup_voltage:
+        - $div: 1000
+        - $fpp: 2
+      - events:
+        - $tso:
+          - line:
+            - $enum:
+              - "unknown"
+              - "disconnected"
+              - "connected"
+    - system:
+      - voltage_rest:
+        - $div: 1000
+        - $fpp: 2
+      - voltage_load:
+        - $div: 1000
+        - $fpp: 2
+      - current_load:
   - attribute:
     - vendor_name:
     - product_name:

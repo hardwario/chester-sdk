@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2026 HARDWARIO a.s.
+#
+# SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+#
+
+config CTR_POWER
+	bool "CTR_POWER"
+	default n
+	depends on CTR_BATT
+	depends on CTR_CONFIG
+	depends on CTR_RTC
+	depends on SETTINGS
+	select CBPRINTF_FP_SUPPORT if CTR_POWER_SHELL || CTR_POWER_LOG_LEVEL_DBG
+
+if CTR_POWER
+
+module = CTR_POWER
+module-str = CHESTER Power Subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config CTR_POWER_MAX_EVENTS
+	int "Event buffer depth"
+	default 32
+
+config CTR_POWER_INIT_PRIORITY
+	int "Initialization priority"
+	default APPLICATION_INIT_PRIORITY
+
+config CTR_POWER_SHELL
+	bool "CTR_POWER_SHELL"
+	depends on SHELL
+	default y
+
+config CTR_POWER_CBOR
+	bool "CTR_POWER_CBOR"
+	depends on ZCBOR
+	default y if CTR_CLOUD
+
+config CTR_POWER_LRW
+	bool "CTR_POWER_LRW"
+	depends on CTR_BUF
+	default y if CTR_LRW
+
+endif # CTR_POWER

@@ -18,6 +18,10 @@
 &ctr_x0_pcal6416a_a {
 	status = "okay";
 };
+/* HARDWARE-CHESTER-Z  */
+&ctr_z {
+	status = "okay";
+};
 /* SUBSYSTEM-CLOUD  */
 / {
 	fstab {

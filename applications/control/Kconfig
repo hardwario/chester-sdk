@@ -13,12 +13,12 @@ config SHIELD_CTR_X0_A
 
 config CTR_X0
 	default y
-# HARDWARE-CHESTER-X0-B
-config SHIELD_CTR_X0_B
-	bool "Enable SHIELD_CTR_X0_B"
+# HARDWARE-CHESTER-X4-B
+config SHIELD_CTR_X4_B
+	bool "Enable SHIELD_CTR_X4_B"
 	default y
 
-config CTR_X0
+config CTR_X4
 	default y
 # HARDWARE-CHESTER-Z
 config SHIELD_CTR_Z

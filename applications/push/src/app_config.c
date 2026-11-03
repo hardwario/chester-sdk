@@ -50,8 +50,6 @@ const struct ctr_config_item items[] = {
 #if defined(FEATURE_HARDWARE_CHESTER_Z)
 	CTR_CONFIG_ITEM_INT("event-report-delay", m_config_interim.event_report_delay, 1, 86400, "Get/Set event report delay in seconds.", 1),
 	CTR_CONFIG_ITEM_INT("event-report-rate", m_config_interim.event_report_rate, 1, 3600, "Get/Set event report rate in reports per hour.", 30),
-	CTR_CONFIG_ITEM_BOOL("backup-report-connected", m_config_interim.backup_report_connected, "Get/Set report when backup is active.", true),
-	CTR_CONFIG_ITEM_BOOL("backup-report-disconnected", m_config_interim.backup_report_disconnected, "Get/Set report when backup is inactive.", true),
 	CTR_CONFIG_ITEM_ENUM("led-mode", m_config_interim.led_mode, ((const char*[]){"multiple", "single"}), "Get/Set button LED mode (multiple LEDs lit independently, or a single exclusive LED)", 0),
 	
 	CTR_CONFIG_ITEM_INT("led-timeout", m_config_interim.led_timeout, 0, 86400, "Get/Set button LED timeout in seconds (0 = stay lit until cleared by downlink).", 5),

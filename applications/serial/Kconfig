@@ -6,6 +6,31 @@
 
 menu "Application"
 
+# HARDWARE-CHESTER-X12-A
+config GPIO
+	default y
+
+config I2C
+	default y
+
+config PM_DEVICE
+	default y
+
+config SERIAL
+	default y
+
+config UART_SC16IS7XX
+	default y
+# HARDWARE-CHESTER-Z
+config SHIELD_CTR_Z
+	bool "Enable SHIELD_CTR_Z"
+	default y
+
+config CTR_Z
+	default y
+
+config I2C
+	default y
 # SUBSYSTEM-LRW
 config SHIELD_CTR_LRW
 	bool "Enable SHIELD_CTR_LRW"

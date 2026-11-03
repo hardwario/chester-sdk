@@ -37,6 +37,13 @@ struct ctr_x10_config {
 	int line_threshold_max;
 };
 
+#define HANDLER_COUNT 3
+
+struct ctr_x10_handler {
+	ctr_x10_user_cb cb;
+	void *user_data;
+};
+
 struct ctr_x10_data {
 	struct k_mutex lock;
 	struct k_timer timer;
@@ -45,8 +52,8 @@ struct ctr_x10_data {
 	struct adc_sequence line_adc_sequence;
 	struct adc_sequence battery_adc_sequence;
 	int16_t adc_buf[1];
-	ctr_x10_user_cb user_cb;
-	void *user_data;
+	struct ctr_x10_handler handlers[HANDLER_COUNT];
+	int handler_count;
 	bool is_line_present;
 };
 
@@ -62,12 +69,21 @@ static inline struct ctr_x10_data *get_data(const struct device *dev)
 
 static int ctr_x10_set_handler_(const struct device *dev, ctr_x10_user_cb user_cb, void *user_data)
 {
-	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
+	struct ctr_x10_data *data = get_data(dev);
 
-	get_data(dev)->user_cb = user_cb;
-	get_data(dev)->user_data = user_data;
+	if (data->handler_count >= (int)ARRAY_SIZE(data->handlers)) {
+		LOG_ERR("No free handler slot");
+		return -ENOMEM;
+	}
 
-	k_mutex_unlock(&get_data(dev)->lock);
+	/* Fill the slot before publishing it, so a concurrent dispatch never sees a
+	 * half-written entry. Registration is expected to happen at init time only.
+	 */
+	data->handlers[data->handler_count] = (struct ctr_x10_handler){
+		.cb = user_cb,
+		.user_data = user_data,
+	};
+	data->handler_count++;
 
 	return 0;
 }
@@ -163,28 +179,30 @@ static void work_handler(struct k_work *work)
 
 	k_mutex_lock(&get_data(dev)->lock, K_FOREVER);
 
-	ctr_x10_user_cb user_cb = NULL;
+	bool dispatch = false;
 	enum ctr_x10_event event;
-	void *user_data = get_data(dev)->user_data;
 
 	if (get_data(dev)->is_line_present) {
 		if (voltage_mv < get_config(dev)->line_threshold_min) {
 			get_data(dev)->is_line_present = false;
 			event = CTR_X10_EVENT_LINE_DISCONNECTED;
-			user_cb = get_data(dev)->user_cb;
+			dispatch = true;
 		}
 	} else {
 		if (voltage_mv > get_config(dev)->line_threshold_max) {
 			get_data(dev)->is_line_present = true;
 			event = CTR_X10_EVENT_LINE_CONNECTED;
-			user_cb = get_data(dev)->user_cb;
+			dispatch = true;
 		}
 	}
 
 	k_mutex_unlock(&get_data(dev)->lock);
 
-	if (user_cb) {
-		user_cb(dev, event, user_data);
+	if (dispatch) {
+		for (int i = 0; i < get_data(dev)->handler_count; i++) {
+			get_data(dev)->handlers[i].cb(dev, event,
+						      get_data(dev)->handlers[i].user_data);
+		}
 	}
 }
 

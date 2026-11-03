@@ -4,13 +4,6 @@ variants:
   fw_bundle: com.hardwario.chester.app.current
   fw_name: hio-chester-current
   fw_version: v3.0.0
-- name: CHESTER Current Z
-  fw_bundle: com.hardwario.chester.app.current.z
-  fw_name: hio-chester-current-z
-  fw_version: v3.0.0
-  features:
-  - hardware-chester-z
-  remark: Support for CHESTER-Z
 project:
   variant: Current
   company: 2024 HARDWARIO a.s.
@@ -40,9 +33,10 @@ features:
 - subsystem-lte-v2
 - subsystem-lrw
 - subsystem-cloud
+- subsystem-power
 - hardware-chester-k1
 - subsystem-ds18b20
-#- hardware-chester-z
+- hardware-chester-z
 parameters:
 - name: interval-sample
   type: int
@@ -80,24 +74,12 @@ parameters:
   max: 86400
   default: 1
   help: 'Get/Set event report delay in seconds'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: event-report-rate
   type: int
   min: 1
   max: 3600
   default: 30
   help: 'Get/Set event report rate in reports per hour'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: backup-report-connected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is active'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
-- name: backup-report-disconnected
-  type: bool
-  default: true
-  help: 'Get/Set report when backup is inactive'
-  depends_on: defined(FEATURE_HARDWARE_CHESTER_Z)
 - name: channel-active
   type: array[bool]
   len: 4

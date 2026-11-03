@@ -17,6 +17,7 @@
 #include <chester/ctr_cloud.h>
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
 #if defined(FEATURE_HARDWARE_CHESTER_X4_B)
 #include <chester/drivers/ctr_x4.h>
@@ -24,7 +25,6 @@
 #if defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B)
 #include <chester/drivers/ctr_x9.h>
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X9_A) || defined(FEATURE_HARDWARE_CHESTER_X9_B) */
-#include <chester/drivers/ctr_z.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -64,8 +64,6 @@ static void report_rate_timer_handler(struct k_timer *timer)
 
 static K_TIMER_DEFINE(m_report_rate_timer, report_rate_timer_handler, NULL);
 
-#if defined(FEATURE_HARDWARE_CHESTER_X0_A) || defined(FEATURE_HARDWARE_CHESTER_Z)
-
 static void send_with_rate_limit(void)
 {
 	if (!atomic_get(&m_report_rate_timer_is_active)) {
@@ -89,8 +87,6 @@ static void send_with_rate_limit(void)
 		LOG_WRN("Hourly counter exceeded");
 	}
 }
-
-#endif
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 
@@ -222,60 +218,18 @@ void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_even
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-
-void app_handler_ctr_z(const struct device *dev, enum ctr_z_event backup_event, void *param)
+#if defined(FEATURE_SUBSYSTEM_POWER)
+void app_handler_power_event(const struct ctr_power_event *event, void *user_data)
 {
-	int ret;
+	LOG_INF("Power line: %d", (int)event->line);
 
-	if (backup_event != CTR_Z_EVENT_DC_CONNECTED &&
-	    backup_event != CTR_Z_EVENT_DC_DISCONNECTED) {
-		return;
-	}
-
-	struct app_data_backup *backup = &g_app_data.backup;
-
-	app_work_backup_update();
-
-	app_data_lock();
-
-	backup->line_present = backup_event == CTR_Z_EVENT_DC_CONNECTED;
-
-	if (backup->event_count < APP_DATA_MAX_BACKUP_EVENTS) {
-		struct app_data_backup_event *event = &backup->events[backup->event_count];
-
-		ret = ctr_rtc_get_ts(&event->timestamp);
-		if (ret) {
-			LOG_ERR("Call `ctr_rtc_get_ts` failed: %d", ret);
-			app_data_unlock();
-			return;
-		}
-
-		event->connected = backup->line_present;
-		backup->event_count++;
-
-		LOG_INF("Event count: %d", backup->event_count);
-	} else {
-		LOG_WRN("Measurement full");
-		app_data_unlock();
-		return;
-	}
-
-	LOG_INF("Backup: %d", (int)backup->line_present);
-
-	if (g_app_config.backup_report_connected && backup_event == CTR_Z_EVENT_DC_CONNECTED) {
-		send_with_rate_limit();
-	}
-
-	if (g_app_config.backup_report_disconnected &&
-	    backup_event == CTR_Z_EVENT_DC_DISCONNECTED) {
-		send_with_rate_limit();
-	}
-
-	app_data_unlock();
+	/*
+	 * `ctr_power` already filters on `report-connected`/`report-disconnected` before
+	 * invoking this callback, so no further gating is needed here.
+	 */
+	send_with_rate_limit();
 }
-
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 #if defined(FEATURE_SUBSYSTEM_LRW)
 

@@ -13,6 +13,7 @@
 /* CHESTER includes */
 #include <chester/ctr_info.h>
 #include <chester/ctr_lte_v2.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
@@ -74,33 +75,13 @@ int encode(zcbor_state_t *zs, uint8_t *buf)
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
 
-	zcbor_uint32_put(zs, CODEC_KEY_E_BATTERY);
-	{
-		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_BATTERY__VOLTAGE_REST);
-		if (isnan(g_app_data.system_voltage_rest)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_voltage_rest);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_BATTERY__VOLTAGE_LOAD);
-		if (isnan(g_app_data.system_voltage_load)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_voltage_load);
-		}
-
-		zcbor_uint32_put(zs, CODEC_KEY_E_BATTERY__CURRENT_LOAD);
-		if (isnan(g_app_data.system_current_load)) {
-			zcbor_nil_put(zs, NULL);
-		} else {
-			zcbor_uint32_put(zs, g_app_data.system_current_load);
-		}
-
-		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+#if defined(FEATURE_SUBSYSTEM_POWER)
+	ret = ctr_power_cbor_encode(zs);
+	if (ret) {
+		LOG_ERR("Call `ctr_power_cbor_encode` failed: %d", ret);
+		return ret;
 	}
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_NETWORK);
 	{

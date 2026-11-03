@@ -11,6 +11,16 @@ config APP_REPORT_JITTER
 	bool "Add random time jitter to report transfers"
 	default y
 	select ENTROPY_GENERATOR
+# HARDWARE-CHESTER-Z
+config SHIELD_CTR_Z
+	bool "Enable SHIELD_CTR_Z"
+	default y
+
+config CTR_Z
+	default y
+
+config I2C
+	default y
 # SUBSYSTEM-GNSS#
 config SHIELD_CTR_GNSS
 	bool "Enable SHIELD_CTR_GNSS"

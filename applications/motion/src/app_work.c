@@ -7,7 +7,6 @@
 #include "app_config.h"
 #include "app_data.h"
 #include "app_init.h"
-#include "app_power.h"
 #include "app_send.h"
 #include "app_sensor.h"
 #include "app_work.h"
@@ -87,20 +86,6 @@ static void sample_work_handler(struct k_work *work)
 
 static K_WORK_DELAYABLE_DEFINE(m_sample_work, sample_work_handler);
 
-static void power_work_handler(struct k_work *work)
-{
-    int ret;
-
-    k_work_schedule_for_queue(&m_work_q, (struct k_work_delayable *)work, K_HOURS(12));
-
-    ret = app_power_sample();
-    if (ret) {
-        LOG_ERR("Call `app_power_sample` failed: %d", ret);
-    }
-}
-
-static K_WORK_DELAYABLE_DEFINE(m_power_work, power_work_handler);
-
 int app_work_init(void)
 {
     k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
@@ -110,7 +95,6 @@ int app_work_init(void)
 
     k_work_schedule_for_queue(&m_work_q, &m_send_work, K_SECONDS(10));
     k_work_schedule_for_queue(&m_work_q, &m_sample_work, K_NO_WAIT);
-    k_work_schedule_for_queue(&m_work_q, &m_power_work, K_SECONDS(60));
 
     return 0;
 }

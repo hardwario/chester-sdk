@@ -9,7 +9,10 @@
 
 #define FEATURE_HARDWARE_CHESTER_BAROMETER_TAG  1
 #define FEATURE_HARDWARE_CHESTER_METEO_A        1
+#define FEATURE_HARDWARE_CHESTER_METEO_M        1
 #define FEATURE_HARDWARE_CHESTER_S2             1
+#define FEATURE_HARDWARE_CHESTER_X2_MODBUS_A    1
+#define FEATURE_HARDWARE_CHESTER_Z              1
 #define FEATURE_SUBSYSTEM_ACCEL                 1
 #define FEATURE_SUBSYSTEM_BATT                  1
 #define FEATURE_SUBSYSTEM_BLE_TAG               1
@@ -29,6 +32,7 @@
 #define FEATURE_SUBSYSTEM_LOG                   1
 #define FEATURE_SUBSYSTEM_LRW                   1
 #define FEATURE_SUBSYSTEM_LTE_V2                1
+#define FEATURE_SUBSYSTEM_POWER                 1
 #define FEATURE_SUBSYSTEM_RTC                   1
 #define FEATURE_SUBSYSTEM_SHELL                 1
 #define FEATURE_SUBSYSTEM_SOIL_SENSOR           1

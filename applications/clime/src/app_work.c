@@ -4,11 +4,9 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "app_backup.h"
 #include "app_config.h"
 #include "app_cbor.h"
 #include "app_init.h"
-#include "app_power.h"
 #include "app_send.h"
 #include "app_sensor.h"
 #include "app_tamper.h"
@@ -62,10 +60,6 @@ static void send_work_handler(struct k_work *work)
 #if defined(FEATURE_CHESTER_APP_TAMPER)
 	app_tamper_clear();
 #endif /* defined(FEATURE_CHESTER_APP_TAMPER) */
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-	app_backup_clear();
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S1)
 	app_sensor_iaq_clear();
@@ -122,13 +116,6 @@ static void sample_work_handler(struct k_work *work)
 {
 	int ret;
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-	ret = app_backup_sample();
-	if (ret) {
-		LOG_ERR("Call `app_backup_sample` failed: %d", ret);
-	}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
-
 	ret = app_sensor_sample();
 	if (ret) {
 		LOG_ERR("Call `app_sensor_sample` failed: %d", ret);
@@ -148,30 +135,6 @@ static void sample_timer_handler(struct k_timer *timer)
 }
 
 static K_TIMER_DEFINE(m_sample_timer, sample_timer_handler, NULL);
-
-static void power_work_handler(struct k_work *work)
-{
-	int ret;
-
-	ret = app_power_sample();
-	if (ret) {
-		LOG_ERR("Call `app_power_sample` failed: %d", ret);
-	}
-}
-
-static K_WORK_DEFINE(m_power_work, power_work_handler);
-
-static void power_timer_handler(struct k_timer *timer)
-{
-	int ret;
-
-	ret = k_work_submit_to_queue(&m_work_q, &m_power_work);
-	if (ret < 0) {
-		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
-	}
-}
-
-static K_TIMER_DEFINE(m_power_timer, power_timer_handler, NULL);
 
 #if defined(FEATURE_HARDWARE_CHESTER_S1)
 
@@ -537,32 +500,6 @@ static K_TIMER_DEFINE(m_sps30_aggreg_timer, sps30_aggreg_timer_handler, NULL);
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_SPS30) */
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10)
-
-static void backup_work_handler(struct k_work *work)
-{
-	int ret;
-
-	ret = app_backup_sample();
-	if (ret) {
-		LOG_ERR("Call `app_backup_sample` failed: %d", ret);
-	}
-}
-
-static K_WORK_DEFINE(m_backup_work, backup_work_handler);
-
-void app_work_backup_update(void)
-{
-	int ret;
-
-	ret = k_work_submit_to_queue(&m_work_q, &m_backup_work);
-	if (ret < 0) {
-		LOG_ERR("Call `k_work_submit_to_queue` failed: %d", ret);
-	}
-}
-
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) || defined(FEATURE_HARDWARE_CHESTER_X10) */
-
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
 static void ble_tag_sample_work_handler(struct k_work *work)
@@ -676,7 +613,6 @@ int app_work_init(void)
 
 	k_timer_start(&m_send_timer, K_SECONDS(10), K_FOREVER);
 	k_timer_start(&m_sample_timer, K_NO_WAIT, K_SECONDS(g_app_config.interval_sample));
-	k_timer_start(&m_power_timer, K_SECONDS(60), K_HOURS(12));
 
 #if defined(FEATURE_HARDWARE_CHESTER_S1)
 	k_timer_start(&m_iaq_sample_timer, K_SECONDS(g_app_config.interval_sample),
@@ -830,8 +766,8 @@ void app_work_send(void)
 	k_timer_start(&m_send_timer, K_NO_WAIT, K_FOREVER);
 }
 
-#if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) ||                 \
-	defined(FEATURE_HARDWARE_CHESTER_X10)
+#if defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_SUBSYSTEM_POWER) ||                   \
+	defined(FEATURE_CHESTER_APP_TAMPER)
 static atomic_t m_report_rate_hourly_counter = 0;
 static atomic_t m_report_rate_timer_is_active = false;
 static atomic_t m_report_delay_timer_is_active = false;
@@ -876,5 +812,5 @@ void app_work_send_with_rate_limit(void)
 	}
 }
 
-#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_HARDWARE_CHESTER_Z) ||           \
-	  defined(FEATURE_HARDWARE_CHESTER_X10) */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_S2) || defined(FEATURE_SUBSYSTEM_POWER) ||             \
+	  defined(FEATURE_CHESTER_APP_TAMPER) */

@@ -11,8 +11,8 @@
 #include <chester/ctr_button.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
+#include <chester/ctr_power.h>
 #include <chester/drivers/ctr_s1.h>
-#include <chester/drivers/ctr_z.h>
 #include <chester/drivers/ctr_x4.h>
 
 #ifdef __cplusplus
@@ -21,6 +21,10 @@ extern "C" {
 
 void app_handler_lrw(enum ctr_lrw_event event, union ctr_lrw_event_data *data, void *param);
 void app_handler_lte(enum ctr_lte_event event, union ctr_lte_event_data *data, void *param);
+
+#if defined(FEATURE_SUBSYSTEM_POWER)
+void app_handler_power_event(const struct ctr_power_event *event, void *user_data);
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S1)
 void ctr_s1_event_handler(const struct device *dev, enum ctr_s1_event event, void *user_data);

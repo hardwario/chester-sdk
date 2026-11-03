@@ -29,12 +29,19 @@ struct ctr_z_config {
 	bool auto_beep;
 };
 
+#define HANDLER_COUNT 3
+
+struct ctr_z_handler {
+	ctr_z_user_cb cb;
+	void *user_data;
+};
+
 struct ctr_z_data {
 	const struct device *dev;
 	struct k_work work;
 	struct gpio_callback gpio_cb;
-	ctr_z_user_cb user_cb;
-	void *user_data;
+	struct ctr_z_handler handlers[HANDLER_COUNT];
+	int handler_count;
 };
 
 static inline const struct ctr_z_config *get_config(const struct device *dev)
@@ -99,8 +106,21 @@ static int write(const struct device *dev, uint8_t reg, uint16_t data)
 
 static int ctr_z_set_handler_(const struct device *dev, ctr_z_user_cb user_cb, void *user_data)
 {
-	get_data(dev)->user_cb = user_cb;
-	get_data(dev)->user_data = user_data;
+	struct ctr_z_data *data = get_data(dev);
+
+	if (data->handler_count >= (int)ARRAY_SIZE(data->handlers)) {
+		LOG_ERR("No free handler slot");
+		return -ENOMEM;
+	}
+
+	/* Fill the slot before publishing it, so a concurrent dispatch never sees a
+	 * half-written entry. Registration is expected to happen at init time only.
+	 */
+	data->handlers[data->handler_count] = (struct ctr_z_handler){
+		.cb = user_cb,
+		.user_data = user_data,
+	};
+	data->handler_count++;
 
 	return 0;
 }
@@ -409,11 +429,14 @@ static void work_handler(struct k_work *work)
 #define DISPATCH(event)                                                                            \
 	do {                                                                                       \
 		if (reg_irq & BIT(event)) {                                                        \
-			data->user_cb(data->dev, event, data->user_data);                          \
+			for (int i = 0; i < data->handler_count; i++) {                            \
+				data->handlers[i].cb(data->dev, event,                             \
+						     data->handlers[i].user_data);                 \
+			}                                                                          \
 		}                                                                                  \
 	} while (0);
 
-	if (data->user_cb) {
+	if (data->handler_count) {
 		uint32_t reg_irq = reg_irq0 << 16 | reg_irq1;
 
 		DISPATCH(CTR_Z_EVENT_DEVICE_RESET);

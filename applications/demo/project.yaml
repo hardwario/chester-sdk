@@ -31,6 +31,8 @@ features:
 - subsystem-entropy-generator
 - subsystem-zcbor
 - subsystem-lte-v2
+- subsystem-power
+- hardware-chester-z
 - chester-app-report-jitter
 #- chester-app-tamper
 parameters:

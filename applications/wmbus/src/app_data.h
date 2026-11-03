@@ -21,11 +21,6 @@ extern "C" {
 
 struct app_data {
 	float therm_temperature;
-#if defined(FEATURE_SUBSYSTEM_BATT)
-	float system_voltage_rest;
-	float system_voltage_load;
-	float system_current_load;
-#endif /* defined(FEATURE_SUBSYSTEM_BATT) */
 #if defined(FEATURE_SUBSYSTEM_ACCEL)
 	float accel_acceleration_x;
 	float accel_acceleration_y;

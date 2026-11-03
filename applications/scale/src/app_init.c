@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
-#include "app_backup.h"
 #include "app_codec.h"
 #include "app_config.h"
 #include "app_handler.h"
@@ -18,9 +17,9 @@
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_cloud.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
 #include <chester/ctr_wdog.h>
-#include <chester/drivers/ctr_z.h>
 #include <chester/drivers/people_counter.h>
 
 /* Zephyr includes */
@@ -203,19 +202,19 @@ int app_init(void)
 	g_app_data.weight_measurement_timestamp = timestamp;
 	app_data_unlock();
 
+#if defined(FEATURE_SUBSYSTEM_POWER)
+	ret = ctr_power_init(app_handler_power_event, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_power_init` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
+
 	ret = app_work_init();
 	if (ret) {
 		LOG_ERR("Call `app_work_init` failed: %d", ret);
 		return ret;
 	}
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-	ret = app_backup_init();
-	if (ret) {
-		LOG_ERR("Call `app_backup_init` failed: %d", ret);
-		return ret;
-	}
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 	return 0;
 }

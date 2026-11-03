@@ -15,6 +15,7 @@
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_cloud.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_wdog.h>
 #include <chester/drivers/ctr_z.h>
 
@@ -223,6 +224,14 @@ int app_init(void)
 	}
 
 	ctr_led_set(CTR_LED_CHANNEL_R, false);
+
+#if defined(FEATURE_SUBSYSTEM_POWER)
+	ret = ctr_power_init(app_handler_power_event, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_power_init` failed: %d", ret);
+		return ret;
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 	ret = app_work_init();
 	if (ret) {

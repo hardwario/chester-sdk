@@ -195,6 +195,15 @@ struct ctr_z_driver_api {
 	ctr_z_api_set_led set_led;
 };
 
+/**
+ * @brief Register an event handler.
+ *
+ * Adds @p user_cb to the device's handler list; it does not replace previously
+ * registered handlers. Call it once per listener, at initialization time.
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM if no handler slot is free
+ */
 static inline int ctr_z_set_handler(const struct device *dev, ctr_z_user_cb user_cb,
 				    void *user_data)
 {

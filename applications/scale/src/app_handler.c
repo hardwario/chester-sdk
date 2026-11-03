@@ -14,6 +14,7 @@
 #include <chester/ctr_led.h>
 #include <chester/ctr_lrw.h>
 #include <chester/ctr_lte.h>
+#include <chester/ctr_power.h>
 #include <chester/ctr_rtc.h>
 
 /* Zephyr includes */
@@ -94,6 +95,19 @@ void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event 
 }
 
 #endif /* defined(FEATURE_SUBSYSTEM_BUTTON) */
+
+#if defined(FEATURE_SUBSYSTEM_POWER)
+void app_handler_power_event(const struct ctr_power_event *event, void *user_data)
+{
+	LOG_INF("Power line: %d", (int)event->line);
+
+	/*
+	 * `ctr_power` already filters on `report-connected`/`report-disconnected` before
+	 * invoking this callback, so no further gating is needed here.
+	 */
+	app_work_send_with_rate_limit();
+}
+#endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
 #if defined(FEATURE_SUBSYSTEM_LRW)
 

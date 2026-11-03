@@ -6,7 +6,6 @@
 
 #include "app_config.h"
 #include "app_driver.h"
-#include "app_power.h"
 #include "app_send.h"
 #include "app_sensor.h"
 #include "app_work.h"
@@ -24,10 +23,8 @@ LOG_MODULE_REGISTER(app_work, LOG_LEVEL_DBG);
 /* Forward declarations */
 static void sample_timer_handler(struct k_timer *timer);
 static void send_timer_handler(struct k_timer *timer);
-static void power_timer_handler(struct k_timer *timer);
 static void sample_work_handler(struct k_work *work);
 static void send_work_handler(struct k_work *work);
-static void power_work_handler(struct k_work *work);
 
 /* Work queue */
 static struct k_work_q m_work_q;
@@ -36,12 +33,10 @@ static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);
 /* Work items */
 static K_WORK_DEFINE(m_sample_work, sample_work_handler);
 static K_WORK_DEFINE(m_send_work, send_work_handler);
-static K_WORK_DEFINE(m_power_work, power_work_handler);
 
 /* Timers */
 static K_TIMER_DEFINE(m_sample_timer, sample_timer_handler, NULL);
 static K_TIMER_DEFINE(m_send_timer, send_timer_handler, NULL);
-static K_TIMER_DEFINE(m_power_timer, power_timer_handler, NULL);
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 
@@ -112,9 +107,6 @@ int app_work_init(void)
 	/* Send timer: one-shot, 30s initial delay */
 	k_timer_start(&m_send_timer, K_SECONDS(30), K_FOREVER);
 
-	/* Power timer: 60s initial, then every 12 hours */
-	k_timer_start(&m_power_timer, K_SECONDS(60), K_HOURS(12));
-
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	k_timer_start(&m_ble_tag_sample_timer, K_SECONDS(g_app_config.interval_sample),
 		      K_SECONDS(g_app_config.interval_sample));
@@ -145,11 +137,6 @@ static void sample_timer_handler(struct k_timer *timer)
 static void send_timer_handler(struct k_timer *timer)
 {
 	k_work_submit_to_queue(&m_work_q, &m_send_work);
-}
-
-static void power_timer_handler(struct k_timer *timer)
-{
-	k_work_submit_to_queue(&m_work_q, &m_power_work);
 }
 
 static void sample_work_handler(struct k_work *work)
@@ -194,14 +181,4 @@ static void send_work_handler(struct k_work *work)
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 	LOG_INF("Send complete");
-}
-
-static void power_work_handler(struct k_work *work)
-{
-	int ret;
-
-	ret = app_power_sample();
-	if (ret) {
-		LOG_ERR("Call `app_power_sample` failed: %d", ret);
-	}
 }

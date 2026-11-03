@@ -8,6 +8,7 @@
 #include "app_data.h"
 
 #include <chester/ctr_encode_lrw.h>
+#include <chester/ctr_power.h>
 
 /* Standard includes */
 #include <errno.h>
@@ -59,7 +60,7 @@ int app_lrw_encode(struct ctr_buf *buf)
 
 	uint8_t header = 0;
 
-	header |= IS_ENABLED(CONFIG_CTR_BATT) ? BIT(0) : 0;
+	header |= IS_ENABLED(FEATURE_SUBSYSTEM_POWER) ? BIT(0) : 0;
 	header |= IS_ENABLED(CONFIG_CTR_ACCEL) ? BIT(1) : 0;
 	header |= IS_ENABLED(CONFIG_CTR_THERM) ? BIT(2) : 0;
 	header |= IS_ENABLED(FEATURE_HARDWARE_CHESTER_S2) ? BIT(3) : 0;
@@ -70,8 +71,8 @@ int app_lrw_encode(struct ctr_buf *buf)
 
 	ctr_buf_append_u8(buf, header);
 
-#if defined(CONFIG_CTR_BATT)
-	CTR_ENCODE_LRW_BATTERY(buf);
+#if defined(FEATURE_SUBSYSTEM_POWER)
+	ret |= ctr_power_lrw_encode(buf);
 #endif
 
 #if defined(CONFIG_CTR_ACCEL)

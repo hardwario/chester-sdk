@@ -104,13 +104,8 @@ struct app_config {
 	int interval_report;
 	int interval_poll;
 	int downlink_wdg_interval;
-
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
 	int event_report_delay;
 	int event_report_rate;
-	bool backup_report_connected;
-	bool backup_report_disconnected;
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_K1)
 	bool channel_active[4];

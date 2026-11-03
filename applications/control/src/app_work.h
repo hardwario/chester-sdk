@@ -17,10 +17,6 @@ void app_work_sample(void);
 void app_work_send(void);
 void app_work_poll(void);
 
-#if defined(FEATURE_HARDWARE_CHESTER_Z)
-void app_work_backup_update(void);
-#endif /* defined(FEATURE_HARDWARE_CHESTER_Z) */
-
 #ifdef __cplusplus
 }
 #endif

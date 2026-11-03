@@ -26,6 +26,7 @@
 #define FEATURE_SUBSYSTEM_LOG                   1
 #define FEATURE_SUBSYSTEM_LRW                   1
 #define FEATURE_SUBSYSTEM_LTE_V2                1
+#define FEATURE_SUBSYSTEM_POWER                 1
 #define FEATURE_SUBSYSTEM_RTC                   1
 #define FEATURE_SUBSYSTEM_SHELL                 1
 #define FEATURE_SUBSYSTEM_THERM                 1

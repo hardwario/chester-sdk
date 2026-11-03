@@ -6,8 +6,8 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-set(ENV{FW_BUNDLE} "com.hardwario.chester.app.control.8ch.z")
-set(ENV{FW_NAME} "CHESTER Control 8Ch Z")
+set(ENV{FW_BUNDLE} "com.hardwario.chester.app.control")
+set(ENV{FW_NAME} "CHESTER Control")
 
 # Derive firmware version from git (see scripts/version.cmake); the fallback is
 # used when git is unavailable at build time.
@@ -16,18 +16,16 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/version.cmake)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
-project(chester-control-8ch-z)
+project(chester-control)
 
 include(${ZEPHYR_CHESTER_MODULE_DIR}/scripts/app_codec.cmake)
 
-target_sources(app PRIVATE src/app_backup.c)
 target_sources(app PRIVATE src/app_cbor.c)
 target_sources(app PRIVATE src/app_config.c)
 target_sources(app PRIVATE src/app_data.c)
 target_sources(app PRIVATE src/app_handler.c)
 target_sources(app PRIVATE src/app_init.c)
 target_sources(app PRIVATE src/app_lrw.c)
-target_sources(app PRIVATE src/app_power.c)
 target_sources(app PRIVATE src/app_send.c)
 target_sources(app PRIVATE src/app_sensor.c)
 target_sources(app PRIVATE src/app_shell.c)
@@ -37,4 +35,5 @@ target_sources(app PRIVATE src/main.c)
 target_precompile_headers(app PRIVATE src/feature.h)
 
 # ### Preserved code "cmake" (begin)
+include(${ZEPHYR_CHESTER_MODULE_DIR}/scripts/app_codec.cmake)
 # ^^^ Preserved code "cmake" (end)
