@@ -18,37 +18,44 @@
 #include <math.h>
 #include <stdbool.h>
 
-struct app_data g_app_data = {
-	.accel_acceleration_x = NAN,
-	.accel_acceleration_y = NAN,
-	.accel_acceleration_z = NAN,
-	.accel_orientation = INT_MAX,
-	.therm_temperature = NAN,
+/*
+ * Keep `g_app_data` zero-initialized so it is placed in `.bss` (RAM only).
+ * Non-zero initializers (NAN, INT_MAX) would move the whole structure to
+ * `.data`, which occupies the same amount of FLASH and is copied on boot.
+ * Non-zero defaults are set at runtime in `app_data_init()` instead.
+ */
+struct app_data g_app_data;
 
-#if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
-	.sensecap = {0},
-	.cubic_pm = {0},
-#endif /* defined(FEATURE_HARDWARE_CHESTER_X2_MODBUS_A ) ||                                        \
-	  defined(FEATURE_HARDWARE_CHESTER_METEO_M) */
+static K_MUTEX_DEFINE(m_lock);
+
+int app_data_init(void)
+{
+	app_data_lock();
+
+	g_app_data.accel_acceleration_x = NAN;
+	g_app_data.accel_acceleration_y = NAN;
+	g_app_data.accel_acceleration_z = NAN;
+	g_app_data.accel_orientation = INT_MAX;
+	g_app_data.therm_temperature = NAN;
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
-	.ble_tag.sensor[0 ... CTR_BLE_TAG_COUNT - 1] =
-		{
-			.last_sample_temperature = NAN,
-			.last_sample_humidity = NAN,
-		},
+	for (int i = 0; i < CTR_BLE_TAG_COUNT; i++) {
+		g_app_data.ble_tag.sensor[i].last_sample_temperature = NAN;
+		g_app_data.ble_tag.sensor[i].last_sample_humidity = NAN;
+	}
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 #if defined(FEATURE_SUBSYSTEM_SOIL_SENSOR)
-	.soil_sensor.sensor[0 ... APP_DATA_SOIL_SENSOR_COUNT - 1] =
-		{
-			.last_temperature = NAN,
-			.last_moisture = NAN,
-		},
-#endif
-};
+	for (int i = 0; i < APP_DATA_SOIL_SENSOR_COUNT; i++) {
+		g_app_data.soil_sensor.sensor[i].last_temperature = NAN;
+		g_app_data.soil_sensor.sensor[i].last_moisture = NAN;
+	}
+#endif /* defined(FEATURE_SUBSYSTEM_SOIL_SENSOR) */
 
-static K_MUTEX_DEFINE(m_lock);
+	app_data_unlock();
+
+	return 0;
+}
 
 void app_data_lock(void)
 {

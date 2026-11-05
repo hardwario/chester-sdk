@@ -92,6 +92,12 @@ int app_init(void)
 {
 	int ret;
 
+	ret = app_data_init();
+	if (ret) {
+		LOG_ERR("Call `app_data_init` failed: %d", ret);
+		return ret;
+	}
+
 	ctr_led_set(CTR_LED_CHANNEL_R, true);
 
 	uint32_t cause;

@@ -88,6 +88,7 @@ extern struct k_mutex g_app_data_lte_eval_mut;
 extern bool g_app_data_lte_eval_valid;
 extern struct ctr_lte_eval g_app_data_lte_eval;
 
+int app_data_init(void);
 void app_data_lock(void);
 void app_data_unlock(void);
 

@@ -419,6 +419,7 @@ extern struct app_data g_app_data;
 
 void app_data_add_sample_float(struct ctr_data_aggreg *aggreg_ptr, int sample_count, float sample);
 
+int app_data_init(void);
 void app_data_lock(void);
 void app_data_unlock(void);
 

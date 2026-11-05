@@ -575,6 +575,12 @@ int app_init(void)
 {
 	int ret;
 
+	ret = app_data_init();
+	if (ret) {
+		LOG_ERR("Call `app_data_init` failed: %d", ret);
+		return ret;
+	}
+
 #if defined(FEATURE_SUBSYSTEM_BUTTON)
 	ret = ctr_button_set_event_cb(app_handler_ctr_button, NULL);
 	if (ret) {

@@ -79,6 +79,12 @@ int app_init(void)
 	CODEC_CLOUD_OPTIONS_STATIC(copt);
 #endif /* defined(FEATURE_SUBSYSTEM_LTE_V2) */
 
+	ret = app_data_init();
+	if (ret) {
+		LOG_ERR("Call `app_data_init` failed: %d", ret);
+		return ret;
+	}
+
 	ctr_led_set(CTR_LED_CHANNEL_R, true);
 
 	ret = ctr_wdog_set_timeout(120000);

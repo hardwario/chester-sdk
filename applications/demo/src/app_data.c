@@ -17,16 +17,30 @@
 #include <math.h>
 #include <stdbool.h>
 
-struct app_data g_app_data = {
-	.sequence = 0,
-	.accel_acceleration_x = NAN,
-	.accel_acceleration_y = NAN,
-	.accel_acceleration_z = NAN,
-	.accel_orientation = INT_MAX,
-	.therm_temperature = NAN,
-};
+/*
+ * Keep `g_app_data` zero-initialized so it is placed in `.bss` (RAM only).
+ * Non-zero initializers (NAN, INT_MAX) would move the whole structure to
+ * `.data`, which occupies the same amount of FLASH and is copied on boot.
+ * Non-zero defaults are set at runtime in `app_data_init()` instead.
+ */
+struct app_data g_app_data;
 
 static K_MUTEX_DEFINE(m_lock);
+
+int app_data_init(void)
+{
+	app_data_lock();
+
+	g_app_data.accel_acceleration_x = NAN;
+	g_app_data.accel_acceleration_y = NAN;
+	g_app_data.accel_acceleration_z = NAN;
+	g_app_data.accel_orientation = INT_MAX;
+	g_app_data.therm_temperature = NAN;
+
+	app_data_unlock();
+
+	return 0;
+}
 
 void app_data_lock(void)
 {

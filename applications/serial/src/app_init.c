@@ -5,6 +5,7 @@
  */
 
 #include "app_config.h"
+#include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
 #include "app_modbus.h"
@@ -41,6 +42,12 @@ extern struct ctr_wdog_channel g_app_wdog_channel;
 int app_init(void)
 {
 	int ret;
+
+	ret = app_data_init();
+	if (ret) {
+		LOG_ERR("Call `app_data_init` failed: %d", ret);
+		return ret;
+	}
 
 	/* Turn on red LED to indicate initialization */
 	ctr_led_set(CTR_LED_CHANNEL_R, true);

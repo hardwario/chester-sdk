@@ -26,6 +26,7 @@ struct app_data {
 
 extern struct app_data g_app_data;
 
+int app_data_init(void);
 void app_data_lock(void);
 void app_data_unlock(void);
 

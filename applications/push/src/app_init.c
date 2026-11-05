@@ -6,6 +6,7 @@
 
 #include "app_codec.h"
 #include "app_config.h"
+#include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
 #include "app_work.h"
@@ -121,6 +122,12 @@ static int init_chester_z(void)
 int app_init(void)
 {
 	int ret;
+
+	ret = app_data_init();
+	if (ret) {
+		LOG_ERR("Call `app_data_init` failed: %d", ret);
+		return ret;
+	}
 
 	ctr_led_set(CTR_LED_CHANNEL_R, true);
 
