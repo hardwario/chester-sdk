@@ -1240,14 +1240,18 @@ int app_sensor_radon_aggreg(void)
 		ret = ctr_radon_read_concentration(
 			&radon->concentration_measurements[radon->measurement_count], false);
 		if (ret) {
-			LOG_ERR("Call `app_radon_read_concentration` failed: %d", ret);
+			LOG_ERR("Call `ctr_radon_read_concentration` failed: %d", ret);
+			ctr_radon_disable();
+			app_data_unlock();
 			return ret;
 		}
 
 		ret = ctr_radon_read_concentration(
 			&radon->daily_concentration_measurements[radon->measurement_count], true);
 		if (ret) {
-			LOG_ERR("Call `app_radon_read_concentration` failed: %d", ret);
+			LOG_ERR("Call `ctr_radon_read_concentration` failed: %d", ret);
+			ctr_radon_disable();
+			app_data_unlock();
 			return ret;
 		}
 
