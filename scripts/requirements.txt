@@ -1,2 +1,3 @@
 hardwario>=1.7.0
 cbor2
+spdx-tools>=0.8,<0.9

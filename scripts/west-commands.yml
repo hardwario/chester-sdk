@@ -20,6 +20,11 @@ west-commands:
       - name: gen-codec
         class: GenerateCodec
         help: generate codec
+  - file: scripts/west_commands/hio-sbom.py
+    commands:
+      - name: hio-sbom
+        class: HioSbom
+        help: post-process west spdx output into a single SPDX JSON
   - file: scripts/west_commands/lrw-decode/lrw-decode.py
     commands:
       - name: chester-lrw-decode

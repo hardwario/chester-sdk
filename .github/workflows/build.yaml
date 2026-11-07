@@ -11,6 +11,11 @@ on:
         - 'v*'
   workflow_dispatch:
 
+env:
+  # SBOM and evidence for security/psirt are made for release tags only
+  PSIRT: ${{ startsWith(github.ref, 'refs/tags/v') }}
+  PSIRT_VERSION: ${{ github.ref_name }}
+
 jobs:
   # ------------------------
   prepare:
@@ -85,6 +90,26 @@ jobs:
           APPLICATIONS=$(python3 .github/gen-matrix.py applications)
           echo $APPLICATIONS
           echo applications=${APPLICATIONS} >> $GITHUB_OUTPUT
+      # modules.json and git history are the same for all variants, so they are
+      # written once per release, not into every leaf. The path must match the
+      # "workspace" of meta.json made by hio-evidence.py. A failure must not hold
+      # back the builds; the psirt job checks that the workspace exists.
+      - name: generate psirt workspace
+        if: env.PSIRT == 'true'
+        continue-on-error: true
+        working-directory: ./chester-sdk
+        run: |
+          python3 chester/.github/hio-evidence.py \
+            --workspace-out "$GITHUB_WORKSPACE/psirt/chester/_workspace/$PSIRT_VERSION"
+      - name: upload psirt artifact
+        if: env.PSIRT == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: psirt-workspace
+          path: psirt
+          retention-days: 1
+          if-no-files-found: error
 
   # ------------------------
   build-sample:
@@ -190,6 +215,12 @@ jobs:
             chester-sdk/test
             chester-sdk/tools
             chester-sdk/zephyr
+      - name: enable CMake file API for west spdx
+        if: env.PSIRT == 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/cmake/api/v1/query"
+          touch "$RUNNER_TEMP/cmake/api/v1/query/codemodel-v2"
+          echo "CMAKE_CONFIG_DIR=$RUNNER_TEMP/cmake" >> "$GITHUB_ENV"
       - name: build
         working-directory: ${{ steps.build-command.outputs.app_path }}
         run: ${{ steps.build-command.outputs.build_cmd }}
@@ -227,6 +258,78 @@ jobs:
           path: ${{ steps.build-command.outputs.app_path }}/stage
           retention-days: 1
           if-no-files-found: error
+      # after the firmware upload, so that a failure here cannot hold back the release
+      - name: generate psirt leaf
+        if: env.PSIRT == 'true'
+        working-directory: ${{ steps.build-command.outputs.app_path }}
+        run: |
+          set -eu
+          app="${{ matrix.application }}"
+          leaf="$GITHUB_WORKSPACE/psirt/chester/${app%%.*}/$app/$PSIRT_VERSION"
+          for domain in $(sed -n 's/^  - name: //p' build/domains.yaml); do
+            west spdx -d "build/$domain"
+          done
+          west hio-sbom -o "$leaf/sbom.spdx.json"
+          python3 ../../.github/hio-evidence.py --out "$leaf" \
+            --application "${app%%.*}" --variant "$app" --version "$PSIRT_VERSION"
+      - name: upload psirt artifact
+        if: env.PSIRT == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: psirt-${{ matrix.application }}
+          path: psirt
+          retention-days: 1
+          if-no-files-found: error
+  # ------------------------
+  psirt:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+      - build-app
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions: {}
+    env:
+      PSIRT_BRANCH: main
+    steps:
+      - name: download psirt artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: leaves
+          pattern: 'psirt-*'
+          merge-multiple: true
+      # the workspace is made in prepare, where a failure must not stop the builds
+      - name: check that the workspace exists
+        run: test -f "leaves/chester/_workspace/$PSIRT_VERSION/modules.json"
+      # build-app is continue-on-error, so a failed variant only shows up here
+      - name: check that every variant has a leaf
+        env:
+          APPLICATIONS: ${{ needs.prepare.outputs.applications }}
+        run: |
+          expected=$(echo "$APPLICATIONS" | jq '[.[] | select(. != "_legacy")] | length')
+          found=$(find leaves -name meta.json | wc -l)
+          echo "leaves: $found of $expected"
+          test "$found" -eq "$expected"
+      - name: push leaves to security/psirt
+        env:
+          PSIRT_GITLAB_TOKEN: ${{ secrets.PSIRT_GITLAB_TOKEN }}
+        run: |
+          set -eu
+          git clone \
+            "https://oauth2:${PSIRT_GITLAB_TOKEN}@gitlab.hardwario.com/security/psirt.git" psirt
+          cd psirt
+          git config user.name "CHESTER SDK release CI"
+          git config user.email "noreply@hardwario.com"
+          cp -r ../leaves/chester .
+          git add chester
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "chester: Add $PSIRT_VERSION" \
+            -m "From ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          for attempt in 1 2 3 4 5; do
+            git push origin "HEAD:$PSIRT_BRANCH" && exit 0
+            sleep $((attempt * 5))
+            git pull --rebase origin "$PSIRT_BRANCH"
+          done
+          exit 1
   # ------------------------
   release:
     runs-on: ubuntu-latest
@@ -235,7 +338,7 @@ jobs:
     needs:
       - prepare
       - build-app
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
