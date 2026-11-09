@@ -29,6 +29,13 @@ module = CTR_BLE
 module-str = CHESTER BLE Subsystem
 source "subsys/logging/Kconfig.template.log_config"
 
+config CTR_BLE_INIT_PRIORITY
+	int "Initialization priority"
+	default APPLICATION_INIT_PRIORITY
+	help
+	  init() calls bt_enable(). Subsystems that use Bluetooth in their
+	  init (ctr_ble_tag) must have a higher number.
+
 config CTR_BLE_DFU
 	bool "Enable DFU over BLE"
 	default y

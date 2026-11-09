@@ -2123,4 +2123,13 @@ static int init(void)
 	return 0;
 }
 
-SYS_INIT(init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+/* init() calls settings_load() and accept_list_rebuild(), which need bt_enable()
+ * of ctr_ble. Before it, loading the stored GATT hash schedules the GATT Service
+ * Changed work before bt_gatt_init() initialized it, and sysworkq calls a NULL
+ * handler. With the same priority the order depends on the link order. */
+#if defined(CONFIG_CTR_BLE)
+BUILD_ASSERT(CONFIG_CTR_BLE_TAG_INIT_PRIORITY > CONFIG_CTR_BLE_INIT_PRIORITY,
+	     "ctr_ble_tag must be initialized after ctr_ble (CONFIG_CTR_BLE_TAG_INIT_PRIORITY)");
+#endif
+
+SYS_INIT(init, APPLICATION, CONFIG_CTR_BLE_TAG_INIT_PRIORITY);

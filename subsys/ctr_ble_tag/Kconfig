@@ -19,6 +19,15 @@ config CTR_BLE_TAG
 
 if CTR_BLE_TAG
 
+config CTR_BLE_TAG_INIT_PRIORITY
+	int "Initialization priority"
+	default 91
+	help
+	  Must be higher than CTR_BLE_INIT_PRIORITY (checked at build time):
+	  init() calls settings_load() and rebuilds the accept list, which
+	  need bt_enable() of ctr_ble done. With the same priority the order
+	  depends on the link order, which LTO changes.
+
 module = CTR_BLE_TAG
 module-str = CHESTER BLE Tag Subsystem
 source "subsys/logging/Kconfig.template.log_config"
