@@ -49,8 +49,10 @@ int app_send(void)
 	case APP_CONFIG_MODE_LRW:
 
 		CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
+		/* Second uplink, used only when the report does not fit one frame. */
+		CTR_BUF_DEFINE_STATIC(lrw_buf_b, 51);
 
-		ret = app_lrw_encode(&lrw_buf);
+		ret = app_lrw_encode(&lrw_buf, &lrw_buf_b);
 		if (ret) {
 			LOG_ERR("Call `app_lrw_encode` failed: %d", ret);
 			return ret;
@@ -62,6 +64,15 @@ int app_send(void)
 		if (ret) {
 			LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
 			return ret;
+		}
+
+		if (ctr_buf_get_used(&lrw_buf_b)) {
+			ret = ctr_lrw_send(&lrw_opts, ctr_buf_get_mem(&lrw_buf_b),
+					   ctr_buf_get_used(&lrw_buf_b), NULL);
+			if (ret) {
+				LOG_ERR("Call `ctr_lrw_send` failed: %d", ret);
+				return ret;
+			}
 		}
 		break;
 #endif /* defined(FEATURE_SUBSYSTEM_LRW) */

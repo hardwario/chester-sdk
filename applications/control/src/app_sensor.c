@@ -8,6 +8,7 @@
 #include "app_data.h"
 #include "app_send.h"
 #include "app_sensor.h"
+#include "app_x0_map.h"
 
 /* CHESTER includes */
 #include <chester/ctr_accel.h>
@@ -225,22 +226,25 @@ int static aggreg_analog(struct app_data_analog *analog)
 	return 0;
 }
 
-static enum ctr_x0_channel x0_adc_lookup[] = {
-	CTR_ADC_CHANNEL_A0, CTR_ADC_CHANNEL_A1, CTR_ADC_CHANNEL_A2, CTR_ADC_CHANNEL_A3,
-#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
-	CTR_ADC_CHANNEL_B0, CTR_ADC_CHANNEL_B1, CTR_ADC_CHANNEL_B2, CTR_ADC_CHANNEL_B3,
-#endif
-};
-
 int app_sensor_voltage_sample(void)
 {
 	int ret;
 
 	for (int i = 0; i < APP_DATA_NUM_CHANNELS; i++) {
+		/* A sensor's measure channel is reported as `voltage` so the channel
+		 * pair describes itself, but the sensor layer owns its power/settle/
+		 * read cycle. Reading it here would sample an unpowered node and
+		 * overwrite the reading with garbage — the double sampling this
+		 * ownership check exists to prevent. The real value travels in the
+		 * SENSORS group; `last_sample` deliberately stays NaN. */
+		if (app_config_channel_owner(i + 1) >= 0) {
+			continue;
+		}
+
 		struct app_data_analog *voltage = g_app_data.voltage[i];
 		if (voltage) {
 			uint16_t adc_voltage;
-			ret = ctr_adc_read(x0_adc_lookup[i], &adc_voltage);
+			ret = ctr_adc_read(app_x0_adc_map[i], &adc_voltage);
 
 			app_data_lock();
 			if (voltage->sample_count < APP_DATA_ANALOG_MAX_SAMPLES) {
@@ -280,6 +284,13 @@ int app_sensor_voltage_aggreg(void)
 	int ret;
 
 	for (int i = 0; i < APP_DATA_NUM_CHANNELS; i++) {
+		/* Skip sensor-owned channels for the same reason as the sample loop:
+		 * nothing collects samples for them, so aggregating would file one
+		 * empty measurement per interval until the array reports full. */
+		if (app_config_channel_owner(i + 1) >= 0) {
+			continue;
+		}
+
 		if (g_app_data.voltage[i]) {
 			ret = aggreg_analog(g_app_data.voltage[i]);
 			if (ret) {
@@ -313,7 +324,7 @@ int app_sensor_current_sample(void)
 		struct app_data_analog *current = g_app_data.current[i];
 		if (current) {
 			uint16_t adc_current;
-			ret = ctr_adc_read(x0_adc_lookup[i], &adc_current);
+			ret = ctr_adc_read(app_x0_adc_map[i], &adc_current);
 
 			app_data_lock();
 			if (current->sample_count < APP_DATA_ANALOG_MAX_SAMPLES) {

@@ -90,6 +90,12 @@ static void send_with_rate_limit(void)
 
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 
+void app_handler_report_event(void)
+{
+	send_with_rate_limit();
+}
+
+
 /* LED blink: yellow on for 50ms, turned off by a one-shot timer (non-blocking) */
 static void led_off_timer_handler(struct k_timer *timer)
 {

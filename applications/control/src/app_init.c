@@ -9,7 +9,9 @@
 #include "app_data.h"
 #include "app_handler.h"
 #include "app_init.h"
+#include "app_sensor_drv.h"
 #include "app_work.h"
+#include "app_x0_map.h"
 #include "feature.h"
 
 /* CHESTER includes */
@@ -124,19 +126,7 @@ static int init_edge(struct ctr_edge *edge, ctr_edge_cb_t cb, const struct devic
 	return 0;
 }
 
-static enum ctr_x0_channel x0_channel_lookup[] = {
-	CTR_X0_CHANNEL_1, CTR_X0_CHANNEL_2, CTR_X0_CHANNEL_3, CTR_X0_CHANNEL_4,
-#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
-	CTR_X0_CHANNEL_1, CTR_X0_CHANNEL_2, CTR_X0_CHANNEL_3, CTR_X0_CHANNEL_4,
-#endif
-};
-
-static enum ctr_x0_channel x0_adc_lookup[] = {
-	CTR_ADC_CHANNEL_A0, CTR_ADC_CHANNEL_A1, CTR_ADC_CHANNEL_A2, CTR_ADC_CHANNEL_A3,
-#if defined(FEATURE_HARDWARE_CHESTER_X0_B)
-	CTR_ADC_CHANNEL_B0, CTR_ADC_CHANNEL_B1, CTR_ADC_CHANNEL_B2, CTR_ADC_CHANNEL_B3,
-#endif
-};
+/* X0 channel/ADC maps live in app_x0_map.h (single definition). */
 
 static int init_chester_x0_triggers(const struct device *dev, int ch_start, int ch_count,
 				    enum app_config_channel_mode *modes)
@@ -172,7 +162,7 @@ static int init_chester_x0_triggers(const struct device *dev, int ch_start, int 
 			/* Initialize channel */
 			ret = init_edge(&g_app_data.trigger[ch_idx]->edge,
 					app_handler_edge_trigger_callback, dev,
-					x0_channel_lookup[ch_idx], trigger_mode,
+					app_x0_channel_map[ch_idx], trigger_mode,
 					g_app_config.trigger_duration_active,
 					g_app_config.trigger_duration_inactive,
 					g_app_config.trigger_cooldown_time, NULL);
@@ -220,7 +210,7 @@ static int init_chester_x0_counters(const struct device *dev, int ch_start, int 
 			/* Initialize channel */
 			ret = init_edge(&g_app_data.counter[ch_idx]->edge,
 					app_handler_edge_counter_callback, dev,
-					x0_channel_lookup[ch_idx], counter_mode,
+					app_x0_channel_map[ch_idx], counter_mode,
 					g_app_config.counter_duration_active,
 					g_app_config.counter_duration_inactive,
 					g_app_config.counter_cooldown_time, NULL);
@@ -257,14 +247,14 @@ static int init_chester_x0_voltages(const struct device *dev, int ch_start, int 
 			g_app_data.voltage[ch_idx]->last_sample = NAN;
 
 			/* Initialize channel */
-			ret = ctr_x0_set_mode(dev, x0_channel_lookup[ch_idx],
+			ret = ctr_x0_set_mode(dev, app_x0_channel_map[ch_idx],
 					      CTR_X0_MODE_AI_INPUT);
 			if (ret) {
 				LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);
 				return ret;
 			}
 
-			ret = ctr_adc_init(x0_adc_lookup[ch_idx]);
+			ret = ctr_adc_init(app_x0_adc_map[ch_idx]);
 			if (ret) {
 				LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 				return ret;
@@ -298,14 +288,14 @@ static int init_chester_x0_currents(const struct device *dev, int ch_start, int 
 			g_app_data.current[ch_idx]->last_sample = NAN;
 
 			/* Initialize channel */
-			ret = ctr_x0_set_mode(dev, x0_channel_lookup[ch_idx],
+			ret = ctr_x0_set_mode(dev, app_x0_channel_map[ch_idx],
 					      CTR_X0_MODE_CL_INPUT);
 			if (ret) {
 				LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);
 				return ret;
 			}
 
-			ret = ctr_adc_init(x0_adc_lookup[ch_idx]);
+			ret = ctr_adc_init(app_x0_adc_map[ch_idx]);
 			if (ret) {
 				LOG_ERR("Call `ctr_adc_init` failed: %d", ret);
 				return ret;
@@ -349,10 +339,68 @@ static int init_chester_x0(void)
 		g_app_config.channel_mode_4,
 	};
 
+	/* Modes are derived from sensor ownership, in both directions, whatever
+	 * channel-mode-N says. The two roles a sensor claims are reported
+	 * differently so the pair describes itself: the supply channel as `power`
+	 * (no payload) and the measure channel as `voltage`. The measure channel's
+	 * value stays NaN — the reading is sent in the SENSORS group rather than
+	 * duplicated here — and `app_sensor_voltage_sample` skips owned channels, so
+	 * there is still no double sampling.
+	 *
+	 * A channel set to `power` by hand that no sensor claims becomes `disabled`,
+	 * because nothing drives it. A hand-set `voltage` is left alone: an ordinary
+	 * voltage channel with no sensor is a legitimate configuration. */
 	for (int i = 0; i < 4; i++) {
-		if (modes_a[i] == APP_CONFIG_CHANNEL_MODE_DISABLED) {
-			LOG_INF("Channel %d disabled", i + 1);
-			ret = ctr_x0_set_mode(dev, x0_channel_lookup[i],
+		if (app_config_channel_owner(i + 1) >= 0) {
+			modes_a[i] = APP_CONFIG_CHANNEL_MODE_POWER;
+		} else if (modes_a[i] == APP_CONFIG_CHANNEL_MODE_POWER) {
+			LOG_WRN("Channel %d: mode `power` but no sensor claims it; "
+				"treating as disabled",
+				i + 1);
+			modes_a[i] = APP_CONFIG_CHANNEL_MODE_DISABLED;
+		}
+	}
+
+	for (int i = 0; i < 4; i++) {
+		/* `power` channels are owned by the sensor layer: park them in the
+		 * same safe default state as a disabled channel and allocate no
+		 * trigger/counter/voltage/current record, so the raw X0 path never
+		 * samples them. `app_sensor_drv_init` runs later and re-drives them
+		 * per sample. */
+		if (modes_a[i] == APP_CONFIG_CHANNEL_MODE_DISABLED ||
+		    modes_a[i] == APP_CONFIG_CHANNEL_MODE_POWER) {
+			int owner = app_config_channel_owner(i + 1);
+			bool power = modes_a[i] == APP_CONFIG_CHANNEL_MODE_POWER;
+			bool is_supply = owner >= 0 && g_app_config.sensors[owner].ch_power == i + 1;
+
+			LOG_INF("Channel %d %s", i + 1, power ? "driven by sensor" : "disabled");
+
+			/* Report the two roles a sensor claims differently, so the pair
+			 * describes itself: the supply channel as `power` (no payload)
+			 * and the measure channel as `voltage`.
+			 *
+			 * The measure channel gets its analog record allocated here
+			 * rather than via `init_chester_x0_voltages`, deliberately: that
+			 * helper would also switch the pin to AI_INPUT permanently and
+			 * re-run `ctr_adc_init` on a channel the sensor layer already
+			 * owns and initialises. Both are wrong here — the node must be
+			 * left alone between samples, and the sensor drives and releases
+			 * the channel itself. `last_sample` stays NaN so the encoder emits
+			 * the invalid marker and the real reading travels in the SENSORS
+			 * group instead of being duplicated. */
+			if (power && !is_supply) {
+				g_app_data.voltage[i] = k_malloc(sizeof(struct app_data_analog));
+				if (!g_app_data.voltage[i]) {
+					LOG_ERR("Call `k_malloc` failed");
+					return -ENOMEM;
+				}
+				memset(g_app_data.voltage[i], 0, sizeof(struct app_data_analog));
+				g_app_data.voltage[i]->last_sample = NAN;
+			} else {
+				g_app_data.power[i] = power;
+			}
+
+			ret = ctr_x0_set_mode(dev, app_x0_channel_map[i],
 					      CTR_X0_MODE_DEFAULT);
 			if (ret) {
 				LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);
@@ -423,10 +471,48 @@ static int init_chester_x0_b(void)
 		g_app_config.channel_mode_8,
 	};
 
+	/* See `init_chester_x0` — modes are derived from sensor ownership both ways,
+	 * supply channel as `power` and measure channel as `voltage`. */
 	for (int i = 0; i < 4; i++) {
-		if (modes_b[i] == APP_CONFIG_CHANNEL_MODE_DISABLED) {
-			LOG_INF("Channel %d disabled", i + 5);
-			ret = ctr_x0_set_mode(dev, x0_channel_lookup[i],
+		int owner = app_config_channel_owner(i + 5);
+
+		if (owner >= 0) {
+			modes_b[i] = APP_CONFIG_CHANNEL_MODE_POWER;
+		} else if (modes_b[i] == APP_CONFIG_CHANNEL_MODE_POWER) {
+			LOG_WRN("Channel %d: mode `power` but no sensor claims it; "
+				"treating as disabled",
+				i + 5);
+			modes_b[i] = APP_CONFIG_CHANNEL_MODE_DISABLED;
+		}
+	}
+
+	for (int i = 0; i < 4; i++) {
+		/* See `init_chester_x0` — `power` channels belong to the sensor
+		 * layer. Note the X0_B channel map is indexed 0-3 per device, while
+		 * `g_app_data.power` is indexed by global channel number. */
+		if (modes_b[i] == APP_CONFIG_CHANNEL_MODE_DISABLED ||
+		    modes_b[i] == APP_CONFIG_CHANNEL_MODE_POWER) {
+			int owner = app_config_channel_owner(i + 5);
+			bool power = modes_b[i] == APP_CONFIG_CHANNEL_MODE_POWER;
+			bool is_supply = owner >= 0 && g_app_config.sensors[owner].ch_power == i + 5;
+
+			LOG_INF("Channel %d %s", i + 5, power ? "driven by sensor" : "disabled");
+
+			/* See `init_chester_x0` — supply channel reports as `power`, the
+			 * measure channel as `voltage` with no value. */
+			if (power && !is_supply) {
+				g_app_data.voltage[i + 4] = k_malloc(sizeof(struct app_data_analog));
+				if (!g_app_data.voltage[i + 4]) {
+					LOG_ERR("Call `k_malloc` failed");
+					return -ENOMEM;
+				}
+				memset(g_app_data.voltage[i + 4], 0, sizeof(struct app_data_analog));
+				g_app_data.voltage[i + 4]->last_sample = NAN;
+			} else {
+				g_app_data.power[i + 4] = power;
+			}
+
+			ret = ctr_x0_set_mode(dev, app_x0_channel_map[i],
 					      CTR_X0_MODE_DEFAULT);
 			if (ret) {
 				LOG_ERR("Call `ctr_x0_set_mode` failed: %d", ret);
@@ -713,6 +799,15 @@ int app_init(void)
 		return ret;
 	}
 #endif /* defined(FEATURE_SUBSYSTEM_POWER) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+	/* Non-fatal: init all configured pluggable sensors (LD-81 etc.). A sensor
+	 * problem must never panic the device (temps + LRW keep running). */
+	ret = app_sensor_drv_init();
+	if (ret) {
+		LOG_WRN("Call `app_sensor_drv_init` failed: %d", ret);
+	}
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
 	ret = app_work_init();
 	if (ret) {

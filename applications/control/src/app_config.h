@@ -15,6 +15,20 @@
 #include <stddef.h>
 
 /* ### Preserved code "includes" (begin) */
+#include <stdint.h>
+
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+/* Pluggable-sensor slots (LD-81 etc.). A sensor claims a power channel + a
+ * measurement channel; see app_sensor_drv.h for the type catalog. */
+#define APP_SENSORS_MAX            4
+#define APP_CONFIG_SENSOR_STR_SIZE 32
+
+struct app_config_sensor {
+	uint8_t type_id;    /* 0 = none; catalog type id (app_sensor_drv.h) */
+	uint8_t ch_power;   /* 1-based channel; 0 = sensor needs no power */
+	uint8_t ch_measure; /* 1-based measurement channel */
+};
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 /* ^^^ Preserved code "includes" (end) */
 
 #ifdef __cplusplus
@@ -35,6 +49,7 @@ enum app_config_channel_mode {
 	APP_CONFIG_CHANNEL_MODE_COUNTER = 2,
 	APP_CONFIG_CHANNEL_MODE_VOLTAGE = 3,
 	APP_CONFIG_CHANNEL_MODE_CURRENT = 4,
+	APP_CONFIG_CHANNEL_MODE_POWER = 5,
 };
 
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
@@ -88,6 +103,11 @@ struct app_config {
 	enum app_config_mode mode;
 
 	/* ### Preserved code "struct variables" (begin) */
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+	char sensor_str[APP_SENSORS_MAX][APP_CONFIG_SENSOR_STR_SIZE];
+	struct app_config_sensor sensors[APP_SENSORS_MAX];
+	int ld81_threshold_mv; /* LD-81 flood threshold; flood = mV above this */
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 	/* ^^^ Preserved code "struct variables" (end) */
 };
 
@@ -99,6 +119,17 @@ int app_config_cmd_config_mode(const struct shell *shell, size_t argc, char **ar
 int app_config_cmd_config(const struct shell *shell, size_t argc, char **argv);
 
 /* ### Preserved code "functions" (begin) */
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+/* Channel mode by 0-based channel index (0..APP_DATA_NUM_CHANNELS-1). */
+enum app_config_channel_mode app_config_get_channel_mode(int ch_idx);
+/* Sensor slot (0-based) owning a 1-based channel as power/measure, else -1. */
+int app_config_channel_owner(int ch_num);
+/* True when a parsed slot's channels are usable: in range for this build, and
+ * distinct when the driver needs a power channel. Used both when loading a slot
+ * from flash (which bypasses the shell path's validation) and before the runtime
+ * indexes the channel lookup tables with them. */
+bool app_config_sensor_channels_valid(const struct app_config_sensor *s);
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 /* ^^^ Preserved code "functions" (end) */
 
 #ifdef __cplusplus

@@ -40,8 +40,16 @@ function decodeUplink(input) {
 		decode_x0_inputs(data, 'inputs_a', 4);
 	}
 
+	// A frame with only this bit set is the second uplink of an 8-channel report
+	// that did not fit one frame: it carries channels 5-8 and nothing else.
 	if (header & BIT(7)) {
 		decode_x0_inputs(data, 'inputs_b', 4);
+	}
+
+	// The sensors group rides on the X0-A header bit; the header byte is full so
+	// there is no bit of its own available.
+	if (header & BIT(6)) {
+		decode_sensors(data);
 	}
 
 	return { data: data };
@@ -63,60 +71,46 @@ function Decode(fPort, bytes) {
 	return decoded.data;
 }
 
+/* A value the device could not measure is left OUT of the output rather than
+ * reported as null. A key that is absent reads as "no reading this uplink",
+ * whereas a wall of `voltage_rest: null` style entries is noise that has to be
+ * filtered downstream. The one deliberate exception is `flooded`, which stays
+ * three-state (yes / no / null) because null there means "state unknown" and
+ * consumers are expected to distinguish that from dry. */
+function set_if_valid(data, key, value) {
+	if (value !== null) {
+		data[key] = value;
+	}
+}
+
 function decode_batt(data) {
-	data.voltage_rest = u16();
-	data.voltage_load = u16();
-	data.current_load = u8();
+	var voltage_rest = u16();
+	var voltage_load = u16();
+	var current_load = u8();
 
-	if (data.voltage_rest === 0xffff) {
-		data.voltage_rest = null;
-	} else {
-		data.voltage_rest = data.voltage_rest / 1000;
-	}
-
-	if (data.voltage_load === 0xffff) {
-		data.voltage_load = null;
-	} else {
-		data.voltage_load = data.voltage_load / 1000;
-	}
-
-	if (data.current_load === 0xff) {
-		data.current_load = null;
-	}
+	set_if_valid(data, 'voltage_rest', voltage_rest === 0xffff ? null : voltage_rest / 1000);
+	set_if_valid(data, 'voltage_load', voltage_load === 0xffff ? null : voltage_load / 1000);
+	set_if_valid(data, 'current_load', current_load === 0xff ? null : current_load);
 }
 
 function decode_accel(data) {
-	data.orientation = u8();
+	var orientation = u8();
 
-	if (data.orientation === 0xff) {
-		data.orientation = null;
-	}
+	set_if_valid(data, 'orientation', orientation === 0xff ? null : orientation);
 }
 
 function decode_therm(data) {
-	data.therm_temperature = s16();
-	if (data.therm_temperature === 0x7fff) {
-		data.therm_temperature = null;
-	} else {
-		data.therm_temperature /= 100;
-	}
+	var temperature = s16();
+
+	set_if_valid(data, 'therm_temperature', temperature === 0x7fff ? null : temperature / 100);
 }
 
 function decode_hygro(data) {
-	data.hygro_temperature = s16();
-	data.hygro_humidity = u8();
+	var temperature = s16();
+	var humidity = u8();
 
-	if (data.hygro_temperature === 0x7fff) {
-		data.hygro_temperature = null;
-	} else {
-		data.hygro_temperature = data.hygro_temperature / 100;
-	}
-
-	if (data.hygro_humidity === 0xff) {
-		data.hygro_humidity = null;
-	} else {
-		data.hygro_humidity = data.hygro_humidity / 2;
-	}
+	set_if_valid(data, 'hygro_temperature', temperature === 0x7fff ? null : temperature / 100);
+	set_if_valid(data, 'hygro_humidity', humidity === 0xff ? null : humidity / 2);
 }
 
 function decode_w1(data) {
@@ -191,33 +185,73 @@ function decode_x0_inputs(data, key, count) {
 				break;
 			case 3: // voltage
 				var value = u16();
-				if (value === 0xffff) {
-					value = null;
-				} else {
-					value = value / 100;
-				}
-				input = {
-					type: 'voltage',
-					voltage: value
-				};
+				input = { type: 'voltage' };
+				/* A sensor's measure channel reports the type with no value at
+				 * all: its reading belongs to data.sensors, so 0xffff means
+				 * "nothing to report here" and the key is left out entirely
+				 * rather than shown as null. */
+				set_if_valid(input, 'voltage', value === 0xffff ? null : value / 100);
 				break;
 			case 4: // current
 				var value = u16();
-				if (value === 0xffff) {
-					value = null;
-				} else {
-					value = value / 100;
-				}
-				input = {
-					type: 'current',
-					current: value
-				};
+				input = { type: 'current' };
+				set_if_valid(input, 'current', value === 0xffff ? null : value / 100);
+				break;
+			case 5: // power - driven by the sensor layer, no payload
+				// Readings for this channel live in data.sensors, not here.
+				input = { type: 'power' };
 				break;
 			default: // disabled or unknown - skip
 				input = { type: 'disabled' };
 				break;
 		}
 		data[key].push(input);
+	}
+}
+
+// Pluggable SENSORS group, appended after the X0 blocks. Layout:
+//   [u8 count] then per sensor [u8 type][u8 status][u8 data_len][data]
+//   status: bit0 = valid, bits 4-5 = slot (0-based), so `index` matches the CBOR
+//   `index` and the `sensor-N` config key even when a lower slot is empty
+// Each sensor's data is length-prefixed so an unknown type can be skipped whole.
+// Guarded on there being at least one byte left, which makes this safe for stock
+// firmware that emits nothing here.
+function decode_sensors(data) {
+	if ((buffer.length - cursor) < 1) {
+		return;
+	}
+
+	var count = u8();
+	data.sensors = [];
+
+	for (var i = 0; i < count; i++) {
+		var type = u8();
+		var status = u8();
+		var valid = !!(status & 0x01);
+		var len = u8();
+		var end = cursor + len;
+		var sensor = { index: ((status >> 4) & 0x03) + 1, type: type, valid: valid, data: {} };
+
+		if (end > buffer.length) {
+			break; // truncated frame: never read past the end
+		}
+
+		if (type === 1 && len >= 3) { // LD-81 flood detector
+			var mv = u16(); // 0xffff = invalid
+			var flooded = u8();
+			// volts, matching the CBOR codec (cbor-decoder.yaml $div 1000 /
+			// $fpp 2); omitted entirely when there is no reading
+			set_if_valid(sensor.data, 'sensor_voltage',
+				     (valid && mv !== 0xffff) ? mv / 1000 : null);
+			/* Three-state on purpose: "yes" flooded / "no" dry / null unknown.
+			 * Unlike the others this one is NOT omitted — null here means the
+			 * state could not be determined, which a consumer must be able to
+			 * tell apart from dry. */
+			sensor.data.flooded = valid ? (flooded ? 'yes' : 'no') : null;
+		}
+
+		cursor = end; // skip anything unread, including unknown types
+		data.sensors.push(sensor);
 	}
 }
 

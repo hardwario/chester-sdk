@@ -67,7 +67,8 @@ void create_output_files(const char *filename, cJSON *root)
 	cJSON_free(json_str);
 
 	CTR_BUF_DEFINE_STATIC(lrw_buf, 51);
-	app_lrw_encode(&lrw_buf);
+	CTR_BUF_DEFINE_STATIC(lrw_buf_b, 51);
+	app_lrw_encode(&lrw_buf, &lrw_buf_b);
 	char filename_b64[255];
 	snprintf(filename_b64, sizeof(filename_b64), "data/%s.b64", filename);
 	write_base64_file(filename_b64, &lrw_buf);

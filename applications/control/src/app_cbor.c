@@ -32,6 +32,8 @@
 #include <stdlib.h>
 
 /* ### Preserved code "functions" (begin) */
+#include "drivers/drv_ld81.h"
+
 #include <chester/ctr_power.h>
 
 __unused static void put_sample_mul(zcbor_state_t *zs, struct ctr_data_aggreg *sample, float mul)
@@ -772,6 +774,64 @@ static int encode(zcbor_state_t *zs)
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 	/* ^^^ Preserved code "ble_tags" (end) */
+
+	/* ### Preserved code "sensors" (begin) */
+
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+	/* Pluggable sensors (LD-81 etc.) — one map per configured slot. */
+	zcbor_uint32_put(zs, CODEC_KEY_E_SENSORS);
+	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	for (int slot = 0; slot < APP_SENSORS_MAX; slot++) {
+		struct app_data_sensor *s = &g_app_data.sensors[slot];
+		if (!s->configured) {
+			continue;
+		}
+
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SENSORS__INDEX);
+		zcbor_uint32_put(zs, slot + 1);
+		zcbor_uint32_put(zs, CODEC_KEY_E_SENSORS__TYPE);
+		zcbor_uint32_put(zs, s->type_id);
+		zcbor_uint32_put(zs, CODEC_KEY_E_SENSORS__CHANNEL_POWER);
+		zcbor_uint32_put(zs, s->ch_power);
+		zcbor_uint32_put(zs, CODEC_KEY_E_SENSORS__CHANNEL_MEASURE);
+		zcbor_uint32_put(zs, s->ch_measure);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_SENSORS__DATA);
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		switch (s->type_id) {
+		case APP_SENSOR_TYPE_LD81: {
+			/* One snapshot, so the millivolts and the flood state in this
+			 * payload always come from the same sample. */
+			struct app_data_ld81 d;
+			bool valid = ld81_get_data(slot, &d) == 0 && d.valid;
+
+			zcbor_uint32_put(zs, CODEC_KEY_E_SENSORS__DATA__SENSOR_VOLTAGE);
+			if (!valid) {
+				zcbor_nil_put(zs, NULL);
+			} else {
+				zcbor_int32_put(zs, d.voltage_mv);
+			}
+			zcbor_uint32_put(zs, CODEC_KEY_E_SENSORS__DATA__FLOODED);
+			if (!valid) {
+				zcbor_nil_put(zs, NULL);
+			} else {
+				zcbor_bool_put(zs, d.flooded);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+	zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
+
+	/* ^^^ Preserved code "sensors" (end) */
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 

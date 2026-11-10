@@ -31,6 +31,14 @@ void app_handler_edge_counter_callback(struct ctr_edge *edge, enum ctr_edge_even
 void app_handler_power_event(const struct ctr_power_event *event, void *user_data);
 #endif /* defined(FEATURE_SUBSYSTEM_POWER) */
 
+#if defined(FEATURE_HARDWARE_CHESTER_X0_A)
+/* Request an immediate report for a state change detected outside the edge
+ * callbacks (e.g. a sensor alarm). Subject to the same `event-report-delay` and
+ * `event-report-rate` limits as trigger events, so a flapping input cannot
+ * exhaust the airtime budget. */
+void app_handler_report_event(void);
+#endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
+
 void app_handler_ctr_button(enum ctr_button_channel chan, enum ctr_button_event ev, int val,
 			    void *user_data);
 

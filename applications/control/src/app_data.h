@@ -12,6 +12,10 @@
 #include <chester/ctr_ble_tag.h>
 #include <chester/application/ctr_data.h>
 
+/* Application includes */
+#include "app_config.h"
+#include "app_sensor_drv.h"
+
 /* Standard includes */
 #include <stdbool.h>
 #include <stdint.h>
@@ -214,6 +218,22 @@ struct app_data {
 	struct app_data_counter *counter[APP_DATA_NUM_CHANNELS];
 	struct app_data_analog *voltage[APP_DATA_NUM_CHANNELS];
 	struct app_data_analog *current[APP_DATA_NUM_CHANNELS];
+	/* Channel is driven by the sensor layer and is not sampled by the raw X0
+	 * block (channel-mode-N == power). A flag rather than a record, because
+	 * the mode carries no data of its own; the sensor's readings are reported
+	 * in the `sensors` section. */
+	bool power[APP_DATA_NUM_CHANNELS];
+	/* Slot bookkeeping only; decoded data lives privately in each driver
+	 * (drv_<type>.c) and is read through the driver's getter. */
+	struct app_data_sensor {
+		bool configured;
+		/* ADC input and driver are set up. A configured slot whose setup failed
+		 * stays configured, reports invalid, and retries before each sample. */
+		bool ready;
+		uint8_t type_id;
+		uint8_t ch_power;
+		uint8_t ch_measure;
+	} sensors[APP_SENSORS_MAX];
 #endif /* defined(FEATURE_HARDWARE_CHESTER_X0_A) */
 
 #if defined(FEATURE_HARDWARE_CHESTER_S2)

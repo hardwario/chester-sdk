@@ -233,3 +233,13 @@ schema:
                   - mdn:
                       - $div: 100
                       - $fpp: 2
+  - sensors:
+      - index:
+      - type:
+      - channel_power:
+      - channel_measure:
+      - data:
+          - sensor_voltage:
+              - $div: 1000
+              - $fpp: 2
+          - flooded:

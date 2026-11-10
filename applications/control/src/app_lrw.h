@@ -13,7 +13,9 @@
 extern "C" {
 #endif
 
-int app_lrw_encode(struct ctr_buf *buf);
+/* Encodes the report into `buf`. When it does not fit one 51-byte frame, channels 5-8
+ * (the X0-B block) go into `buf_b` as a second uplink; otherwise `buf_b` is left empty. */
+int app_lrw_encode(struct ctr_buf *buf, struct ctr_buf *buf_b);
 
 #ifdef __cplusplus
 }

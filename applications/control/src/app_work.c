@@ -7,6 +7,7 @@
 #include "app_config.h"
 #include "app_data.h"
 #include "app_init.h"
+#include "app_sensor_drv.h"
 #include "app_send.h"
 #include "app_sensor.h"
 #include "app_work.h"
@@ -122,6 +123,18 @@ static void analog_sample_work_handler(struct k_work *work)
 	ret = app_sensor_current_sample();
 	if (ret < 0) {
 		LOG_ERR("Call `app_sensor_current_sample` failed: %d", ret);
+	}
+
+	/* The pluggable sensor layer samples here rather than on the generic 60 s
+	 * tick in `sample_work_handler`. That tick is hardcoded and runs on an
+	 * independent phase from `send_work_handler`, so a state change could be
+	 * reported a whole cycle late — on a long report interval, minutes late,
+	 * which defeats a flood alarm. Riding `analog-interval-sample` instead
+	 * removes the phase drift and lets the cadence be tuned down to a few
+	 * seconds for tighter detection. */
+	ret = app_sensor_drv_sample_all();
+	if (ret < 0) {
+		LOG_ERR("Call `app_sensor_drv_sample_all` failed: %d", ret);
 	}
 }
 

@@ -180,6 +180,14 @@ int ctr_config_show_item(const struct shell *shell, const struct ctr_config_item
 		int32_t val = 0;
 		memcpy(&val, item->variable, item->size);
 
+		/* A value stored by a newer firmware can lie past this build's list, for
+		 * example after a rollback. Show it as a number rather than read past the
+		 * end of `enums`. */
+		if (val < item->min || val >= item->max) {
+			shell_print(shell, "%s config %s %d", mod, item->name, val);
+			break;
+		}
+
 		shell_print(shell, "%s config %s \"%s\"", mod, item->name, item->enums[val]);
 		break;
 	}

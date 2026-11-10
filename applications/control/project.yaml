@@ -99,6 +99,7 @@ parameters:
     - counter
     - voltage
     - current
+    - power
   depends_on: defined(FEATURE_HARDWARE_CHESTER_X0_A)
 - name: input-type
   type: enum
