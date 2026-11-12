@@ -32,7 +32,8 @@ typedef uint64_t ctr_cloud_spool_id;
 /* Store one message frame (incl. the protocol header). Drops the oldest
  * message(s) when the spool is full (limit given by the spool-size config
  * parameter). The identifier of the stored message is copied to `id` (pass
- * NULL when not needed). */
+ * NULL when not needed). An identifier already taken is never overwritten -
+ * the message gets the next free one. A failed save leaves nothing behind. */
 int ctr_cloud_spool_save(const void *buf, size_t len, ctr_cloud_spool_id *id);
 
 /* Find the oldest stored message. Returns 0 when found, 1 when the spool
@@ -40,7 +41,9 @@ int ctr_cloud_spool_save(const void *buf, size_t len, ctr_cloud_spool_id *id);
 int ctr_cloud_spool_peek(ctr_cloud_spool_id *id);
 
 /* Append the message content at the buffer's current position (the buffer
- * is NOT reset - the caller may pre-fill it, e.g. with a frame header). */
+ * is NOT reset - the caller may pre-fill it, e.g. with a frame header).
+ * Returns -ENODATA for an empty message and -EFBIG when the message does
+ * not fit the buffer; the buffer is left untouched on error. */
 int ctr_cloud_spool_load(ctr_cloud_spool_id id, struct ctr_buf *buf);
 int ctr_cloud_spool_delete(ctr_cloud_spool_id id);
 int ctr_cloud_spool_count(int *count);

@@ -1,0 +1,7 @@
+tests:
+  subsys.ctr_cloud_spool:
+    tags: chester
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

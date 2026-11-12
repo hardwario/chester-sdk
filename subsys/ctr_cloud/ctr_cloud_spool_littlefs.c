@@ -35,6 +35,9 @@ LOG_MODULE_REGISTER(ctr_cloud_spool, CONFIG_CTR_CLOUD_LOG_LEVEL);
 
 #define FILENAME_SIZE 32
 
+/* How many following milliseconds to try when the message identifier is taken */
+#define SAVE_MAX_ID_ATTEMPTS 1000
+
 static int ensure_dir(void)
 {
 	int ret;
@@ -137,35 +140,67 @@ int ctr_cloud_spool_save(const void *buf, size_t len, ctr_cloud_spool_id *id)
 		return ret;
 	}
 
-	char name[FILENAME_SIZE];
-	make_filename(ts_ms, name, sizeof(name));
-
+	/* Equal timestamps happen (the RTC restarts from the same base after a
+	 * reset without time sync, the sub-second part saturates at 999 ms) -
+	 * take the next free millisecond instead of overwriting a message; the
+	 * order of the messages is kept */
 	char filepath[64];
-	snprintf(filepath, sizeof(filepath), DIR_SPOOL "/%s", name);
+	for (int i = 0;; i++) {
+		if (i >= SAVE_MAX_ID_ATTEMPTS) {
+			LOG_ERR("No free message identifier");
+			return -EEXIST;
+		}
+
+		char name[FILENAME_SIZE];
+		make_filename(ts_ms, name, sizeof(name));
+		snprintf(filepath, sizeof(filepath), DIR_SPOOL "/%s", name);
+
+		struct fs_dirent entry;
+		ret = fs_stat(filepath, &entry);
+		if (ret == -ENOENT) {
+			break;
+		} else if (ret < 0) {
+			LOG_ERR("Call `fs_stat` failed: %d", ret);
+			return ret;
+		}
+
+		ts_ms++;
+	}
 
 	fs_file_t_init(&file);
 
-	ret = fs_open(&file, filepath, FS_O_CREATE | FS_O_WRITE | FS_O_TRUNC);
+	ret = fs_open(&file, filepath, FS_O_CREATE | FS_O_WRITE);
 	if (ret < 0) {
 		LOG_ERR("Call `fs_open` failed: %d", ret);
 		return ret;
 	}
 
-	ret = fs_write(&file, buf, len);
-	if (ret < 0) {
-		LOG_ERR("Call `fs_write` failed: %d", ret);
-		fs_close(&file);
+	ssize_t written = fs_write(&file, buf, len);
+	if (written < 0) {
+		LOG_ERR("Call `fs_write` failed: %d", (int)written);
+		ret = written;
+	} else if ((size_t)written < len) {
+		LOG_ERR("Incomplete write (%d of %u bytes)", (int)written, (unsigned int)len);
+		ret = -ENOSPC;
+	} else {
+		ret = 0;
+	}
+
+	/* LittleFS commits the data on close - its result matters too */
+	int res = fs_close(&file);
+	if (res < 0) {
+		LOG_ERR("Call `fs_close` failed: %d", res);
+		if (!ret) {
+			ret = res;
+		}
+	}
+
+	if (ret) {
+		/* Do not leave a partial message behind - it would be sent as a
+		 * corrupted frame (or, when empty, dropped only on the next drain) */
+		fs_unlink(filepath);
 		return ret;
 	}
-
-	if ((size_t)ret < len) {
-		LOG_ERR("Incomplete write (%d of %u bytes)", ret, (unsigned int)len);
-		fs_close(&file);
-		fs_unlink(filepath);
-		return -ENOSPC;
-	}
-
-	fs_close(&file);
 
 	if (id) {
 		*id = ts_ms;
@@ -233,6 +268,27 @@ int ctr_cloud_spool_load(ctr_cloud_spool_id id, struct ctr_buf *buf)
 
 	char filepath[64];
 	snprintf(filepath, sizeof(filepath), DIR_SPOOL "/%s", name);
+
+	struct fs_dirent entry;
+	ret = fs_stat(filepath, &entry);
+	if (ret < 0) {
+		LOG_ERR("Call `fs_stat` failed: %d", ret);
+		return ret;
+	}
+
+	/* An empty file (power loss between create and close) holds no frame, a
+	 * file bigger than the buffer would be sent truncated - the caller drops
+	 * the message on error */
+	if (!entry.size) {
+		LOG_ERR("Empty file %s", filepath);
+		return -ENODATA;
+	}
+
+	if (entry.size > ctr_buf_get_free(buf)) {
+		LOG_ERR("File %s does not fit the buffer (%u > %u bytes)", filepath,
+			(unsigned int)entry.size, (unsigned int)ctr_buf_get_free(buf));
+		return -EFBIG;
+	}
 
 	fs_file_t_init(&file);
 
