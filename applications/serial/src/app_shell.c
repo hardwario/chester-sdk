@@ -86,6 +86,10 @@ SHELL_CMD_REGISTER(send, NULL, "Send data immediately", cmd_send);
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_serial,
 	SHELL_CMD_ARG(send, NULL, "Send hex and wait for response <hex> [timeout_s]", cmd_serial_send, 2, 1),
 	SHELL_CMD_ARG(recv, NULL, "Read RX buffer [timeout_s]", cmd_serial_receive, 1, 1),
+	SHELL_CMD_ARG(pm, NULL, "Suspend (0) or resume (1) the UART bridge <0|1>", cmd_serial_pm, 2, 0),
+	SHELL_CMD_ARG(break, NULL, "Hold TX low (1) or release to idle high (0) <0|1>", cmd_serial_break, 2, 0),
+	SHELL_CMD_ARG(reinit, NULL, "Re-apply UART configuration", cmd_serial_reinit, 1, 0),
+	SHELL_CMD_ARG(wake, NULL, "Wake peer then send <hex> [timeout_s] [high_ms]", cmd_serial_wake_send, 2, 2),
 	SHELL_SUBCMD_SET_END
 );
 SHELL_CMD_REGISTER(serial, &sub_serial, "Serial interface commands", NULL);
@@ -96,7 +100,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_modbus,
 		      cmd_modbus_read, 4, 1),
 	SHELL_CMD_ARG(write, NULL, "Write Modbus register <slave> <addr> <value>",
 		      cmd_modbus_write, 4, 0),
-	SHELL_CMD_ARG(sample, NULL, "Sample configured device", cmd_modbus_sample, 1, 0),
+	SHELL_CMD_ARG(sample, NULL, "Sample devices without a driver (lambrecht, generic)",
+		      cmd_modbus_sample, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 SHELL_CMD_REGISTER(modbus, &sub_modbus, "Modbus RTU commands", NULL);

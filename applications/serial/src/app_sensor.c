@@ -6,6 +6,7 @@
 
 #include "app_config.h"
 #include "app_data.h"
+#include "app_driver_store.h"
 #include "app_sensor.h"
 #include "feature.h"
 
@@ -34,55 +35,6 @@
 #include <string.h>
 
 LOG_MODULE_REGISTER(app_measure, LOG_LEVEL_DBG);
-
-#if defined(FEATURE_SUBSYSTEM_BLE_TAG)
-
-static int compare(const void *a, const void *b)
-{
-	float fa = *(const float *)a;
-	float fb = *(const float *)b;
-
-	return (fa > fb) - (fa < fb);
-}
-
-static void aggreg(float *samples, size_t count, float *min, float *max, float *avg, float *mdn)
-{
-	*min = NAN;
-	*max = NAN;
-	*avg = NAN;
-	*mdn = NAN;
-
-	if (!count) {
-		return;
-	}
-
-	for (size_t i = 0; i < count; i++) {
-		if (isnan(samples[i])) {
-			return;
-		}
-	}
-
-	qsort(samples, count, sizeof(float), compare);
-
-	*min = samples[0];
-	*max = samples[count - 1];
-
-	double avg_ = 0;
-	for (size_t i = 0; i < count; i++) {
-		avg_ += (double)samples[i];
-	}
-	avg_ /= count;
-
-	*avg = avg_;
-	*mdn = samples[count / 2];
-}
-
-static void aggreg_sample(float *samples, size_t count, struct ctr_data_aggreg *sample)
-{
-	aggreg(samples, count, &sample->min, &sample->max, &sample->avg, &sample->mdn);
-}
-
-#endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 int app_sensor_sample(void)
 {
@@ -218,11 +170,13 @@ int app_sensor_ble_tag_aggreg(void)
 				&ble_tag->sensor[i]
 					 .measurements[ble_tag->sensor[i].measurement_count];
 
-			aggreg_sample(ble_tag->sensor[i].samples_temperature,
-				      ble_tag->sensor[i].sample_count, &measurement->temperature);
+			app_driver_aggreg_samples(ble_tag->sensor[i].samples_temperature,
+						  ble_tag->sensor[i].sample_count,
+						  &measurement->temperature);
 
-			aggreg_sample(ble_tag->sensor[i].samples_humidity,
-				      ble_tag->sensor[i].sample_count, &measurement->humidity);
+			app_driver_aggreg_samples(ble_tag->sensor[i].samples_humidity,
+						  ble_tag->sensor[i].sample_count,
+						  &measurement->humidity);
 
 			ble_tag->sensor[i].measurement_count++;
 

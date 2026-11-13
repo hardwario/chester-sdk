@@ -25,8 +25,6 @@
 extern "C" {
 #endif
 
-#define APP_DATA_MAX_SAMPLES 32
-
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 #define APP_DATA_MAX_BLE_TAG_MEASUREMENTS 16
 #define APP_DATA_MAX_BLE_TAG_SAMPLES      16
@@ -72,19 +70,6 @@ struct app_data {
 	float accel_acceleration_y;
 	float accel_acceleration_z;
 	int accel_orientation;
-
-	/* Generic Modbus device data */
-	struct {
-		uint8_t slave_addr;
-		bool is_online;
-		uint32_t last_seen;
-		uint32_t error_count;
-		uint16_t holding_regs[32];
-		uint16_t input_regs[32];
-		float values[APP_DATA_MAX_SAMPLES];
-		int sample_count;
-	} modbus_devices[4];
-	int modbus_device_count;
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	struct app_data_ble_tag ble_tag;

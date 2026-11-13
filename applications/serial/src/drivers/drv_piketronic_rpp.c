@@ -4,6 +4,38 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+/*
+ * POWER BUDGET - RPP-R deployments are NOT battery powered. Do not size a battery for
+ * one, and do not spend time trying to optimise the firmware down to it.
+ *
+ * Measured on CHESTER-M (PPK2, 3.6 V source meter) with three RPP-R probes on the RS-485
+ * bus, firmware otherwise in its low-power configuration:
+ *
+ *   settled average          5.55 mA
+ *   lowest 1 s bucket        5.43 mA   <- never drops below this
+ *   same board, no probes    ~0.19 mA
+ *   LS 26500 (7700 mAh)      ~0.16 years (about two months)
+ *
+ * The floor never falls, so this is a continuous load of roughly 5.3 mA on top of the
+ * firmware baseline - about 1.7 mA per probe, consistent with an RS-485 transceiver held
+ * in receive mode plus bus bias/termination. It is drawn by the probes, not by the
+ * application: suspending the SC16IS7xx bridge does not change it.
+ *
+ * It cannot be reduced in firmware, for two independent reasons:
+ *
+ *   1. The probes are powered from the CHESTER, and the X2 Modbus shield exposes no
+ *      power-enable line - the overlay defines only the SC16IS740 UART and the Modbus
+ *      DE/RE GPIOs. There is nothing to switch off.
+ *
+ *   2. Even with a switchable rail it would be wrong. Radon measurement is integrative:
+ *      the probe accumulates counts continuously and derives its moving averages and
+ *      internal record log from that history. Cutting power resets the probe and throws
+ *      that away, so the probes must stay powered between reads regardless of cost.
+ *
+ * Consequence: an RPP-R installation needs an external supply. Lowering interval-sample
+ * changes almost nothing - a read takes ~375 ms and is dwarfed by the standing 5.3 mA.
+ */
+
 #include "drv_piketronic_rpp.h"
 #include "drv_interface.h"
 #include "../app_modbus.h"
@@ -20,9 +52,6 @@
 
 LOG_MODULE_REGISTER(drv_piketronic_rpp, LOG_LEVEL_DBG);
 
-#define MAX_SAMPLES 32
-#define DEFAULT_ADDR 1
-
 /* Register addresses (register number == Modbus address on this probe) */
 #define REG_CONCENTRATION_TIME 1  /* UINT */
 #define REG_CONCENTRATION      2  /* UINT32 (L at 2, H at 3) */
@@ -37,23 +66,8 @@ LOG_MODULE_REGISTER(drv_piketronic_rpp, LOG_LEVEL_DBG);
 #define REG_IDENT_VERSION      65 /* 10 ASCII */
 #define REG_IDENT_SERIAL       70 /* 10 ASCII */
 
-static struct app_data_piketronic_rpp m_data = {
-	.modbus_addr = DEFAULT_ADDR,
-	.valid = false,
-};
-
-static K_MUTEX_DEFINE(m_data_mutex);
-
-static struct piketronic_rpp_sample m_samples[MAX_SAMPLES];
-static int m_sample_count = 0;
-static K_MUTEX_DEFINE(m_samples_mutex);
-
-/* Combine two 16-bit registers into a 32-bit value. The probe stores the
- * lower word (L) at the lower address and the higher word (H) at the next. */
-static inline uint32_t decode_u32(const uint16_t *regs)
-{
-	return ((uint32_t)regs[1] << 16) | regs[0];
-}
+/* Polled for a device configured without an address */
+#define DEFAULT_ADDR 1
 
 /* Decode a register-packed ASCII string. Two characters per register, low
  * byte first. out must hold count*2 + 1 bytes. The probe pads the unused part
@@ -84,22 +98,26 @@ static void decode_ascii(const uint16_t *regs, int count, char *out)
 	}
 }
 
-/* Forward declaration */
-static void print_data(const struct shell *shell, int idx, int addr);
-
-static int init(void)
+static int init(struct app_driver_slot *slot)
 {
+	struct app_data_piketronic_rpp *data = slot->ctx;
+
 	LOG_INF("Initializing Piketronic RPP-R driver");
-	m_data.valid = false;
-	m_data.error_count = 0;
+	data->valid = false;
+	data->error_count = 0;
 	return 0;
 }
 
-static int sample(void)
+static int sample(struct app_driver_slot *slot)
 {
+	struct app_data_piketronic_rpp *data = slot->ctx;
+	/* A device configured without an address reaches the driver as 0. The single-instance
+	 * driver polled DEFAULT_ADDR for it, so keep doing that rather than sending a broadcast
+	 * that no probe answers.
+	 */
+	uint8_t addr = slot->addr ? slot->addr : DEFAULT_ADDR;
 	int ret;
 	int errors = 0;
-	uint8_t addr;
 	uint16_t regs[16];
 
 	uint32_t concentration = 0, concentration_day = 0;
@@ -109,25 +127,20 @@ static int sample(void)
 	uint16_t limit = 0, record_interval = 0, spectrum_interval = 0, algorithm = 0;
 	char device[11] = {0}, version_sw[11] = {0}, serial_number[11] = {0};
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
-
 	LOG_INF("Sampling Piketronic RPP-R at address %d", addr);
 
-	ret = app_modbus_enable();
+	ret = app_modbus_acquire();
 	if (ret) {
 		LOG_ERR("Failed to enable Modbus: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		k_mutex_unlock(&m_data_mutex);
+		data->error_count++;
 		return ret;
 	}
 
 	/* Measurements: regs 1-5 (time, concentration L+H, temperature, humidity) */
 	if (app_modbus_read_holding_regs(addr, REG_CONCENTRATION_TIME, 5, regs) == 0) {
 		concentration_time = regs[0];
-		concentration = decode_u32(&regs[1]); /* regs[1]=L (reg2), regs[2]=H (reg3) */
+		concentration = app_modbus_decode_u32(
+			&regs[1], APP_MODBUS_WO_LO_FIRST); /* L at reg 2, H at reg 3 */
 		temperature = (int8_t)(regs[3] & 0xFF);
 		humidity = (uint8_t)(regs[4] & 0xFF);
 	} else {
@@ -136,7 +149,7 @@ static int sample(void)
 
 	/* Daily average: regs 17-18 */
 	if (app_modbus_read_holding_regs(addr, REG_CONCENTRATION_DAY, 2, regs) == 0) {
-		concentration_day = decode_u32(regs);
+		concentration_day = app_modbus_decode_u32(regs, APP_MODBUS_WO_LO_FIRST);
 	} else {
 		errors++;
 	}
@@ -166,66 +179,46 @@ static int sample(void)
 		errors++;
 	}
 
-	app_modbus_disable();
+	app_modbus_release();
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	if (errors == 0) {
-		m_data.concentration = concentration;
-		m_data.concentration_day = concentration_day;
-		m_data.temperature = temperature;
-		m_data.humidity = humidity;
-		m_data.concentration_time = concentration_time;
-		m_data.limit = limit;
-		m_data.record_interval = record_interval;
-		m_data.spectrum_interval = spectrum_interval;
-		m_data.algorithm = algorithm;
-		strcpy(m_data.device, device);
-		strcpy(m_data.version_sw, version_sw);
-		strcpy(m_data.serial_number, serial_number);
-		m_data.valid = true;
-		m_data.last_sample = k_uptime_get_32();
-		m_data.error_count = 0;
-		k_mutex_unlock(&m_data_mutex);
-
-		/* Add to sample buffer */
-		k_mutex_lock(&m_samples_mutex, K_FOREVER);
-		if (m_sample_count < MAX_SAMPLES) {
-			uint64_t ts;
-			ctr_rtc_get_ts(&ts);
-			m_samples[m_sample_count].timestamp = ts;
-			m_samples[m_sample_count].concentration = concentration;
-			m_samples[m_sample_count].concentration_day = concentration_day;
-			m_samples[m_sample_count].temperature = temperature;
-			m_samples[m_sample_count].humidity = humidity;
-			m_sample_count++;
-			LOG_DBG("RPP-R: Added sample %d to buffer", m_sample_count);
-		} else {
-			LOG_WRN("RPP-R: Sample buffer full");
-		}
-		k_mutex_unlock(&m_samples_mutex);
-
-		LOG_INF("RPP-R: Rn=%u Bq/m3, T=%d C, RH=%u %%", concentration, temperature,
-			humidity);
-	} else {
-		m_data.valid = false;
-		m_data.error_count++;
-		k_mutex_unlock(&m_data_mutex);
+	if (errors) {
+		data->valid = false;
+		data->error_count++;
 		LOG_WRN("RPP-R: %d read errors", errors);
 		return -EIO;
 	}
 
-	return 0;
-}
+	data->concentration = concentration;
+	data->concentration_day = concentration_day;
+	data->temperature = temperature;
+	data->humidity = humidity;
+	data->concentration_time = concentration_time;
+	data->limit = limit;
+	data->record_interval = record_interval;
+	data->spectrum_interval = spectrum_interval;
+	data->algorithm = algorithm;
+	strcpy(data->device, device);
+	strcpy(data->version_sw, version_sw);
+	strcpy(data->serial_number, serial_number);
+	data->valid = true;
+	data->last_sample = k_uptime_get_32();
+	data->error_count = 0;
 
-static int config(uint8_t new_addr, const char *parity_str)
-{
-	ARG_UNUSED(parity_str);
-	/* Address and baud/parity are DIP switches on the probe; we only set
-	 * which address CHESTER polls. */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = new_addr;
-	k_mutex_unlock(&m_data_mutex);
-	LOG_INF("RPP-R: sampling address set to %d", new_addr);
+	int64_t ts;
+	ctr_rtc_get_ts(&ts);
+
+	struct piketronic_rpp_sample rec = {
+		.timestamp = ts,
+		.concentration = concentration,
+		.concentration_day = concentration_day,
+		.temperature = temperature,
+		.humidity = humidity,
+	};
+
+	app_driver_rec_push(slot, &rec);
+
+	LOG_INF("RPP-R: Rn=%u Bq/m3, T=%d C, RH=%u %%", concentration, temperature, humidity);
+
 	return 0;
 }
 
@@ -242,133 +235,67 @@ static int cmd_sample(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t old_addr = m_data.modbus_addr;
-	m_data.modbus_addr = addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	int ret = sample();
-
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = old_addr;
-	k_mutex_unlock(&m_data_mutex);
-
+	int ret = app_device_probe_sample(shell, &piketronic_rpp_driver, addr);
 	if (ret) {
 		shell_error(shell, "Sampling failed: %d", ret);
 		return ret;
 	}
 
-	print_data(shell, 0, addr);
 	return 0;
 }
 
 static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 {
-	if (argc < 2) {
-		shell_error(shell, "Usage: device piketronic config <addr>");
-		return -EINVAL;
-	}
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
-	uint8_t addr = (uint8_t)strtol(argv[1], NULL, 0);
-	if (addr < 1 || addr > 247) {
-		shell_error(shell, "Invalid address (1-247)");
-		return -EINVAL;
-	}
-
-	config(addr, NULL);
-	shell_print(shell, "Sampling address set to %d", addr);
+	/* Address and baud/parity are DIP switches on the probe */
+	shell_print(shell, "RPP-R: the address is set by DIP switches on the probe");
+	shell_print(shell, "Set the address in the device configuration: app config device-N");
 	return 0;
 }
 
 static const struct shell_static_entry piketronic_rpp_subcmds[] = {
 	SHELL_CMD_ARG(sample, NULL, "Read values: sample <addr>", cmd_sample, 2, 0),
-	SHELL_CMD_ARG(config, NULL, "Set sampling address: config <addr>", cmd_config, 2, 0),
-	SHELL_SUBCMD_SET_END
-};
+	SHELL_CMD_ARG(config, NULL, "How to set the address: config <addr>", cmd_config, 1, 1),
+	SHELL_SUBCMD_SET_END};
 
 const union shell_cmd_entry piketronic_rpp_shell_cmds = {
 	.entry = piketronic_rpp_subcmds
 };
 
-static void print_data(const struct shell *shell, int idx, int addr)
+static void print_data(const struct shell *shell, struct app_driver_slot *slot)
 {
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	struct app_data_piketronic_rpp d = m_data;
-	k_mutex_unlock(&m_data_mutex);
+	const struct app_data_piketronic_rpp *d = slot->ctx;
 
-	shell_print(shell, "[%d] Piketronic RPP-R @ addr %d:", idx, addr);
-	shell_print(shell, "  radon (1h avg):   %u Bq/m3", d.concentration);
-	shell_print(shell, "  radon (1d avg):   %u Bq/m3", d.concentration_day);
-	shell_print(shell, "  temperature:      %d C", d.temperature);
-	shell_print(shell, "  humidity:         %u %%", d.humidity);
-	shell_print(shell, "  interval timer:   %u s (into 4-min cycle)", d.concentration_time);
-	shell_print(shell, "  alarm limit:      %u Bq/m3", d.limit);
-	shell_print(shell, "  record interval:  %u min", d.record_interval);
-	shell_print(shell, "  spectrum interval:%u min", d.spectrum_interval);
-	shell_print(shell, "  calc mode:        %u (%s)", d.algorithm,
-		    d.algorithm == 0 ? "RnA" : "RnA+RnC");
-	shell_print(shell, "  device:           %s", d.device);
-	shell_print(shell, "  version:          %s", d.version_sw);
-	shell_print(shell, "  serial:           %s", d.serial_number);
+	app_device_print_header(shell, slot, "Piketronic RPP-R");
+	shell_print(shell, "  radon (1h avg):   %u Bq/m3", d->concentration);
+	shell_print(shell, "  radon (1d avg):   %u Bq/m3", d->concentration_day);
+	shell_print(shell, "  temperature:      %d C", d->temperature);
+	shell_print(shell, "  humidity:         %u %%", d->humidity);
+	shell_print(shell, "  interval timer:   %u s (into 4-min cycle)", d->concentration_time);
+	shell_print(shell, "  alarm limit:      %u Bq/m3", d->limit);
+	shell_print(shell, "  record interval:  %u min", d->record_interval);
+	shell_print(shell, "  spectrum interval:%u min", d->spectrum_interval);
+	shell_print(shell, "  calc mode:        %u (%s)", d->algorithm,
+		    d->algorithm == 0 ? "RnA" : "RnA+RnC");
+	shell_print(shell, "  device:           %s", d->device);
+	shell_print(shell, "  version:          %s", d->version_sw);
+	shell_print(shell, "  serial:           %s", d->serial_number);
 }
 
 const struct app_device_driver piketronic_rpp_driver = {
 	.name = "piketronic",
 	.type = APP_DEVICE_TYPE_PIKETRONIC_RPP,
+	.transport = APP_DEVICE_TRANSPORT_MODBUS,
+	.ctx_size = sizeof(struct app_data_piketronic_rpp),
+	.rec_size = sizeof(struct piketronic_rpp_sample),
 	.init = init,
 	.sample = sample,
-	.deinit = NULL,
-	.calibrate = NULL,
-	.reset = NULL,
-	.config = config,
 	.print_data = print_data,
 };
 
-const struct app_data_piketronic_rpp *piketronic_rpp_get_data(void)
+const struct app_data_piketronic_rpp *piketronic_rpp_get_data(const struct app_driver_slot *slot)
 {
-	return &m_data;
-}
-
-void piketronic_rpp_set_addr(uint8_t addr)
-{
-	if (addr >= 1 && addr <= 247) {
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.modbus_addr = addr;
-		k_mutex_unlock(&m_data_mutex);
-	}
-}
-
-uint8_t piketronic_rpp_get_addr(void)
-{
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
-	return addr;
-}
-
-int piketronic_rpp_get_samples(struct piketronic_rpp_sample *out, int max_count)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = (m_sample_count < max_count) ? m_sample_count : max_count;
-	for (int i = 0; i < count; i++) {
-		out[i] = m_samples[i];
-	}
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
-}
-
-void piketronic_rpp_clear_samples(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	m_sample_count = 0;
-	k_mutex_unlock(&m_samples_mutex);
-	LOG_DBG("RPP-R: Sample buffer cleared");
-}
-
-int piketronic_rpp_get_sample_count(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = m_sample_count;
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
+	return slot->ctx;
 }

@@ -43,13 +43,12 @@ struct app_data_em1xx {
 	float frequency;      /* Hz */
 	float energy_in;      /* kWh */
 	float energy_out;     /* kWh */
-	uint8_t modbus_addr;
 	uint32_t last_sample;
 	uint32_t error_count;
 	bool valid;
 };
 
-/* Sample entry for CBOR buffer */
+/* Sample record (slot record ring, encoded to CBOR) */
 struct em1xx_sample {
 	uint64_t timestamp;
 	float voltage;
@@ -63,13 +62,10 @@ struct em1xx_sample {
 	float energy_out;
 };
 
-const struct app_data_em1xx *em1xx_get_data(void);
-void em1xx_set_addr(uint8_t addr);
-uint8_t em1xx_get_addr(void);
+struct app_driver_slot;
 
-int em1xx_get_samples(struct em1xx_sample *out, int max_count);
-void em1xx_clear_samples(void);
-int em1xx_get_sample_count(void);
+/* Latest data of a slot (caller holds slot->lock) */
+const struct app_data_em1xx *em1xx_get_data(const struct app_driver_slot *slot);
 
 #ifdef __cplusplus
 }

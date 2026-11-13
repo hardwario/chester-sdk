@@ -39,13 +39,12 @@ struct app_data_flowt_ft201 {
 	float temp_inlet;      /* Temperature inlet (C) */
 	float temp_outlet;     /* Temperature outlet (C) */
 	uint8_t signal_quality; /* Signal quality 0-99 */
-	uint8_t modbus_addr;
 	uint32_t last_sample;
 	uint32_t error_count;
 	bool valid;
 };
 
-/* Sample entry for CBOR buffer */
+/* Sample record (slot record ring, encoded to CBOR) */
 struct flowt_ft201_sample {
 	uint64_t timestamp;
 	float flow_s;
@@ -62,13 +61,10 @@ struct flowt_ft201_sample {
 	uint8_t signal_quality;
 };
 
-const struct app_data_flowt_ft201 *flowt_ft201_get_data(void);
-void flowt_ft201_set_addr(uint8_t addr);
-uint8_t flowt_ft201_get_addr(void);
+struct app_driver_slot;
 
-int flowt_ft201_get_samples(struct flowt_ft201_sample *out, int max_count);
-void flowt_ft201_clear_samples(void);
-int flowt_ft201_get_sample_count(void);
+/* Latest data of a slot (caller holds slot->lock) */
+const struct app_data_flowt_ft201 *flowt_ft201_get_data(const struct app_driver_slot *slot);
 
 extern const struct app_device_driver flowt_ft201_driver;
 extern const union shell_cmd_entry flowt_ft201_shell_cmds;

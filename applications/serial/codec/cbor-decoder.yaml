@@ -167,6 +167,9 @@ schema:
           - power_factor_l1:
           - power_factor_l2:
           - power_factor_l3:
+          # Both radon probes report through these two keys. The averaging window differs
+          # by probe - RPP-R 1 h, RPP-U 0.5 h - and is read from the device's `type_name`,
+          # so it does not belong in the key name as well.
           - radon_concentration:
           - radon_concentration_day:
           - humidity:
@@ -185,6 +188,207 @@ schema:
           - eps_power_l1:
           - eps_power_l2:
           - eps_power_l3:
+          # Appended for the Piketronic RPP-U. Keys are numbered by position in this
+          # document, so inserting or removing one renumbers every key that follows -
+          # including the whole `ble_tags` block below. That is safe as long as this file and
+          # the firmware ship together: each image carries its own decoder blob and the cloud
+          # swaps it in on a hash mismatch (see ctr_cloud.c). What it does invalidate is any
+          # decoder kept by hand out of band, so prefer appending here over inserting above.
+          #
+          # The probe's own accumulator, in volts to 3 decimals. It cannot reuse `voltage`
+          # above: that is $div 100 because the meters report mains voltage through it.
+          - accumulator_voltage:
+              - $div: 1000
+              - $fpp: 3
+      - sensecap:
+          - air_temperature:
+              - measurements:
+                  - $tsp:
+                      - min:
+                          - $div: 1000
+                          - $fpp: 2
+                      - max:
+                          - $div: 1000
+                          - $fpp: 2
+                      - avg:
+                          - $div: 1000
+                          - $fpp: 2
+                      - mdn:
+                          - $div: 1000
+                          - $fpp: 2
+          - air_humidity:
+              - measurements:
+                  - $tsp:
+                      - min:
+                          - $div: 1000
+                          - $fpp: 2
+                      - max:
+                          - $div: 1000
+                          - $fpp: 2
+                      - avg:
+                          - $div: 1000
+                          - $fpp: 2
+                      - mdn:
+                          - $div: 1000
+                          - $fpp: 2
+          - barometric_pressure:
+              - measurements:
+                  - $tsp:
+                      - min:
+                          - $div: 1000
+                          - $fpp: 2
+                      - max:
+                          - $div: 1000
+                          - $fpp: 2
+                      - avg:
+                          - $div: 1000
+                          - $fpp: 2
+                      - mdn:
+                          - $div: 1000
+                          - $fpp: 2
+          - wind_direction_avg:
+              - measurements:
+                  - $tsp:
+                      - value:
+                          - $div: 1000
+                          - $fpp: 1
+          - wind_speed_avg:
+              - measurements:
+                  - $tsp:
+                      - min:
+                          - $div: 1000
+                          - $fpp: 2
+                      - max:
+                          - $div: 1000
+                          - $fpp: 2
+                      - avg:
+                          - $div: 1000
+                          - $fpp: 2
+                      - mdn:
+                          - $div: 1000
+                          - $fpp: 2
+          - light_intensity:
+              - measurements:
+                  - $tsp:
+                      - min:
+                          - $div: 1000
+                          - $fpp: 0
+                      - max:
+                          - $div: 1000
+                          - $fpp: 0
+                      - avg:
+                          - $div: 1000
+                          - $fpp: 0
+                      - mdn:
+                          - $div: 1000
+                          - $fpp: 0
+          - accumulated_rainfall:
+              - measurements:
+                  - $tsp:
+                      - value:
+                          - $div: 1000
+                          - $fpp: 2
+          - pm2_5:
+              - measurements:
+                  - $tsp:
+                      - min:
+                          - $div: 1000
+                          - $fpp: 1
+                      - max:
+                          - $div: 1000
+                          - $fpp: 1
+                      - avg:
+                          - $div: 1000
+                          - $fpp: 1
+                      - mdn:
+                          - $div: 1000
+                          - $fpp: 1
+          - pm10:
+              - measurements:
+                  - $tsp:
+                      - min:
+                          - $div: 1000
+                          - $fpp: 1
+                      - max:
+                          - $div: 1000
+                          - $fpp: 1
+                      - avg:
+                          - $div: 1000
+                          - $fpp: 1
+                      - mdn:
+                          - $div: 1000
+                          - $fpp: 1
+          - co2:
+              - measurements:
+                  - $tsp:
+                      - min:
+                          - $div: 1000
+                          - $fpp: 0
+                      - max:
+                          - $div: 1000
+                          - $fpp: 0
+                      - avg:
+                          - $div: 1000
+                          - $fpp: 0
+                      - mdn:
+                          - $div: 1000
+                          - $fpp: 0
+          - heater_temperature:
+              - measurements:
+                  - $tsp:
+                      - value:
+                          - $div: 1000
+                          - $fpp: 2
+          - tilt:
+              - measurements:
+                  - $tsp:
+                      - value:
+                          - $div: 1000
+                          - $fpp: 0
+      - cubic_6303:
+          - tsp:
+              - measurements:
+                  - $tsp:
+                      - min:
+                      - max:
+                      - avg:
+                      - mdn:
+          - pm1_0:
+              - measurements:
+                  - $tsp:
+                      - min:
+                      - max:
+                      - avg:
+                      - mdn:
+          - pm2_5:
+              - measurements:
+                  - $tsp:
+                      - min:
+                      - max:
+                      - avg:
+                      - mdn:
+          - pm10:
+              - measurements:
+                  - $tsp:
+                      - min:
+                      - max:
+                      - avg:
+                      - mdn:
+          - gas_flow:
+              - measurements:
+                  - $tsp:
+                      - min:
+                          - $div: 100
+                          - $fpp: 2
+                      - max:
+                          - $div: 100
+                          - $fpp: 2
+                      - avg:
+                          - $div: 100
+                          - $fpp: 2
+                      - mdn:
+                          - $div: 100
+                          - $fpp: 2
   - ble_tags:
       - addr:
       - rssi:

@@ -1,0 +1,11 @@
+
+common:
+  tags:
+    - chester
+    - serial
+  platform_allow: native_sim
+  integration_platforms:
+    - native_sim
+
+tests:
+  applications.serial.promag_mf7s.proto: {}

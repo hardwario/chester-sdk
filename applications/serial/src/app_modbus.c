@@ -7,6 +7,7 @@
 #include "app_modbus.h"
 #include "app_config.h"
 #include "app_data.h"
+#include "drivers/drv_interface.h"
 
 /* Zephyr includes */
 #include <zephyr/device.h>
@@ -16,7 +17,8 @@
 #include <zephyr/modbus/modbus.h>
 #include <zephyr/pm/device.h>
 /* Internal Modbus API: needed to raise the RTU frame timeout (no public setter)
- * to work around the SC16IS7xx I2C-UART bridge RX batching, see app_modbus_init. */
+ * to work around the SC16IS7xx I2C-UART bridge RX batching, see app_modbus_init,
+ * and for the frames of the OR-WE-504 address change, see addr_transact. */
 #include <modbus_internal.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
@@ -52,165 +54,22 @@ static int m_iface = 0;
 static const struct device *m_serial_dev = NULL;
 #endif
 
-/* Helper functions for reading different data types */
+/* Bus ownership (recursive for the owning thread) and enable reference count */
+static K_MUTEX_DEFINE(m_bus_mutex);
+#if HAS_MODBUS_DEVICE
+static int m_enable_count;
+#endif
 
-static int read_reg_ui16(uint8_t slave_addr, uint16_t reg_addr, uint16_t *data)
-{
-	uint16_t reg_data;
-	int ret = modbus_read_input_regs(m_iface, slave_addr, reg_addr, &reg_data, 1);
-	if (ret) {
-		LOG_WRN("Read reg 0x%04x from slave %d failed: %d", reg_addr, slave_addr, ret);
-		return ret;
-	}
-
-	*data = reg_data;
-	return 0;
-}
-
-__maybe_unused static int read_holding_reg_ui16(uint8_t slave_addr, uint16_t reg_addr, uint16_t *data)
-{
-	uint16_t reg_data;
-	int ret = modbus_read_holding_regs(m_iface, slave_addr, reg_addr, &reg_data, 1);
-	if (ret) {
-		LOG_WRN("Read holding reg 0x%04x from slave %d failed: %d", reg_addr, slave_addr,
-			ret);
-		return ret;
-	}
-
-	*data = reg_data;
-	return 0;
-}
-
-__maybe_unused static int write_reg_ui16(uint8_t slave_addr, uint16_t reg_addr, uint16_t data)
-{
-	int ret = modbus_write_holding_reg(m_iface, slave_addr, reg_addr, data);
-	if (ret) {
-		LOG_WRN("Write reg 0x%04x to slave %d failed: %d", reg_addr, slave_addr, ret);
-		return ret;
-	}
-
-	LOG_INF("Successfully wrote 0x%04x to reg 0x%04x at slave %d", data, reg_addr, slave_addr);
-	return 0;
-}
-
-static int read_reg_s32(uint8_t slave_addr, uint16_t reg_addr, int32_t *data)
-{
-	uint16_t reg_data[2];
-	int ret = modbus_read_input_regs(m_iface, slave_addr, reg_addr, reg_data, 2);
-	if (ret) {
-		LOG_WRN("Read reg 0x%04x (32-bit) from slave %d failed: %d", reg_addr, slave_addr,
-			ret);
-		return ret;
-	}
-
-	*data = (int32_t)reg_data[0] << 16 | reg_data[1];
-	return 0;
-}
-
-static int read_reg_u32(uint8_t slave_addr, uint16_t reg_addr, uint32_t *data)
-{
-	uint16_t reg_data[2];
-	int ret = modbus_read_input_regs(m_iface, slave_addr, reg_addr, reg_data, 2);
-	if (ret) {
-		LOG_WRN("Read reg 0x%04x (32-bit) from slave %d failed: %d", reg_addr, slave_addr,
-			ret);
-		return ret;
-	}
-
-	*data = (uint32_t)reg_data[0] << 16 | reg_data[1];
-	return 0;
-}
+/* Set only once modbus_init_client() has succeeded.
+ *
+ * Without this, app_modbus_enable()/disable() would happily run PM RESUME/SUSPEND on the
+ * SC16IS740 even when app_modbus_init() was never called - and that chip is shared with
+ * app_serial. A Modbus driver sampling on a UART-owned bus would then suspend the bridge
+ * out from under the UART device, which is far harder to diagnose than a clean -ENODEV.
+ */
+static bool m_initialized = false;
 
 /* Device-specific sampling functions */
-
-static int modbus_sample_sensecap_s1000(uint8_t slave_addr)
-{
-	int ret;
-	int32_t modbus_data_s32;
-	const float divisor = 1000.0f;
-
-	LOG_INF("Sampling SenseCAP S1000 at slave address %d", slave_addr);
-
-	/* Air temperature (0x0000) */
-	ret = read_reg_s32(slave_addr, 0x0000, &modbus_data_s32);
-	if (ret == 0) {
-		float temperature = (float)modbus_data_s32 / divisor;
-		LOG_INF("  Temperature: %.2f C", (double)temperature);
-	}
-
-	/* Air humidity (0x0002) */
-	ret = read_reg_s32(slave_addr, 0x0002, &modbus_data_s32);
-	if (ret == 0) {
-		float humidity = (float)modbus_data_s32 / divisor;
-		LOG_INF("  Humidity: %.2f %%", (double)humidity);
-	}
-
-	/* Barometric pressure (0x0004) */
-	ret = read_reg_s32(slave_addr, 0x0004, &modbus_data_s32);
-	if (ret == 0) {
-		float pressure = (float)modbus_data_s32 / divisor;
-		LOG_INF("  Pressure: %.2f Pa", (double)pressure);
-	}
-
-	/* Light intensity (0x0006) */
-	ret = read_reg_s32(slave_addr, 0x0006, &modbus_data_s32);
-	if (ret == 0) {
-		float light = (float)modbus_data_s32 / divisor;
-		LOG_INF("  Light: %.2f lux", (double)light);
-	}
-
-	/* Wind direction avg (0x000C) */
-	ret = read_reg_s32(slave_addr, 0x000C, &modbus_data_s32);
-	if (ret == 0) {
-		float wind_dir = (float)modbus_data_s32 / divisor;
-		LOG_INF("  Wind Direction: %.2f deg", (double)wind_dir);
-	}
-
-	/* Wind speed avg (0x0012) */
-	ret = read_reg_s32(slave_addr, 0x0012, &modbus_data_s32);
-	if (ret == 0) {
-		float wind_speed = (float)modbus_data_s32 / divisor;
-		LOG_INF("  Wind Speed: %.2f m/s", (double)wind_speed);
-	}
-
-	return 0;
-}
-
-static int modbus_sample_cubic_6303(uint8_t slave_addr)
-{
-	int ret;
-	uint32_t modbus_data_u32;
-	uint16_t modbus_data_u16;
-
-	LOG_INF("Sampling Cubic 6303 PM sensor at slave address %d", slave_addr);
-
-	/* Version (IR1, addr 0) */
-	ret = read_reg_ui16(slave_addr, 0, &modbus_data_u16);
-	if (ret == 0) {
-		float version = (float)modbus_data_u16 / 100.0f;
-		LOG_INF("  Version: %.2f", (double)version);
-	}
-
-	/* PM1.0 (IR8/9, addr 7) */
-	ret = read_reg_u32(slave_addr, 7, &modbus_data_u32);
-	if (ret == 0) {
-		LOG_INF("  PM1.0: %u ug/m3", modbus_data_u32);
-	}
-
-	/* PM2.5 (IR10/11, addr 9) */
-	ret = read_reg_u32(slave_addr, 9, &modbus_data_u32);
-	if (ret == 0) {
-		LOG_INF("  PM2.5: %u ug/m3", modbus_data_u32);
-	}
-
-	/* PM10 (IR14/15, addr 13) */
-	ret = read_reg_u32(slave_addr, 13, &modbus_data_u32);
-	if (ret == 0) {
-		LOG_INF("  PM10: %u ug/m3", modbus_data_u32);
-	}
-
-	return 0;
-}
 
 static int modbus_sample_lambrecht(uint8_t slave_addr)
 {
@@ -297,6 +156,9 @@ int app_modbus_init(void)
 		return ret;
 	}
 
+	/* Must be set before the enable/disable pair below, which now checks it. */
+	m_initialized = true;
+
 	/* The CHESTER X2 RS-485 front-end is an SC16IS7xx I2C-to-UART bridge that
 	 * delivers RX bytes in batched bursts with inter-batch gaps larger than the
 	 * standard 3.5-character Modbus-RTU end-of-frame silence (~2 ms at 19200
@@ -337,10 +199,20 @@ int app_modbus_init(void)
 #endif
 }
 
-int app_modbus_enable(void)
+bool app_modbus_is_ready(void)
 {
+	return m_initialized;
+}
+
 #if HAS_MODBUS_DEVICE
+static int power_up(void)
+{
 	int ret;
+
+	if (!m_initialized) {
+		LOG_ERR("Modbus not initialized - refusing to touch the shared UART bridge");
+		return -ENODEV;
+	}
 
 	if (m_serial_dev == NULL) {
 		const struct device *dev = DEVICE_DT_GET(MODBUS_DEVICE_NODE);
@@ -360,18 +232,13 @@ int app_modbus_enable(void)
 
 	LOG_DBG("Modbus interface enabled (%s)", SERIAL_IS_RS485 ? "RS-485" : "RS-232");
 	return 0;
-#else
-	LOG_ERR("No serial device (X2/X12) available in device tree");
-	return -ENOTSUP;
-#endif
 }
 
-int app_modbus_disable(void)
+static int power_down(void)
 {
-#if HAS_MODBUS_DEVICE
 	int ret;
 
-	if (m_serial_dev == NULL || !device_is_ready(m_serial_dev)) {
+	if (!m_initialized || m_serial_dev == NULL || !device_is_ready(m_serial_dev)) {
 		return 0;
 	}
 
@@ -383,10 +250,73 @@ int app_modbus_disable(void)
 
 	LOG_DBG("Modbus interface disabled");
 	return 0;
+}
+#endif /* HAS_MODBUS_DEVICE */
+
+int app_modbus_enable(void)
+{
+#if HAS_MODBUS_DEVICE
+	int ret = 0;
+
+	k_mutex_lock(&m_bus_mutex, K_FOREVER);
+
+	if (m_enable_count == 0) {
+		ret = power_up();
+	}
+
+	if (!ret) {
+		m_enable_count++;
+	}
+
+	k_mutex_unlock(&m_bus_mutex);
+
+	return ret;
 #else
 	LOG_ERR("No serial device (X2/X12) available in device tree");
 	return -ENOTSUP;
 #endif
+}
+
+int app_modbus_disable(void)
+{
+#if HAS_MODBUS_DEVICE
+	int ret = 0;
+
+	k_mutex_lock(&m_bus_mutex, K_FOREVER);
+
+	if (m_enable_count > 0 && --m_enable_count == 0) {
+		ret = power_down();
+	}
+
+	k_mutex_unlock(&m_bus_mutex);
+
+	return ret;
+#else
+	LOG_ERR("No serial device (X2/X12) available in device tree");
+	return -ENOTSUP;
+#endif
+}
+
+int app_modbus_acquire(void)
+{
+	int ret;
+
+	k_mutex_lock(&m_bus_mutex, K_FOREVER);
+
+	ret = app_modbus_enable();
+	if (ret) {
+		k_mutex_unlock(&m_bus_mutex);
+		return ret;
+	}
+
+	return 0;
+}
+
+void app_modbus_release(void)
+{
+	app_modbus_disable();
+
+	k_mutex_unlock(&m_bus_mutex);
 }
 
 int app_modbus_read_holding_regs(uint8_t slave_addr, uint16_t reg_addr, uint16_t count,
@@ -398,7 +328,8 @@ int app_modbus_read_holding_regs(uint8_t slave_addr, uint16_t reg_addr, uint16_t
 
 	int ret = modbus_read_holding_regs(m_iface, slave_addr, reg_addr, data, count);
 	if (ret) {
-		LOG_WRN("modbus_read_holding_regs failed: %d", ret);
+		LOG_WRN("Read holding 0x%04x x%u from slave %u failed: %d", reg_addr, count,
+			slave_addr, ret);
 		return ret;
 	}
 
@@ -414,7 +345,8 @@ int app_modbus_read_input_regs(uint8_t slave_addr, uint16_t reg_addr, uint16_t c
 
 	int ret = modbus_read_input_regs(m_iface, slave_addr, reg_addr, data, count);
 	if (ret) {
-		LOG_WRN("modbus_read_input_regs failed: %d", ret);
+		LOG_WRN("Read input 0x%04x x%u from slave %u failed: %d", reg_addr, count,
+			slave_addr, ret);
 		return ret;
 	}
 
@@ -448,6 +380,108 @@ int app_modbus_write_holding_regs(uint8_t slave_addr, uint16_t reg_addr, uint16_
 	return 0;
 }
 
+/* Without the logging wrappers: a timeout at a free address and the -EIO of a reply from
+ * the new address are expected during an address change */
+static int addr_read_reg(uint8_t addr, uint16_t reg, uint16_t *value, void *user)
+{
+	ARG_UNUSED(user);
+
+	return modbus_read_holding_regs(m_iface, addr, reg, value, 1);
+}
+
+static int addr_write_reg(uint8_t addr, uint16_t reg, uint16_t value, void *user)
+{
+	ARG_UNUSED(user);
+
+	return modbus_write_holding_reg(m_iface, addr, reg, value);
+}
+
+/* The OR-WE-504 unlocks with a proprietary function code and answers the address write from
+ * its new address; the client functions reject both replies. The public raw call,
+ * modbus_raw_backend_txn(), needs the raw ADU interfaces (CONFIG_MODBUS_RAW_ADU), so do what
+ * it does: send the frame and take the reply as it comes. */
+static int addr_transact(const struct app_modbus_addr_frame *req, struct app_modbus_addr_frame *rsp,
+			 void *user)
+{
+	struct modbus_context *ctx = modbus_get_context(m_iface);
+	int ret;
+
+	ARG_UNUSED(user);
+
+	if (ctx == NULL) {
+		return -ENODEV;
+	}
+
+	k_mutex_lock(&ctx->iface_lock, K_FOREVER);
+
+	ctx->tx_adu.unit_id = req->unit_id;
+	ctx->tx_adu.fc = req->fc;
+	ctx->tx_adu.length = req->len;
+	memcpy(ctx->tx_adu.data, req->data, req->len);
+
+	ret = modbus_tx_wait_rx_adu(ctx);
+	if (!ret && ctx->rx_adu.length > sizeof(rsp->data)) {
+		ret = -EMSGSIZE;
+	} else if (!ret) {
+		rsp->unit_id = ctx->rx_adu.unit_id;
+		rsp->fc = ctx->rx_adu.fc;
+		rsp->len = ctx->rx_adu.length;
+		memcpy(rsp->data, ctx->rx_adu.data, ctx->rx_adu.length);
+	}
+
+	k_mutex_unlock(&ctx->iface_lock);
+
+	return ret;
+}
+
+static void addr_sleep(int32_t ms, void *user)
+{
+	ARG_UNUSED(user);
+
+	k_msleep(ms);
+}
+
+static const struct app_modbus_addr_bus m_addr_bus = {
+	.read_reg = addr_read_reg,
+	.write_reg = addr_write_reg,
+	.transact = addr_transact,
+	.sleep = addr_sleep,
+};
+
+int app_modbus_change_addr(uint8_t slave_addr, uint8_t new_addr, uint16_t reg_addr,
+			   enum app_modbus_addr_result *result)
+{
+	int ret;
+
+	ret = app_modbus_acquire();
+	if (ret) {
+		return ret;
+	}
+
+	ret = app_modbus_addr_change(&m_addr_bus, slave_addr, new_addr, reg_addr, result);
+
+	app_modbus_release();
+
+	return ret;
+}
+
+int app_modbus_change_addr_or_we_504(uint8_t slave_addr, uint8_t new_addr)
+{
+	int ret;
+
+	ret = app_modbus_acquire();
+	if (ret) {
+		return ret;
+	}
+
+	/* Held through the unlock window, so that no other request gets into it */
+	ret = app_modbus_addr_change_or_we_504(&m_addr_bus, slave_addr, new_addr);
+
+	app_modbus_release();
+
+	return ret;
+}
+
 int app_modbus_read_coils(uint8_t slave_addr, uint16_t coil_addr, uint16_t count, uint8_t *data)
 {
 	if (data == NULL || count == 0) {
@@ -474,6 +508,85 @@ int app_modbus_write_coil(uint8_t slave_addr, uint16_t coil_addr, bool value)
 	return 0;
 }
 
+int app_modbus_read_regs(uint8_t slave_addr, uint16_t reg_addr, enum app_modbus_fc fc,
+			 uint16_t count, uint16_t *data)
+{
+	if (fc == APP_MODBUS_FC_INPUT) {
+		return app_modbus_read_input_regs(slave_addr, reg_addr, count, data);
+	}
+
+	return app_modbus_read_holding_regs(slave_addr, reg_addr, count, data);
+}
+
+int app_modbus_read_u16(uint8_t slave_addr, uint16_t reg_addr, enum app_modbus_fc fc, uint16_t *out)
+{
+	return app_modbus_read_regs(slave_addr, reg_addr, fc, 1, out);
+}
+
+int app_modbus_read_s16(uint8_t slave_addr, uint16_t reg_addr, enum app_modbus_fc fc, int16_t *out)
+{
+	uint16_t reg;
+	int ret = app_modbus_read_regs(slave_addr, reg_addr, fc, 1, &reg);
+	if (ret) {
+		return ret;
+	}
+
+	*out = (int16_t)reg;
+	return 0;
+}
+
+int app_modbus_read_u32(uint8_t slave_addr, uint16_t reg_addr, enum app_modbus_fc fc,
+			enum app_modbus_wo wo, uint32_t *out)
+{
+	uint16_t regs[2];
+	int ret = app_modbus_read_regs(slave_addr, reg_addr, fc, 2, regs);
+	if (ret) {
+		return ret;
+	}
+
+	*out = app_modbus_decode_u32(regs, wo);
+	return 0;
+}
+
+int app_modbus_read_s32(uint8_t slave_addr, uint16_t reg_addr, enum app_modbus_fc fc,
+			enum app_modbus_wo wo, int32_t *out)
+{
+	uint16_t regs[2];
+	int ret = app_modbus_read_regs(slave_addr, reg_addr, fc, 2, regs);
+	if (ret) {
+		return ret;
+	}
+
+	*out = app_modbus_decode_s32(regs, wo);
+	return 0;
+}
+
+int app_modbus_read_float(uint8_t slave_addr, uint16_t reg_addr, enum app_modbus_fc fc,
+			  enum app_modbus_wo wo, float *out)
+{
+	uint16_t regs[2];
+	int ret = app_modbus_read_regs(slave_addr, reg_addr, fc, 2, regs);
+	if (ret) {
+		return ret;
+	}
+
+	*out = app_modbus_decode_float(regs, wo);
+	return 0;
+}
+
+int app_modbus_read_value(uint8_t slave_addr, uint16_t reg_addr, enum app_modbus_fc fc,
+			  enum app_modbus_format fmt, float *out)
+{
+	uint16_t regs[2];
+	int ret = app_modbus_read_regs(slave_addr, reg_addr, fc, app_modbus_format_regs(fmt), regs);
+	if (ret) {
+		return ret;
+	}
+
+	*out = app_modbus_decode_value(regs, fmt);
+	return 0;
+}
+
 /* Sample a single device by index */
 static int sample_device(int dev_idx)
 {
@@ -489,14 +602,6 @@ static int sample_device(int dev_idx)
 
 	/* Sample based on configured device type */
 	switch (dev->type) {
-	case APP_CONFIG_DEVICE_TYPE_SENSECAP_S1000:
-		ret = modbus_sample_sensecap_s1000(slave_addr);
-		break;
-
-	case APP_CONFIG_DEVICE_TYPE_CUBIC_6303:
-		ret = modbus_sample_cubic_6303(slave_addr);
-		break;
-
 	case APP_CONFIG_DEVICE_TYPE_LAMBRECHT:
 		ret = modbus_sample_lambrecht(slave_addr);
 		break;
@@ -519,22 +624,46 @@ static int sample_device(int dev_idx)
 	return ret;
 }
 
+/* Configured device without a device driver (handled by sample_device() below) */
+static bool is_legacy_device(int dev_idx)
+{
+	enum app_device_type type = g_app_config.devices[dev_idx].type;
+
+	return type != APP_DEVICE_TYPE_NONE && app_device_find_driver(type) == NULL;
+}
+
+static bool has_legacy_device(void)
+{
+	for (int i = 0; i < APP_CONFIG_MAX_DEVICES; i++) {
+		if (is_legacy_device(i)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int app_modbus_sample(void)
 {
 	int ret;
 	int errors = 0;
 	int sampled = 0;
 
-	/* Enable Modbus interface (returns -ENOTSUP if no shield) */
-	ret = app_modbus_enable();
+	/* Devices with a driver are sampled by app_device_sample_all() */
+	if (!has_legacy_device()) {
+		return 0;
+	}
+
+	/* Take the bus (returns -ENOTSUP if no shield) */
+	ret = app_modbus_acquire();
 	if (ret) {
-		LOG_ERR("app_modbus_enable failed: %d (sample skipped)", ret);
+		LOG_ERR("app_modbus_acquire failed: %d (sample skipped)", ret);
 		return ret;
 	}
 
 	/* Sample all configured devices */
 	for (int i = 0; i < APP_CONFIG_MAX_DEVICES; i++) {
-		if (g_app_config.devices[i].type != APP_CONFIG_DEVICE_TYPE_NONE) {
+		if (is_legacy_device(i)) {
 			ret = sample_device(i);
 			if (ret) {
 				LOG_WRN("Device[%d] sampling failed: %d", i + 1, ret);
@@ -545,12 +674,7 @@ int app_modbus_sample(void)
 		}
 	}
 
-	/* Disable Modbus interface */
-	int disable_ret = app_modbus_disable();
-	if (disable_ret) {
-		LOG_ERR("app_modbus_disable failed: %d", disable_ret);
-		return disable_ret;
-	}
+	app_modbus_release();
 
 	if (sampled == 0) {
 		LOG_WRN("No devices configured for sampling");
@@ -588,7 +712,7 @@ int cmd_modbus_read(const struct shell *shell, size_t argc, char **argv)
 	uint16_t data[32];
 	int ret;
 
-	ret = app_modbus_enable();
+	ret = app_modbus_acquire();
 	if (ret == -ENOTSUP) {
 		shell_error(shell, "Modbus hardware not available in this build");
 		return ret;
@@ -603,7 +727,7 @@ int cmd_modbus_read(const struct shell *shell, size_t argc, char **argv)
 		ret = app_modbus_read_input_regs(slave_addr, reg_addr, count, data);
 	}
 
-	app_modbus_disable();
+	app_modbus_release();
 
 	if (ret) {
 		shell_error(shell, "Read failed: %d", ret);
@@ -628,7 +752,7 @@ int cmd_modbus_write(const struct shell *shell, size_t argc, char **argv)
 	uint16_t reg_addr = (uint16_t)strtol(argv[2], NULL, 0);
 	uint16_t value = (uint16_t)strtol(argv[3], NULL, 0);
 
-	int ret = app_modbus_enable();
+	int ret = app_modbus_acquire();
 	if (ret == -ENOTSUP) {
 		shell_error(shell, "Modbus hardware not available in this build");
 		return ret;
@@ -639,7 +763,7 @@ int cmd_modbus_write(const struct shell *shell, size_t argc, char **argv)
 
 	ret = app_modbus_write_holding_reg(slave_addr, reg_addr, value);
 
-	app_modbus_disable();
+	app_modbus_release();
 
 	if (ret) {
 		shell_error(shell, "Write failed: %d", ret);
@@ -652,9 +776,89 @@ int cmd_modbus_write(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int print_change_addr_error(const struct shell *shell, int ret, uint8_t slave_addr,
+				   uint8_t new_addr)
+{
+	switch (ret) {
+	case -EINVAL:
+		shell_error(shell, "The device already has address %u", new_addr);
+		break;
+	case -EADDRINUSE:
+		shell_error(shell, "Address %u is already used on the bus", new_addr);
+		break;
+	case -ETIMEDOUT:
+		shell_error(shell, "No reply from address %u", slave_addr);
+		break;
+	case -EACCES:
+		shell_error(shell, "The device refused the address change");
+		break;
+	case -ENODEV:
+		shell_error(shell, "Modbus is not running: set serial-mode modbus and a device-N, "
+				   "then app config save");
+		break;
+	case -ENOTSUP:
+		shell_error(shell, "Modbus hardware not available in this build");
+		break;
+	default:
+		shell_error(shell, "Address change failed: %d", ret);
+		break;
+	}
+
+	return ret;
+}
+
+int app_modbus_shell_change_addr(const struct shell *shell, uint8_t slave_addr, uint8_t new_addr,
+				 uint16_t reg_addr)
+{
+	enum app_modbus_addr_result result;
+	int ret;
+
+	/* Up to a few reply timeouts when the device does not answer */
+	shell_print(shell, "Changing address %u to %u...", slave_addr, new_addr);
+
+	ret = app_modbus_change_addr(slave_addr, new_addr, reg_addr, &result);
+	if (ret) {
+		return print_change_addr_error(shell, ret, slave_addr, new_addr);
+	}
+
+	if (result == APP_MODBUS_ADDR_PENDING) {
+		shell_print(shell, "Address %u stored, power-cycle the device to apply it",
+			    new_addr);
+	} else {
+		shell_print(shell, "Address changed from %u to %u", slave_addr, new_addr);
+	}
+
+	return 0;
+}
+
+int app_modbus_shell_change_addr_or_we_504(const struct shell *shell, uint8_t slave_addr,
+					   uint8_t new_addr)
+{
+	int ret;
+
+	/* The write goes 8 s after the unlock */
+	shell_print(shell, "Unlocking address %u and changing it to %u (about 10 s)...", slave_addr,
+		    new_addr);
+
+	ret = app_modbus_change_addr_or_we_504(slave_addr, new_addr);
+	if (ret) {
+		return print_change_addr_error(shell, ret, slave_addr, new_addr);
+	}
+
+	shell_print(shell, "Address changed from %u to %u", slave_addr, new_addr);
+
+	return 0;
+}
+
 int cmd_modbus_sample(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "Sampling configured device...");
+	if (!has_legacy_device()) {
+		shell_print(shell, "No device without a driver configured (lambrecht, generic)");
+		shell_print(shell, "Use 'sample' for all devices or 'device sample <idx>' for one");
+		return 0;
+	}
+
+	shell_print(shell, "Sampling devices without a driver...");
 
 	int ret = app_modbus_sample();
 	if (ret) {

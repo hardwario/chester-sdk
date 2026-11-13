@@ -46,9 +46,11 @@ enum app_config_mode {
 	APP_CONFIG_MODE_LRW = 2,
 };
 
+/* Values are persisted in settings as the enum index - append only, never renumber. */
 enum app_config_serial_mode {
 	APP_CONFIG_SERIAL_MODE_TRANSPARENT = 0,
 	APP_CONFIG_SERIAL_MODE_MODBUS = 1,
+	APP_CONFIG_SERIAL_MODE_UART = 2,
 };
 
 enum app_config_serial_parity {
@@ -71,6 +73,10 @@ struct app_config {
 	enum app_config_mode mode;
 
 	/* ### Preserved code "struct variables" (begin) */
+	/* RPP-U accumulator alert threshold in mV; 0 disables. Kept here rather than in the
+	 * generated block so the CHESTER generator cannot drop it. */
+	int rppu_voltage_threshold_mv;
+
 	/* Device config strings (stored in settings) */
 	char device_str[APP_CONFIG_MAX_DEVICES][APP_CONFIG_DEVICE_STR_SIZE];
 

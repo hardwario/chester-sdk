@@ -54,14 +54,13 @@ struct app_data_solax_g3 {
 	float power_l1, power_l2, power_l3;       /* W */
 	float frequency;                  /* Hz */
 
-	uint8_t modbus_addr;
 	uint32_t last_sample;
 	uint32_t error_count;
 	bool valid;         /* customer set valid */
 	bool service_valid; /* service set valid */
 };
 
-/* Sample entry for CBOR/LoRaWAN buffer (customer set only) */
+/* Sample record (slot record ring, encoded to CBOR; customer set only) */
 struct solax_g3_sample {
 	uint64_t timestamp;
 	float pv1_power, pv2_power;
@@ -74,16 +73,10 @@ struct solax_g3_sample {
 	float eps_power_l1, eps_power_l2, eps_power_l3;
 };
 
-const struct app_data_solax_g3 *solax_g3_get_data(void);
-void solax_g3_set_addr(uint8_t addr);
-uint8_t solax_g3_get_addr(void);
+struct app_driver_slot;
 
-/* Read the service set on demand (shell), stores into internal struct only */
-int solax_g3_sample_service(void);
-
-int solax_g3_get_samples(struct solax_g3_sample *out, int max_count);
-void solax_g3_clear_samples(void);
-int solax_g3_get_sample_count(void);
+/* Latest data of a slot (caller holds slot->lock) */
+const struct app_data_solax_g3 *solax_g3_get_data(const struct app_driver_slot *slot);
 
 #ifdef __cplusplus
 }

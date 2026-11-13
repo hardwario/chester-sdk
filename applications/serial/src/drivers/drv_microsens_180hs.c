@@ -13,6 +13,7 @@
  */
 
 #include "drv_microsens_180hs.h"
+#include "drv_microsens_180hs_proto.h"
 #include "drv_interface.h"
 #include "../app_device.h"
 #include "../app_config.h"
@@ -32,11 +33,12 @@
 
 LOG_MODULE_REGISTER(microsens, LOG_LEVEL_INF);
 
-#define MAX_SAMPLES 32
-
 /* MicroSENS protocol constants */
-#define STX 0x02
-#define ETX 0x03
+/* Frame constants and the frame/response parsers live in drv_microsens_180hs_proto.{c,h}
+ * so they can be unit tested on the host.
+ */
+#define STX DRV_MICROSENS_180HS_STX
+#define ETX DRV_MICROSENS_180HS_ETX
 
 /* MicroSENS commands (hex) */
 #define CMD_GET_MEASUREMENT    "1100"
@@ -59,36 +61,16 @@ LOG_MODULE_REGISTER(microsens, LOG_LEVEL_INF);
 #define MICROSENS_ERROR_COMM     -2000
 #define MICROSENS_ERROR_SHUTDOWN -3000
 
-static atomic_t m_calibration_active = ATOMIC_INIT(0);
-
-static struct app_data_microsens m_data = {
-	.co2_percent = NAN,
-	.temperature_c = NAN,
-	.pressure_mbar = NAN,
-	.valid = false,
-	.last_sample = 0,
-	.error_count = 0,
-};
-
-static K_MUTEX_DEFINE(m_data_mutex);
-
-/* Sample buffer for CBOR encoding */
-static struct microsens_sample m_samples[MAX_SAMPLES];
-static int m_sample_count = 0;
-static K_MUTEX_DEFINE(m_samples_mutex);
-
 /**
  * @brief Helper function to set measurement error state
  */
-static void set_measurement_error(void)
+static void set_measurement_error(struct app_data_microsens *data)
 {
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.co2_percent = NAN;
-	m_data.temperature_c = NAN;
-	m_data.pressure_mbar = NAN;
-	m_data.valid = false;
-	m_data.error_count++;
-	k_mutex_unlock(&m_data_mutex);
+	data->co2_percent = NAN;
+	data->temperature_c = NAN;
+	data->pressure_mbar = NAN;
+	data->valid = false;
+	data->error_count++;
 }
 
 /**
@@ -154,79 +136,60 @@ static int receive_response(uint8_t *data, size_t max_len, size_t *out_len, uint
 	LOG_INF("Received %zu bytes", buf_len);
 	LOG_HEXDUMP_DBG(buf, buf_len, "RX buffer");
 
-	/* Find STX and ETX */
-	uint8_t *stx = memchr(buf, STX, buf_len);
-	if (!stx) {
-		LOG_ERR("No STX found in %zu bytes", buf_len);
+	/* Pull the payload out of the STX...ETX frame (pure codec). */
+	ret = drv_microsens_180hs_extract_frame(buf, buf_len, data, max_len, out_len);
+	if (ret) {
+		LOG_ERR("Invalid response frame: %d", ret);
 		LOG_HEXDUMP_WRN(buf, buf_len, "Invalid response");
-		return -EIO;
+		return ret;
 	}
-
-	uint8_t *etx = memchr(stx + 1, ETX, buf_len - (stx - buf) - 1);
-	if (!etx) {
-		LOG_ERR("No ETX found after STX");
-		LOG_HEXDUMP_WRN(buf, buf_len, "Incomplete response");
-		return -EIO;
-	}
-
-	/* Extract data between STX and ETX */
-	size_t data_len = etx - stx - 1;
-	if (data_len > max_len) {
-		LOG_ERR("Response too long: %zu > %zu", data_len, max_len);
-		return -ENOMEM;
-	}
-
-	memcpy(data, stx + 1, data_len);
-	data[data_len] = '\0';
-	*out_len = data_len;
 
 	return 0;
 }
 
 /**
- * @brief Parse measurement response
+ * @brief Drop the shared UART bridge back to its idle (suspended) state
  *
- * Format: "<sensor_id> <timestamp> <co2_raw> <temp_raw> <pressure>"
+ * app_serial_send() resumes the bridge on demand but never suspends it again, so a
+ * polled sensor like this must release it after each transaction or the bridge would
+ * stay at its ~5.4 mA running current until the next reboot. The suspend drains any
+ * pending TX first and is idempotent, so it is safe on every exit path.
  */
-static int parse_measurement_response(const char *response, uint32_t *sensor_id,
-				      uint32_t *timestamp, int32_t *co2_raw, int16_t *temp_raw,
-				      int16_t *pressure)
+static void serial_suspend(void)
 {
-	int parsed = sscanf(response, "%u %u %d %hd %hd",
-			    sensor_id, timestamp, co2_raw, temp_raw, pressure);
-
-	if (parsed != 5) {
-		LOG_ERR("Invalid response format (got %d fields, expected 5)", parsed);
-		return -EINVAL;
+	int ret = app_serial_pm(false);
+	if (ret) {
+		LOG_WRN("Could not suspend UART bridge after transaction: %d", ret);
 	}
-
-	return 0;
 }
 
-/* Forward declaration */
-static void print_data(const struct shell *shell, int idx, int addr);
+/*
+ * The driver callbacks run under the slot lock (app_device.c), so a calibration or reset
+ * never overlaps a measurement.
+ */
 
-static int init(void)
+static int init(struct app_driver_slot *slot)
 {
+	struct app_data_microsens *data = slot->ctx;
+
 	LOG_INF("Initializing MicroSENS 180-HS driver");
 
 	/* Initialize data structure */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.co2_percent = NAN;
-	m_data.temperature_c = NAN;
-	m_data.pressure_mbar = NAN;
-	m_data.valid = false;
-	m_data.last_sample = 0;
-	m_data.error_count = 0;
-	k_mutex_unlock(&m_data_mutex);
+	data->co2_percent = NAN;
+	data->temperature_c = NAN;
+	data->pressure_mbar = NAN;
+	data->valid = false;
+	data->last_sample = 0;
+	data->error_count = 0;
 
 	LOG_INF("MicroSENS 180-HS driver initialized");
 
 	return 0;
 }
 
-static int sample(void)
+static int sample(struct app_driver_slot *slot)
 {
+	struct app_data_microsens *data = slot->ctx;
 	int ret;
 	uint8_t response[128];
 	size_t response_len;
@@ -236,19 +199,14 @@ static int sample(void)
 	int16_t temp_raw = 0;
 	int16_t pressure_raw = 0;
 
-	if (atomic_get(&m_calibration_active)) {
-		LOG_WRN("Calibration in progress, skipping measurement");
-		return -EBUSY;
-	}
-
 	LOG_INF("Sampling MicroSENS 180-HS sensor");
 
 	/* Send measurement command */
 	ret = send_command(CMD_GET_MEASUREMENT);
 	if (ret) {
 		LOG_ERR("Failed to send measurement command: %d", ret);
-		set_measurement_error();
-		return ret;
+		set_measurement_error(data);
+		goto out;
 	}
 
 	/* Sensor needs time to measure before responding */
@@ -258,35 +216,38 @@ static int sample(void)
 	ret = receive_response(response, sizeof(response) - 1, &response_len, RESPONSE_TIMEOUT_MS);
 	if (ret) {
 		LOG_ERR("Failed to receive response: %d", ret);
-		set_measurement_error();
-		return ret;
+		set_measurement_error(data);
+		goto out;
 	}
 
 	/* Log raw response */
 	LOG_INF("Raw response (%zu bytes): '%s'", response_len, (char *)response);
 
 	/* Parse response */
-	ret = parse_measurement_response((char *)response, &sensor_id, &timestamp, &co2_raw,
+	ret = drv_microsens_180hs_parse_measurement((char *)response, &sensor_id, &timestamp, &co2_raw,
 					 &temp_raw, &pressure_raw);
 	if (ret) {
 		LOG_ERR("Failed to parse response: %d", ret);
-		set_measurement_error();
-		return ret;
+		set_measurement_error(data);
+		goto out;
 	}
 
 	/* Check for error values */
 	if (co2_raw == MICROSENS_ERROR_SENSOR) {
 		LOG_ERR("Sensor error: CO2 = %d (sensor malfunction)", co2_raw);
-		set_measurement_error();
-		return -EIO;
+		set_measurement_error(data);
+		ret = -EIO;
+		goto out;
 	} else if (co2_raw == MICROSENS_ERROR_COMM) {
 		LOG_ERR("Sensor error: CO2 = %d (communication error)", co2_raw);
-		set_measurement_error();
-		return -EIO;
+		set_measurement_error(data);
+		ret = -EIO;
+		goto out;
 	} else if (co2_raw == MICROSENS_ERROR_SHUTDOWN) {
 		LOG_ERR("Sensor error: CO2 = %d (automatic shutdown, temp > 85C)", co2_raw);
-		set_measurement_error();
-		return -EIO;
+		set_measurement_error(data);
+		ret = -EIO;
+		goto out;
 	}
 
 	/* Convert to actual values */
@@ -312,51 +273,46 @@ static int sample(void)
 	LOG_INF("Temperature: %.1f C (raw: %d)", (double)temp_celsius, temp_raw);
 	LOG_INF("Pressure: %.0f mbar (raw: %d)", (double)pressure_mbar, pressure_raw);
 
-	/* Store in m_data */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.co2_percent = co2_percent;
-	m_data.temperature_c = temp_celsius;
-	m_data.pressure_mbar = pressure_mbar;
-	m_data.valid = true;
-	m_data.last_sample = k_uptime_get_32();
-	m_data.error_count = 0;
-	k_mutex_unlock(&m_data_mutex);
+	data->co2_percent = co2_percent;
+	data->temperature_c = temp_celsius;
+	data->pressure_mbar = pressure_mbar;
+	data->valid = true;
+	data->last_sample = k_uptime_get_32();
+	data->error_count = 0;
 
-	/* Add to sample buffer */
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	if (m_sample_count < MAX_SAMPLES) {
-		uint64_t ts;
-		ctr_rtc_get_ts(&ts);
+	int64_t ts;
+	ctr_rtc_get_ts(&ts);
 
-		m_samples[m_sample_count].timestamp = ts;
-		m_samples[m_sample_count].co2_percent = co2_percent;
-		m_samples[m_sample_count].temperature_c = temp_celsius;
-		m_samples[m_sample_count].pressure_mbar = pressure_mbar;
-		m_sample_count++;
-		LOG_DBG("MicroSENS: Added sample %d to buffer", m_sample_count);
-	} else {
-		LOG_WRN("MicroSENS: Sample buffer full");
-	}
-	k_mutex_unlock(&m_samples_mutex);
+	struct microsens_sample rec = {
+		.timestamp = ts,
+		.co2_percent = co2_percent,
+		.temperature_c = temp_celsius,
+		.pressure_mbar = pressure_mbar,
+	};
+
+	app_driver_rec_push(slot, &rec);
 
 	LOG_INF("MicroSENS sampling complete");
 
-	return 0;
+	ret = 0;
+
+out:
+	/* Release the bridge back to idle current now the transaction is done. */
+	serial_suspend();
+
+	return ret;
 }
 
-static int calibrate(enum app_device_calibration cal_type, int value)
+static int calibrate(struct app_driver_slot *slot, enum app_device_calibration cal_type, int value)
 {
 	int ret;
 	uint8_t response[16];
 	size_t response_len;
 	char cmd[16];
 
-	if (cal_type == APP_DEVICE_CAL_ZERO) {
-		if (atomic_cas(&m_calibration_active, 0, 1) == false) {
-			LOG_WRN("Calibration already in progress");
-			return -EBUSY;
-		}
+	ARG_UNUSED(slot);
 
+	if (cal_type == APP_DEVICE_CAL_ZERO) {
 		/* Use default value if not specified (0 means use default) */
 		int cal_value = (value > 0) ? value : ZERO_CAL_DEFAULT_VALUE;
 
@@ -364,7 +320,6 @@ static int calibrate(enum app_device_calibration cal_type, int value)
 		if (cal_value < ZERO_CAL_MIN_VALUE || cal_value > ZERO_CAL_MAX_VALUE) {
 			LOG_ERR("Zero calibration value out of range: %d (valid: %d-%d)",
 				cal_value, ZERO_CAL_MIN_VALUE, ZERO_CAL_MAX_VALUE);
-			atomic_set(&m_calibration_active, 0);
 			return -EINVAL;
 		}
 
@@ -377,7 +332,7 @@ static int calibrate(enum app_device_calibration cal_type, int value)
 		ret = send_command(cmd);
 		if (ret) {
 			LOG_ERR("Failed to send calibration command: %d", ret);
-			atomic_set(&m_calibration_active, 0);
+			serial_suspend();
 			return ret;
 		}
 
@@ -390,7 +345,7 @@ static int calibrate(enum app_device_calibration cal_type, int value)
 			LOG_DBG("Calibration response: '%s'", response);
 			if (response[0] == '1') {
 				LOG_ERR("Calibration failed (sensor returned error)");
-				atomic_set(&m_calibration_active, 0);
+				serial_suspend();
 				return -EIO;
 			}
 		}
@@ -398,7 +353,7 @@ static int calibrate(enum app_device_calibration cal_type, int value)
 		/* Sensor needs time to complete calibration */
 		k_sleep(K_MSEC(CALIBRATION_WAIT_MS));
 
-		atomic_set(&m_calibration_active, 0);
+		serial_suspend();
 
 		LOG_INF("Zero point calibration complete");
 
@@ -411,43 +366,41 @@ static int calibrate(enum app_device_calibration cal_type, int value)
 	return -EINVAL;
 }
 
-static int reset(void)
+static int reset(struct app_driver_slot *slot)
 {
 	int ret;
 
-	if (atomic_cas(&m_calibration_active, 0, 1) == false) {
-		LOG_WRN("Calibration in progress, cannot reset");
-		return -EBUSY;
-	}
+	ARG_UNUSED(slot);
 
 	LOG_INF("Performing sensor reset");
 
 	ret = send_command(CMD_SENSOR_RESET);
 	if (ret) {
 		LOG_ERR("Failed to send reset command: %d", ret);
-		atomic_set(&m_calibration_active, 0);
+		serial_suspend();
 		return ret;
 	}
 
 	/* Sensor reset command (1908) has no response - just wait for reinitialization */
 	k_sleep(K_MSEC(RESET_WAIT_MS));
 
-	atomic_set(&m_calibration_active, 0);
+	serial_suspend();
 
 	LOG_INF("Sensor reset complete");
 
 	return 0;
 }
 
-struct app_data_microsens *microsens_get_data(void)
+const struct app_data_microsens *microsens_get_data(const struct app_driver_slot *slot)
 {
-	return &m_data;
+	return slot->ctx;
 }
 
-static void print_data(const struct shell *shell, int idx, int addr)
+static void print_data(const struct shell *shell, struct app_driver_slot *slot)
 {
-	struct app_data_microsens *data = microsens_get_data();
-	shell_print(shell, "[%d] MicroSens 180-HS (RS232):", idx);
+	const struct app_data_microsens *data = slot->ctx;
+
+	shell_print(shell, "[%d] MicroSens 180-HS (RS232):", slot->idx);
 	shell_print(shell, "  CO2:      %.3f Vol.-%%", (double)data->co2_percent);
 	shell_print(shell, "  Temp:     %.1f C", (double)data->temperature_c);
 	shell_print(shell, "  Pressure: %.0f mbar", (double)data->pressure_mbar);
@@ -458,9 +411,12 @@ static void print_data(const struct shell *shell, int idx, int addr)
 const struct app_device_driver microsens_driver = {
 	.name = "microsens",
 	.type = APP_DEVICE_TYPE_MICROSENS_180HS,
+	.transport = APP_DEVICE_TRANSPORT_UART,
+	.max_instances = 1, /* RS-232 is point-to-point, one UART */
+	.ctx_size = sizeof(struct app_data_microsens),
+	.rec_size = sizeof(struct microsens_sample),
 	.init = init,
 	.sample = sample,
-	.deinit = NULL,
 	.calibrate = calibrate,
 	.reset = reset,
 	.print_data = print_data,
@@ -496,7 +452,13 @@ static int cmd_microsens_sample(const struct shell *shell, size_t argc, char **a
 		return ret;
 	}
 
-	print_data(shell, 0, 0);
+	struct app_driver_slot *slot = app_device_get_slot(device_idx);
+
+	if (slot) {
+		app_driver_slot_lock(slot);
+		print_data(shell, slot);
+		app_driver_slot_unlock(slot);
+	}
 
 	return 0;
 }
@@ -572,33 +534,6 @@ static int cmd_microsens_reset(const struct shell *shell, size_t argc, char **ar
 	shell_print(shell, "Sensor reset complete");
 
 	return 0;
-}
-
-int microsens_get_samples(struct microsens_sample *out, int max_count)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = (m_sample_count < max_count) ? m_sample_count : max_count;
-	for (int i = 0; i < count; i++) {
-		out[i] = m_samples[i];
-	}
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
-}
-
-void microsens_clear_samples(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	m_sample_count = 0;
-	k_mutex_unlock(&m_samples_mutex);
-	LOG_DBG("MicroSENS: Sample buffer cleared");
-}
-
-int microsens_get_sample_count(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = m_sample_count;
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
 }
 
 /* clang-format off */

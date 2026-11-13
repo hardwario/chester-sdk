@@ -155,23 +155,20 @@ int app_init(void)
 		"serial and Modbus subsystems are disabled");
 #endif
 
-	/* Check if any device is configured */
-	bool has_device = false;
-	bool has_modbus_device = false;
-	bool has_serial_device = false;
-	for (int i = 0; i < APP_CONFIG_MAX_DEVICES; i++) {
-		if (g_app_config.devices[i].type != APP_CONFIG_DEVICE_TYPE_NONE) {
-			has_device = true;
-			/* MicroSENS uses RS-232 via app_serial */
-			if (g_app_config.devices[i].type == APP_CONFIG_DEVICE_TYPE_MICROSENS_180HS) {
-				has_serial_device = true;
-			} else if (g_app_config.serial_mode == APP_CONFIG_SERIAL_MODE_MODBUS) {
-				has_modbus_device = true;
-			} else {
-				has_serial_device = true;
-			}
-		}
-	}
+	/* One bus for all devices, the transport they need (see app_device_pick_bus()).
+	 *
+	 * app_serial and Zephyr's modbus-serial both resolve to ctr_x2_sc16is740_a and both
+	 * call uart_irq_callback_user_data_set() on it - last writer wins. If both inits ran,
+	 * Modbus would steal the callback while app_serial still believed it owned the line: the
+	 * UART driver would get nothing back AND would corrupt Modbus framing by re-running
+	 * uart_configure()/set_break mid-session. So only one of them is brought up, and
+	 * app_device_init() leaves a device that needs the other one inactive. The shell
+	 * validator rejects such a configuration, but `config save` bypasses it.
+	 */
+	enum app_device_transport bus;
+	bool has_device = app_device_pick_bus(g_app_config.devices, g_app_config.serial_mode, &bus);
+	bool has_serial_device = has_device && bus == APP_DEVICE_TRANSPORT_UART;
+	bool has_modbus_device = has_device && bus == APP_DEVICE_TRANSPORT_MODBUS;
 
 #if APP_SERIAL_HW_PRESENT
 	/* Initialize serial interface first (needed by device drivers).
@@ -194,16 +191,8 @@ int app_init(void)
 	}
 #endif /* APP_SERIAL_HW_PRESENT */
 
-	/* Initialize device drivers (MicroSENS, etc.) - safe even without HW,
-	 * runtime calls are guarded by app_serial/app_modbus availability checks */
-	ret = app_device_init();
-	if (ret && ret != -EIO) {
-		LOG_ERR("app_device_init failed: %d", ret);
-		return ret;
-	}
-
 #if APP_MODBUS_HW_PRESENT
-	/* Initialize Modbus for Modbus device types.
+	/* Initialize Modbus for Modbus device types, before the drivers that use it.
 	 * Non-fatal: same shield/firmware mismatch handling as serial init above.
 	 */
 	if (has_modbus_device) {
@@ -220,6 +209,14 @@ int app_init(void)
 		LOG_ERR("Configured device needs Modbus HW - not present, ignoring");
 	}
 #endif /* APP_MODBUS_HW_PRESENT */
+
+	/* Initialize device drivers (MicroSENS, etc.) - safe even without HW,
+	 * runtime calls are guarded by app_serial/app_modbus availability checks */
+	ret = app_device_init();
+	if (ret && ret != -EIO) {
+		LOG_ERR("app_device_init failed: %d", ret);
+		return ret;
+	}
 
 	if (!has_device) {
 		LOG_INF("No device configured");

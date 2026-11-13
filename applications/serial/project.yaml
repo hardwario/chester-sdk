@@ -71,6 +71,8 @@ parameters:
     help: "Polling interval in seconds (LTE only, 0 = disabled)"
 
   # Serial settings
+  # APPEND ONLY - the enum index is what gets persisted in settings, so reordering or
+  # removing a value silently changes the meaning of every already-deployed board's config.
   - name: serial-mode
     type: enum
     help: "Serial operation mode"
@@ -78,6 +80,7 @@ parameters:
     valueset:
       - "transparent"
       - "modbus"
+      - "uart"
   - name: serial-baudrate
     type: int
     min: 1200

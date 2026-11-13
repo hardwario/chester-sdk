@@ -1,0 +1,9 @@
+common:
+  tags:
+    - chester
+  platform_allow: native_sim
+  integration_platforms:
+    - native_sim
+
+tests:
+  applications.serial.driver_store: {}

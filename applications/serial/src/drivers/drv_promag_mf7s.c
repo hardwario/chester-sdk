@@ -15,6 +15,7 @@
  */
 
 #include "drv_promag_mf7s.h"
+#include "drv_promag_mf7s_proto.h"
 #include "drv_interface.h"
 #include "../app_device.h"
 #include "../app_config.h"
@@ -36,16 +37,18 @@
 
 LOG_MODULE_REGISTER(drv_promag_mf7s, LOG_LEVEL_INF);
 
-#define MAX_SAMPLES 32
+/* Card reads kept for the report (event data, independent of interval-sample) */
+#define REC_COUNT 32
 
 /* MF7S protocol constants */
-#define STX 0x02
-#define ETX 0x03
-#define CR  0x0D
-#define LF  0x0A
-
-/* Card frame: STX + 8 hex + CR + LF + ETX = 12 bytes */
-#define CARD_FRAME_LEN 12
+/* Frame constants and the card-frame parser live in drv_promag_mf7s_proto.{c,h} so they
+ * can be unit tested on the host. Short local aliases keep the transport code readable.
+ */
+#define STX	       DRV_PROMAG_MF7S_STX
+#define ETX	       DRV_PROMAG_MF7S_ETX
+#define CR	       DRV_PROMAG_MF7S_CR
+#define LF	       DRV_PROMAG_MF7S_LF
+#define CARD_FRAME_LEN DRV_PROMAG_MF7S_CARD_FRAME_LEN
 
 /* Frame buffer for accumulating received bytes */
 #define FRAME_BUF_SIZE 64
@@ -58,21 +61,8 @@ LOG_MODULE_REGISTER(drv_promag_mf7s, LOG_LEVEL_INF);
 #define LISTENER_POLL_MS    1000
 #define CMD_RESPONSE_MS     2000
 
-static struct app_data_promag_mf7s m_data = {
-	.last_uid = 0,
-	.last_read_ts = 0,
-	.total_reads = 0,
-	.error_count = 0,
-	.sampling_active = false,
-	.valid = false,
-};
-
-static K_MUTEX_DEFINE(m_data_mutex);
-
-/* Sample buffer for CBOR encoding */
-static struct promag_mf7s_sample m_samples[MAX_SAMPLES];
-static int m_sample_count;
-static K_MUTEX_DEFINE(m_samples_mutex);
+/* The one configured slot (RS-232 is point-to-point); set by init */
+static struct app_driver_slot *m_slot;
 
 /* Listener thread control */
 static atomic_t m_listener_enabled = ATOMIC_INIT(0);
@@ -91,102 +81,6 @@ static void listener_thread_fn(void *, void *, void *);
 
 K_THREAD_DEFINE(promag_listener, LISTENER_STACK_SIZE, listener_thread_fn,
 		NULL, NULL, NULL, LISTENER_PRIORITY, 0, SYS_FOREVER_MS);
-
-/**
- * @brief Parse hex character to nibble value
- */
-static int hex_nibble(char c)
-{
-	if (c >= '0' && c <= '9') {
-		return c - '0';
-	}
-	if (c >= 'A' && c <= 'F') {
-		return c - 'A' + 10;
-	}
-	if (c >= 'a' && c <= 'f') {
-		return c - 'a' + 10;
-	}
-	return -1;
-}
-
-/**
- * @brief Parse 8 hex characters into uint32_t UID
- */
-static int parse_uid(const uint8_t *hex_chars, uint32_t *uid)
-{
-	uint32_t val = 0;
-
-	for (int i = 0; i < 8; i++) {
-		int nib = hex_nibble((char)hex_chars[i]);
-		if (nib < 0) {
-			return -EINVAL;
-		}
-		val = (val << 4) | nib;
-	}
-
-	*uid = val;
-	return 0;
-}
-
-/**
- * @brief Parse card frame from buffer
- *
- * Looks for pattern: STX + 8 hex chars + CR + LF + ETX (12 bytes)
- *
- * @param buf Input buffer
- * @param len Buffer length
- * @param uid Output UID
- * @param consumed Number of bytes consumed (including frame)
- * @return 0 if frame found, -EAGAIN if incomplete, -EINVAL if invalid
- */
-static int parse_card_frame(const uint8_t *buf, size_t len, uint32_t *uid, size_t *consumed)
-{
-	/* Search for STX in buffer */
-	for (size_t i = 0; i < len; i++) {
-		if (buf[i] != STX) {
-			continue;
-		}
-
-		/* Check if we have enough bytes for a complete frame */
-		size_t remaining = len - i;
-		if (remaining < CARD_FRAME_LEN) {
-			/* Incomplete frame - consume bytes before STX */
-			*consumed = i;
-			return -EAGAIN;
-		}
-
-		/* Verify frame structure: STX + 8hex + CR + LF + ETX */
-		const uint8_t *frame = &buf[i];
-		if (frame[9] == CR && frame[10] == LF && frame[11] == ETX) {
-			/* Verify all 8 chars are hex */
-			bool valid_hex = true;
-			for (int j = 1; j <= 8; j++) {
-				if (hex_nibble((char)frame[j]) < 0) {
-					valid_hex = false;
-					break;
-				}
-			}
-
-			if (valid_hex) {
-				int ret = parse_uid(&frame[1], uid);
-				if (ret == 0) {
-					*consumed = i + CARD_FRAME_LEN;
-					return 0;
-				}
-			}
-		}
-
-		/* Invalid frame at this STX - skip it */
-	}
-
-	/* No valid frame found, consume everything except potential partial frame */
-	if (len > 0 && buf[len - 1] == STX) {
-		*consumed = len - 1;
-	} else {
-		*consumed = len;
-	}
-	return -EAGAIN;
-}
 
 /**
  * @brief Send command to MF7S reader
@@ -283,30 +177,30 @@ static void store_card(uint32_t uid)
 	ctr_led_set(CTR_LED_CHANNEL_Y, true);
 
 	/* Update data */
-	uint64_t ts;
+	int64_t ts;
 	ctr_rtc_get_ts(&ts);
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.last_uid = uid;
-	m_data.last_read_ts = (uint32_t)ts;
-	m_data.total_reads++;
-	m_data.valid = true;
-	k_mutex_unlock(&m_data_mutex);
+	struct app_driver_slot *slot = m_slot;
 
-	/* Add to sample buffer */
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	if (m_sample_count < MAX_SAMPLES) {
-		uint64_t ts;
-		ctr_rtc_get_ts(&ts);
+	if (slot) {
+		struct promag_mf7s_sample rec = {
+			.timestamp = ts,
+			.uid = uid,
+		};
 
-		m_samples[m_sample_count].timestamp = ts;
-		m_samples[m_sample_count].uid = uid;
-		m_sample_count++;
-		LOG_DBG("Promag: Added sample %d (UID=%08X)", m_sample_count, uid);
-	} else {
-		LOG_WRN("Promag: Sample buffer full");
+		app_driver_slot_lock(slot);
+
+		struct app_data_promag_mf7s *data = slot->ctx;
+
+		data->last_uid = uid;
+		data->last_read_ts = (uint32_t)ts;
+		data->total_reads++;
+		data->valid = true;
+
+		app_driver_rec_push(slot, &rec);
+
+		app_driver_slot_unlock(slot);
 	}
-	k_mutex_unlock(&m_samples_mutex);
 
 	/* Trigger send based on mode */
 	if (g_app_config.mode == APP_CONFIG_MODE_LRW) {
@@ -380,7 +274,7 @@ static void listener_thread_fn(void *p1, void *p2, void *p3)
 			uint32_t uid;
 			size_t consumed = 0;
 
-			ret = parse_card_frame(frame_buf, frame_buf_len, &uid, &consumed);
+			ret = drv_promag_mf7s_parse_card_frame(frame_buf, frame_buf_len, &uid, &consumed);
 
 			if (ret == 0) {
 				/* Card detected */
@@ -426,30 +320,50 @@ static void listener_thread_fn(void *p1, void *p2, void *p3)
 	}
 }
 
-static int init(void)
+static int init(struct app_driver_slot *slot)
 {
+	struct app_data_promag_mf7s *data = slot->ctx;
+
 	LOG_INF("Initializing Promag MF7S driver");
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.last_uid = 0;
-	m_data.last_read_ts = 0;
-	m_data.total_reads = 0;
-	m_data.error_count = 0;
-	m_data.sampling_active = false;
-	m_data.valid = false;
-	k_mutex_unlock(&m_data_mutex);
+	data->last_uid = 0;
+	data->last_read_ts = 0;
+	data->total_reads = 0;
+	data->error_count = 0;
+	data->sampling_active = false;
+	data->valid = false;
+
+	m_slot = slot;
+
+	/* Hold the UART bridge awake for the lifetime of the driver.
+	 *
+	 * The MF7S auto-sends a card UID the moment a tag is presented - unsolicited traffic
+	 * that the listener thread only reads, it never calls app_serial_send(). Since
+	 * app_serial_init() now leaves the bridge suspended and only app_serial_send() resumes
+	 * it, a suspended bridge would drop every card read. This is the passthrough trade-off
+	 * spelled out in app_serial_pm(): catching bytes we never asked for costs the ~5.4 mA
+	 * running current, so resume once here and stay resumed.
+	 */
+	int ret = app_serial_pm(true);
+	if (ret) {
+		LOG_ERR("Could not resume UART bridge for card listener: %d", ret);
+		return ret;
+	}
 
 	/* Enable and start listener thread */
-	atomic_set(&m_listener_enabled, 1);
-	k_thread_start(promag_listener);
+	if (atomic_cas(&m_listener_enabled, 0, 1)) {
+		k_thread_start(promag_listener);
+	}
 
 	LOG_INF("Promag MF7S driver initialized");
 
 	return 0;
 }
 
-static int sample(void)
+static int sample(struct app_driver_slot *slot)
 {
+	ARG_UNUSED(slot);
+
 	/* MF7S is event-driven (auto-sends UID on card present).
 	 * Background listener thread handles card detection.
 	 * No periodic polling needed - use shell command 'read_info' to check reader.
@@ -457,42 +371,16 @@ static int sample(void)
 	return 0;
 }
 
-const struct app_data_promag_mf7s *promag_mf7s_get_data(void)
+const struct app_data_promag_mf7s *promag_mf7s_get_data(const struct app_driver_slot *slot)
 {
-	return &m_data;
+	return slot->ctx;
 }
 
-int promag_mf7s_get_samples(struct promag_mf7s_sample *out, int max_count)
+static void print_data(const struct shell *shell, struct app_driver_slot *slot)
 {
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = (m_sample_count < max_count) ? m_sample_count : max_count;
-	for (int i = 0; i < count; i++) {
-		out[i] = m_samples[i];
-	}
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
-}
+	const struct app_data_promag_mf7s *d = slot->ctx;
 
-void promag_mf7s_clear_samples(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	m_sample_count = 0;
-	k_mutex_unlock(&m_samples_mutex);
-	LOG_DBG("Promag: Sample buffer cleared");
-}
-
-int promag_mf7s_get_sample_count(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = m_sample_count;
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
-}
-
-static void print_data(const struct shell *shell, int idx, int addr)
-{
-	const struct app_data_promag_mf7s *d = promag_mf7s_get_data();
-	shell_print(shell, "[%d] Promag MF7S RFID:", idx);
+	shell_print(shell, "[%d] Promag MF7S RFID:", slot->idx);
 	shell_print(shell, "  Last UID:    %08X (dec: %u)", d->last_uid, d->last_uid);
 	shell_print(shell, "  Total reads: %u", d->total_reads);
 	shell_print(shell, "  Errors:      %u", d->error_count);
@@ -503,18 +391,39 @@ static void print_data(const struct shell *shell, int idx, int addr)
 const struct app_device_driver promag_mf7s_driver = {
 	.name = "promag_mf7s",
 	.type = APP_DEVICE_TYPE_PROMAG_MF7S,
+	.transport = APP_DEVICE_TRANSPORT_UART,
+	.max_instances = 1, /* RS-232 is point-to-point; the listener owns the UART */
+	.ctx_size = sizeof(struct app_data_promag_mf7s),
+	.rec_size = sizeof(struct promag_mf7s_sample),
+	.rec_fixed = REC_COUNT,
 	.init = init,
 	.sample = sample,
-	.deinit = NULL,
-	.calibrate = NULL,
-	.reset = NULL,
-	.config = NULL,
 	.print_data = print_data,
 };
 
 /*
  * Shell commands
  */
+
+/* Mark shell sampling mode in the slot data; returns the total card reads */
+static uint32_t set_sampling_active(bool active)
+{
+	struct app_driver_slot *slot = m_slot;
+	uint32_t total_reads = 0;
+
+	if (slot) {
+		app_driver_slot_lock(slot);
+
+		struct app_data_promag_mf7s *data = slot->ctx;
+
+		data->sampling_active = active;
+		total_reads = data->total_reads;
+
+		app_driver_slot_unlock(slot);
+	}
+
+	return total_reads;
+}
 
 static int find_promag_device(void)
 {
@@ -703,9 +612,7 @@ static int cmd_promag_sampling(const struct shell *shell, size_t argc, char **ar
 	m_sampling_idle_deadline = k_uptime_get() + (timeout_s * 1000);
 	atomic_set(&m_sampling_mode, 1);
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.sampling_active = true;
-	k_mutex_unlock(&m_data_mutex);
+	set_sampling_active(true);
 
 	/* Wait for idle timeout */
 	while (atomic_get(&m_sampling_mode)) {
@@ -720,11 +627,9 @@ static int cmd_promag_sampling(const struct shell *shell, size_t argc, char **ar
 	atomic_set(&m_sampling_mode, 0);
 	m_sampling_shell = NULL;
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.sampling_active = false;
-	k_mutex_unlock(&m_data_mutex);
+	uint32_t total_reads = set_sampling_active(false);
 
-	shell_print(shell, "Sampling finished (total reads: %u)", m_data.total_reads);
+	shell_print(shell, "Sampling finished (total reads: %u)", total_reads);
 
 	return 0;
 }

@@ -27,8 +27,14 @@ int app_driver_sample(void)
 		LOG_WRN("app_device_sample_all failed: %d", ret);
 	}
 
-	/* Sample Modbus devices if configured */
-	if (g_app_config.serial_mode == APP_CONFIG_SERIAL_MODE_MODBUS) {
+	/* Sample the legacy driverless Modbus types.
+	 *
+	 * Gated on whether Modbus actually initialized this boot, NOT on serial-mode: with a
+	 * UART device configured, app_modbus_init() is skipped, and calling this anyway would
+	 * PM-resume and then PM-suspend the SC16IS740 that app_serial is using - killing the
+	 * UART device once per sample interval.
+	 */
+	if (app_modbus_is_ready()) {
 		ret = app_modbus_sample();
 		if (ret) {
 			LOG_ERR("app_modbus_sample failed: %d", ret);

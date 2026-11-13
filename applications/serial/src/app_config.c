@@ -25,6 +25,10 @@
 /* ### Preserved code "includes" (begin) */
 #include "feature.h"
 
+#if defined(CONFIG_SHELL_BACKEND_DUMMY)
+#include <zephyr/shell/shell_dummy.h>
+#endif /* defined(CONFIG_SHELL_BACKEND_DUMMY) */
+
 /* Forward declaration for device_parse_cb used in items[] */
 static int device_parse_cb(const struct shell *shell, char *argv,
 			   const struct ctr_config_item *item);
@@ -44,7 +48,7 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_INT("interval-aggreg", m_config_interim.interval_aggreg, 1, 86400, "Aggregation interval in seconds.", 300),
 	CTR_CONFIG_ITEM_INT("interval-report", m_config_interim.interval_report, 0, 86400, "Report interval in seconds.", 1800),
 	CTR_CONFIG_ITEM_INT("interval-poll", m_config_interim.interval_poll, 0, 86400, "Polling interval in seconds (LTE only, 0 = disabled).", 0),
-	CTR_CONFIG_ITEM_ENUM("serial-mode", m_config_interim.serial_mode, ((const char*[]){"transparent", "modbus"}), "Serial operation mode", 0),
+	CTR_CONFIG_ITEM_ENUM("serial-mode", m_config_interim.serial_mode, ((const char*[]){"transparent", "modbus", "uart"}), "Serial operation mode", 0),
 	
 	CTR_CONFIG_ITEM_INT("serial-baudrate", m_config_interim.serial_baudrate, 1200, 115200, "Serial baudrate.", 9600),
 	CTR_CONFIG_ITEM_INT("serial-data-bits", m_config_interim.serial_data_bits, 7, 9, "Serial data bits.", 8),
@@ -55,6 +59,11 @@ const struct ctr_config_item items[] = {
 	CTR_CONFIG_ITEM_ENUM("mode", m_config_interim.mode, ((const char*[]){"none", "lte", "lrw"}), "Set communication mode", APP_CONFIG_MODE_NONE),
 
 	/* ### Preserved code "config" (begin) */
+	CTR_CONFIG_ITEM_INT("rppu-voltage-threshold", m_config_interim.rppu_voltage_threshold_mv,
+		0, 5000,
+		"RPP-U accumulator alert threshold in mV; uplink immediately on dropping to or below it (0 = off).",
+		3400),
+
 	/* Device configuration - type[,addr[,timeout]] */
 	CTR_CONFIG_ITEM_STRING_PARSE_CB("device-0", m_config_interim.device_str[0],
 		"Device 0: type[,addr[,timeout]]", "", device_parse_cb),
@@ -152,9 +161,12 @@ static int device_parse_cb(const struct shell *shell, char *argv,
 	int ret = parse_device_string(argv, &test_dev);
 	if (ret) {
 		shell_error(shell, "Invalid format. Use: type[,addr[,timeout]]");
-		shell_print(shell, "  Types: none, generic, cubic_6303, em1xx, em5xx,");
-		shell_print(shell, "         flowt_ft201, iem3000, lambrecht, microsens_180hs,");
-		shell_print(shell, "         or_we_504, or_we_516, promag_mf7s, sensecap_s1000");
+		shell_print(shell, "  Modbus types: generic, cubic_6303, em1xx, em5xx,");
+		shell_print(shell, "         flowt_ft201, iem3000, lambrecht, or_we_504,");
+		shell_print(shell, "         or_we_516, piketronic, sensecap_s1000,");
+		shell_print(shell, "         sensecap_s500, sensecap_s700, solax_g3");
+		shell_print(shell, "  UART types:   microsens_180hs, piketronic_u, promag_mf7s");
+		shell_print(shell, "  none:  clears the slot");
 		shell_print(shell, "  addr:  1-247 (required for Modbus mode)");
 		shell_print(shell, "  timeout: seconds (default 1)");
 		return ret;
@@ -189,9 +201,26 @@ static int validate_device_config(const struct shell *shell)
 #endif
 
 	if (m_config_interim.serial_mode == APP_CONFIG_SERIAL_MODE_MODBUS) {
-		/* Modbus mode: address required for all active devices */
 		for (int i = 0; i < APP_CONFIG_MAX_DEVICES; i++) {
-			if (devices[i].type != APP_DEVICE_TYPE_NONE && devices[i].addr == 0) {
+			if (devices[i].type == APP_DEVICE_TYPE_NONE) {
+				continue;
+			}
+
+			/* Wrong transport first: a UART device in Modbus mode would
+			 * otherwise be told it "requires address", which sends the user
+			 * off to invent an address for a device that has none.
+			 */
+			if (app_device_has_driver(devices[i].type) &&
+			    app_device_get_transport(devices[i].type) ==
+				    APP_DEVICE_TRANSPORT_UART) {
+				shell_error(shell,
+					    "Modbus mode: device-%d (%s) is a UART device - use "
+					    "'serial-mode uart'",
+					    i, app_device_type_name(devices[i].type));
+				return -EINVAL;
+			}
+
+			if (devices[i].addr == 0) {
 				shell_error(shell,
 					    "Modbus mode: device-%d requires address (1-247)", i);
 				return -EINVAL;
@@ -210,9 +239,56 @@ static int validate_device_config(const struct shell *shell)
 				return -EINVAL;
 			}
 		}
+
+		/* A device whose driver speaks Modbus is brought up on Modbus whatever the
+		 * mode says, which would silently turn off the raw `serial send` / `recv`
+		 * this mode is for. Ask for the mode that matches instead.
+		 */
+		if (devices[0].type != APP_DEVICE_TYPE_NONE &&
+		    app_device_has_driver(devices[0].type) &&
+		    app_device_get_transport(devices[0].type) == APP_DEVICE_TRANSPORT_MODBUS) {
+			shell_error(shell,
+				    "Transparent mode: device-0 (%s) is a Modbus device - use "
+				    "'serial-mode modbus'",
+				    app_device_type_name(devices[0].type));
+			return -EINVAL;
+		}
 	}
 
-	return 0;
+	if (m_config_interim.serial_mode == APP_CONFIG_SERIAL_MODE_UART) {
+		/* UART mode: point-to-point - one TX, one RX, no addressing, so a
+		 * single device on device-0. Multi-drop is what Modbus mode is for.
+		 */
+		for (int i = 1; i < APP_CONFIG_MAX_DEVICES; i++) {
+			if (devices[i].type != APP_DEVICE_TYPE_NONE) {
+				shell_error(shell,
+					    "UART mode: only device-0 allowed (point-to-point) - "
+					    "device-%d is set",
+					    i);
+				return -EINVAL;
+			}
+		}
+
+		/* UART mode: the device must have a driver that actually speaks UART.
+		 * Requiring the driver matters: the driverless legacy types (generic,
+		 * lambrecht) are implemented inside app_modbus.c, so accepting one here
+		 * would boot cleanly and then collect nothing forever.
+		 */
+		if (devices[0].type != APP_DEVICE_TYPE_NONE &&
+		    (!app_device_has_driver(devices[0].type) ||
+		     app_device_get_transport(devices[0].type) == APP_DEVICE_TRANSPORT_MODBUS)) {
+			shell_error(shell,
+				    "UART mode: device-0 (%s) is a Modbus device - use "
+				    "'serial-mode modbus'",
+				    app_device_type_name(devices[0].type));
+			return -EINVAL;
+		}
+	}
+
+	/* Driver instance limits and device memory */
+	return app_device_check_config(shell, devices, m_config_interim.interval_sample,
+				       m_config_interim.interval_aggreg,
+				       m_config_interim.interval_report, m_config_interim.mode);
 }
 /* ^^^ Preserved code "function" (end) */
 
@@ -234,13 +310,34 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 int app_config_cmd_config(const struct shell *shell, size_t argc, char **argv)
 {
 	/* ### Preserved code "app_config_cmd_config" (begin) */
-	/* Intercept save command for validation */
-	if (argc >= 2 && strcmp(argv[1], "save") == 0) {
+	/* ctr_config_cmd_config() has no "save" item: validate, then save all settings and
+	 * reboot like the global config save
+	 */
+	if (argc == 2 && strcmp(argv[1], "save") == 0) {
 		int ret = validate_device_config(shell);
 		if (ret) {
 			return ret;
 		}
-		/* Continue to ctr_config_cmd_config for actual save */
+
+#if defined(CONFIG_SHELL_BACKEND_DUMMY)
+		/* The cloud runs a configuration line by line on the dummy shell and saves it
+		 * after its last line: only validate, do not reboot in the middle. The cloud
+		 * shell uses the same backend; there config save saves.
+		 */
+		if (shell == shell_backend_dummy_get_ptr()) {
+			shell_print(shell, "Configuration valid, not saved here: use config save");
+			return 0;
+		}
+#endif /* defined(CONFIG_SHELL_BACKEND_DUMMY) */
+
+		ret = ctr_config_save(true);
+		if (ret) {
+			LOG_ERR("Call `ctr_config_save` failed: %d", ret);
+			shell_error(shell, "command failed");
+			return ret;
+		}
+
+		return 0;
 	}
 	/* ^^^ Preserved code "app_config_cmd_config" (end) */
 	return ctr_config_cmd_config(items, ARRAY_SIZE(items), shell, argc, argv);

@@ -21,8 +21,6 @@
 
 LOG_MODULE_REGISTER(drv_flowt_ft201, LOG_LEVEL_DBG);
 
-#define MAX_SAMPLES 32
-
 /* FlowT FT201 Register addresses (PDU / 0-based) */
 #define REG_FLOW_S		0x0000 /* Float32 LSW, 2 regs */
 #define REG_FLOW_M		0x0002
@@ -45,40 +43,9 @@ LOG_MODULE_REGISTER(drv_flowt_ft201, LOG_LEVEL_DBG);
 #define REG_TEMP_OUTLET		0x004B
 #define REG_MODBUS_ADDR		0x1003 /* UINT16 R/W (FC06) */
 
-#define DEFAULT_ADDR 1
-
-/* Decode Float32 Low Word First (word-swap) */
-static float decode_float32_lsw(const uint16_t *regs)
-{
-	union {
-		uint32_t u;
-		float f;
-	} conv;
-	conv.u = ((uint32_t)regs[1] << 16) | regs[0];
-	return conv.f;
-}
-
-static struct app_data_flowt_ft201 m_data = {
-	.modbus_addr = DEFAULT_ADDR,
-	.valid = false,
-};
-
-static K_MUTEX_DEFINE(m_data_mutex);
-
-/* Sample buffer for CBOR encoding */
-static struct flowt_ft201_sample m_samples[MAX_SAMPLES];
-static int m_sample_count;
-static K_MUTEX_DEFINE(m_samples_mutex);
-
 static int read_float32_lsw(uint8_t addr, uint16_t reg, float *out)
 {
-	uint16_t regs[2];
-	int ret = app_modbus_read_holding_regs(addr, reg, 2, regs);
-	if (ret) {
-		return ret;
-	}
-	*out = decode_float32_lsw(regs);
-	return 0;
+	return app_modbus_read_float(addr, reg, APP_MODBUS_FC_HOLDING, APP_MODBUS_WO_LO_FIRST, out);
 }
 
 /* Read totalizer: mantissa (Float32 LSW, 2 regs) + exponent (UINT16, 1 reg) */
@@ -100,28 +67,28 @@ static int read_totalizer(uint8_t addr, uint16_t mant_reg, uint16_t exp_reg, flo
 		return ret;
 	}
 
-	float mantissa = decode_float32_lsw(regs);
+	float mantissa = app_modbus_decode_float(regs, APP_MODBUS_WO_LO_FIRST);
 	int16_t exponent = (int16_t)exp_val;
 	*out = mantissa * powf(10.0f, (float)exponent);
 	return 0;
 }
 
-/* Forward declaration */
-static void print_data(const struct shell *shell, int idx, int addr);
-
-static int init(void)
+static int init(struct app_driver_slot *slot)
 {
+	struct app_data_flowt_ft201 *data = slot->ctx;
+
 	LOG_INF("Initializing FlowT FT201 driver");
-	m_data.valid = false;
-	m_data.error_count = 0;
+	data->valid = false;
+	data->error_count = 0;
 	return 0;
 }
 
-static int sample(void)
+static int sample(struct app_driver_slot *slot)
 {
+	struct app_data_flowt_ft201 *data = slot->ctx;
+	uint8_t addr = slot->addr;
 	int ret;
 	int errors = 0;
-	uint8_t addr;
 
 	float flow_s, flow_m, flow_h, velocity;
 	float total_positive, total_negative, total_net;
@@ -129,18 +96,12 @@ static int sample(void)
 	float temp_inlet, temp_outlet;
 	uint16_t signal_quality;
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
-
 	LOG_INF("Sampling FlowT FT201 at address %d", addr);
 
-	ret = app_modbus_enable();
+	ret = app_modbus_acquire();
 	if (ret) {
 		LOG_ERR("Failed to enable Modbus: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		k_mutex_unlock(&m_data_mutex);
+		data->error_count++;
 		return ret;
 	}
 
@@ -202,82 +163,70 @@ static int sample(void)
 		errors++;
 	}
 
-	app_modbus_disable();
+	app_modbus_release();
 
-	/* Update m_data atomically */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	if (errors == 0) {
-		m_data.flow_s = flow_s;
-		m_data.flow_m = flow_m;
-		m_data.flow_h = flow_h;
-		m_data.velocity = velocity;
-		m_data.total_positive = total_positive;
-		m_data.total_negative = total_negative;
-		m_data.total_net = total_net;
-		m_data.energy_hot = energy_hot;
-		m_data.energy_cold = energy_cold;
-		m_data.temp_inlet = temp_inlet;
-		m_data.temp_outlet = temp_outlet;
-		m_data.signal_quality = (uint8_t)(signal_quality & 0xFF);
-		m_data.valid = true;
-		m_data.last_sample = k_uptime_get_32();
-		m_data.error_count = 0;
-		k_mutex_unlock(&m_data_mutex);
-
-		/* Add to sample buffer */
-		k_mutex_lock(&m_samples_mutex, K_FOREVER);
-		if (m_sample_count < MAX_SAMPLES) {
-			uint64_t ts;
-			ctr_rtc_get_ts(&ts);
-
-			struct flowt_ft201_sample *s = &m_samples[m_sample_count];
-			s->timestamp = ts;
-			s->flow_s = flow_s;
-			s->flow_m = flow_m;
-			s->flow_h = flow_h;
-			s->velocity = velocity;
-			s->total_positive = total_positive;
-			s->total_negative = total_negative;
-			s->total_net = total_net;
-			s->energy_hot = energy_hot;
-			s->energy_cold = energy_cold;
-			s->temp_inlet = temp_inlet;
-			s->temp_outlet = temp_outlet;
-			s->signal_quality = (uint8_t)(signal_quality & 0xFF);
-			m_sample_count++;
-			LOG_DBG("FlowT FT201: Added sample %d to buffer", m_sample_count);
-		} else {
-			LOG_WRN("FlowT FT201: Sample buffer full");
-		}
-		k_mutex_unlock(&m_samples_mutex);
-
-		LOG_INF("FlowT FT201: flow_h=%.4f m3/h, vel=%.4f m/s, "
-			"T_in=%.1f C, T_out=%.1f C, SQ=%u",
-			(double)flow_h, (double)velocity,
-			(double)temp_inlet, (double)temp_outlet,
-			signal_quality & 0xFF);
-	} else {
-		m_data.valid = false;
-		m_data.error_count++;
-		k_mutex_unlock(&m_data_mutex);
+	if (errors) {
+		data->valid = false;
+		data->error_count++;
 		LOG_WRN("FlowT FT201: %d read errors", errors);
 		return -EIO;
 	}
 
+	data->flow_s = flow_s;
+	data->flow_m = flow_m;
+	data->flow_h = flow_h;
+	data->velocity = velocity;
+	data->total_positive = total_positive;
+	data->total_negative = total_negative;
+	data->total_net = total_net;
+	data->energy_hot = energy_hot;
+	data->energy_cold = energy_cold;
+	data->temp_inlet = temp_inlet;
+	data->temp_outlet = temp_outlet;
+	data->signal_quality = (uint8_t)(signal_quality & 0xFF);
+	data->valid = true;
+	data->last_sample = k_uptime_get_32();
+	data->error_count = 0;
+
+	int64_t ts;
+	ctr_rtc_get_ts(&ts);
+
+	struct flowt_ft201_sample rec = {
+		.timestamp = ts,
+		.flow_s = flow_s,
+		.flow_m = flow_m,
+		.flow_h = flow_h,
+		.velocity = velocity,
+		.total_positive = total_positive,
+		.total_negative = total_negative,
+		.total_net = total_net,
+		.energy_hot = energy_hot,
+		.energy_cold = energy_cold,
+		.temp_inlet = temp_inlet,
+		.temp_outlet = temp_outlet,
+		.signal_quality = (uint8_t)(signal_quality & 0xFF),
+	};
+
+	app_driver_rec_push(slot, &rec);
+
+	LOG_INF("FlowT FT201: flow_h=%.4f m3/h, vel=%.4f m/s, "
+		"T_in=%.1f C, T_out=%.1f C, SQ=%u",
+		(double)flow_h, (double)velocity, (double)temp_inlet, (double)temp_outlet,
+		signal_quality & 0xFF);
+
 	return 0;
 }
 
-static int config(uint8_t new_addr, const char *parity_str)
+static int config(struct app_driver_slot *slot, uint8_t new_addr, const char *parity_str)
 {
 	int ret;
+	uint8_t old_addr = slot->addr;
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t old_addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
+	ARG_UNUSED(parity_str);
 
 	LOG_INF("FlowT FT201: Writing new address %d (current: %d)", new_addr, old_addr);
 
-	ret = app_modbus_enable();
+	ret = app_modbus_acquire();
 	if (ret) {
 		LOG_ERR("Failed to enable Modbus: %d", ret);
 		return ret;
@@ -286,16 +235,12 @@ static int config(uint8_t new_addr, const char *parity_str)
 	/* Write new address via FC06 to register 0x1003 */
 	ret = app_modbus_write_holding_reg(old_addr, REG_MODBUS_ADDR, (uint16_t)new_addr);
 
-	app_modbus_disable();
+	app_modbus_release();
 
 	if (ret) {
 		LOG_ERR("Failed to write address: %d", ret);
 		return ret;
 	}
-
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = new_addr;
-	k_mutex_unlock(&m_data_mutex);
 
 	LOG_INF("FlowT FT201: Address changed to %d", new_addr);
 	return 0;
@@ -314,7 +259,7 @@ static int cmd_read_info(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	int ret = app_modbus_enable();
+	int ret = app_modbus_acquire();
 	if (ret) {
 		shell_error(shell, "Failed to enable Modbus: %d", ret);
 		return ret;
@@ -325,7 +270,7 @@ static int cmd_read_info(const struct shell *shell, size_t argc, char **argv)
 	ret = app_modbus_read_holding_regs(addr, REG_SERIAL_NUMBER, 2, &sn_regs[0]);
 	if (ret) {
 		shell_error(shell, "Failed to read serial number (part 1): %d", ret);
-		app_modbus_disable();
+		app_modbus_release();
 		return ret;
 	}
 	k_msleep(100);
@@ -333,7 +278,7 @@ static int cmd_read_info(const struct shell *shell, size_t argc, char **argv)
 	ret = app_modbus_read_holding_regs(addr, REG_SERIAL_NUMBER + 2, 2, &sn_regs[2]);
 	if (ret) {
 		shell_error(shell, "Failed to read serial number (part 2): %d", ret);
-		app_modbus_disable();
+		app_modbus_release();
 		return ret;
 	}
 
@@ -355,12 +300,12 @@ static int cmd_read_info(const struct shell *shell, size_t argc, char **argv)
 	ret = app_modbus_read_holding_regs(addr, REG_INSTRUMENT_ADDR, 2, inst_regs);
 	if (ret) {
 		shell_error(shell, "Failed to read instrument address: %d", ret);
-		app_modbus_disable();
+		app_modbus_release();
 		return ret;
 	}
-	uint32_t inst_addr = ((uint32_t)inst_regs[1] << 16) | inst_regs[0];
+	uint32_t inst_addr = app_modbus_decode_u32(inst_regs, APP_MODBUS_WO_LO_FIRST);
 
-	app_modbus_disable();
+	app_modbus_release();
 
 	shell_print(shell, "FlowT FT201 @ addr %d:", addr);
 	shell_print(shell, "  Serial number:     %s", serial);
@@ -384,19 +329,8 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	/* Temporarily set address to current device */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t saved_addr = m_data.modbus_addr;
-	m_data.modbus_addr = current_addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	int ret = config(new_addr, NULL);
-
-	/* Restore saved address if config failed */
+	int ret = app_device_probe_config(shell, &flowt_ft201_driver, current_addr, new_addr, NULL);
 	if (ret) {
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.modbus_addr = saved_addr;
-		k_mutex_unlock(&m_data_mutex);
 		shell_error(shell, "Config failed: %d", ret);
 		return ret;
 	}
@@ -418,25 +352,11 @@ static int cmd_sample(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	/* Temporarily set address for sampling */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t old_addr = m_data.modbus_addr;
-	m_data.modbus_addr = addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	int ret = sample();
-
-	/* Restore original address */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = old_addr;
-	k_mutex_unlock(&m_data_mutex);
-
+	int ret = app_device_probe_sample(shell, &flowt_ft201_driver, addr);
 	if (ret) {
 		shell_error(shell, "Sampling failed: %d", ret);
 		return ret;
 	}
-
-	print_data(shell, 0, addr);
 
 	return 0;
 }
@@ -453,84 +373,38 @@ const union shell_cmd_entry flowt_ft201_shell_cmds = {
 	.entry = flowt_ft201_subcmds
 };
 
-static void print_data(const struct shell *shell, int idx, int addr)
+static void print_data(const struct shell *shell, struct app_driver_slot *slot)
 {
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	struct app_data_flowt_ft201 d = m_data;
-	k_mutex_unlock(&m_data_mutex);
+	const struct app_data_flowt_ft201 *d = slot->ctx;
 
-	shell_print(shell, "[%d] FlowT FT201 @ addr %d:", idx, addr);
-	shell_print(shell, "  Flow/s:          %.6f m3/s", (double)d.flow_s);
-	shell_print(shell, "  Flow/m:          %.4f m3/min", (double)d.flow_m);
-	shell_print(shell, "  Flow/h:          %.4f m3/h", (double)d.flow_h);
-	shell_print(shell, "  Velocity:        %.4f m/s", (double)d.velocity);
-	shell_print(shell, "  Positive total:  %.3f", (double)d.total_positive);
-	shell_print(shell, "  Negative total:  %.3f", (double)d.total_negative);
-	shell_print(shell, "  Net total:       %.3f", (double)d.total_net);
-	shell_print(shell, "  Energy hot:      %.3f", (double)d.energy_hot);
-	shell_print(shell, "  Energy cold:     %.3f", (double)d.energy_cold);
-	shell_print(shell, "  Temp inlet:      %.1f C", (double)d.temp_inlet);
-	shell_print(shell, "  Temp outlet:     %.1f C", (double)d.temp_outlet);
-	shell_print(shell, "  Signal quality:  %u", d.signal_quality);
+	app_device_print_header(shell, slot, "FlowT FT201");
+	shell_print(shell, "  Flow/s:          %.6f m3/s", (double)d->flow_s);
+	shell_print(shell, "  Flow/m:          %.4f m3/min", (double)d->flow_m);
+	shell_print(shell, "  Flow/h:          %.4f m3/h", (double)d->flow_h);
+	shell_print(shell, "  Velocity:        %.4f m/s", (double)d->velocity);
+	shell_print(shell, "  Positive total:  %.3f", (double)d->total_positive);
+	shell_print(shell, "  Negative total:  %.3f", (double)d->total_negative);
+	shell_print(shell, "  Net total:       %.3f", (double)d->total_net);
+	shell_print(shell, "  Energy hot:      %.3f", (double)d->energy_hot);
+	shell_print(shell, "  Energy cold:     %.3f", (double)d->energy_cold);
+	shell_print(shell, "  Temp inlet:      %.1f C", (double)d->temp_inlet);
+	shell_print(shell, "  Temp outlet:     %.1f C", (double)d->temp_outlet);
+	shell_print(shell, "  Signal quality:  %u", d->signal_quality);
 }
 
 const struct app_device_driver flowt_ft201_driver = {
 	.name = "flowt_ft201",
 	.type = APP_DEVICE_TYPE_FLOWT_FT201,
+	.transport = APP_DEVICE_TRANSPORT_MODBUS,
+	.ctx_size = sizeof(struct app_data_flowt_ft201),
+	.rec_size = sizeof(struct flowt_ft201_sample),
 	.init = init,
 	.sample = sample,
-	.deinit = NULL,
-	.calibrate = NULL,
-	.reset = NULL,
 	.config = config,
 	.print_data = print_data,
 };
 
-const struct app_data_flowt_ft201 *flowt_ft201_get_data(void)
+const struct app_data_flowt_ft201 *flowt_ft201_get_data(const struct app_driver_slot *slot)
 {
-	return &m_data;
-}
-
-void flowt_ft201_set_addr(uint8_t addr)
-{
-	if (addr >= 1 && addr <= 247) {
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.modbus_addr = addr;
-		k_mutex_unlock(&m_data_mutex);
-	}
-}
-
-uint8_t flowt_ft201_get_addr(void)
-{
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
-	return addr;
-}
-
-int flowt_ft201_get_samples(struct flowt_ft201_sample *out, int max_count)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = (m_sample_count < max_count) ? m_sample_count : max_count;
-	for (int i = 0; i < count; i++) {
-		out[i] = m_samples[i];
-	}
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
-}
-
-void flowt_ft201_clear_samples(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	m_sample_count = 0;
-	k_mutex_unlock(&m_samples_mutex);
-	LOG_DBG("FlowT FT201: Sample buffer cleared");
-}
-
-int flowt_ft201_get_sample_count(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = m_sample_count;
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
+	return slot->ctx;
 }

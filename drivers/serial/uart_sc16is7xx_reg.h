@@ -71,6 +71,7 @@
 #define SC16IS7XX_LCR_PARITY_ENABLE_BIT	       3
 #define SC16IS7XX_LCR_PARITY_TYPE_BIT	       4 /* 0: Odd, 1: Even*/
 #define SC16IS7XX_LCR_FORCE_PARITY_BIT	       5
+#define SC16IS7XX_LCR_BREAK_CTRL_BIT	       6 /* 1: force TX low (break) */
 #define SC16IS7XX_LCR_DIVISOR_LATCH_ENABLE_BIT 7
 
 /* MCR register bits */

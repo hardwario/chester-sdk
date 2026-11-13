@@ -21,54 +21,6 @@
 
 LOG_MODULE_REGISTER(drv_iem3000, LOG_LEVEL_DBG);
 
-#define MAX_SAMPLES 32
-
-/* Decode Float32 Low Word First (word-swap) */
-static float decode_float32_lsw(const uint16_t *regs)
-{
-	union {
-		uint32_t u;
-		float f;
-	} conv;
-	conv.u = ((uint32_t)regs[1] << 16) | regs[0];
-	return conv.f;
-}
-
-/* Decode INT64 Big Endian */
-static int64_t decode_int64_be(const uint16_t *regs)
-{
-	return ((int64_t)regs[0] << 48) |
-	       ((int64_t)regs[1] << 32) |
-	       ((int64_t)regs[2] << 16) |
-	       ((int64_t)regs[3]);
-}
-
-/* Parse parity string (e.g., "8E1", "8N1") */
-static int parse_parity(const char *str, char *parity, int *stop_bits)
-{
-	if (!str || strlen(str) < 3) {
-		return -EINVAL;
-	}
-	if (str[0] != '8') {
-		return -EINVAL;
-	}
-	char p = str[1];
-	if (p != 'N' && p != 'n' && p != 'E' && p != 'e' && p != 'O' && p != 'o') {
-		return -EINVAL;
-	}
-	int sb = str[2] - '0';
-	if (sb != 1 && sb != 2) {
-		return -EINVAL;
-	}
-	if (parity) {
-		*parity = (p == 'n') ? 'N' : (p == 'e') ? 'E' : (p == 'o') ? 'O' : p;
-	}
-	if (stop_bits) {
-		*stop_bits = sb;
-	}
-	return 0;
-}
-
 /* iEM3000 Register addresses (Float32 word-swap, INT64 for energy) */
 #define REG_CURRENT_L1        0x0BB7
 #define REG_CURRENT_L2        0x0BB9
@@ -90,206 +42,134 @@ static int parse_parity(const char *str, char *parity, int *stop_bits)
 #define REG_ENERGY_REACTIVE_IN  0x0C93
 #define REG_ENERGY_REACTIVE_OUT 0x0C97
 
-#define DEFAULT_ADDR          1
-
-static struct app_data_iem3000 m_data = {
-	.modbus_addr = DEFAULT_ADDR,
-	.valid = false,
+/* clang-format off */
+/* Float32 values (energy import / export is INT64, see read_energy) */
+static const struct app_device_reg m_regs[] = {
+	APP_DEVICE_REG(struct app_data_iem3000, current_l1, REG_CURRENT_L1, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, current_l2, REG_CURRENT_L2, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, current_l3, REG_CURRENT_L3, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, current, REG_CURRENT, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, voltage_l1, REG_VOLTAGE_L1, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, voltage_l2, REG_VOLTAGE_L2, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, voltage_l3, REG_VOLTAGE_L3, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, power_l1, REG_POWER_L1, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, power_l2, REG_POWER_L2, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, power_l3, REG_POWER_L3, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, power, REG_POWER, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, power_reactive, REG_POWER_REACTIVE, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, power_apparent, REG_POWER_APPARENT, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, power_factor, REG_POWER_FACTOR, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, frequency, REG_FREQUENCY, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, energy_reactive_in, REG_ENERGY_REACTIVE_IN, APP_MODBUS_FLOAT_LO, 1.0f),
+	APP_DEVICE_REG(struct app_data_iem3000, energy_reactive_out, REG_ENERGY_REACTIVE_OUT, APP_MODBUS_FLOAT_LO, 1.0f),
 };
+/* clang-format on */
 
-static K_MUTEX_DEFINE(m_data_mutex);
-
-/* Sample buffer for CBOR encoding */
-static struct iem3000_sample m_samples[MAX_SAMPLES];
-static int m_sample_count = 0;
-static K_MUTEX_DEFINE(m_samples_mutex);
-
-static int read_float32_lsw(uint8_t addr, uint16_t reg, float *out)
-{
-	uint16_t regs[2];
-	int ret = app_modbus_read_holding_regs(addr, reg, 2, regs);
-	if (ret) {
-		return ret;
-	}
-	*out = decode_float32_lsw(regs);
-	return 0;
-}
-
-static int read_int64_energy(uint8_t addr, uint16_t reg, float *out)
+/* Energy: INT64 high word first, Wh; read as two 2-register transactions */
+static int read_energy(uint8_t addr, uint16_t reg, float *out)
 {
 	uint16_t regs[4];
 	int ret;
 
-	/* Read 4 registers for INT64 */
 	ret = app_modbus_read_holding_regs(addr, reg, 2, &regs[0]);
 	if (ret) {
 		return ret;
 	}
+
 	ret = app_modbus_read_holding_regs(addr, reg + 2, 2, &regs[2]);
 	if (ret) {
 		return ret;
 	}
 
-	int64_t val = decode_int64_be(regs);
-	*out = (float)val / 1000.0f;
+	*out = (float)app_modbus_decode_s64(regs, APP_MODBUS_WO_HI_FIRST) / 1000.0f;
 	return 0;
 }
 
-/* Forward declaration */
-static void print_data(const struct shell *shell, int idx, int addr);
-
-static int init(void)
+static int init(struct app_driver_slot *slot)
 {
+	struct app_data_iem3000 *data = slot->ctx;
+
 	LOG_INF("Initializing iEM3000 driver");
-	m_data.valid = false;
-	m_data.error_count = 0;
+	data->valid = false;
+	data->error_count = 0;
 	return 0;
 }
 
-static int sample(void)
+static int sample(struct app_driver_slot *slot)
 {
-	int ret;
+	struct app_data_iem3000 *data = slot->ctx;
+	struct app_data_iem3000 values = *data;
 	int errors = 0;
-	uint8_t addr;
+	int ret;
 
-	/* Local variables for values */
-	float current, current_l1, current_l2, current_l3;
-	float voltage_l1, voltage_l2, voltage_l3;
-	float power, power_l1, power_l2, power_l3;
-	float power_reactive, power_apparent, power_factor, frequency;
-	float energy_in, energy_out, energy_reactive_in, energy_reactive_out;
+	LOG_INF("Sampling iEM3000 at address %d", slot->addr);
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	LOG_INF("Sampling iEM3000 at address %d", addr);
-
-	ret = app_modbus_enable();
+	ret = app_modbus_acquire();
 	if (ret) {
 		LOG_ERR("Failed to enable Modbus: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		k_mutex_unlock(&m_data_mutex);
+		data->error_count++;
 		return ret;
 	}
 
-	/* Per-phase currents */
-	if (read_float32_lsw(addr, REG_CURRENT_L1, &current_l1)) errors++;
-	if (read_float32_lsw(addr, REG_CURRENT_L2, &current_l2)) errors++;
-	if (read_float32_lsw(addr, REG_CURRENT_L3, &current_l3)) errors++;
-	if (read_float32_lsw(addr, REG_CURRENT, &current)) errors++;
+	/* All values are read; the data is updated only if every read succeeded */
+	ret = app_device_read_regs(slot->addr, APP_MODBUS_FC_HOLDING, m_regs, ARRAY_SIZE(m_regs),
+				   &values, false);
+	if (ret) {
+		errors++;
+	}
 
-	/* Per-phase voltages */
-	if (read_float32_lsw(addr, REG_VOLTAGE_L1, &voltage_l1)) errors++;
-	if (read_float32_lsw(addr, REG_VOLTAGE_L2, &voltage_l2)) errors++;
-	if (read_float32_lsw(addr, REG_VOLTAGE_L3, &voltage_l3)) errors++;
-
-	/* Power */
-	if (read_float32_lsw(addr, REG_POWER_L1, &power_l1)) errors++;
-	if (read_float32_lsw(addr, REG_POWER_L2, &power_l2)) errors++;
-	if (read_float32_lsw(addr, REG_POWER_L3, &power_l3)) errors++;
-	if (read_float32_lsw(addr, REG_POWER, &power)) errors++;
-	if (read_float32_lsw(addr, REG_POWER_REACTIVE, &power_reactive)) errors++;
-	if (read_float32_lsw(addr, REG_POWER_APPARENT, &power_apparent)) errors++;
-	if (read_float32_lsw(addr, REG_POWER_FACTOR, &power_factor)) errors++;
-	if (read_float32_lsw(addr, REG_FREQUENCY, &frequency)) errors++;
-
-	/* Energy (INT64) */
-	if (read_int64_energy(addr, REG_ENERGY_IN, &energy_in)) errors++;
-	if (read_int64_energy(addr, REG_ENERGY_OUT, &energy_out)) errors++;
-
-	/* Reactive energy (Float32) */
-	if (read_float32_lsw(addr, REG_ENERGY_REACTIVE_IN, &energy_reactive_in)) errors++;
-	if (read_float32_lsw(addr, REG_ENERGY_REACTIVE_OUT, &energy_reactive_out)) errors++;
-
-	app_modbus_disable();
-
-	/* Update m_data atomically */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	if (errors == 0) {
-		m_data.current = current;
-		m_data.current_l1 = current_l1;
-		m_data.current_l2 = current_l2;
-		m_data.current_l3 = current_l3;
-		m_data.voltage_l1 = voltage_l1;
-		m_data.voltage_l2 = voltage_l2;
-		m_data.voltage_l3 = voltage_l3;
-		m_data.power = power;
-		m_data.power_l1 = power_l1;
-		m_data.power_l2 = power_l2;
-		m_data.power_l3 = power_l3;
-		m_data.power_reactive = power_reactive;
-		m_data.power_apparent = power_apparent;
-		m_data.power_factor = power_factor;
-		m_data.frequency = frequency;
-		m_data.energy_in = energy_in;
-		m_data.energy_out = energy_out;
-		m_data.energy_reactive_in = energy_reactive_in;
-		m_data.energy_reactive_out = energy_reactive_out;
-		m_data.valid = true;
-		m_data.last_sample = k_uptime_get_32();
-		m_data.error_count = 0;
-		k_mutex_unlock(&m_data_mutex);
-
-		/* Add to sample buffer */
-		k_mutex_lock(&m_samples_mutex, K_FOREVER);
-		if (m_sample_count < MAX_SAMPLES) {
-			uint64_t ts;
-			ctr_rtc_get_ts(&ts);
-
-			m_samples[m_sample_count].timestamp = ts;
-			m_samples[m_sample_count].voltage_l1 = voltage_l1;
-			m_samples[m_sample_count].voltage_l2 = voltage_l2;
-			m_samples[m_sample_count].voltage_l3 = voltage_l3;
-			m_samples[m_sample_count].current_l1 = current_l1;
-			m_samples[m_sample_count].current_l2 = current_l2;
-			m_samples[m_sample_count].current_l3 = current_l3;
-			m_samples[m_sample_count].power_l1 = power_l1;
-			m_samples[m_sample_count].power_l2 = power_l2;
-			m_samples[m_sample_count].power_l3 = power_l3;
-			m_samples[m_sample_count].power = power;
-			m_samples[m_sample_count].power_apparent = power_apparent;
-			m_samples[m_sample_count].power_reactive = power_reactive;
-			m_samples[m_sample_count].power_factor = power_factor;
-			m_samples[m_sample_count].frequency = frequency;
-			m_samples[m_sample_count].energy_in = energy_in;
-			m_samples[m_sample_count].energy_out = energy_out;
-			m_sample_count++;
-			LOG_DBG("iEM3000: Added sample %d to buffer", m_sample_count);
-		} else {
-			LOG_WRN("iEM3000: Sample buffer full");
+	/* The meter does not answer: the energy reads would only wait for the timeout too */
+	if (ret != -ETIMEDOUT) {
+		if (read_energy(slot->addr, REG_ENERGY_IN, &values.energy_in)) {
+			errors++;
 		}
-		k_mutex_unlock(&m_samples_mutex);
 
-		LOG_INF("iEM3000: P=%.1f W, E_in=%.1f kWh, PF=%.2f",
-			(double)power, (double)energy_in, (double)power_factor);
-	} else {
-		m_data.valid = false;
-		m_data.error_count++;
-		k_mutex_unlock(&m_data_mutex);
-		LOG_WRN("iEM3000: %d read errors", errors);
+		if (read_energy(slot->addr, REG_ENERGY_OUT, &values.energy_out)) {
+			errors++;
+		}
+	}
+
+	app_modbus_release();
+
+	if (errors) {
+		data->valid = false;
+		data->error_count++;
+		LOG_WRN("iEM3000: read errors");
 		return -EIO;
 	}
 
-	return 0;
-}
+	values.valid = true;
+	values.last_sample = k_uptime_get_32();
+	values.error_count = 0;
+	*data = values;
 
-static int config(uint8_t new_addr, const char *parity_str)
-{
-	LOG_INF("iEM3000: Address change via Modbus not implemented");
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = new_addr;
-	k_mutex_unlock(&m_data_mutex);
-	LOG_INF("Sampling address set to %d", new_addr);
+	int64_t ts;
+	ctr_rtc_get_ts(&ts);
 
-	if (parity_str) {
-		char parity;
-		int stop_bits;
-		if (parse_parity(parity_str, &parity, &stop_bits) == 0) {
-			LOG_INF("Parity: %c, stop bits: %d", parity, stop_bits);
-		}
-	}
+	struct iem3000_sample rec = {
+		.timestamp = ts,
+		.voltage_l1 = data->voltage_l1,
+		.voltage_l2 = data->voltage_l2,
+		.voltage_l3 = data->voltage_l3,
+		.current_l1 = data->current_l1,
+		.current_l2 = data->current_l2,
+		.current_l3 = data->current_l3,
+		.power_l1 = data->power_l1,
+		.power_l2 = data->power_l2,
+		.power_l3 = data->power_l3,
+		.power = data->power,
+		.power_apparent = data->power_apparent,
+		.power_reactive = data->power_reactive,
+		.power_factor = data->power_factor,
+		.frequency = data->frequency,
+		.energy_in = data->energy_in,
+		.energy_out = data->energy_out,
+	};
+
+	app_driver_rec_push(slot, &rec);
+
+	LOG_INF("iEM3000: P=%.1f W, E_in=%.1f kWh, PF=%.2f", (double)data->power,
+		(double)data->energy_in, (double)data->power_factor);
 
 	return 0;
 }
@@ -307,139 +187,70 @@ static int cmd_sample(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	/* Temporarily set address for sampling */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t old_addr = m_data.modbus_addr;
-	m_data.modbus_addr = addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	int ret = sample();
-
-	/* Restore original address */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = old_addr;
-	k_mutex_unlock(&m_data_mutex);
-
+	int ret = app_device_probe_sample(shell, &iem3000_driver, addr);
 	if (ret) {
 		shell_error(shell, "Sampling failed: %d", ret);
 		return ret;
 	}
-
-	print_data(shell, 0, addr);
 
 	return 0;
 }
 
 static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 {
-	if (argc < 2) {
-		shell_error(shell, "Usage: device iem3000 config <addr> [8E1]");
-		return -EINVAL;
-	}
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
-	uint8_t addr = (uint8_t)strtol(argv[1], NULL, 0);
-	if (addr < 1 || addr > 247) {
-		shell_error(shell, "Invalid address (1-247)");
-		return -EINVAL;
-	}
-
-	config(addr, (argc >= 3) ? argv[2] : NULL);
-	shell_print(shell, "Sampling address set to %d", addr);
+	shell_print(shell, "iEM3000: address and parity are set on the meter or with its software");
+	shell_print(shell, "Set the address in the device configuration: app config device-N");
+	shell_print(shell, "Set the matching parity: app config serial-parity");
 	return 0;
 }
 
 static const struct shell_static_entry iem3000_subcmds[] = {
 	SHELL_CMD_ARG(sample, NULL, "Read values: sample <addr>", cmd_sample, 2, 0),
-	SHELL_CMD_ARG(config, NULL, "Set sampling address: config <addr> [8E1]", cmd_config, 2, 1),
-	SHELL_SUBCMD_SET_END
-};
+	SHELL_CMD_ARG(config, NULL, "How to set the address and parity", cmd_config, 1, 2),
+	SHELL_SUBCMD_SET_END};
 
 const union shell_cmd_entry iem3000_shell_cmds = {
 	.entry = iem3000_subcmds
 };
 
-static void print_data(const struct shell *shell, int idx, int addr)
+static void print_data(const struct shell *shell, struct app_driver_slot *slot)
 {
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	struct app_data_iem3000 data_copy = m_data;
-	k_mutex_unlock(&m_data_mutex);
+	const struct app_data_iem3000 *data = slot->ctx;
 
-	shell_print(shell, "[%d] iEM3000 @ addr %d:", idx, addr);
-	shell_print(shell, "  voltage_l1:     %.1f V", (double)data_copy.voltage_l1);
-	shell_print(shell, "  voltage_l2:     %.1f V", (double)data_copy.voltage_l2);
-	shell_print(shell, "  voltage_l3:     %.1f V", (double)data_copy.voltage_l3);
-	shell_print(shell, "  current_l1:     %.3f A", (double)data_copy.current_l1);
-	shell_print(shell, "  current_l2:     %.3f A", (double)data_copy.current_l2);
-	shell_print(shell, "  current_l3:     %.3f A", (double)data_copy.current_l3);
-	shell_print(shell, "  frequency:      %.2f Hz", (double)data_copy.frequency);
-	shell_print(shell, "  power_l1:       %.4f kW", (double)data_copy.power_l1);
-	shell_print(shell, "  power_l2:       %.4f kW", (double)data_copy.power_l2);
-	shell_print(shell, "  power_l3:       %.4f kW", (double)data_copy.power_l3);
-	shell_print(shell, "  power:          %.4f kW", (double)data_copy.power);
-	shell_print(shell, "  power_apparent: %.4f kVA", (double)data_copy.power_apparent);
-	shell_print(shell, "  power_reactive: %.4f kvar", (double)data_copy.power_reactive);
-	shell_print(shell, "  power_factor:   %.3f", (double)data_copy.power_factor);
-	shell_print(shell, "  energy_in:      %.3f kWh", (double)data_copy.energy_in);
-	shell_print(shell, "  energy_out:     %.3f kWh", (double)data_copy.energy_out);
+	app_device_print_header(shell, slot, "iEM3000");
+	shell_print(shell, "  voltage_l1:     %.1f V", (double)data->voltage_l1);
+	shell_print(shell, "  voltage_l2:     %.1f V", (double)data->voltage_l2);
+	shell_print(shell, "  voltage_l3:     %.1f V", (double)data->voltage_l3);
+	shell_print(shell, "  current_l1:     %.3f A", (double)data->current_l1);
+	shell_print(shell, "  current_l2:     %.3f A", (double)data->current_l2);
+	shell_print(shell, "  current_l3:     %.3f A", (double)data->current_l3);
+	shell_print(shell, "  frequency:      %.2f Hz", (double)data->frequency);
+	shell_print(shell, "  power_l1:       %.4f kW", (double)data->power_l1);
+	shell_print(shell, "  power_l2:       %.4f kW", (double)data->power_l2);
+	shell_print(shell, "  power_l3:       %.4f kW", (double)data->power_l3);
+	shell_print(shell, "  power:          %.4f kW", (double)data->power);
+	shell_print(shell, "  power_apparent: %.4f kVA", (double)data->power_apparent);
+	shell_print(shell, "  power_reactive: %.4f kvar", (double)data->power_reactive);
+	shell_print(shell, "  power_factor:   %.3f", (double)data->power_factor);
+	shell_print(shell, "  energy_in:      %.3f kWh", (double)data->energy_in);
+	shell_print(shell, "  energy_out:     %.3f kWh", (double)data->energy_out);
 }
 
 const struct app_device_driver iem3000_driver = {
 	.name = "iem3000",
 	.type = APP_DEVICE_TYPE_IEM3000,
+	.transport = APP_DEVICE_TRANSPORT_MODBUS,
+	.ctx_size = sizeof(struct app_data_iem3000),
+	.rec_size = sizeof(struct iem3000_sample),
 	.init = init,
 	.sample = sample,
-	.deinit = NULL,
-	.calibrate = NULL,
-	.reset = NULL,
-	.config = config,
 	.print_data = print_data,
 };
 
-const struct app_data_iem3000 *iem3000_get_data(void)
+const struct app_data_iem3000 *iem3000_get_data(const struct app_driver_slot *slot)
 {
-	return &m_data;
-}
-
-void iem3000_set_addr(uint8_t addr)
-{
-	if (addr >= 1 && addr <= 247) {
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.modbus_addr = addr;
-		k_mutex_unlock(&m_data_mutex);
-	}
-}
-
-uint8_t iem3000_get_addr(void)
-{
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
-	return addr;
-}
-
-int iem3000_get_samples(struct iem3000_sample *out, int max_count)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = (m_sample_count < max_count) ? m_sample_count : max_count;
-	for (int i = 0; i < count; i++) {
-		out[i] = m_samples[i];
-	}
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
-}
-
-void iem3000_clear_samples(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	m_sample_count = 0;
-	k_mutex_unlock(&m_samples_mutex);
-	LOG_DBG("iEM3000: Sample buffer cleared");
-}
-
-int iem3000_get_sample_count(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = m_sample_count;
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
+	return slot->ctx;
 }

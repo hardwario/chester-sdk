@@ -1142,6 +1142,30 @@ static int sc16is7xx_pm_control(const struct device *dev, enum pm_device_action 
 
 #endif /* CONFIG_PM_DEVICE */
 
+#ifdef CONFIG_UART_DRV_CMD
+
+#include <chester/drv_sc16is7xx.h>
+
+/* Driver-specific commands (see uart_drv_cmd()).
+ *
+ * SET_BREAK asserts/deasserts the LCR break-control bit, which forces TX low for
+ * as long as it is set. Needed by peripherals that require the host to hold their
+ * RX input at logic 0 while idle - e.g. the Piketronic RPP-U radon probe, which
+ * only re-arms its receiver on a 0 -> 1 transition held for 2 s.
+ */
+static int sc16is7xx_drv_cmd(const struct device *dev, uint32_t cmd, uint32_t p)
+{
+	switch (cmd) {
+	case SC16IS7XX_DRV_CMD_SET_BREAK:
+		WRITE_BIT(get_data(dev)->reg_lcr, SC16IS7XX_LCR_BREAK_CTRL_BIT, p ? 1 : 0);
+		return write_register(dev, SC16IS7XX_REG_LCR, get_data(dev)->reg_lcr);
+	default:
+		return -ENOTSUP;
+	}
+}
+
+#endif /* CONFIG_UART_DRV_CMD */
+
 static const struct uart_driver_api sc16is7xx_driver_api = {
 	.poll_in = sc16is7xx_poll_in,
 	.poll_out = sc16is7xx_poll_out,
@@ -1163,6 +1187,10 @@ static const struct uart_driver_api sc16is7xx_driver_api = {
 	.irq_update = sc16is7xx_irq_update,
 	.irq_callback_set = sc16is7xx_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#ifdef CONFIG_UART_DRV_CMD
+	.drv_cmd = sc16is7xx_drv_cmd,
+#endif /* CONFIG_UART_DRV_CMD */
 };
 
 #define SC16IS7XX_INIT(n)                                                                          \

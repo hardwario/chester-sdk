@@ -21,41 +21,6 @@
 
 LOG_MODULE_REGISTER(drv_em1xx, LOG_LEVEL_DBG);
 
-#define MAX_SAMPLES 32
-
-/* Decode INT32 Low Word First (Carlo Gavazzi format) */
-static int32_t decode_int32_lsw(const uint16_t *regs)
-{
-	uint32_t value = ((uint32_t)regs[1] << 16) | regs[0];
-	return (int32_t)value;
-}
-
-/* Parse parity string (e.g., "8E1", "8N1") */
-static int parse_parity(const char *str, char *parity, int *stop_bits)
-{
-	if (!str || strlen(str) < 3) {
-		return -EINVAL;
-	}
-	if (str[0] != '8') {
-		return -EINVAL;
-	}
-	char p = str[1];
-	if (p != 'N' && p != 'n' && p != 'E' && p != 'e' && p != 'O' && p != 'o') {
-		return -EINVAL;
-	}
-	int sb = str[2] - '0';
-	if (sb != 1 && sb != 2) {
-		return -EINVAL;
-	}
-	if (parity) {
-		*parity = (p == 'n') ? 'N' : (p == 'e') ? 'E' : (p == 'o') ? 'O' : p;
-	}
-	if (stop_bits) {
-		*stop_bits = sb;
-	}
-	return 0;
-}
-
 /* EM1XX Register addresses (INT32 LSW) */
 #define REG_CURRENT       0x0100  /* /1000 A */
 #define REG_VOLTAGE       0x0102  /* /10 V */
@@ -67,246 +32,82 @@ static int parse_parity(const char *str, char *parity, int *stop_bits)
 #define REG_ENERGY_IN     0x0112  /* /10 kWh */
 #define REG_ENERGY_OUT    0x0116  /* /10 kWh */
 
-#define DEFAULT_ADDR      1
-
-static struct app_data_em1xx m_data = {
-	.modbus_addr = DEFAULT_ADDR,
-	.valid = false,
+/* clang-format off */
+static const struct app_device_reg m_regs[] = {
+	APP_DEVICE_REG(struct app_data_em1xx, current, REG_CURRENT, APP_MODBUS_S32_LO, 1000.0f),
+	APP_DEVICE_REG(struct app_data_em1xx, voltage, REG_VOLTAGE, APP_MODBUS_S32_LO, 10.0f),
+	APP_DEVICE_REG(struct app_data_em1xx, power, REG_POWER, APP_MODBUS_S32_LO, 10000.0f),
+	APP_DEVICE_REG(struct app_data_em1xx, power_apparent, REG_APPARENT, APP_MODBUS_S32_LO, 10000.0f),
+	APP_DEVICE_REG(struct app_data_em1xx, power_reactive, REG_REACTIVE, APP_MODBUS_S32_LO, 10000.0f),
+	APP_DEVICE_REG(struct app_data_em1xx, power_factor, REG_PF, APP_MODBUS_S32_LO, 1000.0f),
+	APP_DEVICE_REG(struct app_data_em1xx, frequency, REG_FREQUENCY, APP_MODBUS_S32_LO, 10.0f),
+	APP_DEVICE_REG(struct app_data_em1xx, energy_in, REG_ENERGY_IN, APP_MODBUS_S32_LO, 10.0f),
+	APP_DEVICE_REG(struct app_data_em1xx, energy_out, REG_ENERGY_OUT, APP_MODBUS_S32_LO, 10.0f),
 };
+/* clang-format on */
 
-static K_MUTEX_DEFINE(m_data_mutex);
-
-/* Sample buffer for CBOR encoding */
-static struct em1xx_sample m_samples[MAX_SAMPLES];
-static int m_sample_count = 0;
-static K_MUTEX_DEFINE(m_samples_mutex);
-
-/* Forward declaration */
-static void print_data(const struct shell *shell, int idx, int addr);
-
-static int init(void)
+static int init(struct app_driver_slot *slot)
 {
+	struct app_data_em1xx *data = slot->ctx;
+
 	LOG_INF("Initializing EM1XX driver");
-	m_data.valid = false;
-	m_data.error_count = 0;
+	data->valid = false;
+	data->error_count = 0;
 	return 0;
 }
 
-static int sample(void)
+static int sample(struct app_driver_slot *slot)
 {
+	struct app_data_em1xx *data = slot->ctx;
+	struct app_data_em1xx values = *data;
 	int ret;
-	uint16_t regs[2];
-	int32_t val;
-	uint8_t addr;
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
+	LOG_INF("Sampling EM1XX at address %d", slot->addr);
 
-	LOG_INF("Sampling EM1XX at address %d", addr);
-
-	ret = app_modbus_enable();
+	ret = app_modbus_acquire();
 	if (ret) {
 		LOG_ERR("Failed to enable Modbus: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		k_mutex_unlock(&m_data_mutex);
+		data->error_count++;
 		return ret;
 	}
 
-	/* Local variables for values */
-	float current, voltage, power, frequency, energy_in, energy_out;
-	float power_apparent, power_reactive, power_factor;
+	ret = app_device_read_regs(slot->addr, APP_MODBUS_FC_HOLDING, m_regs, ARRAY_SIZE(m_regs),
+				   &values, true);
 
-	/* Read Current (0x0100) */
-	ret = app_modbus_read_holding_regs(addr, REG_CURRENT, 2, regs);
+	app_modbus_release();
+
 	if (ret) {
-		LOG_ERR("Failed to read current: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
+		data->error_count++;
+		data->valid = false;
+		return ret;
 	}
-	val = decode_int32_lsw(regs);
-	current = (float)val / 1000.0f;
 
-	/* Read Voltage (0x0102) */
-	ret = app_modbus_read_holding_regs(addr, REG_VOLTAGE, 2, regs);
-	if (ret) {
-		LOG_ERR("Failed to read voltage: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	val = decode_int32_lsw(regs);
-	voltage = (float)val / 10.0f;
+	values.valid = true;
+	values.last_sample = k_uptime_get_32();
+	values.error_count = 0;
+	*data = values;
 
-	/* Read Power (0x0106) */
-	ret = app_modbus_read_holding_regs(addr, REG_POWER, 2, regs);
-	if (ret) {
-		LOG_ERR("Failed to read power: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	val = decode_int32_lsw(regs);
-	power = (float)val / 10000.0f;
+	int64_t ts;
+	ctr_rtc_get_ts(&ts);
 
-	/* Read Apparent power (0x0108) */
-	ret = app_modbus_read_holding_regs(addr, REG_APPARENT, 2, regs);
-	if (ret) {
-		LOG_ERR("Failed to read apparent power: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	val = decode_int32_lsw(regs);
-	power_apparent = (float)val / 10000.0f;
+	struct em1xx_sample rec = {
+		.timestamp = ts,
+		.voltage = data->voltage,
+		.current = data->current,
+		.power = data->power,
+		.power_apparent = data->power_apparent,
+		.power_reactive = data->power_reactive,
+		.power_factor = data->power_factor,
+		.frequency = data->frequency,
+		.energy_in = data->energy_in,
+		.energy_out = data->energy_out,
+	};
 
-	/* Read Reactive power (0x010A) */
-	ret = app_modbus_read_holding_regs(addr, REG_REACTIVE, 2, regs);
-	if (ret) {
-		LOG_ERR("Failed to read reactive power: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	val = decode_int32_lsw(regs);
-	power_reactive = (float)val / 10000.0f;
-
-	/* Read Power factor (0x010C) */
-	ret = app_modbus_read_holding_regs(addr, REG_PF, 2, regs);
-	if (ret) {
-		LOG_ERR("Failed to read power factor: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	val = decode_int32_lsw(regs);
-	power_factor = (float)val / 1000.0f;
-
-	/* Read Frequency (0x0110) */
-	ret = app_modbus_read_holding_regs(addr, REG_FREQUENCY, 2, regs);
-	if (ret) {
-		LOG_ERR("Failed to read frequency: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	val = decode_int32_lsw(regs);
-	frequency = (float)val / 10.0f;
-
-	/* Read Energy IN (0x0112) */
-	ret = app_modbus_read_holding_regs(addr, REG_ENERGY_IN, 2, regs);
-	if (ret) {
-		LOG_ERR("Failed to read energy_in: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	val = decode_int32_lsw(regs);
-	energy_in = (float)val / 10.0f;
-
-	/* Read Energy OUT (0x0116) */
-	ret = app_modbus_read_holding_regs(addr, REG_ENERGY_OUT, 2, regs);
-	if (ret) {
-		LOG_ERR("Failed to read energy_out: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	val = decode_int32_lsw(regs);
-	energy_out = (float)val / 10.0f;
-
-	/* Update m_data atomically */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.current = current;
-	m_data.voltage = voltage;
-	m_data.power = power;
-	m_data.power_apparent = power_apparent;
-	m_data.power_reactive = power_reactive;
-	m_data.power_factor = power_factor;
-	m_data.frequency = frequency;
-	m_data.energy_in = energy_in;
-	m_data.energy_out = energy_out;
-	m_data.valid = true;
-	m_data.last_sample = k_uptime_get_32();
-	m_data.error_count = 0;
-	k_mutex_unlock(&m_data_mutex);
-
-	/* Add to sample buffer */
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	if (m_sample_count < MAX_SAMPLES) {
-		uint64_t ts;
-		ctr_rtc_get_ts(&ts);
-
-		m_samples[m_sample_count].timestamp = ts;
-		m_samples[m_sample_count].voltage = voltage;
-		m_samples[m_sample_count].current = current;
-		m_samples[m_sample_count].power = power;
-		m_samples[m_sample_count].power_apparent = power_apparent;
-		m_samples[m_sample_count].power_reactive = power_reactive;
-		m_samples[m_sample_count].power_factor = power_factor;
-		m_samples[m_sample_count].frequency = frequency;
-		m_samples[m_sample_count].energy_in = energy_in;
-		m_samples[m_sample_count].energy_out = energy_out;
-		m_sample_count++;
-		LOG_DBG("EM1XX: Added sample %d to buffer", m_sample_count);
-	} else {
-		LOG_WRN("EM1XX: Sample buffer full");
-	}
-	k_mutex_unlock(&m_samples_mutex);
+	app_driver_rec_push(slot, &rec);
 
 	LOG_INF("EM1XX: V=%.1f V, I=%.3f A, P=%.4f kW, F=%.1f Hz, E_in=%.1f kWh, E_out=%.1f kWh",
-		(double)voltage, (double)current, (double)power,
-		(double)frequency, (double)energy_in, (double)energy_out);
-
-out:
-	app_modbus_disable();
-	return ret;
-}
-
-static int config(uint8_t new_addr, const char *parity_str)
-{
-	if (new_addr < 1 || new_addr > 247) {
-		LOG_ERR("Invalid Modbus address: %d", new_addr);
-		return -EINVAL;
-	}
-
-	LOG_INF("EM1XX config: addr change not implemented via Modbus");
-	LOG_INF("Use device configuration software or set address parameter");
-
-	if (parity_str) {
-		char parity;
-		int stop_bits;
-		int ret = parse_parity(parity_str, &parity, &stop_bits);
-		if (ret == 0) {
-			LOG_INF("Parity: %c, stop bits: %d (requires device restart)", parity, stop_bits);
-		}
-	}
-
-	/* Update local address for sampling */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = new_addr;
-	k_mutex_unlock(&m_data_mutex);
-	LOG_INF("Sampling address set to %d", new_addr);
+		(double)data->voltage, (double)data->current, (double)data->power,
+		(double)data->frequency, (double)data->energy_in, (double)data->energy_out);
 
 	return 0;
 }
@@ -326,145 +127,63 @@ static int cmd_sample(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	/* Temporarily set address for sampling */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t old_addr = m_data.modbus_addr;
-	m_data.modbus_addr = addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	int ret = sample();
-
-	/* Restore original address */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = old_addr;
-	k_mutex_unlock(&m_data_mutex);
-
+	int ret = app_device_probe_sample(shell, &em1xx_driver, addr);
 	if (ret) {
 		shell_error(shell, "Sampling failed: %d", ret);
 		return ret;
 	}
-
-	print_data(shell, 0, addr);
 
 	return 0;
 }
 
 static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 {
-	if (argc < 3) {
-		shell_error(shell, "Usage: device em1xx config <old_addr> <new_addr> [8E1]");
-		return -EINVAL;
-	}
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
-	uint8_t old_addr = (uint8_t)strtol(argv[1], NULL, 0);
-	uint8_t new_addr = (uint8_t)strtol(argv[2], NULL, 0);
-	const char *parity_str = (argc >= 4) ? argv[3] : NULL;
-
-	if (old_addr < 1 || old_addr > 247 || new_addr < 1 || new_addr > 247) {
-		shell_error(shell, "Invalid address (1-247)");
-		return -EINVAL;
-	}
-
-	/* Set current address to old_addr for config operation */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = old_addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	int ret = config(new_addr, parity_str);
-	if (ret) {
-		shell_error(shell, "Configuration failed: %d", ret);
-		return ret;
-	}
-
-	shell_print(shell, "Address changed from %d to %d", old_addr, new_addr);
+	shell_print(shell, "EM1XX: address and parity are set on the meter or with its software");
+	shell_print(shell, "Set the address in the device configuration: app config device-N");
+	shell_print(shell, "Set the matching parity: app config serial-parity");
 	return 0;
 }
 
 static const struct shell_static_entry em1xx_subcmds[] = {
 	SHELL_CMD_ARG(sample, NULL, "Read values: sample <addr>", cmd_sample, 2, 0),
-	SHELL_CMD_ARG(config, NULL, "Change address [parity]: config <old_addr> <new_addr> [8E1]", cmd_config, 3, 1),
-	SHELL_SUBCMD_SET_END
-};
+	SHELL_CMD_ARG(config, NULL, "How to set the address and parity", cmd_config, 1, 3),
+	SHELL_SUBCMD_SET_END};
 
 const union shell_cmd_entry em1xx_shell_cmds = {
 	.entry = em1xx_subcmds
 };
 
-static void print_data(const struct shell *shell, int idx, int addr)
+static void print_data(const struct shell *shell, struct app_driver_slot *slot)
 {
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	struct app_data_em1xx data_copy = m_data;
-	k_mutex_unlock(&m_data_mutex);
+	const struct app_data_em1xx *data = slot->ctx;
 
-	shell_print(shell, "[%d] EM1XX (EM111) @ addr %d:", idx, addr);
-	shell_print(shell, "  voltage:        %.1f V", (double)data_copy.voltage);
-	shell_print(shell, "  current:        %.3f A", (double)data_copy.current);
-	shell_print(shell, "  frequency:      %.2f Hz", (double)data_copy.frequency);
-	shell_print(shell, "  power:          %.4f kW", (double)data_copy.power);
-	shell_print(shell, "  power_apparent: %.4f kVA", (double)data_copy.power_apparent);
-	shell_print(shell, "  power_reactive: %.4f kvar", (double)data_copy.power_reactive);
-	shell_print(shell, "  power_factor:   %.3f", (double)data_copy.power_factor);
-	shell_print(shell, "  energy_in:      %.3f kWh", (double)data_copy.energy_in);
-	shell_print(shell, "  energy_out:     %.3f kWh", (double)data_copy.energy_out);
+	app_device_print_header(shell, slot, "EM1XX (EM111)");
+	shell_print(shell, "  voltage:        %.1f V", (double)data->voltage);
+	shell_print(shell, "  current:        %.3f A", (double)data->current);
+	shell_print(shell, "  frequency:      %.2f Hz", (double)data->frequency);
+	shell_print(shell, "  power:          %.4f kW", (double)data->power);
+	shell_print(shell, "  power_apparent: %.4f kVA", (double)data->power_apparent);
+	shell_print(shell, "  power_reactive: %.4f kvar", (double)data->power_reactive);
+	shell_print(shell, "  power_factor:   %.3f", (double)data->power_factor);
+	shell_print(shell, "  energy_in:      %.3f kWh", (double)data->energy_in);
+	shell_print(shell, "  energy_out:     %.3f kWh", (double)data->energy_out);
 }
 
 const struct app_device_driver em1xx_driver = {
 	.name = "em1xx",
 	.type = APP_DEVICE_TYPE_EM1XX,
+	.transport = APP_DEVICE_TRANSPORT_MODBUS,
+	.ctx_size = sizeof(struct app_data_em1xx),
+	.rec_size = sizeof(struct em1xx_sample),
 	.init = init,
 	.sample = sample,
-	.deinit = NULL,
-	.calibrate = NULL,
-	.reset = NULL,
-	.config = config,
 	.print_data = print_data,
 };
 
-const struct app_data_em1xx *em1xx_get_data(void)
+const struct app_data_em1xx *em1xx_get_data(const struct app_driver_slot *slot)
 {
-	return &m_data;
-}
-
-void em1xx_set_addr(uint8_t addr)
-{
-	if (addr >= 1 && addr <= 247) {
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.modbus_addr = addr;
-		k_mutex_unlock(&m_data_mutex);
-	}
-}
-
-uint8_t em1xx_get_addr(void)
-{
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
-	return addr;
-}
-
-int em1xx_get_samples(struct em1xx_sample *out, int max_count)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = (m_sample_count < max_count) ? m_sample_count : max_count;
-	for (int i = 0; i < count; i++) {
-		out[i] = m_samples[i];
-	}
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
-}
-
-void em1xx_clear_samples(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	m_sample_count = 0;
-	k_mutex_unlock(&m_samples_mutex);
-	LOG_DBG("EM1XX: Sample buffer cleared");
-}
-
-int em1xx_get_sample_count(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = m_sample_count;
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
+	return slot->ctx;
 }

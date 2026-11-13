@@ -37,13 +37,12 @@ struct app_data_iem3000 {
 	float voltage_l1, current_l1, power_l1;
 	float voltage_l2, current_l2, power_l2;
 	float voltage_l3, current_l3, power_l3;
-	uint8_t modbus_addr;
 	uint32_t last_sample;
 	uint32_t error_count;
 	bool valid;
 };
 
-/* Sample entry for CBOR buffer */
+/* Sample record (slot record ring, encoded to CBOR) */
 struct iem3000_sample {
 	uint64_t timestamp;
 	float voltage_l1, voltage_l2, voltage_l3;
@@ -58,13 +57,10 @@ struct iem3000_sample {
 	float energy_out;
 };
 
-const struct app_data_iem3000 *iem3000_get_data(void);
-void iem3000_set_addr(uint8_t addr);
-uint8_t iem3000_get_addr(void);
+struct app_driver_slot;
 
-int iem3000_get_samples(struct iem3000_sample *out, int max_count);
-void iem3000_clear_samples(void);
-int iem3000_get_sample_count(void);
+/* Latest data of a slot (caller holds slot->lock) */
+const struct app_data_iem3000 *iem3000_get_data(const struct app_driver_slot *slot);
 
 #ifdef __cplusplus
 }

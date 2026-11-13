@@ -11,6 +11,8 @@
 #include "app_config.h"
 #include "app_data.h"
 #include "app_device.h"
+#include "app_driver_store.h"
+#include "drivers/drv_interface.h"
 #include "feature.h"
 
 /* Driver includes for data access */
@@ -23,6 +25,7 @@
 #include "drivers/drv_promag_mf7s.h"
 #include "drivers/drv_flowt_ft201.h"
 #include "drivers/drv_piketronic_rpp.h"
+#include "drivers/drv_piketronic_rppu.h"
 #include "drivers/drv_solax_g3.h"
 
 /* CHESTER includes */
@@ -57,43 +60,41 @@
 
 LOG_MODULE_REGISTER(app_cbor, LOG_LEVEL_DBG);
 
-#define MAX_SAMPLES 32
-
-static int encode_device_microsens(zcbor_state_t *zs, int device_idx)
+static int encode_device_microsens(zcbor_state_t *zs, struct app_driver_slot *slot, uint32_t first,
+				   uint32_t end)
 {
-	struct microsens_sample samples[MAX_SAMPLES];
-	int count = microsens_get_samples(samples, MAX_SAMPLES);
-
-	if (count == 0) {
+	if (first == end) {
 		return 0;
 	}
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
 	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct microsens_sample *sample = app_driver_rec_get(slot, seq);
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
-		zcbor_uint64_put(zs, samples[i].timestamp);
+		zcbor_uint64_put(zs, sample->timestamp);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CO2_PERCENT);
-		if (!isnan(samples[i].co2_percent)) {
-			zcbor_int32_put(zs, (int32_t)(samples[i].co2_percent * 1000.f));
+		if (!isnan(sample->co2_percent)) {
+			zcbor_int32_put(zs, (int32_t)(sample->co2_percent * 1000.f));
 		} else {
 			zcbor_nil_put(zs, NULL);
 		}
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TEMPERATURE);
-		if (!isnan(samples[i].temperature_c)) {
-			zcbor_int32_put(zs, (int32_t)(samples[i].temperature_c * 100.f));
+		if (!isnan(sample->temperature_c)) {
+			zcbor_int32_put(zs, (int32_t)(sample->temperature_c * 100.f));
 		} else {
 			zcbor_nil_put(zs, NULL);
 		}
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__PRESSURE);
-		if (!isnan(samples[i].pressure_mbar)) {
-			zcbor_int32_put(zs, (int32_t)(samples[i].pressure_mbar * 10.f));
+		if (!isnan(sample->pressure_mbar)) {
+			zcbor_int32_put(zs, (int32_t)(sample->pressure_mbar * 10.f));
 		} else {
 			zcbor_nil_put(zs, NULL);
 		}
@@ -106,49 +107,49 @@ static int encode_device_microsens(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
-static int encode_device_or_we_504(zcbor_state_t *zs, int device_idx)
+static int encode_device_or_we_504(zcbor_state_t *zs, struct app_driver_slot *slot, uint32_t first,
+				   uint32_t end)
 {
-	struct or_we_504_sample samples[MAX_SAMPLES];
-	int count = or_we_504_get_samples(samples, MAX_SAMPLES);
-
-	if (count == 0) {
+	if (first == end) {
 		return 0;
 	}
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
 	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct or_we_504_sample *sample = app_driver_rec_get(slot, seq);
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
-		zcbor_uint64_put(zs, samples[i].timestamp);
+		zcbor_uint64_put(zs, sample->timestamp);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current * 1000.f));
 
 		/* Power/energy/PF as native float32 (kW, kVA, kvar, kWh, dimensionless) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER);
-		zcbor_float32_put(zs, samples[i].power);
+		zcbor_float32_put(zs, sample->power);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_APPARENT);
-		zcbor_float32_put(zs, samples[i].power_apparent);
+		zcbor_float32_put(zs, sample->power_apparent);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_REACTIVE);
-		zcbor_float32_put(zs, samples[i].power_reactive);
+		zcbor_float32_put(zs, sample->power_reactive);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR);
-		zcbor_float32_put(zs, samples[i].power_factor);
+		zcbor_float32_put(zs, sample->power_factor);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FREQUENCY);
-		zcbor_int32_put(zs, (int32_t)(samples[i].frequency * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->frequency * 100.f));
 
 		/* OR-WE-504 reads only active import (no export register) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_IN);
-		zcbor_float32_put(zs, samples[i].energy_in);
+		zcbor_float32_put(zs, sample->energy_in);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -158,84 +159,84 @@ static int encode_device_or_we_504(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
-static int encode_device_or_we_516(zcbor_state_t *zs, int device_idx)
+static int encode_device_or_we_516(zcbor_state_t *zs, struct app_driver_slot *slot, uint32_t first,
+				   uint32_t end)
 {
-	struct or_we_516_sample samples[MAX_SAMPLES];
-	int count = or_we_516_get_samples(samples, MAX_SAMPLES);
-
-	if (count == 0) {
+	if (first == end) {
 		return 0;
 	}
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
 	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct or_we_516_sample *sample = app_driver_rec_get(slot, seq);
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
-		zcbor_uint64_put(zs, samples[i].timestamp);
+		zcbor_uint64_put(zs, sample->timestamp);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE_L1);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage_l1 * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage_l1 * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE_L2);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage_l2 * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage_l2 * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE_L3);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage_l3 * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage_l3 * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L1);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current_l1 * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current_l1 * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L2);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current_l2 * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current_l2 * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L3);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current_l3 * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current_l3 * 1000.f));
 
 		/* OR-WE-516 power/energy as native float32 (kW, kVA, kvar, kWh) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L1);
-		zcbor_float32_put(zs, samples[i].power_l1);
+		zcbor_float32_put(zs, sample->power_l1);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L2);
-		zcbor_float32_put(zs, samples[i].power_l2);
+		zcbor_float32_put(zs, sample->power_l2);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L3);
-		zcbor_float32_put(zs, samples[i].power_l3);
+		zcbor_float32_put(zs, sample->power_l3);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER);
-		zcbor_float32_put(zs, samples[i].power);
+		zcbor_float32_put(zs, sample->power);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_APPARENT);
-		zcbor_float32_put(zs, samples[i].power_apparent);
+		zcbor_float32_put(zs, sample->power_apparent);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_REACTIVE);
-		zcbor_float32_put(zs, samples[i].power_reactive);
+		zcbor_float32_put(zs, sample->power_reactive);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR);
-		zcbor_float32_put(zs, samples[i].power_factor);
+		zcbor_float32_put(zs, sample->power_factor);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L1);
-		zcbor_float32_put(zs, samples[i].power_factor_l1);
+		zcbor_float32_put(zs, sample->power_factor_l1);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L2);
-		zcbor_float32_put(zs, samples[i].power_factor_l2);
+		zcbor_float32_put(zs, sample->power_factor_l2);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L3);
-		zcbor_float32_put(zs, samples[i].power_factor_l3);
+		zcbor_float32_put(zs, sample->power_factor_l3);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FREQUENCY);
-		zcbor_int32_put(zs, (int32_t)(samples[i].frequency * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->frequency * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY);
-		zcbor_float32_put(zs, samples[i].energy);
+		zcbor_float32_put(zs, sample->energy);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_IN);
-		zcbor_float32_put(zs, samples[i].energy_in);
+		zcbor_float32_put(zs, sample->energy_in);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_OUT);
-		zcbor_float32_put(zs, samples[i].energy_out);
+		zcbor_float32_put(zs, sample->energy_out);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -245,51 +246,51 @@ static int encode_device_or_we_516(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
-static int encode_device_em1xx(zcbor_state_t *zs, int device_idx)
+static int encode_device_em1xx(zcbor_state_t *zs, struct app_driver_slot *slot, uint32_t first,
+			       uint32_t end)
 {
-	struct em1xx_sample samples[MAX_SAMPLES];
-	int count = em1xx_get_samples(samples, MAX_SAMPLES);
-
-	if (count == 0) {
+	if (first == end) {
 		return 0;
 	}
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
 	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct em1xx_sample *sample = app_driver_rec_get(slot, seq);
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
-		zcbor_uint64_put(zs, samples[i].timestamp);
+		zcbor_uint64_put(zs, sample->timestamp);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current * 1000.f));
 
 		/* EM1XX power/energy/PF as native float32 (kW, kVA, kvar, kWh, dim) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER);
-		zcbor_float32_put(zs, samples[i].power);
+		zcbor_float32_put(zs, sample->power);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_APPARENT);
-		zcbor_float32_put(zs, samples[i].power_apparent);
+		zcbor_float32_put(zs, sample->power_apparent);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_REACTIVE);
-		zcbor_float32_put(zs, samples[i].power_reactive);
+		zcbor_float32_put(zs, sample->power_reactive);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR);
-		zcbor_float32_put(zs, samples[i].power_factor);
+		zcbor_float32_put(zs, sample->power_factor);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FREQUENCY);
-		zcbor_int32_put(zs, (int32_t)(samples[i].frequency * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->frequency * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_IN);
-		zcbor_float32_put(zs, samples[i].energy_in);
+		zcbor_float32_put(zs, sample->energy_in);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_OUT);
-		zcbor_float32_put(zs, samples[i].energy_out);
+		zcbor_float32_put(zs, sample->energy_out);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -299,87 +300,87 @@ static int encode_device_em1xx(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
-static int encode_device_em5xx(zcbor_state_t *zs, int device_idx)
+static int encode_device_em5xx(zcbor_state_t *zs, struct app_driver_slot *slot, uint32_t first,
+			       uint32_t end)
 {
-	struct em5xx_sample samples[MAX_SAMPLES];
-	int count = em5xx_get_samples(samples, MAX_SAMPLES);
-
-	if (count == 0) {
+	if (first == end) {
 		return 0;
 	}
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
 	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct em5xx_sample *sample = app_driver_rec_get(slot, seq);
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
-		zcbor_uint64_put(zs, samples[i].timestamp);
+		zcbor_uint64_put(zs, sample->timestamp);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current * 1000.f));
 
 		/* EM5XX power/energy/PF as native float32 (kW, kVA, kvar, kWh, dim) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER);
-		zcbor_float32_put(zs, samples[i].power);
+		zcbor_float32_put(zs, sample->power);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_APPARENT);
-		zcbor_float32_put(zs, samples[i].power_apparent);
+		zcbor_float32_put(zs, sample->power_apparent);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_REACTIVE);
-		zcbor_float32_put(zs, samples[i].power_reactive);
+		zcbor_float32_put(zs, sample->power_reactive);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR);
-		zcbor_float32_put(zs, samples[i].power_factor);
+		zcbor_float32_put(zs, sample->power_factor);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FREQUENCY);
-		zcbor_int32_put(zs, (int32_t)(samples[i].frequency * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->frequency * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_IN);
-		zcbor_float32_put(zs, samples[i].energy_in);
+		zcbor_float32_put(zs, sample->energy_in);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_OUT);
-		zcbor_float32_put(zs, samples[i].energy_out);
+		zcbor_float32_put(zs, sample->energy_out);
 
 		/* Per-phase data */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE_L1);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage_l1 * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage_l1 * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE_L2);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage_l2 * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage_l2 * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE_L3);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage_l3 * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage_l3 * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L1);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current_l1 * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current_l1 * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L2);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current_l2 * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current_l2 * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L3);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current_l3 * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current_l3 * 1000.f));
 
 		/* Per-phase power as native float32 (kW) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L1);
-		zcbor_float32_put(zs, samples[i].power_l1);
+		zcbor_float32_put(zs, sample->power_l1);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L2);
-		zcbor_float32_put(zs, samples[i].power_l2);
+		zcbor_float32_put(zs, sample->power_l2);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L3);
-		zcbor_float32_put(zs, samples[i].power_l3);
+		zcbor_float32_put(zs, sample->power_l3);
 
 		/* Per-phase power factor as native float32 */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L1);
-		zcbor_float32_put(zs, samples[i].power_factor_l1);
+		zcbor_float32_put(zs, sample->power_factor_l1);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L2);
-		zcbor_float32_put(zs, samples[i].power_factor_l2);
+		zcbor_float32_put(zs, sample->power_factor_l2);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR_L3);
-		zcbor_float32_put(zs, samples[i].power_factor_l3);
+		zcbor_float32_put(zs, sample->power_factor_l3);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -389,72 +390,72 @@ static int encode_device_em5xx(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
-static int encode_device_iem3000(zcbor_state_t *zs, int device_idx)
+static int encode_device_iem3000(zcbor_state_t *zs, struct app_driver_slot *slot, uint32_t first,
+				 uint32_t end)
 {
-	struct iem3000_sample samples[MAX_SAMPLES];
-	int count = iem3000_get_samples(samples, MAX_SAMPLES);
-
-	if (count == 0) {
+	if (first == end) {
 		return 0;
 	}
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
 	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct iem3000_sample *sample = app_driver_rec_get(slot, seq);
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
-		zcbor_uint64_put(zs, samples[i].timestamp);
+		zcbor_uint64_put(zs, sample->timestamp);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE_L1);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage_l1 * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage_l1 * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE_L2);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage_l2 * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage_l2 * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VOLTAGE_L3);
-		zcbor_int32_put(zs, (int32_t)(samples[i].voltage_l3 * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->voltage_l3 * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L1);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current_l1 * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current_l1 * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L2);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current_l2 * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current_l2 * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CURRENT_L3);
-		zcbor_int32_put(zs, (int32_t)(samples[i].current_l3 * 1000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->current_l3 * 1000.f));
 
 		/* iEM3000 power/energy/PF as native float32 (kW, kVA, kvar, kWh, dim) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L1);
-		zcbor_float32_put(zs, samples[i].power_l1);
+		zcbor_float32_put(zs, sample->power_l1);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L2);
-		zcbor_float32_put(zs, samples[i].power_l2);
+		zcbor_float32_put(zs, sample->power_l2);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_L3);
-		zcbor_float32_put(zs, samples[i].power_l3);
+		zcbor_float32_put(zs, sample->power_l3);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER);
-		zcbor_float32_put(zs, samples[i].power);
+		zcbor_float32_put(zs, sample->power);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_APPARENT);
-		zcbor_float32_put(zs, samples[i].power_apparent);
+		zcbor_float32_put(zs, sample->power_apparent);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_REACTIVE);
-		zcbor_float32_put(zs, samples[i].power_reactive);
+		zcbor_float32_put(zs, sample->power_reactive);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__POWER_FACTOR);
-		zcbor_float32_put(zs, samples[i].power_factor);
+		zcbor_float32_put(zs, sample->power_factor);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FREQUENCY);
-		zcbor_int32_put(zs, (int32_t)(samples[i].frequency * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->frequency * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_IN);
-		zcbor_float32_put(zs, samples[i].energy_in);
+		zcbor_float32_put(zs, sample->energy_in);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_OUT);
-		zcbor_float32_put(zs, samples[i].energy_out);
+		zcbor_float32_put(zs, sample->energy_out);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -464,26 +465,26 @@ static int encode_device_iem3000(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
-static int encode_device_promag_mf7s(zcbor_state_t *zs, int device_idx)
+static int encode_device_promag_mf7s(zcbor_state_t *zs, struct app_driver_slot *slot,
+				     uint32_t first, uint32_t end)
 {
-	struct promag_mf7s_sample samples[MAX_SAMPLES];
-	int count = promag_mf7s_get_samples(samples, MAX_SAMPLES);
-
-	if (count == 0) {
+	if (first == end) {
 		return 0;
 	}
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
 	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct promag_mf7s_sample *sample = app_driver_rec_get(slot, seq);
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
-		zcbor_uint64_put(zs, samples[i].timestamp);
+		zcbor_uint64_put(zs, sample->timestamp);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CARD_UID);
-		zcbor_uint32_put(zs, samples[i].uid);
+		zcbor_uint32_put(zs, sample->uid);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -493,59 +494,59 @@ static int encode_device_promag_mf7s(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
-static int encode_device_flowt_ft201(zcbor_state_t *zs, int device_idx)
+static int encode_device_flowt_ft201(zcbor_state_t *zs, struct app_driver_slot *slot,
+				     uint32_t first, uint32_t end)
 {
-	struct flowt_ft201_sample samples[MAX_SAMPLES];
-	int count = flowt_ft201_get_samples(samples, MAX_SAMPLES);
-
-	if (count == 0) {
+	if (first == end) {
 		return 0;
 	}
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
 	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct flowt_ft201_sample *sample = app_driver_rec_get(slot, seq);
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
-		zcbor_uint64_put(zs, samples[i].timestamp);
+		zcbor_uint64_put(zs, sample->timestamp);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FLOW_S);
-		zcbor_int32_put(zs, (int32_t)(samples[i].flow_s * 10000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->flow_s * 10000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FLOW_M);
-		zcbor_int32_put(zs, (int32_t)(samples[i].flow_m * 10000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->flow_m * 10000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FLOW_H);
-		zcbor_int32_put(zs, (int32_t)(samples[i].flow_h * 10000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->flow_h * 10000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__VELOCITY);
-		zcbor_int32_put(zs, (int32_t)(samples[i].velocity * 10000.f));
+		zcbor_int32_put(zs, (int32_t)(sample->velocity * 10000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TOTAL_POSITIVE);
-		zcbor_int64_put(zs, (int64_t)(samples[i].total_positive * 1000.f));
+		zcbor_int64_put(zs, (int64_t)(sample->total_positive * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TOTAL_NEGATIVE);
-		zcbor_int64_put(zs, (int64_t)(samples[i].total_negative * 1000.f));
+		zcbor_int64_put(zs, (int64_t)(sample->total_negative * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TOTAL_NET);
-		zcbor_int64_put(zs, (int64_t)(samples[i].total_net * 1000.f));
+		zcbor_int64_put(zs, (int64_t)(sample->total_net * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_HOT);
-		zcbor_int64_put(zs, (int64_t)(samples[i].energy_hot * 1000.f));
+		zcbor_int64_put(zs, (int64_t)(sample->energy_hot * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ENERGY_COLD);
-		zcbor_int64_put(zs, (int64_t)(samples[i].energy_cold * 1000.f));
+		zcbor_int64_put(zs, (int64_t)(sample->energy_cold * 1000.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TEMP_INLET);
-		zcbor_int32_put(zs, (int32_t)(samples[i].temp_inlet * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->temp_inlet * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TEMP_OUTLET);
-		zcbor_int32_put(zs, (int32_t)(samples[i].temp_outlet * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->temp_outlet * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__SIGNAL_QUALITY);
-		zcbor_uint32_put(zs, samples[i].signal_quality);
+		zcbor_uint32_put(zs, sample->signal_quality);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -555,35 +556,35 @@ static int encode_device_flowt_ft201(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
-static int encode_device_piketronic_rpp(zcbor_state_t *zs, int device_idx)
+static int encode_device_piketronic_rpp(zcbor_state_t *zs, struct app_driver_slot *slot,
+					uint32_t first, uint32_t end)
 {
-	struct piketronic_rpp_sample samples[MAX_SAMPLES];
-	int count = piketronic_rpp_get_samples(samples, MAX_SAMPLES);
-
-	if (count == 0) {
+	if (first == end) {
 		return 0;
 	}
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
 	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct piketronic_rpp_sample *sample = app_driver_rec_get(slot, seq);
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
-		zcbor_uint64_put(zs, samples[i].timestamp);
+		zcbor_uint64_put(zs, sample->timestamp);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__RADON_CONCENTRATION);
-		zcbor_uint32_put(zs, samples[i].concentration);
+		zcbor_uint32_put(zs, sample->concentration);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__RADON_CONCENTRATION_DAY);
-		zcbor_uint32_put(zs, samples[i].concentration_day);
+		zcbor_uint32_put(zs, sample->concentration_day);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TEMPERATURE);
-		zcbor_int32_put(zs, (int32_t)samples[i].temperature * 100);
+		zcbor_int32_put(zs, (int32_t)sample->temperature * 100);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__HUMIDITY);
-		zcbor_uint32_put(zs, samples[i].humidity);
+		zcbor_uint32_put(zs, sample->humidity);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -593,58 +594,121 @@ static int encode_device_piketronic_rpp(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
-static int encode_device_solax_g3(zcbor_state_t *zs, int device_idx)
+/* RPP-U reports through the same four keys as the RPP-R (see encode above) and adds the
+ * accumulator voltage. The averaging window behind RADON_CONCENTRATION differs - the RPP-U
+ * sends its sensitive 0.5 h average where the RPP-R sends a 1 h one - but a consumer reads
+ * that from the device's `type_name`, so it is not encoded into the key.
+ */
+static int encode_device_piketronic_rppu(zcbor_state_t *zs, struct app_driver_slot *slot,
+					 uint32_t first, uint32_t end)
 {
-	struct solax_g3_sample samples[MAX_SAMPLES];
-	int count = solax_g3_get_samples(samples, MAX_SAMPLES);
-
-	if (count == 0) {
+	if (first == end) {
 		return 0;
 	}
 
 	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
 	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
-	for (int i = 0; i < count; i++) {
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct piketronic_rppu_sample *sample = app_driver_rec_get(slot, seq);
+
 		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
-		zcbor_uint64_put(zs, samples[i].timestamp);
+		zcbor_uint64_put(zs, sample->timestamp);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__RADON_CONCENTRATION);
+		zcbor_uint32_put(zs, sample->concentration);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__RADON_CONCENTRATION_DAY);
+		zcbor_uint32_put(zs, sample->concentration_day);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TEMPERATURE);
+		zcbor_int32_put(zs, (int32_t)sample->temperature * 100);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__HUMIDITY);
+		zcbor_uint32_put(zs, sample->humidity);
+
+		/* Accumulator voltage, in millivolts straight onto a key declared $div 1000
+		 * $fpp 3, so the cloud reports the probe's own resolution (3.576 V) and matches
+		 * what the LoRaWAN payload carries. It deliberately does NOT reuse the shared
+		 * `voltage` key: that is $div 100 because the meters report mains voltage
+		 * through it. The RPP-R has no equivalent - it is bus-powered.
+		 */
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__ACCUMULATOR_VOLTAGE);
+		if (sample->voltage_mv == 0) {
+			/* 0 means the probe did not report a voltage, which is not a flat
+			 * accumulator - drv_piketronic_rppu.c skips the alert on the same
+			 * grounds, and the LRW decoder reports null. Sent as a plain 0 it
+			 * decodes to 0.000 V, so one `accumulator_voltage < 3.3` rule - the
+			 * kind sharing a key name across both transports invites - would fire
+			 * here while staying quiet on LoRaWAN for the same probe state.
+			 */
+			zcbor_nil_put(zs, NULL);
+		} else {
+			zcbor_int32_put(zs, (int32_t)sample->voltage_mv);
+		}
+
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+
+	zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+	return 0;
+}
+
+static int encode_device_solax_g3(zcbor_state_t *zs, struct app_driver_slot *slot, uint32_t first,
+				  uint32_t end)
+{
+	if (first == end) {
+		return 0;
+	}
+
+	zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA);
+	zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+	for (uint32_t seq = first; seq != end; seq++) {
+		const struct solax_g3_sample *sample = app_driver_rec_get(slot, seq);
+
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__TIMESTAMP);
+		zcbor_uint64_put(zs, sample->timestamp);
 
 		/* Powers in W as raw int32 (negatives -> CBOR negative int) */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__PV1_POWER);
-		zcbor_int32_put(zs, (int32_t)samples[i].pv1_power);
+		zcbor_int32_put(zs, (int32_t)sample->pv1_power);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__PV2_POWER);
-		zcbor_int32_put(zs, (int32_t)samples[i].pv2_power);
+		zcbor_int32_put(zs, (int32_t)sample->pv2_power);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__BAT_POWER);
-		zcbor_int32_put(zs, (int32_t)samples[i].bat_power);
+		zcbor_int32_put(zs, (int32_t)sample->bat_power);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__BAT_TEMP);
-		zcbor_int32_put(zs, (int32_t)samples[i].bat_temp);
+		zcbor_int32_put(zs, (int32_t)sample->bat_temp);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__BAT_SOC);
-		zcbor_int32_put(zs, (int32_t)samples[i].bat_soc);
+		zcbor_int32_put(zs, (int32_t)sample->bat_soc);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FEEDIN_POWER);
-		zcbor_int32_put(zs, (int32_t)samples[i].feedin_power);
+		zcbor_int32_put(zs, (int32_t)sample->feedin_power);
 
 		/* Energies as int32(kWh x 100), codec applies $div:100 $fpp:2 */
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__FEEDIN_ENERGY);
-		zcbor_int32_put(zs, (int32_t)(samples[i].feedin_energy * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->feedin_energy * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__CONSUME_ENERGY);
-		zcbor_int32_put(zs, (int32_t)(samples[i].consume_energy * 100.f));
+		zcbor_int32_put(zs, (int32_t)(sample->consume_energy * 100.f));
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__EPS_POWER_L1);
-		zcbor_int32_put(zs, (int32_t)samples[i].eps_power_l1);
+		zcbor_int32_put(zs, (int32_t)sample->eps_power_l1);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__EPS_POWER_L2);
-		zcbor_int32_put(zs, (int32_t)samples[i].eps_power_l2);
+		zcbor_int32_put(zs, (int32_t)sample->eps_power_l2);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_DEVICES__DATA__EPS_POWER_L3);
-		zcbor_int32_put(zs, (int32_t)samples[i].eps_power_l3);
+		zcbor_int32_put(zs, (int32_t)sample->eps_power_l3);
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 	}
@@ -654,7 +718,132 @@ static int encode_device_solax_g3(zcbor_state_t *zs, int device_idx)
 	return 0;
 }
 
-static int encode_devices(zcbor_state_t *zs)
+/* value * mul rounded to int32; nil if not available or out of the int32 range */
+static void put_value_mul(zcbor_state_t *zs, float value, float mul)
+{
+	int32_t v;
+
+	if (app_driver_value_to_int32(value, mul, &v)) {
+		zcbor_int32_put(zs, v);
+	} else {
+		zcbor_nil_put(zs, NULL);
+	}
+}
+
+static void put_sample_mul(zcbor_state_t *zs, const struct ctr_data_aggreg *sample, float mul)
+{
+	put_value_mul(zs, sample->min, mul);
+	put_value_mul(zs, sample->max, mul);
+	put_value_mul(zs, sample->avg, mul);
+	put_value_mul(zs, sample->mdn, mul);
+}
+
+/*
+ * Items of a table-driven device, one $tsp list per item:
+ *   <group>: { <item>: { measurements: [ts, interval, min, max, avg, mdn, ...] } }  (STATS)
+ *   <group>: { <item>: { measurements: [ts, interval, value, ...] } }               (others)
+ * Caller holds slot->lock.
+ */
+static void encode_device_items(zcbor_state_t *zs, struct app_driver_slot *slot, uint32_t first,
+				uint32_t end)
+{
+	const struct app_device_driver *drv = slot->drv;
+
+	if (first == end) {
+		return;
+	}
+
+	zcbor_uint32_put(zs, drv->codec_key);
+	zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+	for (size_t i = 0; i < drv->item_count; i++) {
+		const struct app_driver_item *item = &drv->items[i];
+
+		zcbor_uint32_put(zs, item->key);
+		zcbor_map_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint32_put(zs, item->key_measurements);
+		zcbor_list_start_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+
+		zcbor_uint64_put(zs, app_driver_win_ts(slot, first));
+		zcbor_uint32_put(zs, slot->items.interval);
+
+		for (uint32_t seq = first; seq != end; seq++) {
+			if (item->mode == APP_DRIVER_AGGREG_STATS) {
+				put_sample_mul(zs, app_driver_win_stats(slot, i, seq), item->mul);
+			} else {
+				put_value_mul(zs, app_driver_win_value(slot, i, seq), item->mul);
+			}
+		}
+
+		zcbor_list_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+	}
+
+	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
+}
+
+/* Type-specific measurements of a device; caller holds slot->lock */
+static void encode_device_data(zcbor_state_t *zs, int idx, enum app_device_type type,
+			       struct app_driver_slot *slot, const struct app_send_select *sel)
+{
+	/* Entries may have been dropped from a full ring since the selection was made */
+	uint32_t first = sel->rec[idx].first;
+	uint32_t end = sel->rec[idx].end;
+
+	if (slot->drv->items) {
+		first = sel->win[idx].first;
+		end = sel->win[idx].end;
+
+		app_driver_seq_clamp(&first, &end, app_driver_win_first(slot),
+				     app_driver_win_end(slot));
+		encode_device_items(zs, slot, first, end);
+		return;
+	}
+
+	app_driver_seq_clamp(&first, &end, app_driver_rec_first(slot), app_driver_rec_end(slot));
+
+	switch (type) {
+	case APP_DEVICE_TYPE_MICROSENS_180HS:
+		encode_device_microsens(zs, slot, first, end);
+		break;
+	case APP_DEVICE_TYPE_OR_WE_504:
+		encode_device_or_we_504(zs, slot, first, end);
+		break;
+	case APP_DEVICE_TYPE_OR_WE_516:
+		encode_device_or_we_516(zs, slot, first, end);
+		break;
+	case APP_DEVICE_TYPE_EM1XX:
+		encode_device_em1xx(zs, slot, first, end);
+		break;
+	case APP_DEVICE_TYPE_EM5XX:
+		encode_device_em5xx(zs, slot, first, end);
+		break;
+	case APP_DEVICE_TYPE_IEM3000:
+		encode_device_iem3000(zs, slot, first, end);
+		break;
+	case APP_DEVICE_TYPE_PROMAG_MF7S:
+		encode_device_promag_mf7s(zs, slot, first, end);
+		break;
+	case APP_DEVICE_TYPE_FLOWT_FT201:
+		encode_device_flowt_ft201(zs, slot, first, end);
+		break;
+	case APP_DEVICE_TYPE_PIKETRONIC_RPP:
+		encode_device_piketronic_rpp(zs, slot, first, end);
+		break;
+	case APP_DEVICE_TYPE_PIKETRONIC_RPPU:
+		encode_device_piketronic_rppu(zs, slot, first, end);
+		break;
+	case APP_DEVICE_TYPE_SOLAX_G3:
+		encode_device_solax_g3(zs, slot, first, end);
+		break;
+	default:
+		/* Unknown device type - skip measurements */
+		break;
+	}
+}
+
+static int encode_devices(zcbor_state_t *zs, const struct app_send_select *sel)
 {
 	int device_count = 0;
 
@@ -695,40 +884,12 @@ static int encode_devices(zcbor_state_t *zs)
 		zcbor_uint32_put(zs, g_app_config.devices[i].addr);
 
 		/* Type-specific measurements */
-		switch (type) {
-		case APP_DEVICE_TYPE_MICROSENS_180HS:
-			encode_device_microsens(zs, i);
-			break;
-		case APP_DEVICE_TYPE_OR_WE_504:
-			encode_device_or_we_504(zs, i);
-			break;
-		case APP_DEVICE_TYPE_OR_WE_516:
-			encode_device_or_we_516(zs, i);
-			break;
-		case APP_DEVICE_TYPE_EM1XX:
-			encode_device_em1xx(zs, i);
-			break;
-		case APP_DEVICE_TYPE_EM5XX:
-			encode_device_em5xx(zs, i);
-			break;
-		case APP_DEVICE_TYPE_IEM3000:
-			encode_device_iem3000(zs, i);
-			break;
-		case APP_DEVICE_TYPE_PROMAG_MF7S:
-			encode_device_promag_mf7s(zs, i);
-			break;
-		case APP_DEVICE_TYPE_FLOWT_FT201:
-			encode_device_flowt_ft201(zs, i);
-			break;
-		case APP_DEVICE_TYPE_PIKETRONIC_RPP:
-			encode_device_piketronic_rpp(zs, i);
-			break;
-		case APP_DEVICE_TYPE_SOLAX_G3:
-			encode_device_solax_g3(zs, i);
-			break;
-		default:
-			/* Unknown device type - skip measurements */
-			break;
+		struct app_driver_slot *slot = app_device_get_slot(i);
+
+		if (slot) {
+			app_driver_slot_lock(slot);
+			encode_device_data(zs, i, type, slot, sel);
+			app_driver_slot_unlock(slot);
 		}
 
 		zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
@@ -740,37 +901,6 @@ static int encode_devices(zcbor_state_t *zs)
 }
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
-
-static void put_sample_mul(zcbor_state_t *zs, struct ctr_data_aggreg *sample, float mul)
-{
-	if (isnan(sample->min)) {
-		zcbor_nil_put(zs, NULL);
-	} else {
-		int32_t v = sample->min * mul;
-		zcbor_int32_put(zs, v);
-	}
-
-	if (isnan(sample->max)) {
-		zcbor_nil_put(zs, NULL);
-	} else {
-		int32_t v = sample->max * mul;
-		zcbor_int32_put(zs, v);
-	}
-
-	if (isnan(sample->avg)) {
-		zcbor_nil_put(zs, NULL);
-	} else {
-		int32_t v = sample->avg * mul;
-		zcbor_int32_put(zs, v);
-	}
-
-	if (isnan(sample->mdn)) {
-		zcbor_nil_put(zs, NULL);
-	} else {
-		int32_t v = sample->mdn * mul;
-		zcbor_int32_put(zs, v);
-	}
-}
 
 static int encode_ble_tags(zcbor_state_t *zs)
 {
@@ -874,7 +1004,7 @@ static int encode_ble_tags(zcbor_state_t *zs)
 
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
-static int encode(zcbor_state_t *zs)
+static int encode(zcbor_state_t *zs, const struct app_send_select *sel)
 {
 	int ret;
 
@@ -892,8 +1022,7 @@ static int encode(zcbor_state_t *zs)
 		zcbor_uint32_put(zs, 2);
 
 		zcbor_uint32_put(zs, CODEC_KEY_E_MESSAGE__SEQUENCE);
-		static uint32_t sequence;
-		zcbor_uint32_put(zs, sequence++);
+		zcbor_uint32_put(zs, sel->sequence);
 
 		uint64_t timestamp;
 		ret = ctr_rtc_get_ts(&timestamp);
@@ -1128,32 +1257,43 @@ static int encode(zcbor_state_t *zs)
 	/* ^^^ Preserved code "accelerometer" (end) */
 
 	/* Devices array */
-	encode_devices(zs);
+	encode_devices(zs, sel);
 
 #if defined(FEATURE_SUBSYSTEM_BLE_TAG)
 	/* BLE tags */
-	encode_ble_tags(zs);
+	if (sel->ble_tags) {
+		encode_ble_tags(zs);
+	}
 #endif /* defined(FEATURE_SUBSYSTEM_BLE_TAG) */
 
 	zcbor_map_end_encode(zs, ZCBOR_VALUE_IS_INDEFINITE_LENGTH);
 
 	if (!zcbor_check_error(zs)) {
-		LOG_ERR("Encoding failed: %d", zcbor_pop_error(zs));
+		int err = zcbor_pop_error(zs);
+
+		/* Payload buffer exhausted: the caller splits the report */
+		if (err == ZCBOR_ERR_NO_PAYLOAD) {
+			return -ENOSPC;
+		}
+
+		LOG_ERR("Encoding failed: %d", err);
 		return -EFAULT;
 	}
 
 	return 0;
 }
 
-int app_cbor_encode(zcbor_state_t *zs)
+int app_cbor_encode(zcbor_state_t *zs, const struct app_send_select *sel)
 {
 	int ret;
 
 	app_data_lock();
 
-	ret = encode(zs);
+	ret = encode(zs, sel);
 	if (ret) {
-		LOG_ERR("Call `encode` failed: %d", ret);
+		if (ret != -ENOSPC) {
+			LOG_ERR("Call `encode` failed: %d", ret);
+		}
 		app_data_unlock();
 		return ret;
 	}

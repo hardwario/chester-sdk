@@ -38,13 +38,12 @@ struct app_data_or_we_516 {
 	float voltage_l1, current_l1, power_l1, energy_l1, power_factor_l1;
 	float voltage_l2, current_l2, power_l2, energy_l2, power_factor_l2;
 	float voltage_l3, current_l3, power_l3, energy_l3, power_factor_l3;
-	uint8_t modbus_addr;
 	uint32_t last_sample;
 	uint32_t error_count;
 	bool valid;
 };
 
-/* Sample entry for CBOR buffer */
+/* Sample record (slot record ring, encoded to CBOR) */
 struct or_we_516_sample {
 	uint64_t timestamp;
 	float voltage_l1, voltage_l2, voltage_l3;
@@ -61,13 +60,10 @@ struct or_we_516_sample {
 	float energy_out;     /* export kWh */
 };
 
-const struct app_data_or_we_516 *or_we_516_get_data(void);
-void or_we_516_set_addr(uint8_t addr);
-uint8_t or_we_516_get_addr(void);
+struct app_driver_slot;
 
-int or_we_516_get_samples(struct or_we_516_sample *out, int max_count);
-void or_we_516_clear_samples(void);
-int or_we_516_get_sample_count(void);
+/* Latest data of a slot (caller holds slot->lock) */
+const struct app_data_or_we_516 *or_we_516_get_data(const struct app_driver_slot *slot);
 
 #ifdef __cplusplus
 }

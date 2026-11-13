@@ -35,22 +35,18 @@ struct app_data_promag_mf7s {
 	bool valid;
 };
 
-/* Sample entry for CBOR buffer */
+/* Sample record (slot record ring, encoded to CBOR) */
 struct promag_mf7s_sample {
 	uint64_t timestamp;
 	uint32_t uid;
 };
 
-/**
- * @brief Get pointer to Promag MF7S data
- *
- * @return Pointer to app_data_promag_mf7s structure
- */
-const struct app_data_promag_mf7s *promag_mf7s_get_data(void);
+struct app_driver_slot;
 
-int promag_mf7s_get_samples(struct promag_mf7s_sample *out, int max_count);
-void promag_mf7s_clear_samples(void);
-int promag_mf7s_get_sample_count(void);
+/**
+ * @brief Get the latest Promag MF7S data of a slot (caller holds slot->lock)
+ */
+const struct app_data_promag_mf7s *promag_mf7s_get_data(const struct app_driver_slot *slot);
 
 /**
  * @brief Promag MF7S driver instance

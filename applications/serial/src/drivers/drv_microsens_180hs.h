@@ -34,7 +34,7 @@ struct app_data_microsens {
 	uint32_t error_count;   /* Consecutive error count */
 };
 
-/* Sample entry for CBOR buffer */
+/* Sample record (slot record ring, encoded to CBOR) */
 struct microsens_sample {
 	uint64_t timestamp;
 	float co2_percent;
@@ -42,18 +42,12 @@ struct microsens_sample {
 	float pressure_mbar;
 };
 
-/**
- * @brief Get pointer to MicroSENS data
- *
- * Returns pointer to the microsens data structure in g_app_data.
- *
- * @return Pointer to app_data_microsens structure
- */
-struct app_data_microsens *microsens_get_data(void);
+struct app_driver_slot;
 
-int microsens_get_samples(struct microsens_sample *out, int max_count);
-void microsens_clear_samples(void);
-int microsens_get_sample_count(void);
+/**
+ * @brief Get the latest MicroSENS data of a slot (caller holds slot->lock)
+ */
+const struct app_data_microsens *microsens_get_data(const struct app_driver_slot *slot);
 
 /**
  * @brief MicroSENS driver instance

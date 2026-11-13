@@ -21,40 +21,6 @@
 
 LOG_MODULE_REGISTER(drv_or_we_504, LOG_LEVEL_DBG);
 
-#define MAX_SAMPLES 32
-
-/* Decode UINT32 Big Endian (standard Modbus format) */
-static uint32_t decode_uint32_be(const uint16_t *regs)
-{
-	return ((uint32_t)regs[0] << 16) | regs[1];
-}
-
-/* Parse parity string (e.g., "8E1", "8N1") */
-static int parse_parity(const char *str, char *parity, int *stop_bits)
-{
-	if (!str || strlen(str) < 3) {
-		return -EINVAL;
-	}
-	if (str[0] != '8') {
-		return -EINVAL;
-	}
-	char p = str[1];
-	if (p != 'N' && p != 'n' && p != 'E' && p != 'e' && p != 'O' && p != 'o') {
-		return -EINVAL;
-	}
-	int sb = str[2] - '0';
-	if (sb != 1 && sb != 2) {
-		return -EINVAL;
-	}
-	if (parity) {
-		*parity = (p == 'n') ? 'N' : (p == 'e') ? 'E' : (p == 'o') ? 'O' : p;
-	}
-	if (stop_bits) {
-		*stop_bits = sb;
-	}
-	return 0;
-}
-
 /* OR-WE-504 Register addresses */
 #define REG_VOLTAGE       0x0000  /* UINT16, /10 V */
 #define REG_CURRENT       0x0001  /* UINT16, /10 A */
@@ -65,293 +31,113 @@ static int parse_parity(const char *str, char *parity, int *stop_bits)
 #define REG_PF            0x0006  /* INT16,  /1000 PF */
 #define REG_ENERGY        0x0007  /* UINT32 BE, Wh */
 #define REG_ENERGY_REACT  0x0009  /* UINT32 BE, varh */
-#define REG_ADDRESS       0x000F  /* Address configuration register */
-
-/* Default Modbus address */
-#define DEFAULT_ADDR      1
-
-/* Global data storage */
-static struct app_data_or_we_504 m_data = {
-	.modbus_addr = DEFAULT_ADDR,
-	.valid = false,
-};
-
-static K_MUTEX_DEFINE(m_data_mutex);
-
-/* Sample buffer for CBOR encoding */
-static struct or_we_504_sample m_samples[MAX_SAMPLES];
-static int m_sample_count = 0;
-static K_MUTEX_DEFINE(m_samples_mutex);
-
-/* Unlock OR-WE-504 for configuration (function 0x28) */
-static int unlock_device(uint8_t addr)
-{
-	/*
-	 * OR-WE-504 requires unlock before configuration changes.
-	 * The unlock is done by writing to specific registers.
-	 * Default password is 0x00000000.
-	 *
-	 * Note: This is a simplified implementation.
-	 * Full implementation would use raw Modbus frame with function 0x28.
-	 */
-	LOG_INF("Unlocking OR-WE-504 at address %d (simplified)", addr);
-
-	/* For now, we'll use standard Modbus write which may work on some units */
-	/* Full unlock would require raw frame: [addr, 0x28, 0xFE, 0x01, 0x00, 0x02, 0x04, 0,0,0,0] */
-
-	return 0;
-}
-
-/* Forward declaration */
-static void print_data(const struct shell *shell, int idx, int addr);
 
 /* Driver functions */
 
-static int init(void)
+static int init(struct app_driver_slot *slot)
 {
+	struct app_data_or_we_504 *data = slot->ctx;
+
 	LOG_INF("Initializing OR-WE-504 driver");
-	m_data.valid = false;
-	m_data.error_count = 0;
+	data->valid = false;
+	data->error_count = 0;
 	return 0;
 }
 
-static int sample(void)
+/* clang-format off */
+static const struct app_device_reg m_regs[] = {
+	APP_DEVICE_REG(struct app_data_or_we_504, voltage, REG_VOLTAGE, APP_MODBUS_U16, 10.0f),
+	APP_DEVICE_REG(struct app_data_or_we_504, current, REG_CURRENT, APP_MODBUS_U16, 10.0f),
+	APP_DEVICE_REG(struct app_data_or_we_504, frequency, REG_FREQUENCY, APP_MODBUS_U16, 10.0f),
+	/* W → kW, var → kvar, VA → kVA */
+	APP_DEVICE_REG(struct app_data_or_we_504, power, REG_POWER, APP_MODBUS_S16, 1000.0f),
+	APP_DEVICE_REG(struct app_data_or_we_504, power_reactive, REG_REACTIVE, APP_MODBUS_S16, 1000.0f),
+	APP_DEVICE_REG(struct app_data_or_we_504, power_apparent, REG_APPARENT, APP_MODBUS_U16, 1000.0f),
+	APP_DEVICE_REG(struct app_data_or_we_504, power_factor, REG_PF, APP_MODBUS_S16, 1000.0f),
+	/* Wh → kWh, varh → kvarh */
+	APP_DEVICE_REG(struct app_data_or_we_504, energy_in, REG_ENERGY, APP_MODBUS_U32_HI, 1000.0f),
+	APP_DEVICE_REG(struct app_data_or_we_504, energy_reactive, REG_ENERGY_REACT, APP_MODBUS_U32_HI, 1000.0f),
+};
+/* clang-format on */
+
+static int sample(struct app_driver_slot *slot)
 {
+	struct app_data_or_we_504 *data = slot->ctx;
+	struct app_data_or_we_504 values = *data;
 	int ret;
-	uint16_t regs[4];
-	uint8_t addr;
 
-	/* Local variables for values */
-	float voltage, current, frequency, power, power_reactive, power_apparent, power_factor;
-	float energy_in, energy_reactive;
+	LOG_INF("Sampling OR-WE-504 at address %d", slot->addr);
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	LOG_INF("Sampling OR-WE-504 at address %d", addr);
-
-	ret = app_modbus_enable();
+	ret = app_modbus_acquire();
 	if (ret) {
 		LOG_ERR("Failed to enable Modbus: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		k_mutex_unlock(&m_data_mutex);
+		data->error_count++;
 		return ret;
 	}
 
-	/* Read Voltage (0x0000) - UINT16 */
-	ret = app_modbus_read_holding_regs(addr, REG_VOLTAGE, 1, &regs[0]);
+	ret = app_device_read_regs(slot->addr, APP_MODBUS_FC_HOLDING, m_regs, ARRAY_SIZE(m_regs),
+				   &values, true);
+
+	app_modbus_release();
+
 	if (ret) {
-		LOG_ERR("Failed to read voltage: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
+		data->error_count++;
+		data->valid = false;
+		return ret;
 	}
-	voltage = (float)regs[0] / 10.0f;
 
-	/* Read Current (0x0001) - UINT16 */
-	ret = app_modbus_read_holding_regs(addr, REG_CURRENT, 1, &regs[0]);
-	if (ret) {
-		LOG_ERR("Failed to read current: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	current = (float)regs[0] / 10.0f;
+	values.valid = true;
+	values.last_sample = k_uptime_get_32();
+	values.error_count = 0;
+	*data = values;
 
-	/* Read Frequency (0x0002) - UINT16, /10 Hz */
-	ret = app_modbus_read_holding_regs(addr, REG_FREQUENCY, 1, &regs[0]);
-	if (ret) {
-		LOG_ERR("Failed to read frequency: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	frequency = (float)regs[0] / 10.0f;
+	int64_t ts;
+	ctr_rtc_get_ts(&ts);
 
-	/* Read Active power (0x0003) - INT16, W (signed) */
-	ret = app_modbus_read_holding_regs(addr, REG_POWER, 1, &regs[0]);
-	if (ret) {
-		LOG_ERR("Failed to read power: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	power = (float)((int16_t)regs[0]) / 1000.0f;  /* W → kW */
+	struct or_we_504_sample rec = {
+		.timestamp = ts,
+		.voltage = data->voltage,
+		.current = data->current,
+		.frequency = data->frequency,
+		.power = data->power,
+		.power_reactive = data->power_reactive,
+		.power_apparent = data->power_apparent,
+		.power_factor = data->power_factor,
+		.energy_in = data->energy_in,
+	};
 
-	/* Read Reactive power (0x0004) - INT16, var (signed) */
-	ret = app_modbus_read_holding_regs(addr, REG_REACTIVE, 1, &regs[0]);
-	if (ret) {
-		LOG_ERR("Failed to read reactive power: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	power_reactive = (float)((int16_t)regs[0]) / 1000.0f;  /* var → kvar */
+	app_driver_rec_push(slot, &rec);
 
-	/* Read Apparent power (0x0005) - UINT16, VA */
-	ret = app_modbus_read_holding_regs(addr, REG_APPARENT, 1, &regs[0]);
-	if (ret) {
-		LOG_ERR("Failed to read apparent power: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	power_apparent = (float)regs[0] / 1000.0f;  /* VA → kVA */
+	LOG_INF("OR-WE-504: V=%.1f V, I=%.1f A, F=%.1f Hz, P=%.0f W, S=%.0f VA, Q=%.0f var, "
+		"PF=%.3f, E=%.0f Wh",
+		(double)data->voltage, (double)data->current, (double)data->frequency,
+		(double)data->power, (double)data->power_apparent, (double)data->power_reactive,
+		(double)data->power_factor, (double)data->energy_in);
 
-	/* Read Power factor (0x0006) - INT16, /1000 */
-	ret = app_modbus_read_holding_regs(addr, REG_PF, 1, &regs[0]);
-	if (ret) {
-		LOG_ERR("Failed to read power factor: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	power_factor = (float)((int16_t)regs[0]) / 1000.0f;
-
-	/* Read Active energy (0x0007) - UINT32 BE Swapped long, Wh */
-	ret = app_modbus_read_holding_regs(addr, REG_ENERGY, 2, regs);
-	if (ret) {
-		LOG_ERR("Failed to read energy: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	energy_in = (float)decode_uint32_be(regs) / 1000.0f;  /* Wh → kWh */
-
-	/* Read Reactive energy (0x0009) - UINT32 BE, varh */
-	ret = app_modbus_read_holding_regs(addr, REG_ENERGY_REACT, 2, regs);
-	if (ret) {
-		LOG_ERR("Failed to read reactive energy: %d", ret);
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.error_count++;
-		m_data.valid = false;
-		k_mutex_unlock(&m_data_mutex);
-		goto out;
-	}
-	energy_reactive = (float)decode_uint32_be(regs) / 1000.0f;  /* varh → kvarh */
-
-	/* Update m_data atomically */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.voltage = voltage;
-	m_data.current = current;
-	m_data.frequency = frequency;
-	m_data.power = power;
-	m_data.power_reactive = power_reactive;
-	m_data.power_apparent = power_apparent;
-	m_data.power_factor = power_factor;
-	m_data.energy_in = energy_in;
-	m_data.energy_reactive = energy_reactive;
-	m_data.valid = true;
-	m_data.last_sample = k_uptime_get_32();
-	m_data.error_count = 0;
-	k_mutex_unlock(&m_data_mutex);
-
-	/* Add to sample buffer */
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	if (m_sample_count < MAX_SAMPLES) {
-		uint64_t ts;
-		ctr_rtc_get_ts(&ts);
-
-		m_samples[m_sample_count].timestamp = ts;
-		m_samples[m_sample_count].voltage = voltage;
-		m_samples[m_sample_count].current = current;
-		m_samples[m_sample_count].frequency = frequency;
-		m_samples[m_sample_count].power = power;
-		m_samples[m_sample_count].power_reactive = power_reactive;
-		m_samples[m_sample_count].power_apparent = power_apparent;
-		m_samples[m_sample_count].power_factor = power_factor;
-		m_samples[m_sample_count].energy_in = energy_in;
-		m_sample_count++;
-		LOG_DBG("OR-WE-504: Added sample %d to buffer", m_sample_count);
-	} else {
-		LOG_WRN("OR-WE-504: Sample buffer full");
-	}
-	k_mutex_unlock(&m_samples_mutex);
-
-	LOG_INF("OR-WE-504: V=%.1f V, I=%.1f A, F=%.1f Hz, P=%.0f W, S=%.0f VA, Q=%.0f var, PF=%.3f, E=%.0f Wh",
-		(double)voltage, (double)current, (double)frequency, (double)power,
-		(double)power_apparent, (double)power_reactive, (double)power_factor, (double)energy_in);
-
-out:
-	app_modbus_disable();
-	return ret;
+	return 0;
 }
 
-static int config(uint8_t new_addr, const char *parity_str)
+static int config(struct app_driver_slot *slot, uint8_t new_addr, const char *parity_str)
 {
 	int ret;
-	uint8_t current_addr;
+
+	/* The meter has no parity setting (8N1, it also works on an 8E1 bus) */
+	ARG_UNUSED(parity_str);
 
 	if (new_addr < 1 || new_addr > 247) {
 		LOG_ERR("Invalid Modbus address: %d (must be 1-247)", new_addr);
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	current_addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
+	LOG_INF("Changing OR-WE-504 address %u -> %u", slot->addr, new_addr);
 
-	LOG_INF("Configuring OR-WE-504: addr %d -> %d", current_addr, new_addr);
-
-	ret = app_modbus_enable();
+	ret = app_modbus_change_addr_or_we_504(slot->addr, new_addr);
 	if (ret) {
-		LOG_ERR("Failed to enable Modbus: %d", ret);
+		LOG_ERR("Failed to change the address: %d", ret);
 		return ret;
 	}
 
-	/* Unlock device for configuration */
-	ret = unlock_device(current_addr);
-	if (ret) {
-		LOG_ERR("Failed to unlock device: %d", ret);
-		goto out;
-	}
-
-	/* Wait for unlock to take effect */
-	k_msleep(100);
-
-	/* Write new address to register 0x000F */
-	ret = app_modbus_write_holding_reg(current_addr, REG_ADDRESS, new_addr);
-	if (ret) {
-		LOG_ERR("Failed to write new address: %d", ret);
-		goto out;
-	}
-
-	LOG_INF("Address changed successfully. New address: %d", new_addr);
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = new_addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	if (parity_str) {
-		char parity;
-		int stop_bits;
-		ret = parse_parity(parity_str, &parity, &stop_bits);
-		if (ret == 0) {
-			LOG_INF("Parity setting requested: %c, stop bits: %d", parity, stop_bits);
-			LOG_WRN("Parity change requires device restart");
-		}
-	}
-
-out:
-	app_modbus_disable();
-	return ret;
+	return 0;
 }
 
 /* Shell commands */
@@ -369,64 +155,40 @@ static int cmd_sample(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	/* Temporarily set address for sampling */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t old_addr = m_data.modbus_addr;
-	m_data.modbus_addr = addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	int ret = sample();
-
-	/* Restore original address */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = old_addr;
-	k_mutex_unlock(&m_data_mutex);
-
+	int ret = app_device_probe_sample(shell, &or_we_504_driver, addr);
 	if (ret) {
 		shell_error(shell, "Sampling failed: %d", ret);
 		return ret;
 	}
-
-	print_data(shell, 0, addr);
 
 	return 0;
 }
 
 static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 {
-	if (argc < 3) {
-		shell_error(shell, "Usage: device or_we_504 config <old_addr> <new_addr> [8E1]");
-		return -EINVAL;
-	}
+	long addr = strtol(argv[1], NULL, 0);
+	long new_addr = strtol(argv[2], NULL, 0);
+	int ret;
 
-	uint8_t old_addr = (uint8_t)strtol(argv[1], NULL, 0);
-	uint8_t new_addr = (uint8_t)strtol(argv[2], NULL, 0);
-	const char *parity_str = (argc >= 4) ? argv[3] : NULL;
-
-	if (old_addr < 1 || old_addr > 247 || new_addr < 1 || new_addr > 247) {
+	if (addr < 1 || addr > 247 || new_addr < 1 || new_addr > 247) {
 		shell_error(shell, "Invalid address (1-247)");
 		return -EINVAL;
 	}
 
-	/* Set current address to old_addr for config operation */
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	m_data.modbus_addr = old_addr;
-	k_mutex_unlock(&m_data_mutex);
-
-	int ret = config(new_addr, parity_str);
+	ret = app_modbus_shell_change_addr_or_we_504(shell, (uint8_t)addr, (uint8_t)new_addr);
 	if (ret) {
-		shell_error(shell, "Configuration failed: %d", ret);
 		return ret;
 	}
 
-	shell_print(shell, "Address changed from %d to %d", old_addr, new_addr);
+	shell_print(shell, "Then set the address in app config device-N");
+
 	return 0;
 }
 
 /* Shell command entries */
 static const struct shell_static_entry or_we_504_subcmds[] = {
 	SHELL_CMD_ARG(sample, NULL, "Read values: sample <addr>", cmd_sample, 2, 0),
-	SHELL_CMD_ARG(config, NULL, "Change address [parity]: config <old_addr> <new_addr> [8E1]", cmd_config, 3, 1),
+	SHELL_CMD_ARG(config, NULL, "Change address: config <addr> <new_addr>", cmd_config, 3, 0),
 	SHELL_SUBCMD_SET_END
 };
 
@@ -434,83 +196,37 @@ const union shell_cmd_entry or_we_504_shell_cmds = {
 	.entry = or_we_504_subcmds
 };
 
-static void print_data(const struct shell *shell, int idx, int addr)
+static void print_data(const struct shell *shell, struct app_driver_slot *slot)
 {
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	struct app_data_or_we_504 data_copy = m_data;
-	k_mutex_unlock(&m_data_mutex);
+	const struct app_data_or_we_504 *data = slot->ctx;
 
-	shell_print(shell, "[%d] OR-WE-504 @ addr %d:", idx, addr);
-	shell_print(shell, "  voltage:        %.1f V", (double)data_copy.voltage);
-	shell_print(shell, "  current:        %.3f A", (double)data_copy.current);
-	shell_print(shell, "  frequency:      %.2f Hz", (double)data_copy.frequency);
-	shell_print(shell, "  power:          %.4f kW", (double)data_copy.power);
-	shell_print(shell, "  power_apparent: %.4f kVA", (double)data_copy.power_apparent);
-	shell_print(shell, "  power_reactive: %.4f kvar", (double)data_copy.power_reactive);
-	shell_print(shell, "  power_factor:   %.3f", (double)data_copy.power_factor);
-	shell_print(shell, "  energy_in:      %.3f kWh", (double)data_copy.energy_in);
+	app_device_print_header(shell, slot, "OR-WE-504");
+	shell_print(shell, "  voltage:        %.1f V", (double)data->voltage);
+	shell_print(shell, "  current:        %.3f A", (double)data->current);
+	shell_print(shell, "  frequency:      %.2f Hz", (double)data->frequency);
+	shell_print(shell, "  power:          %.4f kW", (double)data->power);
+	shell_print(shell, "  power_apparent: %.4f kVA", (double)data->power_apparent);
+	shell_print(shell, "  power_reactive: %.4f kvar", (double)data->power_reactive);
+	shell_print(shell, "  power_factor:   %.3f", (double)data->power_factor);
+	shell_print(shell, "  energy_in:      %.3f kWh", (double)data->energy_in);
 }
 
 /* Driver registration */
 const struct app_device_driver or_we_504_driver = {
 	.name = "or_we_504",
 	.type = APP_DEVICE_TYPE_OR_WE_504,
+	.transport = APP_DEVICE_TRANSPORT_MODBUS,
+	.ctx_size = sizeof(struct app_data_or_we_504),
+	.rec_size = sizeof(struct or_we_504_sample),
 	.init = init,
 	.sample = sample,
-	.deinit = NULL,
-	.calibrate = NULL,
-	.reset = NULL,
 	.config = config,
 	.print_data = print_data,
 };
 
 /* Public API */
 
-const struct app_data_or_we_504 *or_we_504_get_data(void)
+const struct app_data_or_we_504 *or_we_504_get_data(const struct app_driver_slot *slot)
 {
-	return &m_data;
-}
-
-void or_we_504_set_addr(uint8_t addr)
-{
-	if (addr >= 1 && addr <= 247) {
-		k_mutex_lock(&m_data_mutex, K_FOREVER);
-		m_data.modbus_addr = addr;
-		k_mutex_unlock(&m_data_mutex);
-	}
-}
-
-uint8_t or_we_504_get_addr(void)
-{
-	k_mutex_lock(&m_data_mutex, K_FOREVER);
-	uint8_t addr = m_data.modbus_addr;
-	k_mutex_unlock(&m_data_mutex);
-	return addr;
-}
-
-int or_we_504_get_samples(struct or_we_504_sample *out, int max_count)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = (m_sample_count < max_count) ? m_sample_count : max_count;
-	for (int i = 0; i < count; i++) {
-		out[i] = m_samples[i];
-	}
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
-}
-
-void or_we_504_clear_samples(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	m_sample_count = 0;
-	k_mutex_unlock(&m_samples_mutex);
-	LOG_DBG("OR-WE-504: Sample buffer cleared");
-}
-
-int or_we_504_get_sample_count(void)
-{
-	k_mutex_lock(&m_samples_mutex, K_FOREVER);
-	int count = m_sample_count;
-	k_mutex_unlock(&m_samples_mutex);
-	return count;
+	return slot->ctx;
 }

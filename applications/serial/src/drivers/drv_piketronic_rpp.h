@@ -60,13 +60,12 @@ struct app_data_piketronic_rpp {
 	char serial_number[11];      /* reg 70-74 */
 
 	/* Bookkeeping */
-	uint8_t modbus_addr;
 	uint32_t last_sample;
 	uint32_t error_count;
 	bool valid;
 };
 
-/* Sample entry for CBOR buffer (lean uplink payload) */
+/* Sample record (slot record ring, encoded to CBOR; lean uplink payload) */
 struct piketronic_rpp_sample {
 	uint64_t timestamp;
 	uint32_t concentration;     /* Bq/m3, 1-hour average */
@@ -75,13 +74,10 @@ struct piketronic_rpp_sample {
 	uint8_t humidity;           /* % */
 };
 
-const struct app_data_piketronic_rpp *piketronic_rpp_get_data(void);
-void piketronic_rpp_set_addr(uint8_t addr);
-uint8_t piketronic_rpp_get_addr(void);
+struct app_driver_slot;
 
-int piketronic_rpp_get_samples(struct piketronic_rpp_sample *out, int max_count);
-void piketronic_rpp_clear_samples(void);
-int piketronic_rpp_get_sample_count(void);
+/* Latest data of a slot (caller holds slot->lock) */
+const struct app_data_piketronic_rpp *piketronic_rpp_get_data(const struct app_driver_slot *slot);
 
 #ifdef __cplusplus
 }

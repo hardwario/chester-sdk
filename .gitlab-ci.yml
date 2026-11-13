@@ -52,3 +52,13 @@ applications:
           exit 1
         fi
       done
+
+# Static guard: every device driver must have a CBOR (LTE) and LRW encode path.
+# A missing dispatch case silently drops that device's telemetry - the compiler and the
+# codec unit tests cannot see it, so it is enforced here. No build needed, just the tree.
+telemetry-completeness:
+  stage: build
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - python3 applications/serial/scripts/check_telemetry_completeness.py
