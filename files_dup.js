@@ -36,5 +36,6 @@ var files_dup =
     [ "ctr_util.h", "ctr__util_8h.html", "ctr__util_8h" ],
     [ "ctr_w1.h", "ctr__w1_8h.html", "ctr__w1_8h" ],
     [ "ctr_wdog.h", "ctr__wdog_8h.html", "ctr__wdog_8h" ],
-    [ "ctr_weight_probe.h", "ctr__weight__probe_8h.html", "ctr__weight__probe_8h" ]
+    [ "ctr_weight_probe.h", "ctr__weight__probe_8h.html", "ctr__weight__probe_8h" ],
+    [ "drv_sc16is7xx.h", "drv__sc16is7xx_8h.html", "drv__sc16is7xx_8h" ]
 ];
