@@ -1,0 +1,15 @@
+tests:
+  subsys.ctr_cloud_msg_data:
+    tags: chester
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+  # Same sources with no zcbor backup states: bstr_start_encode must fail with -ENOMEM
+  subsys.ctr_cloud_msg_data.no_backup_states:
+    tags: chester
+    extra_args: TEST_ZCBOR_STATES=0
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

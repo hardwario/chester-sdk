@@ -33,6 +33,25 @@ config CTR_CLOUD_TRANSFER_BUF_SIZE
 	int "Cloud transfer buffer size in bytes"
 	default 16384
 
+config CTR_CLOUD_ENCODE_ZCBOR_STATES
+	int "Number of zcbor backup states for message encoding"
+	default 2
+	range 0 32
+	help
+	  Number of zcbor backup states available to the encoding callback
+	  of a data message. Backup states are consumed only by canonical
+	  encoding of maps and lists (CONFIG_ZCBOR_CANONICAL), where each
+	  level of nesting needs one, and by zcbor_bstr_start_encode().
+	  Encoding with indefinite-length maps and lists, as done today,
+	  needs none, so the default 2 is just a small reserve.
+
+	  The states are allocated on the stack of the thread calling the
+	  send function, not in static RAM: (N + 2) * sizeof(zcbor_state_t),
+	  that is 36 bytes per state on 32-bit targets, 144 bytes at the
+	  default of 2. Increase the value when sending fails with -ENOMEM
+	  (zcbor ran out of backup states: messages nested deeper with
+	  canonical encoding or bstr wrapping), decrease it to save stack.
+
 config CTR_CLOUD_CONFIG
 	bool
 
