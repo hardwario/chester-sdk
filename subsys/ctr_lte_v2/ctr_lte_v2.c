@@ -89,6 +89,7 @@ atomic_t m_flag = ATOMIC_INIT(0);
 #define CONNECTED_BIT      BIT(0)
 #define SEND_RECV_DONE_BIT BIT(1)
 #define SEND_RECV_STOP_BIT BIT(2)
+#define ATTACHED_BIT       BIT(3)
 static K_EVENT_DEFINE(m_states_event);
 
 K_MUTEX_DEFINE(m_send_recv_lock);
@@ -372,7 +373,7 @@ int ctr_lte_v2_reconnect(void)
 
 int ctr_lte_v2_is_attached(bool *attached)
 {
-	*attached = k_event_test(&m_states_event, CONNECTED_BIT) ? true : false;
+	*attached = k_event_test(&m_states_event, ATTACHED_BIT) ? true : false;
 	return 0;
 }
 
@@ -529,6 +530,9 @@ int ctr_lte_v2_gnss_set_handler(ctr_lte_v2_gnss_cb callback, void *user_data)
 static int on_enter_disabled(void)
 {
 	int ret;
+
+	k_event_clear(&m_states_event, ATTACHED_BIT | CONNECTED_BIT);
+
 	ret = ctr_lte_v2_flow_disable(true);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_flow_disable` failed: %d", ret);
@@ -587,7 +591,7 @@ static int on_enter_error(void)
 		return 0;
 	}
 
-	k_event_clear(&m_states_event, CONNECTED_BIT);
+	k_event_clear(&m_states_event, ATTACHED_BIT | CONNECTED_BIT);
 
 	if (ret == -ENOTSOCK) {
 		m_error_ctx.flow_check_failures++;
@@ -863,7 +867,7 @@ static int on_enter_attach(void)
 
 	m_start = k_uptime_get_32();
 
-	k_event_clear(&m_states_event, CONNECTED_BIT);
+	k_event_clear(&m_states_event, ATTACHED_BIT | CONNECTED_BIT);
 
 	struct ctr_lte_v2_attach_timeout timeout = get_attach_timeout(m_attach_retry_count);
 
@@ -884,6 +888,7 @@ static int attach_event_handler(enum ctr_lte_v2_event event)
 		m_metrics.attach_last_duration_ms = k_uptime_get_32() - m_start;
 		m_metrics.attach_duration_ms += m_metrics.attach_last_duration_ms;
 		k_mutex_unlock(&m_metrics_lock);
+		k_event_post(&m_states_event, ATTACHED_BIT);
 		transition_state(FSM_STATE_OPEN_SOCKET);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:

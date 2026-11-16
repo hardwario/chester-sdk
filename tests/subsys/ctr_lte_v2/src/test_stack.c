@@ -106,10 +106,13 @@ static void test_attach(void)
 		{"AT+CGDCONT?", "+CGDCONT: 0,\"IP\",\"hardwario\",\"172.28.0.139\",0,0", "OK"},
 		{"AT#XSOCKET=1,2,0,0", "#XSOCKET: 0,2,17", "OK"},
 		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG)
-		{"AT#XCONNECT=\"46.101.214.168\",5003", "#XCONNECT: 1", "OK"},
+		{"AT#XCONNECT=\"46.101.214.168\",5003"},
 		#else
-		{"AT#XCONNECT=\"192.168.192.4\",5003", "#XCONNECT: 1", "OK"},
+		{"AT#XCONNECT=\"192.168.192.4\",5003"},
 		#endif
+		/* Registered, the socket connects a while later */
+		URC(1000, "#XCONNECT: 1"),
+		URC(0, "OK"),
 		{"AT%CONEVAL", "%CONEVAL: 0,1,7,95,30,49,\"000AE520\",\"23003\",135,6447,20,0,0,-8,2,1,73", "OK"},
 	};
 	/* clang-format on */
@@ -117,6 +120,18 @@ static void test_attach(void)
 	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
 
 	ctr_lte_v2_enable();
+
+	for (int i = 0; i < 60 && strcmp(ctr_lte_v2_get_state(), "open_socket"); i++) {
+		k_sleep(K_MSEC(100));
+	}
+	ASSERT_FSM_STATE("open_socket");
+
+	/* Attached to the network, the socket is not connected yet */
+	bool attached = false;
+	zassert_ok(ctr_lte_v2_is_attached(&attached));
+	zassert_true(attached, "expected attached while the socket connects");
+	zassert_equal(ctr_lte_v2_wait_for_connected(K_NO_WAIT), -ETIMEDOUT,
+		      "expected not connected while the socket connects");
 
 	int ret = ctr_lte_v2_wait_for_connected(K_MSEC(6000));
 	zassert_ok(ret, "ctr_lte_v2_wait_for_connected failed");
