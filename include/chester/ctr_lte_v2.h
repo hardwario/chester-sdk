@@ -205,6 +205,7 @@ int ctr_lte_v2_wait_for_connected(k_timeout_t timeout);
  *                    connection for the data (see @ref ctr_lte_v2_send_recv_param.retry_count).
  * @retval -EBUSY     Another exchange kept the stack busy until the timeout.
  * @retval -ENOTSUP   Test mode is enabled.
+ * @retval -EINVAL    @p param is NULL, or has recv_buf without recv_size or recv_len.
  */
 int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param);
 

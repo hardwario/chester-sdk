@@ -499,6 +499,33 @@ ZTEST(txn, test_lock_busy)
 	zassert_equal(ret, -EBUSY, "expected -EBUSY but got: %d", ret);
 	zassert_true(elapsed >= 500 && elapsed <= 600, "returned %lld ms after the call", elapsed);
 
+	/* An invalid param is refused at once, before the lock */
+	char recv_buf[8];
+	struct ctr_lte_v2_send_recv_param invalid = {
+		.send_buf = "Invalid",
+		.send_len = 7,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = NULL,
+		.timeout = K_MSEC(500),
+		.rai = true,
+	};
+
+	ret = send_recv(&invalid, &elapsed);
+	zassert_equal(ret, -EINVAL, "expected -EINVAL but got: %d", ret);
+	zassert_equal(elapsed, 0, "returned %lld ms after the call", elapsed);
+
+	size_t recv_len = 0;
+	invalid.recv_size = 0;
+	invalid.recv_len = &recv_len;
+
+	ret = send_recv(&invalid, &elapsed);
+	zassert_equal(ret, -EINVAL, "expected -EINVAL but got: %d", ret);
+	zassert_equal(elapsed, 0, "returned %lld ms after the call", elapsed);
+
+	zassert_equal(ctr_lte_v2_send_recv(NULL), -EINVAL);
+
 	ret = caller_join(&elapsed);
 	zassert_ok(ret, "owner's send_recv failed: %d", ret);
 	zassert_equal(owner_recv_len, 8, "recv_len incorrect");

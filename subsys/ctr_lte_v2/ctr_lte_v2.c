@@ -577,6 +577,11 @@ static void wait_txn_idle(void)
 
 int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param)
 {
+	/* Checked here: the FSM receives into its own copy of recv_len */
+	if (!param || (param->recv_buf && (!param->recv_size || !param->recv_len))) {
+		return -EINVAL;
+	}
+
 	/* The modem belongs to the shell */
 	if (g_ctr_lte_v2_config.test) {
 		LOG_WRN("LTE Test mode enabled");
