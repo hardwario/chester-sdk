@@ -9,6 +9,7 @@
  */
 
 #include "common.h"
+#include "ctr_cloud_msg.h"
 
 /* CHESTER includes */
 #include <chester/ctr_cloud.h>
@@ -74,6 +75,72 @@ static void match_thread_name(const struct k_thread *thread, void *user_data)
 		*found = true;
 	}
 }
+
+#if TEST_INIT_RETRY
+/* A failed step is run again 10 s later, one that requires a session starts over from CREATE
+ * SESSION at once
+ */
+ZTEST(ctr_cloud_send_4_init, test_init_steps_retried)
+{
+	/* clang-format off */
+	static const struct {
+		uint8_t type;
+		int ret;
+		/* Since the previous uplink */
+		int64_t after_ms;
+	} expected[] = {
+		/* Without an id: the ack goes, then the decoder requires a session */
+		{UL_CREATE_SESSION, 0, 0},
+		{UL_UPLOAD_FIRMWARE, 0, 0},
+		{UL_CREATE_SESSION, 0, 0},
+		/* A failed step runs again, without a new session */
+		{UL_UPLOAD_DECODER, -EIO, 0},
+		{UL_UPLOAD_DECODER, 0, 10000},
+		{UL_UPLOAD_ENCODER, 0, 0},
+		/* Also the config, which used to be given up after a failed upload */
+		{UL_UPLOAD_CONFIG, -EIO, 0},
+		{UL_UPLOAD_CONFIG, -EIO, 10000},
+		{UL_UPLOAD_CONFIG, 0, 10000},
+	};
+	/* clang-format on */
+
+	zassert_true(mock_transfer_log_count() >= ARRAY_SIZE(expected), "%d uplinks",
+		     mock_transfer_log_count());
+
+	for (size_t i = 0; i < ARRAY_SIZE(expected); i++) {
+		const struct mock_log_entry *e = mock_transfer_log(i);
+
+		zassert_equal(e->mem[0], expected[i].type,
+			      "uplink %zu of type 0x%02x, expected 0x%02x", i, e->mem[0],
+			      expected[i].type);
+		zassert_equal(e->ret, expected[i].ret, "uplink %zu failed with %d, expected %d", i,
+			      e->ret, expected[i].ret);
+
+		if (i > 0) {
+			int64_t after_ms = e->at - mock_transfer_log(i - 1)->at;
+
+			/* A sleep may end a tick late */
+			zassert_within(after_ms, expected[i].after_ms + 10, 10,
+				       "uplink %zu %lld ms after the previous one, expected %lld",
+				       i, after_ms, expected[i].after_ms);
+		}
+	}
+}
+#endif
+
+#if TEST_CONFIG_SHOW_FAIL
+/* A config that cannot be packed is not retried: the init goes on without it, and data go
+ * out
+ */
+ZTEST(ctr_cloud_send_4_init, test_init_config_show_fail)
+{
+	/* Initialized: the suite setup waited for it */
+	zassert_equal(mock_transfer_log_find(UL_UPLOAD_CONFIG), -1);
+
+	zassert_ok(ctr_cloud_send_data(PAYLOAD_A, sizeof(PAYLOAD_A), K_FOREVER));
+	assert_uplink(0, MSG_A, sizeof(MSG_A));
+}
+#endif
 
 ZTEST(ctr_cloud_send_4_init, test_work_queue_thread_name)
 {

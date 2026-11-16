@@ -82,6 +82,12 @@ static int transfer(struct ctr_cloud_packet *pck_send, struct ctr_cloud_packet *
 	struct ctr_buf *recv_buf = &m_buf_0;
 	size_t len;
 
+	/* A packet that would start past the deadline costs no AT dialog */
+	if (sys_timepoint_expired(end)) {
+		LOG_ERR("No time left for packet Sequence: %u", pck_send->sequence);
+		return -ETIMEDOUT;
+	}
+
 	LOG_INF("Sending packet Sequence: %u %s len: %u", pck_send->sequence,
 		ctr_cloud_packet_flags_to_str(pck_send->flags), pck_send->data_len);
 

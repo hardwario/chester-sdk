@@ -66,6 +66,6 @@ void mock_fw_setup(void)
 #endif
 
 #if TEST_FW == 2
-	mock_transfer_fail_first_of_type(UL_UPLOAD_FIRMWARE, -EIO);
+	mock_transfer_fail_first_of_type(UL_UPLOAD_FIRMWARE, -EIO, 1);
 #endif
 }

@@ -19,6 +19,16 @@ if(NOT DEFINED TEST_FW)
   set(TEST_FW 1)
 endif()
 add_compile_definitions(TEST_FW=${TEST_FW})
+# The uploads of the init steps fail, see init_setup() in src/test_send_data_cb.c
+if(NOT DEFINED TEST_INIT_RETRY)
+  set(TEST_INIT_RETRY 0)
+endif()
+add_compile_definitions(TEST_INIT_RETRY=${TEST_INIT_RETRY})
+# `config show` fails, so the config cannot be packed, see init_setup()
+if(NOT DEFINED TEST_CONFIG_SHOW_FAIL)
+  set(TEST_CONFIG_SHOW_FAIL 0)
+endif()
+add_compile_definitions(TEST_CONFIG_SHOW_FAIL=${TEST_CONFIG_SHOW_FAIL})
 
 # The real ctr_cloud.c; only the transport (ctr_cloud_transfer_*) and the spool
 # backend (ctr_cloud_spool_*) are mocked.

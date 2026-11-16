@@ -38,6 +38,8 @@
 #define POLL_TIMEOUT     K_MINUTES(1)
 #define POLL_RETRY_DELAY K_MINUTES(5)
 
+#define INIT_STEP_RETRY_DELAY K_SECONDS(10)
+
 LOG_MODULE_REGISTER(ctr_cloud, CONFIG_CTR_CLOUD_LOG_LEVEL);
 
 /* Serializes the users of m_transfer_buf. Every public function that rewrites
@@ -508,21 +510,24 @@ static int upload_config(void)
 
 	ctr_buf_reset(&m_transfer_buf);
 
+	/* A local error (e.g. `config show` fails, or the config does not fit) comes again on
+	 * another attempt: the init goes on without the config, only the upload is retried
+	 */
 	ret = ctr_cloud_msg_pack_config(&m_transfer_buf);
 
 	if (ret) {
-		LOG_ERR("Call `ctr_cloud_msg_pack_config` failed: %d", ret);
+		LOG_WRN("Call `ctr_cloud_msg_pack_config` failed: %d, config not uploaded", ret);
 		k_mutex_unlock(&m_lock);
-		return ret;
+		return 0;
 	}
 
 	uint64_t hash;
 
 	ret = ctr_cloud_msg_get_hash(&m_transfer_buf, &hash);
 	if (ret) {
-		LOG_ERR("Call `ctr_cloud_msg_get_hash` failed: %d", ret);
+		LOG_WRN("Call `ctr_cloud_msg_get_hash` failed: %d, config not uploaded", ret);
 		k_mutex_unlock(&m_lock);
-		return ret;
+		return 0;
 	}
 
 	if (m_session.config_hash != hash) {
@@ -613,10 +618,36 @@ static int firmware_confirmed(void)
 }
 #endif
 
-static void init_work_handler(struct k_work *work)
+/* Run the init step until it succeeds, with a pause between the attempts. A step that requires
+ * a session that is not set returns -EPERM at once, so that the caller starts over from CREATE
+ * SESSION. */
+static int init_step(const char *name, int (*step)(void))
 {
 	int ret;
 
+	for (;;) {
+		ctr_cloud_transfer_wait_for_ready(K_FOREVER);
+
+		LOG_INF("Running %s", name);
+
+		ret = step();
+		if (ret == -EPERM) {
+			LOG_WRN("%s requires a session", name);
+			return ret;
+		}
+
+		if (ret) {
+			LOG_ERR("%s failed: %d", name, ret);
+			k_sleep(INIT_STEP_RETRY_DELAY);
+			continue;
+		}
+
+		return 0;
+	}
+}
+
+static void init_work_handler(struct k_work *work)
+{
 	LOG_INF("Initializing Start");
 
 	k_mutex_lock(&m_lock, K_FOREVER);
@@ -624,15 +655,7 @@ static void init_work_handler(struct k_work *work)
 	ctr_buf_reset(&m_transfer_buf);
 
 	for (;;) {
-
-		ctr_cloud_transfer_wait_for_ready(K_FOREVER);
-
-		LOG_INF("Running CREATE SESSION");
-		ret = create_session();
-		if (ret) {
-			LOG_ERR("Call `create_session` failed: %d", ret);
-			continue;
-		}
+		init_step("CREATE SESSION", create_session);
 
 		/* The session proves the new image can reach the cloud: confirm it and ack the
 		 * update before the long uploads below, so that a reset during them cannot
@@ -642,29 +665,16 @@ static void init_work_handler(struct k_work *work)
 		firmware_confirmed();
 #endif
 
-		LOG_INF("Running UPLOAD DECODER");
-
-		ret = upload_decoder();
-		if (ret) {
-			LOG_ERR("Call `upload_decoder` failed: %d", ret);
+		if (init_step("UPLOAD DECODER", upload_decoder)) {
 			continue;
 		}
 
-		LOG_INF("Running UPLOAD ENCODER");
-
-		ret = upload_encoder();
-
-		if (ret) {
-			LOG_ERR("Call `upload_encoder` failed: %d", ret);
+		if (init_step("UPLOAD ENCODER", upload_encoder)) {
 			continue;
 		}
 
-		LOG_INF("Running UPLOAD CONFIG");
-
-		ret = upload_config();
-
-		if (ret) {
-			LOG_WRN("Call `upload_config` failed: %d", ret);
+		if (init_step("UPLOAD CONFIG", upload_config)) {
+			continue;
 		}
 
 		break;

@@ -27,10 +27,22 @@ const uint8_t PAYLOAD_B[3] = {0x82, 0x07, 0x08};
 const uint8_t MSG_B[TEST_HDR_LEN + 3] = {0x06, 0x01, 0x02, 0x03, 0x04, 0x05,
 					 0x06, 0x07, 0x08, 0x82, 0x07, 0x08};
 
+#if TEST_INIT_RETRY
+/* Uploaded by the init work */
+static const uint8_t m_decoder[] = {'d', 'e', 'c'};
+static const uint8_t m_encoder[] = {'e', 'n', 'c'};
+#endif
+
 /* Different hashes, so that a message with the wrong one is told apart */
 static struct ctr_cloud_options m_options = {
 	.decoder_hash = 0x0102030405060708ULL,
 	.encoder_hash = 0x1112131415161718ULL,
+#if TEST_INIT_RETRY
+	.decoder_buf = m_decoder,
+	.decoder_len = sizeof(m_decoder),
+	.encoder_buf = m_encoder,
+	.encoder_len = sizeof(m_encoder),
+#endif
 };
 
 static K_THREAD_STACK_DEFINE(m_helper_stack, HELPER_STACK_SIZE);
@@ -59,7 +71,7 @@ int common_init_start(void)
 void *common_setup_initialized(void)
 {
 	zassert_ok(common_init_start());
-	zassert_ok(ctr_cloud_wait_initialized(K_SECONDS(5)));
+	zassert_ok(ctr_cloud_wait_initialized(TEST_INIT_TIMEOUT));
 
 	return NULL;
 }

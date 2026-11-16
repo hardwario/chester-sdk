@@ -11,12 +11,15 @@
  */
 
 #include "common.h"
+#include "ctr_cloud_msg.h"
 
 /* CHESTER includes */
 #include <chester/ctr_cloud.h>
+#include <chester/ctr_config.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
+#include <zephyr/shell/shell.h>
 #include <zephyr/ztest.h>
 
 /* Third-party includes */
@@ -63,10 +66,30 @@ static int encode_a_after_ms(zcbor_state_t *zs, void *user_data)
 
 /* ---- Up to a successful ctr_cloud_init() (suites and tests run in name order) ---- */
 
+#if TEST_CONFIG_SHOW_FAIL
+static int config_show_fail(const struct shell *shell, size_t argc, char **argv)
+{
+	return -EIO;
+}
+#endif
+
 static void *init_setup(void)
 {
 	/* Before the first ctr_cloud_init(), which confirms a firmware update */
 	mock_fw_setup();
+
+#if TEST_INIT_RETRY
+	/* A session without an id first (the uploads require one), one failed upload of the
+	 * decoder and two of the config, see test_init_steps_retried() */
+	mock_transfer_session_without_id_first();
+	mock_transfer_fail_first_of_type(UL_UPLOAD_DECODER, -EIO, 1);
+	mock_transfer_fail_first_of_type(UL_UPLOAD_CONFIG, -EIO, 2);
+#endif
+
+#if TEST_CONFIG_SHOW_FAIL
+	/* Every `config show` fails, see test_init_config_show_fail() */
+	ctr_config_append_show("fail", config_show_fail);
+#endif
 
 	return NULL;
 }
@@ -144,9 +167,11 @@ ZTEST(ctr_cloud_send_0_init, test_3_cb_waits_for_session)
 	zassert_equal(m_calls, 0);
 
 	mock_transfer_release();
+	/* Posted after the init work releases the lock, so maybe only after the send; the
+	 * failed steps of TEST_INIT_RETRY take a while
+	 */
+	zassert_ok(ctr_cloud_wait_initialized(TEST_INIT_TIMEOUT));
 	zassert_ok(helper_join());
-	/* Posted after the init work releases the lock, so maybe only after the send */
-	zassert_ok(ctr_cloud_wait_initialized(K_SECONDS(5)));
 
 	/* Encoded and sent after the session (and the configuration upload) */
 	int count = mock_transfer_uplink_count();

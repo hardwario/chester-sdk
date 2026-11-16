@@ -45,8 +45,10 @@ static int m_downlink_count;
 
 static int m_log_count;
 static struct mock_log_entry m_log[MOCK_LOG_MAX];
-static uint8_t m_fail_type;
-static int m_fail_type_err;
+/* Error of the first uplinks of each message type (UL_*), and how many of them fail */
+static int m_fail_type_err[UL_UPLOAD_FIRMWARE + 1];
+static int m_fail_type_count[UL_UPLOAD_FIRMWARE + 1];
+static bool m_session_without_id;
 
 static K_SEM_DEFINE(m_entered, 0, 1);
 static K_SEM_DEFINE(m_release, 0, 1);
@@ -144,10 +146,17 @@ int mock_transfer_log_find(uint8_t type)
 	return -1;
 }
 
-void mock_transfer_fail_first_of_type(uint8_t type, int err)
+void mock_transfer_fail_first_of_type(uint8_t type, int err, int count)
 {
-	m_fail_type = type;
-	m_fail_type_err = err;
+	__ASSERT_NO_MSG(type < ARRAY_SIZE(m_fail_type_err));
+
+	m_fail_type_err[type] = err;
+	m_fail_type_count[type] = count;
+}
+
+void mock_transfer_session_without_id_first(void)
+{
+	m_session_without_id = true;
 }
 
 int ctr_cloud_transfer_init(uint32_t serial_number, uint8_t token[16], ctr_cloud_transfer_cb cb)
@@ -178,6 +187,7 @@ int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink, k_timeout
 		e = &m_log[m_log_count];
 		e->len = len;
 		memcpy(e->mem, mem, MIN(len, sizeof(e->mem)));
+		e->at = k_uptime_get();
 	}
 
 	m_log_count++;
@@ -193,9 +203,9 @@ int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink, k_timeout
 		m_fail_next_uplink = 0;
 	}
 
-	if (m_fail_type_err && len && mem[0] == m_fail_type) {
-		ret = m_fail_type_err;
-		m_fail_type_err = 0;
+	if (len && mem[0] < ARRAY_SIZE(m_fail_type_count) && m_fail_type_count[mem[0]]) {
+		ret = m_fail_type_err[mem[0]];
+		m_fail_type_count[mem[0]]--;
 	}
 
 	if (e) {
@@ -222,6 +232,22 @@ int ctr_cloud_transfer_downlink(struct ctr_buf *buf, bool *has_downlink, k_timeo
 
 	if (m_session_pending) {
 		m_session_pending = false;
+
+		if (m_session_without_id) {
+			m_session_without_id = false;
+
+			/* The map with one pair less: without the id (key 0) */
+			const uint8_t head[] = {m_session_msg[0], 0xa3};
+			int ret = ctr_buf_append_mem(buf, head, sizeof(head));
+
+			if (ret) {
+				return ret;
+			}
+
+			return ctr_buf_append_mem(buf, &m_session_msg[8],
+						  sizeof(m_session_msg) - 8);
+		}
+
 		return ctr_buf_append_mem(buf, m_session_msg, sizeof(m_session_msg));
 	}
 

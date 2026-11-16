@@ -63,14 +63,20 @@ struct mock_log_entry {
 	size_t len;
 	uint8_t mem[MOCK_LOG_MEM_MAX];
 	int ret;
+	/* Uptime of the call in ms */
+	int64_t at;
 };
 
 int mock_transfer_log_count(void);
 const struct mock_log_entry *mock_transfer_log(int index);
 /* Index of the first logged uplink of message `type`, or -1 */
 int mock_transfer_log_find(uint8_t type);
-/* The first uplink of message `type` fails with `err`; not cleared by mock_transfer_reset() */
-void mock_transfer_fail_first_of_type(uint8_t type, int err);
+/* The first `count` uplinks of message `type` fail with `err`; not cleared by
+ * mock_transfer_reset()
+ */
+void mock_transfer_fail_first_of_type(uint8_t type, int err, int count);
+/* The first session response comes without an id; not cleared by mock_transfer_reset() */
+void mock_transfer_session_without_id_first(void);
 
 /* ---- Mock MCUboot image state and the firmware update scenario (TEST_FW) ---- */
 
@@ -97,6 +103,9 @@ const uint8_t *mock_spool_last_saved(size_t *len);
 int mock_spool_stored(void);
 
 /* ---- Helpers ---- */
+
+/* For the init work, which pauses 10 s between the failed attempts of a step (TEST_INIT_RETRY) */
+#define TEST_INIT_TIMEOUT K_SECONDS(60)
 
 /* Call ctr_cloud_init() once with the test options; later calls return 0 */
 int common_init_start(void);

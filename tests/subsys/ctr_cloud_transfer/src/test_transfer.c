@@ -41,6 +41,10 @@
 #define REPLY(seq, fl, rseq, rfl, data) \
 	{.sequence = (seq), .flags = (fl), .resp_sequence = (rseq), .resp_flags = (rfl), \
 	 .resp_data = (data)}
+/* The packet gets the response after ms */
+#define REPLY_AFTER(seq, fl, rseq, rfl, ms) \
+	{.sequence = (seq), .flags = (fl), .resp_sequence = (rseq), .resp_flags = (rfl), \
+	 .duration_ms = (ms)}
 /* The final ACK of a downlink, which expects no response, fails after ms */
 #define ACK_FAIL(seq, err, ms) \
 	{.sequence = (seq), .flags = ACK, .no_recv = true, .ret = (err), .duration_ms = (ms)}
@@ -52,6 +56,8 @@ static uint8_t m_token[16] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 			      0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10};
 
 CTR_BUF_DEFINE_STATIC(m_buf, 64);
+/* Two fragments: 360 and 40 bytes */
+CTR_BUF_DEFINE_STATIC(m_big_buf, 400);
 
 static int uplink(k_timeout_t timeout, int64_t *elapsed)
 {
@@ -189,6 +195,30 @@ ZTEST(transfer, test_ack_lost_reply)
 	int64_t elapsed;
 	int ret = downlink(K_SECONDS(60), &elapsed);
 	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
+
+	mock_lte_assert_done();
+}
+
+/* A fragment that would start past the deadline is not sent at all */
+ZTEST(transfer, test_fragment_past_deadline)
+{
+	static const struct mock_lte_exchange script[] = {
+		/* The response to the first fragment comes at the deadline */
+		REPLY_AFTER(0, CTR_CLOUD_PACKET_FLAG_FIRST, 1, 0, 2000),
+	};
+
+	mock_lte_start(SERIAL_NUMBER, m_token, script, ARRAY_SIZE(script));
+
+	ctr_buf_reset(&m_big_buf);
+	memset(ctr_buf_get_mem(&m_big_buf), 0x55, ctr_buf_get_free(&m_big_buf));
+	zassert_ok(ctr_buf_seek(&m_big_buf, 400));
+
+	int64_t start = k_uptime_get();
+	int ret = ctr_cloud_transfer_uplink(&m_big_buf, NULL, K_MSEC(2000));
+	int64_t elapsed = k_uptime_get() - start;
+
+	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
+	zassert_within(elapsed, 2000, 20, "returned %lld ms after the call", elapsed);
 
 	mock_lte_assert_done();
 }

@@ -46,7 +46,12 @@ ZTEST(ctr_cloud_send_3_fw, test_firmware_update_ack)
 	int config = mock_transfer_log_find(UL_UPLOAD_CONFIG);
 
 	zassert_true(session >= 0);
+#if TEST_CONFIG_SHOW_FAIL
+	/* The config cannot be packed, so it is not uploaded */
+	zassert_equal(config, -1, "config at %d", config);
+#else
 	zassert_true(config > session);
+#endif
 
 #if TEST_FW == 0
 	/* No update id stored (an update over BLE, or the id got lost): the image is confirmed,

@@ -31,3 +31,19 @@ tests:
       - native_sim
     integration_platforms:
       - native_sim
+  # The uploads of the init steps fail
+  subsys.ctr_cloud_send.init_retry:
+    tags: chester
+    extra_args: TEST_INIT_RETRY=1
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+  # The config cannot be packed (`config show` fails)
+  subsys.ctr_cloud_send.init_config_show_fail:
+    tags: chester
+    extra_args: TEST_CONFIG_SHOW_FAIL=1
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
