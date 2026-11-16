@@ -29,6 +29,20 @@
 
 #define MODEM_SLEEP_DELAY K_SECONDS(10)
 
+/* A failed exchange is sent again with the same bytes, and so with the same sequence, until the
+ * deadline: the server answers a repeated packet with its last response, so the transfer keeps
+ * its place. The backoff depends on the cause: a lost response (-ETIMEDOUT) is asked for again
+ * soon, while with no connection granted (-ENOTCONN) the network needs time. */
+#define TRANSFER_BACKOFF_LOST_REPLY K_SECONDS(1)
+#define TRANSFER_BACKOFF_NO_CONN    K_SECONDS(30)
+
+/* A restart waits too, so that a peer out of step cannot make it spin */
+#define TRANSFER_BACKOFF_RESTART K_SECONDS(1)
+
+/* How many times a stale response (the one to the previous packet) is answered by sending the
+ * same packet again before the transfer restarts */
+#define TRANSFER_REPEAT_LIMIT 3
+
 #define MAX_DATA_SIZE        (CTR_CLOUD_PACKET_MAX_SIZE - CTR_CLOUD_PACKET_MIN_SIZE)
 #define MAX_BASE64_DATA_SIZE ((CTR_CLOUD_PACKET_MAX_SIZE / 4 * 3) - 7 - CTR_CLOUD_PACKET_MIN_SIZE)
 
@@ -45,8 +59,22 @@ static struct ctr_cloud_packet m_pck_send;
 static struct ctr_cloud_packet m_pck_recv;
 static ctr_cloud_transfer_cb m_cb;
 
+/* Sleep for the backoff, but not past the deadline; false if no time is left after it */
+static bool backoff(k_timeout_t delay, k_timepoint_t end)
+{
+	k_timepoint_t until = sys_timepoint_calc(delay);
+
+	if (sys_timepoint_cmp(until, end) > 0) {
+		until = end;
+	}
+
+	k_sleep(sys_timepoint_timeout(until));
+
+	return !sys_timepoint_expired(end);
+}
+
 static int transfer(struct ctr_cloud_packet *pck_send, struct ctr_cloud_packet *pck_recv, bool rai,
-		    k_timeout_t timeout)
+		    k_timepoint_t end)
 {
 	int ret;
 	struct ctr_buf *pck_buf = &m_buf_0;
@@ -72,32 +100,51 @@ static int transfer(struct ctr_cloud_packet *pck_send, struct ctr_cloud_packet *
 		return ret;
 	}
 	ctr_buf_seek(send_buf, len);
-	len = 0;
 
 	LOG_HEXDUMP_INF(ctr_buf_get_mem(send_buf), ctr_buf_get_used(send_buf),
 			rai ? "Sending packet RAI:" : "Sending packet:");
 
-	struct ctr_lte_v2_send_recv_param param = {
-		.rai = rai,
-		.send_as_string = true,
-		.send_buf = ctr_buf_get_mem(send_buf),
-		.send_len = ctr_buf_get_used(send_buf),
-		.recv_buf = NULL,
-		.recv_size = 0,
-		.recv_len = &len,
-		.timeout = timeout,
-	};
+	for (int attempt = 1;; attempt++) {
+		len = 0;
 
-	if (pck_recv) {
-		ctr_buf_reset(recv_buf);
-		param.recv_buf = ctr_buf_get_mem(recv_buf);
-		param.recv_size = ctr_buf_get_free(recv_buf);
-	}
+		/* Each attempt gets the time left */
+		struct ctr_lte_v2_send_recv_param param = {
+			.rai = rai,
+			.send_as_string = true,
+			.send_buf = ctr_buf_get_mem(send_buf),
+			.send_len = ctr_buf_get_used(send_buf),
+			.recv_buf = NULL,
+			.recv_size = 0,
+			.recv_len = &len,
+			.timeout = sys_timepoint_timeout(end),
+		};
 
-	ret = ctr_lte_v2_send_recv(&param);
-	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_send_recv` failed: %d", ret);
-		return ret;
+		if (pck_recv) {
+			ctr_buf_reset(recv_buf);
+			param.recv_buf = ctr_buf_get_mem(recv_buf);
+			param.recv_size = ctr_buf_get_free(recv_buf);
+		}
+
+		ret = ctr_lte_v2_send_recv(&param);
+		if (!ret) {
+			break;
+		}
+
+		/* A lost response is worth asking for again only if one is expected */
+		if (ret != -ENOTCONN && !(pck_recv && ret == -ETIMEDOUT)) {
+			LOG_ERR("Call `ctr_lte_v2_send_recv` failed: %d", ret);
+			return ret;
+		}
+
+		LOG_WRN("Call `ctr_lte_v2_send_recv` failed: %d, attempt %d, retrying", ret,
+			attempt);
+
+		if (!backoff(ret == -ENOTCONN ? TRANSFER_BACKOFF_NO_CONN
+					      : TRANSFER_BACKOFF_LOST_REPLY,
+			     end)) {
+			LOG_ERR("No time left for another attempt");
+			return ret;
+		}
 	}
 
 	if (pck_recv) {
@@ -179,12 +226,20 @@ int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink, k_timeout
 	size_t len = 0;
 	int part = 0;
 	int fragments = 0;
+	int restarts = 0;
+	k_timepoint_t end = sys_timepoint_calc(timeout);
 
 	if (has_downlink) {
 		*has_downlink = false;
 	}
 
 restart:
+	if (restarts++ && !backoff(TRANSFER_BACKOFF_RESTART, end)) {
+		LOG_ERR("No time left for a restart");
+		res = -ETIMEDOUT;
+		goto exit;
+	}
+
 	part = 0;
 
 	if (buf) {
@@ -215,7 +270,10 @@ restart:
 		}
 
 		bool rai = m_pck_send.flags & CTR_CLOUD_PACKET_FLAG_LAST;
-		ret = transfer(&m_pck_send, &m_pck_recv, rai, timeout);
+		int repeats = 0;
+
+	resend:
+		ret = transfer(&m_pck_send, &m_pck_recv, rai, end);
 		if (ret) {
 			LOG_ERR("Call `transfer` failed: %d", ret);
 			res = ret;
@@ -246,8 +304,16 @@ restart:
 
 		if (m_pck_recv.sequence != m_sequence) {
 			if (m_pck_recv.sequence == m_last_recv_sequence) {
-				LOG_WRN("Received repeat response");
-				continue;
+				/* The response to the previous packet: send this one again with
+				 * the same sequence, a new one would put the server out of step */
+				if (++repeats <= TRANSFER_REPEAT_LIMIT) {
+					LOG_WRN("Repeat response, resending part %d (%d/%d)", part,
+						repeats, TRANSFER_REPEAT_LIMIT);
+					goto resend;
+				}
+				LOG_WRN("Repeat response limit reached, restarting transfer");
+				m_sequence = 0;
+				goto restart;
 			} else {
 				LOG_WRN("Received unexpected sequence expect: %u", m_sequence);
 				m_sequence = 0;
@@ -296,6 +362,8 @@ int ctr_cloud_transfer_downlink(struct ctr_buf *buf, bool *has_downlink, k_timeo
 	int res = 0;
 	int part = 0;
 	bool quit;
+	int restarts = 0;
+	k_timepoint_t end = sys_timepoint_calc(timeout);
 
 	if (has_downlink) {
 		*has_downlink = false;
@@ -303,6 +371,11 @@ int ctr_cloud_transfer_downlink(struct ctr_buf *buf, bool *has_downlink, k_timeo
 	size_t buf_used = ctr_buf_get_used(buf);
 
 restart:
+	if (restarts++ && !backoff(TRANSFER_BACKOFF_RESTART, end)) {
+		LOG_ERR("No time left for a restart");
+		res = -ETIMEDOUT;
+		goto exit;
+	}
 
 	part = 0;
 	quit = false;
@@ -317,11 +390,13 @@ restart:
 		m_pck_send.sequence = m_sequence;
 		m_sequence = ctr_cloud_packet_sequence_inc(m_sequence);
 
+		int repeats = 0;
+
 	again:
 		if (quit) {
 			bool rai = has_downlink ? !*has_downlink
 						: true; /* use RAI if no downlink is expected */
-			ret = transfer(&m_pck_send, NULL, rai, timeout);
+			ret = transfer(&m_pck_send, NULL, rai, end);
 			if (ret) {
 				LOG_ERR("Call `transfer` failed: %d", ret);
 				res = ret;
@@ -331,7 +406,7 @@ restart:
 		}
 
 		bool rai = part == 0;
-		ret = transfer(&m_pck_send, &m_pck_recv, rai, timeout);
+		ret = transfer(&m_pck_send, &m_pck_recv, rai, end);
 		if (ret) {
 			LOG_ERR("Call `transfer` failed: %d", ret);
 			res = ret;
@@ -352,8 +427,15 @@ restart:
 
 		if (m_pck_recv.sequence != m_sequence) {
 			if (m_pck_recv.sequence == m_last_recv_sequence) {
-				LOG_WRN("Received repeat response");
-				goto again;
+				/* The response to the previous packet: send this one again */
+				if (++repeats <= TRANSFER_REPEAT_LIMIT) {
+					LOG_WRN("Repeat response, resending (%d/%d)", repeats,
+						TRANSFER_REPEAT_LIMIT);
+					goto again;
+				}
+				LOG_WRN("Repeat response limit reached, restarting transfer");
+				m_sequence = 0;
+				goto restart;
 			} else {
 				LOG_WRN("Received unexpected sequence expect: %u", m_sequence);
 				m_sequence = 0;
