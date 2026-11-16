@@ -449,7 +449,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Download pending data from the cloud. </p>
-<p >Downloads one downlink message and processes it (session, time, configuration, data for the callback of <a class="el" href="ctr__cloud_8h.html#ac89d49138115a39edefad9167a6fa83a" title="Set the callback for data received from the cloud.">ctr_cloud_set_callback()</a>, shell commands, firmware), uploading a response when the message requires one. When the cloud has more messages, another download is scheduled on the cloud work queue. Call only after <a class="el" href="ctr__cloud_8h.html#abef7de6d0872cc11b20769e231f05636" title="Initialize the cloud subsystem and start connecting in the background.">ctr_cloud_init()</a> has succeeded.</p>
+<p >Downloads one downlink message and processes it (session, time, configuration, data for the callback of <a class="el" href="ctr__cloud_8h.html#ac89d49138115a39edefad9167a6fa83a" title="Set the callback for data received from the cloud.">ctr_cloud_set_callback()</a>, shell commands, firmware), uploading a response when the message requires one. When the cloud has more messages, another download is scheduled on the cloud work queue.</p>
 <p ><code>timeout</code> is one deadline for waiting for the cloud lock and for the download. Uses soft timeout: when timeout expires, the underlying LTE operation completes gracefully before returning. The timeout applies only to the initial download - any required response upload uses K_FOREVER.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -460,6 +460,7 @@ Functions</h2></td></tr>
 <dl class="retval"><dt>Return values</dt><dd>
   <table class="retval">
     <tr><td class="paramname">0</td><td>Success, also when there was nothing to download. </td></tr>
+    <tr><td class="paramname">-EPERM</td><td><a class="el" href="ctr__cloud_8h.html#abef7de6d0872cc11b20769e231f05636" title="Initialize the cloud subsystem and start connecting in the background.">ctr_cloud_init()</a> has not completed. </td></tr>
     <tr><td class="paramname">-EBUSY</td><td><code>timeout</code> is K_NO_WAIT and the cloud lock is taken. </td></tr>
     <tr><td class="paramname">-EAGAIN</td><td>The deadline expired while waiting for the cloud lock. </td></tr>
     <tr><td class="paramname">-EDEADLK</td><td>Called from inside an encoder callback. </td></tr>
@@ -499,6 +500,7 @@ Functions</h2></td></tr>
   <table class="retval">
     <tr><td class="paramname">0</td><td>The request has been sent. </td></tr>
     <tr><td class="paramname">-EINVAL</td><td><code>firmwareId</code> is empty or longer than 200 characters. </td></tr>
+    <tr><td class="paramname">-EPERM</td><td><a class="el" href="ctr__cloud_8h.html#abef7de6d0872cc11b20769e231f05636" title="Initialize the cloud subsystem and start connecting in the background.">ctr_cloud_init()</a> has not completed. </td></tr>
     <tr><td class="paramname">-EDEADLK</td><td>Called from inside an encoder callback. </td></tr>
     <tr><td class="paramname">&lt;0</td><td>Packing or transfer error. </td></tr>
   </table>
@@ -592,7 +594,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Initialize the cloud subsystem and start connecting in the background. </p>
-<p >Stores <code>options</code> (not copied, the structure must stay valid), starts the cloud work queue and returns without waiting for the cloud: the work queue creates the session and uploads the decoder, the encoder and the configuration, retrying all but the configuration until they succeed. Use <a class="el" href="ctr__cloud_8h.html#ac8e5c9c675aaf4a20aa0a0a03610ca64" title="Wait until the first cloud session has been created.">ctr_cloud_wait_initialized()</a> to wait for it. Call once.</p>
+<p >Stores <code>options</code> (not copied, the structure must stay valid), starts the cloud work queue and returns without waiting for the cloud: the work queue creates the session and uploads the decoder, the encoder and the configuration, retrying all but the configuration until they succeed. Use <a class="el" href="ctr__cloud_8h.html#ac8e5c9c675aaf4a20aa0a0a03610ca64" title="Wait until the first cloud session has been created.">ctr_cloud_wait_initialized()</a> to wait for it. Call once; a call that failed leaves the subsystem unused and can be repeated.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">options</td><td>Hashes and optional decoder and encoder of the application.</td></tr>
@@ -604,6 +606,7 @@ Functions</h2></td></tr>
     <tr><td class="paramname">0</td><td>Started. </td></tr>
     <tr><td class="paramname">-EINVAL</td><td><code>options</code> is NULL, or the claim token is not 32 hex digits. </td></tr>
     <tr><td class="paramname">-EPERM</td><td>The claim token is not set. </td></tr>
+    <tr><td class="paramname">-EALREADY</td><td>Already started by a previous successful call. </td></tr>
     <tr><td class="paramname">&lt;0</td><td>Another error reading the device information or initializing the transfer layer. </td></tr>
   </table>
   </dd>
@@ -661,10 +664,12 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Poll the cloud for downlink messages now. </p>
-<p >Schedules <a class="el" href="ctr__cloud_8h.html#a5385a33d085257f2fa01325d904294f1" title="Download pending data from the cloud.">ctr_cloud_downlink()</a> on the cloud work queue and returns. Call only after <a class="el" href="ctr__cloud_8h.html#abef7de6d0872cc11b20769e231f05636" title="Initialize the cloud subsystem and start connecting in the background.">ctr_cloud_init()</a> has succeeded.</p>
+<p >Schedules <a class="el" href="ctr__cloud_8h.html#a5385a33d085257f2fa01325d904294f1" title="Download pending data from the cloud.">ctr_cloud_downlink()</a> on the cloud work queue and returns.</p>
 <dl class="retval"><dt>Return values</dt><dd>
   <table class="retval">
     <tr><td class="paramname">0</td><td>Success. </td></tr>
+    <tr><td class="paramname">-EPERM</td><td><a class="el" href="ctr__cloud_8h.html#abef7de6d0872cc11b20769e231f05636" title="Initialize the cloud subsystem and start connecting in the background.">ctr_cloud_init()</a> has not completed. </td></tr>
+    <tr><td class="paramname">&lt;0</td><td>The work could not be scheduled. </td></tr>
   </table>
   </dd>
 </dl>
@@ -710,6 +715,7 @@ Functions</h2></td></tr>
   <table class="retval">
     <tr><td class="paramname">0</td><td>Sent. </td></tr>
     <tr><td class="paramname">-EINVAL</td><td><code>buf</code> is NULL or <code>len</code> is zero. </td></tr>
+    <tr><td class="paramname">-EPERM</td><td><a class="el" href="ctr__cloud_8h.html#abef7de6d0872cc11b20769e231f05636" title="Initialize the cloud subsystem and start connecting in the background.">ctr_cloud_init()</a> has not completed. </td></tr>
     <tr><td class="paramname">-EDEADLK</td><td>Called from inside an encoder callback. </td></tr>
     <tr><td class="paramname">-ENOSPC</td><td>The data do not fit the transfer buffer. </td></tr>
     <tr><td class="paramname">&lt;0</td><td>Another transfer error. </td></tr>
@@ -767,6 +773,7 @@ Functions</h2></td></tr>
   <table class="retval">
     <tr><td class="paramname">0</td><td>Sent. </td></tr>
     <tr><td class="paramname">-EINVAL</td><td><code>buf</code> is NULL or <code>len</code> is zero. </td></tr>
+    <tr><td class="paramname">-EPERM</td><td><a class="el" href="ctr__cloud_8h.html#abef7de6d0872cc11b20769e231f05636" title="Initialize the cloud subsystem and start connecting in the background.">ctr_cloud_init()</a> has not completed. </td></tr>
     <tr><td class="paramname">-EBUSY</td><td><code>timeout</code> is K_NO_WAIT and the cloud lock is taken. </td></tr>
     <tr><td class="paramname">-EAGAIN</td><td>The deadline expired while waiting for the cloud lock. </td></tr>
     <tr><td class="paramname">-EDEADLK</td><td>Called from inside an encoder callback. </td></tr>
