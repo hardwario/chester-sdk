@@ -6,6 +6,7 @@ project(test)
 
 add_compile_definitions(CONFIG_CTR_CLOUD_LOG_LEVEL=4)
 add_compile_definitions(CONFIG_CTR_CLOUD_TRANSFER_BUF_SIZE=16384)
+add_compile_definitions(CONFIG_CTR_CLOUD_ENCODE_ZCBOR_STATES=2)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../subsys/ctr_cloud)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../subsys/ctr_cloud/ctr_cloud_packet.c)
@@ -15,6 +16,7 @@ target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../subsys/ctr_cloud
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../subsys/ctr_cloud/ctr_cloud_process.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../subsys/ctr_cloud/ctr_cloud_shell.c)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../subsys/ctr_cloud/ctr_cloud.c)
+target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../subsys/ctr_cloud/ctr_cloud_msg_data.c)
 
 target_sources(app PRIVATE src/mock.c)
 target_sources(app PRIVATE src/mock_ctr_info.c)

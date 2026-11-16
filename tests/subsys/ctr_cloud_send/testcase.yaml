@@ -1,0 +1,15 @@
+tests:
+  subsys.ctr_cloud_send:
+    tags: chester
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+  # Same sources without CONFIG_CTR_CLOUD_SPOOL
+  subsys.ctr_cloud_send.no_spool:
+    tags: chester
+    extra_args: TEST_SPOOL=0
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

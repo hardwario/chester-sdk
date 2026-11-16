@@ -96,42 +96,127 @@ union ctr_cloud_event_data {
 typedef void (*ctr_cloud_cb)(enum ctr_cloud_event event, union ctr_cloud_event_data *data,
 			     void *param);
 
+/**
+ * @brief Initialize the cloud subsystem and start connecting in the background.
+ *
+ * Stores @p options (not copied, the structure must stay valid), starts the cloud
+ * work queue and returns without waiting for the cloud: the work queue creates the
+ * session and uploads the decoder, the encoder and the configuration, retrying all
+ * but the configuration until they succeed. Use ctr_cloud_wait_initialized() to wait
+ * for it. Call once.
+ *
+ * @param options Hashes and optional decoder and encoder of the application.
+ *
+ * @retval 0       Started.
+ * @retval -EINVAL @p options is NULL, or the claim token is not 32 hex digits.
+ * @retval -EPERM  The claim token is not set.
+ * @retval <0      Another error reading the device information or initializing
+ *                 the transfer layer.
+ */
 int ctr_cloud_init(struct ctr_cloud_options *options);
+
+/**
+ * @brief Wait until the first cloud session has been created.
+ *
+ * @param timeout Time to wait.
+ *
+ * @retval 0          The session has been created (ctr_cloud_init() has finished
+ *                    in the background).
+ * @retval -ETIMEDOUT Not within @p timeout.
+ */
 int ctr_cloud_wait_initialized(k_timeout_t timeout);
+
+/**
+ * @brief Check whether the first cloud session has been created.
+ *
+ * @param[out] initialized Set to true once ctr_cloud_wait_initialized() would return 0.
+ *
+ * @retval 0       Success.
+ * @retval -EINVAL @p initialized is NULL.
+ */
 int ctr_cloud_is_initialized(bool *initialized);
+
+/**
+ * @brief Set the callback for data received from the cloud.
+ *
+ * The callback gets CTR_CLOUD_EVENT_RECV with the payload of each downlink data
+ * message. It runs in the thread that calls ctr_cloud_downlink() (the cloud work
+ * queue when polling) with the cloud lock held. Waits for the cloud lock.
+ *
+ * @param user_cb   Callback, NULL to remove it.
+ * @param user_data Passed to @p user_cb.
+ *
+ * @retval 0 Success.
+ */
 int ctr_cloud_set_callback(ctr_cloud_cb user_cb, void *user_data);
+
+/**
+ * @brief Set the period of polling the cloud for downlink messages.
+ *
+ * Takes effect immediately once the first session has been created, otherwise
+ * when it is. The cloud is polled by ctr_cloud_downlink() on the cloud work queue.
+ *
+ * @param interval Poll period, K_NO_WAIT (the default) for no periodic polling.
+ *
+ * @retval 0 Success.
+ */
 int ctr_cloud_set_poll_interval(k_timeout_t interval);
+
+/**
+ * @brief Poll the cloud for downlink messages now.
+ *
+ * Schedules ctr_cloud_downlink() on the cloud work queue and returns. Call only
+ * after ctr_cloud_init() has succeeded.
+ *
+ * @retval 0 Success.
+ */
 int ctr_cloud_poll_immediately(void);
 
 /**
  * @brief Send data to the cloud with timeout.
  *
- * Uses soft timeout: when timeout expires, the underlying LTE operation
- * completes gracefully before returning. The timeout signals "finish when
- * you can", not an immediate abort.
+ * Copies @p buf (the encoded payload) into the cloud transfer buffer behind the
+ * data packet header and sends it. Call only after ctr_cloud_init() has succeeded.
+ *
+ * @p timeout is one deadline for waiting for the cloud lock and for the transfer;
+ * the transfer gets the time left. Uses soft timeout: when timeout expires, the
+ * underlying LTE operation completes gracefully before returning. The timeout
+ * signals "finish when you can", not an immediate abort.
+ *
+ * With CONFIG_CTR_CLOUD_SPOOL, a message that is not sent because the transfer fails
+ * (or, for ctr_cloud_send_data_cb(), because the deadline expired after encoding)
+ * stays in the spool and goes out with a later successful send; the return code
+ * does not tell whether the message was queued, so a retry by the caller may
+ * duplicate it.
  *
  * @param buf     Pointer to data buffer.
  * @param len     Length of data to send.
- * @param timeout Soft timeout for the operation.
+ * @param timeout Deadline for the lock wait and the transfer.
  *
- * @retval 0          Success.
- * @retval -EINVAL    Invalid argument (NULL buffer or zero length).
- * @retval -ETIMEDOUT Operation timed out.
- * @retval -EIO       I/O error.
+ * @retval 0          Sent.
+ * @retval -EINVAL    @p buf is NULL or @p len is zero.
+ * @retval -EBUSY     @p timeout is K_NO_WAIT and the cloud lock is taken.
+ * @retval -EAGAIN    The deadline expired while waiting for the cloud lock.
+ * @retval -EDEADLK   Called from inside an encoder callback.
+ * @retval -ENOSPC    The data do not fit the transfer buffer.
+ * @retval -ETIMEDOUT The transfer timed out.
+ * @retval <0         Another transfer error.
  */
 int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout);
 
 /**
  * @brief Send data to the cloud (blocking, no timeout).
  *
- * Equivalent to ctr_cloud_send_data() with K_FOREVER timeout.
+ * Equivalent to ctr_cloud_send_data() with K_FOREVER timeout, including the spool.
  *
  * @param buf  Pointer to data buffer.
  * @param len  Length of data to send.
  *
- * @retval 0       Success.
- * @retval -EINVAL Invalid argument.
- * @retval -EIO    I/O error.
+ * @retval 0        Sent.
+ * @retval -EINVAL  @p buf is NULL or @p len is zero.
+ * @retval -EDEADLK Called from inside an encoder callback.
+ * @retval -ENOSPC  The data do not fit the transfer buffer.
+ * @retval <0       Another transfer error.
  */
 int ctr_cloud_send(const void *buf, size_t len);
 
@@ -149,13 +234,22 @@ int ctr_cloud_send(const void *buf, size_t len);
  * The state has stop_on_error enabled, so the callback does not need to check the
  * result of every put call. The first error is kept and nothing is written after it.
  *
- * The callback runs in the thread of the caller while the cloud subsystem holds its
- * lock, so it must not call any cloud API. It may be called at most once per send,
- * but a send is not guaranteed to call it exactly once, so side effects (for example
- * sequence numbers) should be kept outside of the callback or be idempotent. The
- * message must fit into the transfer buffer minus the 9 byte packet header. The
- * helpers ctr_cloud_cbor_free(), ctr_cloud_cbor_len(), ctr_cloud_cbor_put_raw() and
- * ctr_cloud_cbor_put_key_ts() are meant to be used from the callback.
+ * The callback runs in the caller's thread with the cloud lock held. Calling
+ * ctr_cloud_send_data(), ctr_cloud_send(), ctr_cloud_send_data_cb(),
+ * ctr_cloud_downlink() or ctr_cloud_firmware_update() from it fails with -EDEADLK;
+ * other blocking cloud calls (e.g. ctr_cloud_wait_initialized()) may deadlock.
+ * Do not take a lock whose holder may call the cloud API.
+ *
+ * It may be called at most once per send, but a send is not guaranteed to call it
+ * exactly once, so side effects (for example sequence numbers) should be kept
+ * outside of the callback or be idempotent. The message must fit into the transfer
+ * buffer minus the 9 byte packet header. The helpers ctr_cloud_cbor_free(),
+ * ctr_cloud_cbor_len(), ctr_cloud_cbor_put_raw() and ctr_cloud_cbor_put_key_ts() are
+ * meant to be used from the callback.
+ *
+ * Return 0 on success or a negative errno. Avoid -EAGAIN, -ETIMEDOUT, -EDEADLK
+ * and -EPERM: the value is passed through unchanged and cannot be told apart
+ * from the errors of ctr_cloud_send_data_cb() itself.
  *
  * @param zs        Encoding state positioned behind the packet header.
  * @param user_data User data passed by the caller of the send function.
@@ -166,6 +260,53 @@ int ctr_cloud_send(const void *buf, size_t len);
  * @retval positive Not allowed, reserved for the cloud subsystem; treated as -EINVAL.
  */
 typedef int (*ctr_cloud_data_encode_cb)(zcbor_state_t *zs, void *user_data);
+
+/**
+ * @brief Encode a data message with a callback and send it to the cloud.
+ *
+ * Waits for the cloud lock, then lets @p cb encode the CBOR payload directly
+ * into the cloud transfer buffer behind the data packet header, so the caller
+ * needs no message buffer of its own. The callback is called only once the
+ * transfer buffer is free, so the data reflect the moment of sending.
+ *
+ * @p timeout is one deadline for waiting for the cloud lock and for the
+ * transfer: the time left after the lock is acquired and the payload is
+ * encoded is passed to the transfer layer, which applies it to each packet
+ * exchange, so a fragmented message can take longer than @p timeout. If the
+ * deadline expires while waiting for the lock, the callback is not called
+ * (-EAGAIN); if it has expired before the transfer can start, nothing is sent
+ * (-ETIMEDOUT); K_NO_WAIT therefore never sends.
+ *
+ * If encoding fails, nothing is sent. Test the result with ret != 0;
+ * positive values are reserved.
+ *
+ * With CONFIG_CTR_CLOUD_SPOOL, a message that is not sent because the transfer fails
+ * (or, for ctr_cloud_send_data_cb(), because the deadline expired after encoding)
+ * stays in the spool and goes out with a later successful send; the return code
+ * does not tell whether the message was queued, so a retry by the caller may
+ * duplicate it.
+ *
+ * @param cb        Encoder callback, see ctr_cloud_data_encode_cb.
+ * @param user_data Passed to @p cb.
+ * @param timeout   Deadline for the lock wait; the rest is the transfer timeout.
+ *
+ * @retval 0          Sent.
+ * @retval -EINVAL    @p cb is NULL, the callback returned a positive value or
+ *                    encoded an empty payload.
+ * @retval -EPERM     ctr_cloud_init() has not completed.
+ * @retval -EAGAIN    The deadline expired while waiting for the cloud lock;
+ *                    the callback was not called.
+ * @retval -ETIMEDOUT The deadline expired before the transfer could start, or
+ *                    the transfer timed out.
+ * @retval -EDEADLK   Called from inside an encoder callback.
+ * @retval -ENOSPC    The payload does not fit the transfer buffer.
+ * @retval -ENOMEM    Not enough zcbor backup states (raise
+ *                    CONFIG_CTR_CLOUD_ENCODE_ZCBOR_STATES).
+ * @retval -EBADMSG   The payload is not valid CBOR.
+ * @retval <0         A negative error returned by @p cb, or another transfer
+ *                    error.
+ */
+int ctr_cloud_send_data_cb(ctr_cloud_data_encode_cb cb, void *user_data, k_timeout_t timeout);
 
 /**
  * @brief Get the number of free bytes left for the payload.
@@ -251,20 +392,44 @@ int ctr_cloud_get_last_seen_ts(int64_t *ts);
  */
 int ctr_cloud_get_metrics(struct ctr_cloud_metrics *metrics);
 
+/**
+ * @brief Request a firmware update from the cloud.
+ *
+ * Sends a request to download the application firmware @p firmwareId; the firmware
+ * then arrives in downlink messages. Waits for the cloud lock and the transfer
+ * without a timeout.
+ *
+ * @param firmwareId Firmware identifier, 1 to 200 characters (not NULL).
+ *
+ * @retval 0        The request has been sent.
+ * @retval -EINVAL  @p firmwareId is empty or longer than 200 characters.
+ * @retval -EDEADLK Called from inside an encoder callback.
+ * @retval <0       Packing or transfer error.
+ */
 int ctr_cloud_firmware_update(const char *firmwareId);
 
 /**
  * @brief Download pending data from the cloud.
  *
+ * Downloads one downlink message and processes it (session, time, configuration,
+ * data for the callback of ctr_cloud_set_callback(), shell commands, firmware),
+ * uploading a response when the message requires one. When the cloud has more
+ * messages, another download is scheduled on the cloud work queue. Call only after
+ * ctr_cloud_init() has succeeded.
+ *
+ * @p timeout is one deadline for waiting for the cloud lock and for the download.
  * Uses soft timeout: when timeout expires, the underlying LTE operation
  * completes gracefully before returning. The timeout applies only to the
  * initial download - any required response upload uses K_FOREVER.
  *
- * @param timeout Soft timeout for the download operation.
+ * @param timeout Deadline for the lock wait and the download.
  *
- * @retval 0          Success.
- * @retval -ETIMEDOUT Operation timed out.
- * @retval -EIO       I/O error.
+ * @retval 0          Success, also when there was nothing to download.
+ * @retval -EBUSY     @p timeout is K_NO_WAIT and the cloud lock is taken.
+ * @retval -EAGAIN    The deadline expired while waiting for the cloud lock.
+ * @retval -EDEADLK   Called from inside an encoder callback.
+ * @retval -ETIMEDOUT The download timed out.
+ * @retval <0         Another transfer error, or the message could not be processed.
  */
 int ctr_cloud_downlink(k_timeout_t timeout);
 

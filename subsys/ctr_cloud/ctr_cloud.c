@@ -24,7 +24,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/dfu/mcuboot.h>
 
-
 /* Standard includes */
 #include <errno.h>
 #include <stdbool.h>
@@ -32,6 +31,7 @@
 #include <stdint.h>
 
 #define EVENT_INITIALIZED_SET BIT(0)
+#define EVENT_STARTED_SET     BIT(1)
 #define WORK_Q_STACK_SIZE     4096
 #define WORK_Q_PRIORITY       K_LOWEST_APPLICATION_THREAD_PRIO
 
@@ -40,8 +40,15 @@
 
 LOG_MODULE_REGISTER(ctr_cloud, CONFIG_CTR_CLOUD_LOG_LEVEL);
 
+/* Serializes the users of m_transfer_buf. Every public function that rewrites
+ * m_transfer_buf under m_lock must take it via lock_transfer_buf() (the
+ * reentrancy guard against calls from an encode callback). */
 static K_MUTEX_DEFINE(m_lock);
 CTR_BUF_DEFINE_STATIC(m_transfer_buf, CONFIG_CTR_CLOUD_TRANSFER_BUF_SIZE);
+
+/* Set while an encode callback runs. Accessed only with m_lock held, and m_lock is
+ * recursive, so whoever finds it set is the thread of that callback. */
+static bool m_in_encode_cb;
 
 static K_THREAD_STACK_DEFINE(m_work_q_stack, WORK_Q_STACK_SIZE);
 static struct k_work_q m_work_q;
@@ -284,6 +291,28 @@ static int uplink(struct ctr_buf *buf, k_timeout_t timeout)
 
 	if (has_downlink) {
 		k_work_schedule_for_queue(&m_work_q, &m_poll_dwork, K_NO_WAIT);
+	}
+
+	return 0;
+}
+
+/* Take m_lock to rewrite m_transfer_buf; refuse a nested call from an encode callback,
+ * which would corrupt the message being encoded. Returns the raw k_mutex_lock code
+ * (callers that document -EAGAIN map it themselves). */
+static int lock_transfer_buf(k_timeout_t timeout)
+{
+	int ret;
+
+	ret = k_mutex_lock(&m_lock, timeout);
+	if (ret) {
+		LOG_WRN("Failed to acquire lock: %d", ret);
+		return ret;
+	}
+
+	if (m_in_encode_cb) {
+		LOG_ERR("Cloud API called from an encode callback");
+		k_mutex_unlock(&m_lock);
+		return -EDEADLK;
 	}
 
 	return 0;
@@ -683,6 +712,8 @@ int ctr_cloud_init(struct ctr_cloud_options *options)
 
 	k_work_submit_to_queue(&m_work_q, &m_init_work);
 
+	k_event_post(&m_cloud_events, EVENT_STARTED_SET);
+
 	return 0;
 }
 
@@ -776,27 +807,6 @@ int ctr_cloud_poll_immediately(void)
 	return 0;
 }
 
-static int frame_reset(void)
-{
-	int ret;
-
-	ctr_buf_reset(&m_transfer_buf);
-
-	ret = ctr_buf_append_u8(&m_transfer_buf, UL_UPLOAD_DATA);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u8` failed: %d", ret);
-		return ret;
-	}
-
-	ret = ctr_buf_append_u64_be(&m_transfer_buf, m_options->decoder_hash);
-	if (ret) {
-		LOG_ERR("Call `ctr_buf_append_u64` failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 static int frame_send(k_timeout_t timeout)
 {
 	int ret;
@@ -855,35 +865,11 @@ static void drain_spool(k_timepoint_t end)
 
 #endif /* defined(CONFIG_CTR_CLOUD_SPOOL) */
 
-int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout)
+/* Send the data message built in m_transfer_buf, through the spool when enabled.
+ * m_lock must be held. */
+static int send_with_spool(k_timepoint_t end)
 {
 	int ret;
-
-	if (!buf || !len) {
-		return -EINVAL;
-	}
-
-	k_timepoint_t end = sys_timepoint_calc(timeout);
-
-	ret = k_mutex_lock(&m_lock, timeout);
-	if (ret) {
-		LOG_WRN("Failed to acquire lock: %d", ret);
-		return ret;
-	}
-
-	LOG_INF("Request SEND started");
-
-	ret = frame_reset();
-	if (!ret) {
-		ret = ctr_buf_append_mem(&m_transfer_buf, buf, len);
-		if (ret) {
-			LOG_ERR("Call `ctr_buf_append_mem` failed: %d", ret);
-		}
-	}
-	if (ret) {
-		k_mutex_unlock(&m_lock);
-		return ret;
-	}
 
 #if defined(CONFIG_CTR_CLOUD_SPOOL)
 	/* The spool acts as a send buffer - every message is stored first
@@ -908,7 +894,6 @@ int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout)
 			LOG_INF("Unsent message kept in spool: %llu", id);
 		}
 #endif
-		k_mutex_unlock(&m_lock);
 		return ret;
 	}
 
@@ -921,15 +906,135 @@ int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout)
 			/* Uplink works - send the remaining messages, oldest first */
 			drain_spool(end);
 		}
-		ret = 0;
 	}
 #endif
 
+	return 0;
+}
+
+/* Common exit of the send functions: releases m_lock (taken by the caller) and
+ * logs success. Passes @p ret through. */
+static int send_finish(int ret)
+{
 	k_mutex_unlock(&m_lock);
 
-	LOG_INF("Request SEND finished");
+	if (!ret) {
+		LOG_INF("Request SEND finished");
+	}
 
-	return 0;
+	return ret;
+}
+
+/* Body of ctr_cloud_send_data(); m_lock must be held */
+static int send_data_locked(const void *buf, size_t len, k_timepoint_t end)
+{
+	int ret;
+
+	LOG_INF("Request SEND started");
+
+	ctr_buf_reset(&m_transfer_buf);
+
+	ret = ctr_cloud_msg_pack_data(&m_transfer_buf, m_options->decoder_hash, buf, len);
+	if (ret) {
+		LOG_ERR("Call `ctr_cloud_msg_pack_data` failed: %d", ret);
+		return ret;
+	}
+
+	return send_with_spool(end);
+}
+
+int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout)
+{
+	int ret;
+
+	if (!buf || !len) {
+		return -EINVAL;
+	}
+
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+
+	ret = lock_transfer_buf(timeout);
+	if (ret) {
+		return ret;
+	}
+
+	ret = send_data_locked(buf, len, end);
+
+	return send_finish(ret);
+}
+
+/* Body of ctr_cloud_send_data_cb(); m_lock must be held */
+static int send_cb_locked(ctr_cloud_data_encode_cb cb, void *user_data, k_timepoint_t end)
+{
+	int ret;
+
+	/* Encode only when there is time left to send the result */
+	if (sys_timepoint_expired(end)) {
+		return -ETIMEDOUT;
+	}
+
+	LOG_INF("Request SEND started");
+
+	ctr_buf_reset(&m_transfer_buf);
+
+	m_in_encode_cb = true;
+	ret = ctr_cloud_msg_pack_data_cb(&m_transfer_buf, m_options->decoder_hash, cb, user_data);
+	m_in_encode_cb = false;
+
+	if (ret) {
+		/* Nothing to send or spool: pack_data_cb has rolled the buffer back */
+		LOG_WRN("Call `ctr_cloud_msg_pack_data_cb` failed: %d", ret);
+		return ret;
+	}
+
+	k_timeout_t left = sys_timepoint_timeout(end);
+
+	if (K_TIMEOUT_EQ(left, K_NO_WAIT)) {
+		LOG_WRN("Deadline expired while encoding");
+#if defined(CONFIG_CTR_CLOUD_SPOOL)
+		/* No time left to transfer: keep the encoded message for a later send */
+		ctr_cloud_spool_id id;
+
+		ret = ctr_cloud_spool_save(ctr_buf_get_mem(&m_transfer_buf),
+					   ctr_buf_get_used(&m_transfer_buf), &id);
+		if (ret) {
+			LOG_WRN("Call `ctr_cloud_spool_save` failed: %d", ret);
+		} else {
+			LOG_INF("Unsent message kept in spool: %llu", id);
+		}
+#endif
+		ctr_buf_reset(&m_transfer_buf);
+		return -ETIMEDOUT;
+	}
+
+	return send_with_spool(end);
+}
+
+int ctr_cloud_send_data_cb(ctr_cloud_data_encode_cb cb, void *user_data, k_timeout_t timeout)
+{
+	int ret;
+
+	if (!cb) {
+		return -EINVAL;
+	}
+
+	if (!k_event_test(&m_cloud_events, EVENT_STARTED_SET)) {
+		LOG_WRN("Cloud not started");
+		return -EPERM;
+	}
+
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+
+	ret = lock_transfer_buf(sys_timepoint_timeout(end));
+	if (ret) {
+		/* Any failure to get the lock in time, also -EBUSY of K_NO_WAIT */
+		ret = (ret == -EDEADLK) ? ret : -EAGAIN;
+		return ret;
+	}
+
+	ret = send_cb_locked(cb, user_data, end);
+
+	return send_finish(ret);
 }
 
 int ctr_cloud_send(const void *buf, size_t len)
@@ -943,9 +1048,8 @@ int ctr_cloud_downlink(k_timeout_t timeout)
 	bool has_downlink = false;
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 
-	ret = k_mutex_lock(&m_lock, timeout);
+	ret = lock_transfer_buf(timeout);
 	if (ret) {
-		LOG_WRN("Failed to acquire lock: %d", ret);
 		return ret;
 	}
 
@@ -1055,7 +1159,10 @@ int ctr_cloud_firmware_update(const char *firmware)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&m_lock, K_FOREVER);
+	ret = lock_transfer_buf(K_FOREVER);
+	if (ret) {
+		return ret;
+	}
 
 	LOG_INF("Request FIRMWARE UPDATE started");
 
