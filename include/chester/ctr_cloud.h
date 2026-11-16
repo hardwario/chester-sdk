@@ -103,15 +103,17 @@ typedef void (*ctr_cloud_cb)(enum ctr_cloud_event event, union ctr_cloud_event_d
  * work queue and returns without waiting for the cloud: the work queue creates the
  * session and uploads the decoder, the encoder and the configuration, retrying all
  * but the configuration until they succeed. Use ctr_cloud_wait_initialized() to wait
- * for it. Call once.
+ * for it. Call once; a call that failed leaves the subsystem unused and can be
+ * repeated.
  *
  * @param options Hashes and optional decoder and encoder of the application.
  *
- * @retval 0       Started.
- * @retval -EINVAL @p options is NULL, or the claim token is not 32 hex digits.
- * @retval -EPERM  The claim token is not set.
- * @retval <0      Another error reading the device information or initializing
- *                 the transfer layer.
+ * @retval 0         Started.
+ * @retval -EINVAL   @p options is NULL, or the claim token is not 32 hex digits.
+ * @retval -EPERM    The claim token is not set.
+ * @retval -EALREADY Already started by a previous successful call.
+ * @retval <0        Another error reading the device information or initializing
+ *                   the transfer layer.
  */
 int ctr_cloud_init(struct ctr_cloud_options *options);
 
@@ -165,10 +167,11 @@ int ctr_cloud_set_poll_interval(k_timeout_t interval);
 /**
  * @brief Poll the cloud for downlink messages now.
  *
- * Schedules ctr_cloud_downlink() on the cloud work queue and returns. Call only
- * after ctr_cloud_init() has succeeded.
+ * Schedules ctr_cloud_downlink() on the cloud work queue and returns.
  *
- * @retval 0 Success.
+ * @retval 0      Success.
+ * @retval -EPERM ctr_cloud_init() has not completed.
+ * @retval <0     The work could not be scheduled.
  */
 int ctr_cloud_poll_immediately(void);
 
@@ -195,6 +198,7 @@ int ctr_cloud_poll_immediately(void);
  *
  * @retval 0          Sent.
  * @retval -EINVAL    @p buf is NULL or @p len is zero.
+ * @retval -EPERM     ctr_cloud_init() has not completed.
  * @retval -EBUSY     @p timeout is K_NO_WAIT and the cloud lock is taken.
  * @retval -EAGAIN    The deadline expired while waiting for the cloud lock.
  * @retval -EDEADLK   Called from inside an encoder callback.
@@ -214,6 +218,7 @@ int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout);
  *
  * @retval 0        Sent.
  * @retval -EINVAL  @p buf is NULL or @p len is zero.
+ * @retval -EPERM   ctr_cloud_init() has not completed.
  * @retval -EDEADLK Called from inside an encoder callback.
  * @retval -ENOSPC  The data do not fit the transfer buffer.
  * @retval <0       Another transfer error.
@@ -403,6 +408,7 @@ int ctr_cloud_get_metrics(struct ctr_cloud_metrics *metrics);
  *
  * @retval 0        The request has been sent.
  * @retval -EINVAL  @p firmwareId is empty or longer than 200 characters.
+ * @retval -EPERM   ctr_cloud_init() has not completed.
  * @retval -EDEADLK Called from inside an encoder callback.
  * @retval <0       Packing or transfer error.
  */
@@ -414,8 +420,7 @@ int ctr_cloud_firmware_update(const char *firmwareId);
  * Downloads one downlink message and processes it (session, time, configuration,
  * data for the callback of ctr_cloud_set_callback(), shell commands, firmware),
  * uploading a response when the message requires one. When the cloud has more
- * messages, another download is scheduled on the cloud work queue. Call only after
- * ctr_cloud_init() has succeeded.
+ * messages, another download is scheduled on the cloud work queue.
  *
  * @p timeout is one deadline for waiting for the cloud lock and for the download.
  * Uses soft timeout: when timeout expires, the underlying LTE operation
@@ -425,6 +430,7 @@ int ctr_cloud_firmware_update(const char *firmwareId);
  * @param timeout Deadline for the lock wait and the download.
  *
  * @retval 0          Success, also when there was nothing to download.
+ * @retval -EPERM     ctr_cloud_init() has not completed.
  * @retval -EBUSY     @p timeout is K_NO_WAIT and the cloud lock is taken.
  * @retval -EAGAIN    The deadline expired while waiting for the cloud lock.
  * @retval -EDEADLK   Called from inside an encoder callback.

@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2026 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
+ */
+
+/*
+ * ctr_cloud_init() and the API before it.
+ */
+
+#include "common.h"
+
+/* CHESTER includes */
+#include <chester/ctr_cloud.h>
+
+/* Zephyr includes */
+#include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
+
+/* Standard includes */
+#include <errno.h>
+
+/* ---- Before a successful ctr_cloud_init() (suite ctr_cloud_send_0_init) ---- */
+
+static void assert_api_eperm(void)
+{
+	zassert_equal(ctr_cloud_send_data(PAYLOAD_A, sizeof(PAYLOAD_A), K_FOREVER), -EPERM);
+	zassert_equal(ctr_cloud_send(PAYLOAD_A, sizeof(PAYLOAD_A)), -EPERM);
+	zassert_equal(ctr_cloud_downlink(K_FOREVER), -EPERM);
+	zassert_equal(ctr_cloud_poll_immediately(), -EPERM);
+	zassert_equal(ctr_cloud_firmware_update("fw"), -EPERM);
+
+	assert_no_transfer();
+	zassert_equal(mock_transfer_downlink_count(), 0);
+}
+
+ZTEST(ctr_cloud_send_0_init, test_1_api_eperm_before_init)
+{
+	/* No ctr_cloud_init() at all yet: no options, transfer layer or work queue */
+	assert_api_eperm();
+}
+
+/* Runs after test_2_cb_eperm_after_failed_init */
+ZTEST(ctr_cloud_send_0_init, test_2_data_eperm_after_failed_init)
+{
+	assert_api_eperm();
+}
+
+/* ---- After ctr_cloud_init() ---- */
+
+ZTEST_SUITE(ctr_cloud_send_4_init, NULL, common_setup_initialized, common_before, common_after,
+	    NULL);
+
+ZTEST(ctr_cloud_send_4_init, test_init_again_ealready)
+{
+	static struct ctr_cloud_options options = {
+		.decoder_hash = 0xdeaddeaddeaddeadULL,
+	};
+
+	zassert_equal(ctr_cloud_init(&options), -EALREADY);
+
+	/* Still the options of the first init: MSG_A carries their decoder hash */
+	zassert_ok(ctr_cloud_send_data(PAYLOAD_A, sizeof(PAYLOAD_A), K_FOREVER));
+	assert_uplink(0, MSG_A, sizeof(MSG_A));
+}

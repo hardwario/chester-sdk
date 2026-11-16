@@ -55,6 +55,14 @@ static struct k_work_q m_work_q;
 
 static K_EVENT_DEFINE(m_cloud_events);
 
+/* True once ctr_cloud_init() has completed: m_options, the transfer layer and m_work_q are
+ * only valid afterwards
+ */
+static bool is_started(void)
+{
+	return k_event_test(&m_cloud_events, EVENT_STARTED_SET) != 0;
+}
+
 static ctr_cloud_cb m_user_cb;
 static void *m_user_data;
 static struct ctr_cloud_options *m_options = NULL;
@@ -682,7 +690,12 @@ int ctr_cloud_init(struct ctr_cloud_options *options)
 		return -EINVAL;
 	}
 
-	m_options = options;
+	if (is_started()) {
+		LOG_ERR("Already initialized");
+		return -EALREADY;
+	}
+
+	k_work_queue_init(&m_work_q);
 
 	uint32_t serial_number;
 
@@ -718,16 +731,19 @@ int ctr_cloud_init(struct ctr_cloud_options *options)
 		return ret;
 	}
 
-	k_mutex_init(&m_lock);
-	k_mutex_init(&m_lock_state);
+	/* The mutexes are statically defined: initializing them again here could reset one
+	 * held by another thread (a shell command). Publish the options and start the work
+	 * queue only after all the validations above passed, so that a failed init leaves
+	 * the module inert.
+	 */
+	m_options = options;
 
-	k_work_queue_init(&m_work_q);
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
 			   WORK_Q_PRIORITY, NULL);
 
-	k_work_submit_to_queue(&m_work_q, &m_init_work);
-
 	k_event_post(&m_cloud_events, EVENT_STARTED_SET);
+
+	k_work_submit_to_queue(&m_work_q, &m_init_work);
 
 	return 0;
 }
@@ -817,7 +833,18 @@ int ctr_cloud_set_poll_interval(k_timeout_t interval)
 
 int ctr_cloud_poll_immediately(void)
 {
-	k_work_schedule_for_queue(&m_work_q, &m_poll_dwork, K_NO_WAIT);
+	int ret;
+
+	if (!is_started()) {
+		LOG_WRN("Cloud is not initialized");
+		return -EPERM;
+	}
+
+	ret = k_work_schedule_for_queue(&m_work_q, &m_poll_dwork, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Call `k_work_schedule_for_queue` failed: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }
@@ -966,6 +993,11 @@ int ctr_cloud_send_data(const void *buf, size_t len, k_timeout_t timeout)
 		return -EINVAL;
 	}
 
+	if (!is_started()) {
+		LOG_WRN("Cloud is not initialized");
+		return -EPERM;
+	}
+
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 
 	ret = lock_transfer_buf(timeout);
@@ -1033,8 +1065,8 @@ int ctr_cloud_send_data_cb(ctr_cloud_data_encode_cb cb, void *user_data, k_timeo
 		return -EINVAL;
 	}
 
-	if (!k_event_test(&m_cloud_events, EVENT_STARTED_SET)) {
-		LOG_WRN("Cloud not started");
+	if (!is_started()) {
+		LOG_WRN("Cloud is not initialized");
 		return -EPERM;
 	}
 
@@ -1061,6 +1093,12 @@ int ctr_cloud_downlink(k_timeout_t timeout)
 {
 	int ret;
 	bool has_downlink = false;
+
+	if (!is_started()) {
+		LOG_WRN("Cloud is not initialized");
+		return -EPERM;
+	}
+
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 
 	ret = lock_transfer_buf(timeout);
@@ -1172,6 +1210,11 @@ int ctr_cloud_firmware_update(const char *firmware)
 	if (len > 200) {
 		LOG_ERR("Invalid argument `firmware` is too long");
 		return -EINVAL;
+	}
+
+	if (!is_started()) {
+		LOG_WRN("Cloud is not initialized");
+		return -EPERM;
 	}
 
 	ret = lock_transfer_buf(K_FOREVER);
