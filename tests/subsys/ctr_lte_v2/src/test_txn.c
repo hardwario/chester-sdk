@@ -5,12 +5,13 @@
  */
 
 /*
- * The send_recv transaction when the caller gives up. Each scenario is a configuration of its
- * own (testcase.yaml) and runs from the attach.
+ * The send_recv transaction when the caller gives up or LTE reconnects meanwhile. Each scenario
+ * is a configuration of its own (testcase.yaml) and runs from the attach.
  */
 
 #include "stack.h"
 
+#include "ctr_lte_v2_config.h"
 #include "ctr_lte_v2_state.h"
 
 #include <chester/ctr_lte_v2.h>
@@ -481,6 +482,124 @@ ZTEST(txn, test_lock_busy)
 	k_sleep(K_SECONDS(8));
 
 	ASSERT_FSM_STATE("sleep");
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_TXN_RECONNECT_IN_RECV)
+/* 'lte reconnect' during AT#XRECV: the FSM thread reconnects only after the dialog, the
+ * transaction completes */
+ZTEST(txn, test_reconnect_in_recv)
+{
+	/* Refused in the test mode and while LTE is disabled */
+	g_ctr_lte_v2_config.test = true;
+	zassert_equal(ctr_lte_v2_reconnect(), -ENOTSUP);
+	g_ctr_lte_v2_config.test = false;
+
+	zassert_equal(ctr_lte_v2_reconnect(), -ENODEV);
+	k_sleep(K_MSEC(500));
+	ASSERT_FSM_STATE("disabled");
+
+	stack_attach();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		{"AT#XRECV=5"},
+		RX_DATA(1000, "#XRECV: 8", "Hi there"),
+		{"AT#XSOCKETOPT=1,50", "OK"},
+		/* Only then the reconnect: the disabled state puts the modem to sleep, the boot
+		 * attaches again */
+		{"AT#XSLEEP=2", "OK"},
+		ITEMS_PREPARE,
+		ITEMS_REGISTER,
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_SECONDS(10),
+		.rai = true,
+	};
+
+	caller_start(&param, K_PRIO_PREEMPT(5));
+
+	stack_wait_for_state("receive", K_SECONDS(2));
+	/* Inside AT#XRECV */
+	k_sleep(K_MSEC(300));
+
+	zassert_ok(ctr_lte_v2_reconnect());
+
+	/* Only requested, the FSM is still in the dialog */
+	ASSERT_FSM_STATE("receive");
+
+	int64_t elapsed;
+	int ret = caller_join(&elapsed);
+	zassert_ok(ret, "send_recv failed: %d", ret);
+	zassert_equal(recv_len, 8, "recv_len incorrect");
+	zassert_mem_equal(recv_buf, "Hi there", recv_len, "recv_buf incorrect");
+
+	/* Attached again */
+	stack_wait_for_state("open_socket", K_SECONDS(10));
+	zassert_ok(ctr_lte_v2_wait_for_connected(K_SECONDS(6)));
+	k_sleep(K_MSEC(500));
+
+	ASSERT_FSM_STATE("ready");
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_TXN_RECONNECT_IN_ERROR)
+/* 'lte reconnect' in the error state shortly before its timer runs out: the timer does not fire
+ * into the new boot */
+ZTEST(txn, test_reconnect_in_error)
+{
+	stack_attach();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		ITEMS_FLOW_CHECK,
+		/* The modem refuses the send */
+		{"AT#XSOCKETOPT=1,51", "ERROR"},
+		/* Error state - flow check, ready state in 5 s */
+		ITEMS_FLOW_CHECK,
+		/* Reconnect */
+		{"AT#XSLEEP=2", "OK"},
+		ITEMS_PREPARE,
+		ITEMS_REGISTER,
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	/* The send fails, the deadline comes in the error state */
+	int64_t start = k_uptime_get();
+	give_up("error");
+
+	/* The error timer would run out 150 ms after the reconnect: in the boot state, after the
+	 * pause of the disabled state and before the modem wakes up */
+	sleep_until(start + 4850);
+	ASSERT_FSM_STATE("error");
+
+	zassert_ok(ctr_lte_v2_reconnect());
+
+	/* Attached again */
+	stack_wait_for_state("open_socket", K_SECONDS(10));
+	zassert_ok(ctr_lte_v2_wait_for_connected(K_SECONDS(6)));
+	k_sleep(K_MSEC(500));
+
+	ASSERT_FSM_STATE("ready");
 	mock_ctr_lte_link_assert_done();
 }
 #endif

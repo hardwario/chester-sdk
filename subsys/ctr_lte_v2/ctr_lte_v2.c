@@ -125,6 +125,7 @@ struct k_work m_gnss_work;
 #endif
 
 static struct fsm_state_desc *get_fsm_state(enum fsm_state state);
+static void transition_state(enum fsm_state next);
 
 static bool txn_take(void)
 {
@@ -330,6 +331,14 @@ static void event_handler(enum ctr_lte_v2_event event)
 {
 	LOG_INF("event: %s, state: %s", ctr_lte_v2_str_fsm_event(event), fsm_state_str(m_state));
 
+	/* The same in every state */
+	if (event == CTR_LTE_V2_EVENT_RECONNECT) {
+		stop_timer();
+		transition_state(FSM_STATE_DISABLED);
+		delegate_event(CTR_LTE_V2_EVENT_ENABLE);
+		return;
+	}
+
 	struct fsm_state_desc *fsm_state = get_fsm_state(m_state);
 	if (fsm_state && fsm_state->event_handler) {
 		int ret = fsm_state->event_handler(event);
@@ -446,16 +455,9 @@ int ctr_lte_v2_reconnect(void)
 		return -ENODEV;
 	}
 
-	stop_timer();
-
-	k_work_cancel(&m_event_dispatch_work);
-	k_mutex_lock(&m_event_rb_lock, K_FOREVER);
-	ring_buf_reset(&m_event_rb);
-	k_mutex_unlock(&m_event_rb_lock);
-
-	transition_state(FSM_STATE_DISABLED);
-
-	delegate_event(CTR_LTE_V2_EVENT_ENABLE);
+	/* Only the FSM thread may change the state: from this thread, the disabled state would talk
+	 * to the modem in the middle of its AT dialog */
+	delegate_event(CTR_LTE_V2_EVENT_RECONNECT);
 
 	return 0;
 }

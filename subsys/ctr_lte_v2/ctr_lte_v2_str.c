@@ -106,6 +106,8 @@ const char *ctr_lte_v2_str_fsm_event(enum ctr_lte_v2_event event)
 		return "timeout";
 	case CTR_LTE_V2_EVENT_ENABLE:
 		return "enable";
+	case CTR_LTE_V2_EVENT_RECONNECT:
+		return "reconnect";
 	case CTR_LTE_V2_EVENT_READY:
 		return "ready";
 	case CTR_LTE_V2_EVENT_SIMDETECTED:

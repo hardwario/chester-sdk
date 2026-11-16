@@ -156,7 +156,9 @@ int ctr_lte_v2_enable(void);
 /**
  * @brief Disconnect and reconnect LTE modem.
  *
- * Useful for recovering from connection issues.
+ * Useful for recovering from connection issues. The call only requests the reconnect: the LTE
+ * thread carries it out once it is done with its current step (an AT dialog in progress ends
+ * first).
  *
  * @retval 0   Success.
  * @retval -ENOTSUP Test mode is enabled.
