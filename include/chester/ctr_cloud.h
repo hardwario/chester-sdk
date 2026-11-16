@@ -182,9 +182,11 @@ int ctr_cloud_poll_immediately(void);
  * data packet header and sends it. Call only after ctr_cloud_init() has succeeded.
  *
  * @p timeout is one deadline for waiting for the cloud lock and for the transfer;
- * the transfer gets the time left. Uses soft timeout: when timeout expires, the
- * underlying LTE operation completes gracefully before returning. The timeout
- * signals "finish when you can", not an immediate abort.
+ * the transfer gets the time left and repeats an exchange whose response got lost
+ * (after 1 s) or for which the network granted no connection (after 30 s) until the
+ * deadline; K_FOREVER repeats without end. At the deadline the LTE layer gives the
+ * exchange up once an AT dialog on the transfer buffers has ended, so the call can
+ * return up to about 36 s past @p timeout.
  *
  * With CONFIG_CTR_CLOUD_SPOOL, a message that is not sent because the transfer fails
  * (or, for ctr_cloud_send_data_cb(), because the deadline expired after encoding)
@@ -276,11 +278,11 @@ typedef int (*ctr_cloud_data_encode_cb)(zcbor_state_t *zs, void *user_data);
  *
  * @p timeout is one deadline for waiting for the cloud lock and for the
  * transfer: the time left after the lock is acquired and the payload is
- * encoded is passed to the transfer layer, which applies it to each packet
- * exchange, so a fragmented message can take longer than @p timeout. If the
- * deadline expires while waiting for the lock, the callback is not called
- * (-EAGAIN); if it has expired before the transfer can start, nothing is sent
- * (-ETIMEDOUT); K_NO_WAIT therefore never sends.
+ * encoded is the deadline of the transfer, which repeats failed exchanges
+ * until it as ctr_cloud_send_data() does. If the deadline expires while
+ * waiting for the lock, the callback is not called (-EAGAIN); if it has
+ * expired before the transfer can start, nothing is sent (-ETIMEDOUT);
+ * K_NO_WAIT therefore never sends.
  *
  * If encoding fails, nothing is sent. Test the result with ret != 0;
  * positive values are reserved.
@@ -422,10 +424,10 @@ int ctr_cloud_firmware_update(const char *firmwareId);
  * uploading a response when the message requires one. When the cloud has more
  * messages, another download is scheduled on the cloud work queue.
  *
- * @p timeout is one deadline for waiting for the cloud lock and for the download.
- * Uses soft timeout: when timeout expires, the underlying LTE operation
- * completes gracefully before returning. The timeout applies only to the
- * initial download - any required response upload uses K_FOREVER.
+ * @p timeout is one deadline for waiting for the cloud lock and for the download,
+ * which repeats failed exchanges until it as ctr_cloud_send_data() does. The
+ * timeout applies only to the initial download - any required response upload
+ * uses K_FOREVER.
  *
  * @param timeout Deadline for the lock wait and the download.
  *

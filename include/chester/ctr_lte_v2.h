@@ -118,7 +118,10 @@ struct ctr_lte_v2_send_recv_param {
 			       * no connection for them. Each send waits for the connection
 			       * for the time left to the deadline, at least 5 s and at most
 			       * 120 s. 0 (the default) sends once; a negative value counts
-			       * as 0.
+			       * as 0. The call returns -ENOTCONN for a missing connection
+			       * only when the last send has more than 120 s left (or no
+			       * deadline); with less, the deadline comes first and the call
+			       * returns -ETIMEDOUT.
 			       */
 };
 
@@ -196,6 +199,9 @@ int ctr_lte_v2_wait_for_connected(k_timeout_t timeout);
  * returns 0 even when that happened just past the timeout.
  *
  * The buffers in @p param are not touched after the call returns.
+ *
+ * After -ENOTCONN for a missing connection, 'lte state' shows the extended error report of the
+ * modem (AT+CEER).
  *
  * @param param  Send/receive parameters (see @ref ctr_lte_v2_send_recv_param).
  *
