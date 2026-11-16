@@ -43,6 +43,8 @@ LOG_MODULE_REGISTER(ctr_lte_link, LOG_LEVEL_INF);
 #define STACK_SIZE       1024
 #define WORKQ_PRIORITY   K_PRIO_COOP(7)
 
+#define VIOLATION_BUF_SIZE 256
+
 struct ctr_lte_link_data {
 	bool enabled;
 	struct k_mutex lock;
@@ -64,9 +66,14 @@ struct ctr_lte_link_data {
 	uint8_t rx_heap_mem[RX_HEAP_MEM_SIZE];
 	k_timepoint_t tx_timepoint;
 
+	/* The script state is shared by the FSM thread (TX lines) and the mock work queue (URCs);
+	 * script_lock guards it, so the test thread can read it while the FSM sits in a dialog */
+	struct k_spinlock script_lock;
 	struct mock_link_item *items;
 	size_t items_count;
 	size_t items_index;
+	int violations;
+	char violation[VIOLATION_BUF_SIZE];
 
 	const char *pending_rx_data;
 	size_t pending_rx_data_len;
@@ -75,6 +82,25 @@ struct ctr_lte_link_data {
 static inline struct ctr_lte_link_data *get_data(const struct device *dev)
 {
 	return dev->data;
+}
+
+/* Record a departure from the script. Asserting here would fail the test from the FSM thread or
+ * from the mock work queue, so the first violation is kept for mock_ctr_lte_link_assert_done(),
+ * which asserts from the test thread. The caller holds script_lock. */
+static void record_violation(struct ctr_lte_link_data *data, const char *format, ...)
+{
+	char msg[VIOLATION_BUF_SIZE];
+	va_list ap;
+
+	va_start(ap, format);
+	vsnprintf(msg, sizeof(msg), format, ap);
+	va_end(ap);
+
+	LOG_ERR("Script violation: %s", msg);
+
+	if (!data->violations++) {
+		strcpy(data->violation, msg);
+	}
 }
 
 static int ctr_lte_link_set_callback_(const struct device *dev, ctr_lte_link_user_cb user_cb,
@@ -157,39 +183,50 @@ static void event_dispatch_work_handler(struct k_work *work)
 	}
 }
 
+/* Schedule the next item if it is a URC; the caller holds script_lock */
+static void schedule_next_urc(struct ctr_lte_link_data *data)
+{
+	if (data->items_index < data->items_count) {
+		const struct mock_link_item *item = &data->items[data->items_index];
+		if (item->tx == NULL) {
+			k_work_schedule(&data->urc_dispatch_work, K_MSEC(item->delay_ms));
+		}
+	}
+}
+
 static void urc_dispatch_work_handler(struct k_work *work)
 {
 	struct ctr_lte_link_data *const data = CONTAINER_OF(
 		(struct k_work_delayable *)work, struct ctr_lte_link_data, urc_dispatch_work);
 
-	if (data->items_index < data->items_count) {
-		const struct mock_link_item *item = &data->items[data->items_index];
-		if (item->tx == NULL) {
-			data->items_index++;
-			if (item->rx) {
-				rx(data->dev, item->rx);
+	const struct mock_link_item *item = NULL;
 
-				/* If URC starts with #XRECV:, store rx2 as pending data */
-				if (strncmp(item->rx, "#XRECV:", 7) == 0 && item->rx2) {
-					int expected_len = 0;
-					sscanf(item->rx + 7, " %d", &expected_len);
-					zassert_equal(
-						(size_t)expected_len, strlen(item->rx2),
-						"XRECV len mismatch: header says %d, data is %zu",
-						expected_len, strlen(item->rx2));
+	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
 
-					data->pending_rx_data = item->rx2;
-					data->pending_rx_data_len = strlen(item->rx2);
-				}
+	if (data->items_index < data->items_count && data->items[data->items_index].tx == NULL) {
+		item = &data->items[data->items_index++];
+
+		/* If URC starts with #XRECV:, store rx2 as pending data */
+		if (item->rx && strncmp(item->rx, "#XRECV:", 7) == 0 && item->rx2) {
+			int expected_len = 0;
+			sscanf(item->rx + 7, " %d", &expected_len);
+			if ((size_t)expected_len != strlen(item->rx2)) {
+				record_violation(data,
+						 "XRECV len mismatch: header says %d, data is %zu",
+						 expected_len, strlen(item->rx2));
 			}
-			if (data->items_index < data->items_count) {
-				item = &data->items[data->items_index];
-				if (item->tx == NULL) {
-					k_work_schedule(&data->urc_dispatch_work,
-							K_MSEC(item->delay_ms));
-				}
-			}
+
+			data->pending_rx_data = item->rx2;
+			data->pending_rx_data_len = strlen(item->rx2);
 		}
+
+		schedule_next_urc(data);
+	}
+
+	k_spin_unlock(&data->script_lock, key);
+
+	if (item && item->rx) {
+		rx(data->dev, item->rx);
 	}
 }
 
@@ -356,30 +393,40 @@ static int ctr_lte_link_send_line_(const struct device *dev, k_timeout_t timeout
 
 	// strcat(data->tx_line_buf, TX_LINE_SUFFIX);
 
-	if (data->items_index < data->items_count) {
-		const struct mock_link_item *item = &data->items[data->items_index];
-		if (item->tx) {
-			zassert_true(strcmp(data->tx_line_buf, item->tx) == 0,
-				     "unexpected TX line: get %s, expected %s", data->tx_line_buf,
-				     item->tx);
+	/* A line the script does not expect gets no response and is recorded as a violation */
+	const struct mock_link_item *item = NULL;
 
-			data->items_index++;
-			if (item->rx) {
-				rx(dev, item->rx);
-			}
-			if (item->rx2) {
-				rx(dev, item->rx2);
-			}
-			if (data->items_index < data->items_count) {
-				item = &data->items[data->items_index];
-				if (item->tx == NULL) {
-					k_work_schedule(&data->urc_dispatch_work,
-							K_MSEC(item->delay_ms));
-				}
-			}
-		} else {
-			LOG_ERR("Missing TX item %d", data->items_index);
+	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
+
+	if (data->items_index >= data->items_count) {
+		record_violation(data, "unexpected TX after the end of the script: %s",
+				 data->tx_line_buf);
+	} else if (data->items[data->items_index].tx == NULL) {
+		record_violation(data, "unexpected TX at item %zu, expected URC %s: %s",
+				 data->items_index, data->items[data->items_index].rx,
+				 data->tx_line_buf);
+	} else if (strcmp(data->tx_line_buf, data->items[data->items_index].tx) != 0) {
+		record_violation(data, "unexpected TX at item %zu, expected %s: %s",
+				 data->items_index, data->items[data->items_index].tx,
+				 data->tx_line_buf);
+	} else {
+		item = &data->items[data->items_index++];
+	}
+
+	k_spin_unlock(&data->script_lock, key);
+
+	if (item) {
+		if (item->rx) {
+			rx(dev, item->rx);
 		}
+		if (item->rx2) {
+			rx(dev, item->rx2);
+		}
+
+		/* Only after the response, so that a URC due at once comes after it */
+		key = k_spin_lock(&data->script_lock);
+		schedule_next_urc(data);
+		k_spin_unlock(&data->script_lock, key);
 	}
 
 	// if (strcmp(data->tx_line_buf, "AT") == 0) {
@@ -549,11 +596,45 @@ void mock_ctr_lte_link_start(struct mock_link_item *items, size_t count)
 
 	struct ctr_lte_link_data *data = get_data(DEVICE_DT_INST_GET(0));
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	k_work_cancel_delayable(&data->urc_dispatch_work);
+
+	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
 
 	data->items = items;
 	data->items_count = count;
 	data->items_index = 0;
+	data->violations = 0;
+	data->violation[0] = '\0';
 
-	k_mutex_unlock(&data->lock);
+	k_spin_unlock(&data->script_lock, key);
+}
+
+void mock_ctr_lte_link_assert_done(void)
+{
+	struct ctr_lte_link_data *data = get_data(DEVICE_DT_INST_GET(0));
+
+	int violations;
+	char violation[VIOLATION_BUF_SIZE];
+	size_t index;
+	size_t count;
+	const char *next_tx = NULL;
+	const char *next_rx = NULL;
+
+	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
+
+	violations = data->violations;
+	strcpy(violation, data->violation);
+	index = data->items_index;
+	count = data->items_count;
+	if (index < count) {
+		next_tx = data->items[index].tx;
+		next_rx = data->items[index].rx;
+	}
+
+	k_spin_unlock(&data->script_lock, key);
+
+	zassert_equal(violations, 0, "%d script violation(s), the first: %s", violations,
+		      violation);
+	zassert_equal(index, count, "script stopped at item %zu of %zu (tx: %s, rx: %s)", index,
+		      count, next_tx ? next_tx : "-", next_rx ? next_rx : "-");
 }

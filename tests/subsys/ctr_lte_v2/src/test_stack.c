@@ -137,6 +137,8 @@ static void test_attach(void)
 	zassert_ok(ret, "ctr_lte_v2_wait_for_connected failed");
 
 	k_sleep(K_MSEC(500));
+
+	mock_ctr_lte_link_assert_done();
 }
 
 /* ========================================================================== */
@@ -184,6 +186,7 @@ static void test_send_only(void)
 	k_sleep(K_MSEC(5000));
 
 	ASSERT_FSM_STATE("sleep");
+	mock_ctr_lte_link_assert_done();
 }
 
 /* ========================================================================== */
@@ -246,6 +249,7 @@ static void test_send_recv(void)
 	k_sleep(K_MSEC(10000));
 
 	ASSERT_FSM_STATE("sleep");
+	mock_ctr_lte_link_assert_done();
 }
 
 /* ========================================================================== */
@@ -309,6 +313,7 @@ static void test_timeout_helper(k_timeout_t timeout)
 	k_sleep(K_MSEC(15000));
 
 	ASSERT_FSM_STATE("sleep");
+	mock_ctr_lte_link_assert_done();
 }
 
 /* Timeout in send state (before CSCON=1, ~650ms into sequence) */
@@ -389,6 +394,7 @@ static void test_send_recv_no_psm(void)
 	k_sleep(K_MSEC(10000));
 
 	ASSERT_FSM_STATE("sleep");
+	mock_ctr_lte_link_assert_done();
 }
 
 /* ========================================================================== */
