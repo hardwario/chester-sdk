@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(ctr_lte_v2, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 #define MDMEV_RESET_LOOP_DELAY K_MINUTES(32)
 #define SEND_CSCON_1_TIMEOUT   K_SECONDS(30)
 #define CONEVAL_TIMEOUT        K_SECONDS(30)
-#define FSM_STOP_TIMEOUT       K_SECONDS(30)
+#define TXN_IDLE_WARN_TIMEOUT  K_SECONDS(40)
 
 #define WORK_Q_STACK_SIZE 4096
 #define WORK_Q_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
@@ -79,22 +79,29 @@ uint8_t m_event_buf[8];
 struct ring_buf m_event_rb;
 K_MUTEX_DEFINE(m_event_rb_lock);
 
-#define FLAG_CSCON        BIT(0)
-#define FLAG_GNSS_ENABLE  BIT(1)
-#define FLAG_CFUN4        BIT(2)
-#define FLAG_SEND_PENDING BIT(3)
-#define FLAG_RECV_PENDING BIT(4)
+#define FLAG_CSCON       BIT(0)
+#define FLAG_GNSS_ENABLE BIT(1)
+#define FLAG_CFUN4       BIT(2)
 atomic_t m_flag = ATOMIC_INIT(0);
 
 #define CONNECTED_BIT      BIT(0)
 #define SEND_RECV_DONE_BIT BIT(1)
-#define SEND_RECV_STOP_BIT BIT(2)
+#define TXN_IDLE_BIT       BIT(2)
 #define ATTACHED_BIT       BIT(3)
 static K_EVENT_DEFINE(m_states_event);
 
 K_MUTEX_DEFINE(m_send_recv_lock);
-struct ctr_lte_v2_send_recv_param *m_send_recv_param = NULL;
-static int m_send_recv_result = 0;
+
+/* The caller publishes its param and drops it at its deadline. The FSM works on its own copy
+ * (m_txn) and ends the transaction only while it is still the one it took (m_txn_gen changes on
+ * publish, drop and end). */
+static struct k_spinlock m_txn_lock;
+static const struct ctr_lte_v2_send_recv_param *m_send_recv_param;
+static int m_send_recv_result;
+static uint32_t m_txn_gen;
+static uint32_t m_txn_gen_taken;
+static struct ctr_lte_v2_send_recv_param m_txn;
+static size_t m_txn_recv_len;
 
 K_MUTEX_DEFINE(m_metrics_lock);
 struct ctr_lte_v2_metrics m_metrics;
@@ -118,6 +125,85 @@ struct k_work m_gnss_work;
 #endif
 
 static struct fsm_state_desc *get_fsm_state(enum fsm_state state);
+
+static bool txn_take(void)
+{
+	bool taken = false;
+	k_spinlock_key_t key = k_spin_lock(&m_txn_lock);
+
+	if (m_send_recv_param) {
+		m_txn = *m_send_recv_param;
+		m_txn_recv_len = 0;
+		m_txn.recv_len = &m_txn_recv_len;
+		m_txn_gen_taken = m_txn_gen;
+		taken = true;
+	}
+
+	k_spin_unlock(&m_txn_lock, key);
+
+	return taken;
+}
+
+static bool txn_pending(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&m_txn_lock);
+	bool pending = m_send_recv_param != NULL;
+
+	k_spin_unlock(&m_txn_lock, key);
+
+	return pending;
+}
+
+static bool txn_current(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&m_txn_lock);
+	bool current = m_send_recv_param && m_txn_gen == m_txn_gen_taken;
+
+	k_spin_unlock(&m_txn_lock, key);
+
+	return current;
+}
+
+/* End the transaction the FSM took, unless the caller has dropped it in the meantime */
+static void txn_end(int result, bool with_recv_len)
+{
+	k_spinlock_key_t key = k_spin_lock(&m_txn_lock);
+
+	if (m_send_recv_param && m_txn_gen == m_txn_gen_taken) {
+		if (with_recv_len) {
+			*m_send_recv_param->recv_len = m_txn_recv_len;
+		}
+		m_send_recv_result = result;
+		m_send_recv_param = NULL;
+		m_txn_gen++;
+		/* Posted under the lock, so that a caller never wakes up on the end of an older
+		 * transaction */
+		k_event_post(&m_states_event, SEND_RECV_DONE_BIT);
+	}
+
+	k_spin_unlock(&m_txn_lock, key);
+}
+
+/* The FSM touches the caller's send_buf and recv_buf only inside the IO section, and the caller
+ * waits for TXN_IDLE_BIT before it returns. The bit is cleared before the check, while the caller
+ * drops its param before the wait: either the FSM sees the drop and skips the section, or the
+ * caller sees the cleared bit and waits for the section to end. */
+static bool io_section_enter(void)
+{
+	k_event_clear(&m_states_event, TXN_IDLE_BIT);
+
+	if (!txn_current()) {
+		k_event_post(&m_states_event, TXN_IDLE_BIT);
+		return false;
+	}
+
+	return true;
+}
+
+static void io_section_leave(void)
+{
+	k_event_post(&m_states_event, TXN_IDLE_BIT);
+}
 
 static struct ctr_lte_v2_attach_timeout get_attach_timeout(int attempt)
 {
@@ -213,9 +299,12 @@ static void stop_timer(void)
 
 static void delegate_event(enum ctr_lte_v2_event event)
 {
+	/* FLAG_CSCON follows the modem as the URCs arrive, not as the queued events get handled */
 	if (event == CTR_LTE_V2_EVENT_CSCON_1) {
+		atomic_set_bit(&m_flag, FLAG_CSCON);
 		m_start_cscon1 = k_uptime_get_32();
 	} else if (event == CTR_LTE_V2_EVENT_CSCON_0) {
+		atomic_clear_bit(&m_flag, FLAG_CSCON);
 		k_mutex_lock(&m_metrics_lock, K_FOREVER);
 		m_metrics.cscon_1_last_duration_ms = k_uptime_get_32() - m_start_cscon1;
 		m_metrics.cscon_1_duration_ms += m_metrics.cscon_1_last_duration_ms;
@@ -405,56 +494,70 @@ int ctr_lte_v2_get_modem_fw_version(char **version)
 	return ctr_lte_v2_state_get_modem_fw_version(version);
 }
 
+static void wait_txn_idle(void)
+{
+	/* Unbounded: the IO section is bounded by the timeouts of its AT dialogs */
+	if (k_event_wait(&m_states_event, TXN_IDLE_BIT, false, TXN_IDLE_WARN_TIMEOUT)) {
+		return;
+	}
+
+	LOG_WRN("Still waiting for the FSM to leave the send/recv IO section");
+
+	k_event_wait(&m_states_event, TXN_IDLE_BIT, false, K_FOREVER);
+}
+
 int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param)
 {
 	LOG_INF("send_len: %u", param->send_len);
 
 	k_timepoint_t end = sys_timepoint_calc(param->timeout);
 
-	k_mutex_lock(&m_send_recv_lock, sys_timepoint_timeout(end));
+	int ret = k_mutex_lock(&m_send_recv_lock, sys_timepoint_timeout(end));
+	if (ret) {
+		LOG_WRN("Transaction in progress, giving up: %d", ret);
+		return -EBUSY;
+	}
 
 	LOG_DBG("locked");
 
-	m_send_recv_param = (struct ctr_lte_v2_send_recv_param *)param;
-	m_send_recv_result = -ETIMEDOUT;
+	k_event_clear(&m_states_event, SEND_RECV_DONE_BIT);
 
-	k_event_clear(&m_states_event, SEND_RECV_DONE_BIT | SEND_RECV_STOP_BIT);
-
-	/* Set flags to indicate pending work */
-	atomic_set_bit(&m_flag, FLAG_SEND_PENDING);
-	if (param->recv_buf) {
-		atomic_set_bit(&m_flag, FLAG_RECV_PENDING);
-	}
+	k_spinlock_key_t key = k_spin_lock(&m_txn_lock);
+	m_send_recv_param = param;
+	m_send_recv_result = 0;
+	m_txn_gen++;
+	k_spin_unlock(&m_txn_lock, key);
 
 	delegate_event(CTR_LTE_V2_EVENT_SEND);
 
 	LOG_DBG("waiting for end transaction");
 
-	uint32_t events = k_event_wait(&m_states_event, SEND_RECV_DONE_BIT, false,
-				       sys_timepoint_timeout(end));
+	k_event_wait(&m_states_event, SEND_RECV_DONE_BIT, false, sys_timepoint_timeout(end));
 
-	int result = m_send_recv_result;
+	/* Ownership decides the result, not the time: a transaction the FSM has ended keeps its
+	 * result even past the deadline, one that is still ours is dropped */
+	bool dropped = false;
+	int result;
 
-	if (!events) {
-		/* Timeout - wait for FSM to stop working on SEND/RECEIVE */
-		LOG_WRN("send_recv timeout, waiting for FSM to complete");
-		events = k_event_wait(&m_states_event, SEND_RECV_STOP_BIT, false, FSM_STOP_TIMEOUT);
-		if (!events) {
-			LOG_ERR("FSM stuck - SEND_RECV_STOP_BIT not received");
-			/* Note: Save result BEFORE delegate_event because FSM error handler
-			 * will overwrite m_send_recv_result with -EIO. We want -EFAULT. */
-			result = -EFAULT;
-			delegate_event(CTR_LTE_V2_EVENT_ERROR);
-		} else {
-			LOG_DBG("FSM completed after timeout");
-			result = m_send_recv_result;
-		}
+	key = k_spin_lock(&m_txn_lock);
+	if (m_send_recv_param == param) {
+		m_send_recv_param = NULL;
+		m_txn_gen++;
+		dropped = true;
+		result = -ETIMEDOUT;
+	} else {
+		result = m_send_recv_result;
 	}
+	k_spin_unlock(&m_txn_lock, key);
 
-	/* Clear flags - only this function clears them */
-	atomic_clear_bit(&m_flag, FLAG_SEND_PENDING);
-	atomic_clear_bit(&m_flag, FLAG_RECV_PENDING);
-	m_send_recv_param = NULL;
+	/* The caller's buffers are not touched after the return */
+	wait_txn_idle();
+
+	if (dropped) {
+		LOG_WRN("Transaction timed out");
+		/* Before the unlock, so that it is queued ahead of the next transaction */
+		delegate_event(CTR_LTE_V2_EVENT_SEND_ABORT);
+	}
 
 	k_mutex_unlock(&m_send_recv_lock);
 
@@ -891,12 +994,6 @@ static int attach_event_handler(enum ctr_lte_v2_event event)
 		k_event_post(&m_states_event, ATTACHED_BIT);
 		transition_state(FSM_STATE_OPEN_SOCKET);
 		break;
-	case CTR_LTE_V2_EVENT_CSCON_1:
-		atomic_set_bit(&m_flag, FLAG_CSCON);
-		break;
-	case CTR_LTE_V2_EVENT_CSCON_0:
-		atomic_clear_bit(&m_flag, FLAG_CSCON);
-		break;
 	case CTR_LTE_V2_EVENT_RESET_LOOP:
 		transition_state(FSM_STATE_RESET_LOOP);
 		break;
@@ -946,12 +1043,6 @@ static int open_socket_event_handler(enum ctr_lte_v2_event event)
 		m_error_ctx.timeout_s = 0; /* Reset error timeout counter on success */
 		transition_state(FSM_STATE_CONEVAL);
 		break;
-	case CTR_LTE_V2_EVENT_CSCON_1:
-		atomic_set_bit(&m_flag, FLAG_CSCON);
-		break;
-	case CTR_LTE_V2_EVENT_CSCON_0:
-		atomic_clear_bit(&m_flag, FLAG_CSCON);
-		break;
 	case CTR_LTE_V2_EVENT_DEREGISTERED:
 		transition_state(FSM_STATE_ATTACH);
 		break;
@@ -966,7 +1057,7 @@ static int open_socket_event_handler(enum ctr_lte_v2_event event)
 
 static int on_enter_ready(void)
 {
-	if (m_send_recv_param) {
+	if (txn_pending()) {
 		delegate_event(CTR_LTE_V2_EVENT_SEND);
 	}
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
@@ -1008,12 +1099,6 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 			return 0; /* ignore DEREGISTERED event */
 		}
 		transition_state(FSM_STATE_ATTACH);
-		break;
-	case CTR_LTE_V2_EVENT_CSCON_1:
-		atomic_set_bit(&m_flag, FLAG_CSCON);
-		break;
-	case CTR_LTE_V2_EVENT_CSCON_0:
-		atomic_clear_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_XMODMSLEEEP:
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
@@ -1065,7 +1150,7 @@ static int on_enter_sleep(void)
 		return ret;
 	}
 
-	if (m_send_recv_param) {
+	if (txn_pending()) {
 		delegate_event(CTR_LTE_V2_EVENT_SEND);
 	}
 
@@ -1136,23 +1221,24 @@ static int on_enter_send(void)
 {
 	int ret;
 
-	if (!atomic_test_bit(&m_flag, FLAG_SEND_PENDING)) {
+	if (!txn_take() || !io_section_enter()) {
 		delegate_event(CTR_LTE_V2_EVENT_READY);
 		return 0;
 	}
 
-	k_event_clear(&m_states_event, SEND_RECV_STOP_BIT);
-
 	k_mutex_lock(&m_metrics_lock, K_FOREVER);
 	m_metrics.uplink_count++;
-	m_metrics.uplink_bytes += m_send_recv_param->send_len;
+	m_metrics.uplink_bytes += m_txn.send_len;
 	ret = ctr_rtc_get_ts(&m_metrics.uplink_last_ts);
 	if (ret) {
 		LOG_WRN("Call `ctr_rtc_get_ts` failed: %d", ret);
 	}
 	k_mutex_unlock(&m_metrics_lock);
 
-	ret = ctr_lte_v2_flow_send(m_send_recv_param);
+	ret = ctr_lte_v2_flow_send(&m_txn);
+
+	io_section_leave();
+
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_flow_send` failed: %d", ret);
 
@@ -1160,9 +1246,14 @@ static int on_enter_send(void)
 		m_metrics.uplink_errors++;
 		k_mutex_unlock(&m_metrics_lock);
 
-		m_send_recv_result = -EIO;
-
 		return ret;
+	}
+
+	if (m_txn.rai && !m_txn.recv_buf) {
+		ret = ctr_lte_v2_flow_rai_no_data();
+		if (ret) {
+			LOG_WRN("Call `ctr_lte_v2_flow_rai_no_data` failed: %d", ret);
+		}
 	}
 
 	start_timer(SEND_CSCON_1_TIMEOUT);
@@ -1178,25 +1269,29 @@ static int send_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_CSCON_0:
-		atomic_clear_bit(&m_flag, FLAG_CSCON);
-		m_send_recv_result = -ECONNRESET;
-		k_event_post(&m_states_event, SEND_RECV_STOP_BIT);
 		transition_state(FSM_STATE_READY);
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:
-		atomic_set_bit(&m_flag, FLAG_CSCON); /* Continue to send */
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_SEND:
+		/* Only with an RRC connection: a SEND queued without one must not cut the wait */
+		if (!atomic_test_bit(&m_flag, FLAG_CSCON)) {
+			break;
+		}
 		stop_timer();
-		if (atomic_test_bit(&m_flag, FLAG_RECV_PENDING)) {
+		if (!txn_current()) {
+			transition_state(FSM_STATE_READY);
+		} else if (m_txn.recv_buf) {
 			LOG_INF("proceed to RECEIVE state");
 			transition_state(FSM_STATE_RECEIVE);
 		} else {
-			m_send_recv_result = 0;
-			atomic_clear_bit(&m_flag, FLAG_SEND_PENDING);
-			atomic_clear_bit(&m_flag, FLAG_RECV_PENDING);
-			k_event_post(&m_states_event, SEND_RECV_DONE_BIT | SEND_RECV_STOP_BIT);
+			txn_end(0, false);
 			transition_state(FSM_STATE_CONEVAL);
+		}
+		break;
+	case CTR_LTE_V2_EVENT_SEND_ABORT:
+		if (!txn_current()) {
+			transition_state(FSM_STATE_READY);
 		}
 		break;
 	case CTR_LTE_V2_EVENT_READY:
@@ -1205,18 +1300,12 @@ static int send_event_handler(enum ctr_lte_v2_event event)
 		k_mutex_lock(&m_metrics_lock, K_FOREVER);
 		m_metrics.uplink_errors++;
 		k_mutex_unlock(&m_metrics_lock);
-		m_send_recv_result = -ETIMEDOUT;
-		k_event_post(&m_states_event, SEND_RECV_STOP_BIT);
 		transition_state(FSM_STATE_READY);
 		break;
 	case CTR_LTE_V2_EVENT_DEREGISTERED:
-		m_send_recv_result = -ENETDOWN;
-		k_event_post(&m_states_event, SEND_RECV_STOP_BIT);
 		transition_state(FSM_STATE_ATTACH);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
-		m_send_recv_result = -EIO;
-		k_event_post(&m_states_event, SEND_RECV_STOP_BIT);
 		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
@@ -1234,7 +1323,8 @@ static int on_leave_send(void)
 static int on_enter_receive(void)
 {
 	int ret;
-	if (!atomic_test_bit(&m_flag, FLAG_RECV_PENDING)) {
+
+	if (!io_section_enter()) {
 		delegate_event(CTR_LTE_V2_EVENT_READY);
 		return 0;
 	}
@@ -1247,26 +1337,32 @@ static int on_enter_receive(void)
 	}
 	k_mutex_unlock(&m_metrics_lock);
 
-	ret = ctr_lte_v2_flow_recv(m_send_recv_param);
+	ret = ctr_lte_v2_flow_recv(&m_txn);
+
+	io_section_leave();
+
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_flow_recv` failed: %d", ret);
 		k_mutex_lock(&m_metrics_lock, K_FOREVER);
 		m_metrics.downlink_errors++;
 		k_mutex_unlock(&m_metrics_lock);
-		m_send_recv_result = -EIO;
 		return ret;
 	}
 
+	if (m_txn.rai) {
+		ret = ctr_lte_v2_flow_rai_no_data();
+		if (ret) {
+			LOG_WRN("Call `ctr_lte_v2_flow_rai_no_data` failed: %d", ret);
+		}
+	}
+
 	k_mutex_lock(&m_metrics_lock, K_FOREVER);
-	m_metrics.downlink_bytes += *m_send_recv_param->recv_len;
+	m_metrics.downlink_bytes += m_txn_recv_len;
 	k_mutex_unlock(&m_metrics_lock);
 
 	delegate_event(CTR_LTE_V2_EVENT_RECV);
 
-	m_send_recv_result = 0;
-	atomic_clear_bit(&m_flag, FLAG_SEND_PENDING);
-	atomic_clear_bit(&m_flag, FLAG_RECV_PENDING);
-	k_event_post(&m_states_event, SEND_RECV_DONE_BIT | SEND_RECV_STOP_BIT);
+	txn_end(0, true);
 
 	return 0;
 }
@@ -1278,31 +1374,19 @@ static int receive_event_handler(enum ctr_lte_v2_event event)
 		transition_state(FSM_STATE_CONEVAL);
 		break;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
-		m_send_recv_result = -ETIMEDOUT;
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_READY:
 		transition_state(FSM_STATE_READY);
 		break;
-	case CTR_LTE_V2_EVENT_CSCON_0:
-		atomic_clear_bit(&m_flag, FLAG_CSCON);
-		break;
 	case CTR_LTE_V2_EVENT_DEREGISTERED:
-		m_send_recv_result = -ENETDOWN;
 		transition_state(FSM_STATE_ATTACH);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
-		m_send_recv_result = -EIO;
 		transition_state(FSM_STATE_ERROR);
 		break;
 	default:
 		break;
 	}
-	return 0;
-}
-
-static int on_leave_receive(void)
-{
-	k_event_post(&m_states_event, SEND_RECV_STOP_BIT);
 	return 0;
 }
 
@@ -1326,12 +1410,6 @@ static int coneval_event_handler(enum ctr_lte_v2_event event)
 		__fallthrough;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
 		transition_state(FSM_STATE_READY);
-		break;
-	case CTR_LTE_V2_EVENT_CSCON_0:
-		atomic_clear_bit(&m_flag, FLAG_CSCON);
-		break;
-	case CTR_LTE_V2_EVENT_CSCON_1:
-		atomic_set_bit(&m_flag, FLAG_CSCON);
 		break;
 	case CTR_LTE_V2_EVENT_DEREGISTERED:
 		transition_state(FSM_STATE_ATTACH);
@@ -1431,7 +1509,7 @@ static struct fsm_state_desc m_fsm_states[] = {
 	{FSM_STATE_SLEEP, on_enter_sleep, NULL, sleep_event_handler},
 	{FSM_STATE_WAKEUP, on_enter_wakeup, on_leave_wakeup, wakeup_event_handler},
 	{FSM_STATE_SEND, on_enter_send, on_leave_send, send_event_handler},
-	{FSM_STATE_RECEIVE, on_enter_receive, on_leave_receive, receive_event_handler},
+	{FSM_STATE_RECEIVE, on_enter_receive, NULL, receive_event_handler},
 	{FSM_STATE_CONEVAL, on_enter_coneval, NULL, coneval_event_handler},
 	#if defined(CONFIG_CTR_LTE_V2_GNSS)
 	{FSM_STATE_GNSS, on_enter_gnss, on_leave_gnss, gnss_event_handler},
@@ -1475,6 +1553,8 @@ static int init(void)
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
 			   WORK_Q_PRIORITY, NULL);
 	k_thread_name_set(&m_work_q.thread, "ctr_lte_v2");
+
+	k_event_post(&m_states_event, TXN_IDLE_BIT);
 
 	k_work_init_delayable(&m_timeout_work, timeout_work_handler);
 	k_work_init(&m_event_dispatch_work, event_dispatch_work_handler);

@@ -128,6 +128,8 @@ const char *ctr_lte_v2_str_fsm_event(enum ctr_lte_v2_event event)
 		return "xtime";
 	case CTR_LTE_V2_EVENT_SEND:
 		return "send";
+	case CTR_LTE_V2_EVENT_SEND_ABORT:
+		return "send_abort";
 	case CTR_LTE_V2_EVENT_RECV:
 		return "recv";
 	case CTR_LTE_V2_EVENT_XGPS_ENABLE:

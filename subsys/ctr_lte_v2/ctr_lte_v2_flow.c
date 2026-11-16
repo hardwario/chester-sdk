@@ -884,13 +884,6 @@ int ctr_lte_v2_flow_send(const struct ctr_lte_v2_send_recv_param *param)
 		}
 	}
 
-	if (param->rai && !param->recv_buf) { /* RAI and no receive buffer */
-		ret = ctr_lte_v2_talk_at_xsocketopt(&m_talk, 1, SO_RAI_NO_DATA, NULL);
-		if (ret) {
-			LOG_WRN("Call `ctr_lte_v2_talk_at_xsocketopt 1,50` failed: %d", ret);
-		}
-	}
-
 	return 0;
 }
 
@@ -910,11 +903,15 @@ int ctr_lte_v2_flow_recv(const struct ctr_lte_v2_send_recv_param *param)
 		return ret;
 	}
 
-	if (param->rai) {
-		ret = ctr_lte_v2_talk_at_xsocketopt(&m_talk, 1, SO_RAI_NO_DATA, NULL);
-		if (ret) {
-			LOG_WRN("Call `ctr_lte_v2_talk_at_xsocketopt 1,50` failed: %d", ret);
-		}
+	return 0;
+}
+
+int ctr_lte_v2_flow_rai_no_data(void)
+{
+	int ret = ctr_lte_v2_talk_at_xsocketopt(&m_talk, 1, SO_RAI_NO_DATA, NULL);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_xsocketopt 1,50` failed: %d", ret);
+		return ret;
 	}
 
 	return 0;

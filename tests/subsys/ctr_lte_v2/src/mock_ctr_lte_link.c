@@ -606,6 +606,9 @@ void mock_ctr_lte_link_start(struct mock_link_item *items, size_t count)
 	data->violations = 0;
 	data->violation[0] = '\0';
 
+	/* A script may start with a URC */
+	schedule_next_urc(data);
+
 	k_spin_unlock(&data->script_lock, key);
 }
 

@@ -4,15 +4,15 @@
 /*
  * Test cases (run sequentially, depend on each other):
  *
- * - test_attach:          Initial connection to network
+ * - stack_attach:         Initial connection to network
  * - test_send_only:       Send without receive (RAI_LAST)
  * - test_send_recv:       Send and receive with PSM
- * - test_timeout_in_send: API timeout before CSCON=1
- * - test_timeout_in_recv: API timeout during data wait
+ * - test_timeout_in_send: API timeout before CSCON=1, the FSM drops the send
+ * - test_timeout_in_recv: API timeout during data wait, returns when the modem gives up
  * - test_send_recv_no_psm: Send and receive without PSM (CFUN=4 shutdown)
  */
 
-#include "mock.h"
+#include "stack.h"
 
 #include <chester/ctr_lte_v2.h>
 
@@ -23,123 +23,6 @@
 #include <zephyr/settings/settings.h>
 
 #include "ctr_lte_v2_state.h"
-
-/* clang-format off */
-#define URC(ms, urc) { .rx=urc, .delay_ms=ms }
-#define RX_DATA(ms, urc, data) { .rx=urc, .rx2=data, .delay_ms=ms }
-/* clang-format on */
-
-#define ASSERT_FSM_STATE(expected)                                                                 \
-	zassert_equal(strcmp(ctr_lte_v2_get_state(), expected), 0,                                 \
-		      "expected state " expected " but got: %s", ctr_lte_v2_get_state())
-
-/* ========================================================================== */
-/* Test: Attach                                                               */
-/* ========================================================================== */
-
-static void test_attach(void)
-{
-	/* clang-format off */
-	static struct mock_link_item items[] = {
-		{"AT", "OK"},
-		{"AT+CGSN=1", "+CGSN: \"351358815178345\"", "OK"},
-		{"AT%HWVERSION", "%HWVERSION: nRF9160 SICA B1A", "OK"},
-		{"AT%SHORTSWVER", "%SHORTSWVER: nrf9160_1.3.2", "OK"},
-		{"AT#XSLMVER", "#XSLMVER: \"2.5.2\",\"2.5.0-lte-5ccd2d4dd54c\"", "OK"},
-		{"AT#XVERSION", "#XVERSION: \"v1.7.0\"", "OK"},
-		{"AT+CFUN=0", "OK"},
-		{"AT%XPOFWARN=1,30", "OK"},
-		{"AT%XTEMPHIGHLVL=70", "OK"},
-		{"AT%XTEMP=1", "OK"},
-		{"AT%XSYSTEMMODE=1,1,1,1", "OK"},
-		{"AT%XDATAPRFL=0", "OK"},
-		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG)
-		{"AT%XBANDLOCK=1,\"0000000000000000000000100000000000000000000000000000000000001011000011110001100010011010\"", "OK"},
-		#else
-		{"AT%XBANDLOCK=0", "OK"},
-		#endif
-		{"AT%XSIM=1", "OK"},
-		{"AT%XNETTIME=1", "OK"},
-		{"AT%MDMEV=1", "OK"},
-		{"AT%REL14FEAT=1,1,1,1,0", "OK"},
-		{"AT%RAI=1", "OK"},
-		{"AT+CPSMS=1,,,\"00111000\",\"00000000\"", "OK"},
-		{"AT+CEPPI=1", "OK"},
-		{"AT+CEREG=5", "OK"},
-		{"AT+CGEREP=1", "OK"},
-		{"AT+CMEE=1", "OK"},
-		{"AT+CNEC=24", "OK"},
-		{"AT%XCOEX0=1,1,1565,1586", "OK"},
-		{"AT+CSCON=1", "OK"},
-		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG)
-		{"AT+COPS=1,2,\"23003\"", "OK"},
-		{"AT+CGDCONT=0,\"IP\",\"hardwario\"", "OK"},
-		#else
-		{"AT+COPS=0", "OK"},
-		{"AT+CGDCONT=0,\"IP\"", "OK"},
-		#endif
-		{"AT+CGAUTH=0,0", "OK"},
-		{"AT%XMODEMSLEEP=1,500,10240", "OK"},
-		{"AT+CFUN=1", "%XMODEMSLEEP: 4", "OK"},
-		URC(0, "%XMODEMSLEEP: 4,0"),
-		URC(0, "+CEREG: 0"),
-		URC(500, "+CEREG: 2,\"B4DC\",\"000AE520\",9"),
-		URC(100, "%XSIM: 1"),
-		{"AT+CIMI", "901288910017273", "OK"},
-		{"AT+CIMI", "901288910017273", "OK"},
-		{"AT%XICCID", "%XICCID: 89882390000262826558", "OK"},
-		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_FPLMN_ERASE_FAILS)
-		/* Forbidden network on the SIM, which refuses the erase: attach anyway */
-		{"AT+CRSM=176,28539,0,0,12", "+CRSM: 144,0,\"32F030FFFFFFFFFFFFFFFFFF\"", "OK"},
-		{"AT+CRSM=214,28539,0,0,12,\"FFFFFFFFFFFFFFFFFFFFFFFF\"", "ERROR"},
-		#else
-		{"AT+CRSM=176,28539,0,0,12", "+CRSM: 144,0,\"FFFFFFFFFFFFFFFFFFFFFFFF\"", "OK"},
-		#endif
-		URC(100, "+CSCON: 1"),
-		URC(50, "+CEREG: 5,\"B4DC\",\"000AE520\",9,0,18,\"00000000\",\"00111000\""),
-		{"AT+COPS?", "+COPS: 1,2,\"23003\",9", "OK"},
-		{"AT+CEREG?", "+CEREG: 5,5,\"B4DC\",\"000AE520\",9,0,18,\"00000000\",\"00111000\"", "OK"},
-		{"AT%XCBAND", "%XCBAND: 20", "OK"},
-		{"AT+CEINFO?", "+CEINFO: 0,1,C,8,1,-79,21", "OK"},
-		{"AT+CGATT?", "+CGATT: 1", "OK"},
-		{"AT+CGACT?", "+CGACT: 0,1", "OK"},
-		{"AT+CGDCONT?", "+CGDCONT: 0,\"IP\",\"hardwario\",\"172.28.0.139\",0,0", "OK"},
-		{"AT#XSOCKET=1,2,0,0", "#XSOCKET: 0,2,17", "OK"},
-		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG)
-		{"AT#XCONNECT=\"46.101.214.168\",5003"},
-		#else
-		{"AT#XCONNECT=\"192.168.192.4\",5003"},
-		#endif
-		/* Registered, the socket connects a while later */
-		URC(1000, "#XCONNECT: 1"),
-		URC(0, "OK"),
-		{"AT%CONEVAL", "%CONEVAL: 0,1,7,95,30,49,\"000AE520\",\"23003\",135,6447,20,0,0,-8,2,1,73", "OK"},
-	};
-	/* clang-format on */
-
-	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
-
-	ctr_lte_v2_enable();
-
-	for (int i = 0; i < 60 && strcmp(ctr_lte_v2_get_state(), "open_socket"); i++) {
-		k_sleep(K_MSEC(100));
-	}
-	ASSERT_FSM_STATE("open_socket");
-
-	/* Attached to the network, the socket is not connected yet */
-	bool attached = false;
-	zassert_ok(ctr_lte_v2_is_attached(&attached));
-	zassert_true(attached, "expected attached while the socket connects");
-	zassert_equal(ctr_lte_v2_wait_for_connected(K_NO_WAIT), -ETIMEDOUT,
-		      "expected not connected while the socket connects");
-
-	int ret = ctr_lte_v2_wait_for_connected(K_MSEC(6000));
-	zassert_ok(ret, "ctr_lte_v2_wait_for_connected failed");
-
-	k_sleep(K_MSEC(500));
-
-	mock_ctr_lte_link_assert_done();
-}
 
 /* ========================================================================== */
 /* Test: Send only (no receive)                                               */
@@ -253,42 +136,27 @@ static void test_send_recv(void)
 }
 
 /* ========================================================================== */
-/* Test: Timeout helper (shared logic for timeout tests)                      */
+/* Test: Timeouts                                                             */
 /* ========================================================================== */
 
-static void test_timeout_helper(k_timeout_t timeout)
+/* Timeout in send state (before CSCON=1, ~650ms into sequence) */
+static void test_timeout_in_send(void)
 {
 	ASSERT_FSM_STATE("sleep");
 
 	/* clang-format off */
 	static struct mock_link_item items[] = {
 		/* Flow check in ready state */
-		{"AT+CFUN?", "+CFUN: 1", "OK"},
-		{"AT+CEREG?", "+CEREG: 5,5,\"B4DC\",\"000AE520\",9,0,18,\"00000000\",\"00111000\"",
-		 "OK"},
-		{"AT+CGATT?", "+CGATT: 1", "OK"},
-		{"AT+CGACT?", "+CGACT: 0,1", "OK"},
-		{"AT#XSOCKET?", "#XSOCKET: 0,1,0,2,0", "OK"},
+		ITEMS_FLOW_CHECK,
 		/* Send state */
 		{"AT#XSOCKETOPT=1,52", "OK"},
 		{"AT#XSEND=\"No response\"", "#XSEND: 11", "OK"},
 		URC(50, "%XMODEMSLEEP: 1,0"),
+		/* The caller gives up, the FSM is back in ready state */
 		URC(200, "%MDMEV: SEARCH STATUS 2"),
 		URC(400, "+CSCON: 1"),
-		/* Receive state - modem returns ERROR after 5s */
-		{"AT#XRECV=5"},
-		URC(5000, "ERROR"),
-		/* Error state - flow check */
-		{"AT+CFUN?", "+CFUN: 1", "OK"},
-		{"AT+CEREG?", "+CEREG: 5,5,\"B4DC\",\"000AE520\",9,0,18,\"00000000\",\"00111000\"",
-		 "OK"},
-		{"AT+CGATT?", "+CGATT: 1", "OK"},
-		{"AT+CGACT?", "+CGACT: 0,1", "OK"},
-		{"AT#XSOCKET?", "#XSOCKET: 0,1,0,2,0", "OK"},
-		/* Error state timeout (5s) -> ready state -> sleep */
-		URC(6000, "+CSCON: 0"),
-		URC(0, "%XMODEMSLEEP: 1,89999999"),
-		{"AT#XSLEEP=2", "OK"},
+		/* Ready state -> later goes to sleep */
+		ITEMS_SLEEP(1000),
 	};
 	/* clang-format on */
 
@@ -303,12 +171,15 @@ static void test_timeout_helper(k_timeout_t timeout)
 		.recv_buf = recv_buf,
 		.recv_size = sizeof(recv_buf),
 		.recv_len = &recv_len,
-		.timeout = timeout,
+		.timeout = K_MSEC(300),
 		.rai = true,
 	};
 
+	int64_t start = k_uptime_get();
 	int ret = ctr_lte_v2_send_recv(&param);
-	zassert_equal(ret, -EIO, "expected -EIO but got: %d", ret);
+	int64_t elapsed = k_uptime_get() - start;
+	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
+	zassert_true(elapsed <= 400, "returned %lld ms after the call", elapsed);
 
 	k_sleep(K_MSEC(15000));
 
@@ -316,16 +187,58 @@ static void test_timeout_helper(k_timeout_t timeout)
 	mock_ctr_lte_link_assert_done();
 }
 
-/* Timeout in send state (before CSCON=1, ~650ms into sequence) */
-static void test_timeout_in_send(void)
-{
-	test_timeout_helper(K_MSEC(300));
-}
-
 /* Timeout in receive state (after CSCON=1, waiting for data) */
 static void test_timeout_in_recv(void)
 {
-	test_timeout_helper(K_MSEC(2000));
+	ASSERT_FSM_STATE("sleep");
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		/* Flow check in ready state */
+		ITEMS_FLOW_CHECK,
+		/* Send state */
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"No response\"", "#XSEND: 11", "OK"},
+		URC(50, "%XMODEMSLEEP: 1,0"),
+		URC(200, "%MDMEV: SEARCH STATUS 2"),
+		URC(400, "+CSCON: 1"),
+		/* Receive state - modem returns ERROR after 5s */
+		{"AT#XRECV=5"},
+		URC(5000, "ERROR"),
+		/* Error state - flow check */
+		ITEMS_FLOW_CHECK,
+		/* Error state timeout (5s) -> ready state -> sleep */
+		ITEMS_SLEEP(6000),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "No response",
+		.send_len = 11,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_MSEC(2000),
+		.rai = true,
+	};
+
+	/* The caller waits until the modem gives the receive up */
+	int64_t start = k_uptime_get();
+	int ret = ctr_lte_v2_send_recv(&param);
+	int64_t elapsed = k_uptime_get() - start;
+	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
+	zassert_true(elapsed >= 5500 && elapsed <= 6000, "returned %lld ms after the call",
+		     elapsed);
+
+	k_sleep(K_MSEC(15000));
+
+	ASSERT_FSM_STATE("sleep");
+	mock_ctr_lte_link_assert_done();
 }
 
 /* ========================================================================== */
@@ -403,7 +316,7 @@ static void test_send_recv_no_psm(void)
 
 ZTEST(stack, test_full_sequence)
 {
-	test_attach();
+	stack_attach();
 	test_send_only();
 	test_send_recv();
 	test_timeout_in_send();

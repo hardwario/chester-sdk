@@ -37,6 +37,7 @@ enum ctr_lte_v2_event {
 	CTR_LTE_V2_EVENT_CSCON_1,
 	CTR_LTE_V2_EVENT_XTIME,
 	CTR_LTE_V2_EVENT_SEND,
+	CTR_LTE_V2_EVENT_SEND_ABORT,
 	CTR_LTE_V2_EVENT_RECV,
 	CTR_LTE_V2_EVENT_XGPS_ENABLE,
 	CTR_LTE_V2_EVENT_XGPS_DISABLE,
@@ -71,6 +72,7 @@ int ctr_lte_v2_flow_close_socket(void);
 int ctr_lte_v2_flow_check(void);
 int ctr_lte_v2_flow_send(const struct ctr_lte_v2_send_recv_param *param);
 int ctr_lte_v2_flow_recv(const struct ctr_lte_v2_send_recv_param *param);
+int ctr_lte_v2_flow_rai_no_data(void);
 
 int ctr_lte_v2_flow_coneval(void);
 

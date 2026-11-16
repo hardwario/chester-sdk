@@ -29,6 +29,38 @@ config TEST_FEATURE_STACK_FPLMN_ERASE_FAILS
 	  The SIM holds forbidden networks and refuses to erase them; the
 	  attach must go on anyway.
 
+config TEST_FEATURE_TXN
+	bool "TEST_FEATURE_TXN"
+	default n
+	select CTR_LTE_V2_GNSS
+	help
+	  A send_recv transaction scenario; each runs in a configuration of its
+	  own.
+
+config TEST_FEATURE_TXN_GIVE_UP_IN_RECV
+	bool "TEST_FEATURE_TXN_GIVE_UP_IN_RECV"
+	select TEST_FEATURE_TXN
+
+config TEST_FEATURE_TXN_GIVE_UP_IN_ATTACH
+	bool "TEST_FEATURE_TXN_GIVE_UP_IN_ATTACH"
+	select TEST_FEATURE_TXN
+
+config TEST_FEATURE_TXN_GIVE_UP_IN_ERROR
+	bool "TEST_FEATURE_TXN_GIVE_UP_IN_ERROR"
+	select TEST_FEATURE_TXN
+
+config TEST_FEATURE_TXN_GIVE_UP_IN_SEND
+	bool "TEST_FEATURE_TXN_GIVE_UP_IN_SEND"
+	select TEST_FEATURE_TXN
+
+config TEST_FEATURE_TXN_GIVE_UP_IN_XSEND
+	bool "TEST_FEATURE_TXN_GIVE_UP_IN_XSEND"
+	select TEST_FEATURE_TXN
+
+config TEST_FEATURE_TXN_LOCK_BUSY
+	bool "TEST_FEATURE_TXN_LOCK_BUSY"
+	select TEST_FEATURE_TXN
+
 config CTR_LTE_V2_DEFAULT_BANDS
 	string "LTE Bands for CTR_LTE_V2"
 	default "2,4,5,8,12,13,17,18,19,20,25,26,28,66" if TEST_FEATURE_STACK_OVERRIDES_CONFIG

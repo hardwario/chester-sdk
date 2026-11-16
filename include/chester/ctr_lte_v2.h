@@ -111,9 +111,8 @@ struct ctr_lte_v2_send_recv_param {
 	size_t *recv_len;     /**< Output: number of received bytes (can not be null if is set
 			       * recv_buf).
 			       */
-	k_timeout_t timeout;  /**< Soft timeout for the operation. When timeout expires, FSM
-			       * completes current operation gracefully before returning.
-			       * Not a hard abort - signals "finish when you can".
+	k_timeout_t timeout;  /**< Deadline for the whole exchange, including the wait for
+			       * another one in progress (see @ref ctr_lte_v2_send_recv).
 			       */
 };
 
@@ -180,18 +179,21 @@ int ctr_lte_v2_wait_for_connected(k_timeout_t timeout);
  *
  * Sends data to the network and optionally waits for a response.
  *
- * Uses soft timeout: when timeout expires, FSM completes current operation
- * gracefully before returning. The timeout signals "finish when you can",
- * not an immediate abort. Return code reflects actual result of the operation.
+ * The LTE stack works on its own copy of @p param. When the timeout expires before the
+ * exchange has ended, the call gives the exchange up and returns -ETIMEDOUT; the stack goes on
+ * with what it is doing (for example the network attach). If the modem is just then exchanging
+ * the data with the caller's buffers, the call first waits for that AT dialog to end, which
+ * can take up to about 36 s past the timeout; a response received in that wait is dropped.
+ * The result follows who ended the exchange, not the time: an exchange the stack has completed
+ * returns 0 even when that happened just past the timeout.
+ *
+ * The buffers in @p param are not touched after the call returns.
  *
  * @param param  Send/receive parameters (see @ref ctr_lte_v2_send_recv_param).
  *
  * @retval 0          Success.
- * @retval -ETIMEDOUT Operation timed out (returned after FSM completed gracefully).
- * @retval -ECONNRESET Connection was reset (CSCON=0 received during send).
- * @retval -ENETDOWN  Network is down (deregistered from network).
- * @retval -EIO       I/O error (send/receive failed or general error).
- * @retval -EFAULT    FSM stuck (internal error, STOP_BIT not received in 30s).
+ * @retval -ETIMEDOUT The exchange did not end before the timeout.
+ * @retval -EBUSY     Another exchange kept the stack busy until the timeout.
  */
 int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param);
 

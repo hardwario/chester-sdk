@@ -17,3 +17,8 @@ target_sources(app PRIVATE src/mock_ctr_info.c)
 target_sources_ifdef(CONFIG_TEST_FEATURE_PARSING app PRIVATE src/test_parse.c)
 target_sources_ifdef(CONFIG_TEST_FEATURE_PARSING app PRIVATE src/test_state.c)
 target_sources_ifdef(CONFIG_TEST_FEATURE_STACK app PRIVATE src/test_stack.c)
+target_sources_ifdef(CONFIG_TEST_FEATURE_TXN app PRIVATE src/test_txn.c)
+
+if(CONFIG_TEST_FEATURE_STACK OR CONFIG_TEST_FEATURE_TXN)
+  target_sources(app PRIVATE src/stack.c)
+endif()
