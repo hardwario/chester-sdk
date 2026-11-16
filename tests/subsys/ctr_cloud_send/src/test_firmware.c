@@ -67,6 +67,13 @@ ZTEST(ctr_cloud_send_3_fw, test_firmware_update_ack)
 	zassert_equal(ack, -1, "ack at %d", ack);
 	zassert_equal(mock_boot_confirm_calls(), 0);
 	zassert_equal(ctr_cloud_util_get_firmware_update_id(id), -ENOENT);
+#elif TEST_FW == 4
+	/* The image cannot be confirmed, so MCUboot reverts it at the next reset: no ack, but
+	 * the init goes on (the config above), and the id stays for the old image to drop
+	 */
+	zassert_equal(ack, -1, "ack at %d", ack);
+	zassert_equal(mock_boot_confirm_calls(), 1);
+	zassert_ok(ctr_cloud_util_get_firmware_update_id(id));
 #else
 	/* Confirmed and acked right after the session, before the uploads */
 	zassert_equal(ack, session + 1, "ack at %d, session at %d", ack, session);
@@ -78,16 +85,28 @@ ZTEST(ctr_cloud_send_3_fw, test_firmware_update_ack)
 			      sizeof(TEST_FW_UPDATE_ID)),
 		     "ack without the stored update id");
 
-#if TEST_FW == 1
+#if TEST_FW == 2
+	/* The first ack fails and goes again 10 s later, in the same boot: that the image is
+	 * confirmed by then must not drop the id
+	 */
+	zassert_equal(e->ret, -EIO);
+
+	const struct mock_log_entry *again = mock_transfer_log(ack + 1);
+	int64_t after_ms = again->at - e->at;
+
+	zassert_equal(again->mem[0], UL_UPLOAD_FIRMWARE,
+		      "uplink after the failed ack of type 0x%02x", again->mem[0]);
+	zassert_true(contains(again->mem, MIN(again->len, sizeof(again->mem)), TEST_FW_UPDATE_ID,
+			      sizeof(TEST_FW_UPDATE_ID)),
+		     "ack again without the stored update id");
+	zassert_within(after_ms, 10010, 10, "ack again %lld ms after the failed one", after_ms);
+
+	e = again;
+#endif
+
 	zassert_equal(e->ret, 0);
 	/* Acked: the id is dropped */
 	zassert_equal(ctr_cloud_util_get_firmware_update_id(id), -ENOENT);
-#else
-	zassert_equal(e->ret, -EIO);
-	/* Not acked: the id stays */
-	zassert_ok(ctr_cloud_util_get_firmware_update_id(id));
-	zassert_mem_equal(id, TEST_FW_UPDATE_ID, sizeof(id));
-#endif
 #endif
 }
 

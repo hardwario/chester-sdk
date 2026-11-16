@@ -551,21 +551,36 @@ static int upload_config(void)
 }
 
 #if defined(CONFIG_MCUBOOT_IMG_MANAGER)
+/* The image state at boot, read on the first call of firmware_confirmed(): that call confirms
+ * the image, so boot_is_img_confirmed() tells nothing about the update after it
+ */
+static bool m_img_state_read;
+static bool m_img_confirmed_at_boot;
+
+/* Confirm the running image and ack its update. Fails only when the ack is to be sent again;
+ * the update id is kept until then.
+ */
 static int firmware_confirmed(void)
 {
 	int ret;
 
 	ctr_cloud_uuid_t fuid;
 
+	if (!m_img_state_read) {
+		m_img_confirmed_at_boot = boot_is_img_confirmed();
+		m_img_state_read = true;
+	}
+
 	/* The session proves that the running image works: keep it, also when the update did
 	 * not come from the cloud (e.g. BLE) or its id was not stored
 	 */
-	bool was_confirmed = boot_is_img_confirmed();
-
-	if (!was_confirmed) {
+	if (!boot_is_img_confirmed()) {
 		if (boot_write_img_confirmed()) {
+			/* MCUboot reverts the image at the next reset, so there is no update to
+			 * ack: the init goes on, and the old image drops the id after that reset
+			 */
 			LOG_ERR("Failed to confirm image");
-			return -EIO; // Failed to confirm image
+			return 0;
 		}
 
 		LOG_INF("Marked image as OK");
@@ -576,7 +591,7 @@ static int firmware_confirmed(void)
 		return 0; // No firmware update ID
 	}
 
-	if (was_confirmed) {
+	if (m_img_confirmed_at_boot) {
 		/* The image of the update did not take (MCUboot reverted it), or the update was
 		 * handled before: there is nothing to ack
 		 */
@@ -659,10 +674,12 @@ static void init_work_handler(struct k_work *work)
 
 		/* The session proves the new image can reach the cloud: confirm it and ack the
 		 * update before the long uploads below, so that a reset during them cannot
-		 * revert a working image
+		 * revert a working image. A failed ack is sent again, as any failed step.
 		 */
 #if defined(CONFIG_MCUBOOT_IMG_MANAGER)
-		firmware_confirmed();
+		if (init_step("CONFIRM FIRMWARE", firmware_confirmed)) {
+			continue;
+		}
 #endif
 
 		if (init_step("UPLOAD DECODER", upload_decoder)) {

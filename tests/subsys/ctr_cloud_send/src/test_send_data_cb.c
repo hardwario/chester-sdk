@@ -168,7 +168,7 @@ ZTEST(ctr_cloud_send_0_init, test_3_cb_waits_for_session)
 
 	mock_transfer_release();
 	/* Posted after the init work releases the lock, so maybe only after the send; the
-	 * failed steps of TEST_INIT_RETRY take a while
+	 * failed steps of TEST_INIT_RETRY and TEST_FW 2 take a while
 	 */
 	zassert_ok(ctr_cloud_wait_initialized(TEST_INIT_TIMEOUT));
 	zassert_ok(helper_join());

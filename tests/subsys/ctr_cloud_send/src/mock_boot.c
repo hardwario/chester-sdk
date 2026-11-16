@@ -36,9 +36,15 @@ bool boot_is_img_confirmed(void)
 int boot_write_img_confirmed(void)
 {
 	m_confirm_calls++;
+
+#if TEST_FW == 4
+	/* The flash write fails */
+	return -EIO;
+#else
 	m_confirmed = true;
 
 	return 0;
+#endif
 }
 
 int mock_boot_confirm_calls(void)

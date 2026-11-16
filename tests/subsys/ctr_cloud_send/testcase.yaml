@@ -15,7 +15,7 @@ tests:
       - native_sim
     integration_platforms:
       - native_sim
-  # The ack of a firmware update fails
+  # The first ack of a firmware update fails
   subsys.ctr_cloud_send.fw_ack_fail:
     tags: chester
     extra_args: TEST_FW=2
@@ -27,6 +27,14 @@ tests:
   subsys.ctr_cloud_send.fw_reverted:
     tags: chester
     extra_args: TEST_FW=3
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+  # The image of a firmware update cannot be confirmed
+  subsys.ctr_cloud_send.fw_confirm_fail:
+    tags: chester
+    extra_args: TEST_FW=4
     platform_allow:
       - native_sim
     integration_platforms:

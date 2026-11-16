@@ -80,8 +80,9 @@ void mock_transfer_session_without_id_first(void);
 
 /* ---- Mock MCUboot image state and the firmware update scenario (TEST_FW) ---- */
 
-/* TEST_FW 0: no update id stored, 1: id stored and acked, 2: id stored, the ack fails,
- * 3: id stored, but the image is confirmed (MCUboot reverted the update)
+/* TEST_FW 0: no update id stored, 1: id stored and acked, 2: id stored, the first ack fails,
+ * 3: id stored, but the image is confirmed (MCUboot reverted the update), 4: id stored, but the
+ * image cannot be confirmed
  */
 extern const uint8_t TEST_FW_UPDATE_ID[16];
 
@@ -104,7 +105,9 @@ int mock_spool_stored(void);
 
 /* ---- Helpers ---- */
 
-/* For the init work, which pauses 10 s between the failed attempts of a step (TEST_INIT_RETRY) */
+/* For the init work, which pauses 10 s between the failed attempts of a step (TEST_INIT_RETRY,
+ * TEST_FW 2)
+ */
 #define TEST_INIT_TIMEOUT K_SECONDS(60)
 
 /* Call ctr_cloud_init() once with the test options; later calls return 0 */
