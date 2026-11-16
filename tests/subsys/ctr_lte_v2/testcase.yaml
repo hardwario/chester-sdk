@@ -54,3 +54,18 @@ tests:
 
   subsys.ctr_lte_v2.txn_disabled:
     extra_args: CONFIG_TEST_FEATURE_TXN_DISABLED=y
+
+  subsys.ctr_lte_v2.txn_no_cscon:
+    extra_args: CONFIG_TEST_FEATURE_TXN_NO_CSCON=y
+
+  subsys.ctr_lte_v2.txn_cscon_timer:
+    extra_args: CONFIG_TEST_FEATURE_TXN_CSCON_TIMER=y
+
+  subsys.ctr_lte_v2.txn_cscon_0_in_send:
+    extra_args: CONFIG_TEST_FEATURE_TXN_CSCON_0_IN_SEND=y
+
+  subsys.ctr_lte_v2.txn_error_in_send:
+    extra_args: CONFIG_TEST_FEATURE_TXN_ERROR_IN_SEND=y
+
+  subsys.ctr_lte_v2.txn_reattach_in_send:
+    extra_args: CONFIG_TEST_FEATURE_TXN_REATTACH_IN_SEND=y

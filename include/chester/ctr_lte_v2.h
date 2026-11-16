@@ -114,6 +114,12 @@ struct ctr_lte_v2_send_recv_param {
 	k_timeout_t timeout;  /**< Deadline for the whole exchange, including the wait for
 			       * another one in progress (see @ref ctr_lte_v2_send_recv).
 			       */
+	int retry_count;      /**< Number of extra sends of the data when the network grants
+			       * no connection for them. Each send waits for the connection
+			       * for the time left to the deadline, at least 5 s and at most
+			       * 120 s. 0 (the default) sends once; a negative value counts
+			       * as 0.
+			       */
 };
 
 /**
@@ -195,7 +201,8 @@ int ctr_lte_v2_wait_for_connected(k_timeout_t timeout);
  *
  * @retval 0          Success.
  * @retval -ETIMEDOUT The exchange did not end before the timeout, or the response did not come.
- * @retval -ENOTCONN  LTE is disabled, or the socket is not usable.
+ * @retval -ENOTCONN  LTE is disabled, the socket is not usable, or the network granted no
+ *                    connection for the data (see @ref ctr_lte_v2_send_recv_param.retry_count).
  * @retval -EBUSY     Another exchange kept the stack busy until the timeout.
  * @retval -ENOTSUP   Test mode is enabled.
  */

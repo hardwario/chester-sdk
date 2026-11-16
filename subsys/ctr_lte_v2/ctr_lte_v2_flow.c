@@ -857,7 +857,7 @@ int ctr_lte_v2_flow_check(void)
 	return 0;
 }
 
-int ctr_lte_v2_flow_send(const struct ctr_lte_v2_send_recv_param *param)
+int ctr_lte_v2_flow_send(const struct ctr_lte_v2_send_recv_param *param, bool *xsend_issued)
 {
 	int ret;
 
@@ -869,6 +869,8 @@ int ctr_lte_v2_flow_send(const struct ctr_lte_v2_send_recv_param *param)
 			return ret;
 		}
 	}
+
+	*xsend_issued = true;
 
 	if (param->send_as_string) {
 		ret = ctr_lte_v2_talk_at_xsend_string(&m_talk, param->send_buf, param->send_len);

@@ -31,9 +31,12 @@ LOG_MODULE_REGISTER(ctr_lte_v2, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 #define WAKEUP_TIMEOUT         K_SECONDS(10)
 #define SIMDETECTED_TIMEOUT    K_SECONDS(10)
 #define MDMEV_RESET_LOOP_DELAY K_MINUTES(32)
-#define SEND_CSCON_1_TIMEOUT   K_SECONDS(30)
 #define CONEVAL_TIMEOUT        K_SECONDS(30)
 #define TXN_IDLE_WARN_TIMEOUT  K_SECONDS(40)
+
+/* Bounds of the wait for CSCON 1 after AT#XSEND, which follows the deadline of the transaction */
+#define SEND_CSCON_1_TIMEOUT_MIN_SEC 5
+#define SEND_CSCON_1_TIMEOUT_MAX_SEC 120
 
 #define WORK_Q_STACK_SIZE 4096
 #define WORK_Q_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
@@ -97,11 +100,16 @@ K_MUTEX_DEFINE(m_send_recv_lock);
  * publish, drop and end), or aborts the published one in a state where it cannot complete. */
 static struct k_spinlock m_txn_lock;
 static const struct ctr_lte_v2_send_recv_param *m_send_recv_param;
+static k_timepoint_t m_send_recv_end;
 static int m_send_recv_result;
 static uint32_t m_txn_gen;
 static uint32_t m_txn_gen_taken;
 static struct ctr_lte_v2_send_recv_param m_txn;
+static k_timepoint_t m_txn_end;
 static size_t m_txn_recv_len;
+/* AT#XSEND lines issued for the transaction since the FSM took it first, or since the socket was
+ * opened (the new socket does not have the datagram) */
+static int m_txn_xsend_count;
 
 K_MUTEX_DEFINE(m_metrics_lock);
 struct ctr_lte_v2_metrics m_metrics;
@@ -133,7 +141,12 @@ static bool txn_take(void)
 	k_spinlock_key_t key = k_spin_lock(&m_txn_lock);
 
 	if (m_send_recv_param) {
+		/* Not taken before: not sent yet */
+		if (m_txn_gen_taken != m_txn_gen) {
+			m_txn_xsend_count = 0;
+		}
 		m_txn = *m_send_recv_param;
+		m_txn_end = m_send_recv_end;
 		m_txn_recv_len = 0;
 		m_txn.recv_len = &m_txn_recv_len;
 		m_txn_gen_taken = m_txn_gen;
@@ -198,6 +211,35 @@ static void txn_end(int result, bool with_recv_len)
 static void txn_abort(int result)
 {
 	txn_settle(result, false, false);
+}
+
+/* End the transaction the FSM took with -ENOTCONN once it has issued 1 + retry_count AT#XSEND
+ * lines: the modem may have each datagram queued until the network grants a connection, so no
+ * more of them */
+static bool txn_end_if_sends_used_up(void)
+{
+	if (m_txn_xsend_count <= MAX(m_txn.retry_count, 0)) {
+		return false;
+	}
+
+	LOG_WRN("No connection for the transaction after %d send(s)", m_txn_xsend_count);
+	txn_end(-ENOTCONN, false);
+
+	return true;
+}
+
+/* The wait for CSCON 1 after AT#XSEND: the time left to the deadline of the transaction, within
+ * the bounds; the upper one without a deadline */
+static uint32_t send_cscon_1_timeout_sec(void)
+{
+	k_timeout_t remaining = sys_timepoint_timeout(m_txn_end);
+
+	if (K_TIMEOUT_EQ(remaining, K_FOREVER)) {
+		return SEND_CSCON_1_TIMEOUT_MAX_SEC;
+	}
+
+	return CLAMP(k_ticks_to_sec_ceil32(remaining.ticks), SEND_CSCON_1_TIMEOUT_MIN_SEC,
+		     SEND_CSCON_1_TIMEOUT_MAX_SEC);
 }
 
 /* The FSM touches the caller's send_buf and recv_buf only inside the IO section, and the caller
@@ -547,6 +589,7 @@ int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param)
 
 	k_spinlock_key_t key = k_spin_lock(&m_txn_lock);
 	m_send_recv_param = param;
+	m_send_recv_end = end;
 	m_send_recv_result = 0;
 	m_txn_gen++;
 	k_spin_unlock(&m_txn_lock, key);
@@ -1056,6 +1099,10 @@ static int on_leave_attach(void)
 
 static int on_enter_open_socket(void)
 {
+	/* The new socket does not have a datagram queued in the old one: the transaction may send
+	 * it again */
+	m_txn_xsend_count = 0;
+
 	k_event_clear(&m_states_event, CONNECTED_BIT);
 
 	int ret = ctr_lte_v2_flow_open_socket();
@@ -1255,7 +1302,7 @@ static int on_enter_send(void)
 {
 	int ret;
 
-	if (!txn_take() || !io_section_enter()) {
+	if (!txn_take() || txn_end_if_sends_used_up() || !io_section_enter()) {
 		delegate_event(CTR_LTE_V2_EVENT_READY);
 		return 0;
 	}
@@ -1269,9 +1316,14 @@ static int on_enter_send(void)
 	}
 	k_mutex_unlock(&m_metrics_lock);
 
-	ret = ctr_lte_v2_flow_send(&m_txn);
+	bool xsend_issued = false;
+	ret = ctr_lte_v2_flow_send(&m_txn, &xsend_issued);
 
 	io_section_leave();
+
+	if (xsend_issued) {
+		m_txn_xsend_count++;
+	}
 
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_flow_send` failed: %d", ret);
@@ -1290,7 +1342,7 @@ static int on_enter_send(void)
 		}
 	}
 
-	start_timer(SEND_CSCON_1_TIMEOUT);
+	start_timer(K_SECONDS(send_cscon_1_timeout_sec()));
 
 	if (atomic_test_bit(&m_flag, FLAG_CSCON)) {
 		delegate_event(CTR_LTE_V2_EVENT_SEND);
@@ -1303,7 +1355,9 @@ static int send_event_handler(enum ctr_lte_v2_event event)
 {
 	switch (event) {
 	case CTR_LTE_V2_EVENT_CSCON_0:
-		transition_state(FSM_STATE_READY);
+		/* The modem has had the datagram since AT#XSEND and sends it once the network
+		 * grants a connection: no second AT#XSEND, which would duplicate it, the wait for
+		 * CSCON 1 goes on (FLAG_CSCON is cleared) */
 		break;
 	case CTR_LTE_V2_EVENT_CSCON_1:
 		__fallthrough;
@@ -1328,9 +1382,12 @@ static int send_event_handler(enum ctr_lte_v2_event event)
 			transition_state(FSM_STATE_READY);
 		}
 		break;
-	case CTR_LTE_V2_EVENT_READY:
-		__fallthrough;
 	case CTR_LTE_V2_EVENT_TIMEOUT:
+		/* No connection for the datagram: unless this was its last send, the ready state
+		 * sends it again */
+		txn_end_if_sends_used_up();
+		__fallthrough;
+	case CTR_LTE_V2_EVENT_READY:
 		k_mutex_lock(&m_metrics_lock, K_FOREVER);
 		m_metrics.uplink_errors++;
 		k_mutex_unlock(&m_metrics_lock);

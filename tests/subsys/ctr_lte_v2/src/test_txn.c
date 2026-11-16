@@ -5,8 +5,9 @@
  */
 
 /*
- * The send_recv transaction when the caller gives up or LTE reconnects meanwhile. Each scenario
- * is a configuration of its own (testcase.yaml) and runs from the attach.
+ * The send_recv transaction when the caller gives up, LTE reconnects meanwhile or the network
+ * grants no connection. Each scenario is a configuration of its own (testcase.yaml) and runs from
+ * the attach.
  */
 
 #include "stack.h"
@@ -120,6 +121,30 @@ static __maybe_unused void go_to_sleep(void)
 	/* Past the pause after AT#XSLEEP */
 	k_sleep(K_MSEC(500));
 	mock_ctr_lte_link_assert_done();
+}
+
+/* Wait until the send state waits for CSCON 1 (after AT#XSEND) and return the time left on its
+ * timer */
+static __maybe_unused int send_timer_sec(void)
+{
+	int remaining_sec = 0;
+
+	for (int i = 0; i < 1000; i++) {
+		if (!strcmp(ctr_lte_v2_get_state(), "send")) {
+			int ret = ctr_lte_v2_get_curr_attach_info(NULL, NULL, NULL, &remaining_sec);
+
+			zassert_ok(ret, "attach info failed: %d", ret);
+			if (remaining_sec > 0) {
+				break;
+			}
+		}
+		k_sleep(K_MSEC(10));
+	}
+
+	ASSERT_FSM_STATE("send");
+	zassert_true(remaining_sec > 0, "no timer in the send state");
+
+	return remaining_sec;
 }
 
 #if defined(CONFIG_TEST_FEATURE_TXN_GIVE_UP_IN_RECV)
@@ -818,6 +843,363 @@ ZTEST(txn, test_disabled)
 	k_sleep(K_MSEC(500));
 
 	ASSERT_FSM_STATE("ready");
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_TXN_NO_CSCON)
+/* The network grants no connection for the datagram: without a deadline, each AT#XSEND waits
+ * 120 s for CSCON 1, and after 1 + retry_count of them the transaction ends with -ENOTCONN */
+ZTEST(txn, test_no_cscon)
+{
+	stack_attach();
+	go_to_sleep();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		/* No CSCON 1 within 120 s: back in the ready state, sent once more */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		/* Nor within the next 120 s: no third send */
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_FOREVER,
+		.rai = true,
+		.retry_count = 1,
+	};
+
+	/* From a thread, so that a call that never returns fails the join */
+	caller_start(&param, K_PRIO_PREEMPT(5));
+	k_sleep(K_SECONDS(239));
+
+	int64_t elapsed;
+	int ret = caller_join(&elapsed);
+	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
+	zassert_true(elapsed >= 240000 && elapsed <= 240200, "returned %lld ms after the call",
+		     elapsed);
+	zassert_equal(recv_len, 0, "recv_len written: %zu", recv_len);
+
+	/* Past a third send */
+	k_sleep(K_SECONDS(1));
+
+	ASSERT_FSM_STATE("ready");
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_TXN_CSCON_TIMER)
+/* The send state waits for CSCON 1 for the time left to the deadline of the transaction, at least
+ * 5 s and at most 120 s */
+ZTEST(txn, test_cscon_timer)
+{
+	stack_attach();
+	go_to_sleep();
+
+	/* clang-format off */
+	static struct mock_link_item items_short[] = {
+		/* No CSCON 1, the caller gives up */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Short\"", "#XSEND: 5", "OK"},
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_short, ARRAY_SIZE(items_short));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Short",
+		.send_len = 5,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_SECONDS(3),
+		.rai = true,
+	};
+
+	/* A deadline of 3 s: 5 s at least */
+	caller_start(&param, K_PRIO_PREEMPT(5));
+
+	int timer_sec = send_timer_sec();
+	zassert_true(timer_sec >= 4 && timer_sec <= 5, "timer of %d s", timer_sec);
+
+	int64_t elapsed;
+	int ret = caller_join(&elapsed);
+	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
+	stack_wait_for_state("ready", K_MSEC(100));
+	mock_ctr_lte_link_assert_done();
+
+	/* clang-format off */
+	static struct mock_link_item items_late[] = {
+		/* The modem refuses the send */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,51", "ERROR"},
+		/* Error state - flow check, ready state in 5 s */
+		ITEMS_FLOW_CHECK,
+		/* Ready state: sent now, CSCON 1 a second later */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,51", "OK"},
+		{"AT#XSEND=\"Late\"", "#XSEND: 4", "OK"},
+		{"AT#XSOCKETOPT=1,50", "OK"},
+		URC(1000, "+CSCON: 1"),
+		ITEM_CONEVAL,
+		ITEMS_SLEEP(2000),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_late, ARRAY_SIZE(items_late));
+
+	struct ctr_lte_v2_send_recv_param late_param = {
+		.send_buf = "Late",
+		.send_len = 4,
+		.send_as_string = true,
+		.timeout = K_SECONDS(60),
+		.rai = true,
+	};
+
+	/* Sent 5 s into a deadline of 60 s: the time left */
+	caller_start(&late_param, K_PRIO_PREEMPT(5));
+
+	timer_sec = send_timer_sec();
+	zassert_true(timer_sec >= 54 && timer_sec <= 55, "timer of %d s", timer_sec);
+
+	ret = caller_join(&elapsed);
+	zassert_ok(ret, "send_recv failed: %d", ret);
+	stack_wait_for_state("sleep", K_SECONDS(3));
+	/* Past the pause after AT#XSLEEP */
+	k_sleep(K_MSEC(500));
+	mock_ctr_lte_link_assert_done();
+
+	/* clang-format off */
+	static struct mock_link_item items_long[] = {
+		/* No CSCON 1 */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Long\"", "#XSEND: 4", "OK"},
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_long, ARRAY_SIZE(items_long));
+
+	param.send_buf = "Long";
+	param.send_len = 4;
+	param.timeout = K_SECONDS(300);
+
+	/* A deadline of 300 s: 120 s at most, then the transaction ends */
+	caller_start(&param, K_PRIO_PREEMPT(5));
+
+	timer_sec = send_timer_sec();
+	zassert_true(timer_sec >= 119 && timer_sec <= 120, "timer of %d s", timer_sec);
+
+	k_sleep(K_SECONDS(118));
+
+	ret = caller_join(&elapsed);
+	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
+	zassert_true(elapsed >= 120000 && elapsed <= 120200, "returned %lld ms after the call",
+		     elapsed);
+	zassert_equal(recv_len, 0, "recv_len written: %zu", recv_len);
+
+	stack_wait_for_state("ready", K_MSEC(100));
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_TXN_CSCON_0_IN_SEND)
+/* CSCON 0 while the send state waits for CSCON 1: the modem has the datagram already, the wait
+ * goes on without a second AT#XSEND */
+ZTEST(txn, test_cscon_0_in_send)
+{
+	stack_attach();
+	go_to_sleep();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		URC(300, "+CSCON: 0"),
+		URC(500, "+CSCON: 1"),
+		{"AT#XRECV=5"},
+		RX_DATA(200, "#XRECV: 8", "Hi there"),
+		{"AT#XSOCKETOPT=1,50", "OK"},
+		ITEM_CONEVAL,
+		ITEMS_SLEEP(5000),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_SECONDS(10),
+		.rai = true,
+	};
+
+	int64_t elapsed;
+	int ret = send_recv(&param, &elapsed);
+	zassert_ok(ret, "send_recv failed: %d", ret);
+	zassert_equal(recv_len, 8, "recv_len incorrect");
+	zassert_mem_equal(recv_buf, "Hi there", recv_len, "recv_buf incorrect");
+
+	k_sleep(K_SECONDS(8));
+
+	ASSERT_FSM_STATE("sleep");
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_TXN_ERROR_IN_SEND)
+/* The send fails into the error state, whose flow check passes: the transaction goes on from the
+ * ready state. A datagram the modem has not got is sent then; once the AT#XSEND line has gone
+ * out, the datagram may be on its way, and with retry_count 0 the transaction ends with -ENOTCONN
+ * instead of a second AT#XSEND */
+ZTEST(txn, test_error_in_send)
+{
+	stack_attach();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		/* First transaction: the modem refuses the option before AT#XSEND */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "ERROR"},
+		/* Error state - flow check, ready state in 5 s */
+		ITEMS_FLOW_CHECK,
+		/* Ready state: sent now, RRC still connected after the attach */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		{"AT#XRECV=5"},
+		RX_DATA(200, "#XRECV: 8", "Hi there"),
+		{"AT#XSOCKETOPT=1,50", "OK"},
+		ITEM_CONEVAL,
+		/* Second transaction: no answer to AT#XSEND */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello again\""},
+		/* Error state after the talk timeout - flow check, ready state in 5 s */
+		ITEMS_FLOW_CHECK,
+		/* Ready state: the check before the send, but no send */
+		ITEMS_FLOW_CHECK,
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_SECONDS(60),
+		.rai = true,
+	};
+
+	int64_t elapsed;
+	int ret = send_recv(&param, &elapsed);
+	zassert_ok(ret, "send_recv failed: %d", ret);
+	zassert_true(elapsed >= 5000 && elapsed <= 5400, "returned %lld ms after the call",
+		     elapsed);
+	zassert_equal(recv_len, 8, "recv_len incorrect");
+	zassert_mem_equal(recv_buf, "Hi there", recv_len, "recv_buf incorrect");
+	stack_wait_for_state("ready", K_MSEC(500));
+
+	param.send_buf = "Hello again";
+	recv_len = 0;
+
+	ret = send_recv(&param, &elapsed);
+	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
+	zassert_true(elapsed >= 35000 && elapsed <= 35300, "returned %lld ms after the call",
+		     elapsed);
+	zassert_equal(recv_len, 0, "recv_len written: %zu", recv_len);
+
+	stack_wait_for_state("ready", K_MSEC(100));
+	/* Past a second send */
+	k_sleep(K_SECONDS(1));
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_TXN_REATTACH_IN_SEND)
+/* The network deregisters while the send state waits for CSCON 1: the socket the attach opens
+ * again has not got the datagram, which is sent once more */
+ZTEST(txn, test_reattach_in_send)
+{
+	stack_attach();
+	go_to_sleep();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		/* Deregistered: attach, open the socket */
+		URC(500, "+CEREG: 2,\"B4DC\",\"000AE520\",9"),
+		ITEMS_REGISTER,
+		/* Ready state: sent again, RRC connected */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		{"AT#XRECV=5"},
+		RX_DATA(200, "#XRECV: 8", "Hi there"),
+		{"AT#XSOCKETOPT=1,50", "OK"},
+		ITEM_CONEVAL,
+		ITEMS_SLEEP(5000),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_SECONDS(30),
+		.rai = true,
+	};
+
+	int64_t elapsed;
+	int ret = send_recv(&param, &elapsed);
+	zassert_ok(ret, "send_recv failed: %d", ret);
+	zassert_equal(recv_len, 8, "recv_len incorrect");
+	zassert_mem_equal(recv_buf, "Hi there", recv_len, "recv_buf incorrect");
+
+	k_sleep(K_SECONDS(8));
+
+	ASSERT_FSM_STATE("sleep");
 	mock_ctr_lte_link_assert_done();
 }
 #endif
