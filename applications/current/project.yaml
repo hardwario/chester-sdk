@@ -171,7 +171,7 @@ commands:
   help: 'Send data immediately.'
 - name: aggreg
   callback: app_work_aggreg()
-  help: 'Aggregate data immediately'
+  help: 'Aggregate data immediately.'
 extras:
 - CONFIG_ADC_NRFX_SAADC=n
 - CONFIG_ADC_SHELL=n

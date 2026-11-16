@@ -1139,6 +1139,8 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 	return ctr_config_cmd_config(m_config_items, ARRAY_SIZE(m_config_items), shell, argc, argv);
 }
 
+CTR_CONFIG_SUBCMD_GET_DEFINE(ctr_lrw_config_subcmd_get, m_config_items, cmd_config)
+
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
 	return ctr_config_h_set(m_config_items, ARRAY_SIZE(m_config_items), key, len, read_cb,
@@ -1304,14 +1306,16 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lrw_test,
-	SHELL_CMD_ARG(uart, NULL, "Enable/Disable UART interface (format: <enable|disable>).",
+	SHELL_CMD_ARG(uart, NULL, "Enable/disable UART interface <enable|disable>.",
 		      cmd_test_uart, 2, 0),
 	SHELL_CMD_ARG(reset, NULL, "Reset modem.", cmd_test_reset, 1, 0),
-	SHELL_CMD_ARG(cmd, NULL, "Send command to modem. (format: <command>)", cmd_test_cmd, 2, 0),
+	SHELL_CMD_ARG(cmd, NULL, "Send command to modem <command>.", cmd_test_cmd, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
+SHELL_DYNAMIC_CMD_CREATE(sub_lrw_config, ctr_lrw_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_lrw,
-			       SHELL_CMD_ARG(config, NULL, "Configuration commands.",
+			       SHELL_CMD_ARG(config, &sub_lrw_config, "Configuration commands.",
 					     cmd_config, 1, 3),
 			       SHELL_CMD_ARG(start, NULL, "Start interface.", cmd_start, 1, 0),
 			       SHELL_CMD_ARG(join, NULL, "Join network.", cmd_join, 1, 0),

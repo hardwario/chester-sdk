@@ -102,13 +102,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_tc,
 
 	SHELL_CMD_ARG(read, NULL,
-	              "Read temperature w/ optional number of repetitions"
-		      "(format: <a1|a2|b1|b2> <k> [<1-3600>]).",
+	              "Read temperature <a1|a2|b1|b2> <k> "
+		      "[repetitions (1-3600), 1 s apart, default 1].",
 	              cmd_tc_read, 3, 1),
 
         SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(tc, &sub_tc, "thermocouple commands.", print_help);
+SHELL_CMD_REGISTER(tc, &sub_tc, "Thermocouple commands.", print_help);
 
 /* clang-format on */

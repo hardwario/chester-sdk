@@ -362,10 +362,10 @@ static int cmd_sample(const struct shell *shell, size_t argc, char **argv)
 }
 
 static const struct shell_static_entry flowt_ft201_subcmds[] = {
-	SHELL_CMD_ARG(read_info, NULL, "Read device info: read_info <addr>", cmd_read_info, 2, 0),
-	SHELL_CMD_ARG(config, NULL, "Change address: config <current_addr> <new_addr>", cmd_config,
+	SHELL_CMD_ARG(read_info, NULL, "Read device info <addr> (1-247).", cmd_read_info, 2, 0),
+	SHELL_CMD_ARG(config, NULL, "Change device address <current_addr> <new_addr> (1-247).", cmd_config,
 		      3, 0),
-	SHELL_CMD_ARG(sample, NULL, "Read values: sample <addr>", cmd_sample, 2, 0),
+	SHELL_CMD_ARG(sample, NULL, "Read and print values <addr> (1-247).", cmd_sample, 2, 0),
 	SHELL_SUBCMD_SET_END
 };
 

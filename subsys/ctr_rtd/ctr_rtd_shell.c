@@ -106,8 +106,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_rtd,
 
 	SHELL_CMD_ARG(read, NULL,
-	              "Read temperature w/ optional number of repetitions"
-		      "(format: <a1|a2|b1|b2> <pt100|pt1000> [<1-3600>]).",
+	              "Read temperature <a1|a2|b1|b2> <pt100|pt1000> "
+		      "[repetitions (1-3600), 1 s apart, default 1].",
 	              cmd_rtd_read, 3, 1),
 
         SHELL_SUBCMD_SET_END

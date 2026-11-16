@@ -99,8 +99,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_sps30,
 
 	SHELL_CMD_ARG(read, NULL,
-	              "Read sps30 sensor "
-	              "w/ optional number of repetitions (format: [<1-3600>]).",
+	              "Read SPS30 sensor "
+	              "[repetitions (1-3600), 1 s apart, default 1].",
 		      cmd_sps30_read, 1, 1),
 
 	SHELL_SUBCMD_SET_END

@@ -37,9 +37,11 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 
 /* clang-format off */
 
+SHELL_DYNAMIC_CMD_CREATE(sub_app_config, app_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 
-			       SHELL_CMD_ARG(config, NULL, "Configurations commands.",
+			       SHELL_CMD_ARG(config, &sub_app_config, "Configuration commands.",
 					     app_config_cmd_config, 1, 3),
 
 /* ### Preserved code "subcmd" (begin) */

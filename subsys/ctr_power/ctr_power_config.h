@@ -37,6 +37,7 @@ extern struct ctr_power_config g_ctr_power_config;
 
 int ctr_power_config_cmd_show(const struct shell *shell, size_t argc, char **argv);
 int ctr_power_config_cmd(const struct shell *shell, size_t argc, char **argv);
+void ctr_power_config_subcmd_get(size_t idx, struct shell_static_entry *entry);
 int ctr_power_config_init(void);
 
 #ifdef __cplusplus

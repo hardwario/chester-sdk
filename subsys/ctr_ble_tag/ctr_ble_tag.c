@@ -2009,23 +2009,32 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_SUBCMD_SET_END
 );
 
-/* `devices` is a deprecated alias of the `slot-N` config items, kept undocumented for
- * one release so existing scripts keep working. It is the only named subcommand here:
- * anything else after `tag config` finds no match and so falls through to cmd_config
- * (the shell's has_last_handler path), which is what routes `tag config <name> [value]`
- * and `tag config show` into ctr_config_cmd_config(). */
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_tag_config,
+CTR_CONFIG_SUBCMD_GET_DEFINE(ctr_ble_tag_config_items_get, m_config_items, cmd_config)
 
-	SHELL_CMD_ARG(devices, &sub_tag_config_devices, NULL, print_help, 1, 0),
-	SHELL_SUBCMD_SET_END
-);
+/* `devices` is a deprecated alias of the `slot-N` config items, kept for one release so
+ * existing scripts keep working. The dynamic set lists `show` and the config items (see
+ * CTR_CONFIG_SUBCMD_GET_DEFINE) and appends `devices` after them. */
+static void tag_config_subcmd_get(size_t idx, struct shell_static_entry *entry)
+{
+	ctr_ble_tag_config_items_get(idx, entry);
+
+	if (entry->syntax == NULL && idx == ARRAY_SIZE(m_config_items) + 1) {
+		entry->syntax = "devices";
+		entry->help = "Deprecated, use the slot-N parameters.";
+		entry->subcmd = &sub_tag_config_devices;
+		entry->handler = print_help;
+		entry->args.mandatory = 1;
+		entry->args.optional = 0;
+	}
+}
+
+SHELL_DYNAMIC_CMD_CREATE(sub_tag_config, tag_config_subcmd_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_tag_list,
 
 	SHELL_CMD_ARG(show, NULL, "Show every slot and its latest readings.", cmd_list_show, 1, 0),
-	SHELL_CMD_ARG(sample, NULL, "Wait for fresh readings from every enrolled tag <timeout (1-300) s, default 60>.", cmd_list_sample, 1, 1),
+	SHELL_CMD_ARG(sample, NULL, "Wait for fresh readings from every enrolled tag [timeout (1-300) s, default 60].", cmd_list_sample, 1, 1),
 	SHELL_CMD_ARG(add, NULL, "Add a tag to the lowest free slot <MAC (12 hex digits)>.", cmd_config_add_tag, 2, 0),
 	SHELL_CMD_ARG(remove, NULL, "Remove a tag <MAC (12 hex digits) | slot (at most 2 digits)>.", cmd_config_remove_tag, 2, 0),
 	SHELL_CMD_ARG(clear, NULL, "Clear all slots.", cmd_config_clear_tags, 1, 0),
@@ -2041,8 +2050,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				  cmd_config, 1, 2),
 	SHELL_CMD_ARG(list, &sub_tag_list, "Enrolled tag commands.", print_help, 1, 0),
 	SHELL_CMD_ARG(apply, NULL, "Make edited configuration live without a reboot.", cmd_apply, 1, 0),
-	SHELL_CMD_ARG(discovery, NULL, "Report every nearby tag, enrolled or not <timeout (1-300) s, default 60>.", cmd_discovery, 1, 1),
-	SHELL_CMD_ARG(enroll, NULL, "Enroll every nearby tag into the free slots <threshold (-128:0) dBm, default -40> <timeout (1-300) s, default 12>.", cmd_enroll, 1, 2),
+	SHELL_CMD_ARG(discovery, NULL, "Report every nearby tag, enrolled or not [timeout (1-300) s, default 60].", cmd_discovery, 1, 1),
+	SHELL_CMD_ARG(enroll, NULL, "Enroll every nearby tag into the free slots [threshold (-128:0) dBm, default -40] [timeout (1-300) s, default 12].", cmd_enroll, 1, 2),
 	SHELL_CMD_ARG(read, NULL, "Read enrolled devices (12 seconds).", cmd_scan, 1, 2),
 
 	/* Undocumented aliases of `tag list show` and `tag discovery`, kept for one release. */

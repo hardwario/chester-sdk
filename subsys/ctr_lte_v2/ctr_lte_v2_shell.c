@@ -501,7 +501,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lte_test,
 
 	SHELL_CMD_ARG(uart, NULL,
-	              "Enable/Disable UART interface (format: <enable|disable>).",
+	              "Enable/disable UART interface <enable|disable>.",
 	              cmd_test_uart, 2, 0),
 
 	SHELL_CMD_ARG(reset, NULL,
@@ -513,7 +513,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              cmd_test_wakeup, 1, 0),
 
 	SHELL_CMD_ARG(cmd, NULL,
-	              "Send command to modem. (format: <command>).",
+	              "Send command to modem <command>.",
 	              cmd_test_cmd, 2, 0),
 
 	SHELL_CMD_ARG(prepare, NULL, "Run prepare modem sequence.", cmd_test_prepare, 1, 0),
@@ -523,10 +523,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_DYNAMIC_CMD_CREATE(sub_lte_config, ctr_lte_v2_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lte,
 
-	SHELL_CMD_ARG(config, NULL,
+	SHELL_CMD_ARG(config, &sub_lte_config,
 	              "Configuration commands.",
 	              ctr_lte_v2_config_cmd, 1, 3),
 

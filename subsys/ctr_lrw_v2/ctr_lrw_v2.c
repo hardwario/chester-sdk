@@ -218,68 +218,68 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              ctr_lrw_v2_config_cmd_show, 1, 0),
 
 	SHELL_CMD_ARG(test, NULL,
-	              "Get/Set LoRaWAN test mode.",
+	              "Get/set LoRaWAN test mode [true|false].",
 	              ctr_lrw_v2_config_cmd_test, 1, 1),
 
 	SHELL_CMD_ARG(antenna, NULL,
-	              "Get/Set LoRaWAN antenna (format: <int|ext>).",
+	              "Get/set LoRaWAN antenna [int|ext].",
 		      ctr_lrw_v2_config_cmd_antenna, 1, 1),
 
 	SHELL_CMD_ARG(band, NULL,
-		      "Get/Set radio band"
-		      " (format: <as923|au915|eu868|kr920|in865|us915>).",
+		      "Get/set radio band"
+		      " [as923|au915|eu868|kr920|in865|us915].",
 		      ctr_lrw_v2_config_cmd_band, 1, 1),
 
 	SHELL_CMD_ARG(chmask, NULL,
-	              "Get/Set channel mask (format: <N hexadecimal digits>). ",
+	              "Get/set channel mask [up to 24 lowercase hex digits].",
 		      ctr_lrw_v2_config_cmd_chmask, 1, 1),
 
 	SHELL_CMD_ARG(class, NULL,
-	              "Get/Set device class (format: <a|c>).",
+	              "Get/set device class [a|c].",
 		      ctr_lrw_v2_config_cmd_class, 1, 1),
 
 	SHELL_CMD_ARG(mode, NULL,
-	              "Get/Set operation mode (format: <abp|otaa>).",
+	              "Get/set operation mode [abp|otaa].",
 		      ctr_lrw_v2_config_cmd_mode, 1, 1),
 
 	SHELL_CMD_ARG(nwk, NULL,
-	              "Get/Set network type (format: <private|public>).",
+	              "Get/set network type [private|public].",
 		      ctr_lrw_v2_config_cmd_nwk, 1, 1),
 
 	SHELL_CMD_ARG(adr, NULL,
-	              "Get/Set adaptive data rate (format: <true|false>).",
+	              "Get/set adaptive data rate [true|false].",
 		      ctr_lrw_v2_config_cmd_adr, 1, 1),
 
 	SHELL_CMD_ARG(datarate, NULL,
-	              "Get/Set data rate (format: <number 1-15>).",
+	              "Get/set data rate [0-15].",
 		      ctr_lrw_v2_config_cmd_datarate, 1, 1),
 
 	SHELL_CMD_ARG(dutycycle, NULL,
-	              "Get/Set duty cycle (format: <true|false>).",
+	              "Get/set duty cycle [true|false].",
 		      ctr_lrw_v2_config_cmd_dutycycle, 1, 1),
 
 	SHELL_CMD_ARG(devaddr, NULL,
-	              "Get/Set DevAddr (format: <8 hexadecimal digits>).",
+	              "Get/set DevAddr [8 hex digits].",
 		      ctr_lrw_v2_config_cmd_devaddr, 1, 1),
 
 	SHELL_CMD_ARG(deveui, NULL,
-	              "Get/Set DevEUI (format: <16 hexadecimal digits>).",
+	              "Get/set DevEUI [16 hex digits].",
 		      ctr_lrw_v2_config_cmd_deveui, 1, 1),
 
 	SHELL_CMD_ARG(joineui, NULL,
-	              "Get/Set JoinEUI (format: <16 hexadecimal digits>).",
+	              "Get/set JoinEUI [16 hex digits].",
 		      ctr_lrw_v2_config_cmd_joineui, 1, 1),
 
 	SHELL_CMD_ARG(appkey, NULL,
-	              "Get/Set AppKey (format: <32 hexadecimal digits>).",
+	              "Get/set AppKey [32 hex digits].",
 		      ctr_lrw_v2_config_cmd_appkey, 1, 1),
 
 	SHELL_CMD_ARG(nwkskey, NULL,
-	              "Get/Set NwkSKey (format: <32 hexadecimal digits>).",
+	              "Get/set NwkSKey [32 hex digits].",
 		      ctr_lrw_v2_config_cmd_nwkskey, 1, 1),
 
 	SHELL_CMD_ARG(appskey, NULL,
-	              "Get/Set AppSKey (format: <32 hexadecimal digits>).",
+	              "Get/set AppSKey [32 hex digits].",
 		      ctr_lrw_v2_config_cmd_appskey, 1, 1),
 
 	SHELL_SUBCMD_SET_END
@@ -289,14 +289,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lrw_test,
 
 	SHELL_CMD_ARG(uart, NULL,
-	              "Enable/Disable UART interface (format: <enable|disable>).",
+	              "Enable/disable UART interface <enable|disable>.",
 		      ctr_lrw_v2_flow_cmd_test_uart, 2, 0),
 	SHELL_CMD_ARG(reset, NULL,
 	              "Reset modem.",
 		      ctr_lrw_v2_flow_cmd_test_reset, 1, 0),
 
 	SHELL_CMD_ARG(cmd, NULL,
-	              "Send command to modem. (format: <command>).",
+	              "Send command to modem <command>.",
 		      ctr_lrw_v2_flow_cmd_test_cmd, 2, 0),
 
 	SHELL_SUBCMD_SET_END

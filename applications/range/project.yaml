@@ -128,7 +128,7 @@ commands:
   help: 'Send data immediately.'
 - name: aggreg
   callback: app_work_aggreg()
-  help: 'Aggregate data immediately'
+  help: 'Aggregate data immediately.'
 extras:
 - CONFIG_I2C_SHELL=y
 - CONFIG_MCUBOOT_SHELL=y

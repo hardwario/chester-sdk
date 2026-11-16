@@ -105,7 +105,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_button,
 
 	SHELL_CMD_ARG(read, NULL,
-	              "Read button state (format int|ext).",
+	              "Read button state <int|ext>.",
 	              cmd_button_read, 2, 0),
 
 	SHELL_SUBCMD_SET_END

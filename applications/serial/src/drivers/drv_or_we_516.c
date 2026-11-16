@@ -191,8 +191,8 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 }
 
 static const struct shell_static_entry or_we_516_subcmds[] = {
-	SHELL_CMD_ARG(sample, NULL, "Read values: sample <addr>", cmd_sample, 2, 0),
-	SHELL_CMD_ARG(config, NULL, "How to set the address: config <addr>", cmd_config, 1, 1),
+	SHELL_CMD_ARG(sample, NULL, "Read and print values <addr> (1-247).", cmd_sample, 2, 0),
+	SHELL_CMD_ARG(config, NULL, "Print how to set the device address.", cmd_config, 1, 1),
 	SHELL_SUBCMD_SET_END};
 
 const union shell_cmd_entry or_we_516_shell_cmds = {

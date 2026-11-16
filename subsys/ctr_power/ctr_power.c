@@ -671,10 +671,12 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 }
 
 /* clang-format off */
+SHELL_DYNAMIC_CMD_CREATE(sub_power_config, ctr_power_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_power,
 
-	SHELL_CMD_ARG(config, NULL,
+	SHELL_CMD_ARG(config, &sub_power_config,
 	              "Configuration commands.",
 	              ctr_power_config_cmd, 1, 3),
 

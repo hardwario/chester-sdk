@@ -147,7 +147,7 @@ static int cmd_motion_detection(const struct shell *shell, size_t argc, char **a
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_app_motion,
 			       SHELL_CMD_ARG(detection, NULL,
-					     "Monitor motion detection [timeout_s].",
+					     "Monitor motion detection [timeout_s] (1-1800, default 60).",
 					     cmd_motion_detection, 1, 1),
 			       SHELL_CMD_ARG(samples, NULL, "Show motion samples.", cmd_motion_view,
 					     1, 0),
@@ -157,9 +157,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_app_motion,
 
 /* clang-format off */
 
+SHELL_DYNAMIC_CMD_CREATE(sub_app_config, app_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 
-			       SHELL_CMD_ARG(config, NULL, "Configurations commands.",
+			       SHELL_CMD_ARG(config, &sub_app_config, "Configuration commands.",
 					     app_config_cmd_config, 1, 3),
 
 /* ### Preserved code "subcmd" (begin) */

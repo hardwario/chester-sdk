@@ -106,7 +106,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 	SHELL_CMD_ARG(read, NULL,
 	              "Read DS18B20 thermometers "
-	              "w/ optional number of repetitions (format: [<1-3600>]).",
+	              "[repetitions (1-3600), 1 s apart, default 1].",
 	              cmd_ds18b20_read, 1, 1),
 
         SHELL_SUBCMD_SET_END

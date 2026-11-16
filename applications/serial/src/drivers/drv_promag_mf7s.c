@@ -637,9 +637,9 @@ static int cmd_promag_sampling(const struct shell *shell, size_t argc, char **ar
 /* clang-format off */
 
 const struct shell_static_entry promag_mf7s_shell_subcmds[] = {
-	SHELL_CMD_ARG(read_info, NULL, "Read device info", cmd_promag_read_info, 1, 0),
-	SHELL_CMD_ARG(notify, NULL, "Beep notification + LED", cmd_promag_notify, 1, 0),
-	SHELL_CMD_ARG(sampling, NULL, "Sampling mode: sampling [timeout_s]", cmd_promag_sampling, 1, 1),
+	SHELL_CMD_ARG(read_info, NULL, "Read device info.", cmd_promag_read_info, 1, 0),
+	SHELL_CMD_ARG(notify, NULL, "Trigger beep and LED notification.", cmd_promag_notify, 1, 0),
+	SHELL_CMD_ARG(sampling, NULL, "Enter card sampling mode [timeout_s] (idle timeout, default 10).", cmd_promag_sampling, 1, 1),
 	SHELL_SUBCMD_SET_END
 };
 

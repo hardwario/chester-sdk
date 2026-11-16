@@ -52,6 +52,8 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 	return ctr_config_cmd_config(m_config_items, ARRAY_SIZE(m_config_items), shell, argc, argv);
 }
 
+CTR_CONFIG_SUBCMD_GET_DEFINE(sample_config_subcmd_get, m_config_items, cmd_config)
+
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
 	return ctr_config_h_set(m_config_items, ARRAY_SIZE(m_config_items), key, len, read_cb,
@@ -85,10 +87,12 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 
 /* clang-format off */
 
+SHELL_DYNAMIC_CMD_CREATE(sub_sample_config, sample_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_sample,
 
-	SHELL_CMD_ARG(config, NULL,
+	SHELL_CMD_ARG(config, &sub_sample_config,
 	              "Configuration commands.",
 	              cmd_config, 1, 3),
 

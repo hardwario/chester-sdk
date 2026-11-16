@@ -325,6 +325,8 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 	return ctr_config_cmd_config(m_config_items, ARRAY_SIZE(m_config_items), shell, argc, argv);
 }
 
+CTR_CONFIG_SUBCMD_GET_DEFINE(ctr_ble_config_subcmd_get, m_config_items, cmd_config)
+
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
 	return ctr_config_h_set(m_config_items, ARRAY_SIZE(m_config_items), key, len, read_cb,
@@ -391,16 +393,18 @@ static int cmd_neighbor_reboot(const struct shell *shell, size_t argc, char **ar
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_neighbor,
 	SHELL_CMD_ARG(reboot, NULL,
-			"Reboot <addr> <passkey>",
+			"Reboot neighbor device <addr (XX:XX:XX:XX:XX:XX)> <passkey (0-999999)>.",
 			cmd_neighbor_reboot, 3, 0),
 
 	SHELL_SUBCMD_SET_END);
 #endif
 
+SHELL_DYNAMIC_CMD_CREATE(sub_ble_config, ctr_ble_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_ble,
 
-	SHELL_CMD_ARG(config, NULL,
+	SHELL_CMD_ARG(config, &sub_ble_config,
 	              "Configuration commands.",
 	              cmd_config, 1, 3),
 

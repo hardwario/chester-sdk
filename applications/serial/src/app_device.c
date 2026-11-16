@@ -1129,26 +1129,26 @@ static int cmd_device_reset_idx(const struct shell *shell, size_t argc, char **a
  */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_device,
 	/* Device-specific commands (with address parameter) */
-	SHELL_CMD(microsens_180hs, &microsens_shell_cmds, "MicroSENS 180-HS CO2 sensor commands", NULL),
-	SHELL_CMD(or_we_504, &or_we_504_shell_cmds, "Orno OR-WE-504 single-phase meter", NULL),
-	SHELL_CMD(em1xx, &em1xx_shell_cmds, "Carlo Gavazzi EM1XX (EM111) single-phase meter", NULL),
-	SHELL_CMD(or_we_516, &or_we_516_shell_cmds, "Orno OR-WE-516 3-phase meter", NULL),
-	SHELL_CMD(em5xx, &em5xx_shell_cmds, "Carlo Gavazzi EM5XX (EM540) 3-phase meter", NULL),
-	SHELL_CMD(iem3000, &iem3000_shell_cmds, "Schneider iEM3000 3-phase meter", NULL),
-	SHELL_CMD(promag_mf7s, &promag_mf7s_shell_cmds, "Promag MF7S RFID reader", NULL),
-	SHELL_CMD(flowt_ft201, &flowt_ft201_shell_cmds, "FlowT FT201 ultrasonic flowmeter", NULL),
-	SHELL_CMD(piketronic, &piketronic_rpp_shell_cmds, "Piketronic RPP-R radon probe", NULL),
-	SHELL_CMD(solax_g3, &solax_g3_shell_cmds, "SolaX X3-Hybrid G3 inverter", NULL),
-	SHELL_CMD(piketronic_u, &piketronic_rppu_shell_cmds, "Piketronic RPP-U radon probe (UART)", NULL),
-	SHELL_CMD(sensecap, &sensecap_shell_cmds, "SenseCAP S1000 / S700 / S500 weather station",
+	SHELL_CMD(microsens_180hs, &microsens_shell_cmds, "MicroSENS 180-HS CO2 sensor commands.", NULL),
+	SHELL_CMD(or_we_504, &or_we_504_shell_cmds, "Orno OR-WE-504 single-phase meter commands.", NULL),
+	SHELL_CMD(em1xx, &em1xx_shell_cmds, "Carlo Gavazzi EM1XX (EM111) single-phase meter commands.", NULL),
+	SHELL_CMD(or_we_516, &or_we_516_shell_cmds, "Orno OR-WE-516 3-phase meter commands.", NULL),
+	SHELL_CMD(em5xx, &em5xx_shell_cmds, "Carlo Gavazzi EM5XX (EM540) 3-phase meter commands.", NULL),
+	SHELL_CMD(iem3000, &iem3000_shell_cmds, "Schneider iEM3000 3-phase meter commands.", NULL),
+	SHELL_CMD(promag_mf7s, &promag_mf7s_shell_cmds, "Promag MF7S RFID reader commands.", NULL),
+	SHELL_CMD(flowt_ft201, &flowt_ft201_shell_cmds, "FlowT FT201 ultrasonic flowmeter commands.", NULL),
+	SHELL_CMD(piketronic, &piketronic_rpp_shell_cmds, "Piketronic RPP-R radon probe commands.", NULL),
+	SHELL_CMD(solax_g3, &solax_g3_shell_cmds, "SolaX X3-Hybrid G3 inverter commands.", NULL),
+	SHELL_CMD(piketronic_u, &piketronic_rppu_shell_cmds, "Piketronic RPP-U radon probe (UART) commands.", NULL),
+	SHELL_CMD(sensecap, &sensecap_shell_cmds, "SenseCAP S1000 / S700 / S500 weather station commands.",
 		  NULL),
-	SHELL_CMD(cubic_6303, &cubic_6303_shell_cmds, "Cubic 6303 particulate matter sensor", NULL),
+	SHELL_CMD(cubic_6303, &cubic_6303_shell_cmds, "Cubic 6303 particulate matter sensor commands.", NULL),
 	/* Generic commands (use device index from config) */
-	SHELL_CMD_ARG(sample, NULL, "Sample device by index: sample <0-7>", cmd_device_sample_idx, 2, 0),
-	SHELL_CMD_ARG(reset, NULL, "Reset device by index: reset <0-7>", cmd_device_reset_idx, 2, 0),
-	SHELL_CMD_ARG(list, NULL, "List configured devices", cmd_device_list, 1, 0),
+	SHELL_CMD_ARG(sample, NULL, "Sample configured device and print values <index> (0-7).", cmd_device_sample_idx, 2, 0),
+	SHELL_CMD_ARG(reset, NULL, "Reset configured device <index> (0-7).", cmd_device_reset_idx, 2, 0),
+	SHELL_CMD_ARG(list, NULL, "List configured devices.", cmd_device_list, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
-SHELL_CMD_REGISTER(device, &sub_device, "Device commands", NULL);
+SHELL_CMD_REGISTER(device, &sub_device, "Device commands.", NULL);
 
 /* clang-format on */

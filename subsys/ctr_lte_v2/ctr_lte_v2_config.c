@@ -131,6 +131,8 @@ int ctr_lte_v2_config_cmd(const struct shell *shell, size_t argc, char **argv)
 	return ctr_config_cmd_config(m_config_items, ARRAY_SIZE(m_config_items), shell, argc, argv);
 }
 
+CTR_CONFIG_SUBCMD_GET_DEFINE(ctr_lte_v2_config_subcmd_get, m_config_items, ctr_lte_v2_config_cmd)
+
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
 	if (!strncmp(key, "clksync", 7)) { /* obsolete key, ignore load */

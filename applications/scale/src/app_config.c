@@ -88,6 +88,8 @@ int app_config_cmd_config(const struct shell *shell, size_t argc, char **argv)
 	return ctr_config_cmd_config(items, ARRAY_SIZE(items), shell, argc, argv);
 }
 
+CTR_CONFIG_SUBCMD_GET_DEFINE(app_config_subcmd_get, items, app_config_cmd_config)
+
 static int h_set(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
 	/* ### Preserved code "h_set" (begin) */

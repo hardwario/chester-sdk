@@ -242,9 +242,11 @@ int cmd_heap(const struct shell *shell, size_t argc, char **argv)
 
 /* clang-format off */
 
+SHELL_DYNAMIC_CMD_CREATE(sub_app_config, app_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 
-			       SHELL_CMD_ARG(config, NULL, "Configurations commands.",
+			       SHELL_CMD_ARG(config, &sub_app_config, "Configuration commands.",
 					     app_config_cmd_config, 1, 3),
 
 /* ### Preserved code "subcmd" (begin) */
@@ -259,20 +261,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 	SHELL_CMD_ARG(on, NULL, "Enable wM-Bus receiver.", cmd_on, 0, 0),
 	SHELL_CMD_ARG(off, NULL, "Disable wM-Bus receiver.", cmd_off, 0, 0),
-	SHELL_CMD_ARG(config, NULL, "Config wM-Bus receiver.", cmd_config, 0, 0),
+	SHELL_CMD_ARG(config, NULL, "Configure wM-Bus receiver [reset|<hex_command>] (no argument: default setup).", cmd_config, 0, 0),
 
 	SHELL_CMD_ARG(scan, NULL, "Trigger manual wM-Bus scan.", cmd_scan, 0, 0),
 	SHELL_CMD_ARG(timeout, NULL, "Stop manual wM-Bus scan.", cmd_timeout, 0, 0),
-	SHELL_CMD_ARG(enroll, NULL, "Scan and save sensors around. wm enroll <timeout> <rssi_threshold>.", cmd_enroll, 0, 3),
+	SHELL_CMD_ARG(enroll, NULL, "Scan and save nearby sensors [timeout_s] [rssi_threshold_dbm] (5-86400, default scan-timeout; -128-0, default -150 = no limit).", cmd_enroll, 0, 3),
 
 	SHELL_CMD_ARG(send, NULL, "Send data immediately.", cmd_send, 0, 0),
-	SHELL_CMD_ARG(weekday, NULL, "Get current weekday.", cmd_weekday, 0, 0),
+	SHELL_CMD_ARG(weekday, NULL, "Log current weekday (debug log level).", cmd_weekday, 0, 0),
 
-	SHELL_CMD_ARG(ant, NULL, "Manually control RF switch.", cmd_ant, 3, 0),
+	SHELL_CMD_ARG(ant, NULL, "Manually control RF switch <antenna> <state> (antenna: 1|2, state: 0|1).", cmd_ant, 3, 0),
 
-	SHELL_CMD_ARG(push, NULL, "Debug push packet to buffer.", cmd_packet_push, 0, 0),
-	SHELL_CMD_ARG(poll, NULL, "Debug poll server for data.", cmd_packet_poll, 0, 0),
-	SHELL_CMD_ARG(poll_ts, NULL, "Get timestamp of last downlink.", cmd_packet_poll_ts, 0, 0),
+	SHELL_CMD_ARG(push, NULL, "Push test packet to buffer (debug).", cmd_packet_push, 0, 0),
+	SHELL_CMD_ARG(poll, NULL, "Poll cloud for new data (debug).", cmd_packet_poll, 0, 0),
+	SHELL_CMD_ARG(poll_ts, NULL, "Show timestamp of last downlink.", cmd_packet_poll_ts, 0, 0),
 
 	SHELL_CMD_ARG(heap, NULL, "Show heap usage.", cmd_heap, 0, 0),
 

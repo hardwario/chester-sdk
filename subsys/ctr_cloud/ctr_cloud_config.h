@@ -27,6 +27,7 @@ extern struct ctr_cloud_config g_ctr_cloud_config;
 
 int ctr_cloud_config_cmd_show(const struct shell *shell, size_t argc, char **argv);
 int ctr_cloud_config_cmd(const struct shell *shell, size_t argc, char **argv);
+void ctr_cloud_config_subcmd_get(size_t idx, struct shell_static_entry *entry);
 
 #ifdef __cplusplus
 }

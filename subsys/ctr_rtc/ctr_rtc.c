@@ -366,11 +366,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_rtc,
 
 	SHELL_CMD_ARG(get, NULL,
-	              "Get current date/time (format YYYY/MM/DD hh:mm:ss).",
+	              "Get current UTC date/time (printed as YYYY/MM/DD hh:mm:ss).",
 	              cmd_rtc_get, 1, 0),
 
 	SHELL_CMD_ARG(set, NULL,
-	              "Set current date/time (format YYYY/MM/DD hh:mm:ss).",
+	              "Set current UTC date/time <YYYY/MM/DD> <hh:mm:ss>.",
 	              cmd_rtc_set, 3, 0),
 
 	SHELL_SUBCMD_SET_END

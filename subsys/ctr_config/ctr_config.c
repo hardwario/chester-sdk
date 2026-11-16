@@ -28,10 +28,12 @@
 
 /* Standard includes */
 #include <ctype.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 LOG_MODULE_REGISTER(ctr_config, CONFIG_CTR_CONFIG_LOG_LEVEL);
 
@@ -478,6 +480,114 @@ int ctr_config_cmd_config(const struct ctr_config_item *items, int nitems,
 	}
 
 	return 0;
+}
+
+/* Help text of the most recently fetched dynamic subcommand. The Zephyr shell prints the help of
+ * a dynamic entry right after fetching it, so one shared buffer is enough. */
+static char m_subcmd_help[192];
+
+static void subcmd_help_append(size_t *pos, const char *fmt, ...)
+{
+	char tmp[96];
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintf(tmp, sizeof(tmp), fmt, ap);
+	va_end(ap);
+
+	/* The shell prints help texts as format strings, so escape '%' */
+	for (const char *s = tmp; *s != '\0' && *pos < sizeof(m_subcmd_help) - 2; s++) {
+		if (*s == '%') {
+			m_subcmd_help[(*pos)++] = '%';
+		}
+		m_subcmd_help[(*pos)++] = *s;
+	}
+
+	m_subcmd_help[*pos] = '\0';
+}
+
+static const char *subcmd_help_format(const struct ctr_config_item *item)
+{
+	size_t pos = 0;
+
+	m_subcmd_help[0] = '\0';
+
+	if (item->help != NULL) {
+		subcmd_help_append(&pos, "%s ", item->help);
+	}
+
+	switch (item->type) {
+	case CTR_CONFIG_TYPE_INT:
+	case CTR_CONFIG_TYPE_FLOAT:
+		subcmd_help_append(&pos, "<%d~%d>", item->min, item->max);
+		break;
+
+	case CTR_CONFIG_TYPE_BOOL:
+		subcmd_help_append(&pos, "<true/false>");
+		break;
+
+	case CTR_CONFIG_TYPE_ENUM: {
+		bool first = true;
+
+		subcmd_help_append(&pos, "<");
+		for (int i = 0; i < item->max; i++) {
+			if (strlen(item->enums[i])) {
+				subcmd_help_append(&pos, first ? "%s" : "/%s", item->enums[i]);
+				first = false;
+			}
+		}
+		subcmd_help_append(&pos, ">");
+		break;
+	}
+
+	case CTR_CONFIG_TYPE_STRING:
+		subcmd_help_append(&pos, "<string, max %d chars>", (int)item->size - 1);
+		break;
+
+	case CTR_CONFIG_TYPE_HEX:
+		subcmd_help_append(&pos, "<hex, %d B>", (int)item->size);
+		break;
+	}
+
+	return m_subcmd_help;
+}
+
+void ctr_config_subcmd_get(const struct ctr_config_item *items, int nitems, size_t idx,
+			   struct shell_static_entry *entry, shell_cmd_handler handler)
+{
+	memset(entry, 0, sizeof(*entry));
+
+	if (idx == 0) {
+		entry->syntax = "show";
+		entry->help = "Show all parameters with their current values.";
+	} else if (idx <= nitems) {
+		entry->syntax = items[idx - 1].name;
+		entry->help = subcmd_help_format(&items[idx - 1]);
+	} else {
+		entry->syntax = NULL;
+		return;
+	}
+
+	entry->handler = handler;
+	entry->args.mandatory = 1;
+	entry->args.optional = SHELL_OPT_ARG_CHECK_SKIP;
+}
+
+int ctr_config_subcmd_forward(const struct shell *shell, size_t argc, char **argv,
+			      shell_cmd_handler handler)
+{
+	char *fwd_argv[CONFIG_SHELL_ARGC_MAX + 2];
+
+	if (argc > CONFIG_SHELL_ARGC_MAX) {
+		return -EINVAL;
+	}
+
+	/* Rebuild the argv the parent `config` handler would get: config <name> [<value>] */
+	fwd_argv[0] = "config";
+	memcpy(&fwd_argv[1], argv, argc * sizeof(argv[0]));
+	fwd_argv[argc + 1] = NULL;
+
+	return handler(shell, argc + 1, fwd_argv);
 }
 
 int ctr_config_h_set(const struct ctr_config_item *items, int nitems, const char *key, size_t len,

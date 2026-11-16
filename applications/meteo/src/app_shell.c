@@ -126,17 +126,19 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 
 /* clang-format off */
 
+SHELL_DYNAMIC_CMD_CREATE(sub_app_config, app_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 
-			       SHELL_CMD_ARG(config, NULL, "Configurations commands.",
+			       SHELL_CMD_ARG(config, &sub_app_config, "Configuration commands.",
 					     app_config_cmd_config, 1, 3),
 
 /* ### Preserved code "subcmd" (begin) */
 #if defined(FEATURE_HARDWARE_CHESTER_METEO_M)
-SHELL_CMD_ARG(modbus, NULL, "Read Modbus data. Optional: modbus sample",
+SHELL_CMD_ARG(modbus, NULL, "Print Modbus sensor data [sample] (sample: sample sensors first).",
 			   cmd_modbus_read, 1, 1),
-SHELL_CMD_ARG(modbus_set_sensecap, NULL, "Set SenseCAP address. Usage: ... <current> <new>", cmd_modbus_set_sensecap, 3, 0),
-SHELL_CMD_ARG(modbus_set_cubic, NULL, "Set Cubic PM address. Usage: ... <current> <new>", cmd_modbus_set_cubic, 3, 0),
+SHELL_CMD_ARG(modbus_set_sensecap, NULL, "Set SenseCAP Modbus address <current> <new> (1-247).", cmd_modbus_set_sensecap, 3, 0),
+SHELL_CMD_ARG(modbus_set_cubic, NULL, "Set Cubic PM Modbus address <current> <new> (1-247).", cmd_modbus_set_cubic, 3, 0),
 #endif /* defined(FEATURE_HARDWARE_CHESTER_METEO_M) */
 /* ^^^ Preserved code "subcmd" (end) */
 
@@ -145,10 +147,10 @@ SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 
 SHELL_CMD_REGISTER(sample, NULL, "Sample immediately.", cmd_sample);
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
-SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately", cmd_aggreg);
+SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately.", cmd_aggreg);
 
 /* ### Preserved code "functions 2" (begin) */
-SHELL_CMD_REGISTER(sensors_read, NULL, "Read sensors and print values to shell", cmd_read);
+SHELL_CMD_REGISTER(sensors_read, NULL, "Read sensors and print values.", cmd_read);
 /* ^^^ Preserved code "functions 2" (end) */
 
 /* clang-format on */

@@ -187,8 +187,8 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 
 /* Shell command entries */
 static const struct shell_static_entry or_we_504_subcmds[] = {
-	SHELL_CMD_ARG(sample, NULL, "Read values: sample <addr>", cmd_sample, 2, 0),
-	SHELL_CMD_ARG(config, NULL, "Change address: config <addr> <new_addr>", cmd_config, 3, 0),
+	SHELL_CMD_ARG(sample, NULL, "Read and print values <addr> (1-247).", cmd_sample, 2, 0),
+	SHELL_CMD_ARG(config, NULL, "Change device address <addr> <new_addr> (1-247).", cmd_config, 3, 0),
 	SHELL_SUBCMD_SET_END
 };
 

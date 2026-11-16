@@ -114,10 +114,10 @@ parameters:
 commands:
   - name: sample
     callback: app_work_sample()
-    help: "Trigger immediate sampling"
+    help: "Sample immediately."
   - name: send
     callback: app_work_send()
-    help: "Send data immediately"
+    help: "Send data immediately."
 
 extras:
   - CONFIG_MODBUS=y

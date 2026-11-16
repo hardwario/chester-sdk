@@ -545,9 +545,9 @@ static int cmd_microsens_reset(const struct shell *shell, size_t argc, char **ar
  * static variables which cannot be exported.
  */
 const struct shell_static_entry microsens_shell_subcmds[] = {
-	SHELL_CMD_ARG(sample, NULL, "Sample MicroSENS 180-HS sensor", cmd_microsens_sample, 1, 0),
-	SHELL_CMD_ARG(calibrate, NULL, "Calibrate sensor: zero [value]", cmd_microsens_calibrate, 2, 1),
-	SHELL_CMD_ARG(reset, NULL, "Soft reset MicroSENS sensor", cmd_microsens_reset, 1, 0),
+	SHELL_CMD_ARG(sample, NULL, "Sample MicroSENS 180-HS sensor.", cmd_microsens_sample, 1, 0),
+	SHELL_CMD_ARG(calibrate, NULL, "Calibrate sensor <zero> [value] (value: 0-500 = 0-5000 ppm CO2, default 40).", cmd_microsens_calibrate, 2, 1),
+	SHELL_CMD_ARG(reset, NULL, "Soft reset MicroSENS sensor.", cmd_microsens_reset, 1, 0),
 	SHELL_SUBCMD_SET_END
 };
 

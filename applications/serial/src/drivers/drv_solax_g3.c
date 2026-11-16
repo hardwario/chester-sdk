@@ -446,9 +446,9 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 }
 
 static const struct shell_static_entry solax_g3_subcmds[] = {
-	SHELL_CMD_ARG(sample, NULL, "Read customer set: sample <addr>", cmd_sample, 2, 0),
-	SHELL_CMD_ARG(service, NULL, "Read service set: service <addr>", cmd_service, 2, 0),
-	SHELL_CMD_ARG(config, NULL, "How to set the address: config <addr>", cmd_config, 1, 1),
+	SHELL_CMD_ARG(sample, NULL, "Read and print customer register set <addr> (1-247).", cmd_sample, 2, 0),
+	SHELL_CMD_ARG(service, NULL, "Read and print service register set <addr> (1-247).", cmd_service, 2, 0),
+	SHELL_CMD_ARG(config, NULL, "Print how to set the device address.", cmd_config, 1, 1),
 	SHELL_SUBCMD_SET_END};
 
 const union shell_cmd_entry solax_g3_shell_cmds = {

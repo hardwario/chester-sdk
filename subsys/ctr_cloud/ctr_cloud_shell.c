@@ -260,7 +260,7 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_cloud_firmware,
 
 			       SHELL_CMD_ARG(download, NULL,
-					     "Download firmware. (format: <fw-id>).",
+					     "Download firmware <fw-id>.",
 					     cmd_firmware_download, 2, 0),
 
 			       SHELL_SUBCMD_SET_END);
@@ -272,7 +272,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cloud_spool,
 			       SHELL_CMD_ARG(count, NULL, "Get number of spooled messages.",
 					     cmd_spool_count, 1, 0),
 			       SHELL_CMD_ARG(fake, NULL,
-					     "Create fake spooled messages (format: <count>).",
+					     "Create fake spooled messages <count (1-100)>.",
 					     cmd_spool_fake, 2, 0),
 			       SHELL_CMD_ARG(clean, NULL, "Delete all spooled messages.",
 					     cmd_spool_clean, 1, 0),
@@ -281,10 +281,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cloud_spool,
 
 #endif /* defined(CONFIG_CTR_CLOUD_SPOOL) */
 
+#if defined(CONFIG_CTR_CLOUD_CONFIG)
+SHELL_DYNAMIC_CMD_CREATE(sub_cloud_config, ctr_cloud_config_subcmd_get);
+#endif /* defined(CONFIG_CTR_CLOUD_CONFIG) */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_cloud,
 #if defined(CONFIG_CTR_CLOUD_CONFIG)
-	SHELL_CMD_ARG(config, NULL, "Configuration commands.", ctr_cloud_config_cmd, 1, 3),
+	SHELL_CMD_ARG(config, &sub_cloud_config, "Configuration commands.", ctr_cloud_config_cmd, 1, 3),
 #endif
 #if defined(CONFIG_CTR_CLOUD_SPOOL)
 	SHELL_CMD_ARG(spool, &sub_cloud_spool, "Spool commands.", print_help, 1, 0),

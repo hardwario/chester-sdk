@@ -104,9 +104,11 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 
 /* clang-format off */
 
+SHELL_DYNAMIC_CMD_CREATE(sub_app_config, app_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 
-			       SHELL_CMD_ARG(config, NULL, "Configurations commands.",
+			       SHELL_CMD_ARG(config, &sub_app_config, "Configuration commands.",
 					     app_config_cmd_config, 1, 3),
 
 /* ### Preserved code "subcmd" (begin) */
@@ -117,9 +119,9 @@ SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
 SHELL_CMD_REGISTER(measure, NULL, "Measure immediately.", cmd_measure);
-SHELL_CMD_REGISTER(test, NULL, "Test immediately.", cmd_test);
+SHELL_CMD_REGISTER(test, NULL, "Measure weight channels and print raw values.", cmd_test);
 SHELL_CMD_REGISTER(sample, NULL, "Sample immediately.", cmd_sample);
-SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately", cmd_aggreg);
+SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately.", cmd_aggreg);
 
 /* ### Preserved code "functions 2" (begin) */
 /* ^^^ Preserved code "functions 2" (end) */

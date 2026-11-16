@@ -510,8 +510,8 @@ static int cmd_rppu_serial(const struct shell *shell, size_t argc, char **argv)
 /* clang-format off */
 
 const struct shell_static_entry piketronic_rppu_shell_subcmds[] = {
-	SHELL_CMD_ARG(sample, NULL, "Read actual data (D)", cmd_rppu_sample, 1, 0),
-	SHELL_CMD_ARG(serial, NULL, "Read serial number (V)", cmd_rppu_serial, 1, 0),
+	SHELL_CMD_ARG(sample, NULL, "Sample configured probe and print data.", cmd_rppu_sample, 1, 0),
+	SHELL_CMD_ARG(serial, NULL, "Read and print probe serial number.", cmd_rppu_serial, 1, 0),
 	SHELL_SUBCMD_SET_END
 };
 

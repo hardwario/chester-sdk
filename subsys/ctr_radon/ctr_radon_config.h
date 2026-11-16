@@ -15,6 +15,7 @@ extern struct ctr_radon_config g_ctr_radon_config;
 
 int ctr_radon_config_cmd_show(const struct shell *shell, size_t argc, char **argv);
 int ctr_radon_config_cmd(const struct shell *shell, size_t argc, char **argv);
+void ctr_radon_config_subcmd_get(size_t idx, struct shell_static_entry *entry);
 int ctr_radon_config_init(void);
 
 #endif /* CTR_RADON_CONFIG_H_ */

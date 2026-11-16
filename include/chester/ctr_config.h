@@ -157,6 +157,56 @@ int ctr_config_init_item(const struct ctr_config_item *item);
 
 int ctr_config_cmd_config(const struct ctr_config_item *items, int nitems,
 			  const struct shell *shell, size_t argc, char **argv);
+
+/**
+ * @brief Fill a dynamic shell subcommand entry for a config item table.
+ *
+ * Index 0 is `show`, the following indexes are the items. Used by
+ * @ref CTR_CONFIG_SUBCMD_GET_DEFINE, not meant to be called directly.
+ */
+void ctr_config_subcmd_get(const struct ctr_config_item *items, int nitems, size_t idx,
+			   struct shell_static_entry *entry, shell_cmd_handler handler);
+
+/**
+ * @brief Call a `config` handler as `config <argv...>` from a dynamic subcommand handler.
+ *
+ * Used by @ref CTR_CONFIG_SUBCMD_GET_DEFINE, not meant to be called directly.
+ */
+int ctr_config_subcmd_forward(const struct shell *shell, size_t argc, char **argv,
+			      shell_cmd_handler handler);
+
+/**
+ * @brief Define a dynamic shell subcommand getter for a config item table.
+ *
+ * Exposes `show` and every item of @p _items as a subcommand of a `config` command, so that
+ * `config -h` lists the parameters (with type, range and allowed values) and
+ * `config <name> -h` describes one parameter. Executing a subcommand calls @p _handler exactly
+ * as if it was called as `config <name> [<value>]`, so the behaviour of the command does not
+ * change.
+ *
+ * Usage:
+ * @code
+ * CTR_CONFIG_SUBCMD_GET_DEFINE(foo_config_subcmd_get, m_config_items, cmd_config);
+ * SHELL_DYNAMIC_CMD_CREATE(sub_foo_config, foo_config_subcmd_get);
+ * ...
+ * SHELL_CMD_ARG(config, &sub_foo_config, "Configuration commands.", cmd_config, 1, 3),
+ * @endcode
+ *
+ * @param _get Name of the (non-static) getter function to define.
+ * @param _items Array of struct ctr_config_item (must be an array, not a pointer).
+ * @param _handler Existing `config` command handler.
+ */
+#define CTR_CONFIG_SUBCMD_GET_DEFINE(_get, _items, _handler)                                       \
+	static int _get##_handler(const struct shell *shell, size_t argc, char **argv)            \
+	{                                                                                          \
+		return ctr_config_subcmd_forward(shell, argc, argv, _handler);                     \
+	}                                                                                          \
+	void _get(size_t idx, struct shell_static_entry *entry);                                   \
+	void _get(size_t idx, struct shell_static_entry *entry)                                    \
+	{                                                                                          \
+		ctr_config_subcmd_get(_items, ARRAY_SIZE(_items), idx, entry, _get##_handler);     \
+	}
+
 int ctr_config_h_export(const struct ctr_config_item *items, int nitems,
 			int (*export_func)(const char *name, const void *val, size_t val_len));
 int ctr_config_h_set(const struct ctr_config_item *items, int nitems, const char *key, size_t len,

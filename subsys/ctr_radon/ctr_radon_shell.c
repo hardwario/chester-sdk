@@ -68,14 +68,16 @@ static int print_help(const struct shell *shell, size_t argc, char **argv)
 }
 
 /* clang-format off */
+SHELL_DYNAMIC_CMD_CREATE(sub_radon_config, ctr_radon_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_radon,
 
-	SHELL_CMD_ARG(config, NULL,
+	SHELL_CMD_ARG(config, &sub_radon_config,
 	              "Configuration commands.",
 	              ctr_radon_config_cmd, 1, 3),
 	
-	SHELL_CMD_ARG(read, NULL, "Read radon probe", cmd_read, 1, 0),
+	SHELL_CMD_ARG(read, NULL, "Read radon probe.", cmd_read, 1, 0),
 
 	SHELL_SUBCMD_SET_END
 );

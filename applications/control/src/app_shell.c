@@ -450,9 +450,11 @@ static int cmd_sensor_scan(const struct shell *shell, size_t argc, char **argv)
 
 /* clang-format off */
 
+SHELL_DYNAMIC_CMD_CREATE(sub_app_config, app_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 
-			       SHELL_CMD_ARG(config, NULL, "Configurations commands.",
+			       SHELL_CMD_ARG(config, &sub_app_config, "Configuration commands.",
 					     app_config_cmd_config, 1, 3),
 
 /* ### Preserved code "subcmd" (begin) */
@@ -468,23 +470,26 @@ SHELL_CMD_REGISTER(poll, NULL, "Poll cloud immediately.", cmd_poll);
 /* ### Preserved code "functions 2" (begin) */
 #if defined(FEATURE_HARDWARE_CHESTER_X0_A)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_channel,
-			       SHELL_CMD_ARG(show, NULL, "Show channel status.",
+			       SHELL_CMD_ARG(show, NULL, "Show channel status [channel ...] (1-4, 1-8 with X0 B; all if omitted).",
 					     cmd_channel_show, 1, 8),
-			       SHELL_CMD_ARG(read, NULL, "Read channel: read <channel> [timeout_s]",
+			       SHELL_CMD_ARG(read, NULL, "Print live channel value every second <channel> [duration_s] (default 10).",
 					     cmd_channel_read, 2, 1),
-			       SHELL_CMD_ARG(reset, NULL, "Reset channel data: reset [channel]",
+			       SHELL_CMD_ARG(reset, NULL, "Reset channel data [channel] (all if omitted).",
 					     cmd_channel_reset, 1, 1),
 			       SHELL_SUBCMD_SET_END);
 SHELL_CMD_REGISTER(channel, &sub_channel, "Channel commands.", print_help);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor,
-			       SHELL_CMD_ARG(show, NULL, "Show sensor data.",
+			       SHELL_CMD_ARG(show, NULL, "Show data of all configured sensors.",
 					     cmd_sensor_show, 1, 0),
-			       SHELL_CMD_ARG(read, NULL, "Live read: read <sensor> [count]",
+			       SHELL_CMD_ARG(read, NULL,
+					     "Sample a sensor and print its data, once per second "
+					     "<sensor> [count] (sensor: 1-4, count: 1-60, default 1).",
 					     cmd_sensor_read, 2, 1),
 			       SHELL_CMD_ARG(scan, NULL,
-					     "Find which channel the sensor is wired to: "
-					     "scan [supply_channel] [slot]",
+					     "Find which channel the sensor is wired to "
+					     "[supply_channel] [slot] (supply_channel: 1-4, 1-8 with X0 B, "
+					     "default: configured sensor's; slot: 1-4).",
 					     cmd_sensor_scan, 1, 2),
 			       SHELL_SUBCMD_SET_END);
 SHELL_CMD_REGISTER(sensor, &sub_sensor, "Sensor commands.", print_help);

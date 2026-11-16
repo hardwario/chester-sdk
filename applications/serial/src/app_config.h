@@ -91,6 +91,7 @@ int app_config_cmd_config_show(const struct shell *shell, size_t argc, char **ar
 int app_config_cmd_config_mode(const struct shell *shell, size_t argc, char **argv);
 
 int app_config_cmd_config(const struct shell *shell, size_t argc, char **argv);
+void app_config_subcmd_get(size_t idx, struct shell_static_entry *entry);
 
 /* ### Preserved code "functions" (begin) */
 /* ^^^ Preserved code "functions" (end) */

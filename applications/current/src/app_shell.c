@@ -280,9 +280,11 @@ DEFINE_CHANNEL_COMMANDS(4)
 
 /* clang-format off */
 
+SHELL_DYNAMIC_CMD_CREATE(sub_app_config, app_config_subcmd_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_app,
 
-			       SHELL_CMD_ARG(config, NULL, "Configurations commands.",
+			       SHELL_CMD_ARG(config, &sub_app_config, "Configuration commands.",
 					     app_config_cmd_config, 1, 3),
 
 /* ### Preserved code "subcmd" (begin) */
@@ -293,7 +295,7 @@ SHELL_CMD_REGISTER(app, &sub_app, "Application commands.", print_help);
 
 SHELL_CMD_REGISTER(sample, NULL, "Sample immediately.", cmd_sample);
 SHELL_CMD_REGISTER(send, NULL, "Send data immediately.", cmd_send);
-SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately", cmd_aggreg);
+SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately.", cmd_aggreg);
 
 /* ### Preserved code "functions 2" (begin) */
 
@@ -304,35 +306,35 @@ SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately", cmd_aggreg);
 	static const struct shell_static_entry shell_sub_channel_##n##_calib[] = {             \
 		{                                                                              \
 			.syntax = "set-0",                                                     \
-			.help = "Set calibration point 0 <real_value>",                        \
+			.help = "Set calibration point 0 to current reading <real_value>.",    \
 			.subcmd = NULL,                                                        \
 			.handler = cmd_channel_##n##_calib_0,                                  \
 			.args = { .mandatory = 2, .optional = 0 }                              \
 		},                                                                             \
 		{                                                                              \
 			.syntax = "set-1",                                                     \
-			.help = "Set calibration point 1 <real_value>",                        \
+			.help = "Set calibration point 1 to current reading <real_value>.",    \
 			.subcmd = NULL,                                                        \
 			.handler = cmd_channel_##n##_calib_1,                                  \
 			.args = { .mandatory = 2, .optional = 0 }                              \
 		},                                                                             \
 		{                                                                              \
 			.syntax = "show",                                                      \
-			.help = "Show calibration",                                            \
+			.help = "Show calibration.",                                           \
 			.subcmd = NULL,                                                        \
 			.handler = cmd_channel_##n##_calib_show,                               \
 			.args = { .mandatory = 1, .optional = 0 }                              \
 		},                                                                             \
 		{                                                                              \
 			.syntax = "reset",                                                     \
-			.help = "Reset calibration to 0",                                      \
+			.help = "Reset calibration points to 0.",                              \
 			.subcmd = NULL,                                                        \
 			.handler = cmd_channel_##n##_calib_reset,                              \
 			.args = { .mandatory = 1, .optional = 0 }                              \
 		},                                                                             \
 		{                                                                              \
 			.syntax = "mode",                                                      \
-			.help = "Set/show mode (avg|rms)",                                     \
+			.help = "Get/set calibration mode [avg|rms].",                         \
 			.subcmd = NULL,                                                        \
 			.handler = cmd_channel_##n##_calib_mode,                               \
 			.args = { .mandatory = 1, .optional = 1 }                              \
@@ -346,14 +348,14 @@ SHELL_CMD_REGISTER(aggreg, NULL, "Aggregate data immediately", cmd_aggreg);
 	static const struct shell_static_entry shell_sub_channel_##n[] = {                     \
 		{                                                                              \
 			.syntax = "read",                                                      \
-			.help = "Read raw mV value",                                           \
+			.help = "Read avg/rms value in mV and calibrated value.",              \
 			.subcmd = NULL,                                                        \
 			.handler = cmd_channel_##n##_read,                                     \
 			.args = { .mandatory = 1, .optional = 0 }                              \
 		},                                                                             \
 		{                                                                              \
 			.syntax = "calib",                                                     \
-			.help = "Calibration commands",                                        \
+			.help = "Calibration commands.",                                       \
 			.subcmd = &sub_channel_##n##_calib,                                    \
 			.handler = print_help,                                                 \
 			.args = { .mandatory = 1, .optional = 0 }                              \
@@ -375,28 +377,28 @@ DEFINE_CHANNEL_SUBCMDS(4);
 static const struct shell_static_entry shell_sub_current[] = {
 	{
 		.syntax = "channel-1",
-		.help = "Channel 1 commands",
+		.help = "Channel 1 commands.",
 		.subcmd = &sub_channel_1,
 		.handler = print_help,
 		.args = { .mandatory = 1, .optional = 0 }
 	},
 	{
 		.syntax = "channel-2",
-		.help = "Channel 2 commands",
+		.help = "Channel 2 commands.",
 		.subcmd = &sub_channel_2,
 		.handler = print_help,
 		.args = { .mandatory = 1, .optional = 0 }
 	},
 	{
 		.syntax = "channel-3",
-		.help = "Channel 3 commands",
+		.help = "Channel 3 commands.",
 		.subcmd = &sub_channel_3,
 		.handler = print_help,
 		.args = { .mandatory = 1, .optional = 0 }
 	},
 	{
 		.syntax = "channel-4",
-		.help = "Channel 4 commands",
+		.help = "Channel 4 commands.",
 		.subcmd = &sub_channel_4,
 		.handler = print_help,
 		.args = { .mandatory = 1, .optional = 0 }
