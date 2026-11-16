@@ -125,6 +125,9 @@ Macros</h2></td></tr>
 <tr class="separator:ga80f8171fbeb22746dc76911687c30918"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaf517ad3a0fdb9f5ca32b3a01eb96d9b2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#gaf517ad3a0fdb9f5ca32b3a01eb96d9b2">CTR_CONFIG_ITEM_HEX</a>(_name_d,  _var,  _help,  _default)</td></tr>
 <tr class="separator:gaf517ad3a0fdb9f5ca32b3a01eb96d9b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac05d9adeec5e35186e24396a11f8f798"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#gac05d9adeec5e35186e24396a11f8f798">CTR_CONFIG_SUBCMD_GET_DEFINE</a>(_get,  _items,  _handler)</td></tr>
+<tr class="memdesc:gac05d9adeec5e35186e24396a11f8f798"><td class="mdescLeft">&#160;</td><td class="mdescRight">Define a dynamic shell subcommand getter for a config item table.  <a href="group__ctr__config.html#gac05d9adeec5e35186e24396a11f8f798">More...</a><br /></td></tr>
+<tr class="separator:gac05d9adeec5e35186e24396a11f8f798"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -165,6 +168,12 @@ Functions</h2></td></tr>
 <tr class="separator:ga3e4bee5d7eee64cb53697466d6d3d5d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac82e387e5505961da8f2d8b82b5f4f45"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#gac82e387e5505961da8f2d8b82b5f4f45">ctr_config_cmd_config</a> (const struct <a class="el" href="structctr__config__item.html">ctr_config_item</a> *items, int nitems, const struct shell *shell, size_t argc, char **argv)</td></tr>
 <tr class="separator:gac82e387e5505961da8f2d8b82b5f4f45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab1af4dec5eaa3f2504947a549ef22a0c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#gab1af4dec5eaa3f2504947a549ef22a0c">ctr_config_subcmd_get</a> (const struct <a class="el" href="structctr__config__item.html">ctr_config_item</a> *items, int nitems, size_t idx, struct shell_static_entry *entry, shell_cmd_handler handler)</td></tr>
+<tr class="memdesc:gab1af4dec5eaa3f2504947a549ef22a0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fill a dynamic shell subcommand entry for a config item table.  <a href="group__ctr__config.html#gab1af4dec5eaa3f2504947a549ef22a0c">More...</a><br /></td></tr>
+<tr class="separator:gab1af4dec5eaa3f2504947a549ef22a0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0ab4e5e3cc1e9ce07b5629b763bd27c8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#ga0ab4e5e3cc1e9ce07b5629b763bd27c8">ctr_config_subcmd_forward</a> (const struct shell *shell, size_t argc, char **argv, shell_cmd_handler handler)</td></tr>
+<tr class="memdesc:ga0ab4e5e3cc1e9ce07b5629b763bd27c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Call a <code>config</code> handler as <code>config &lt;argv...&gt;</code> from a dynamic subcommand handler.  <a href="group__ctr__config.html#ga0ab4e5e3cc1e9ce07b5629b763bd27c8">More...</a><br /></td></tr>
+<tr class="separator:ga0ab4e5e3cc1e9ce07b5629b763bd27c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8bde8a0f7ab362f1cce5977a2aee0bc0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#ga8bde8a0f7ab362f1cce5977a2aee0bc0">ctr_config_h_export</a> (const struct <a class="el" href="structctr__config__item.html">ctr_config_item</a> *items, int nitems, int(*export_func)(const char *name, const void *val, size_t val_len))</td></tr>
 <tr class="separator:ga8bde8a0f7ab362f1cce5977a2aee0bc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga41ea775a61f0e991f376377d9c051512"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__config.html#ga41ea775a61f0e991f376377d9c051512">ctr_config_h_set</a> (const struct <a class="el" href="structctr__config__item.html">ctr_config_item</a> *items, int nitems, const char *key, size_t len, settings_read_cb read_cb, void *cb_arg)</td></tr>
@@ -565,6 +574,66 @@ Functions</h2></td></tr>
 </div><!-- fragment -->
 </div>
 </div>
+<a id="gac05d9adeec5e35186e24396a11f8f798" name="gac05d9adeec5e35186e24396a11f8f798"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gac05d9adeec5e35186e24396a11f8f798">&#9670;&#160;</a></span>CTR_CONFIG_SUBCMD_GET_DEFINE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CTR_CONFIG_SUBCMD_GET_DEFINE</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_get, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_items, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">_handler&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">    <span class="keyword">static</span> <span class="keywordtype">int</span> _get##_handler(<span class="keyword">const</span> <span class="keyword">struct</span> shell *shell, <span class="keywordtype">size_t</span> argc, <span class="keywordtype">char</span> **argv)            \</div>
+<div class="line">    {                                                                                          \</div>
+<div class="line">        <span class="keywordflow">return</span> <a class="code hl_function" href="group__ctr__config.html#ga0ab4e5e3cc1e9ce07b5629b763bd27c8">ctr_config_subcmd_forward</a>(shell, argc, argv, _handler);                     \</div>
+<div class="line">    }                                                                                          \</div>
+<div class="line">    <span class="keywordtype">void</span> _get(<span class="keywordtype">size_t</span> idx, <span class="keyword">struct</span> shell_static_entry *entry);                                   \</div>
+<div class="line">    <span class="keywordtype">void</span> _get(<span class="keywordtype">size_t</span> idx, <span class="keyword">struct</span> shell_static_entry *entry)                                    \</div>
+<div class="line">    {                                                                                          \</div>
+<div class="line">        ctr_config_subcmd_get(_items, ARRAY_SIZE(_items), idx, entry, _get##_handler);     \</div>
+<div class="line">    }</div>
+<div class="ttc" id="agroup__ctr__config_html_ga0ab4e5e3cc1e9ce07b5629b763bd27c8"><div class="ttname"><a href="group__ctr__config.html#ga0ab4e5e3cc1e9ce07b5629b763bd27c8">ctr_config_subcmd_forward</a></div><div class="ttdeci">int ctr_config_subcmd_forward(const struct shell *shell, size_t argc, char **argv, shell_cmd_handler handler)</div><div class="ttdoc">Call a config handler as config &lt;argv...&gt; from a dynamic subcommand handler.</div></div>
+</div><!-- fragment -->
+<p>Define a dynamic shell subcommand getter for a config item table. </p>
+<p >Exposes <code>show</code> and every item of <code>_items</code> as a subcommand of a <code>config</code> command, so that <code>config -h</code> lists the parameters (with type, range and allowed values) and <code>config &lt;name&gt; -h</code> describes one parameter. Executing a subcommand calls <code>_handler</code> exactly as if it was called as <code>config &lt;name&gt; [&lt;value&gt;]</code>, so the behaviour of the command does not change.</p>
+<p >Usage: </p><div class="fragment"><div class="line"><a class="code hl_define" href="group__ctr__config.html#gac05d9adeec5e35186e24396a11f8f798">CTR_CONFIG_SUBCMD_GET_DEFINE</a>(foo_config_subcmd_get, m_config_items, cmd_config);</div>
+<div class="line">SHELL_DYNAMIC_CMD_CREATE(sub_foo_config, foo_config_subcmd_get);</div>
+<div class="line">...</div>
+<div class="line">SHELL_CMD_ARG(config, &amp;sub_foo_config, <span class="stringliteral">&quot;Configuration commands.&quot;</span>, cmd_config, 1, 3),</div>
+<div class="ttc" id="agroup__ctr__config_html_gac05d9adeec5e35186e24396a11f8f798"><div class="ttname"><a href="group__ctr__config.html#gac05d9adeec5e35186e24396a11f8f798">CTR_CONFIG_SUBCMD_GET_DEFINE</a></div><div class="ttdeci">#define CTR_CONFIG_SUBCMD_GET_DEFINE(_get, _items, _handler)</div><div class="ttdoc">Define a dynamic shell subcommand getter for a config item table.</div><div class="ttdef"><b>Definition:</b> ctr_config.h:199</div></div>
+</div><!-- fragment --><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">_get</td><td>Name of the (non-static) getter function to define. </td></tr>
+    <tr><td class="paramname">_items</td><td>Array of struct <a class="el" href="structctr__config__item.html">ctr_config_item</a> (must be an array, not a pointer). </td></tr>
+    <tr><td class="paramname">_handler</td><td>Existing <code>config</code> command handler. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a id="gac1f2d01f0cebb959228acda8b022add4" name="gac1f2d01f0cebb959228acda8b022add4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gac1f2d01f0cebb959228acda8b022add4">&#9670;&#160;</a></span>ctr_config_parse_cb</h2>
@@ -919,6 +988,98 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="ga0ab4e5e3cc1e9ce07b5629b763bd27c8" name="ga0ab4e5e3cc1e9ce07b5629b763bd27c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga0ab4e5e3cc1e9ce07b5629b763bd27c8">&#9670;&#160;</a></span>ctr_config_subcmd_forward()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_config_subcmd_forward </td>
+          <td>(</td>
+          <td class="paramtype">const struct shell *&#160;</td>
+          <td class="paramname"><em>shell</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>argc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char **&#160;</td>
+          <td class="paramname"><em>argv</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">shell_cmd_handler&#160;</td>
+          <td class="paramname"><em>handler</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Call a <code>config</code> handler as <code>config &lt;argv...&gt;</code> from a dynamic subcommand handler. </p>
+<p >Used by <a class="el" href="group__ctr__config.html#gac05d9adeec5e35186e24396a11f8f798">CTR_CONFIG_SUBCMD_GET_DEFINE</a>, not meant to be called directly. </p>
+
+</div>
+</div>
+<a id="gab1af4dec5eaa3f2504947a549ef22a0c" name="gab1af4dec5eaa3f2504947a549ef22a0c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gab1af4dec5eaa3f2504947a549ef22a0c">&#9670;&#160;</a></span>ctr_config_subcmd_get()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ctr_config_subcmd_get </td>
+          <td>(</td>
+          <td class="paramtype">const struct <a class="el" href="structctr__config__item.html">ctr_config_item</a> *&#160;</td>
+          <td class="paramname"><em>items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>nitems</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>idx</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">struct shell_static_entry *&#160;</td>
+          <td class="paramname"><em>entry</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">shell_cmd_handler&#160;</td>
+          <td class="paramname"><em>handler</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Fill a dynamic shell subcommand entry for a config item table. </p>
+<p >Index 0 is <code>show</code>, the following indexes are the items. Used by <a class="el" href="group__ctr__config.html#gac05d9adeec5e35186e24396a11f8f798">CTR_CONFIG_SUBCMD_GET_DEFINE</a>, not meant to be called directly. </p>
 
 </div>
 </div>

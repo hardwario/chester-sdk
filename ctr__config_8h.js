@@ -7,6 +7,7 @@ var ctr__config_8h =
     [ "CTR_CONFIG_ITEM_INT", "group__ctr__config.html#ga936d3bff8acbd6281a0c27ac84a9128f", null ],
     [ "CTR_CONFIG_ITEM_STRING", "group__ctr__config.html#ga345d55e3d70e8cafba9f535cdafa0a9a", null ],
     [ "CTR_CONFIG_ITEM_STRING_PARSE_CB", "group__ctr__config.html#ga80f8171fbeb22746dc76911687c30918", null ],
+    [ "CTR_CONFIG_SUBCMD_GET_DEFINE", "group__ctr__config.html#gac05d9adeec5e35186e24396a11f8f798", null ],
     [ "ctr_config_parse_cb", "group__ctr__config.html#gac1f2d01f0cebb959228acda8b022add4", null ],
     [ "ctr_config_show_cb", "group__ctr__config.html#gac68562a9443640c60dc453cf4633d800", null ],
     [ "ctr_config_item_type", "group__ctr__config.html#ga8287cc294380be3621f0b8ad80209bac", [
@@ -26,5 +27,7 @@ var ctr__config_8h =
     [ "ctr_config_parse_item", "group__ctr__config.html#ga2820613314101da028cdab42d6595894", null ],
     [ "ctr_config_reset", "group__ctr__config.html#ga3245d9a7d62c928953c383b59fb4884c", null ],
     [ "ctr_config_save", "group__ctr__config.html#ga19d9b023c1996faf64f2ecded448f656", null ],
-    [ "ctr_config_show_item", "group__ctr__config.html#ga69a2988354e80ec5ae0d91a437786db3", null ]
+    [ "ctr_config_show_item", "group__ctr__config.html#ga69a2988354e80ec5ae0d91a437786db3", null ],
+    [ "ctr_config_subcmd_forward", "group__ctr__config.html#ga0ab4e5e3cc1e9ce07b5629b763bd27c8", null ],
+    [ "ctr_config_subcmd_get", "group__ctr__config.html#gab1af4dec5eaa3f2504947a549ef22a0c", null ]
 ];
