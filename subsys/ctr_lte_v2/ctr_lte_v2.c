@@ -179,9 +179,10 @@ static bool txn_current(void)
 }
 
 /* End the published transaction; with only_taken, only the one the FSM took, unless the caller
- * has dropped it in the meantime */
-static void txn_settle(int result, bool only_taken, bool with_recv_len)
+ * has dropped it in the meantime. Returns whether it ended one. */
+static bool txn_settle(int result, bool only_taken, bool with_recv_len)
 {
+	bool ended = false;
 	k_spinlock_key_t key = k_spin_lock(&m_txn_lock);
 
 	if (m_send_recv_param && (!only_taken || m_txn_gen == m_txn_gen_taken)) {
@@ -194,15 +195,18 @@ static void txn_settle(int result, bool only_taken, bool with_recv_len)
 		/* Posted under the lock, so that a caller never wakes up on the end of an older
 		 * transaction */
 		k_event_post(&m_states_event, SEND_RECV_DONE_BIT);
+		ended = true;
 	}
 
 	k_spin_unlock(&m_txn_lock, key);
+
+	return ended;
 }
 
 /* End the transaction the FSM took, unless the caller has dropped it in the meantime */
-static void txn_end(int result, bool with_recv_len)
+static bool txn_end(int result, bool with_recv_len)
 {
-	txn_settle(result, true, with_recv_len);
+	return txn_settle(result, true, with_recv_len);
 }
 
 /* End the published transaction, also one the FSM has not taken (yet), in a state where it
@@ -215,15 +219,21 @@ static void txn_abort(int result)
 
 /* End the transaction the FSM took with -ENOTCONN once it has issued 1 + retry_count AT#XSEND
  * lines: the modem may have each datagram queued until the network grants a connection, so no
- * more of them */
+ * more of them. The extended error report of the modem then goes to the state, for the shell. */
 static bool txn_end_if_sends_used_up(void)
 {
 	if (m_txn_xsend_count <= MAX(m_txn.retry_count, 0)) {
 		return false;
 	}
 
-	LOG_WRN("No connection for the transaction after %d send(s)", m_txn_xsend_count);
-	txn_end(-ENOTCONN, false);
+	if (txn_end(-ENOTCONN, false)) {
+		LOG_WRN("No connection for the transaction after %d send(s)", m_txn_xsend_count);
+
+		int ret = ctr_lte_v2_flow_ceer();
+		if (ret) {
+			LOG_WRN("Call `ctr_lte_v2_flow_ceer` failed: %d", ret);
+		}
+	}
 
 	return true;
 }

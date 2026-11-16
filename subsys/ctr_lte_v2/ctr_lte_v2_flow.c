@@ -1058,6 +1058,28 @@ int ctr_lte_v2_flow_rfmux_release(void)
 	return 0;
 }
 
+int ctr_lte_v2_flow_ceer(void)
+{
+	/* Room for more than the state keeps, which cuts the report */
+	char buf[64] = {0};
+
+	int ret = ctr_lte_v2_talk_at_ceer(&m_talk, buf, sizeof(buf));
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_ceer` failed: %d", ret);
+		return ret;
+	}
+
+	if (!buf[0]) {
+		return 0;
+	}
+
+	LOG_WRN("CEER: %s", buf);
+
+	ctr_lte_v2_state_set_ceer(buf);
+
+	return 0;
+}
+
 int ctr_lte_v2_flow_coneval(void)
 {
 	int ret;

@@ -33,6 +33,14 @@ void ctr_lte_v2_state_set_iccid(const char *iccid);
 int ctr_lte_v2_state_get_modem_fw_version(char **version);
 void ctr_lte_v2_state_set_modem_fw_version(const char *version);
 
+/* The last extended error report (AT+CEER), such as "EMM 22" with the quotes: the module and the
+ * cause value of the last failure the modem stored */
+#define CTR_LTE_V2_STATE_CEER_SIZE 32
+
+/* Copies the report into buf, cut to its size and NUL-terminated; -ENODATA when there is none */
+int ctr_lte_v2_state_get_ceer(char *buf, size_t size);
+void ctr_lte_v2_state_set_ceer(const char *ceer);
+
 int ctr_lte_v2_state_get_conn_param(struct ctr_lte_v2_conn_param *param);
 void ctr_lte_v2_state_set_conn_param(const struct ctr_lte_v2_conn_param *param);
 

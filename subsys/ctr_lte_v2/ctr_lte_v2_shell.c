@@ -170,6 +170,11 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 		shell_print(shell, "earfcn: %d", conn_param.earfcn);
 	}
 
+	char ceer[CTR_LTE_V2_STATE_CEER_SIZE];
+	if (!ctr_lte_v2_state_get_ceer(ceer, sizeof(ceer))) {
+		shell_print(shell, "ceer: %s", ceer);
+	}
+
 	shell_print(shell, "fsm-state: %s", ctr_lte_v2_get_state());
 	if (strcmp(ctr_lte_v2_get_state(), "attach") == 0) {
 		int attempt, attach_timeout_sec, remaining_sec;

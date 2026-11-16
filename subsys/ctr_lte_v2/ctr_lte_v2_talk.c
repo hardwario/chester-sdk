@@ -280,6 +280,23 @@ int ctr_lte_v2_talk_at_cclk_q(struct ctr_lte_v2_talk *talk, char *buf, size_t si
 	DIALOG_EPILOG /* clang-format on */
 }
 
+/* A modem without a stored failure answers OK alone, buf stays as it is */
+int ctr_lte_v2_talk_at_ceer(struct ctr_lte_v2_talk *talk, char *buf, size_t size)
+{
+	DIALOG_PROLOG /* clang-format off */
+
+	DIALOG_ENTER();
+	DIALOG_SEND_LINE("AT+CEER");
+	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_S, {
+		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
+		DIALOG_LOOP_GATHER_PFX("+CEER: ", buf, size);
+		DIALOG_LOOP_BREAK_ON_STR("OK");
+	});
+	DIALOG_EXIT();
+
+	DIALOG_EPILOG /* clang-format on */
+}
+
 int ctr_lte_v2_talk_at_ceppi(struct ctr_lte_v2_talk *talk, int p1)
 {
 	DIALOG_PROLOG /* clang-format off */

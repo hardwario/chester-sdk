@@ -32,6 +32,7 @@ int ctr_lte_v2_talk_set_callback(struct ctr_lte_v2_talk *talk, ctr_lte_v2_talk_c
 				 void *user_data);
 int ctr_lte_v2_talk_(struct ctr_lte_v2_talk *talk, const char *s);
 int ctr_lte_v2_talk_at_cclk_q(struct ctr_lte_v2_talk *talk, char *buf, size_t size);
+int ctr_lte_v2_talk_at_ceer(struct ctr_lte_v2_talk *talk, char *buf, size_t size);
 int ctr_lte_v2_talk_at_ceppi(struct ctr_lte_v2_talk *talk, int p1);
 int ctr_lte_v2_talk_at_cereg(struct ctr_lte_v2_talk *talk, int p1);
 int ctr_lte_v2_talk_at_cfun(struct ctr_lte_v2_talk *talk, int p1);

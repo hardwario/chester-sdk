@@ -849,7 +849,8 @@ ZTEST(txn, test_disabled)
 
 #if defined(CONFIG_TEST_FEATURE_TXN_NO_CSCON)
 /* The network grants no connection for the datagram: without a deadline, each AT#XSEND waits
- * 120 s for CSCON 1, and after 1 + retry_count of them the transaction ends with -ENOTCONN */
+ * 120 s for CSCON 1, and after 1 + retry_count of them the transaction ends with -ENOTCONN. The
+ * extended error report of the modem (AT+CEER) is kept for the shell */
 ZTEST(txn, test_no_cscon)
 {
 	stack_attach();
@@ -864,7 +865,8 @@ ZTEST(txn, test_no_cscon)
 		ITEMS_FLOW_CHECK,
 		{"AT#XSOCKETOPT=1,52", "OK"},
 		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
-		/* Nor within the next 120 s: no third send */
+		/* Nor within the next 120 s: no third send, the cause the modem stored */
+		{"AT+CEER", "+CEER: \"EMM 22\"", "OK"},
 	};
 	/* clang-format on */
 
@@ -897,6 +899,10 @@ ZTEST(txn, test_no_cscon)
 
 	/* Past a third send */
 	k_sleep(K_SECONDS(1));
+
+	char ceer[CTR_LTE_V2_STATE_CEER_SIZE];
+	zassert_ok(ctr_lte_v2_state_get_ceer(ceer, sizeof(ceer)));
+	zassert_str_equal(ceer, "\"EMM 22\"");
 
 	ASSERT_FSM_STATE("ready");
 	mock_ctr_lte_link_assert_done();
@@ -994,6 +1000,8 @@ ZTEST(txn, test_cscon_timer)
 		ITEMS_FLOW_CHECK,
 		{"AT#XSOCKETOPT=1,52", "OK"},
 		{"AT#XSEND=\"Long\"", "#XSEND: 4", "OK"},
+		/* A report longer than the one kept */
+		{"AT+CEER", "+CEER: \"OTHER 0 and a text longer than the report kept\"", "OK"},
 	};
 	/* clang-format on */
 
@@ -1019,6 +1027,10 @@ ZTEST(txn, test_cscon_timer)
 
 	stack_wait_for_state("ready", K_MSEC(100));
 	mock_ctr_lte_link_assert_done();
+
+	char ceer[CTR_LTE_V2_STATE_CEER_SIZE];
+	zassert_ok(ctr_lte_v2_state_get_ceer(ceer, sizeof(ceer)));
+	zassert_str_equal(ceer, "\"OTHER 0 and a text longer than");
 }
 #endif
 
@@ -1103,8 +1115,9 @@ ZTEST(txn, test_error_in_send)
 		{"AT#XSEND=\"Hello again\""},
 		/* Error state after the talk timeout - flow check, ready state in 5 s */
 		ITEMS_FLOW_CHECK,
-		/* Ready state: the check before the send, but no send */
+		/* Ready state: the check before the send, but no send; the modem has no cause */
 		ITEMS_FLOW_CHECK,
+		{"AT+CEER", "OK"},
 	};
 	/* clang-format on */
 
@@ -1145,6 +1158,9 @@ ZTEST(txn, test_error_in_send)
 	/* Past a second send */
 	k_sleep(K_SECONDS(1));
 	mock_ctr_lte_link_assert_done();
+
+	char ceer[CTR_LTE_V2_STATE_CEER_SIZE];
+	zassert_equal(ctr_lte_v2_state_get_ceer(ceer, sizeof(ceer)), -ENODATA);
 }
 #endif
 

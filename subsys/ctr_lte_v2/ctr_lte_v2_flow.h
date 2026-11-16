@@ -79,6 +79,8 @@ int ctr_lte_v2_flow_recv(const struct ctr_lte_v2_send_recv_param *param);
 int ctr_lte_v2_flow_rai_no_data(void);
 
 int ctr_lte_v2_flow_coneval(void);
+/* Reads the extended error report (AT+CEER) into the state, when the modem has one */
+int ctr_lte_v2_flow_ceer(void);
 
 int ctr_lte_v2_flow_wake_up_and_wait_on_ready(void);
 int ctr_lte_v2_flow_cmd_without_response(const char *s);

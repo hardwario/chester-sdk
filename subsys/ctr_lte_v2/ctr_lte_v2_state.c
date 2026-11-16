@@ -26,6 +26,7 @@ static uint64_t m_imei;
 static uint64_t m_imsi;
 static char m_iccid[22 + 1] = {0};
 static char m_fw_version[64] = {0};
+static char m_ceer[CTR_LTE_V2_STATE_CEER_SIZE] = {0};
 static struct ctr_lte_v2_conn_param m_conn_param = {0};
 static struct ctr_lte_v2_cereg_param m_cereg_param = {0};
 static struct ctr_lte_v2_gnss_update m_gnss_update = {0};
@@ -133,6 +134,37 @@ void ctr_lte_v2_state_set_modem_fw_version(const char *version)
 
 	strncpy(m_fw_version, version, sizeof(m_fw_version) - 1);
 	m_fw_version[sizeof(m_fw_version) - 1] = '\0';
+
+	k_mutex_unlock(&m_lock);
+}
+
+int ctr_lte_v2_state_get_ceer(char *buf, size_t size)
+{
+	if (!buf || !size) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	/* A copy: the FSM may store a new report meanwhile */
+	strncpy(buf, m_ceer, size - 1);
+	buf[size - 1] = '\0';
+
+	k_mutex_unlock(&m_lock);
+
+	return buf[0] != 0 ? 0 : -ENODATA;
+}
+
+void ctr_lte_v2_state_set_ceer(const char *ceer)
+{
+	if (!ceer) {
+		return;
+	}
+
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	strncpy(m_ceer, ceer, sizeof(m_ceer) - 1);
+	m_ceer[sizeof(m_ceer) - 1] = '\0';
 
 	k_mutex_unlock(&m_lock);
 }

@@ -11,6 +11,7 @@
 #include <zephyr/ztest.h>
 
 /* Standard includes */
+#include <errno.h>
 #include <string.h>
 
 /* Longer than every string kept by ctr_lte_v2_state */
@@ -49,6 +50,30 @@ ZTEST(state, test_fw_version_too_long_is_terminated)
 	/* The version buffer holds 63 characters and the NUL */
 	zassert_equal(bounded_len(version), 63);
 	zassert_mem_equal(version, m_long, 63);
+}
+
+ZTEST(state, test_ceer_too_long_is_terminated)
+{
+	char ceer[sizeof(m_long)];
+
+	/* None stored yet */
+	zassert_equal(ctr_lte_v2_state_get_ceer(ceer, sizeof(ceer)), -ENODATA);
+	zassert_equal(ceer[0], '\0');
+
+	ctr_lte_v2_state_set_ceer(m_long);
+
+	memset(ceer, 'x', sizeof(ceer));
+	zassert_ok(ctr_lte_v2_state_get_ceer(ceer, sizeof(ceer)));
+	/* The report buffer holds 31 characters and the NUL */
+	zassert_equal(bounded_len(ceer), CTR_LTE_V2_STATE_CEER_SIZE - 1);
+	zassert_mem_equal(ceer, m_long, CTR_LTE_V2_STATE_CEER_SIZE - 1);
+
+	/* Cut to a smaller buffer of the caller */
+	memset(ceer, 'x', sizeof(ceer));
+	zassert_ok(ctr_lte_v2_state_get_ceer(ceer, 8));
+	zassert_equal(bounded_len(ceer), 7);
+	zassert_mem_equal(ceer, m_long, 7);
+	zassert_equal(ceer[8], 'x', "written past the size");
 }
 
 ZTEST_SUITE(state, NULL, NULL, NULL, NULL, NULL);
