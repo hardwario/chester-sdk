@@ -511,6 +511,47 @@ ZTEST(txn, test_lock_busy)
 }
 #endif
 
+#if defined(CONFIG_TEST_FEATURE_TXN_CSCON_1_0_IN_SEND)
+/* The network grants a connection for the datagram and releases it at once: CSCON 1 and CSCON 0
+ * both arrive before the FSM handles CSCON 1, which still completes the transaction */
+ZTEST(txn, test_cscon_1_0_in_send)
+{
+	stack_attach();
+	go_to_sleep();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,51", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		{"AT#XSOCKETOPT=1,50", "OK"},
+		URC(500, "+CSCON: 1"),
+		URC(0, "+CSCON: 0"),
+		ITEM_CONEVAL,
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.timeout = K_SECONDS(30),
+		.rai = true,
+	};
+
+	int64_t elapsed;
+	int ret = send_recv(&param, &elapsed);
+	zassert_ok(ret, "send_recv failed: %d", ret);
+	/* With CSCON 1, not at the end of the wait for it */
+	zassert_true(elapsed >= 500 && elapsed <= 1000, "returned %lld ms after the call", elapsed);
+
+	stack_wait_for_state("ready", K_MSEC(500));
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
 #if defined(CONFIG_TEST_FEATURE_TXN_RECONNECT_IN_RECV)
 /* 'lte reconnect' during AT#XRECV: the FSM thread reconnects only after the dialog, the
  * transaction completes */

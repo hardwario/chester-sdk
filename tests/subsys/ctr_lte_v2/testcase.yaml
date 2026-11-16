@@ -37,6 +37,9 @@ tests:
   subsys.ctr_lte_v2.txn_lock_busy:
     extra_args: CONFIG_TEST_FEATURE_TXN_LOCK_BUSY=y
 
+  subsys.ctr_lte_v2.txn_cscon_1_0_in_send:
+    extra_args: CONFIG_TEST_FEATURE_TXN_CSCON_1_0_IN_SEND=y
+
   subsys.ctr_lte_v2.txn_reconnect_in_recv:
     extra_args: CONFIG_TEST_FEATURE_TXN_RECONNECT_IN_RECV=y
 

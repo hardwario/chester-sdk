@@ -1369,13 +1369,14 @@ static int send_event_handler(enum ctr_lte_v2_event event)
 		 * grants a connection: no second AT#XSEND, which would duplicate it, the wait for
 		 * CSCON 1 goes on (FLAG_CSCON is cleared) */
 		break;
-	case CTR_LTE_V2_EVENT_CSCON_1:
-		__fallthrough;
 	case CTR_LTE_V2_EVENT_SEND:
 		/* Only with an RRC connection: a SEND queued without one must not cut the wait */
 		if (!atomic_test_bit(&m_flag, FLAG_CSCON)) {
 			break;
 		}
+		__fallthrough;
+	case CTR_LTE_V2_EVENT_CSCON_1:
+		/* Also when CSCON 0 has cleared FLAG_CSCON since: the datagram went out with it */
 		stop_timer();
 		if (!txn_current()) {
 			transition_state(FSM_STATE_READY);
