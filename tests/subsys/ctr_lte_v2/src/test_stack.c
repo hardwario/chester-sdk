@@ -405,4 +405,22 @@ ZTEST(stack, test_full_sequence)
 	test_send_recv_no_psm();
 }
 
+static void match_thread_name(const struct k_thread *thread, void *user_data)
+{
+	const char *name = k_thread_name_get((k_tid_t)thread);
+	bool *found = user_data;
+
+	if (name && !strcmp(name, "ctr_lte_v2")) {
+		*found = true;
+	}
+}
+
+ZTEST(stack, test_work_queue_thread_name)
+{
+	bool found = false;
+
+	k_thread_foreach(match_thread_name, &found);
+	zassert_true(found, "no thread named ctr_lte_v2");
+}
+
 ZTEST_SUITE(stack, NULL, NULL, NULL, NULL, NULL);

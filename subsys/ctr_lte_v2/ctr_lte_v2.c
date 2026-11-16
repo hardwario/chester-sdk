@@ -1474,6 +1474,7 @@ static int init(void)
 
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
 			   WORK_Q_PRIORITY, NULL);
+	k_thread_name_set(&m_work_q.thread, "ctr_lte_v2");
 
 	k_work_init_delayable(&m_timeout_work, timeout_work_handler);
 	k_work_init(&m_event_dispatch_work, event_dispatch_work_handler);

@@ -19,6 +19,7 @@
 
 /* Standard includes */
 #include <errno.h>
+#include <string.h>
 
 /* ---- Before a successful ctr_cloud_init() (suite ctr_cloud_send_0_init) ---- */
 
@@ -62,4 +63,22 @@ ZTEST(ctr_cloud_send_4_init, test_init_again_ealready)
 	/* Still the options of the first init: MSG_A carries their decoder hash */
 	zassert_ok(ctr_cloud_send_data(PAYLOAD_A, sizeof(PAYLOAD_A), K_FOREVER));
 	assert_uplink(0, MSG_A, sizeof(MSG_A));
+}
+
+static void match_thread_name(const struct k_thread *thread, void *user_data)
+{
+	const char *name = k_thread_name_get((k_tid_t)thread);
+	bool *found = user_data;
+
+	if (name && !strcmp(name, "ctr_cloud")) {
+		*found = true;
+	}
+}
+
+ZTEST(ctr_cloud_send_4_init, test_work_queue_thread_name)
+{
+	bool found = false;
+
+	k_thread_foreach(match_thread_name, &found);
+	zassert_true(found, "no thread named ctr_cloud");
 }

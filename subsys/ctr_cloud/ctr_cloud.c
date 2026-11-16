@@ -740,6 +740,7 @@ int ctr_cloud_init(struct ctr_cloud_options *options)
 
 	k_work_queue_start(&m_work_q, m_work_q_stack, K_THREAD_STACK_SIZEOF(m_work_q_stack),
 			   WORK_Q_PRIORITY, NULL);
+	k_thread_name_set(&m_work_q.thread, "ctr_cloud");
 
 	k_event_post(&m_cloud_events, EVENT_STARTED_SET);
 
