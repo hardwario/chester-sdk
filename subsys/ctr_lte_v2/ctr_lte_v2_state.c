@@ -102,7 +102,8 @@ void ctr_lte_v2_state_set_iccid(const char *iccid)
 
 	k_mutex_lock(&m_lock, K_FOREVER);
 
-	strncpy(m_iccid, iccid, sizeof(m_iccid));
+	strncpy(m_iccid, iccid, sizeof(m_iccid) - 1);
+	m_iccid[sizeof(m_iccid) - 1] = '\0';
 
 	k_mutex_unlock(&m_lock);
 }
@@ -130,7 +131,8 @@ void ctr_lte_v2_state_set_modem_fw_version(const char *version)
 
 	k_mutex_lock(&m_lock, K_FOREVER);
 
-	strncpy(m_fw_version, version, sizeof(m_fw_version));
+	strncpy(m_fw_version, version, sizeof(m_fw_version) - 1);
+	m_fw_version[sizeof(m_fw_version) - 1] = '\0';
 
 	k_mutex_unlock(&m_lock);
 }
