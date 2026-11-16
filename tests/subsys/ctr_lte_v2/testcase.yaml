@@ -15,3 +15,6 @@ tests:
 
   subsys.ctr_lte_v2.stack_default:
     extra_args: CONFIG_TEST_FEATURE_STACK=y
+
+  subsys.ctr_lte_v2.stack_fplmn_erase_fails:
+    extra_args: CONFIG_TEST_FEATURE_STACK_FPLMN_ERASE_FAILS=y

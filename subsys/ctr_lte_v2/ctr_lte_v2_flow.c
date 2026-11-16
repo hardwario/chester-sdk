@@ -602,7 +602,8 @@ int ctr_lte_v2_flow_sim_fplmn(void)
 		ret = ctr_lte_v2_talk_crsm_214(&m_talk);
 		if (ret) {
 			LOG_ERR("Call `ctr_lte_v2_talk_crsm_214` failed: %d", ret);
-			return ret;
+			/* Some SIMs refuse the erase; the caller attaches anyway */
+			return -EOPNOTSUPP;
 		}
 
 		ret = ctr_lte_v2_talk_at_cfun(&m_talk, 4);

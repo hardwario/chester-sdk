@@ -88,7 +88,13 @@ static void test_attach(void)
 		{"AT+CIMI", "901288910017273", "OK"},
 		{"AT+CIMI", "901288910017273", "OK"},
 		{"AT%XICCID", "%XICCID: 89882390000262826558", "OK"},
+		#if IS_ENABLED(CONFIG_TEST_FEATURE_STACK_FPLMN_ERASE_FAILS)
+		/* Forbidden network on the SIM, which refuses the erase: attach anyway */
+		{"AT+CRSM=176,28539,0,0,12", "+CRSM: 144,0,\"32F030FFFFFFFFFFFFFFFFFF\"", "OK"},
+		{"AT+CRSM=214,28539,0,0,12,\"FFFFFFFFFFFFFFFFFFFFFFFF\"", "ERROR"},
+		#else
 		{"AT+CRSM=176,28539,0,0,12", "+CRSM: 144,0,\"FFFFFFFFFFFFFFFFFFFFFFFF\"", "OK"},
+		#endif
 		URC(100, "+CSCON: 1"),
 		URC(50, "+CEREG: 5,\"B4DC\",\"000AE520\",9,0,18,\"00000000\",\"00111000\""),
 		{"AT+COPS?", "+COPS: 1,2,\"23003\",9", "OK"},

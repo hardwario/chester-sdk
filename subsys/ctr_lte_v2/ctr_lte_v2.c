@@ -711,9 +711,12 @@ static int prepare_event_handler(enum ctr_lte_v2_event event)
 		if (ret) {
 			if (ret == -EAGAIN) {
 				break;
+			} else if (ret == -EOPNOTSUPP) {
+				LOG_WRN("FPLMN Erase not supported, continuing");
+			} else {
+				LOG_ERR("Call `ctr_lte_v2_flow_sim_fplmn` failed: %d", ret);
+				return ret;
 			}
-			LOG_ERR("Call `ctr_lte_v2_flow_sim_fplmn` failed: %d", ret);
-			return ret;
 		}
 		transition_state(FSM_STATE_ATTACH);
 		break;

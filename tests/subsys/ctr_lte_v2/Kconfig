@@ -21,6 +21,14 @@ config TEST_FEATURE_STACK_OVERRIDES_CONFIG
 	select CTR_LTE_V2_GNSS
 	select TEST_FEATURE_STACK
 
+config TEST_FEATURE_STACK_FPLMN_ERASE_FAILS
+	bool "TEST_FEATURE_STACK_FPLMN_ERASE_FAILS"
+	default n
+	select TEST_FEATURE_STACK
+	help
+	  The SIM holds forbidden networks and refuses to erase them; the
+	  attach must go on anyway.
+
 config CTR_LTE_V2_DEFAULT_BANDS
 	string "LTE Bands for CTR_LTE_V2"
 	default "2,4,5,8,12,13,17,18,19,20,25,26,28,66" if TEST_FEATURE_STACK_OVERRIDES_CONFIG
