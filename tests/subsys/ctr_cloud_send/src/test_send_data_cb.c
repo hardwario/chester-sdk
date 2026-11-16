@@ -63,7 +63,15 @@ static int encode_a_after_ms(zcbor_state_t *zs, void *user_data)
 
 /* ---- Up to a successful ctr_cloud_init() (suites and tests run in name order) ---- */
 
-ZTEST_SUITE(ctr_cloud_send_0_init, NULL, NULL, common_before, common_after, NULL);
+static void *init_setup(void)
+{
+	/* Before the first ctr_cloud_init(), which confirms a firmware update */
+	mock_fw_setup();
+
+	return NULL;
+}
+
+ZTEST_SUITE(ctr_cloud_send_0_init, NULL, init_setup, common_before, common_after, NULL);
 
 ZTEST(ctr_cloud_send_0_init, test_0_cb_null_einval)
 {

@@ -53,6 +53,36 @@ int mock_transfer_uplink_count(void);
 const struct mock_uplink *mock_transfer_uplink(int index);
 int mock_transfer_downlink_count(void);
 
+/* Every uplink since the start, also the session request of the init work; unlike the
+ * above, not cleared by mock_transfer_reset()
+ */
+#define MOCK_LOG_MAX     32
+#define MOCK_LOG_MEM_MAX 64
+
+struct mock_log_entry {
+	size_t len;
+	uint8_t mem[MOCK_LOG_MEM_MAX];
+	int ret;
+};
+
+int mock_transfer_log_count(void);
+const struct mock_log_entry *mock_transfer_log(int index);
+/* Index of the first logged uplink of message `type`, or -1 */
+int mock_transfer_log_find(uint8_t type);
+/* The first uplink of message `type` fails with `err`; not cleared by mock_transfer_reset() */
+void mock_transfer_fail_first_of_type(uint8_t type, int err);
+
+/* ---- Mock MCUboot image state and the firmware update scenario (TEST_FW) ---- */
+
+/* TEST_FW 0: no update id stored, 1: id stored and acked, 2: id stored, the ack fails,
+ * 3: id stored, but the image is confirmed (MCUboot reverted the update)
+ */
+extern const uint8_t TEST_FW_UPDATE_ID[16];
+
+/* Before ctr_cloud_init(): an unconfirmed image and the update id of TEST_FW */
+void mock_fw_setup(void);
+int mock_boot_confirm_calls(void);
+
 /* ---- Mock spool backend (ctr_cloud_spool_*) ---- */
 
 void mock_spool_reset(void);

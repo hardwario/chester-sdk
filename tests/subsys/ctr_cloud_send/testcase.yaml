@@ -5,10 +5,28 @@ tests:
       - native_sim
     integration_platforms:
       - native_sim
-  # Same sources without CONFIG_CTR_CLOUD_SPOOL
+  # Same sources without CONFIG_CTR_CLOUD_SPOOL, and no firmware update id stored
   subsys.ctr_cloud_send.no_spool:
     tags: chester
-    extra_args: TEST_SPOOL=0
+    extra_args:
+      - TEST_SPOOL=0
+      - TEST_FW=0
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+  # The ack of a firmware update fails
+  subsys.ctr_cloud_send.fw_ack_fail:
+    tags: chester
+    extra_args: TEST_FW=2
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+  # An update id stored, but MCUboot reverted the update
+  subsys.ctr_cloud_send.fw_reverted:
+    tags: chester
+    extra_args: TEST_FW=3
     platform_allow:
       - native_sim
     integration_platforms:

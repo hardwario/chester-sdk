@@ -43,6 +43,11 @@ static int m_fail_next_uplink;
 static bool m_gate;
 static int m_downlink_count;
 
+static int m_log_count;
+static struct mock_log_entry m_log[MOCK_LOG_MAX];
+static uint8_t m_fail_type;
+static int m_fail_type_err;
+
 static K_SEM_DEFINE(m_entered, 0, 1);
 static K_SEM_DEFINE(m_release, 0, 1);
 
@@ -114,6 +119,37 @@ int mock_transfer_downlink_count(void)
 	return m_downlink_count;
 }
 
+int mock_transfer_log_count(void)
+{
+	return m_log_count;
+}
+
+const struct mock_log_entry *mock_transfer_log(int index)
+{
+	if (index < 0 || index >= MIN(m_log_count, MOCK_LOG_MAX)) {
+		return NULL;
+	}
+
+	return &m_log[index];
+}
+
+int mock_transfer_log_find(uint8_t type)
+{
+	for (int i = 0; i < MIN(m_log_count, MOCK_LOG_MAX); i++) {
+		if (m_log[i].len && m_log[i].mem[0] == type) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+void mock_transfer_fail_first_of_type(uint8_t type, int err)
+{
+	m_fail_type = type;
+	m_fail_type_err = err;
+}
+
 int ctr_cloud_transfer_init(uint32_t serial_number, uint8_t token[16], ctr_cloud_transfer_cb cb)
 {
 	return m_init_ret;
@@ -136,6 +172,16 @@ int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink, k_timeout
 		k_sem_take(&m_release, K_FOREVER);
 	}
 
+	struct mock_log_entry *e = NULL;
+
+	if (m_log_count < MOCK_LOG_MAX) {
+		e = &m_log[m_log_count];
+		e->len = len;
+		memcpy(e->mem, mem, MIN(len, sizeof(e->mem)));
+	}
+
+	m_log_count++;
+
 	if (len && mem[0] == UL_CREATE_SESSION) {
 		m_session_pending = true;
 		*has_downlink = true;
@@ -145,6 +191,15 @@ int ctr_cloud_transfer_uplink(struct ctr_buf *buf, bool *has_downlink, k_timeout
 	if (m_fail_next_uplink) {
 		ret = m_fail_next_uplink;
 		m_fail_next_uplink = 0;
+	}
+
+	if (m_fail_type_err && len && mem[0] == m_fail_type) {
+		ret = m_fail_type_err;
+		m_fail_type_err = 0;
+	}
+
+	if (e) {
+		e->ret = ret;
 	}
 
 	if (m_uplink_count < MOCK_UPLINK_MAX) {

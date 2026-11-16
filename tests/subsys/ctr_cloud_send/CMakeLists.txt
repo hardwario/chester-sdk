@@ -14,6 +14,11 @@ endif()
 if(TEST_SPOOL)
   add_compile_definitions(CONFIG_CTR_CLOUD_SPOOL=1)
 endif()
+# Firmware update confirmed by the init work, see src/mock_boot.c
+if(NOT DEFINED TEST_FW)
+  set(TEST_FW 1)
+endif()
+add_compile_definitions(TEST_FW=${TEST_FW})
 
 # The real ctr_cloud.c; only the transport (ctr_cloud_transfer_*) and the spool
 # backend (ctr_cloud_spool_*) are mocked.
@@ -23,6 +28,9 @@ set(MOCK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../ctr_cloud/src)
 include_directories(${CLOUD_DIR})
 include_directories(${MOCK_DIR})
 target_sources(app PRIVATE ${CLOUD_DIR}/ctr_cloud.c)
+# Only ctr_cloud.c: MCUboot itself is mocked (src/mock_boot.c)
+set_source_files_properties(${CLOUD_DIR}/ctr_cloud.c PROPERTIES COMPILE_DEFINITIONS
+                            CONFIG_MCUBOOT_IMG_MANAGER=1)
 target_sources(app PRIVATE ${CLOUD_DIR}/ctr_cloud_cbor.c)
 target_sources(app PRIVATE ${CLOUD_DIR}/ctr_cloud_msg_data.c)
 target_sources(app PRIVATE ${CLOUD_DIR}/ctr_cloud_msg.c)
@@ -35,8 +43,10 @@ target_sources(app PRIVATE ${MOCK_DIR}/mock_ctr_lte_v2.c)
 target_sources(app PRIVATE ${MOCK_DIR}/mock_ctr_rtc.c)
 
 target_sources(app PRIVATE src/common.c)
+target_sources(app PRIVATE src/mock_boot.c)
 target_sources(app PRIVATE src/mock_spool.c)
 target_sources(app PRIVATE src/mock_transfer.c)
 
 target_sources(app PRIVATE src/test_send_data.c)
 target_sources(app PRIVATE src/test_send_data_cb.c)
+target_sources(app PRIVATE src/test_firmware.c)

@@ -155,6 +155,7 @@ int ctr_cloud_util_save_firmware_update_id(const ctr_cloud_uuid_t uuid)
 struct settings_read_callback_params {
 	void *data;
 	size_t len;
+	bool found;
 };
 
 static int settings_read_callback(const char *key, size_t len, settings_read_cb read_cb,
@@ -162,7 +163,8 @@ static int settings_read_callback(const char *key, size_t len, settings_read_cb 
 {
 	struct settings_read_callback_params *params = param;
 
-	if (params->len < len) {
+	/* A shorter record would leave a part of the buffer uninitialized */
+	if (params->len != len) {
 		return -EINVAL;
 	}
 
@@ -174,6 +176,8 @@ static int settings_read_callback(const char *key, size_t len, settings_read_cb 
 		return -EINVAL;
 	}
 
+	params->found = true;
+
 	return 0;
 }
 
@@ -182,8 +186,20 @@ int ctr_cloud_util_get_firmware_update_id(ctr_cloud_uuid_t uuid)
 	struct settings_read_callback_params params = {
 		.data = uuid,
 		.len = sizeof(ctr_cloud_uuid_t),
+		.found = false,
 	};
-	return settings_load_subtree_direct("cloud/firmware/update_id", settings_read_callback, &params);
+
+	/* settings_load_subtree_direct() returns 0 also when the key does not exist (the
+	 * callback is just never called), so report -ENOENT then; otherwise the caller would
+	 * take the uninitialized uuid buffer for a valid id.
+	 */
+	int ret = settings_load_subtree_direct("cloud/firmware/update_id", settings_read_callback,
+					       &params);
+	if (ret) {
+		return ret;
+	}
+
+	return params.found ? 0 : -ENOENT;
 }
 
 int ctr_cloud_util_delete_firmware_update_id(void)

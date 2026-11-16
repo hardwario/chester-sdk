@@ -544,24 +544,32 @@ static int firmware_confirmed(void)
 
 	ctr_cloud_uuid_t fuid;
 
-	ret = ctr_cloud_util_get_firmware_update_id(fuid);
+	/* The session proves that the running image works: keep it, also when the update did
+	 * not come from the cloud (e.g. BLE) or its id was not stored
+	 */
+	bool was_confirmed = boot_is_img_confirmed();
 
+	if (!was_confirmed) {
+		if (boot_write_img_confirmed()) {
+			LOG_ERR("Failed to confirm image");
+			return -EIO; // Failed to confirm image
+		}
+
+		LOG_INF("Marked image as OK");
+	}
+
+	ret = ctr_cloud_util_get_firmware_update_id(fuid);
 	if (ret) {
 		return 0; // No firmware update ID
 	}
 
-	ctr_cloud_util_delete_firmware_update_id();
-
-	if (boot_is_img_confirmed()) {
-		LOG_INF("Image confirmed OK");
+	if (was_confirmed) {
+		/* The image of the update did not take (MCUboot reverted it), or the update was
+		 * handled before: there is nothing to ack
+		 */
+		LOG_WRN("Image confirmed before, dropping the firmware update id");
+		ctr_cloud_util_delete_firmware_update_id();
 		return 0;
-	} else {
-		if (boot_write_img_confirmed()) {
-			LOG_ERR("Failed to confirm image");
-			return -EIO; // Failed to confirm image
-		} else {
-			LOG_INF("Marked image as OK");
-		}
 	}
 
 	struct ctr_cloud_upfirmware upfirmware = {
@@ -590,6 +598,9 @@ static int firmware_confirmed(void)
 
 	k_mutex_unlock(&m_lock);
 
+	/* Dropped only once the cloud has received the ack */
+	ctr_cloud_util_delete_firmware_update_id();
+
 	return 0;
 }
 #endif
@@ -615,7 +626,15 @@ static void init_work_handler(struct k_work *work)
 			continue;
 		}
 
-		LOG_INF("Running UPLOAD ENCODER");
+		/* The session proves the new image can reach the cloud: confirm it and ack the
+		 * update before the long uploads below, so that a reset during them cannot
+		 * revert a working image
+		 */
+#if defined(CONFIG_MCUBOOT_IMG_MANAGER)
+		firmware_confirmed();
+#endif
+
+		LOG_INF("Running UPLOAD DECODER");
 
 		ret = upload_decoder();
 		if (ret) {
@@ -639,10 +658,6 @@ static void init_work_handler(struct k_work *work)
 		if (ret) {
 			LOG_WRN("Call `upload_config` failed: %d", ret);
 		}
-
-#if defined(CONFIG_MCUBOOT_IMG_MANAGER)
-		firmware_confirmed();
-#endif
 
 		break;
 	}
