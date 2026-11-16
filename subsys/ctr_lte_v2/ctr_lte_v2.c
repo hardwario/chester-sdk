@@ -380,15 +380,17 @@ static void delegate_event(enum ctr_lte_v2_event event)
 	}
 
 	k_mutex_lock(&m_event_rb_lock, K_FOREVER);
-	int ret = ring_buf_put(&m_event_rb, (uint8_t *)&event, 1);
+	uint32_t written = ring_buf_put(&m_event_rb, (uint8_t *)&event, 1);
 	k_mutex_unlock(&m_event_rb_lock);
 
-	if (ret < 0) {
-		LOG_WRN("Failed to put event in ring buffer");
+	/* Lost: nothing posts it again */
+	if (!written) {
+		LOG_ERR("Event ring buffer full, dropped event: %s",
+			ctr_lte_v2_str_fsm_event(event));
 		return;
 	}
 
-	ret = k_work_submit_to_queue(&m_work_q, &m_event_dispatch_work);
+	int ret = k_work_submit_to_queue(&m_work_q, &m_event_dispatch_work);
 	if (ret < 0) {
 		LOG_WRN("Failed to submit work to queue");
 	}
