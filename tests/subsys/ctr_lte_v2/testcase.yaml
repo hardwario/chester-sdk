@@ -42,3 +42,15 @@ tests:
 
   subsys.ctr_lte_v2.txn_reconnect_in_error:
     extra_args: CONFIG_TEST_FEATURE_TXN_RECONNECT_IN_ERROR=y
+
+  subsys.ctr_lte_v2.txn_recv_no_data:
+    extra_args: CONFIG_TEST_FEATURE_TXN_RECV_NO_DATA=y
+
+  subsys.ctr_lte_v2.txn_recv_fail:
+    extra_args: CONFIG_TEST_FEATURE_TXN_RECV_FAIL=y
+
+  subsys.ctr_lte_v2.txn_error_no_socket:
+    extra_args: CONFIG_TEST_FEATURE_TXN_ERROR_NO_SOCKET=y
+
+  subsys.ctr_lte_v2.txn_disabled:
+    extra_args: CONFIG_TEST_FEATURE_TXN_DISABLED=y

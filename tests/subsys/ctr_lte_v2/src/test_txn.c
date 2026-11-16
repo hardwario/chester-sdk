@@ -604,4 +604,222 @@ ZTEST(txn, test_reconnect_in_error)
 }
 #endif
 
+#if defined(CONFIG_TEST_FEATURE_TXN_RECV_NO_DATA)
+/* No response within the receive window: the modem answers AT#XRECV with ERROR at its end. The
+ * reply is lost, the socket is fine: -ETIMEDOUT, no error state and no second AT#XSEND */
+ZTEST(txn, test_recv_no_data)
+{
+	stack_attach();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		{"AT#XRECV=5"},
+		URC(5000, "ERROR"),
+		/* On as after a response */
+		ITEM_CONEVAL,
+		ITEMS_SLEEP(5000),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_SECONDS(60),
+		.rai = true,
+	};
+
+	int64_t elapsed;
+	int ret = send_recv(&param, &elapsed);
+	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
+	zassert_true(elapsed >= 5000 && elapsed <= 5200, "returned %lld ms after the call",
+		     elapsed);
+	zassert_equal(recv_len, 0, "recv_len written: %zu", recv_len);
+
+	stack_wait_for_state("sleep", K_SECONDS(7));
+	/* Past the pause after AT#XSLEEP */
+	k_sleep(K_MSEC(500));
+
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_TXN_RECV_FAIL)
+/* AT#XRECV fails as no lost reply does: an ERROR early in the receive window comes from the
+ * socket, and no answer at all is a talk timeout. Both end the transaction with -ETIMEDOUT and go
+ * to the error state */
+ZTEST(txn, test_recv_fail)
+{
+	stack_attach();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		/* First transaction: ERROR in the first half of the receive window */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		{"AT#XRECV=5"},
+		URC(2000, "ERROR"),
+		/* Error state - flow check, ready state in 5 s */
+		ITEMS_FLOW_CHECK,
+		/* Second transaction: no answer to AT#XRECV */
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello again\"", "#XSEND: 11", "OK"},
+		{"AT#XRECV=5"},
+		/* Error state after the talk timeout */
+		ITEMS_FLOW_CHECK,
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_SECONDS(60),
+		.rai = true,
+	};
+
+	int64_t elapsed;
+	int ret = send_recv(&param, &elapsed);
+	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
+	zassert_true(elapsed >= 2000 && elapsed <= 2200, "returned %lld ms after the call",
+		     elapsed);
+	stack_wait_for_state("error", K_MSEC(500));
+
+	stack_wait_for_state("ready", K_SECONDS(6));
+
+	param.send_buf = "Hello again";
+
+	ret = send_recv(&param, &elapsed);
+	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
+	zassert_true(elapsed >= 30000 && elapsed <= 30200, "returned %lld ms after the call",
+		     elapsed);
+	stack_wait_for_state("error", K_MSEC(500));
+	zassert_equal(recv_len, 0, "recv_len written: %zu", recv_len);
+
+	/* Past the flow check of the error state */
+	k_sleep(K_MSEC(100));
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_TXN_ERROR_NO_SOCKET)
+/* The socket is not a datagram client: the check before the send fails, and so does the one of
+ * the error state, which ends the transaction with -ENOTCONN at once */
+ZTEST(txn, test_error_no_socket)
+{
+	stack_attach();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		/* Ready state: a datagram socket, but a server one */
+		ITEMS_FLOW_CHECK_XSOCKET("#XSOCKET: 0,1,1,2,0"),
+		/* Error state: a client socket, but a stream one; open again in 5 s */
+		ITEMS_FLOW_CHECK_XSOCKET("#XSOCKET: 0,1,0,1,0"),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.timeout = K_SECONDS(60),
+		.rai = true,
+	};
+
+	int64_t elapsed;
+	int ret = send_recv(&param, &elapsed);
+	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
+	zassert_true(elapsed <= 100, "returned %lld ms after the call", elapsed);
+
+	ASSERT_FSM_STATE("error");
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_TXN_DISABLED)
+/* No transaction in the test mode, nor while LTE is disabled; entering the disabled state ends
+ * the pending one */
+ZTEST(txn, test_disabled)
+{
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.timeout = K_SECONDS(60),
+		.rai = true,
+	};
+
+	int64_t elapsed;
+	int ret;
+
+	g_ctr_lte_v2_config.test = true;
+	ret = send_recv(&param, &elapsed);
+	g_ctr_lte_v2_config.test = false;
+	zassert_equal(ret, -ENOTSUP, "expected -ENOTSUP but got: %d", ret);
+	zassert_equal(elapsed, 0, "returned %lld ms after the call", elapsed);
+
+	/* Not enabled yet */
+	ret = send_recv(&param, &elapsed);
+	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
+	zassert_true(elapsed <= 100, "returned %lld ms after the call", elapsed);
+	ASSERT_FSM_STATE("disabled");
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		/* No network: the attach state */
+		ITEMS_PREPARE,
+		/* Reconnect */
+		{"AT#XSLEEP=2", "OK"},
+		ITEMS_PREPARE,
+		ITEMS_REGISTER,
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	ctr_lte_v2_enable();
+	stack_wait_for_state("attach", K_SECONDS(10));
+
+	/* Pending in the attach state, which leaves it to the ready state */
+	caller_start(&param, K_PRIO_PREEMPT(5));
+	k_sleep(K_SECONDS(1));
+
+	zassert_ok(ctr_lte_v2_reconnect());
+
+	ret = caller_join(&elapsed);
+	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
+	zassert_true(elapsed >= 1000 && elapsed <= 1100, "returned %lld ms after the call",
+		     elapsed);
+
+	/* Attached again */
+	stack_wait_for_state("open_socket", K_SECONDS(10));
+	zassert_ok(ctr_lte_v2_wait_for_connected(K_SECONDS(6)));
+	k_sleep(K_MSEC(500));
+
+	ASSERT_FSM_STATE("ready");
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
 ZTEST_SUITE(txn, NULL, NULL, NULL, NULL, NULL);

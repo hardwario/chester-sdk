@@ -105,13 +105,16 @@
 	{"AT+CFUN=4", "OK"}, \
 	{"AT#XSLEEP=2", "OK"}
 
-/* The check before a send from the ready state */
-#define ITEMS_FLOW_CHECK \
+/* The check before a send from the ready state, with the socket the modem reports */
+#define ITEMS_FLOW_CHECK_XSOCKET(xsocket) \
 	{"AT+CFUN?", "+CFUN: 1", "OK"}, \
 	{"AT+CEREG?", "+CEREG: 5,5,\"B4DC\",\"000AE520\",9,0,18,\"00000000\",\"00111000\"", "OK"}, \
 	{"AT+CGATT?", "+CGATT: 1", "OK"}, \
 	{"AT+CGACT?", "+CGACT: 0,1", "OK"}, \
-	{"AT#XSOCKET?", "#XSOCKET: 0,1,0,2,0", "OK"}
+	{"AT#XSOCKET?", xsocket, "OK"}
+
+/* <handle>,<family>,<role>,<type>,<cid>: a datagram client socket */
+#define ITEMS_FLOW_CHECK ITEMS_FLOW_CHECK_XSOCKET("#XSOCKET: 0,1,0,2,0")
 
 #define ITEM_CONEVAL \
 	{"AT%CONEVAL", "%CONEVAL: 0,1,7,95,30,49,\"000AE520\",\"23003\",135,6447,20,0,0,-8,2,1,73", "OK"}

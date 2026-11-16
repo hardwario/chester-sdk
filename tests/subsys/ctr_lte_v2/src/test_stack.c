@@ -205,9 +205,9 @@ static void test_timeout_in_recv(void)
 		/* Receive state - modem returns ERROR after 5s */
 		{"AT#XRECV=5"},
 		URC(5000, "ERROR"),
-		/* Error state - flow check */
-		ITEMS_FLOW_CHECK,
-		/* Error state timeout (5s) -> ready state -> sleep */
+		/* No data within the receive window, no error state: on as after a response */
+		ITEM_CONEVAL,
+		/* Ready state -> sleep */
 		ITEMS_SLEEP(6000),
 	};
 	/* clang-format on */

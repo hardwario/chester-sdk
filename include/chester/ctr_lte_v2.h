@@ -194,8 +194,10 @@ int ctr_lte_v2_wait_for_connected(k_timeout_t timeout);
  * @param param  Send/receive parameters (see @ref ctr_lte_v2_send_recv_param).
  *
  * @retval 0          Success.
- * @retval -ETIMEDOUT The exchange did not end before the timeout.
+ * @retval -ETIMEDOUT The exchange did not end before the timeout, or the response did not come.
+ * @retval -ENOTCONN  LTE is disabled, or the socket is not usable.
  * @retval -EBUSY     Another exchange kept the stack busy until the timeout.
+ * @retval -ENOTSUP   Test mode is enabled.
  */
 int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param);
 

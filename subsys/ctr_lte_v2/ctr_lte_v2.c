@@ -94,7 +94,7 @@ K_MUTEX_DEFINE(m_send_recv_lock);
 
 /* The caller publishes its param and drops it at its deadline. The FSM works on its own copy
  * (m_txn) and ends the transaction only while it is still the one it took (m_txn_gen changes on
- * publish, drop and end). */
+ * publish, drop and end), or aborts the published one in a state where it cannot complete. */
 static struct k_spinlock m_txn_lock;
 static const struct ctr_lte_v2_send_recv_param *m_send_recv_param;
 static int m_send_recv_result;
@@ -165,12 +165,13 @@ static bool txn_current(void)
 	return current;
 }
 
-/* End the transaction the FSM took, unless the caller has dropped it in the meantime */
-static void txn_end(int result, bool with_recv_len)
+/* End the published transaction; with only_taken, only the one the FSM took, unless the caller
+ * has dropped it in the meantime */
+static void txn_settle(int result, bool only_taken, bool with_recv_len)
 {
 	k_spinlock_key_t key = k_spin_lock(&m_txn_lock);
 
-	if (m_send_recv_param && m_txn_gen == m_txn_gen_taken) {
+	if (m_send_recv_param && (!only_taken || m_txn_gen == m_txn_gen_taken)) {
 		if (with_recv_len) {
 			*m_send_recv_param->recv_len = m_txn_recv_len;
 		}
@@ -183,6 +184,20 @@ static void txn_end(int result, bool with_recv_len)
 	}
 
 	k_spin_unlock(&m_txn_lock, key);
+}
+
+/* End the transaction the FSM took, unless the caller has dropped it in the meantime */
+static void txn_end(int result, bool with_recv_len)
+{
+	txn_settle(result, true, with_recv_len);
+}
+
+/* End the published transaction, also one the FSM has not taken (yet), in a state where it
+ * cannot complete. The FSM calls it outside the IO section, so the caller finds TXN_IDLE_BIT
+ * set. */
+static void txn_abort(int result)
+{
+	txn_settle(result, false, false);
 }
 
 /* The FSM touches the caller's send_buf and recv_buf only inside the IO section, and the caller
@@ -510,6 +525,12 @@ static void wait_txn_idle(void)
 
 int ctr_lte_v2_send_recv(const struct ctr_lte_v2_send_recv_param *param)
 {
+	/* The modem belongs to the shell */
+	if (g_ctr_lte_v2_config.test) {
+		LOG_WRN("LTE Test mode enabled");
+		return -ENOTSUP;
+	}
+
 	LOG_INF("send_len: %u", param->send_len);
 
 	k_timepoint_t end = sys_timepoint_calc(param->timeout);
@@ -636,6 +657,9 @@ static int on_enter_disabled(void)
 {
 	int ret;
 
+	/* The modem goes down, the transaction cannot complete */
+	txn_abort(-ENOTCONN);
+
 	k_event_clear(&m_states_event, ATTACHED_BIT | CONNECTED_BIT);
 
 	ret = ctr_lte_v2_flow_disable(true);
@@ -657,6 +681,10 @@ static int disabled_event_handler(enum ctr_lte_v2_event event)
 	switch (event) {
 	case CTR_LTE_V2_EVENT_ENABLE:
 		transition_state(FSM_STATE_BOOT);
+		break;
+	case CTR_LTE_V2_EVENT_SEND:
+		/* Not waking the modem for it */
+		txn_abort(-ENOTCONN);
 		break;
 	case CTR_LTE_V2_EVENT_ERROR:
 		transition_state(FSM_STATE_ERROR);
@@ -695,6 +723,10 @@ static int on_enter_error(void)
 		start_timer(K_SECONDS(5));
 		return 0;
 	}
+
+	/* Both ways below leave the socket unusable for a while: the transaction ends, its caller
+	 * decides when to try again */
+	txn_abort(-ENOTCONN);
 
 	k_event_clear(&m_states_event, ATTACHED_BIT | CONNECTED_BIT);
 
@@ -1348,6 +1380,16 @@ static int on_enter_receive(void)
 		k_mutex_lock(&m_metrics_lock, K_FOREVER);
 		m_metrics.downlink_errors++;
 		k_mutex_unlock(&m_metrics_lock);
+
+		/* The response is lost: its caller decides whether to send again */
+		txn_end(-ETIMEDOUT, false);
+
+		/* No data within the receive window, the socket works: on as after a response */
+		if (ret == -ENODATA) {
+			delegate_event(CTR_LTE_V2_EVENT_RECV);
+			return 0;
+		}
+
 		return ret;
 	}
 

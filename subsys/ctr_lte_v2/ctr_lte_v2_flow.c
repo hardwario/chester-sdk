@@ -849,7 +849,7 @@ int ctr_lte_v2_flow_check(void)
 		return -ENOTSOCK;
 	}
 
-	if (xsocket_param.type != XSOCKET_TYPE_DGRAM && xsocket_param.role != XSOCKET_ROLE_CLIENT) {
+	if (xsocket_param.type != XSOCKET_TYPE_DGRAM || xsocket_param.role != XSOCKET_ROLE_CLIENT) {
 		LOG_ERR("Unexpected XSOCKET response: %s", resp);
 		return -ENOTSOCK;
 	}
@@ -895,8 +895,17 @@ int ctr_lte_v2_flow_recv(const struct ctr_lte_v2_send_recv_param *param)
 
 	int ret;
 
+	int64_t start = k_uptime_get();
+
 	ret = ctr_lte_v2_talk_at_xrecv(&m_talk, XRECVFROM_TIMEOUT_SEC, param->recv_buf,
 				       param->recv_size, param->recv_len);
+
+	/* The modem answers ERROR when no data come within the receive window; an ERROR in the
+	 * first half of the window comes from the socket */
+	if (ret == -EILSEQ && k_uptime_get() - start >= XRECVFROM_TIMEOUT_SEC * MSEC_PER_SEC / 2) {
+		LOG_WRN("No data within %d s", XRECVFROM_TIMEOUT_SEC);
+		return -ENODATA;
+	}
 
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_xrecv` failed: %d", ret);
