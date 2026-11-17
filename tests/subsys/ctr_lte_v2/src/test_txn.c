@@ -538,6 +538,55 @@ ZTEST(txn, test_lock_busy)
 }
 #endif
 
+#if defined(CONFIG_TEST_FEATURE_TXN_CSCON_AGAIN_IN_RECV)
+/* The network releases the connection and sets up a new one during AT#XRECV: AT%CONEVAL in that
+ * moment wedges the modem (nRF9160 with SLM), so the FSM skips it for this exchange */
+ZTEST(txn, test_cscon_again_in_recv)
+{
+	stack_attach();
+	go_to_sleep();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello world\"", "#XSEND: 11", "OK"},
+		URC(200, "+CSCON: 1"),
+		{"AT#XRECV=5"},
+		RX_DATA(200, "#XRECV: 8", "Hi there"),
+		URC(0, "+CSCON: 0"),
+		URC(0, "+CSCON: 1"),
+		{"AT#XSOCKETOPT=1,50", "OK"},
+		/* No AT%CONEVAL */
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello world",
+		.send_len = 11,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_SECONDS(30),
+		.rai = true,
+	};
+
+	int64_t elapsed;
+	int ret = send_recv(&param, &elapsed);
+	zassert_ok(ret, "send_recv failed: %d", ret);
+	zassert_equal(recv_len, 8, "recv_len incorrect");
+
+	stack_wait_for_state("ready", K_MSEC(1000));
+	k_sleep(K_MSEC(500));
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
 #if defined(CONFIG_TEST_FEATURE_TXN_CSCON_1_0_IN_SEND)
 /* The network grants a connection for the datagram and releases it at once: CSCON 1 and CSCON 0
  * both arrive before the FSM handles CSCON 1, which still completes the transaction */

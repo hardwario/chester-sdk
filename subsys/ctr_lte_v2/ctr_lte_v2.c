@@ -85,6 +85,10 @@ K_MUTEX_DEFINE(m_event_rb_lock);
 #define FLAG_CSCON       BIT(0)
 #define FLAG_GNSS_ENABLE BIT(1)
 #define FLAG_CFUN4       BIT(2)
+/* The values serve as bit numbers in m_flag (as the ones above): CSCON 0 came during the exchange,
+ * and CSCON 1 after it, so the modem sets up a new RRC connection */
+#define FLAG_CSCON_RELEASED BIT(3)
+#define FLAG_CSCON_AGAIN    BIT(4)
 atomic_t m_flag = ATOMIC_INIT(0);
 
 #define CONNECTED_BIT      BIT(0)
@@ -370,9 +374,13 @@ static void delegate_event(enum ctr_lte_v2_event event)
 	/* FLAG_CSCON follows the modem as the URCs arrive, not as the queued events get handled */
 	if (event == CTR_LTE_V2_EVENT_CSCON_1) {
 		atomic_set_bit(&m_flag, FLAG_CSCON);
+		if (atomic_test_bit(&m_flag, FLAG_CSCON_RELEASED)) {
+			atomic_set_bit(&m_flag, FLAG_CSCON_AGAIN);
+		}
 		m_start_cscon1 = k_uptime_get_32();
 	} else if (event == CTR_LTE_V2_EVENT_CSCON_0) {
 		atomic_clear_bit(&m_flag, FLAG_CSCON);
+		atomic_set_bit(&m_flag, FLAG_CSCON_RELEASED);
 		k_mutex_lock(&m_metrics_lock, K_FOREVER);
 		m_metrics.cscon_1_last_duration_ms = k_uptime_get_32() - m_start_cscon1;
 		m_metrics.cscon_1_duration_ms += m_metrics.cscon_1_last_duration_ms;
@@ -1054,6 +1062,10 @@ static int on_leave_retry_delay(void)
 
 static int on_enter_attach(void)
 {
+	/* The registration starts: watch the RRC connection from here for the CONEVAL after it */
+	atomic_clear_bit(&m_flag, FLAG_CSCON_RELEASED);
+	atomic_clear_bit(&m_flag, FLAG_CSCON_AGAIN);
+
 	k_mutex_lock(&m_metrics_lock, K_FOREVER);
 	m_metrics.attach_count++;
 	int ret = ctr_rtc_get_ts(&m_metrics.attach_last_ts);
@@ -1333,6 +1345,10 @@ static int on_enter_send(void)
 	}
 	k_mutex_unlock(&m_metrics_lock);
 
+	/* The exchange starts: watch the RRC connection from here for the CONEVAL after it */
+	atomic_clear_bit(&m_flag, FLAG_CSCON_RELEASED);
+	atomic_clear_bit(&m_flag, FLAG_CSCON_AGAIN);
+
 	bool xsend_issued = false;
 	ret = ctr_lte_v2_flow_send(&m_txn, &xsend_issued);
 
@@ -1433,6 +1449,11 @@ static int on_enter_receive(void)
 {
 	int ret;
 
+	/* The response comes over the connection the send got: watch it from here on, a new one
+	 * set up while waiting for the response is what CONEVAL must not run into */
+	atomic_clear_bit(&m_flag, FLAG_CSCON_RELEASED);
+	atomic_clear_bit(&m_flag, FLAG_CSCON_AGAIN);
+
 	if (!io_section_enter()) {
 		delegate_event(CTR_LTE_V2_EVENT_READY);
 		return 0;
@@ -1511,6 +1532,16 @@ static int receive_event_handler(enum ctr_lte_v2_event event)
 
 static int on_enter_coneval(void)
 {
+	atomic_clear_bit(&m_flag, FLAG_CSCON_RELEASED);
+
+	/* AT%CONEVAL while the modem sets up a new RRC connection gets no answer, and the modem
+	 * answers no other command until it is reset (nRF9160 with SLM): keep the last values */
+	if (atomic_test_and_clear_bit(&m_flag, FLAG_CSCON_AGAIN)) {
+		LOG_INF("RRC connection set up again, skipping CONEVAL");
+		delegate_event(CTR_LTE_V2_EVENT_READY);
+		return 0;
+	}
+
 	int ret = ctr_lte_v2_flow_coneval();
 	if (ret) {
 		LOG_WRN("Call `ctr_lte_v2_flow_coneval` failed: %d", ret);
