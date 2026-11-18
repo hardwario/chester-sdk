@@ -351,6 +351,11 @@ static int ctr_lte_link_exit_dialog_(const struct device *dev)
 
 	k_mutex_unlock(&get_data(dev)->lock);
 
+	/* As the driver does: the URCs that came during the dialog are dispatched now */
+	if (get_data(dev)->user_cb) {
+		k_work_submit_to_queue(&get_data(dev)->workq, &get_data(dev)->event_dispatch_work);
+	}
+
 	return 0;
 }
 
