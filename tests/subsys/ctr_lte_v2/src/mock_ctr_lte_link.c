@@ -72,6 +72,7 @@ struct ctr_lte_link_data {
 	struct mock_link_item *items;
 	size_t items_count;
 	size_t items_index;
+	int64_t item_time[MOCK_LINK_MAX_ITEMS]; /* k_uptime_get() of each item, -1 before it */
 	int violations;
 	char violation[VIOLATION_BUF_SIZE];
 
@@ -204,6 +205,7 @@ static void urc_dispatch_work_handler(struct k_work *work)
 	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
 
 	if (data->items_index < data->items_count && data->items[data->items_index].tx == NULL) {
+		data->item_time[data->items_index] = k_uptime_get();
 		item = &data->items[data->items_index++];
 
 		/* If URC starts with #XRECV:, store rx2 as pending data */
@@ -415,6 +417,7 @@ static int ctr_lte_link_send_line_(const struct device *dev, k_timeout_t timeout
 				 data->items_index, data->items[data->items_index].tx,
 				 data->tx_line_buf);
 	} else {
+		data->item_time[data->items_index] = k_uptime_get();
 		item = &data->items[data->items_index++];
 	}
 
@@ -605,9 +608,15 @@ void mock_ctr_lte_link_start(struct mock_link_item *items, size_t count)
 
 	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
 
+	zassert_true(count <= MOCK_LINK_MAX_ITEMS, "a script of %zu items, the mock keeps %d",
+		     count, MOCK_LINK_MAX_ITEMS);
+
 	data->items = items;
 	data->items_count = count;
 	data->items_index = 0;
+	for (size_t i = 0; i < MOCK_LINK_MAX_ITEMS; i++) {
+		data->item_time[i] = -1;
+	}
 	data->violations = 0;
 	data->violation[0] = '\0';
 
@@ -645,4 +654,20 @@ void mock_ctr_lte_link_assert_done(void)
 		      violation);
 	zassert_equal(index, count, "script stopped at item %zu of %zu (tx: %s, rx: %s)", index,
 		      count, next_tx ? next_tx : "-", next_rx ? next_rx : "-");
+}
+
+int64_t mock_ctr_lte_link_tx_time(size_t index)
+{
+	struct ctr_lte_link_data *data = get_data(DEVICE_DT_INST_GET(0));
+	int64_t time = -1;
+
+	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
+
+	if (index < data->items_count) {
+		time = data->item_time[index];
+	}
+
+	k_spin_unlock(&data->script_lock, key);
+
+	return time;
 }

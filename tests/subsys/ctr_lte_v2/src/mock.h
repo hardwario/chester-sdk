@@ -13,6 +13,9 @@
 #include <stdio.h>
 #include <string.h>
 
+/* The longest script the mock keeps the times of */
+#define MOCK_LINK_MAX_ITEMS 512
+
 struct mock_link_item {
 	const char *tx;
 	const char *rx;
@@ -26,6 +29,10 @@ typedef char **list;
  * and rx2, an item without tx is a URC sent delay_ms after the previous item (or after the
  * start). A line the script does not expect at that point (also after its end) is a violation. */
 void mock_ctr_lte_link_start(struct mock_link_item *items, size_t count);
+
+/* When the item of the loaded script was handled, in k_uptime_get() ms: the FSM sent its line (tx)
+ * or the mock sent the URC. -1 for an item not reached yet and for an index past the script. */
+int64_t mock_ctr_lte_link_tx_time(size_t index);
 
 /* Assert, from the test thread, that the script ran to its end without a violation */
 void mock_ctr_lte_link_assert_done(void);

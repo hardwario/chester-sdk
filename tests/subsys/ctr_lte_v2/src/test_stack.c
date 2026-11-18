@@ -353,9 +353,36 @@ static void test_cereg_history(void)
 /* Main test - runs all subtests sequentially (they depend on each other)     */
 /* ========================================================================== */
 
+/* The mock notes when it handled each item of the attach script */
+static void test_attach_tx_time(void)
+{
+	int cfun = stack_attach_index("AT+CFUN=1");
+	zassert_true(cfun > 0, "AT+CFUN=1 not in the attach script");
+
+	int64_t first = mock_ctr_lte_link_tx_time(0);
+	int64_t t_cfun = mock_ctr_lte_link_tx_time(cfun);
+	zassert_true(first >= 0 && t_cfun >= first, "times of AT and AT+CFUN=1: %lld, %lld", first,
+		     t_cfun);
+
+	/* %XMODEMSLEEP: 4,0, +CEREG: 0 and (500 ms later) +CEREG: 2 follow AT+CFUN=1 */
+	int64_t t_cereg = mock_ctr_lte_link_tx_time(cfun + 3);
+	zassert_true(t_cereg - t_cfun >= 500 && t_cereg - t_cfun <= 700,
+		     "+CEREG: 2 came %lld ms after AT+CFUN=1", t_cereg - t_cfun);
+
+	/* The URCs due at once come with the response, not with the one 500 ms later */
+	int64_t t_cereg0 = mock_ctr_lte_link_tx_time(cfun + 2);
+	zassert_true(t_cereg0 - t_cfun >= 0 && t_cereg0 - t_cfun <= 100,
+		     "+CEREG: 0 came %lld ms after AT+CFUN=1", t_cereg0 - t_cfun);
+
+	/* An item past the script has no time */
+	zassert_equal(mock_ctr_lte_link_tx_time(100000), -1, "past the script");
+	zassert_equal(stack_attach_index("AT+NONE"), -ENOENT, "no such line");
+}
+
 ZTEST(stack, test_full_sequence)
 {
 	stack_attach();
+	test_attach_tx_time();
 	test_send_only();
 	test_send_recv();
 	test_timeout_in_send();

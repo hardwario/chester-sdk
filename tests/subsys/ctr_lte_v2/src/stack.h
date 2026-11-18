@@ -41,6 +41,9 @@
 	{"AT+CRSM=176,28539,0,0,12", "+CRSM: 144,0,\"FFFFFFFFFFFFFFFFFFFFFFFF\"", "OK"}
 #endif
 
+/* The system mode the FSM sets before the attach (the test configurations do not override it) */
+#define ITEM_XSYSTEMMODE {"AT%XSYSTEMMODE=1,1,1,1", "OK"}
+
 /* From the modem boot to the SIM read, after which the FSM is in the attach state */
 #define ITEMS_PREPARE \
 	{"AT", "OK"}, \
@@ -53,7 +56,7 @@
 	{"AT%XPOFWARN=1,30", "OK"}, \
 	{"AT%XTEMPHIGHLVL=70", "OK"}, \
 	{"AT%XTEMP=1", "OK"}, \
-	{"AT%XSYSTEMMODE=1,1,1,1", "OK"}, \
+	ITEM_XSYSTEMMODE, \
 	{"AT%XDATAPRFL=0", "OK"}, \
 	ITEM_BANDLOCK, \
 	{"AT%XSIM=1", "OK"}, \
@@ -135,5 +138,31 @@ void stack_attach(void);
 
 /* Poll until the FSM is in the state, fail after the timeout */
 void stack_wait_for_state(const char *state, k_timeout_t timeout);
+
+/* Index of the first item of the attach script (stack_attach) that expects the line, -ENOENT if
+ * there is none; for mock_ctr_lte_link_tx_time() */
+int stack_attach_index(const char *tx);
+
+/* A send_recv call and how long it took in ms */
+int stack_send_recv(struct ctr_lte_v2_send_recv_param *param, int64_t *elapsed);
+
+/* Call send_recv from a thread of the priority instead of the (cooperative) test thread */
+void stack_caller_start(struct ctr_lte_v2_send_recv_param *param, int prio);
+
+/* Wait for that thread (60 s at most) and return its result and its time in ms */
+int stack_caller_join(int64_t *elapsed);
+
+/* Sleep until the k_uptime_get() time, if it is still ahead */
+void stack_sleep_until(int64_t uptime);
+
+/* The output of a shell command, which has to succeed */
+const char *stack_shell_cmd(const char *cmd);
+
+/* Give a transaction up while the FSM is in a state without IO: the call returns at the deadline,
+ * and the state is left alone */
+void stack_give_up(const char *state);
+
+/* Let the network release the RRC connection: the FSM ends in the sleep state */
+void stack_go_to_sleep(void);
 
 #endif

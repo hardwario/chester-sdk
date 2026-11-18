@@ -31,44 +31,6 @@
 
 #define CANARY 0xa5
 
-static __maybe_unused int send_recv(struct ctr_lte_v2_send_recv_param *param, int64_t *elapsed)
-{
-	int64_t start = k_uptime_get();
-	int ret = ctr_lte_v2_send_recv(param);
-	*elapsed = k_uptime_get() - start;
-
-	return ret;
-}
-
-static K_THREAD_STACK_DEFINE(m_caller_stack, 2048);
-static struct k_thread m_caller_thread;
-static struct ctr_lte_v2_send_recv_param *m_caller_param;
-static int64_t m_caller_elapsed;
-static int m_caller_ret;
-
-static void caller_entry(void *p1, void *p2, void *p3)
-{
-	m_caller_ret = send_recv(m_caller_param, &m_caller_elapsed);
-}
-
-/* Call send_recv from a thread of the priority instead of the (cooperative) test thread */
-static __maybe_unused void caller_start(struct ctr_lte_v2_send_recv_param *param, int prio)
-{
-	m_caller_param = param;
-
-	k_thread_create(&m_caller_thread, m_caller_stack, K_THREAD_STACK_SIZEOF(m_caller_stack),
-			caller_entry, NULL, NULL, NULL, prio, 0, K_NO_WAIT);
-}
-
-static __maybe_unused int caller_join(int64_t *elapsed)
-{
-	zassert_ok(k_thread_join(&m_caller_thread, K_SECONDS(60)));
-
-	*elapsed = m_caller_elapsed;
-
-	return m_caller_ret;
-}
-
 static __maybe_unused void assert_canary(const char *buf, size_t size, const size_t *len)
 {
 	for (size_t i = 0; i < size; i++) {
@@ -76,68 +38,6 @@ static __maybe_unused void assert_canary(const char *buf, size_t size, const siz
 	}
 
 	zassert_equal(*len, CANARY, "recv_len written after the return");
-}
-
-static __maybe_unused void sleep_until(int64_t uptime)
-{
-	int64_t now = k_uptime_get();
-
-	if (uptime > now) {
-		k_sleep(K_MSEC(uptime - now));
-	}
-}
-
-/* The output of a shell command */
-static __maybe_unused const char *shell_cmd(const char *cmd)
-{
-	const struct shell *sh = shell_backend_dummy_get_ptr();
-	size_t size;
-
-	WAIT_FOR(shell_ready(sh), 20000, k_msleep(1));
-	shell_backend_dummy_clear_output(sh);
-	int ret = shell_execute_cmd(sh, cmd);
-	const char *out = shell_backend_dummy_get_output(sh, &size);
-	zassert_ok(ret, "%s failed: %d: %s", cmd, ret, out);
-
-	return out;
-}
-
-/* Give a transaction up while the FSM is in a state without IO: the call returns at the deadline,
- * and the state is left alone */
-static __maybe_unused void give_up(const char *state)
-{
-	struct ctr_lte_v2_send_recv_param param = {
-		.send_buf = "Hello world",
-		.send_len = 11,
-		.send_as_string = true,
-		.timeout = K_SECONDS(2),
-		.rai = true,
-	};
-
-	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
-	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
-	zassert_true(elapsed >= 2000 && elapsed <= 2100, "returned %lld ms after the call",
-		     elapsed);
-
-	zassert_equal(strcmp(ctr_lte_v2_get_state(), state), 0, "expected state %s but got: %s",
-		      state, ctr_lte_v2_get_state());
-}
-
-static __maybe_unused void go_to_sleep(void)
-{
-	/* clang-format off */
-	static struct mock_link_item items[] = {
-		ITEMS_SLEEP(100),
-	};
-	/* clang-format on */
-
-	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
-
-	stack_wait_for_state("sleep", K_SECONDS(2));
-	/* Past the pause after AT#XSLEEP */
-	k_sleep(K_MSEC(500));
-	mock_ctr_lte_link_assert_done();
 }
 
 /* Wait until the send state waits for CSCON 1 (after AT#XSEND) and return the time left on its
@@ -203,10 +103,10 @@ ZTEST(txn, test_give_up_in_recv)
 	/* The call waits for the end of AT#XRECV, the response is dropped. The caller runs at the
 	 * priority of the FSM, which then ends its work on the response before the caller wakes
 	 * up: the result is still the caller's, as it gave the transaction up first. */
-	caller_start(&param, K_LOWEST_APPLICATION_THREAD_PRIO);
+	stack_caller_start(&param, K_LOWEST_APPLICATION_THREAD_PRIO);
 
 	int64_t elapsed;
-	int ret = caller_join(&elapsed);
+	int ret = stack_caller_join(&elapsed);
 	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
 	zassert_true(elapsed >= 2900 && elapsed <= 3500, "returned %lld ms after the call",
 		     elapsed);
@@ -251,7 +151,7 @@ ZTEST(txn, test_give_up_in_attach)
 	stack_wait_for_state("attach", K_SECONDS(10));
 	int64_t attach_start = k_uptime_get();
 
-	give_up("attach");
+	stack_give_up("attach");
 
 	struct ctr_lte_v2_metrics metrics;
 	zassert_ok(ctr_lte_v2_get_metrics(&metrics));
@@ -262,7 +162,7 @@ ZTEST(txn, test_give_up_in_attach)
 	zassert_true(remaining_sec >= 300 - 3, "attach timer cut to %d s", remaining_sec);
 
 	/* The attach times out at its time */
-	sleep_until(attach_start + 299 * MSEC_PER_SEC);
+	stack_sleep_until(attach_start + 299 * MSEC_PER_SEC);
 	ASSERT_FSM_STATE("attach");
 	stack_wait_for_state("retry_delay", K_SECONDS(2));
 
@@ -291,13 +191,13 @@ ZTEST(txn, test_give_up_in_attach)
 	zassert_ok(ctr_lte_v2_get_curr_attach_info(NULL, NULL, &retry_delay_sec, NULL));
 	zassert_equal(retry_delay_sec, 3600, "retry delay: %d s", retry_delay_sec);
 
-	give_up("retry_delay");
+	stack_give_up("retry_delay");
 
 	zassert_ok(ctr_lte_v2_get_curr_attach_info(NULL, NULL, NULL, &remaining_sec));
 	zassert_true(remaining_sec >= 3600 - 4, "retry delay cut to %d s", remaining_sec);
 
 	/* The retry delay runs to its end */
-	sleep_until(retry_delay_start + 3598 * MSEC_PER_SEC);
+	stack_sleep_until(retry_delay_start + 3598 * MSEC_PER_SEC);
 	ASSERT_FSM_STATE("retry_delay");
 
 	zassert_ok(ctr_lte_v2_wait_for_connected(K_SECONDS(30)));
@@ -333,10 +233,10 @@ ZTEST(txn, test_give_up_in_error)
 
 	/* The send fails, the deadline comes in the error state */
 	int64_t start = k_uptime_get();
-	give_up("error");
+	stack_give_up("error");
 
 	/* The error state ends at its time */
-	sleep_until(start + 4800);
+	stack_sleep_until(start + 4800);
 	ASSERT_FSM_STATE("error");
 	stack_wait_for_state("ready", K_MSEC(500));
 
@@ -352,7 +252,7 @@ ZTEST(txn, test_give_up_in_error)
 ZTEST(txn, test_give_up_in_send)
 {
 	stack_attach();
-	go_to_sleep();
+	stack_go_to_sleep();
 
 	/* clang-format off */
 	static struct mock_link_item items[] = {
@@ -389,7 +289,7 @@ ZTEST(txn, test_give_up_in_send)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
 	zassert_true(elapsed >= 2000 && elapsed <= 2100, "returned %lld ms after the call",
 		     elapsed);
@@ -398,7 +298,7 @@ ZTEST(txn, test_give_up_in_send)
 	param.send_len = 11;
 	param.timeout = K_SECONDS(10);
 
-	ret = send_recv(&param, &elapsed);
+	ret = stack_send_recv(&param, &elapsed);
 	zassert_ok(ret, "send_recv failed: %d", ret);
 	zassert_equal(recv_len, 8, "recv_len incorrect");
 	zassert_mem_equal(recv_buf, "Hi there", recv_len, "recv_buf incorrect");
@@ -415,7 +315,7 @@ ZTEST(txn, test_give_up_in_send)
 ZTEST(txn, test_give_up_in_xsend)
 {
 	stack_attach();
-	go_to_sleep();
+	stack_go_to_sleep();
 
 	/* clang-format off */
 	static struct mock_link_item items[] = {
@@ -447,7 +347,7 @@ ZTEST(txn, test_give_up_in_xsend)
 
 	/* The call waits for the end of AT#XSEND */
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
 	zassert_true(elapsed >= 1550 && elapsed <= 1700, "returned %lld ms after the call",
 		     elapsed);
@@ -499,7 +399,7 @@ ZTEST(txn, test_lock_busy)
 		.rai = true,
 	};
 
-	caller_start(&owner_param, K_PRIO_PREEMPT(5));
+	stack_caller_start(&owner_param, K_PRIO_PREEMPT(5));
 
 	k_sleep(K_MSEC(200));
 
@@ -512,7 +412,7 @@ ZTEST(txn, test_lock_busy)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_equal(ret, -EBUSY, "expected -EBUSY but got: %d", ret);
 	zassert_true(elapsed >= 500 && elapsed <= 600, "returned %lld ms after the call", elapsed);
 
@@ -529,7 +429,7 @@ ZTEST(txn, test_lock_busy)
 		.rai = true,
 	};
 
-	ret = send_recv(&invalid, &elapsed);
+	ret = stack_send_recv(&invalid, &elapsed);
 	zassert_equal(ret, -EINVAL, "expected -EINVAL but got: %d", ret);
 	zassert_equal(elapsed, 0, "returned %lld ms after the call", elapsed);
 
@@ -537,13 +437,13 @@ ZTEST(txn, test_lock_busy)
 	invalid.recv_size = 0;
 	invalid.recv_len = &recv_len;
 
-	ret = send_recv(&invalid, &elapsed);
+	ret = stack_send_recv(&invalid, &elapsed);
 	zassert_equal(ret, -EINVAL, "expected -EINVAL but got: %d", ret);
 	zassert_equal(elapsed, 0, "returned %lld ms after the call", elapsed);
 
 	zassert_equal(ctr_lte_v2_send_recv(NULL), -EINVAL);
 
-	ret = caller_join(&elapsed);
+	ret = stack_caller_join(&elapsed);
 	zassert_ok(ret, "owner's send_recv failed: %d", ret);
 	zassert_equal(owner_recv_len, 8, "recv_len incorrect");
 	zassert_mem_equal(owner_recv_buf, "Hi there", owner_recv_len, "recv_buf incorrect");
@@ -561,7 +461,7 @@ ZTEST(txn, test_lock_busy)
 ZTEST(txn, test_cscon_again_in_recv)
 {
 	stack_attach();
-	go_to_sleep();
+	stack_go_to_sleep();
 
 	/* clang-format off */
 	static struct mock_link_item items[] = {
@@ -594,7 +494,7 @@ ZTEST(txn, test_cscon_again_in_recv)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_ok(ret, "send_recv failed: %d", ret);
 	zassert_equal(recv_len, 8, "recv_len incorrect");
 
@@ -610,7 +510,7 @@ ZTEST(txn, test_cscon_again_in_recv)
 ZTEST(txn, test_cscon_1_0_in_send)
 {
 	stack_attach();
-	go_to_sleep();
+	stack_go_to_sleep();
 
 	/* clang-format off */
 	static struct mock_link_item items[] = {
@@ -635,7 +535,7 @@ ZTEST(txn, test_cscon_1_0_in_send)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_ok(ret, "send_recv failed: %d", ret);
 	/* With CSCON 1, not at the end of the wait for it */
 	zassert_true(elapsed >= 500 && elapsed <= 1000, "returned %lld ms after the call", elapsed);
@@ -692,7 +592,7 @@ ZTEST(txn, test_reconnect_in_recv)
 		.rai = true,
 	};
 
-	caller_start(&param, K_PRIO_PREEMPT(5));
+	stack_caller_start(&param, K_PRIO_PREEMPT(5));
 
 	stack_wait_for_state("receive", K_SECONDS(2));
 	/* Inside AT#XRECV */
@@ -704,7 +604,7 @@ ZTEST(txn, test_reconnect_in_recv)
 	ASSERT_FSM_STATE("receive");
 
 	int64_t elapsed;
-	int ret = caller_join(&elapsed);
+	int ret = stack_caller_join(&elapsed);
 	zassert_ok(ret, "send_recv failed: %d", ret);
 	zassert_equal(recv_len, 8, "recv_len incorrect");
 	zassert_mem_equal(recv_buf, "Hi there", recv_len, "recv_buf incorrect");
@@ -744,11 +644,11 @@ ZTEST(txn, test_reconnect_in_error)
 
 	/* The send fails, the deadline comes in the error state */
 	int64_t start = k_uptime_get();
-	give_up("error");
+	stack_give_up("error");
 
 	/* The error timer would run out 150 ms after the reconnect: in the boot state, after the
 	 * pause of the disabled state and before the modem wakes up */
-	sleep_until(start + 4850);
+	stack_sleep_until(start + 4850);
 	ASSERT_FSM_STATE("error");
 
 	zassert_ok(ctr_lte_v2_reconnect());
@@ -799,7 +699,7 @@ ZTEST(txn, test_recv_no_data)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
 	zassert_true(elapsed >= 5000 && elapsed <= 5200, "returned %lld ms after the call",
 		     elapsed);
@@ -857,7 +757,7 @@ ZTEST(txn, test_recv_fail)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
 	zassert_true(elapsed >= 2000 && elapsed <= 2200, "returned %lld ms after the call",
 		     elapsed);
@@ -867,7 +767,7 @@ ZTEST(txn, test_recv_fail)
 
 	param.send_buf = "Hello again";
 
-	ret = send_recv(&param, &elapsed);
+	ret = stack_send_recv(&param, &elapsed);
 	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
 	zassert_true(elapsed >= 30000 && elapsed <= 30200, "returned %lld ms after the call",
 		     elapsed);
@@ -907,7 +807,7 @@ ZTEST(txn, test_error_no_socket)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
 	zassert_true(elapsed <= 100, "returned %lld ms after the call", elapsed);
 
@@ -933,13 +833,13 @@ ZTEST(txn, test_disabled)
 	int ret;
 
 	g_ctr_lte_v2_config.test = true;
-	ret = send_recv(&param, &elapsed);
+	ret = stack_send_recv(&param, &elapsed);
 	g_ctr_lte_v2_config.test = false;
 	zassert_equal(ret, -ENOTSUP, "expected -ENOTSUP but got: %d", ret);
 	zassert_equal(elapsed, 0, "returned %lld ms after the call", elapsed);
 
 	/* Not enabled yet */
-	ret = send_recv(&param, &elapsed);
+	ret = stack_send_recv(&param, &elapsed);
 	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
 	zassert_true(elapsed <= 100, "returned %lld ms after the call", elapsed);
 	ASSERT_FSM_STATE("disabled");
@@ -961,12 +861,12 @@ ZTEST(txn, test_disabled)
 	stack_wait_for_state("attach", K_SECONDS(10));
 
 	/* Pending in the attach state, which leaves it to the ready state */
-	caller_start(&param, K_PRIO_PREEMPT(5));
+	stack_caller_start(&param, K_PRIO_PREEMPT(5));
 	k_sleep(K_SECONDS(1));
 
 	zassert_ok(ctr_lte_v2_reconnect());
 
-	ret = caller_join(&elapsed);
+	ret = stack_caller_join(&elapsed);
 	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
 	zassert_true(elapsed >= 1000 && elapsed <= 1100, "returned %lld ms after the call",
 		     elapsed);
@@ -988,7 +888,7 @@ ZTEST(txn, test_disabled)
 ZTEST(txn, test_no_cscon)
 {
 	stack_attach();
-	go_to_sleep();
+	stack_go_to_sleep();
 
 	/* clang-format off */
 	static struct mock_link_item items[] = {
@@ -1021,11 +921,11 @@ ZTEST(txn, test_no_cscon)
 	};
 
 	/* From a thread, so that a call that never returns fails the join */
-	caller_start(&param, K_PRIO_PREEMPT(5));
+	stack_caller_start(&param, K_PRIO_PREEMPT(5));
 	k_sleep(K_SECONDS(239));
 
 	int64_t elapsed;
-	int ret = caller_join(&elapsed);
+	int ret = stack_caller_join(&elapsed);
 	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
 	zassert_true(elapsed >= 240000 && elapsed <= 240200, "returned %lld ms after the call",
 		     elapsed);
@@ -1049,7 +949,7 @@ ZTEST(txn, test_no_cscon)
 ZTEST(txn, test_cscon_timer)
 {
 	stack_attach();
-	go_to_sleep();
+	stack_go_to_sleep();
 
 	/* clang-format off */
 	static struct mock_link_item items_short[] = {
@@ -1076,13 +976,13 @@ ZTEST(txn, test_cscon_timer)
 	};
 
 	/* A deadline of 3 s: 5 s at least */
-	caller_start(&param, K_PRIO_PREEMPT(5));
+	stack_caller_start(&param, K_PRIO_PREEMPT(5));
 
 	int timer_sec = send_timer_sec();
 	zassert_true(timer_sec >= 4 && timer_sec <= 5, "timer of %d s", timer_sec);
 
 	int64_t elapsed;
-	int ret = caller_join(&elapsed);
+	int ret = stack_caller_join(&elapsed);
 	zassert_equal(ret, -ETIMEDOUT, "expected -ETIMEDOUT but got: %d", ret);
 	stack_wait_for_state("ready", K_MSEC(100));
 	mock_ctr_lte_link_assert_done();
@@ -1116,12 +1016,12 @@ ZTEST(txn, test_cscon_timer)
 	};
 
 	/* Sent 5 s into a deadline of 60 s: the time left */
-	caller_start(&late_param, K_PRIO_PREEMPT(5));
+	stack_caller_start(&late_param, K_PRIO_PREEMPT(5));
 
 	timer_sec = send_timer_sec();
 	zassert_true(timer_sec >= 54 && timer_sec <= 55, "timer of %d s", timer_sec);
 
-	ret = caller_join(&elapsed);
+	ret = stack_caller_join(&elapsed);
 	zassert_ok(ret, "send_recv failed: %d", ret);
 	stack_wait_for_state("sleep", K_SECONDS(3));
 	/* Past the pause after AT#XSLEEP */
@@ -1146,14 +1046,14 @@ ZTEST(txn, test_cscon_timer)
 	param.timeout = K_SECONDS(300);
 
 	/* A deadline of 300 s: 120 s at most, then the transaction ends */
-	caller_start(&param, K_PRIO_PREEMPT(5));
+	stack_caller_start(&param, K_PRIO_PREEMPT(5));
 
 	timer_sec = send_timer_sec();
 	zassert_true(timer_sec >= 119 && timer_sec <= 120, "timer of %d s", timer_sec);
 
 	k_sleep(K_SECONDS(118));
 
-	ret = caller_join(&elapsed);
+	ret = stack_caller_join(&elapsed);
 	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
 	zassert_true(elapsed >= 120000 && elapsed <= 120200, "returned %lld ms after the call",
 		     elapsed);
@@ -1174,7 +1074,7 @@ ZTEST(txn, test_cscon_timer)
 ZTEST(txn, test_cscon_0_in_send)
 {
 	stack_attach();
-	go_to_sleep();
+	stack_go_to_sleep();
 
 	/* clang-format off */
 	static struct mock_link_item items[] = {
@@ -1207,7 +1107,7 @@ ZTEST(txn, test_cscon_0_in_send)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_ok(ret, "send_recv failed: %d", ret);
 	zassert_equal(recv_len, 8, "recv_len incorrect");
 	zassert_mem_equal(recv_buf, "Hi there", recv_len, "recv_buf incorrect");
@@ -1271,7 +1171,7 @@ ZTEST(txn, test_error_in_send)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_ok(ret, "send_recv failed: %d", ret);
 	zassert_true(elapsed >= 5000 && elapsed <= 5400, "returned %lld ms after the call",
 		     elapsed);
@@ -1282,7 +1182,7 @@ ZTEST(txn, test_error_in_send)
 	param.send_buf = "Hello again";
 	recv_len = 0;
 
-	ret = send_recv(&param, &elapsed);
+	ret = stack_send_recv(&param, &elapsed);
 	zassert_equal(ret, -ENOTCONN, "expected -ENOTCONN but got: %d", ret);
 	zassert_true(elapsed >= 35000 && elapsed <= 35300, "returned %lld ms after the call",
 		     elapsed);
@@ -1304,7 +1204,7 @@ ZTEST(txn, test_error_in_send)
 ZTEST(txn, test_reattach_in_send)
 {
 	stack_attach();
-	go_to_sleep();
+	stack_go_to_sleep();
 
 	/* clang-format off */
 	static struct mock_link_item items[] = {
@@ -1342,7 +1242,7 @@ ZTEST(txn, test_reattach_in_send)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_ok(ret, "send_recv failed: %d", ret);
 	zassert_equal(recv_len, 8, "recv_len incorrect");
 	zassert_mem_equal(recv_buf, "Hi there", recv_len, "recv_buf incorrect");
@@ -1411,10 +1311,10 @@ ZTEST(txn, test_deregistered_in_ready)
 ZTEST(txn, test_no_psm_cfun4)
 {
 	stack_attach();
-	go_to_sleep();
+	stack_go_to_sleep();
 
 	/* The attach granted PSM */
-	const char *out = shell_cmd("lte state");
+	const char *out = stack_shell_cmd("lte state");
 	zassert_not_null(strstr(out, "psm: active-time 0s, periodic-tau 1d 00h 00m 00s"), "%s",
 			 out);
 
@@ -1459,7 +1359,7 @@ ZTEST(txn, test_no_psm_cfun4)
 	};
 
 	int64_t elapsed;
-	int ret = send_recv(&param, &elapsed);
+	int ret = stack_send_recv(&param, &elapsed);
 	zassert_ok(ret, "send_recv failed: %d", ret);
 
 	stack_wait_for_state("sleep", K_SECONDS(5));
@@ -1474,7 +1374,7 @@ ZTEST(txn, test_no_psm_cfun4)
 	zassert_str_equal(cereg.tac, "05F2");
 	zassert_equal(cereg.active_time, -1);
 
-	out = shell_cmd("lte state");
+	out = stack_shell_cmd("lte state");
 	zassert_not_null(strstr(out, "cereg: registered-roaming"), "%s", out);
 	zassert_not_null(strstr(out, "psm: not granted"), "%s", out);
 
@@ -1497,14 +1397,14 @@ ZTEST(txn, test_no_psm_cfun4)
 	mock_ctr_lte_link_start(items_wake_up, ARRAY_SIZE(items_wake_up));
 
 	/* The send wakes the modem up, the attach does not end before the deadline */
-	give_up("attach");
+	stack_give_up("attach");
 	mock_ctr_lte_link_assert_done();
 
 	zassert_ok(ctr_lte_v2_get_cereg_param(&cereg));
 	zassert_equal(cereg.stat, CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING);
 
 	/* No PSM line without a registration */
-	out = shell_cmd("lte state");
+	out = stack_shell_cmd("lte state");
 	zassert_not_null(strstr(out, "cereg: searching"), "%s", out);
 	zassert_is_null(strstr(out, "psm:"), "%s", out);
 }
@@ -1552,7 +1452,7 @@ ZTEST(txn, test_callbacks)
 	zassert_equal(ctr_lte_v2_add_callback(&cb), -EALREADY);
 
 	stack_attach();
-	go_to_sleep();
+	stack_go_to_sleep();
 
 	zassert_equal(atomic_get(&m_cb_count), 2);
 	zassert_equal(m_cb_events[0], CTR_LTE_V2_CB_EVENT_CSCON_1);
