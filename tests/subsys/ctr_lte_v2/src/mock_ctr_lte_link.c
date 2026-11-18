@@ -73,6 +73,10 @@ struct ctr_lte_link_data {
 	size_t items_count;
 	size_t items_index;
 	int64_t item_time[MOCK_LINK_MAX_ITEMS]; /* k_uptime_get() of each item, -1 before it */
+	/* The resets of the script: the next item at each, and at the first wake-up after it */
+	int resets;
+	int reset_item[MOCK_LINK_MAX_RESETS];
+	int wake_up_item[MOCK_LINK_MAX_RESETS];
 	int violations;
 	char violation[VIOLATION_BUF_SIZE];
 
@@ -130,10 +134,28 @@ static void ctr_lte_link_unlock_(const struct device *dev)
 	k_mutex_unlock(&get_data(dev)->lock);
 }
 
+/* The resets so far, and the wake-ups left without a "Ready" */
+static atomic_t m_reset_count;
+static atomic_t m_ready_drop;
+
 static int ctr_lte_link_reset_(const struct device *dev)
 {
 
+	struct ctr_lte_link_data *data = get_data(dev);
+
 	LOG_DBG("Reset");
+	atomic_inc(&m_reset_count);
+
+	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
+
+	if (data->resets < MOCK_LINK_MAX_RESETS) {
+		data->reset_item[data->resets] = data->items_index;
+		data->wake_up_item[data->resets] = -1;
+	}
+	data->resets++;
+
+	k_spin_unlock(&data->script_lock, key);
+
 	k_sleep(RESET_DELAY);
 	// k_sleep(RESET_PAUSE);
 	return 0;
@@ -235,9 +257,26 @@ static void urc_dispatch_work_handler(struct k_work *work)
 static int ctr_lte_link_wake_up_(const struct device *dev)
 {
 
+	struct ctr_lte_link_data *data = get_data(dev);
+
 	LOG_INF("Wake up");
+
+	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
+
+	int n = data->resets - 1;
+	if (n >= 0 && n < MOCK_LINK_MAX_RESETS && data->wake_up_item[n] < 0) {
+		data->wake_up_item[n] = data->items_index;
+	}
+
+	k_spin_unlock(&data->script_lock, key);
+
 	k_sleep(WAKE_UP_DELAY);
 	// k_sleep(WAKE_UP_PAUSE);
+	if (atomic_get(&m_ready_drop) > 0) {
+		atomic_dec(&m_ready_drop);
+		LOG_INF("No Ready");
+		return 0;
+	}
 	rx(dev, "Ready");
 	return 0;
 }
@@ -619,6 +658,7 @@ void mock_ctr_lte_link_start(struct mock_link_item *items, size_t count)
 	}
 	data->violations = 0;
 	data->violation[0] = '\0';
+	data->resets = 0;
 
 	/* A script may start with a URC */
 	schedule_next_urc(data);
@@ -654,6 +694,33 @@ void mock_ctr_lte_link_assert_done(void)
 		      violation);
 	zassert_equal(index, count, "script stopped at item %zu of %zu (tx: %s, rx: %s)", index,
 		      count, next_tx ? next_tx : "-", next_rx ? next_rx : "-");
+}
+
+int mock_ctr_lte_link_reset_count(void)
+{
+	return atomic_get(&m_reset_count);
+}
+
+void mock_ctr_lte_link_drop_ready(int count)
+{
+	atomic_set(&m_ready_drop, count);
+}
+
+int mock_ctr_lte_link_reset_item(int n)
+{
+	struct ctr_lte_link_data *data = get_data(DEVICE_DT_INST_GET(0));
+	int item = -1;
+
+	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
+
+	if (n >= 0 && n < MIN(data->resets, MOCK_LINK_MAX_RESETS) &&
+	    data->wake_up_item[n] == data->reset_item[n]) {
+		item = data->reset_item[n];
+	}
+
+	k_spin_unlock(&data->script_lock, key);
+
+	return item;
 }
 
 int64_t mock_ctr_lte_link_tx_time(size_t index)

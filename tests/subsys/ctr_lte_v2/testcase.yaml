@@ -113,3 +113,51 @@ tests:
 
   subsys.ctr_lte_v2.ncellmeas_cancel:
     extra_args: CONFIG_TEST_FEATURE_SCAN_NCELLMEAS_CANCEL=y
+
+  subsys.ctr_lte_v2.scan_both:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_BOTH=y
+
+  subsys.ctr_lte_v2.scan_one_rat:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_ONE_RAT=y
+
+  subsys.ctr_lte_v2.scan_timeouts:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_TIMEOUTS=y
+
+  subsys.ctr_lte_v2.scan_cops_timeout:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_COPS_TIMEOUT=y
+
+  subsys.ctr_lte_v2.scan_cops_cme:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_COPS_CME=y
+
+  subsys.ctr_lte_v2.scan_step_fail:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_STEP_FAIL=y
+
+  subsys.ctr_lte_v2.scan_send:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_SEND=y
+
+  subsys.ctr_lte_v2.scan_send_cfun4:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_SEND_CFUN4=y
+
+  subsys.ctr_lte_v2.scan_send_after:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_SEND_AFTER=y
+
+  subsys.ctr_lte_v2.scan_reconnect:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_RECONNECT=y
+
+  subsys.ctr_lte_v2.scan_in_attach:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_IN_ATTACH=y
+
+  subsys.ctr_lte_v2.scan_in_retry_delay:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_IN_RETRY_DELAY=y
+
+  subsys.ctr_lte_v2.scan_in_gnss:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_IN_GNSS=y
+
+  subsys.ctr_lte_v2.scan_in_gnss_no_psm:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_IN_GNSS_NO_PSM=y
+
+  subsys.ctr_lte_v2.scan_reset_loop:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_RESET_LOOP=y
+
+  subsys.ctr_lte_v2.scan_modes:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_MODES=y

@@ -58,12 +58,13 @@ int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param)
 int ctr_lte_v2_parse_urc_xgps(const char *s, struct ctr_lte_v2_gnss_update *update);
 int ctr_lte_v2_parse_cgcont(const char *s, struct cgdcont_param *param);
 
-/* The RSRP and RSRQ the modem reports (%CONEVAL, %NCELLMEAS) in dBm and dB */
+/* The RSRP index of %NCELLMEAS in dBm, as RSRP_IDX_TO_DBM of nrf */
 static inline int ctr_lte_v2_parse_rsrp_dbm(int rsrp)
 {
-	return rsrp - 140;
+	return rsrp - 141;
 }
 
+/* The RSRQ the modem reports (%CONEVAL, %NCELLMEAS) in dB */
 static inline int ctr_lte_v2_parse_rsrq_db(int rsrq)
 {
 	return (rsrq - 39) / 2;
@@ -76,6 +77,11 @@ int ctr_lte_v2_parse_plmn(const char *s);
  * neighbours that fit are kept. On an error the cells are cleared, result and uptime_s are left
  * to the caller. */
 int ctr_lte_v2_parse_urc_ncellmeas(const char *s, struct ctr_lte_v2_ncellmeas_param *param);
+/* Parses what follows "+COPS: " in the response to AT+COPS=?. Stores at most max networks, counts
+ * them all; the names are skipped and the lists of the supported modes and formats after ",,"
+ * are ignored. The caller owns the array, so the line needs no copy. */
+int ctr_lte_v2_parse_cops_list(const char *s, struct ctr_lte_v2_scan_network *networks, size_t max,
+			       size_t *count);
 #endif
 
 #ifdef __cplusplus

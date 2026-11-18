@@ -46,6 +46,7 @@ enum ctr_lte_v2_event {
 	CTR_LTE_V2_EVENT_NCELLMEAS,
 	CTR_LTE_V2_EVENT_NCELLMEAS_DONE,
 	CTR_LTE_V2_EVENT_SCAN_TIMER,
+	CTR_LTE_V2_EVENT_SCAN,
 };
 
 /**
@@ -66,8 +67,11 @@ int ctr_lte_v2_flow_enable(bool wakeup);
 int ctr_lte_v2_flow_disable(bool send_sleep);
 int ctr_lte_v2_flow_reset(void);
 
-int ctr_lte_v2_flow_prepare(void);
+/* The mode as 'lte config mode' ("lte-m", "nb-iot" or both) sets %XSYSTEMMODE */
+int ctr_lte_v2_flow_prepare(const char *mode);
 int ctr_lte_v2_flow_cfun(int cfun);
+/* As ctr_lte_v2_flow_cfun, the response awaited up to the timeout instead of 30 s */
+int ctr_lte_v2_flow_cfun_timeout(int cfun, k_timeout_t timeout);
 int ctr_lte_v2_flow_sim_info(void);
 int ctr_lte_v2_flow_sim_fplmn(void);
 int ctr_lte_v2_flow_open_socket(void);
@@ -92,6 +96,8 @@ int ctr_lte_v2_flow_cmd_without_response(const char *s);
 int ctr_lte_v2_flow_ncellmeas(void);
 /* AT%NCELLMEASSTOP; during a measurement the modem sends the cells found so far right after OK */
 int ctr_lte_v2_flow_ncellmeas_stop(void);
+/* AT+COPS=? into the scan result: 0, -ETIMEDOUT, -EIO (rejected, no network), -EBADMSG */
+int ctr_lte_v2_flow_scan_networks(void);
 #endif
 int ctr_lte_v2_flow_bypass_set_cb(ctr_lte_v2_flow_bypass_cb cb, void *user_data);
 int ctr_lte_v2_flow_bypass_write(const uint8_t *data, const size_t len);

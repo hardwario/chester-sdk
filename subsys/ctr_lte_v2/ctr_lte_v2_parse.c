@@ -582,7 +582,7 @@ int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param)
 	if (param->result == 0) {
 		param->eest = energy_estimate;
 		param->ecl = ce_level;
-		param->rsrp = ctr_lte_v2_parse_rsrp_dbm(rsrp);
+		param->rsrp = rsrp - 140;
 		param->rsrq = ctr_lte_v2_parse_rsrq_db(rsrq);
 		param->snr = snr - 24;
 		param->plmn = strtol(plmn, NULL, 10);
@@ -1044,6 +1044,102 @@ int ctr_lte_v2_parse_urc_ncellmeas(const char *s, struct ctr_lte_v2_ncellmeas_pa
 	param->uptime_s = uptime_s;
 
 	return ret;
+}
+
+/* Skips a quoted string; returns the position after it or NULL */
+static const char *skip_quoted(const char *p)
+{
+	if (*p != '"') {
+		return NULL;
+	}
+
+	const char *end = strchr(p + 1, '"');
+
+	return end ? end + 1 : NULL;
+}
+
+/* A number in [0, 255] that ends at the character 'term' (not consumed); returns the position of
+ * the terminator or NULL */
+static const char *num_before(const char *p, char term, uint8_t *num)
+{
+	char *end;
+	long val = strtol(p, &end, 10);
+
+	if (end == p || *end != term || val < 0 || val > UINT8_MAX) {
+		return NULL;
+	}
+
+	*num = val;
+
+	return end;
+}
+
+int ctr_lte_v2_parse_cops_list(const char *s, struct ctr_lte_v2_scan_network *networks, size_t max,
+			       size_t *count)
+{
+	/* (<stat>,<long name>,<short name>,<plmn>,<AcT>)[,(...)][,,(<modes>),(<formats>)] */
+	if (!s || !networks || !count) {
+		return -EINVAL;
+	}
+
+	*count = 0;
+
+	if (*s != '\0' && *s != '(') {
+		return -EBADMSG;
+	}
+
+	const char *p = s;
+
+	while (*p == '(') {
+		struct ctr_lte_v2_scan_network n = {0};
+
+		if (!(p = num_before(p + 1, ',', &n.stat))) {
+			goto fail;
+		}
+
+		/* The long and the short name, not kept */
+		if (!(p = skip_quoted(p + 1)) || *p != ',') {
+			goto fail;
+		}
+
+		if (!(p = skip_quoted(p + 1)) || *p != ',') {
+			goto fail;
+		}
+
+		/* The PLMN does not fit when it is longer than 6 characters */
+		bool def;
+
+		if (!(p = ctr_lte_v2_tok_str(p + 1, &def, n.plmn, sizeof(n.plmn))) || !def ||
+		    ctr_lte_v2_parse_plmn(n.plmn) || *p != ',') {
+			goto fail;
+		}
+
+		if (!(p = num_before(p + 1, ')', &n.act))) {
+			goto fail;
+		}
+
+		if (*count < max) {
+			networks[*count] = n;
+		}
+
+		(*count)++;
+
+		p++;
+
+		/* Another network follows ",(", while ",," starts the lists of modes and formats */
+		if (p[0] != ',' || p[1] != '(') {
+			break;
+		}
+
+		p++;
+	}
+
+	return 0;
+
+fail:
+	*count = 0;
+
+	return -EBADMSG;
 }
 
 #endif /* CONFIG_CTR_LTE_V2_SCAN */

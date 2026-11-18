@@ -9,6 +9,7 @@
 
 /* Zephyr includes */
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
 /* Standard includes */
 #include <stddef.h>
@@ -36,6 +37,8 @@ int ctr_lte_v2_talk_at_ceer(struct ctr_lte_v2_talk *talk, char *buf, size_t size
 int ctr_lte_v2_talk_at_ceppi(struct ctr_lte_v2_talk *talk, int p1);
 int ctr_lte_v2_talk_at_cereg(struct ctr_lte_v2_talk *talk, int p1);
 int ctr_lte_v2_talk_at_cfun(struct ctr_lte_v2_talk *talk, int p1);
+/* As ctr_lte_v2_talk_at_cfun, the response awaited up to the timeout instead of 30 s */
+int ctr_lte_v2_talk_at_cfun_timeout(struct ctr_lte_v2_talk *talk, int p1, k_timeout_t timeout);
 int ctr_lte_v2_talk_at_cgauth(struct ctr_lte_v2_talk *talk, int p1, int *p2, const char *p3,
 			      const char *p4);
 int ctr_lte_v2_talk_at_cgdcont(struct ctr_lte_v2_talk *talk, int p1, const char *p2,
@@ -91,6 +94,10 @@ int ctr_lte_v2_talk_at_cmd(struct ctr_lte_v2_talk *talk, const char *s);
 #if defined(CONFIG_CTR_LTE_V2_SCAN)
 int ctr_lte_v2_talk_at_ncellmeas(struct ctr_lte_v2_talk *talk, int search_type, int max_cells);
 int ctr_lte_v2_talk_at_ncellmeasstop(struct ctr_lte_v2_talk *talk);
+/* What follows "+COPS: " in the response to AT+COPS=? */
+typedef void (*ctr_lte_v2_talk_cops_list_cb)(const char *s, void *user_data);
+int ctr_lte_v2_talk_at_cops_test(struct ctr_lte_v2_talk *talk, ctr_lte_v2_talk_cops_list_cb cb,
+				 void *user_data);
 #endif
 int ctr_lte_v2_talk_at_cmd_with_resp(struct ctr_lte_v2_talk *talk, const char *s, char *buf,
 				     size_t size);

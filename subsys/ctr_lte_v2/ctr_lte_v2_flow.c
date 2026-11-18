@@ -292,7 +292,7 @@ static int fill_bands(char *bands)
 	return 0;
 }
 
-int ctr_lte_v2_flow_prepare(void)
+int ctr_lte_v2_flow_prepare(const char *mode)
 {
 	int ret;
 
@@ -392,8 +392,8 @@ int ctr_lte_v2_flow_prepare(void)
 	gnss_mode = 1;
 #endif
 
-	char *pos_let_m = strstr(g_ctr_lte_v2_config.mode, "lte-m");
-	char *pos_nb_iot = strstr(g_ctr_lte_v2_config.mode, "nb-iot");
+	char *pos_let_m = strstr(mode, "lte-m");
+	char *pos_nb_iot = strstr(mode, "nb-iot");
 
 	int lte_m_mode = pos_let_m ? 1 : 0;
 	int nb_iot_mode = pos_nb_iot ? 1 : 0;
@@ -569,6 +569,17 @@ int ctr_lte_v2_flow_cfun(int cfun)
 	ret = ctr_lte_v2_talk_at_cfun(&m_talk, cfun);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_cfun` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_v2_flow_cfun_timeout(int cfun, k_timeout_t timeout)
+{
+	int ret = ctr_lte_v2_talk_at_cfun_timeout(&m_talk, cfun, timeout);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cfun_timeout` failed: %d", ret);
 		return ret;
 	}
 
@@ -1169,6 +1180,30 @@ int ctr_lte_v2_flow_ncellmeas_stop(void)
 	}
 
 	return 0;
+}
+
+static void cops_list_cb(const char *s, void *user_data)
+{
+	*(int *)user_data = ctr_lte_v2_state_scan_add_networks(s);
+}
+
+int ctr_lte_v2_flow_scan_networks(void)
+{
+	/* The number of networks in the list, or the parser error */
+	int parsed = 0;
+
+	int ret = ctr_lte_v2_talk_at_cops_test(&m_talk, cops_list_cb, &parsed);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cops_test` failed: %d", ret);
+		return ret == -ETIMEDOUT ? -ETIMEDOUT : -EIO;
+	}
+
+	if (parsed < 0) {
+		LOG_WRN("Unreadable +COPS list: %d", parsed);
+		return -EBADMSG;
+	}
+
+	return parsed ? 0 : -EIO;
 }
 #endif
 

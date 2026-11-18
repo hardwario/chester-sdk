@@ -98,7 +98,7 @@ config CTR_LTE_V2_SCAN
 	default n
 	help
 		Neighbour cell measurement ('lte ncellmeas') and network scan ('lte scan')
-		for diagnostics (about 1 kB of RAM). The scan takes the device offline
+		for diagnostics (about 1.5 kB of RAM). The scan takes the device offline
 		for minutes and ends with a modem reset and a new attach.
 
 config HEAP_MEM_POOL_SIZE

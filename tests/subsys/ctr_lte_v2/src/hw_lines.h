@@ -44,6 +44,58 @@
 #define HW_PSM_NCELLMEAS_STOPPED                                                                   \
 	"0,\"000AE520\",\"23003\",\"B4DC\",65535,0,6447,135,88,29,658953,0,0"
 
+/* AT+COPS=? on LTE-M after the registration (U1): the camped RAT only, no names */
+#define HW_COPS_LIST "(1,\"\",\"\",\"23001\",7),(1,\"\",\"\",\"23003\",7),(2,\"\",\"\",\"23002\",7)"
+
+/* AT+COPS=? on NB-IoT, camped without a registration (U1); stat 2 is the camped network */
+#define HW_COPS_NBIOT_CAMPED                                                                       \
+	"(1,\"\",\"\",\"23003\",9),(2,\"\",\"\",\"23001\",9),(1,\"\",\"\",\"23002\",9)"
+
+/* AT+COPS=? on NB-IoT in PSM (the board with the SIM of 23003) */
+#define HW_COPS_PSM_NBIOT                                                                          \
+	"(2,\"\",\"\",\"23003\",9),(1,\"\",\"\",\"23002\",9),(1,\"\",\"\",\"23001\",9)"
+
+/* +CEREG on NB-IoT, camped without a registration (U1) */
+#define HW_CEREG_NBIOT_CAMPED "+CEREG: 2,\"2D02\",\"074FEB55\",9"
+
+/* The registration rejected on NB-IoT (the board with PSM, network forced to 23002, gate 3B): the
+ * reject is stat 2 with the EMM cause 11, 6.6 s after the CFUN=1 */
+#define HW_REJECT_CEREG_SEARCH "+CEREG: 2,\"2D02\",\"074FEB56\",9"
+#define HW_REJECT_CEREG        "+CEREG: 2,\"2D02\",\"074FEB56\",9,0,11"
+
+/* %NCELLMEAS=5,7 after the reject (B1, after 126 s): the rejecting network serves */
+#define HW_REJECT_NCELLMEAS                                                                        \
+	"0,\"074FEB56\",\"23002\",\"2D02\",0,964058,6348,339,71,25,1097250,1,0,"                   \
+	"\"000AE520\",\"23003\",\"B4DC\",65535,0,6447,135,85,22,1097285,0,0,"                      \
+	"\"074FEBAC\",\"23001\",\"28B4\",65535,0,6247,14,77,27,1097323,0,0"
+
+/* AT+COPS=? after the reject (B2, after 92 s): 23002 forbidden */
+#define HW_REJECT_COPS                                                                             \
+	"(3,\"\",\"\",\"23002\",9),(1,\"\",\"\",\"23001\",9),(1,\"\",\"\",\"23003\",9)"
+
+/* The registration of LTE-M reported during its AT+COPS=? (not seen on the modem): a REGISTERED
+ * counts only in the registration step */
+#define SYN_CEREG_STALE_LTEM "+CEREG: 5,\"05F2\",\"074FEB50\",7,,,\"11100000\",\"11100000\""
+
+/* 12 networks with names, over 500 B (the modem sends 1024 B at most), no 23003: the list is
+ * longer than the 10 networks we keep and than any buffer a parser might copy it into */
+#define SYN_COPS_LONG                                                                              \
+	"(1,\"Telekom Long Name 1\",\"TLN1\",\"26201\",7),"                                        \
+	"(1,\"Telekom Long Name 2\",\"TLN2\",\"26202\",7),"                                        \
+	"(1,\"Telekom Long Name 3\",\"TLN3\",\"26203\",7),"                                        \
+	"(1,\"Telekom Long Name 4\",\"TLN4\",\"26204\",7),"                                        \
+	"(1,\"Telekom Long Name 5\",\"TLN5\",\"26205\",7),"                                        \
+	"(1,\"Telekom Long Name 6\",\"TLN6\",\"26206\",7),"                                        \
+	"(1,\"Telekom Long Name 7\",\"TLN7\",\"26207\",7),"                                        \
+	"(1,\"Telekom Long Name 8\",\"TLN8\",\"26208\",7),"                                        \
+	"(1,\"Telekom Long Name 9\",\"TLN9\",\"26209\",7),"                                        \
+	"(1,\"Telekom Long Name 10\",\"TLN10\",\"26210\",7),"                                      \
+	"(1,\"Telekom Long Name 11\",\"TLN11\",\"26211\",7),"                                      \
+	"(2,\"Telekom Long Name 12\",\"TLN12\",\"26212\",7),,(0,1,2,3,4),(0,1,2)"
+
+/* A list without the closing parenthesis of the last network */
+#define SYN_COPS_BAD "(1,\"\",\"\",\"23001\",7),(1,\"\",\"\",\"23003\",7"
+
 /* A neighbour (earfcn, pci, rsrp, rsrq, time_diff) to build lines with 10 and more of them */
 #define SYN_NCELL ",6300,339,64,12,0"
 

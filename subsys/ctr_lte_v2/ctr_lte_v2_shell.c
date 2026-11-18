@@ -23,6 +23,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 LOG_MODULE_REGISTER(ctr_lte_v2_shell, CONFIG_CTR_LTE_V2_LOG_LEVEL);
@@ -443,7 +445,7 @@ static int cmd_test_prepare(const struct shell *shell, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	ret = ctr_lte_v2_flow_prepare();
+	ret = ctr_lte_v2_flow_prepare(g_ctr_lte_v2_config.mode);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_flow_prepare` failed: %d", ret);
 		shell_error(shell, "command failed");
@@ -588,6 +590,9 @@ static int cmd_ncellmeas(const struct shell *shell, size_t argc, char **argv)
 	int ret = ctr_lte_v2_schedule_ncellmeas();
 	if (ret == -EALREADY) {
 		shell_print(shell, "measurement already requested");
+	} else if (ret == -EBUSY) {
+		shell_error(shell, "scan in progress");
+		return ret;
 	} else if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_schedule_ncellmeas` failed: %d", ret);
 		shell_error(shell, "command failed");
@@ -666,6 +671,436 @@ static int cmd_ncellmeas_show(const struct shell *shell, size_t argc, char **arg
 
 	return 0;
 }
+
+static const char *cops_stat_str(int stat)
+{
+	switch (stat) {
+	case 1:
+		return "available";
+	case 2:
+		return "current";
+	case 3:
+		return "forbidden";
+	default:
+		return "unknown";
+	}
+}
+
+static const char *cops_act_str(int act)
+{
+	switch (act) {
+	case 7:
+		return "lte-m";
+	case 9:
+		return "nb-iot";
+	default:
+		return "unknown";
+	}
+}
+
+static const char *scan_status_str(int status)
+{
+	switch (status) {
+	case 0:
+		return "ok";
+	case -ENODATA:
+		return "not run";
+	case -EINTR:
+		return "partial";
+	case -EBUSY:
+		return "radio busy";
+	case -ECANCELED:
+		return "cancelled";
+	default:
+		return "error";
+	}
+}
+
+/* The cells step stopped at its bound has the cells found so far */
+static int scan_cells_status(int status)
+{
+	return status == -ETIMEDOUT ? -EINTR : status;
+}
+
+/* One word for the lists of the RATs that ran: all ok, some ok (partial), none ok (error: each
+ * failure of the list is an error in these words) */
+static int scan_networks_status(const struct ctr_lte_v2_scan_result *r)
+{
+	const int status[] = {r->lte_m.networks, r->nb_iot.networks};
+	int run = 0;
+	int ok = 0;
+
+	for (size_t i = 0; i < ARRAY_SIZE(status); i++) {
+		run += status[i] != -ENODATA;
+		ok += status[i] == 0;
+	}
+
+	if (!run) {
+		return -ENODATA;
+	}
+
+	if (ok == run) {
+		return 0;
+	}
+
+	return ok ? -EINTR : -EIO;
+}
+
+/* MCC and MNC as one key in their order, -1 for an invalid PLMN */
+static int32_t scan_plmn_key(const char *plmn)
+{
+	if (ctr_lte_v2_parse_plmn(plmn)) {
+		return -1;
+	}
+
+	int32_t mcc = (plmn[0] - '0') * 100 + (plmn[1] - '0') * 10 + (plmn[2] - '0');
+
+	return mcc * 1000 + strtol(plmn + 3, NULL, 10);
+}
+
+/* Stronger first within a RAT; LTE-M before NB-IoT */
+static bool scan_cell_before(const struct ctr_lte_v2_scan_cell *a,
+			     const struct ctr_lte_v2_scan_cell *b)
+{
+	return a->act != b->act ? a->act < b->act : a->rsrp > b->rsrp;
+}
+
+/* One group: the PLMN with its RATs and stat from the lists, and its cells. True if listed */
+static bool print_scan_plmn(const struct shell *shell, const struct ctr_lte_v2_scan_result *r,
+			    size_t entries, int32_t key)
+{
+	int stat_ltem = -1;
+	int stat_nbiot = -1;
+	bool ltem = false;
+	bool nbiot = false;
+	const char *plmn = NULL;
+
+	for (size_t i = 0; i < entries; i++) {
+		const struct ctr_lte_v2_scan_network *e = &r->networks[i];
+
+		if (scan_plmn_key(e->plmn) != key) {
+			continue;
+		}
+		if (!plmn) {
+			plmn = e->plmn;
+		}
+		if (e->act == CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT) {
+			stat_nbiot = e->stat;
+			nbiot = true;
+		} else {
+			stat_ltem = e->stat;
+			ltem = true;
+		}
+	}
+
+	bool listed = plmn != NULL;
+	uint8_t cells[CTR_LTE_V2_SCAN_CELL_MAX];
+	size_t n = 0;
+
+	for (size_t i = 0; i < MIN(r->cell_count, CTR_LTE_V2_SCAN_CELL_MAX); i++) {
+		const struct ctr_lte_v2_scan_cell *c = &r->cells[i];
+
+		if (scan_plmn_key(c->plmn) != key) {
+			continue;
+		}
+		if (!plmn) {
+			plmn = c->plmn;
+		}
+		if (c->act == CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT) {
+			nbiot = true;
+		} else {
+			ltem = true;
+		}
+
+		size_t j = n++;
+		for (; j > 0 && scan_cell_before(c, &r->cells[cells[j - 1]]); j--) {
+			cells[j] = cells[j - 1];
+		}
+		cells[j] = i;
+	}
+
+	char stat[48];
+
+	if (stat_ltem < 0 && stat_nbiot < 0) {
+		snprintf(stat, sizeof(stat), "not in network list");
+	} else if (stat_ltem < 0 || stat_nbiot < 0 || stat_ltem == stat_nbiot) {
+		snprintf(stat, sizeof(stat), "%s",
+			 cops_stat_str(stat_ltem >= 0 ? stat_ltem : stat_nbiot));
+	} else {
+		snprintf(stat, sizeof(stat), "%s (lte-m), %s (nb-iot)", cops_stat_str(stat_ltem),
+			 cops_stat_str(stat_nbiot));
+	}
+
+	shell_print(shell, "plmn: %s, act: %s%s%s, stat: %s", plmn, ltem ? "lte-m" : "",
+		    ltem && nbiot ? "," : "", nbiot ? "nb-iot" : "", stat);
+
+	for (size_t i = 0; i < n; i++) {
+		const struct ctr_lte_v2_scan_cell *c = &r->cells[cells[i]];
+
+		shell_print(shell,
+			    "  cell: %08X, act: %s, tac: %04X, earfcn: %u, pci: %u, rsrp: %d dBm",
+			    (unsigned int)c->eci, cops_act_str(c->act), c->tac,
+			    (unsigned int)c->earfcn, c->pci, ctr_lte_v2_parse_rsrp_dbm(c->rsrp));
+	}
+
+	return listed;
+}
+
+/* One group per PLMN with all its RATs and cells, in the order of MCC and MNC: each round takes
+ * the smallest key above the last one (no arrays on the stack) */
+static void print_scan_groups(const struct shell *shell, const struct ctr_lte_v2_scan_result *r)
+{
+	size_t entries = MIN(r->network_count, CTR_LTE_V2_SCAN_NETWORK_MAX);
+	size_t cell_count = MIN(r->cell_count, CTR_LTE_V2_SCAN_CELL_MAX);
+	size_t listed = 0;
+	int32_t key = -1;
+
+	for (;;) {
+		int32_t next = INT32_MAX;
+
+		for (size_t i = 0; i < entries + cell_count; i++) {
+			int32_t k = scan_plmn_key(i < entries ? r->networks[i].plmn
+							      : r->cells[i - entries].plmn);
+			if (k > key && k < next) {
+				next = k;
+			}
+		}
+
+		if (next == INT32_MAX) {
+			break;
+		}
+
+		key = next;
+		listed += print_scan_plmn(shell, r, entries, key);
+	}
+
+	if (entries < r->network_count) {
+		shell_print(shell, "networks: %zu (%u with act, %zu stored), cells: %u", listed,
+			    r->network_count, entries, r->cell_count);
+	} else {
+		shell_print(shell, "networks: %zu (%u with act), cells: %u", listed,
+			    r->network_count, r->cell_count);
+	}
+}
+
+static int print_scan_result(const struct shell *shell)
+{
+	/* A copy (on the stack): printing under the lock of the state would hold up the URCs */
+	struct ctr_lte_v2_scan_result result;
+
+	int ret = ctr_lte_v2_get_scan_result(&result);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_get_scan_result` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	if (!result.valid) {
+		shell_print(shell, "no scan yet");
+		return 0;
+	}
+
+	print_last_reject(shell);
+
+	char ago[24];
+	/* From the end, as hio */
+	uint32_t age_s = (k_uptime_get() - result.uptime_ms) / MSEC_PER_SEC - result.duration_s;
+
+	ctr_util_fmt_duration(age_s, ago, sizeof(ago));
+	shell_print(shell, "last scan: %s ago (request)", ago);
+	shell_print(shell, "search: lte-m cells %s, nb-iot cells %s, networks %s",
+		    scan_status_str(scan_cells_status(result.lte_m.cells)),
+		    scan_status_str(scan_cells_status(result.nb_iot.cells)),
+		    scan_status_str(scan_networks_status(&result)));
+
+	print_scan_groups(shell, &result);
+
+	return 0;
+}
+
+/* The optional mode in argv[1], the same for each command that takes it */
+static int scan_mode_parse(const struct shell *shell, size_t argc, char **argv,
+			   enum ctr_lte_v2_scan_mode *mode)
+{
+	*mode = CTR_LTE_V2_SCAN_ALL;
+
+	if (argc > 2) {
+		shell_error(shell, "only one argument is accepted");
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (argc == 2) {
+		if (!strcmp(argv[1], "all")) {
+			*mode = CTR_LTE_V2_SCAN_ALL;
+		} else if (!strcmp(argv[1], "plmn")) {
+			*mode = CTR_LTE_V2_SCAN_PLMN;
+		} else if (!strcmp(argv[1], "cells")) {
+			*mode = CTR_LTE_V2_SCAN_CELLS;
+		} else {
+			shell_error(shell, "unknown mode: %s", argv[1]);
+			shell_help(shell);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+/* A state that does not take the scan soon: the reason, or NULL. The request waits there (reset
+ * loop, error) or is dropped (disabled) */
+static const char *scan_blocked(const char *state)
+{
+	if (!strcmp(state, "disabled")) {
+		return "LTE is disabled";
+	} else if (!strcmp(state, "reset_loop")) {
+		return "modem reset loop, attach blocked";
+	} else if (!strcmp(state, "error")) {
+		return "LTE error, retrying";
+	}
+
+	return NULL;
+}
+
+static int cmd_scan_now(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+	enum ctr_lte_v2_scan_mode mode;
+
+	ret = scan_mode_parse(shell, argc, argv, &mode);
+	if (ret) {
+		return ret;
+	}
+
+	if (g_ctr_lte_v2_config.test) {
+		shell_error(shell, "not supported in test mode");
+		return -ENOEXEC;
+	}
+
+	const char *state = ctr_lte_v2_get_state();
+	const char *reason = scan_blocked(state);
+
+	if (reason) {
+		shell_error(shell, "scan not possible: %s (fsm-state: %s)", reason, state);
+		return -EBUSY;
+	}
+
+	int64_t start;
+	int64_t last;
+	int64_t prev;
+
+	/* The result of this request has another start */
+	ctr_lte_v2_state_get_scan_starts(&start, &prev);
+
+	ret = ctr_lte_v2_scan(mode);
+	if (ret == -EALREADY) {
+		shell_print(shell, "scan already in progress, waiting for it");
+	} else if (ret) {
+		shell_error(shell, "command failed: %d", ret);
+		return ret;
+	}
+
+	/* Cannot be interrupted anyway, so hold the shell until it is done. The connection is
+	 * re-established after the scan. */
+	shell_print(shell, "scanning, this takes minutes...");
+
+	int64_t command = k_uptime_get();
+	k_timeout_t wait;
+
+	start = 0;
+	for (;;) {
+		if (!start) {
+			ctr_lte_v2_state_get_scan_starts(&start, &last);
+		}
+
+		if (start) {
+			/* A line each 30 s from the start */
+			wait = K_MSEC(30000 - (k_uptime_get() - start) % 30000);
+		} else {
+			/* Not started: a state that blocks it ends the wait, the request stays */
+			state = ctr_lte_v2_get_state();
+			reason = scan_blocked(state);
+			if (reason) {
+				shell_error(shell, "scan not possible: %s (fsm-state: %s)", reason,
+					    state);
+				return -EBUSY;
+			}
+
+			wait = K_SECONDS(1);
+		}
+
+		if (!ctr_lte_v2_wait_for_scan(wait)) {
+			break;
+		}
+
+		/* Beyond the bounds of the steps: something is wrong */
+		int64_t elapsed = (k_uptime_get() - (start ? start : command)) / MSEC_PER_SEC;
+
+		if (elapsed > 35 * 60) {
+			shell_error(shell, "scan did not finish");
+			return -ETIMEDOUT;
+		}
+
+		if (start) {
+			char took[24];
+
+			ctr_util_fmt_duration(elapsed, took, sizeof(took));
+			shell_print(shell, "still scanning (%s)", took);
+		}
+	}
+
+	/* Dropped (a reconnect, LTE disabled): no new result */
+	ctr_lte_v2_state_get_scan_starts(&start, &last);
+	if (last == prev) {
+		shell_error(shell, "scan dropped");
+		return -ECANCELED;
+	}
+
+	ret = print_scan_result(shell);
+	if (!ret) {
+		shell_info(shell, "command succeeded");
+	}
+
+	return ret;
+}
+
+static int cmd_scan_schedule(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret;
+	enum ctr_lte_v2_scan_mode mode;
+
+	ret = scan_mode_parse(shell, argc, argv, &mode);
+	if (ret) {
+		return ret;
+	}
+
+	if (g_ctr_lte_v2_config.test) {
+		shell_error(shell, "not supported in test mode");
+		return -ENOEXEC;
+	}
+
+	ret = ctr_lte_v2_scan(mode);
+	if (ret && ret != -EALREADY) {
+		LOG_ERR("Call `ctr_lte_v2_scan` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_info(shell, "command succeeded");
+
+	return 0;
+}
+
+static int cmd_scan_show(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	return print_scan_result(shell);
+}
 #endif
 
 static int print_help(const struct shell *shell, size_t argc, char **argv)
@@ -721,6 +1156,25 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 	SHELL_SUBCMD_SET_END
 );
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_lte_scan,
+
+	SHELL_CMD_ARG(now, NULL,
+	              "Scan and wait for the result (format: [all|plmn|cells]). Not while "
+	              "disabled, in a reset loop or an error (the request then stays).",
+	              cmd_scan_now, 1, 1),
+
+	SHELL_CMD_ARG(schedule, NULL,
+	              "Schedule a scan and return at once (format: [all|plmn|cells]).",
+	              cmd_scan_schedule, 1, 1),
+
+	SHELL_CMD_ARG(show, NULL,
+	              "Show the last scan result.",
+	              cmd_scan_show, 1, 0),
+
+	SHELL_SUBCMD_SET_END
+);
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -767,6 +1221,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(ncellmeas, &sub_lte_ncellmeas,
 	              "Measure the neighbour cells (returns at once, see 'show').",
 	              cmd_ncellmeas, 1, 0),
+
+	SHELL_CMD(scan, &sub_lte_scan,
+	          "Scan the cells and networks of the configured RATs; LTE is offline for minutes.",
+	          print_help),
 #endif
 
 	SHELL_CMD_ARG(test, &sub_lte_test,

@@ -49,6 +49,9 @@ static bool m_radio_off;
 /* The last measurement; the URC is taken only while armed (the FSM owns result and uptime_s) */
 static struct ctr_lte_v2_ncellmeas_param m_ncellmeas = {.result = -ENODATA};
 static bool m_ncellmeas_armed;
+/* The running scan, and the last ended one */
+static struct ctr_lte_v2_scan_result m_scan;
+static struct ctr_lte_v2_scan_result m_scan_last;
 #endif
 
 int ctr_lte_v2_state_get_imei(uint64_t *imei)
@@ -456,5 +459,115 @@ int ctr_lte_v2_state_get_ncellmeas_param(struct ctr_lte_v2_ncellmeas_param *para
 	k_mutex_unlock(&m_lock);
 
 	return 0;
+}
+
+void ctr_lte_v2_state_scan_start(enum ctr_lte_v2_scan_mode mode)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	memset(&m_scan, 0, sizeof(m_scan));
+	m_scan.mode = mode;
+	m_scan.uptime_ms = k_uptime_get();
+	m_scan.lte_m = m_scan.nb_iot = (struct ctr_lte_v2_scan_rat){-ENODATA, -ENODATA, -ENODATA};
+
+	k_mutex_unlock(&m_lock);
+}
+
+void ctr_lte_v2_state_scan_set_result(int act, enum ctr_lte_v2_scan_step step, int result)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	struct ctr_lte_v2_scan_rat *rat =
+		act == CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT ? &m_scan.nb_iot : &m_scan.lte_m;
+
+	if (step == CTR_LTE_V2_SCAN_STEP_REGISTRATION) {
+		rat->registration = result;
+	} else if (step == CTR_LTE_V2_SCAN_STEP_CELLS) {
+		rat->cells = result;
+	} else {
+		rat->networks = result;
+	}
+
+	k_mutex_unlock(&m_lock);
+}
+
+void ctr_lte_v2_state_scan_add_cells(int act)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	for (int i = 0; i < m_ncellmeas.num_cells && m_scan.cell_count < CTR_LTE_V2_SCAN_CELL_MAX;
+	     i++) {
+		const struct ctr_lte_v2_ncellmeas_cell *c = &m_ncellmeas.cells[i];
+		struct ctr_lte_v2_scan_cell *d = &m_scan.cells[m_scan.cell_count++];
+
+		*d = (struct ctr_lte_v2_scan_cell){
+			.eci = c->eci,
+			.earfcn = c->earfcn,
+			.tac = c->tac,
+			.pci = c->pci,
+			.rsrp = c->rsrp,
+			.act = act,
+			.serving = c->serving,
+		};
+		memcpy(d->plmn, c->plmn, sizeof(d->plmn));
+	}
+
+	k_mutex_unlock(&m_lock);
+}
+
+int ctr_lte_v2_state_scan_add_networks(const char *s)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	size_t stored = MIN(m_scan.network_count, CTR_LTE_V2_SCAN_NETWORK_MAX);
+	size_t count;
+
+	int ret = ctr_lte_v2_parse_cops_list(s, &m_scan.networks[stored],
+					     CTR_LTE_V2_SCAN_NETWORK_MAX - stored, &count);
+	if (!ret) {
+		m_scan.network_count += count;
+		ret = count;
+	}
+
+	k_mutex_unlock(&m_lock);
+
+	return ret;
+}
+
+void ctr_lte_v2_state_scan_end(void)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	m_scan.valid = true;
+	m_scan.duration_s = (k_uptime_get() - m_scan.uptime_ms) / MSEC_PER_SEC;
+	memcpy(&m_scan_last, &m_scan, sizeof(m_scan_last));
+
+	k_mutex_unlock(&m_lock);
+}
+
+int ctr_lte_v2_state_get_scan_result(struct ctr_lte_v2_scan_result *result)
+{
+	if (!result) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	memcpy(result, &m_scan_last, sizeof(*result));
+
+	k_mutex_unlock(&m_lock);
+
+	return 0;
+}
+
+void ctr_lte_v2_state_get_scan_starts(int64_t *running, int64_t *last)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	/* The end sets valid */
+	*running = m_scan.valid ? 0 : m_scan.uptime_ms;
+	*last = m_scan_last.valid ? m_scan_last.uptime_ms : 0;
+
+	k_mutex_unlock(&m_lock);
 }
 #endif

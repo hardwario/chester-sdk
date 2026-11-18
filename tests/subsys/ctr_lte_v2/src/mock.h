@@ -16,6 +16,9 @@
 /* The longest script the mock keeps the times of */
 #define MOCK_LINK_MAX_ITEMS 512
 
+/* The resets of a script the mock keeps the places of */
+#define MOCK_LINK_MAX_RESETS 8
+
 struct mock_link_item {
 	const char *tx;
 	const char *rx;
@@ -36,5 +39,16 @@ int64_t mock_ctr_lte_link_tx_time(size_t index);
 
 /* Assert, from the test thread, that the script ran to its end without a violation */
 void mock_ctr_lte_link_assert_done(void);
+
+/* The resets of the modem so far (the reset is not a line of the script) */
+int mock_ctr_lte_link_reset_count(void);
+
+/* The next count wake-ups get no "Ready": the modem does not answer after a reset */
+void mock_ctr_lte_link_drop_ready(int count);
+
+/* Where the n-th reset (from 0) since mock_ctr_lte_link_start() came: the index of the script item
+ * after it. -1 for a reset not made, or not followed by a wake-up before that item (the modem boots
+ * on the wake-up after its reset) */
+int mock_ctr_lte_link_reset_item(int n);
 
 #endif

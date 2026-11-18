@@ -289,6 +289,8 @@ enum ctr_lte_v2_cb_event {
 	CTR_LTE_V2_CB_EVENT_CSCON_1 = 1, /**< Connection Status (Connected). */
 	/** The neighbour cell measurement (ctr_lte_v2_schedule_ncellmeas) has ended. */
 	CTR_LTE_V2_CB_EVENT_NCELLMEAS_DONE = 2,
+	/** The network scan (ctr_lte_v2_scan) has ended, before the modem is restored. */
+	CTR_LTE_V2_CB_EVENT_SCAN_DONE = 3,
 };
 
 /**
@@ -345,8 +347,9 @@ int ctr_lte_v2_gnss_set_handler(ctr_lte_v2_gnss_cb callback, void *user_data);
 #if defined(CONFIG_CTR_LTE_V2_SCAN)
 
 /* %NCELLMEAS=5,7 (GCI search). rsrp and rsrq are the indexes the modem reports: RSRP in dBm is
- * rsrp - 140 (as the shell prints it, and as for %CONEVAL in ctr_lte_v2_conn_param), RSRQ in dB
- * is (rsrq - 39) / 2 with integer division (as for %CONEVAL) */
+ * rsrp - 141 (RSRP_IDX_TO_DBM of nrf for an index from 0, as the shell prints it; %CONEVAL in
+ * ctr_lte_v2_conn_param takes - 140), RSRQ in dB is (rsrq - 39) / 2 with integer division (as
+ * for %CONEVAL) */
 #define CTR_LTE_V2_NCELLMEAS_CELL_MAX  7
 #define CTR_LTE_V2_NCELLMEAS_NCELL_MAX 10
 
@@ -390,8 +393,12 @@ struct ctr_lte_v2_ncellmeas_param {
  * @brief Request a neighbour cell measurement; it runs once the modem is registered and the RRC
  *        connection is idle, a sleeping modem is woken up for it.
  *
+ * The callbacks of CTR_LTE_V2_CB_EVENT_NCELLMEAS_DONE run before the end is published: a request
+ * from one gets -EALREADY and no measurement follows.
+ *
  * @retval 0         Requested.
  * @retval -EALREADY Requested or running already (the request is posted again).
+ * @retval -EBUSY    A scan is requested or running.
  * @retval -ENODEV   LTE is disabled.
  * @retval -ENOTSUP  Test mode.
  */
@@ -412,8 +419,97 @@ int ctr_lte_v2_wait_for_ncellmeas(k_timeout_t timeout);
 /**
  * @brief Get the last measurement: result 0, -ENODATA (none yet), -ETIMEDOUT (cells after
  *        %NCELLMEASSTOP, if any), -EIO (rejected), -EBADMSG (unreadable URC), -ECANCELED.
+ *
+ * A scan with the cells (CTR_LTE_V2_SCAN_ALL, CTR_LTE_V2_SCAN_CELLS) overwrites it, without the
+ * callback: -ENODATA while it measures a RAT, then the cells of the last RAT it measured.
  */
 int ctr_lte_v2_get_ncellmeas_param(struct ctr_lte_v2_ncellmeas_param *param);
+
+/* A network of the list from AT+COPS=? */
+#define CTR_LTE_V2_SCAN_NETWORK_MAX 10
+
+struct ctr_lte_v2_scan_network {
+	char plmn[7];
+	uint8_t stat; /* 0 unknown, 1 available, 2 current, 3 forbidden */
+	uint8_t act;  /* 7 LTE-M, 9 NB-IoT */
+};
+
+/* The cells of the scan, from %NCELLMEAS in each RAT */
+#define CTR_LTE_V2_SCAN_CELL_MAX 14
+
+struct ctr_lte_v2_scan_cell {
+	uint32_t eci;
+	uint32_t earfcn;
+	char plmn[7];
+	uint16_t tac;
+	uint16_t pci;
+	int16_t rsrp; /* index as in ctr_lte_v2_ncellmeas_cell, in dBm rsrp - 141 */
+	uint8_t act;  /* the RAT of the measurement: 7 LTE-M, 9 NB-IoT */
+	bool serving;
+};
+
+/* A step: 0 ok, -ENODATA not run, -ETIMEDOUT, -EIO rejected, -EBADMSG unreadable, -ECANCELED */
+struct ctr_lte_v2_scan_rat {
+	int registration;
+	int cells; /* -ETIMEDOUT: stopped at its bound, with the cells found so far */
+	int networks;
+};
+
+/* What the scan covers in each RAT, after the reset and the registration */
+enum ctr_lte_v2_scan_mode {
+	CTR_LTE_V2_SCAN_ALL = 0, /* the cells (%NCELLMEAS), then the networks (AT+COPS=?) */
+	CTR_LTE_V2_SCAN_PLMN,    /* the networks only */
+	CTR_LTE_V2_SCAN_CELLS,   /* the cells only */
+};
+
+struct ctr_lte_v2_scan_result {
+	bool valid;
+	uint8_t mode;      /* enum ctr_lte_v2_scan_mode */
+	int64_t uptime_ms; /* the start */
+	uint32_t duration_s;
+	struct ctr_lte_v2_scan_rat lte_m;
+	struct ctr_lte_v2_scan_rat nb_iot;
+	uint8_t cell_count;
+	struct ctr_lte_v2_scan_cell cells[CTR_LTE_V2_SCAN_CELL_MAX];
+	uint8_t network_count; /* the networks of both lists, may exceed the stored ones */
+	struct ctr_lte_v2_scan_network networks[CTR_LTE_V2_SCAN_NETWORK_MAX];
+};
+
+/**
+ * @brief Request a network scan: in each configured RAT (LTE-M first) a reset of the modem, the
+ *        registration, then the cells and the network list as the mode says; then the modem is
+ *        reset and attaches again. LTE is offline for minutes, a transaction meanwhile fails with
+ *        -ENOTCONN. The step a mode skips stays -ENODATA.
+ *
+ * The callbacks of CTR_LTE_V2_CB_EVENT_SCAN_DONE run before the end is published: a request from
+ * one gets -EALREADY and no scan follows.
+ *
+ * @retval 0         Requested.
+ * @retval -EALREADY Requested or running already, with its own mode (the request is posted
+ *                   again).
+ * @retval -EINVAL   Invalid mode.
+ * @retval -ENODEV   LTE is disabled.
+ * @retval -ENOTSUP  Test mode.
+ */
+int ctr_lte_v2_scan(enum ctr_lte_v2_scan_mode mode);
+
+/**
+ * @brief Wait for the end of the requested scan.
+ *
+ * A request dropped (LTE disabled, also by ctr_lte_v2_reconnect()) returns 0 as an end does, the
+ * result is then an older one: only an end calls CTR_LTE_V2_CB_EVENT_SCAN_DONE and changes
+ * uptime_ms of the result. Do not wait from that callback, it runs before the end is published.
+ *
+ * @retval 0          Ended, or dropped (LTE disabled), or nothing was requested.
+ * @retval -ETIMEDOUT Still requested or running.
+ */
+int ctr_lte_v2_wait_for_scan(k_timeout_t timeout);
+
+/**
+ * @brief Get the last ended scan (valid once one has ended); a running scan keeps it until its
+ *        own end.
+ */
+int ctr_lte_v2_get_scan_result(struct ctr_lte_v2_scan_result *result);
 
 #endif
 

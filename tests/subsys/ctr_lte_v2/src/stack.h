@@ -41,11 +41,17 @@
 	{"AT+CRSM=176,28539,0,0,12", "+CRSM: 144,0,\"FFFFFFFFFFFFFFFFFFFFFFFF\"", "OK"}
 #endif
 
-/* The system mode the FSM sets before the attach (the test configurations do not override it) */
-#define ITEM_XSYSTEMMODE {"AT%XSYSTEMMODE=1,1,1,1", "OK"}
+/* The system mode the FSM sets before the attach, from the configured mode (with GNSS) */
+#if IS_ENABLED(CONFIG_TEST_FEATURE_SCAN_LTE_M)
+#define SYSMODE "1,0,1,0"
+#elif IS_ENABLED(CONFIG_TEST_FEATURE_SCAN_NB_IOT)
+#define SYSMODE "0,1,1,0"
+#else
+#define SYSMODE "1,1,1,1"
+#endif
 
-/* From the modem boot to the SIM read, after which the FSM is in the attach state */
-#define ITEMS_PREPARE \
+/* From the modem boot up to the CFUN=1, with AT%XSYSTEMMODE=<sysmode> */
+#define ITEMS_PREPARE_SYSMODE(sysmode) \
 	{"AT", "OK"}, \
 	{"AT+CGSN=1", "+CGSN: \"351358815178345\"", "OK"}, \
 	{"AT%HWVERSION", "%HWVERSION: nRF9160 SICA B1A", "OK"}, \
@@ -56,7 +62,7 @@
 	{"AT%XPOFWARN=1,30", "OK"}, \
 	{"AT%XTEMPHIGHLVL=70", "OK"}, \
 	{"AT%XTEMP=1", "OK"}, \
-	ITEM_XSYSTEMMODE, \
+	{"AT%XSYSTEMMODE=" sysmode, "OK"}, \
 	{"AT%XDATAPRFL=0", "OK"}, \
 	ITEM_BANDLOCK, \
 	{"AT%XSIM=1", "OK"}, \
@@ -74,12 +80,20 @@
 	{"AT+CSCON=1", "OK"}, \
 	ITEMS_NETWORK, \
 	{"AT+CGAUTH=0,0", "OK"}, \
-	{"AT%XMODEMSLEEP=1,500,10240", "OK"}, \
+	{"AT%XMODEMSLEEP=1,500,10240", "OK"}
+
+/* The CFUN=1 after the prepare: the modem searches, the SIM is detected */
+#define ITEMS_PREPARE_CFUN1 \
 	{"AT+CFUN=1", "%XMODEMSLEEP: 4", "OK"}, \
 	URC(0, "%XMODEMSLEEP: 4,0"), \
 	URC(0, "+CEREG: 0"), \
 	URC(500, "+CEREG: 2,\"B4DC\",\"000AE520\",9"), \
-	URC(100, "%XSIM: 1"), \
+	URC(100, "%XSIM: 1")
+
+/* From the modem boot to the SIM read, after which the FSM is in the attach state */
+#define ITEMS_PREPARE \
+	ITEMS_PREPARE_SYSMODE(SYSMODE), \
+	ITEMS_PREPARE_CFUN1, \
 	{"AT+CIMI", "901288910017273", "OK"}, \
 	{"AT+CIMI", "901288910017273", "OK"}, \
 	{"AT%XICCID", "%XICCID: 89882390000262826558", "OK"}, \
@@ -153,6 +167,34 @@
 	URC(0, "%XMODEMSLEEP: 1,0"), \
 	URC(ms, urc), \
 	URC(77, "%XMODEMSLEEP: 1,86280784")
+
+/* The scan starts a RAT by a reset of the modem, with no AT command before it: the modem is
+ * prepared with the RAT only (sysmode "1,0,1,0" LTE-M, "0,1,1,0" NB-IoT), the search starts after
+ * the CFUN=1 */
+#define ITEMS_SCAN_RAT_START(sysmode) \
+	ITEMS_PREPARE_SYSMODE(sysmode), \
+	ITEMS_PREPARE_CFUN1
+
+/* AT+COPS=? answered ms after the command */
+#define ITEMS_SCAN_COPS(ms, list) \
+	{"AT+COPS=?"}, \
+	URC(ms, "+COPS: " list), \
+	URC(0, "OK")
+
+/* After the modem answered AT+COPS=? (the switch to NB-IoT, the end of the scan): CFUN=0 before
+ * the reset */
+#define ITEM_SCAN_CFUN0 {"AT+CFUN=0", "OK"}
+
+/* The end of the scan without an AT command before the reset (an error, a timeout): the same
+ * script as the cold start */
+#define ITEMS_SCAN_RESTORE_RESET \
+	ITEMS_PREPARE, \
+	ITEMS_REGISTER
+
+/* The end of the scan after AT+COPS=? answered: CFUN=0, then the reset */
+#define ITEMS_SCAN_RESTORE \
+	ITEM_SCAN_CFUN0, \
+	ITEMS_SCAN_RESTORE_RESET
 /* clang-format on */
 
 #define ASSERT_FSM_STATE(expected)                                                                 \

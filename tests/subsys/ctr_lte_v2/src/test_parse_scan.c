@@ -427,3 +427,125 @@ ZTEST(parser, test_ncellmeas_reparse)
 	zassert_equal(param.num_ncells, 1, "num_ncells");
 	zassert_equal(param.cells[1].eci, 0, "old cell dropped");
 }
+
+/* -------- +COPS=? -------- */
+
+static struct ctr_lte_v2_scan_network nets[CTR_LTE_V2_SCAN_NETWORK_MAX];
+static size_t net_count;
+
+static void expect_net(int i, const char *plmn, uint8_t stat, uint8_t act)
+{
+	zassert_str_equal(nets[i].plmn, plmn, "nets[%d].plmn", i);
+	zassert_equal(nets[i].stat, stat, "nets[%d].stat", i);
+	zassert_equal(nets[i].act, act, "nets[%d].act", i);
+}
+
+static int cops(const char *s)
+{
+	memset(nets, 0, sizeof(nets));
+	net_count = 99;
+
+	return ctr_lte_v2_parse_cops_list(s, nets, ARRAY_SIZE(nets), &net_count);
+}
+
+ZTEST(parser, test_cops_hw_lte_m)
+{
+	zassert_ok(cops(HW_COPS_LIST));
+
+	zassert_equal(net_count, 3, "count");
+	expect_net(0, "23001", 1, 7);
+	expect_net(1, "23003", 1, 7);
+	expect_net(2, "23002", 2, 7);
+}
+
+ZTEST(parser, test_cops_hw_nbiot_camped)
+{
+	zassert_ok(cops(HW_COPS_NBIOT_CAMPED));
+
+	zassert_equal(net_count, 3, "count");
+	expect_net(0, "23003", 1, 9);
+	expect_net(1, "23001", 2, 9);
+	expect_net(2, "23002", 1, 9);
+}
+
+ZTEST(parser, test_cops_hw_psm_nbiot)
+{
+	zassert_ok(cops(HW_COPS_PSM_NBIOT));
+
+	zassert_equal(net_count, 3, "count");
+	expect_net(0, "23003", 2, 9);
+	expect_net(1, "23002", 1, 9);
+	expect_net(2, "23001", 1, 9);
+}
+
+ZTEST(parser, test_cops_names_and_3digit_mnc)
+{
+	zassert_ok(cops("(3,\"CHN-UNICOM\",\"UNICOM\",\"460001\",9)"));
+
+	zassert_equal(net_count, 1, "count");
+	expect_net(0, "460001", 3, 9);
+}
+
+/* 3GPP allows the lists of the supported modes and formats after ",," */
+ZTEST(parser, test_cops_trailing_lists)
+{
+	zassert_ok(cops("(1,\"\",\"\",\"23003\",7),,(0,1,2,3,4),(0,1,2)"));
+	zassert_equal(net_count, 1, "count");
+	expect_net(0, "23003", 1, 7);
+
+	zassert_ok(
+		cops("(1,\"\",\"\",\"23003\",7),(2,\"\",\"\",\"23001\",7),,(0,1,2,3,4),(0,1,2)"));
+	zassert_equal(net_count, 2, "count with two networks");
+	expect_net(1, "23001", 2, 7);
+}
+
+ZTEST(parser, test_cops_empty)
+{
+	zassert_ok(cops(""));
+	zassert_equal(net_count, 0, "count");
+}
+
+/* More networks than we keep: all are counted, the first ones are stored, the line is not copied */
+ZTEST(parser, test_cops_more_than_max)
+{
+	zassert_ok(cops(SYN_COPS_LONG));
+
+	zassert_true(strlen(SYN_COPS_LONG) > 384, "the line is long");
+	zassert_equal(net_count, 12, "count");
+	expect_net(0, "26201", 1, 7);
+	expect_net(9, "26210", 1, 7);
+}
+
+ZTEST(parser, test_cops_max_smaller_than_list)
+{
+	struct ctr_lte_v2_scan_network one[1] = {0};
+	size_t count = 0;
+
+	zassert_ok(ctr_lte_v2_parse_cops_list(HW_COPS_LIST, one, 1, &count));
+	zassert_equal(count, 3, "count");
+	zassert_str_equal(one[0].plmn, "23001", "stored");
+}
+
+ZTEST(parser, test_cops_malformed)
+{
+	/* unquoted PLMN */
+	zassert_equal(cops("(2,\"\",\"\",23002,7)"), -EBADMSG, "unquoted PLMN");
+	/* PLMN of 7 characters, of 4 digits, with a letter */
+	zassert_equal(cops("(2,\"\",\"\",\"2300123\",7)"), -EBADMSG, "PLMN too long");
+	zassert_equal(cops("(2,\"\",\"\",\"2300\",7)"), -EBADMSG, "PLMN too short");
+	zassert_equal(cops("(2,\"\",\"\",\"2300a\",7)"), -EBADMSG, "PLMN with a letter");
+	/* missing closing parenthesis, status, AcT, names */
+	zassert_equal(cops(SYN_COPS_BAD), -EBADMSG, "no closing parenthesis");
+	zassert_equal(cops("(,\"\",\"\",\"23002\",7)"), -EBADMSG, "no status");
+	zassert_equal(cops("(2,\"\",\"\",\"23002\",)"), -EBADMSG, "no AcT");
+	zassert_equal(cops("(2,\"\",\"\")"), -EBADMSG, "no PLMN");
+	zassert_equal(cops("(2,\"\",\"\",\"23002\",300)"), -EBADMSG, "AcT out of range");
+	/* nothing is reported from a list that fails halfway */
+	zassert_equal(cops("(1,\"\",\"\",\"23001\",7),(2,\"\",\"\",23002,7)"), -EBADMSG, "second");
+	zassert_equal(net_count, 0, "count after an error");
+	/* not a list */
+	zassert_equal(cops("garbage"), -EBADMSG, "not a list");
+	zassert_equal(ctr_lte_v2_parse_cops_list(NULL, nets, 1, &net_count), -EINVAL, "NULL line");
+	zassert_equal(ctr_lte_v2_parse_cops_list("", NULL, 1, &net_count), -EINVAL, "NULL array");
+	zassert_equal(ctr_lte_v2_parse_cops_list("", nets, 1, NULL), -EINVAL, "NULL count");
+}

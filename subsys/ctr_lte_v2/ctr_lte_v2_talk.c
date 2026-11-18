@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(ctr_lte_v2_talk, CONFIG_CTR_LTE_V2_LOG_LEVEL);
 #define RESPONSE_TIMEOUT_S       K_SECONDS(3)
 #define RESPONSE_TIMEOUT_L       K_SECONDS(30)
 #define RESPONSE_TIMEOUT_CONEVAL K_SECONDS(30)
+/* The network search of AT+COPS=? (140 s on NB-IoT without a registration) */
+#define RESPONSE_TIMEOUT_COPS    K_SECONDS(300)
 
 #define DIALOG_PROLOG bool in_dialog = false;
 
@@ -329,11 +331,16 @@ int ctr_lte_v2_talk_at_cereg(struct ctr_lte_v2_talk *talk, int p1)
 
 int ctr_lte_v2_talk_at_cfun(struct ctr_lte_v2_talk *talk, int p1)
 {
+	return ctr_lte_v2_talk_at_cfun_timeout(talk, p1, RESPONSE_TIMEOUT_L);
+}
+
+int ctr_lte_v2_talk_at_cfun_timeout(struct ctr_lte_v2_talk *talk, int p1, k_timeout_t timeout)
+{
 	DIALOG_PROLOG /* clang-format off */
 
 	DIALOG_ENTER();
 	DIALOG_SEND_LINE("AT+CFUN=%d", p1);
-	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_L, {
+	DIALOG_LOOP_RUN(timeout, {
 		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
 		DIALOG_LOOP_BREAK_ON_STR("OK");
 	});
@@ -1256,6 +1263,28 @@ int ctr_lte_v2_talk_at_ncellmeasstop(struct ctr_lte_v2_talk *talk)
 	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_S, {
 		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
 		DIALOG_LOOP_ABORT_ON_PFX("+CME ERROR");
+		DIALOG_LOOP_BREAK_ON_STR("OK");
+	});
+	DIALOG_EXIT();
+
+	DIALOG_EPILOG /* clang-format on */
+}
+
+/* The list goes to the callback (up to 1024 B); the OK, even after a bad one, ends the dialog */
+int ctr_lte_v2_talk_at_cops_test(struct ctr_lte_v2_talk *talk, ctr_lte_v2_talk_cops_list_cb cb,
+				 void *user_data)
+{
+	DIALOG_PROLOG /* clang-format off */
+
+	DIALOG_ENTER();
+	DIALOG_SEND_LINE("AT+COPS=?");
+	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_COPS, {
+		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
+		DIALOG_LOOP_ABORT_ON_PFX("+CME ERROR");
+		if (!strncmp(line, "+COPS: ", 7)) {
+			cb(&line[7], user_data);
+			process_urc = false;
+		}
 		DIALOG_LOOP_BREAK_ON_STR("OK");
 	});
 	DIALOG_EXIT();

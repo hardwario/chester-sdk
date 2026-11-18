@@ -80,6 +80,25 @@ bool ctr_lte_v2_state_ncellmeas_valid(void);
 /* The FSM ends the measurement: the result and its uptime */
 void ctr_lte_v2_state_set_ncellmeas_result(int result);
 int ctr_lte_v2_state_get_ncellmeas_param(struct ctr_lte_v2_ncellmeas_param *param);
+
+/* The steps of the scan in each RAT */
+enum ctr_lte_v2_scan_step {
+	CTR_LTE_V2_SCAN_STEP_REGISTRATION,
+	CTR_LTE_V2_SCAN_STEP_CELLS,
+	CTR_LTE_V2_SCAN_STEP_NETWORKS,
+};
+
+/* The running scan, written by the FSM only; the cells come from the last measurement. Published
+ * at its end */
+void ctr_lte_v2_state_scan_start(enum ctr_lte_v2_scan_mode mode);
+void ctr_lte_v2_state_scan_set_result(int act, enum ctr_lte_v2_scan_step step, int result);
+void ctr_lte_v2_state_scan_add_cells(int act);
+void ctr_lte_v2_state_scan_end(void);
+/* Parse what follows "+COPS: " into the networks: their number in the list, or the parser error */
+int ctr_lte_v2_state_scan_add_networks(const char *s);
+int ctr_lte_v2_state_get_scan_result(struct ctr_lte_v2_scan_result *result);
+/* The start (uptime in ms) of the running scan and of the last ended one, 0 for none */
+void ctr_lte_v2_state_get_scan_starts(int64_t *running, int64_t *last);
 #endif
 
 const char *ctr_lte_v2_get_state(void);

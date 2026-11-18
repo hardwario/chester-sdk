@@ -149,6 +149,8 @@ const char *ctr_lte_v2_str_fsm_event(enum ctr_lte_v2_event event)
 		return "ncellmeas_done";
 	case CTR_LTE_V2_EVENT_SCAN_TIMER:
 		return "scan_timer";
+	case CTR_LTE_V2_EVENT_SCAN:
+		return "scan";
 	}
 	return INVALID;
 }
