@@ -17,6 +17,7 @@ target_sources(app PRIVATE src/mock_ctr_info.c)
 target_sources_ifdef(CONFIG_TEST_FEATURE_PARSING app PRIVATE src/test_parse.c)
 target_sources_ifdef(CONFIG_TEST_FEATURE_PARSING app PRIVATE src/test_state.c)
 target_sources_ifdef(CONFIG_TEST_FEATURE_PARSING app PRIVATE src/test_str.c)
+target_sources_ifdef(CONFIG_TEST_FEATURE_PARSING app PRIVATE src/test_fmt_duration.c)
 target_sources_ifdef(CONFIG_TEST_FEATURE_STACK app PRIVATE src/test_stack.c)
 target_sources_ifdef(CONFIG_TEST_FEATURE_TXN app PRIVATE src/test_txn.c)
 

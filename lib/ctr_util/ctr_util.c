@@ -10,7 +10,9 @@
 #include <zephyr/kernel.h>
 
 /* Standard includes */
+#include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
 
 int ctr_buf2hex(const void *src, size_t src_size, char *dst, size_t dst_size, bool upper)
 {
@@ -80,4 +82,25 @@ int ctr_hex2buf(const char *src, void *dst, size_t dst_size, bool allow_spaces)
 	}
 
 	return n / 2;
+}
+
+int ctr_util_fmt_duration(uint32_t sec, char *dst, size_t dst_size)
+{
+	uint32_t d = sec / 86400;
+	uint32_t h = sec / 3600 % 24;
+	uint32_t m = sec / 60 % 60;
+	uint32_t s = sec % 60;
+	int ret;
+
+	if (d) {
+		ret = snprintf(dst, dst_size, "%ud %02uh %02um %02us", d, h, m, s);
+	} else if (h) {
+		ret = snprintf(dst, dst_size, "%uh %02um %02us", h, m, s);
+	} else if (m) {
+		ret = snprintf(dst, dst_size, "%um %02us", m, s);
+	} else {
+		ret = snprintf(dst, dst_size, "%us", s);
+	}
+
+	return ret < 0 || (size_t)ret >= dst_size ? -ENOSPC : 0;
 }
