@@ -1388,6 +1388,97 @@ ZTEST(txn, test_deregistered_in_ready)
 }
 #endif
 
+#if defined(CONFIG_TEST_FEATURE_TXN_NO_PSM_CFUN4)
+/* On a cell without PSM the ready state switches the modem off (CFUN=4) after an exchange: the
+ * values of the registration stay. After the wake-up a loss of the network is stored again */
+ZTEST(txn, test_no_psm_cfun4)
+{
+	stack_attach();
+	go_to_sleep();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		ITEMS_FLOW_CHECK,
+		{"AT#XSOCKETOPT=1,52", "OK"},
+		{"AT#XSEND=\"Hello\"", "#XSEND: 5", "OK"},
+		URC(50, "%XMODEMSLEEP: 1,0"),
+		/* A cell without PSM */
+		URC(200, "+CEREG: 5,\"05F2\",\"074FEB01\",7,,,\"11100000\",\"11100000\""),
+		URC(400, "+CSCON: 1"),
+		{"AT#XRECV=5"},
+		RX_DATA(200, "#XRECV: 8", "Hi there"),
+		{"AT#XSOCKETOPT=1,50", "OK"},
+		ITEM_CONEVAL,
+		/* Ready state timeout: no PSM, so CFUN=4; the URC can come before the OK */
+		{"AT#XSOCKET=0", "#XSOCKET: 0,\"closed\"", "OK"},
+		{"AT+CFUN=4", "+CEREG: 0", "OK"},
+		URC(0, "+CGEV: ME PDN DEACT 0"),
+		URC(0, "+CGEV: ME DETACH"),
+		URC(0, "+CSCON: 0"),
+		URC(0, "%XSIM: 0"),
+		URC(0, "%XMODEMSLEEP: 4"),
+		{"AT#XSLEEP=2", "OK"},
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	char recv_buf[20] = {0};
+	size_t recv_len = 0;
+	struct ctr_lte_v2_send_recv_param param = {
+		.send_buf = "Hello",
+		.send_len = 5,
+		.send_as_string = true,
+		.recv_buf = recv_buf,
+		.recv_size = sizeof(recv_buf),
+		.recv_len = &recv_len,
+		.timeout = K_SECONDS(10),
+		.rai = true,
+	};
+
+	int64_t elapsed;
+	int ret = send_recv(&param, &elapsed);
+	zassert_ok(ret, "send_recv failed: %d", ret);
+
+	stack_wait_for_state("sleep", K_SECONDS(5));
+	/* Past the pause after AT#XSLEEP */
+	k_sleep(K_MSEC(500));
+	mock_ctr_lte_link_assert_done();
+
+	/* The values of the registration, not the "+CEREG: 0" of the CFUN=4 */
+	struct ctr_lte_v2_cereg_param cereg;
+	zassert_ok(ctr_lte_v2_get_cereg_param(&cereg));
+	zassert_equal(cereg.stat, CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING);
+	zassert_str_equal(cereg.tac, "05F2");
+	zassert_equal(cereg.active_time, -1);
+
+	/* The history has it */
+	struct ctr_lte_v2_cereg_event event;
+	size_t count;
+	zassert_ok(ctr_lte_v2_get_cereg_history(&event, 1, &count));
+	zassert_equal(count, 1);
+	zassert_equal(event.stat, CTR_LTE_V2_CEREG_PARAM_STAT_NOT_REGISTERED);
+
+	/* clang-format off */
+	static struct mock_link_item items_wake_up[] = {
+		/* Out of the flight mode, attach */
+		{"AT+CFUN=1", "OK"},
+		/* The network is lost */
+		URC(200, "+CEREG: 2"),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_wake_up, ARRAY_SIZE(items_wake_up));
+
+	/* The send wakes the modem up, the attach does not end before the deadline */
+	give_up("attach");
+	mock_ctr_lte_link_assert_done();
+
+	zassert_ok(ctr_lte_v2_get_cereg_param(&cereg));
+	zassert_equal(cereg.stat, CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING);
+}
+#endif
+
 #if defined(CONFIG_TEST_FEATURE_TXN_CALLBACKS)
 static atomic_t m_cb_count;
 static atomic_t m_cb_once_count;

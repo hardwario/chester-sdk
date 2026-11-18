@@ -800,6 +800,9 @@ static int on_enter_disabled(void)
 {
 	int ret;
 
+	/* What the modem reports from here on is the state of the network again */
+	ctr_lte_v2_state_set_radio_off(false);
+
 	/* The modem goes down, the transaction cannot complete */
 	txn_abort(-ENOTCONN);
 
@@ -856,6 +859,8 @@ static int on_leave_disabled(void)
 
 static int on_enter_error(void)
 {
+	ctr_lte_v2_state_set_radio_off(false);
+
 	m_error_ctx.on_timeout_state = FSM_STATE_BOOT; /* Default timeout state */
 
 	int ret = ctr_lte_v2_flow_check();
@@ -1137,6 +1142,8 @@ static int on_leave_retry_delay(void)
 
 static int on_enter_attach(void)
 {
+	ctr_lte_v2_state_set_radio_off(false);
+
 	/* The registration starts: watch the RRC connection from here for the CONEVAL after it */
 	atomic_clear_bit(&m_flag, FLAG_CSCON_RELEASED);
 	atomic_clear_bit(&m_flag, FLAG_CSCON_AGAIN);
@@ -1304,9 +1311,12 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 				LOG_ERR("Call `ctr_lte_v2_flow_close_socket` failed: %d", ret);
 				return ret;
 			}
+			/* Before the command: the modem reports "+CEREG: 0" right away */
+			ctr_lte_v2_state_set_radio_off(true);
 			ret = ctr_lte_v2_flow_cfun(4);
 			if (ret) {
 				LOG_ERR("Call `ctr_lte_v2_flow_cfun` failed: %d", ret);
+				ctr_lte_v2_state_set_radio_off(false);
 				return ret;
 			}
 			atomic_set_bit(&m_flag, FLAG_CFUN4);

@@ -55,7 +55,11 @@ static inline bool ctr_lte_v2_state_cereg_is_reject(const struct ctr_lte_v2_cere
 }
 
 int ctr_lte_v2_state_get_cereg_param(struct ctr_lte_v2_cereg_param *param);
+/* While the radio is off on purpose (see ctr_lte_v2_state_set_radio_off), a CEREG that is not a
+ * registration leaves the stored values of the last registration */
 void ctr_lte_v2_state_set_cereg_param(const struct ctr_lte_v2_cereg_param *param);
+/* The FSM switches the radio off between exchanges (CFUN=4) where the network grants no PSM */
+void ctr_lte_v2_state_set_radio_off(bool off);
 void ctr_lte_v2_state_add_cereg_event(const struct ctr_lte_v2_cereg_param *param);
 int ctr_lte_v2_state_get_cereg_history(struct ctr_lte_v2_cereg_event *events, size_t max,
 				       size_t *count);

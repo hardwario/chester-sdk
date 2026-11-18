@@ -42,6 +42,8 @@ static size_t m_cereg_len;
 static struct ctr_lte_v2_cereg_event m_last_reject;
 static bool m_last_reject_valid;
 
+static bool m_radio_off;
+
 int ctr_lte_v2_state_get_imei(uint64_t *imei)
 {
 	if (!imei) {
@@ -229,10 +231,23 @@ void ctr_lte_v2_state_set_cereg_param(const struct ctr_lte_v2_cereg_param *param
 		return;
 	}
 
+	bool registered = param->stat == CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME ||
+			  param->stat == CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING;
+
 	k_mutex_lock(&m_lock, K_FOREVER);
 
-	memcpy(&m_cereg_param, param, sizeof(m_cereg_param));
+	/* The "+CEREG: 0" of our own CFUN=4 says nothing about the network */
+	if (registered || !m_radio_off) {
+		memcpy(&m_cereg_param, param, sizeof(m_cereg_param));
+	}
 
+	k_mutex_unlock(&m_lock);
+}
+
+void ctr_lte_v2_state_set_radio_off(bool off)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+	m_radio_off = off;
 	k_mutex_unlock(&m_lock);
 }
 
