@@ -56,6 +56,10 @@ static inline bool ctr_lte_v2_state_cereg_is_reject(const struct ctr_lte_v2_cere
 
 int ctr_lte_v2_state_get_cereg_param(struct ctr_lte_v2_cereg_param *param);
 void ctr_lte_v2_state_set_cereg_param(const struct ctr_lte_v2_cereg_param *param);
+void ctr_lte_v2_state_add_cereg_event(const struct ctr_lte_v2_cereg_param *param);
+int ctr_lte_v2_state_get_cereg_history(struct ctr_lte_v2_cereg_event *events, size_t max,
+				       size_t *count);
+int ctr_lte_v2_state_get_last_reject(struct ctr_lte_v2_cereg_event *event);
 
 int ctr_lte_v2_state_set_gnss_update(const struct ctr_lte_v2_gnss_update *update);
 int ctr_lte_v2_state_get_gnss_update(struct ctr_lte_v2_gnss_update *update);

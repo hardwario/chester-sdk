@@ -109,3 +109,99 @@ ZTEST(state, test_cereg_is_reject)
 }
 
 ZTEST_SUITE(state, NULL, NULL, NULL, NULL, NULL);
+
+static void add_cereg(int stat, const char *tac, int cid, int cause_type, int cause)
+{
+	struct ctr_lte_v2_cereg_param param = {
+		.valid = true,
+		.stat = stat,
+		.cid = cid,
+		.act = CTR_LTE_V2_CEREG_PARAM_ACT_LTE,
+		.cause_type = cause_type,
+		.reject_cause = cause,
+	};
+
+	strcpy(param.tac, tac);
+	ctr_lte_v2_state_add_cereg_event(&param);
+}
+
+#if CONFIG_CTR_LTE_V2_CEREG_HISTORY > 0
+
+/* The parser configuration keeps 3 changes */
+BUILD_ASSERT(CONFIG_CTR_LTE_V2_CEREG_HISTORY == 3);
+
+ZTEST(state_cereg_history, test_history)
+{
+	struct ctr_lte_v2_cereg_event e[5];
+	size_t count;
+
+	zassert_equal(ctr_lte_v2_state_get_last_reject(&e[0]), -ENODATA);
+
+	add_cereg(2, "8DCC", 0xAE5CA, 0, 0);
+	/* A repeat is not stored */
+	add_cereg(2, "8DCC", 0xAE5CA, 0, 0);
+	add_cereg(3, "8DCC", 0xAE5CA, 0, 15);
+
+	zassert_ok(ctr_lte_v2_state_get_cereg_history(e, ARRAY_SIZE(e), &count));
+	zassert_equal(count, 2);
+	zassert_equal(e[0].reject_cause, 15, "newest first");
+	zassert_equal(e[0].tac, 0x8DCC);
+	zassert_equal(e[0].cid, 0xAE5CA);
+	zassert_equal(e[1].stat, 2);
+
+	/* A manufacturer-specific cause is not an EMM cause */
+	add_cereg(3, "8DCC", 0xAE5CA, 1, 42);
+	/* An accepted registration keeps its cause, but is not a reject */
+	add_cereg(5, "05F2", 0x74FEB50, 0, 18);
+	add_cereg(1, "05F2", 0x74FEB50, 0, 0);
+
+	zassert_ok(ctr_lte_v2_state_get_cereg_history(e, ARRAY_SIZE(e), &count));
+	zassert_equal(count, 3, "the ring keeps the newest 3");
+	zassert_equal(e[0].stat, 1);
+	zassert_equal(e[1].stat, 5);
+	zassert_equal(e[1].reject_cause, 18);
+	zassert_equal(e[2].stat, 3);
+	zassert_equal(e[2].reject_cause, 0);
+
+	/* Fewer than kept */
+	zassert_ok(ctr_lte_v2_state_get_cereg_history(e, 1, &count));
+	zassert_equal(count, 1);
+	zassert_equal(e[0].stat, 1);
+
+	/* The reject survives the ring rolling over */
+	zassert_ok(ctr_lte_v2_state_get_last_reject(&e[0]));
+	zassert_equal(e[0].reject_cause, 15);
+	zassert_equal(e[0].tac, 0x8DCC);
+	zassert_equal(e[0].stat, 3);
+}
+
+#else
+
+ZTEST(state_cereg_history, test_no_history)
+{
+	struct ctr_lte_v2_cereg_event e;
+	size_t count = 1;
+
+	add_cereg(3, "8DCC", 0xAE5CA, 0, 15);
+
+	zassert_ok(ctr_lte_v2_state_get_cereg_history(&e, 1, &count));
+	zassert_equal(count, 0);
+
+	/* The last reject is kept anyway */
+	zassert_ok(ctr_lte_v2_state_get_last_reject(&e));
+	zassert_equal(e.reject_cause, 15);
+}
+
+#endif /* CONFIG_CTR_LTE_V2_CEREG_HISTORY > 0 */
+
+ZTEST(state_cereg_history, test_null_args)
+{
+	struct ctr_lte_v2_cereg_event e;
+	size_t count;
+
+	zassert_equal(ctr_lte_v2_state_get_cereg_history(NULL, 1, &count), -EINVAL);
+	zassert_equal(ctr_lte_v2_state_get_cereg_history(&e, 1, NULL), -EINVAL);
+	zassert_equal(ctr_lte_v2_state_get_last_reject(NULL), -EINVAL);
+}
+
+ZTEST_SUITE(state_cereg_history, NULL, NULL, NULL, NULL, NULL);

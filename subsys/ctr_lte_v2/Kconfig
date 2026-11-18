@@ -84,6 +84,15 @@ config CTR_LTE_V2_CAUSE_STR
 		shell, with a hint for the common ones (a few kB of flash, no RAM).
 		Without them only the numbers are shown.
 
+config CTR_LTE_V2_CEREG_HISTORY
+	int "CTR_LTE_V2_CEREG_HISTORY"
+	default 5
+	range 0 20
+	help
+		Registration status changes (CEREG) kept for 'lte history', e.g. to
+		see a device hopping between cells or getting rejected (16 B of
+		RAM each). 0 keeps only the last reject.
+
 config HEAP_MEM_POOL_SIZE
 	int "HEAP_MEM_POOL_SIZE"
 	default 8192

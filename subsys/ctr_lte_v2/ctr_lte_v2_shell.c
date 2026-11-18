@@ -10,6 +10,7 @@
 
 /* CHESTER includes */
 #include <chester/ctr_lte_v2.h>
+#include <chester/ctr_util.h>
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -125,6 +126,73 @@ static int cmd_fw_version(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static void print_cereg_event(const struct shell *shell, const char *label,
+			      const struct ctr_lte_v2_cereg_event *e)
+{
+	char ago[24];
+
+	ctr_util_fmt_duration(k_uptime_seconds() - e->uptime_s, ago, sizeof(ago));
+
+	if (e->reject_cause) {
+		shell_print(shell, "%s%s ago, %s, act: %s, tac: %04X, cell: %08X, emm: %u (%s)",
+			    label, ago, ctr_lte_v2_str_cereg_stat(e->stat),
+			    ctr_lte_v2_str_act(e->act), e->tac, e->cid, e->reject_cause,
+			    ctr_lte_v2_str_emm_cause(e->reject_cause));
+	} else {
+		shell_print(shell, "%s%s ago, %s, act: %s, tac: %04X, cell: %08X", label, ago,
+			    ctr_lte_v2_str_cereg_stat(e->stat), ctr_lte_v2_str_act(e->act), e->tac,
+			    e->cid);
+	}
+}
+
+static void print_last_reject(const struct shell *shell)
+{
+	struct ctr_lte_v2_cereg_event e;
+
+	if (ctr_lte_v2_get_last_reject(&e)) {
+		return;
+	}
+
+	print_cereg_event(shell, "last-reject: ", &e);
+
+	const char *hint = ctr_lte_v2_str_emm_cause_hint(e.reject_cause);
+	if (hint) {
+		shell_print(shell, "last-reject-hint: %s", hint);
+	}
+}
+
+static int cmd_history(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+#if CONFIG_CTR_LTE_V2_CEREG_HISTORY > 0
+	struct ctr_lte_v2_cereg_event events[CONFIG_CTR_LTE_V2_CEREG_HISTORY];
+	size_t count;
+
+	int ret = ctr_lte_v2_get_cereg_history(events, ARRAY_SIZE(events), &count);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_get_cereg_history` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	/* Oldest first, the newest ends up next to the prompt */
+	for (size_t i = count; i > 0; i--) {
+		print_cereg_event(shell, "", &events[i - 1]);
+	}
+#endif
+
+	print_last_reject(shell);
+
+	shell_print(shell, "command succeeded");
+
+	return 0;
+}
+
 static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
@@ -174,6 +242,8 @@ static int cmd_state(const struct shell *shell, size_t argc, char **argv)
 	if (!ctr_lte_v2_state_get_ceer(ceer, sizeof(ceer))) {
 		shell_print(shell, "ceer: %s", ceer);
 	}
+
+	print_last_reject(shell);
 
 	shell_print(shell, "fsm-state: %s", ctr_lte_v2_get_state());
 	if (strcmp(ctr_lte_v2_get_state(), "attach") == 0) {
@@ -564,6 +634,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(reconnect, NULL,
 	              "Reconnect LTE modem.",
 	              cmd_reconnect, 1, 0),
+
+	SHELL_CMD_ARG(history, NULL,
+	              "Show recent registration changes (CEREG, oldest first) and the "
+	              "last reject.",
+	              cmd_history, 1, 0),
 
 	SHELL_CMD_ARG(test, &sub_lte_test,
 	              "Test commands.",

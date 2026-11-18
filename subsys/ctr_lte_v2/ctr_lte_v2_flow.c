@@ -123,6 +123,7 @@ static void process_urc(const char *line)
 		}
 
 		ctr_lte_v2_state_set_cereg_param(&cereg_param);
+		ctr_lte_v2_state_add_cereg_event(&cereg_param);
 
 		if (ctr_lte_v2_state_cereg_is_reject(&cereg_param)) {
 			char what[48];

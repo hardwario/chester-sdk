@@ -241,6 +241,43 @@ int ctr_lte_v2_is_attached(bool *attached);
 int ctr_lte_v2_get_curr_attach_info(int *attempt, int *attach_timeout_sec, int *retry_delay_sec,
 				    int *remaining_sec);
 
+/**
+ * @brief One registration status change (CEREG).
+ */
+struct ctr_lte_v2_cereg_event {
+	uint32_t uptime_s;    /**< Uptime of the change. */
+	uint32_t cid;         /**< Cell ID, 0 if not reported. */
+	uint16_t tac;         /**< Tracking area code, 0 if not reported. */
+	uint8_t stat;         /**< @ref ctr_lte_v2_cereg_param_stat. */
+	uint8_t act;          /**< @ref ctr_lte_v2_cereg_param_act. */
+	uint8_t reject_cause; /**< EMM cause, 0 if none (also set on an accepted registration). */
+};
+
+/**
+ * @brief Get the last registration status changes, newest first.
+ *
+ * Keeps CONFIG_CTR_LTE_V2_CEREG_HISTORY changes; a repeat of the newest one is not stored.
+ *
+ * @param events Output array.
+ * @param max    Size of @p events.
+ * @param count  Number of events written.
+ *
+ * @retval 0       Success.
+ * @retval -EINVAL Invalid argument.
+ */
+int ctr_lte_v2_get_cereg_history(struct ctr_lte_v2_cereg_event *events, size_t max, size_t *count);
+
+/**
+ * @brief Get the last registration reject (CEREG with an EMM cause while not registered).
+ *
+ * Kept separately, so it survives the history rolling over.
+ *
+ * @retval 0        Success.
+ * @retval -EINVAL  Invalid argument.
+ * @retval -ENODATA No reject since boot.
+ */
+int ctr_lte_v2_get_last_reject(struct ctr_lte_v2_cereg_event *event);
+
 /* -------- GNSS functions -------- */
 
 #if defined(CONFIG_CTR_LTE_V2_GNSS)

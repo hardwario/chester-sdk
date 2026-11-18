@@ -8,12 +8,20 @@ common:
 
 tests:
   subsys.ctr_lte_v2.parser:
-    extra_args: CONFIG_TEST_FEATURE_PARSING=y
+    extra_args:
+      - CONFIG_TEST_FEATURE_PARSING=y
+      - CONFIG_CTR_LTE_V2_CEREG_HISTORY=3
 
   subsys.ctr_lte_v2.parser_no_cause_str:
     extra_args:
       - CONFIG_TEST_FEATURE_PARSING=y
       - CONFIG_CTR_LTE_V2_CAUSE_STR=n
+      - CONFIG_CTR_LTE_V2_CEREG_HISTORY=3
+
+  subsys.ctr_lte_v2.parser_no_cereg_history:
+    extra_args:
+      - CONFIG_TEST_FEATURE_PARSING=y
+      - CONFIG_CTR_LTE_V2_CEREG_HISTORY=0
 
   subsys.ctr_lte_v2.stack_overrides_config:
     extra_args: CONFIG_TEST_FEATURE_STACK_OVERRIDES_CONFIG=y

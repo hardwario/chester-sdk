@@ -667,6 +667,16 @@ int ctr_lte_v2_get_cereg_param(struct ctr_lte_v2_cereg_param *param)
 	return ctr_lte_v2_state_get_cereg_param(param);
 }
 
+int ctr_lte_v2_get_cereg_history(struct ctr_lte_v2_cereg_event *events, size_t max, size_t *count)
+{
+	return ctr_lte_v2_state_get_cereg_history(events, max, count);
+}
+
+int ctr_lte_v2_get_last_reject(struct ctr_lte_v2_cereg_event *event)
+{
+	return ctr_lte_v2_state_get_last_reject(event);
+}
+
 int ctr_lte_v2_get_metrics(struct ctr_lte_v2_metrics *metrics)
 {
 	if (!metrics) {
