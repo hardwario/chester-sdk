@@ -76,4 +76,36 @@ ZTEST(state, test_ceer_too_long_is_terminated)
 	zassert_equal(ceer[8], 'x', "written past the size");
 }
 
+ZTEST(state, test_cereg_is_reject)
+{
+	struct ctr_lte_v2_cereg_param param = {
+		.valid = true,
+		.stat = CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING,
+		.cause_type = 0,
+		.reject_cause = 15,
+	};
+
+	zassert_true(ctr_lte_v2_state_cereg_is_reject(&param));
+
+	param.stat = CTR_LTE_V2_CEREG_PARAM_STAT_REGISTRATION_DENIED;
+	zassert_true(ctr_lte_v2_state_cereg_is_reject(&param));
+
+	/* An EPS-only attach is accepted with EMM cause 18 (CS domain not available) */
+	param.reject_cause = 18;
+	param.stat = CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING;
+	zassert_false(ctr_lte_v2_state_cereg_is_reject(&param));
+	param.stat = CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME;
+	zassert_false(ctr_lte_v2_state_cereg_is_reject(&param));
+
+	/* A manufacturer-specific cause is not an EMM cause */
+	param.stat = CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING;
+	param.cause_type = 1;
+	zassert_false(ctr_lte_v2_state_cereg_is_reject(&param));
+
+	/* No cause */
+	param.cause_type = 0;
+	param.reject_cause = 0;
+	zassert_false(ctr_lte_v2_state_cereg_is_reject(&param));
+}
+
 ZTEST_SUITE(state, NULL, NULL, NULL, NULL, NULL);

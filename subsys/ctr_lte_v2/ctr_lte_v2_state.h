@@ -44,6 +44,16 @@ void ctr_lte_v2_state_set_ceer(const char *ceer);
 int ctr_lte_v2_state_get_conn_param(struct ctr_lte_v2_conn_param *param);
 void ctr_lte_v2_state_set_conn_param(const struct ctr_lte_v2_conn_param *param);
 
+/* A registration reject: an EMM cause (cause_type 0; 1 is manufacturer specific) while not
+ * registered. A registration can be accepted with a cause too, e.g. 18 "CS domain not available"
+ * for an EPS-only attach. */
+static inline bool ctr_lte_v2_state_cereg_is_reject(const struct ctr_lte_v2_cereg_param *param)
+{
+	return param->cause_type == 0 && param->reject_cause &&
+	       param->stat != CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME &&
+	       param->stat != CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING;
+}
+
 int ctr_lte_v2_state_get_cereg_param(struct ctr_lte_v2_cereg_param *param);
 void ctr_lte_v2_state_set_cereg_param(const struct ctr_lte_v2_cereg_param *param);
 

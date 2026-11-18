@@ -71,6 +71,22 @@ static ctr_lte_v2_flow_event_delegate_cb m_event_delegate_cb = NULL;
 static ctr_lte_v2_flow_bypass_cb m_bypass_cb = NULL;
 static void *m_bypass_user_data = NULL;
 
+static void log_emm_cause(const char *what, int cause)
+{
+	const char *hint = ctr_lte_v2_str_emm_cause_hint(cause);
+
+	LOG_WRN("%s: EMM cause %d (%s)%s%s", what, cause, ctr_lte_v2_str_emm_cause(cause),
+		hint ? ": " : "", hint ? hint : "");
+}
+
+static void log_esm_cause(int cause)
+{
+	const char *hint = ctr_lte_v2_str_esm_cause_hint(cause);
+
+	LOG_WRN("ESM cause %d (%s)%s%s", cause, ctr_lte_v2_str_esm_cause(cause), hint ? ": " : "",
+		hint ? hint : "");
+}
+
 static void process_urc(const char *line)
 {
 	LOG_INF("URC: %s", line);
@@ -107,6 +123,14 @@ static void process_urc(const char *line)
 		}
 
 		ctr_lte_v2_state_set_cereg_param(&cereg_param);
+
+		if (ctr_lte_v2_state_cereg_is_reject(&cereg_param)) {
+			char what[48];
+
+			snprintf(what, sizeof(what), "Registration rejected, tac %s, cell %08X",
+				 cereg_param.tac, (unsigned int)cereg_param.cid);
+			log_emm_cause(what, cereg_param.reject_cause);
+		}
 
 		if (cereg_param.stat == CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME ||
 		    cereg_param.stat == CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING) {
@@ -147,6 +171,11 @@ static void process_urc(const char *line)
 			ctr_lte_v2_state_set_gnss_update(&update);
 			m_event_delegate_cb(CTR_LTE_V2_EVENT_XGPS);
 		}
+	} else if (!strncmp(line, "+CNEC_EMM: ", 11)) {
+		log_emm_cause("Network", atoi(line + 11));
+
+	} else if (!strncmp(line, "+CNEC_ESM: ", 11)) {
+		log_esm_cause(atoi(line + 11));
 	}
 }
 

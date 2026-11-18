@@ -76,6 +76,14 @@ config CTR_LTE_V2_GNSS
 	bool "CTR_LTE_V2_GNSS"
 	default y
 
+config CTR_LTE_V2_CAUSE_STR
+	bool "CTR_LTE_V2_CAUSE_STR"
+	default y
+	help
+		Texts of the EMM and ESM causes (3GPP TS 24.301) in the log and the
+		shell, with a hint for the common ones (a few kB of flash, no RAM).
+		Without them only the numbers are shown.
+
 config HEAP_MEM_POOL_SIZE
 	int "HEAP_MEM_POOL_SIZE"
 	default 8192

@@ -271,6 +271,17 @@ const char *ctr_lte_v2_str_cereg_stat_human(enum ctr_lte_v2_cereg_param_stat sta
 /** Convert access technology (AcT) to text. */
 const char *ctr_lte_v2_str_act(enum ctr_lte_v2_cereg_param_act act);
 
+/** EMM cause text (3GPP TS 24.301 9.9.3.9), e.g. 15 "No suitable cells in tracking area";
+ *  "unknown" without CONFIG_CTR_LTE_V2_CAUSE_STR. */
+const char *ctr_lte_v2_str_emm_cause(int cause);
+/** Hint what to do about an EMM cause, NULL if there is none. */
+const char *ctr_lte_v2_str_emm_cause_hint(int cause);
+/** ESM cause text (3GPP TS 24.301 9.9.4.4), e.g. 27 "Missing or unknown APN";
+ *  "unknown" without CONFIG_CTR_LTE_V2_CAUSE_STR. */
+const char *ctr_lte_v2_str_esm_cause(int cause);
+/** Hint what to do about an ESM cause, NULL if there is none. */
+const char *ctr_lte_v2_str_esm_cause_hint(int cause);
+
 /** @} */ /* end of group hio_lte_modem */
 
 #ifdef __cplusplus
