@@ -103,6 +103,7 @@ $(document).ready(function(){initNavTree('ctr__lte__v2_8h.html',''); initResizab
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;zephyr/kernel.h&gt;</code><br />
+<code>#include &lt;zephyr/sys/slist.h&gt;</code><br />
 <code>#include &lt;stdbool.h&gt;</code><br />
 <code>#include &lt;stddef.h&gt;</code><br />
 <code>#include &lt;stdint.h&gt;</code><br />
@@ -111,11 +112,12 @@ Include dependency graph for ctr_lte_v2.h:</div>
 <div class="dyncontent">
 <div class="center"><img src="ctr__lte__v2_8h__incl.png" border="0" usemap="#actr__lte__v2_8h" alt=""/></div>
 <map name="actr__lte__v2_8h" id="actr__lte__v2_8h">
-<area shape="rect" title=" " alt="" coords="179,5,268,31"/>
+<area shape="rect" title=" " alt="" coords="276,5,365,31"/>
 <area shape="rect" title=" " alt="" coords="5,79,113,104"/>
-<area shape="rect" title=" " alt="" coords="138,79,213,104"/>
-<area shape="rect" title=" " alt="" coords="237,79,305,104"/>
-<area shape="rect" title=" " alt="" coords="330,79,394,104"/>
+<area shape="rect" title=" " alt="" coords="137,79,259,104"/>
+<area shape="rect" title=" " alt="" coords="283,79,358,104"/>
+<area shape="rect" title=" " alt="" coords="383,79,451,104"/>
+<area shape="rect" title=" " alt="" coords="475,79,539,104"/>
 </map>
 </div>
 </div>
@@ -134,6 +136,12 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__metrics.html">ctr_lte_v2_metrics</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Communication metrics and timing information.  <a href="structctr__lte__v2__metrics.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__cereg__event.html">ctr_lte_v2_cereg_event</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">One registration status change (CEREG).  <a href="structctr__lte__v2__cereg__event.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structctr__lte__v2__cb.html">ctr_lte_v2_cb</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">LTE event callback.  <a href="structctr__lte__v2__cb.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
@@ -176,6 +184,11 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="memdesc:ga1255fdc6c390258bd02ea4a8d6e33cba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attach policy for retry and timeout configuration.  <a href="group__ctr__lte__v2.html#ga1255fdc6c390258bd02ea4a8d6e33cba">More...</a><br /></td></tr>
 <tr class="separator:ga1255fdc6c390258bd02ea4a8d6e33cba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga91b07bcefc0667b9efac150c7b041033"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga91b07bcefc0667b9efac150c7b041033">ctr_lte_v2_cb_event</a> { <a class="el" href="group__ctr__lte__v2.html#gga91b07bcefc0667b9efac150c7b041033a85e74878e0bf8b8fc23898785e75effa">CTR_LTE_V2_CB_EVENT_CSCON_0</a> = 0
+, <a class="el" href="group__ctr__lte__v2.html#gga91b07bcefc0667b9efac150c7b041033a32c0b8c1ad6405d7565d3dba6963abb2">CTR_LTE_V2_CB_EVENT_CSCON_1</a> = 1
+ }</td></tr>
+<tr class="memdesc:ga91b07bcefc0667b9efac150c7b041033"><td class="mdescLeft">&#160;</td><td class="mdescRight">LTE events reported to the callbacks.  <a href="group__ctr__lte__v2.html#ga91b07bcefc0667b9efac150c7b041033">More...</a><br /></td></tr>
+<tr class="separator:ga91b07bcefc0667b9efac150c7b041033"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -210,6 +223,18 @@ Functions</h2></td></tr>
 <tr class="memitem:ga9e9f53f807f79d20ba1de0a7906a6ca2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga9e9f53f807f79d20ba1de0a7906a6ca2">ctr_lte_v2_get_curr_attach_info</a> (int *attempt, int *attach_timeout_sec, int *retry_delay_sec, int *remaining_sec)</td></tr>
 <tr class="memdesc:ga9e9f53f807f79d20ba1de0a7906a6ca2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get current attach information.  <a href="group__ctr__lte__v2.html#ga9e9f53f807f79d20ba1de0a7906a6ca2">More...</a><br /></td></tr>
 <tr class="separator:ga9e9f53f807f79d20ba1de0a7906a6ca2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3a61ef5c4a2deb8c6d7c76291fedfe66"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga3a61ef5c4a2deb8c6d7c76291fedfe66">ctr_lte_v2_get_cereg_history</a> (struct <a class="el" href="structctr__lte__v2__cereg__event.html">ctr_lte_v2_cereg_event</a> *events, size_t max, size_t *count)</td></tr>
+<tr class="memdesc:ga3a61ef5c4a2deb8c6d7c76291fedfe66"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the last registration status changes, newest first.  <a href="group__ctr__lte__v2.html#ga3a61ef5c4a2deb8c6d7c76291fedfe66">More...</a><br /></td></tr>
+<tr class="separator:ga3a61ef5c4a2deb8c6d7c76291fedfe66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa8bb8f2c73613ac84288b7655e181fcc"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#gaa8bb8f2c73613ac84288b7655e181fcc">ctr_lte_v2_get_last_reject</a> (struct <a class="el" href="structctr__lte__v2__cereg__event.html">ctr_lte_v2_cereg_event</a> *event)</td></tr>
+<tr class="memdesc:gaa8bb8f2c73613ac84288b7655e181fcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the last registration reject (CEREG with an EMM cause while not registered).  <a href="group__ctr__lte__v2.html#gaa8bb8f2c73613ac84288b7655e181fcc">More...</a><br /></td></tr>
+<tr class="separator:gaa8bb8f2c73613ac84288b7655e181fcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0bcd4ceb76f77047f83ed458a4bb8f4b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga0bcd4ceb76f77047f83ed458a4bb8f4b">ctr_lte_v2_add_callback</a> (struct <a class="el" href="structctr__lte__v2__cb.html">ctr_lte_v2_cb</a> *cb)</td></tr>
+<tr class="memdesc:ga0bcd4ceb76f77047f83ed458a4bb8f4b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add an LTE event callback.  <a href="group__ctr__lte__v2.html#ga0bcd4ceb76f77047f83ed458a4bb8f4b">More...</a><br /></td></tr>
+<tr class="separator:ga0bcd4ceb76f77047f83ed458a4bb8f4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7c7873351b1c38e9a45742ebf406ebd3"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga7c7873351b1c38e9a45742ebf406ebd3">ctr_lte_v2_remove_callback</a> (struct <a class="el" href="structctr__lte__v2__cb.html">ctr_lte_v2_cb</a> *cb)</td></tr>
+<tr class="memdesc:ga7c7873351b1c38e9a45742ebf406ebd3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove an LTE event callback.  <a href="group__ctr__lte__v2.html#ga7c7873351b1c38e9a45742ebf406ebd3">More...</a><br /></td></tr>
+<tr class="separator:ga7c7873351b1c38e9a45742ebf406ebd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga84fe693ea37ee8b203ee97b1fa02471d"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga84fe693ea37ee8b203ee97b1fa02471d">ctr_lte_v2_str_coneval_result</a> (int result)</td></tr>
 <tr class="separator:ga84fe693ea37ee8b203ee97b1fa02471d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae379f2982c159acc317217e3a2601f72"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#gae379f2982c159acc317217e3a2601f72">ctr_lte_v2_str_cereg_stat</a> (enum <a class="el" href="group__ctr__lte__v2.html#ga5286895a249ddc7b9e8673a0e07390b8">ctr_lte_v2_cereg_param_stat</a> stat)</td></tr>
@@ -218,6 +243,14 @@ Functions</h2></td></tr>
 <tr class="separator:ga46827298c0bda6d30f5280ad2c8d6520"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaf8fe5ad35409f167e3e777e448f2c549"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#gaf8fe5ad35409f167e3e777e448f2c549">ctr_lte_v2_str_act</a> (enum <a class="el" href="group__ctr__lte__v2.html#ga36c152e447cf2947877e44eab9692de0">ctr_lte_v2_cereg_param_act</a> act)</td></tr>
 <tr class="separator:gaf8fe5ad35409f167e3e777e448f2c549"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8d88c565662fd86d0d475b036dd3743d"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga8d88c565662fd86d0d475b036dd3743d">ctr_lte_v2_str_emm_cause</a> (int cause)</td></tr>
+<tr class="separator:ga8d88c565662fd86d0d475b036dd3743d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab47ab92878c997e72795f895fbf2515f"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#gab47ab92878c997e72795f895fbf2515f">ctr_lte_v2_str_emm_cause_hint</a> (int cause)</td></tr>
+<tr class="separator:gab47ab92878c997e72795f895fbf2515f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga62c798e07c5765c8bf425d816b7d9585"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga62c798e07c5765c8bf425d816b7d9585">ctr_lte_v2_str_esm_cause</a> (int cause)</td></tr>
+<tr class="separator:ga62c798e07c5765c8bf425d816b7d9585"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga35592fda04eb8d7f0e78dbbcf5f51e02"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__lte__v2.html#ga35592fda04eb8d7f0e78dbbcf5f51e02">ctr_lte_v2_str_esm_cause_hint</a> (int cause)</td></tr>
+<tr class="separator:ga35592fda04eb8d7f0e78dbbcf5f51e02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

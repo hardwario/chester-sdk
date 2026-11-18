@@ -10,6 +10,10 @@ var ctr__lte__v2_8h =
       [ "CTR_LTE_V2_ATTACH_POLICY_PERIODIC_1D", "group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaa6d1a8d3aafb096fcc6e19d51d62fa5a9", null ],
       [ "CTR_LTE_V2_ATTACH_POLICY_PROGRESSIVE", "group__ctr__lte__v2.html#gga1255fdc6c390258bd02ea4a8d6e33cbaac2e3677e64b481d68d8d6ea207c97812", null ]
     ] ],
+    [ "ctr_lte_v2_cb_event", "group__ctr__lte__v2.html#ga91b07bcefc0667b9efac150c7b041033", [
+      [ "CTR_LTE_V2_CB_EVENT_CSCON_0", "group__ctr__lte__v2.html#gga91b07bcefc0667b9efac150c7b041033a85e74878e0bf8b8fc23898785e75effa", null ],
+      [ "CTR_LTE_V2_CB_EVENT_CSCON_1", "group__ctr__lte__v2.html#gga91b07bcefc0667b9efac150c7b041033a32c0b8c1ad6405d7565d3dba6963abb2", null ]
+    ] ],
     [ "ctr_lte_v2_cereg_param_act", "group__ctr__lte__v2.html#ga36c152e447cf2947877e44eab9692de0", [
       [ "CTR_LTE_V2_CEREG_PARAM_ACT_UNKNOWN", "group__ctr__lte__v2.html#gga36c152e447cf2947877e44eab9692de0a1fbf4ba77d64e0d10047f1eecc51ed54", null ],
       [ "CTR_LTE_V2_CEREG_PARAM_ACT_LTE", "group__ctr__lte__v2.html#gga36c152e447cf2947877e44eab9692de0a63f0c75fe6f3b254a6e0c40b537f03e8", null ],
@@ -24,21 +28,29 @@ var ctr__lte__v2_8h =
       [ "CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING", "group__ctr__lte__v2.html#gga5286895a249ddc7b9e8673a0e07390b8a5b36a4b666ec7f7642bfa87af3f864c7", null ],
       [ "CTR_LTE_V2_CEREG_PARAM_STAT_SIM_FAILURE", "group__ctr__lte__v2.html#gga5286895a249ddc7b9e8673a0e07390b8ad1be013d9f6f219b40b8a94677944097", null ]
     ] ],
+    [ "ctr_lte_v2_add_callback", "group__ctr__lte__v2.html#ga0bcd4ceb76f77047f83ed458a4bb8f4b", null ],
     [ "ctr_lte_v2_enable", "group__ctr__lte__v2.html#ga9a4dd2eefd353bf31c17bc4367c60b5a", null ],
+    [ "ctr_lte_v2_get_cereg_history", "group__ctr__lte__v2.html#ga3a61ef5c4a2deb8c6d7c76291fedfe66", null ],
     [ "ctr_lte_v2_get_cereg_param", "group__ctr__lte__v2.html#ga8ebc16fca4e81b3b98a7c9e2b67bf5a4", null ],
     [ "ctr_lte_v2_get_conn_param", "group__ctr__lte__v2.html#ga9861ebd72de329f1ef4eec4dba2c70f1", null ],
     [ "ctr_lte_v2_get_curr_attach_info", "group__ctr__lte__v2.html#ga9e9f53f807f79d20ba1de0a7906a6ca2", null ],
     [ "ctr_lte_v2_get_iccid", "group__ctr__lte__v2.html#ga682e48d53179f1a18eeee3d18cf567ac", null ],
     [ "ctr_lte_v2_get_imei", "group__ctr__lte__v2.html#gab28432793e6f6a169ad5254f847160f0", null ],
     [ "ctr_lte_v2_get_imsi", "group__ctr__lte__v2.html#gad17e7b2b42a62e519f2d3d1ced4498af", null ],
+    [ "ctr_lte_v2_get_last_reject", "group__ctr__lte__v2.html#gaa8bb8f2c73613ac84288b7655e181fcc", null ],
     [ "ctr_lte_v2_get_metrics", "group__ctr__lte__v2.html#ga8ec2416f749cf174bb4c68068fba25b0", null ],
     [ "ctr_lte_v2_get_modem_fw_version", "group__ctr__lte__v2.html#ga8b41e1b25f51b8c3607b8277f3886480", null ],
     [ "ctr_lte_v2_is_attached", "group__ctr__lte__v2.html#ga221f50b3e0ae35346bb9309d40b464f2", null ],
     [ "ctr_lte_v2_reconnect", "group__ctr__lte__v2.html#ga706c1ed710c1beb2cc8cf1ae936ac294", null ],
+    [ "ctr_lte_v2_remove_callback", "group__ctr__lte__v2.html#ga7c7873351b1c38e9a45742ebf406ebd3", null ],
     [ "ctr_lte_v2_send_recv", "group__ctr__lte__v2.html#ga9a85941ee750c49c5ce74c0b981f8273", null ],
     [ "ctr_lte_v2_str_act", "group__ctr__lte__v2.html#gaf8fe5ad35409f167e3e777e448f2c549", null ],
     [ "ctr_lte_v2_str_cereg_stat", "group__ctr__lte__v2.html#gae379f2982c159acc317217e3a2601f72", null ],
     [ "ctr_lte_v2_str_cereg_stat_human", "group__ctr__lte__v2.html#ga46827298c0bda6d30f5280ad2c8d6520", null ],
     [ "ctr_lte_v2_str_coneval_result", "group__ctr__lte__v2.html#ga84fe693ea37ee8b203ee97b1fa02471d", null ],
+    [ "ctr_lte_v2_str_emm_cause", "group__ctr__lte__v2.html#ga8d88c565662fd86d0d475b036dd3743d", null ],
+    [ "ctr_lte_v2_str_emm_cause_hint", "group__ctr__lte__v2.html#gab47ab92878c997e72795f895fbf2515f", null ],
+    [ "ctr_lte_v2_str_esm_cause", "group__ctr__lte__v2.html#ga62c798e07c5765c8bf425d816b7d9585", null ],
+    [ "ctr_lte_v2_str_esm_cause_hint", "group__ctr__lte__v2.html#ga35592fda04eb8d7f0e78dbbcf5f51e02", null ],
     [ "ctr_lte_v2_wait_for_connected", "group__ctr__lte__v2.html#gacfb35b18305a8f77c790e8fb58def117", null ]
 ];

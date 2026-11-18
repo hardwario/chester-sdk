@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['act_0',['act',['../structctr__lte__v2__cereg__param.html#a50016f78caecff785f804f8fd9f176db',1,'ctr_lte_v2_cereg_param']]],
+  ['act_0',['act',['../structctr__lte__v2__cereg__param.html#a50016f78caecff785f804f8fd9f176db',1,'ctr_lte_v2_cereg_param::act()'],['../structctr__lte__v2__cereg__event.html#a498ad68f6ad531c198c4317491f8a082',1,'ctr_lte_v2_cereg_event::act()']]],
   ['active_5fduration_1',['active_duration',['../structctr__edge.html#a3dcb8e491f15c604d892e007cc1f7675',1,'ctr_edge']]],
   ['active_5ftime_2',['active_time',['../structctr__lte__v2__cereg__param.html#a02a3dd0220cfaad4cae44207dc9a26ed',1,'ctr_lte_v2_cereg_param']]],
   ['addr_3',['addr',['../structctr__lte__send__opts.html#ac13d6982888421898bf9d723763d5004',1,'ctr_lte_send_opts']]],

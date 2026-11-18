@@ -42,6 +42,8 @@ var annotated_dup =
     [ "ctr_lte_event_data", "unionctr__lte__event__data.html", "unionctr__lte__event__data" ],
     [ "ctr_lte_link_driver_api", "structctr__lte__link__driver__api.html", "structctr__lte__link__driver__api" ],
     [ "ctr_lte_send_opts", "structctr__lte__send__opts.html", "structctr__lte__send__opts" ],
+    [ "ctr_lte_v2_cb", "structctr__lte__v2__cb.html", "structctr__lte__v2__cb" ],
+    [ "ctr_lte_v2_cereg_event", "structctr__lte__v2__cereg__event.html", "structctr__lte__v2__cereg__event" ],
     [ "ctr_lte_v2_cereg_param", "structctr__lte__v2__cereg__param.html", "structctr__lte__v2__cereg__param" ],
     [ "ctr_lte_v2_conn_param", "structctr__lte__v2__conn__param.html", "structctr__lte__v2__conn__param" ],
     [ "ctr_lte_v2_metrics", "structctr__lte__v2__metrics.html", "structctr__lte__v2__metrics" ],

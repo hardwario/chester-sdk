@@ -106,6 +106,9 @@ Functions</h2></td></tr>
 <tr class="separator:ga691fd410bba9b6fe4909e9b4c4c21c10"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gafd15bbc0b1cec984667285faec792faa"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__util.html#gafd15bbc0b1cec984667285faec792faa">ctr_hex2buf</a> (const char *src, void *dst, size_t dst_size, bool allow_spaces)</td></tr>
 <tr class="separator:gafd15bbc0b1cec984667285faec792faa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf439f1a5d33f8e2a8697f15dd0ab41e4"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ctr__util.html#gaf439f1a5d33f8e2a8697f15dd0ab41e4">ctr_util_fmt_duration</a> (uint32_t sec, char *dst, size_t dst_size)</td></tr>
+<tr class="memdesc:gaf439f1a5d33f8e2a8697f15dd0ab41e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Format a duration for humans, e.g. "45s", "36m 50s", "1d 02h 03m 04s".  <a href="group__ctr__util.html#gaf439f1a5d33f8e2a8697f15dd0ab41e4">More...</a><br /></td></tr>
+<tr class="separator:gaf439f1a5d33f8e2a8697f15dd0ab41e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
@@ -192,6 +195,49 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="gaf439f1a5d33f8e2a8697f15dd0ab41e4" name="gaf439f1a5d33f8e2a8697f15dd0ab41e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaf439f1a5d33f8e2a8697f15dd0ab41e4">&#9670;&#160;</a></span>ctr_util_fmt_duration()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ctr_util_fmt_duration </td>
+          <td>(</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>sec</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char *&#160;</td>
+          <td class="paramname"><em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>dst_size</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Format a duration for humans, e.g. "45s", "36m 50s", "1d 02h 03m 04s". </p>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">0</td><td>Success. </td></tr>
+    <tr><td class="paramname">-ENOSPC</td><td><code>dst</code> is too small (24 bytes always fit). </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
