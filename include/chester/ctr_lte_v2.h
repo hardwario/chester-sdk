@@ -9,6 +9,7 @@
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
 /* Standard includes */
 #include <stdbool.h>
@@ -277,6 +278,46 @@ int ctr_lte_v2_get_cereg_history(struct ctr_lte_v2_cereg_event *events, size_t m
  * @retval -ENODATA No reject since boot.
  */
 int ctr_lte_v2_get_last_reject(struct ctr_lte_v2_cereg_event *event);
+
+/* -------- Callbacks for LTE events -------- */
+
+/**
+ * @brief LTE events reported to the callbacks.
+ */
+enum ctr_lte_v2_cb_event {
+	CTR_LTE_V2_CB_EVENT_CSCON_0 = 0, /**< Connection Status (Idle). */
+	CTR_LTE_V2_CB_EVENT_CSCON_1 = 1, /**< Connection Status (Connected). */
+};
+
+/**
+ * @brief LTE event callback.
+ *
+ * @note The handler runs on the ctr_lte_v2 work queue; it must not block and must return
+ *       quickly. It may remove its own callback, but no other one.
+ */
+struct ctr_lte_v2_cb {
+	sys_snode_t node; /**< Zephyr singly-linked list support. */
+	void (*handler)(struct ctr_lte_v2_cb *cb, enum ctr_lte_v2_cb_event event);
+	void *user_data; /**< User data owned by the registrant. */
+};
+
+/**
+ * @brief Add an LTE event callback.
+ *
+ * @retval 0         Success.
+ * @retval -EALREADY Callback already registered.
+ * @retval -EINVAL   Invalid argument.
+ */
+int ctr_lte_v2_add_callback(struct ctr_lte_v2_cb *cb);
+
+/**
+ * @brief Remove an LTE event callback.
+ *
+ * @retval 0       Success.
+ * @retval -ENOENT Callback not found.
+ * @retval -EINVAL Invalid argument.
+ */
+int ctr_lte_v2_remove_callback(struct ctr_lte_v2_cb *cb);
 
 /* -------- GNSS functions -------- */
 

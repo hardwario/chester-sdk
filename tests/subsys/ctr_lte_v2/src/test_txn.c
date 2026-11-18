@@ -1388,4 +1388,61 @@ ZTEST(txn, test_deregistered_in_ready)
 }
 #endif
 
+#if defined(CONFIG_TEST_FEATURE_TXN_CALLBACKS)
+static atomic_t m_cb_count;
+static atomic_t m_cb_once_count;
+static enum ctr_lte_v2_cb_event m_cb_events[4];
+static void *m_cb_user_data;
+
+static void cb_handler(struct ctr_lte_v2_cb *cb, enum ctr_lte_v2_cb_event event)
+{
+	atomic_val_t i = atomic_inc(&m_cb_count);
+
+	if (i < ARRAY_SIZE(m_cb_events)) {
+		m_cb_events[i] = event;
+	}
+
+	m_cb_user_data = cb->user_data;
+}
+
+/* Removes itself on the first event */
+static void cb_once_handler(struct ctr_lte_v2_cb *cb, enum ctr_lte_v2_cb_event event)
+{
+	atomic_inc(&m_cb_once_count);
+	ctr_lte_v2_remove_callback(cb);
+}
+
+/* The callbacks get CSCON 1 of the attach and CSCON 0 before the sleep */
+ZTEST(txn, test_callbacks)
+{
+	static int user_data;
+	static struct ctr_lte_v2_cb cb = {.handler = cb_handler, .user_data = &user_data};
+	static struct ctr_lte_v2_cb once = {.handler = cb_once_handler};
+	static struct ctr_lte_v2_cb no_handler;
+
+	zassert_equal(ctr_lte_v2_add_callback(NULL), -EINVAL);
+	zassert_equal(ctr_lte_v2_add_callback(&no_handler), -EINVAL);
+	zassert_equal(ctr_lte_v2_remove_callback(NULL), -EINVAL);
+
+	/* Ahead of cb: removing itself must not stop the others */
+	zassert_ok(ctr_lte_v2_add_callback(&once));
+	zassert_ok(ctr_lte_v2_add_callback(&cb));
+	zassert_equal(ctr_lte_v2_add_callback(&cb), -EALREADY);
+
+	stack_attach();
+	go_to_sleep();
+
+	zassert_equal(atomic_get(&m_cb_count), 2);
+	zassert_equal(m_cb_events[0], CTR_LTE_V2_CB_EVENT_CSCON_1);
+	zassert_equal(m_cb_events[1], CTR_LTE_V2_CB_EVENT_CSCON_0);
+	zassert_equal_ptr(m_cb_user_data, &user_data);
+
+	zassert_equal(atomic_get(&m_cb_once_count), 1, "not removed by its handler");
+	zassert_equal(ctr_lte_v2_remove_callback(&once), -ENOENT);
+
+	zassert_ok(ctr_lte_v2_remove_callback(&cb));
+	zassert_equal(ctr_lte_v2_remove_callback(&cb), -ENOENT);
+}
+#endif
+
 ZTEST_SUITE(txn, NULL, NULL, NULL, NULL, NULL);

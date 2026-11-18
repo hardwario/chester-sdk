@@ -17,6 +17,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/time_units.h>
 
 /* Standard includes */
@@ -119,6 +120,10 @@ K_MUTEX_DEFINE(m_metrics_lock);
 struct ctr_lte_v2_metrics m_metrics;
 static uint32_t m_start = 0;
 static uint32_t m_start_cscon1 = 0;
+
+/* Registered by the applications, called from the work queue */
+static sys_slist_t m_cb_list = SYS_SLIST_STATIC_INIT(&m_cb_list);
+static K_MUTEX_DEFINE(m_cb_lock);
 
 struct ctr_lte_v2_cereg_param m_cereg_param = {0};
 
@@ -404,9 +409,29 @@ static void delegate_event(enum ctr_lte_v2_event event)
 	}
 }
 
+static void notify(enum ctr_lte_v2_cb_event event)
+{
+	struct ctr_lte_v2_cb *cb, *tmp;
+
+	/* Recursive for this thread, so a handler can remove its callback */
+	k_mutex_lock(&m_cb_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&m_cb_list, cb, tmp, node) {
+		cb->handler(cb, event);
+	}
+
+	k_mutex_unlock(&m_cb_lock);
+}
+
 static void event_handler(enum ctr_lte_v2_event event)
 {
 	LOG_INF("event: %s, state: %s", ctr_lte_v2_str_fsm_event(event), fsm_state_str(m_state));
+
+	if (event == CTR_LTE_V2_EVENT_CSCON_0) {
+		notify(CTR_LTE_V2_CB_EVENT_CSCON_0);
+	} else if (event == CTR_LTE_V2_EVENT_CSCON_1) {
+		notify(CTR_LTE_V2_CB_EVENT_CSCON_1);
+	}
 
 	/* The same in every state */
 	if (event == CTR_LTE_V2_EVENT_RECONNECT) {
@@ -675,6 +700,46 @@ int ctr_lte_v2_get_cereg_history(struct ctr_lte_v2_cereg_event *events, size_t m
 int ctr_lte_v2_get_last_reject(struct ctr_lte_v2_cereg_event *event)
 {
 	return ctr_lte_v2_state_get_last_reject(event);
+}
+
+int ctr_lte_v2_add_callback(struct ctr_lte_v2_cb *cb)
+{
+	if (!cb || !cb->handler) {
+		return -EINVAL;
+	}
+
+	int ret = 0;
+	struct ctr_lte_v2_cb *iter;
+
+	k_mutex_lock(&m_cb_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&m_cb_list, iter, node) {
+		if (iter == cb) {
+			ret = -EALREADY;
+			break;
+		}
+	}
+
+	if (!ret) {
+		sys_slist_append(&m_cb_list, &cb->node);
+	}
+
+	k_mutex_unlock(&m_cb_lock);
+
+	return ret;
+}
+
+int ctr_lte_v2_remove_callback(struct ctr_lte_v2_cb *cb)
+{
+	if (!cb) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&m_cb_lock, K_FOREVER);
+	bool removed = sys_slist_find_and_remove(&m_cb_list, &cb->node);
+	k_mutex_unlock(&m_cb_lock);
+
+	return removed ? 0 : -ENOENT;
 }
 
 int ctr_lte_v2_get_metrics(struct ctr_lte_v2_metrics *metrics)

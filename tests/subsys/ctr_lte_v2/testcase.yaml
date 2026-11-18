@@ -91,3 +91,6 @@ tests:
 
   subsys.ctr_lte_v2.txn_deregistered_in_ready:
     extra_args: CONFIG_TEST_FEATURE_TXN_DEREGISTERED_IN_READY=y
+
+  subsys.ctr_lte_v2.txn_callbacks:
+    extra_args: CONFIG_TEST_FEATURE_TXN_CALLBACKS=y
