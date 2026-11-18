@@ -141,13 +141,14 @@ var NAVTREEINDEX5 =
 "structctr__lte__v2__metrics.html#afbd5ed3fb03c6f2540855c79ce5f8b24":[1,17,3,2],
 "structctr__lte__v2__send__recv__param.html":[1,17,2],
 "structctr__lte__v2__send__recv__param.html#a16cc41d0dd4030b254d76b0b41937881":[1,17,2,0],
-"structctr__lte__v2__send__recv__param.html#a1aee8d925b88fbc088ac44631a786c62":[1,17,2,4],
+"structctr__lte__v2__send__recv__param.html#a1aee8d925b88fbc088ac44631a786c62":[1,17,2,5],
+"structctr__lte__v2__send__recv__param.html#a24f3e87678c4e9bd6086e09f45dcba64":[1,17,2,4],
 "structctr__lte__v2__send__recv__param.html#a651f61df2b09e8ec920219ab52e8fe78":[1,17,2,3],
 "structctr__lte__v2__send__recv__param.html#a6b943f8e328e355d533e53e1e2905443":[1,17,2,1],
-"structctr__lte__v2__send__recv__param.html#aa15707a6209e097aca5928d0fdc67587":[1,17,2,7],
-"structctr__lte__v2__send__recv__param.html#aa3e984cd200d79c7509f0f8f3011cb32":[1,17,2,5],
+"structctr__lte__v2__send__recv__param.html#aa15707a6209e097aca5928d0fdc67587":[1,17,2,8],
+"structctr__lte__v2__send__recv__param.html#aa3e984cd200d79c7509f0f8f3011cb32":[1,17,2,6],
 "structctr__lte__v2__send__recv__param.html#acac7c5e1b392dfbc15acf58b3827f552":[1,17,2,2],
-"structctr__lte__v2__send__recv__param.html#ae7aeddb6cc68da9707c030e5c77cd246":[1,17,2,6],
+"structctr__lte__v2__send__recv__param.html#ae7aeddb6cc68da9707c030e5c77cd246":[1,17,2,7],
 "structctr__pm3006s__driver__api.html":[1,38,1],
 "structctr__pm3006s__driver__api.html#a8d0ab8496520a3d324df6e7efff3d9a4":[1,38,1,1],
 "structctr__pm3006s__driver__api.html#ac0230ec01fc715b8616a90a6881fb347":[1,38,1,2],
@@ -248,6 +249,5 @@ var NAVTREEINDEX5 =
 "unionctr__gnss__event__data.html#af80806e34afdb2c1783d11de8901bdbe":[1,10,5,3],
 "unionctr__gnss__event__data.html#afc3a7c0bd13f4603fb2799844c1dd984":[1,10,5,0],
 "unionctr__lrw__event__data.html":[1,15,6],
-"unionctr__lrw__event__data.html#a1700dcc768768d5219baaf0e6edf05ab":[1,15,6,5],
-"unionctr__lrw__event__data.html#a20614fa42f52b9792cb040bb7aa206a7":[1,15,6,4]
+"unionctr__lrw__event__data.html#a1700dcc768768d5219baaf0e6edf05ab":[1,15,6,5]
 };

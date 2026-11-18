@@ -570,7 +570,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Disconnect and reconnect LTE modem. </p>
-<p >Useful for recovering from connection issues.</p>
+<p >Useful for recovering from connection issues. The call only requests the reconnect: the LTE thread carries it out once it is done with its current step (an AT dialog in progress ends first).</p>
 <dl class="retval"><dt>Return values</dt><dd>
   <table class="retval">
     <tr><td class="paramname">0</td><td>Success. </td></tr>
@@ -600,7 +600,9 @@ Functions</h2></td></tr>
 
 <p>Send data and optionally receive response. </p>
 <p >Sends data to the network and optionally waits for a response.</p>
-<p >Uses soft timeout: when timeout expires, FSM completes current operation gracefully before returning. The timeout signals "finish when you can", not an immediate abort. Return code reflects actual result of the operation.</p>
+<p >The LTE stack works on its own copy of <code>param</code>. When the timeout expires before the exchange has ended, the call gives the exchange up and returns -ETIMEDOUT; the stack goes on with what it is doing (for example the network attach). If the modem is just then exchanging the data with the caller's buffers, the call first waits for that AT dialog to end, which can take up to about 36 s past the timeout; a response received in that wait is dropped. The result follows who ended the exchange, not the time: an exchange the stack has completed returns 0 even when that happened just past the timeout.</p>
+<p >The buffers in <code>param</code> are not touched after the call returns.</p>
+<p >After -ENOTCONN for a missing connection, 'lte state' shows the extended error report of the modem (AT+CEER).</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">param</td><td>Send/receive parameters (see <a class="el" href="structctr__lte__v2__send__recv__param.html">ctr_lte_v2_send_recv_param</a>).</td></tr>
@@ -610,11 +612,11 @@ Functions</h2></td></tr>
 <dl class="retval"><dt>Return values</dt><dd>
   <table class="retval">
     <tr><td class="paramname">0</td><td>Success. </td></tr>
-    <tr><td class="paramname">-ETIMEDOUT</td><td>Operation timed out (returned after FSM completed gracefully). </td></tr>
-    <tr><td class="paramname">-ECONNRESET</td><td>Connection was reset (CSCON=0 received during send). </td></tr>
-    <tr><td class="paramname">-ENETDOWN</td><td>Network is down (deregistered from network). </td></tr>
-    <tr><td class="paramname">-EIO</td><td>I/O error (send/receive failed or general error). </td></tr>
-    <tr><td class="paramname">-EFAULT</td><td>FSM stuck (internal error, STOP_BIT not received in 30s). </td></tr>
+    <tr><td class="paramname">-ETIMEDOUT</td><td>The exchange did not end before the timeout, or the response did not come. </td></tr>
+    <tr><td class="paramname">-ENOTCONN</td><td>LTE is disabled, the socket is not usable, or the network granted no connection for the data (see <a class="el" href="structctr__lte__v2__send__recv__param.html#a24f3e87678c4e9bd6086e09f45dcba64">ctr_lte_v2_send_recv_param::retry_count</a>). </td></tr>
+    <tr><td class="paramname">-EBUSY</td><td>Another exchange kept the stack busy until the timeout. </td></tr>
+    <tr><td class="paramname">-ENOTSUP</td><td>Test mode is enabled. </td></tr>
+    <tr><td class="paramname">-EINVAL</td><td><code>param</code> is NULL, or has recv_buf without recv_size or recv_len. </td></tr>
   </table>
   </dd>
 </dl>
