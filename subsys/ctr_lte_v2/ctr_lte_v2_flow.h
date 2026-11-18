@@ -43,6 +43,9 @@ enum ctr_lte_v2_event {
 	CTR_LTE_V2_EVENT_XGPS_ENABLE,
 	CTR_LTE_V2_EVENT_XGPS_DISABLE,
 	CTR_LTE_V2_EVENT_XGPS,
+	CTR_LTE_V2_EVENT_NCELLMEAS,
+	CTR_LTE_V2_EVENT_NCELLMEAS_DONE,
+	CTR_LTE_V2_EVENT_SCAN_TIMER,
 };
 
 /**
@@ -84,6 +87,12 @@ int ctr_lte_v2_flow_ceer(void);
 
 int ctr_lte_v2_flow_wake_up_and_wait_on_ready(void);
 int ctr_lte_v2_flow_cmd_without_response(const char *s);
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+/* AT%NCELLMEAS=5,7 (GCI search); the URC comes later */
+int ctr_lte_v2_flow_ncellmeas(void);
+/* AT%NCELLMEASSTOP; during a measurement the modem sends the cells found so far right after OK */
+int ctr_lte_v2_flow_ncellmeas_stop(void);
+#endif
 int ctr_lte_v2_flow_bypass_set_cb(ctr_lte_v2_flow_bypass_cb cb, void *user_data);
 int ctr_lte_v2_flow_bypass_write(const uint8_t *data, const size_t len);
 

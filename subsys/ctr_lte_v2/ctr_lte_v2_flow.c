@@ -172,6 +172,13 @@ static void process_urc(const char *line)
 			ctr_lte_v2_state_set_gnss_update(&update);
 			m_event_delegate_cb(CTR_LTE_V2_EVENT_XGPS);
 		}
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+	} else if (!strncmp(line, "%NCELLMEAS: ", 12)) {
+		/* Only the measurement the FSM armed: a late or foreign URC changes nothing */
+		if (ctr_lte_v2_state_ncellmeas_urc(&line[12])) {
+			m_event_delegate_cb(CTR_LTE_V2_EVENT_NCELLMEAS_DONE);
+		}
+#endif
 	} else if (!strncmp(line, "+CNEC_EMM: ", 11)) {
 		log_emm_cause("Network", atoi(line + 11));
 
@@ -1140,6 +1147,30 @@ int ctr_lte_v2_flow_coneval(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+int ctr_lte_v2_flow_ncellmeas(void)
+{
+	int ret = ctr_lte_v2_talk_at_ncellmeas(&m_talk, 5, CTR_LTE_V2_NCELLMEAS_CELL_MAX);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_ncellmeas` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_v2_flow_ncellmeas_stop(void)
+{
+	int ret = ctr_lte_v2_talk_at_ncellmeasstop(&m_talk);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_ncellmeasstop` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif
 
 int ctr_lte_v2_flow_init(ctr_lte_v2_flow_event_delegate_cb cb)
 {

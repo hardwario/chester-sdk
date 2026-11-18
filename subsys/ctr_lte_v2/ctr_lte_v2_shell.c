@@ -571,6 +571,103 @@ static int cmd_reconnect(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+static int cmd_ncellmeas(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		shell_error(shell, "command not found: %s", argv[1]);
+		shell_help(shell);
+		return -EINVAL;
+	}
+
+	if (g_ctr_lte_v2_config.test) {
+		shell_error(shell, "test mode is enabled");
+		return -ENOTSUP;
+	}
+
+	int ret = ctr_lte_v2_schedule_ncellmeas();
+	if (ret == -EALREADY) {
+		shell_print(shell, "measurement already requested");
+	} else if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_schedule_ncellmeas` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	} else {
+		shell_print(shell, "measurement requested, see 'lte ncellmeas show'");
+	}
+
+	shell_print(shell, "command succeeded");
+
+	return 0;
+}
+
+static const char *ncellmeas_result_str(const struct ctr_lte_v2_ncellmeas_param *param)
+{
+	switch (param->result) {
+	case 0:
+		return "ok";
+	case -ETIMEDOUT:
+		return param->num_cells ? "timeout, partial" : "timeout";
+	case -ECANCELED:
+		return "cancelled";
+	default:
+		return "error";
+	}
+}
+
+static int cmd_ncellmeas_show(const struct shell *shell, size_t argc, char **argv)
+{
+	/* A copy (on the stack): printing under the lock of the state would hold up the URCs */
+	struct ctr_lte_v2_ncellmeas_param param;
+
+	/* The cells of the previous measurement are gone once the new one is armed */
+	if (ctr_lte_v2_wait_for_ncellmeas(K_NO_WAIT)) {
+		shell_print(shell, "ncellmeas: in progress");
+		shell_print(shell, "command succeeded");
+		return 0;
+	}
+
+	int ret = ctr_lte_v2_get_ncellmeas_param(&param);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_get_ncellmeas_param` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	if (param.result == -ENODATA) {
+		shell_print(shell, "no measurement yet");
+		shell_print(shell, "command succeeded");
+		return 0;
+	}
+
+	char ago[24];
+	ctr_util_fmt_duration(k_uptime_seconds() - param.uptime_s, ago, sizeof(ago));
+	shell_print(shell, "ncellmeas: %s ago, %s", ago, ncellmeas_result_str(&param));
+
+	for (int i = 0; i < param.num_cells; i++) {
+		const struct ctr_lte_v2_ncellmeas_cell *c = &param.cells[i];
+
+		shell_print(shell,
+			    "cell: %08X, plmn: %s, tac: %04X, earfcn: %u, pci: %u, rsrp: %d dBm%s",
+			    (unsigned int)c->eci, c->plmn, c->tac, (unsigned int)c->earfcn, c->pci,
+			    ctr_lte_v2_parse_rsrp_dbm(c->rsrp), c->serving ? ", serving" : "");
+
+		for (int j = 0; j < c->neighbor_count; j++) {
+			const struct ctr_lte_v2_ncellmeas_ncell *n =
+				&param.ncells[c->ncell_first + j];
+
+			shell_print(shell, "  neighbour: earfcn: %u, pci: %u, rsrp: %d dBm",
+				    (unsigned int)n->earfcn, n->pci,
+				    ctr_lte_v2_parse_rsrp_dbm(n->rsrp));
+		}
+	}
+
+	shell_print(shell, "command succeeded");
+
+	return 0;
+}
+#endif
+
 static int print_help(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -614,6 +711,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 SHELL_DYNAMIC_CMD_CREATE(sub_lte_config, ctr_lte_v2_config_subcmd_get);
 
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_lte_ncellmeas,
+
+	SHELL_CMD_ARG(show, NULL,
+	              "Show the last neighbour cell measurement.",
+	              cmd_ncellmeas_show, 1, 0),
+
+	SHELL_SUBCMD_SET_END
+);
+#endif
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lte,
 
@@ -653,6 +762,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              "Show recent registration changes (CEREG, oldest first) and the "
 	              "last reject.",
 	              cmd_history, 1, 0),
+
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+	SHELL_CMD_ARG(ncellmeas, &sub_lte_ncellmeas,
+	              "Measure the neighbour cells (returns at once, see 'show').",
+	              cmd_ncellmeas, 1, 0),
+#endif
 
 	SHELL_CMD_ARG(test, &sub_lte_test,
 	              "Test commands.",

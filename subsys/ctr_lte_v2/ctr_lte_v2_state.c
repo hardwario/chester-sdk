@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: LicenseRef-HARDWARIO-5-Clause
  */
 
+#include "ctr_lte_v2_parse.h"
 #include "ctr_lte_v2_state.h"
 
 /* CHESTER includes */
@@ -43,6 +44,12 @@ static struct ctr_lte_v2_cereg_event m_last_reject;
 static bool m_last_reject_valid;
 
 static bool m_radio_off;
+
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+/* The last measurement; the URC is taken only while armed (the FSM owns result and uptime_s) */
+static struct ctr_lte_v2_ncellmeas_param m_ncellmeas = {.result = -ENODATA};
+static bool m_ncellmeas_armed;
+#endif
 
 int ctr_lte_v2_state_get_imei(uint64_t *imei)
 {
@@ -365,3 +372,89 @@ int ctr_lte_v2_state_get_gnss_update(struct ctr_lte_v2_gnss_update *update)
 
 	return 0;
 }
+
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+static void ncellmeas_clear_cells(void)
+{
+	int result = m_ncellmeas.result;
+	uint32_t uptime_s = m_ncellmeas.uptime_s;
+
+	memset(&m_ncellmeas, 0, sizeof(m_ncellmeas));
+	m_ncellmeas.result = result;
+	m_ncellmeas.uptime_s = uptime_s;
+}
+
+void ctr_lte_v2_state_ncellmeas_arm(bool arm)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	ncellmeas_clear_cells();
+	m_ncellmeas_armed = arm;
+
+	k_mutex_unlock(&m_lock);
+}
+
+void ctr_lte_v2_state_ncellmeas_disarm(void)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	m_ncellmeas_armed = false;
+
+	k_mutex_unlock(&m_lock);
+}
+
+bool ctr_lte_v2_state_ncellmeas_urc(const char *s)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	if (!m_ncellmeas_armed) {
+		k_mutex_unlock(&m_lock);
+		return false;
+	}
+
+	m_ncellmeas_armed = false;
+
+	/* An error leaves no cells (valid false), the FSM reports it */
+	(void)ctr_lte_v2_parse_urc_ncellmeas(s, &m_ncellmeas);
+
+	k_mutex_unlock(&m_lock);
+
+	return true;
+}
+
+bool ctr_lte_v2_state_ncellmeas_valid(void)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	bool valid = m_ncellmeas.valid;
+
+	k_mutex_unlock(&m_lock);
+
+	return valid;
+}
+
+void ctr_lte_v2_state_set_ncellmeas_result(int result)
+{
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	m_ncellmeas.result = result;
+	m_ncellmeas.uptime_s = k_uptime_seconds();
+
+	k_mutex_unlock(&m_lock);
+}
+
+int ctr_lte_v2_state_get_ncellmeas_param(struct ctr_lte_v2_ncellmeas_param *param)
+{
+	if (!param) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&m_lock, K_FOREVER);
+
+	memcpy(param, &m_ncellmeas, sizeof(*param));
+
+	k_mutex_unlock(&m_lock);
+
+	return 0;
+}
+#endif

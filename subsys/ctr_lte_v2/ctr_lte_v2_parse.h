@@ -58,6 +58,26 @@ int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param)
 int ctr_lte_v2_parse_urc_xgps(const char *s, struct ctr_lte_v2_gnss_update *update);
 int ctr_lte_v2_parse_cgcont(const char *s, struct cgdcont_param *param);
 
+/* The RSRP and RSRQ the modem reports (%CONEVAL, %NCELLMEAS) in dBm and dB */
+static inline int ctr_lte_v2_parse_rsrp_dbm(int rsrp)
+{
+	return rsrp - 140;
+}
+
+static inline int ctr_lte_v2_parse_rsrq_db(int rsrq)
+{
+	return (rsrq - 39) / 2;
+}
+
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+/* Validates a PLMN: 5 or 6 digits, MCC not 000 (-EBADMSG, -EPROTO) */
+int ctr_lte_v2_parse_plmn(const char *s);
+/* Parses what follows "%NCELLMEAS: " (GCI search); a full capacity is not an error, the cells and
+ * neighbours that fit are kept. On an error the cells are cleared, result and uptime_s are left
+ * to the caller. */
+int ctr_lte_v2_parse_urc_ncellmeas(const char *s, struct ctr_lte_v2_ncellmeas_param *param);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

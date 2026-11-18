@@ -287,6 +287,8 @@ int ctr_lte_v2_get_last_reject(struct ctr_lte_v2_cereg_event *event);
 enum ctr_lte_v2_cb_event {
 	CTR_LTE_V2_CB_EVENT_CSCON_0 = 0, /**< Connection Status (Idle). */
 	CTR_LTE_V2_CB_EVENT_CSCON_1 = 1, /**< Connection Status (Connected). */
+	/** The neighbour cell measurement (ctr_lte_v2_schedule_ncellmeas) has ended. */
+	CTR_LTE_V2_CB_EVENT_NCELLMEAS_DONE = 2,
 };
 
 /**
@@ -336,6 +338,83 @@ typedef void (*ctr_lte_v2_gnss_cb)(const struct ctr_lte_v2_gnss_update *update, 
 int ctr_lte_v2_gnss_set_enable(bool enable);
 int ctr_lte_v2_gnss_get_enable(bool *enable);
 int ctr_lte_v2_gnss_set_handler(ctr_lte_v2_gnss_cb callback, void *user_data);
+#endif
+
+/* -------- Neighbour cell measurement and network scan -------- */
+
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+
+/* %NCELLMEAS=5,7 (GCI search). rsrp and rsrq are the indexes the modem reports: RSRP in dBm is
+ * rsrp - 140 (as the shell prints it, and as for %CONEVAL in ctr_lte_v2_conn_param), RSRQ in dB
+ * is (rsrq - 39) / 2 with integer division (as for %CONEVAL) */
+#define CTR_LTE_V2_NCELLMEAS_CELL_MAX  7
+#define CTR_LTE_V2_NCELLMEAS_NCELL_MAX 10
+
+struct ctr_lte_v2_ncellmeas_ncell {
+	uint32_t earfcn;
+	uint16_t pci;
+	int16_t rsrp;  /* index, see above */
+	int16_t rsrq;  /* index, see above */
+	int time_diff; /* ms between the measurement of its cell and this one, 0 if not valid */
+};
+
+struct ctr_lte_v2_ncellmeas_cell {
+	uint32_t eci;
+	uint32_t earfcn;
+	char plmn[7];
+	uint16_t tac;
+	uint16_t adv; /* timing advance as reported, 65535 if not valid */
+	uint16_t pci;
+	int16_t rsrp; /* index, see above */
+	int16_t rsrq; /* index, see above */
+	bool serving;
+	uint8_t neighbor_count; /* stored neighbours, at ncells[ncell_first] */
+	uint8_t ncell_first;
+};
+
+struct ctr_lte_v2_ncellmeas_param {
+	/* True after a readable URC: status and the cells are from it, otherwise no cells */
+	bool valid;
+	/* <status> of the URC if valid: 0 measured (at least the serving cell), 1 failed (no
+	 * cells); 3 is taken with the cells it has, another status is not read (valid false) */
+	uint8_t status;
+	int result;        /* how it ended, see ctr_lte_v2_get_ncellmeas_param() */
+	uint32_t uptime_s; /* k_uptime_seconds() at the end */
+	uint8_t num_cells;
+	uint8_t num_ncells;
+	struct ctr_lte_v2_ncellmeas_cell cells[CTR_LTE_V2_NCELLMEAS_CELL_MAX];
+	struct ctr_lte_v2_ncellmeas_ncell ncells[CTR_LTE_V2_NCELLMEAS_NCELL_MAX];
+};
+
+/**
+ * @brief Request a neighbour cell measurement; it runs once the modem is registered and the RRC
+ *        connection is idle, a sleeping modem is woken up for it.
+ *
+ * @retval 0         Requested.
+ * @retval -EALREADY Requested or running already (the request is posted again).
+ * @retval -ENODEV   LTE is disabled.
+ * @retval -ENOTSUP  Test mode.
+ */
+int ctr_lte_v2_schedule_ncellmeas(void);
+
+/**
+ * @brief Wait for the end of the requested measurement.
+ *
+ * A request dropped (LTE disabled, also by ctr_lte_v2_reconnect()) returns 0 as an end does, the
+ * last measurement is then an older one: only an end calls CTR_LTE_V2_CB_EVENT_NCELLMEAS_DONE. Do
+ * not wait from that callback, it runs before the end is published.
+ *
+ * @retval 0          Ended, or dropped (LTE disabled), or nothing was requested.
+ * @retval -ETIMEDOUT Still requested or running.
+ */
+int ctr_lte_v2_wait_for_ncellmeas(k_timeout_t timeout);
+
+/**
+ * @brief Get the last measurement: result 0, -ENODATA (none yet), -ETIMEDOUT (cells after
+ *        %NCELLMEASSTOP, if any), -EIO (rejected), -EBADMSG (unreadable URC), -ECANCELED.
+ */
+int ctr_lte_v2_get_ncellmeas_param(struct ctr_lte_v2_ncellmeas_param *param);
+
 #endif
 
 /* -------- Utility functions -------- */

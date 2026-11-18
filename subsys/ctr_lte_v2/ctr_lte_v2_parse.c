@@ -14,6 +14,7 @@
 
 /* Standard includes */
 #include <ctype.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -581,8 +582,8 @@ int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param)
 	if (param->result == 0) {
 		param->eest = energy_estimate;
 		param->ecl = ce_level;
-		param->rsrp = rsrp - 140;
-		param->rsrq = (rsrq - 39) / 2;
+		param->rsrp = ctr_lte_v2_parse_rsrp_dbm(rsrp);
+		param->rsrq = ctr_lte_v2_parse_rsrq_db(rsrq);
 		param->snr = snr - 24;
 		param->plmn = strtol(plmn, NULL, 10);
 		param->cid = cid;
@@ -724,3 +725,325 @@ int ctr_lte_v2_parse_cgcont(const char *s, struct cgdcont_param *param)
 
 	return 0;
 }
+
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+
+#define CELL_ECI_MAX    268435455
+#define CELL_EARFCN_MAX 262143
+
+static bool all_chars(const char *s, size_t n, int (*is)(int))
+{
+	for (size_t i = 0; i < n; i++) {
+		if (!is((unsigned char)s[i])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+int ctr_lte_v2_parse_plmn(const char *s)
+{
+	if (!s) {
+		return -EINVAL;
+	}
+
+	size_t len = strlen(s);
+
+	if ((len != 5 && len != 6) || !all_chars(s, len, isdigit)) {
+		return -EBADMSG;
+	}
+
+	if (s[0] == '0' && s[1] == '0' && s[2] == '0') {
+		return -EPROTO;
+	}
+
+	return 0;
+}
+
+/* The ECI is 8 hex digits, the highest ECI is 28 bits */
+static int parse_hex_eci(const char *s, uint32_t *eci)
+{
+	if (strlen(s) != 8 || !all_chars(s, 8, isxdigit)) {
+		return -EBADMSG;
+	}
+
+	unsigned long val = strtoul(s, NULL, 16);
+
+	if (val > CELL_ECI_MAX) {
+		return -ERANGE;
+	}
+
+	*eci = (uint32_t)val;
+
+	return 0;
+}
+
+static int parse_hex_tac(const char *s, uint16_t *tac)
+{
+	if (strlen(s) != 4 || !all_chars(s, 4, isxdigit)) {
+		return -EBADMSG;
+	}
+
+	*tac = (uint16_t)strtoul(s, NULL, 16);
+
+	return 0;
+}
+
+/* A number in [min, max], -EBADMSG when missing, -ERANGE when out of the range */
+static int tok_ranged(const char **p, long min, long max, long *num)
+{
+	bool def;
+	long val;
+
+	if (!(*p = ctr_lte_v2_tok_num(*p, &def, &val)) || !def) {
+		return -EBADMSG;
+	}
+
+	if (val < min || val > max) {
+		return -ERANGE;
+	}
+
+	*num = val;
+
+	return 0;
+}
+
+/* Separator (-EPROTO when missing) and then a number in the range */
+static int sep_ranged(const char **p, long min, long max, long *num)
+{
+	if (!(*p = ctr_lte_v2_tok_sep(*p))) {
+		return -EPROTO;
+	}
+
+	return tok_ranged(p, min, max, num);
+}
+
+static int parse_ncellmeas_ncell(const char **p, struct ctr_lte_v2_ncellmeas_ncell *n)
+{
+	/* <n_earfcn>,<n_phys_cell_id>,<n_rsrp>,<n_rsrq>,<time_diff> */
+	long num;
+	int ret;
+
+	if ((ret = tok_ranged(p, 0, CELL_EARFCN_MAX, &num))) {
+		return ret;
+	}
+	n->earfcn = num;
+
+	if ((ret = sep_ranged(p, 0, UINT16_MAX, &num))) {
+		return ret;
+	}
+	n->pci = num;
+
+	if ((ret = sep_ranged(p, -17, 255, &num))) {
+		return ret;
+	}
+	n->rsrp = num;
+
+	if ((ret = sep_ranged(p, -17, 255, &num))) {
+		return ret;
+	}
+	n->rsrq = num;
+
+	if ((ret = sep_ranged(p, -99999, 99999, &num))) {
+		return ret;
+	}
+	n->time_diff = num;
+
+	return 0;
+}
+
+/* The next quoted string after a separator */
+static int sep_str(const char **p, char *str, size_t size)
+{
+	bool def;
+
+	if (!(*p = ctr_lte_v2_tok_sep(*p))) {
+		return -EPROTO;
+	}
+
+	if (!(*p = ctr_lte_v2_tok_str(*p, &def, str, size)) || !def) {
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+static int parse_ncellmeas_cell(const char **p, struct ctr_lte_v2_ncellmeas_cell *c,
+				uint8_t *announced)
+{
+	/* <cell_id>,<plmn>,<tac>,<timing_advance>,<timing_advance_measurement_time>,<earfcn>,
+	 * <phys_cell_id>,<rsrp>,<rsrq>,<measurement_time>,<serving>,<neighbor_count> */
+	char str[9];
+	bool def;
+	long num;
+	int ret;
+
+	if (!(*p = ctr_lte_v2_tok_str(*p, &def, str, sizeof(str))) || !def) {
+		return -EBADMSG;
+	}
+
+	if ((ret = parse_hex_eci(str, &c->eci))) {
+		return ret;
+	}
+
+	if ((ret = sep_str(p, c->plmn, sizeof(c->plmn)))) {
+		return ret;
+	}
+
+	if ((ret = ctr_lte_v2_parse_plmn(c->plmn))) {
+		return ret;
+	}
+
+	if ((ret = sep_str(p, str, sizeof(str)))) {
+		return ret;
+	}
+
+	if ((ret = parse_hex_tac(str, &c->tac))) {
+		return ret;
+	}
+
+	if ((ret = sep_ranged(p, 0, UINT16_MAX, &num))) {
+		return ret;
+	}
+	c->adv = num;
+
+	/* The time of the timing advance measurement, not kept */
+	if ((ret = sep_ranged(p, 0, LONG_MAX, &num))) {
+		return ret;
+	}
+
+	if ((ret = sep_ranged(p, 0, CELL_EARFCN_MAX, &num))) {
+		return ret;
+	}
+	c->earfcn = num;
+
+	if ((ret = sep_ranged(p, 0, UINT16_MAX, &num))) {
+		return ret;
+	}
+	c->pci = num;
+
+	if ((ret = sep_ranged(p, -17, 255, &num))) {
+		return ret;
+	}
+	c->rsrp = num;
+
+	if ((ret = sep_ranged(p, -17, 255, &num))) {
+		return ret;
+	}
+	c->rsrq = num;
+
+	/* The time of the measurement, not kept */
+	if ((ret = sep_ranged(p, 0, LONG_MAX, &num))) {
+		return ret;
+	}
+
+	if ((ret = sep_ranged(p, 0, 1, &num))) {
+		return ret;
+	}
+	c->serving = num;
+
+	if ((ret = sep_ranged(p, 0, UINT8_MAX, &num))) {
+		return ret;
+	}
+	*announced = num;
+
+	return 0;
+}
+
+static int parse_ncellmeas(const char *s, struct ctr_lte_v2_ncellmeas_param *param)
+{
+	const char *p = s;
+	long status;
+	int ret;
+
+	if ((ret = tok_ranged(&p, 0, UINT8_MAX, &status))) {
+		return ret;
+	}
+
+	param->status = status;
+
+	/* 1: no cells, 3: cells and/or nothing, 0: cells (2 and others: unsupported) */
+	if (status != 0 && status != 1 && status != 3) {
+		return -EOPNOTSUPP;
+	}
+
+	while (*p != '\0') {
+		struct ctr_lte_v2_ncellmeas_cell *c = &param->cells[param->num_cells];
+		uint8_t announced;
+
+		if (!(p = ctr_lte_v2_tok_sep(p))) {
+			return -EPROTO;
+		}
+
+		if ((ret = parse_ncellmeas_cell(&p, c, &announced))) {
+			return ret;
+		}
+
+		param->num_cells++;
+
+		/* The neighbours that fit; the rest is dropped together with the later cells */
+		bool full = false;
+
+		for (int i = 0; i < announced; i++) {
+			if (!(p = ctr_lte_v2_tok_sep(p))) {
+				return -EPROTO;
+			}
+
+			if (param->num_ncells == CTR_LTE_V2_NCELLMEAS_NCELL_MAX) {
+				full = true;
+				break;
+			}
+
+			if (i == 0) {
+				c->ncell_first = param->num_ncells;
+			}
+
+			if ((ret = parse_ncellmeas_ncell(&p, &param->ncells[param->num_ncells]))) {
+				return ret;
+			}
+
+			param->num_ncells++;
+			c->neighbor_count++;
+		}
+
+		if (full || param->num_cells == CTR_LTE_V2_NCELLMEAS_CELL_MAX) {
+			break;
+		}
+	}
+
+	/* Status 0 is a measurement, so it holds at least the serving cell */
+	if (status == 0 && param->num_cells == 0) {
+		return -EPROTO;
+	}
+
+	param->valid = true;
+
+	return 0;
+}
+
+int ctr_lte_v2_parse_urc_ncellmeas(const char *s, struct ctr_lte_v2_ncellmeas_param *param)
+{
+	if (!s || !param) {
+		return -EINVAL;
+	}
+
+	/* The FSM owns result and uptime_s */
+	int result = param->result;
+	uint32_t uptime_s = param->uptime_s;
+
+	memset(param, 0, sizeof(*param));
+
+	int ret = parse_ncellmeas(s, param);
+
+	if (ret) {
+		memset(param, 0, sizeof(*param));
+	}
+
+	param->result = result;
+	param->uptime_s = uptime_s;
+
+	return ret;
+}
+
+#endif /* CONFIG_CTR_LTE_V2_SCAN */

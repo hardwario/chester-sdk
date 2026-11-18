@@ -143,6 +143,12 @@ const char *ctr_lte_v2_str_fsm_event(enum ctr_lte_v2_event event)
 		return "xgps_disable";
 	case CTR_LTE_V2_EVENT_XGPS:
 		return "xgps";
+	case CTR_LTE_V2_EVENT_NCELLMEAS:
+		return "ncellmeas";
+	case CTR_LTE_V2_EVENT_NCELLMEAS_DONE:
+		return "ncellmeas_done";
+	case CTR_LTE_V2_EVENT_SCAN_TIMER:
+		return "scan_timer";
 	}
 	return INVALID;
 }

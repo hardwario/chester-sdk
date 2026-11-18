@@ -61,6 +61,7 @@ enum fsm_state {
 	FSM_STATE_RECEIVE,
 	FSM_STATE_CONEVAL,
 	FSM_STATE_GNSS,
+	FSM_STATE_NCELLMEAS,
 };
 
 struct fsm_state_desc {
@@ -97,6 +98,37 @@ atomic_t m_flag = ATOMIC_INIT(0);
 #define TXN_IDLE_BIT       BIT(2)
 #define ATTACHED_BIT       BIT(3)
 static K_EVENT_DEFINE(m_states_event);
+
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+/* Bit numbers in m_flag as well: the request not taken yet, and the sleep to go back to after a
+ * measurement without a URC (the modem announces it again only after a URC) */
+#define FLAG_NCELLMEAS_REQ   5
+#define FLAG_NCELLMEAS_SLEEP 7
+
+/* Set while no measurement is requested or running */
+#define NCELLMEAS_DONE_BIT BIT(5)
+
+#define NCELLMEAS_IDLE_TIMEOUT K_SECONDS(60)
+#define NCELLMEAS_TIMEOUT      K_SECONDS(180)
+#define NCELLMEAS_STOP_GRACE   K_SECONDS(2)
+
+enum ncellmeas_phase {
+	NCELLMEAS_PHASE_IDLE,    /* waiting for the RRC idle */
+	NCELLMEAS_PHASE_MEASURE, /* armed, waiting for the URC */
+	NCELLMEAS_PHASE_GRACE,   /* stopped, armed for the cells found so far */
+	NCELLMEAS_PHASE_END,
+};
+
+static enum ncellmeas_phase m_ncellmeas_phase;
+static int m_ncellmeas_result;
+static bool m_ncellmeas_urc;
+/* The request against its drop in the disabled state */
+static K_MUTEX_DEFINE(m_ncellmeas_lock);
+
+/* The timer of the steps, with its own event: a stale one is told by the timepoint */
+static struct k_work_delayable m_scan_timer;
+static k_timepoint_t m_scan_timer_end;
+#endif
 
 K_MUTEX_DEFINE(m_send_recv_lock);
 
@@ -355,6 +387,8 @@ const char *fsm_state_str(enum fsm_state state)
 		return "coneval";
 	case FSM_STATE_GNSS:
 		return "gnss";
+	case FSM_STATE_NCELLMEAS:
+		return "ncellmeas";
 	}
 	return "unknown";
 }
@@ -374,7 +408,8 @@ static void stop_timer(void)
 	k_work_cancel_delayable(&m_timeout_work);
 }
 
-static void delegate_event(enum ctr_lte_v2_event event)
+/* Put the event into the ring; false when the full ring dropped it */
+static bool post_event(enum ctr_lte_v2_event event)
 {
 	/* FLAG_CSCON follows the modem as the URCs arrive, not as the queued events get handled */
 	if (event == CTR_LTE_V2_EVENT_CSCON_1) {
@@ -400,13 +435,20 @@ static void delegate_event(enum ctr_lte_v2_event event)
 	if (!written) {
 		LOG_ERR("Event ring buffer full, dropped event: %s",
 			ctr_lte_v2_str_fsm_event(event));
-		return;
+		return false;
 	}
 
 	int ret = k_work_submit_to_queue(&m_work_q, &m_event_dispatch_work);
 	if (ret < 0) {
 		LOG_WRN("Failed to submit work to queue");
 	}
+
+	return true;
+}
+
+static void delegate_event(enum ctr_lte_v2_event event)
+{
+	post_event(event);
 }
 
 static void notify(enum ctr_lte_v2_cb_event event)
@@ -796,6 +838,82 @@ int ctr_lte_v2_gnss_set_handler(ctr_lte_v2_gnss_cb callback, void *user_data)
 }
 #endif
 
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+static void scan_timer_work_handler(struct k_work *item)
+{
+	/* A full ring would lose the kick: try again */
+	if (!post_event(CTR_LTE_V2_EVENT_SCAN_TIMER)) {
+		k_work_schedule_for_queue(&m_work_q, &m_scan_timer, K_MSEC(100));
+	}
+}
+
+/* Stop first, so that the timer does not fire before the timepoint of its guard */
+static void scan_arm(k_timeout_t timeout)
+{
+	k_work_cancel_delayable(&m_scan_timer);
+	m_scan_timer_end = sys_timepoint_calc(timeout);
+	k_work_schedule_for_queue(&m_work_q, &m_scan_timer, timeout);
+}
+
+int ctr_lte_v2_schedule_ncellmeas(void)
+{
+	int ret = 0;
+
+	if (g_ctr_lte_v2_config.test) {
+		LOG_WRN("LTE Test mode enabled");
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&m_ncellmeas_lock, K_FOREVER);
+
+	if (m_state == FSM_STATE_DISABLED) {
+		k_mutex_unlock(&m_ncellmeas_lock);
+		LOG_WRN("Cannot measure, LTE is disabled");
+		return -ENODEV;
+	}
+
+	if (k_event_test(&m_states_event, NCELLMEAS_DONE_BIT)) {
+		k_event_clear(&m_states_event, NCELLMEAS_DONE_BIT);
+		atomic_set_bit(&m_flag, FLAG_NCELLMEAS_REQ);
+	} else {
+		ret = -EALREADY;
+	}
+
+	k_mutex_unlock(&m_ncellmeas_lock);
+
+	/* Again when requested already: a full ring may have dropped the first event */
+	delegate_event(CTR_LTE_V2_EVENT_NCELLMEAS);
+
+	return ret;
+}
+
+int ctr_lte_v2_wait_for_ncellmeas(k_timeout_t timeout)
+{
+	if (!k_event_wait(&m_states_event, NCELLMEAS_DONE_BIT, false, timeout)) {
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
+int ctr_lte_v2_get_ncellmeas_param(struct ctr_lte_v2_ncellmeas_param *param)
+{
+	return ctr_lte_v2_state_get_ncellmeas_param(param);
+}
+
+/* Drop the request: a waiting caller returns, there is no callback */
+static void ncellmeas_drop(void)
+{
+	k_mutex_lock(&m_ncellmeas_lock, K_FOREVER);
+
+	atomic_clear_bit(&m_flag, FLAG_NCELLMEAS_REQ);
+	atomic_clear_bit(&m_flag, FLAG_NCELLMEAS_SLEEP);
+	k_event_post(&m_states_event, NCELLMEAS_DONE_BIT);
+
+	k_mutex_unlock(&m_ncellmeas_lock);
+}
+#endif
+
 static int on_enter_disabled(void)
 {
 	int ret;
@@ -805,6 +923,10 @@ static int on_enter_disabled(void)
 
 	/* The modem goes down, the transaction cannot complete */
 	txn_abort(-ENOTCONN);
+
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+	ncellmeas_drop();
+#endif
 
 	k_event_clear(&m_states_event, ATTACHED_BIT | CONNECTED_BIT);
 
@@ -1252,6 +1374,11 @@ static int on_enter_ready(void)
 	if (txn_pending()) {
 		delegate_event(CTR_LTE_V2_EVENT_SEND);
 	}
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+	else if (atomic_test_bit(&m_flag, FLAG_NCELLMEAS_REQ)) {
+		delegate_event(CTR_LTE_V2_EVENT_NCELLMEAS);
+	}
+#endif
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
 	else if (atomic_test_bit(&m_flag,
 				 FLAG_GNSS_ENABLE)) { /* Only one event delegate at a time */
@@ -1292,6 +1419,17 @@ static int ready_event_handler(enum ctr_lte_v2_event event)
 		}
 		transition_state(FSM_STATE_ATTACH);
 		break;
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+	case CTR_LTE_V2_EVENT_NCELLMEAS:
+		/* The flag is the request; a transaction goes first, with the radio off the sleep
+		 * state takes it */
+		if (!atomic_test_bit(&m_flag, FLAG_NCELLMEAS_REQ) ||
+		    atomic_test_bit(&m_flag, FLAG_CFUN4) || txn_pending()) {
+			break;
+		}
+		transition_state(FSM_STATE_NCELLMEAS);
+		break;
+#endif
 	case CTR_LTE_V2_EVENT_XMODMSLEEEP:
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
 		__fallthrough;
@@ -1348,6 +1486,11 @@ static int on_enter_sleep(void)
 	if (txn_pending()) {
 		delegate_event(CTR_LTE_V2_EVENT_SEND);
 	}
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+	else if (atomic_test_bit(&m_flag, FLAG_NCELLMEAS_REQ)) {
+		delegate_event(CTR_LTE_V2_EVENT_NCELLMEAS);
+	}
+#endif
 
 	return 0;
 }
@@ -1360,6 +1503,18 @@ static int sleep_event_handler(enum ctr_lte_v2_event event)
 	case CTR_LTE_V2_EVENT_XGPS_ENABLE:
 		transition_state(FSM_STATE_WAKEUP);
 		break;
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+	case CTR_LTE_V2_EVENT_NCELLMEAS:
+		if (!atomic_test_bit(&m_flag, FLAG_NCELLMEAS_REQ)) {
+			break;
+		}
+		/* In PSM: back to sleep after the measurement */
+		if (!atomic_test_bit(&m_flag, FLAG_CFUN4) && !txn_pending()) {
+			atomic_set_bit(&m_flag, FLAG_NCELLMEAS_SLEEP);
+		}
+		transition_state(FSM_STATE_WAKEUP);
+		break;
+#endif
 	default:
 		break;
 	}
@@ -1730,6 +1885,149 @@ static int on_leave_gnss(void)
 }
 #endif
 
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+static void ncellmeas_finish(void)
+{
+	m_ncellmeas_phase = NCELLMEAS_PHASE_END;
+
+	/* Without a URC the modem does not announce its sleep again */
+	if (atomic_test_and_clear_bit(&m_flag, FLAG_NCELLMEAS_SLEEP) && !m_ncellmeas_urc &&
+	    !txn_pending()) {
+		delegate_event(CTR_LTE_V2_EVENT_XMODMSLEEEP);
+	}
+
+	transition_state(FSM_STATE_READY);
+}
+
+static void ncellmeas_measure(void)
+{
+	m_ncellmeas_phase = NCELLMEAS_PHASE_MEASURE;
+
+	/* Before the command: the URC may come right after its OK */
+	ctr_lte_v2_state_ncellmeas_arm(true);
+
+	int ret = ctr_lte_v2_flow_ncellmeas();
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_flow_ncellmeas` failed: %d", ret);
+		ctr_lte_v2_state_ncellmeas_disarm();
+		m_ncellmeas_result = -EIO;
+		m_ncellmeas_phase = NCELLMEAS_PHASE_END;
+		scan_arm(K_NO_WAIT);
+		return;
+	}
+
+	scan_arm(NCELLMEAS_TIMEOUT);
+}
+
+static int on_enter_ncellmeas(void)
+{
+	atomic_clear_bit(&m_flag, FLAG_NCELLMEAS_REQ);
+
+	m_ncellmeas_phase = NCELLMEAS_PHASE_IDLE;
+	m_ncellmeas_result = -ENODATA;
+	m_ncellmeas_urc = false;
+	ctr_lte_v2_state_ncellmeas_arm(false);
+
+	/* With the RRC connection open the modem finds only the serving cell and its neighbour */
+	scan_arm(atomic_test_bit(&m_flag, FLAG_CSCON) ? NCELLMEAS_IDLE_TIMEOUT : K_NO_WAIT);
+
+	return 0;
+}
+
+static int ncellmeas_event_handler(enum ctr_lte_v2_event event)
+{
+	switch (event) {
+	case CTR_LTE_V2_EVENT_CSCON_0:
+		/* Not a stale one: the connection is still released */
+		if (m_ncellmeas_phase == NCELLMEAS_PHASE_IDLE &&
+		    !atomic_test_bit(&m_flag, FLAG_CSCON)) {
+			ncellmeas_measure();
+		}
+		break;
+	case CTR_LTE_V2_EVENT_SCAN_TIMER:
+		/* Stale, from a previous phase */
+		if (!sys_timepoint_expired(m_scan_timer_end)) {
+			break;
+		}
+		if (m_ncellmeas_phase == NCELLMEAS_PHASE_IDLE) {
+			/* Without the RRC idle the result is poorer, but there is one */
+			ncellmeas_measure();
+		} else if (m_ncellmeas_phase == NCELLMEAS_PHASE_MEASURE) {
+			m_ncellmeas_phase = NCELLMEAS_PHASE_GRACE;
+			m_ncellmeas_result = -ETIMEDOUT;
+			/* Still armed: the cells found so far come right after the OK */
+			int ret = ctr_lte_v2_flow_ncellmeas_stop();
+			if (ret) {
+				LOG_WRN("Call `ctr_lte_v2_flow_ncellmeas_stop` failed: %d", ret);
+			}
+			scan_arm(NCELLMEAS_STOP_GRACE);
+		} else {
+			ctr_lte_v2_state_ncellmeas_disarm();
+			ncellmeas_finish();
+		}
+		break;
+	case CTR_LTE_V2_EVENT_NCELLMEAS_DONE:
+		if (m_ncellmeas_phase == NCELLMEAS_PHASE_MEASURE) {
+			m_ncellmeas_result = ctr_lte_v2_state_ncellmeas_valid() ? 0 : -EBADMSG;
+			if (m_ncellmeas_result) {
+				LOG_WRN("Unreadable %%NCELLMEAS URC");
+			}
+		}
+		m_ncellmeas_urc = true;
+		/* Not by a kick: the sleep the modem announces after the URC can be next in this
+		 * batch, and only the ready state acts on it */
+		ncellmeas_finish();
+		break;
+	case CTR_LTE_V2_EVENT_XMODMSLEEEP:
+		/* For an end without a URC: after one the modem announces the sleep again */
+		atomic_set_bit(&m_flag, FLAG_NCELLMEAS_SLEEP);
+		break;
+	case CTR_LTE_V2_EVENT_DEREGISTERED:
+		transition_state(FSM_STATE_ATTACH);
+		break;
+	case CTR_LTE_V2_EVENT_RESET_LOOP:
+		transition_state(FSM_STATE_RESET_LOOP);
+		break;
+	case CTR_LTE_V2_EVENT_ERROR:
+		transition_state(FSM_STATE_ERROR);
+		break;
+	default:
+		/* SEND waits: on_enter_ready posts it again */
+		break;
+	}
+
+	return 0;
+}
+
+static int on_leave_ncellmeas(void)
+{
+	k_work_cancel_delayable(&m_scan_timer);
+	atomic_clear_bit(&m_flag, FLAG_NCELLMEAS_SLEEP);
+
+	if (m_ncellmeas_phase != NCELLMEAS_PHASE_END) {
+		m_ncellmeas_result = -ECANCELED;
+	}
+
+	/* Cancelled while measuring: the cells found so far come right after the OK */
+	if (m_ncellmeas_phase == NCELLMEAS_PHASE_MEASURE) {
+		int ret = ctr_lte_v2_flow_ncellmeas_stop();
+		if (ret) {
+			/* Only logged: an error would cancel the transition (and a reconnect) */
+			LOG_WRN("Call `ctr_lte_v2_flow_ncellmeas_stop` failed: %d", ret);
+		}
+	}
+
+	ctr_lte_v2_state_ncellmeas_disarm();
+	ctr_lte_v2_state_set_ncellmeas_result(m_ncellmeas_result);
+
+	/* The callbacks first: a waiting caller returns once they ran */
+	notify(CTR_LTE_V2_CB_EVENT_NCELLMEAS_DONE);
+	k_event_post(&m_states_event, NCELLMEAS_DONE_BIT);
+
+	return 0;
+}
+#endif
+
 /* clang-format off */
 static struct fsm_state_desc m_fsm_states[] = {
 	{FSM_STATE_DISABLED, on_enter_disabled, on_leave_disabled, disabled_event_handler},
@@ -1748,6 +2046,9 @@ static struct fsm_state_desc m_fsm_states[] = {
 	{FSM_STATE_CONEVAL, on_enter_coneval, NULL, coneval_event_handler},
 	#if defined(CONFIG_CTR_LTE_V2_GNSS)
 	{FSM_STATE_GNSS, on_enter_gnss, on_leave_gnss, gnss_event_handler},
+	#endif
+	#if defined(CONFIG_CTR_LTE_V2_SCAN)
+	{FSM_STATE_NCELLMEAS, on_enter_ncellmeas, on_leave_ncellmeas, ncellmeas_event_handler},
 	#endif
 };
 /* clang-format on */
@@ -1796,6 +2097,11 @@ static int init(void)
 	ring_buf_init(&m_event_rb, sizeof(m_event_buf), m_event_buf);
 #if defined(CONFIG_CTR_LTE_V2_GNSS)
 	k_work_init(&m_gnss_work, gnss_work_handler);
+#endif
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+	k_work_init_delayable(&m_scan_timer, scan_timer_work_handler);
+	/* Nothing requested */
+	k_event_post(&m_states_event, NCELLMEAS_DONE_BIT);
 #endif
 	return 0;
 }

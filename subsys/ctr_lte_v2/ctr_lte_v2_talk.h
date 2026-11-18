@@ -88,6 +88,10 @@ int ctr_lte_v2_talk_at(struct ctr_lte_v2_talk *talk);
 int ctr_lte_v2_talk_crsm_176(struct ctr_lte_v2_talk *talk, char *buf, size_t size);
 int ctr_lte_v2_talk_crsm_214(struct ctr_lte_v2_talk *talk);
 int ctr_lte_v2_talk_at_cmd(struct ctr_lte_v2_talk *talk, const char *s);
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+int ctr_lte_v2_talk_at_ncellmeas(struct ctr_lte_v2_talk *talk, int search_type, int max_cells);
+int ctr_lte_v2_talk_at_ncellmeasstop(struct ctr_lte_v2_talk *talk);
+#endif
 int ctr_lte_v2_talk_at_cmd_with_resp(struct ctr_lte_v2_talk *talk, const char *s, char *buf,
 				     size_t size);
 int ctr_lte_v2_talk_at_cmd_with_resp_prefix(struct ctr_lte_v2_talk *talk, const char *s, char *buf,

@@ -68,6 +68,20 @@ int ctr_lte_v2_state_get_last_reject(struct ctr_lte_v2_cereg_event *event);
 int ctr_lte_v2_state_set_gnss_update(const struct ctr_lte_v2_gnss_update *update);
 int ctr_lte_v2_state_get_gnss_update(struct ctr_lte_v2_gnss_update *update);
 
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+/* Clear the cells of the last measurement and take (arm) or refuse the next URC; set before the
+ * command, since the URC may come right after its OK */
+void ctr_lte_v2_state_ncellmeas_arm(bool arm);
+void ctr_lte_v2_state_ncellmeas_disarm(void);
+/* Take what follows "%NCELLMEAS: " if armed (disarms): true if taken. A parser error leaves the
+ * cells empty */
+bool ctr_lte_v2_state_ncellmeas_urc(const char *s);
+bool ctr_lte_v2_state_ncellmeas_valid(void);
+/* The FSM ends the measurement: the result and its uptime */
+void ctr_lte_v2_state_set_ncellmeas_result(int result);
+int ctr_lte_v2_state_get_ncellmeas_param(struct ctr_lte_v2_ncellmeas_param *param);
+#endif
+
 const char *ctr_lte_v2_get_state(void);
 
 #ifdef __cplusplus

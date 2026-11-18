@@ -10,6 +10,7 @@ tests:
   subsys.ctr_lte_v2.parser:
     extra_args:
       - CONFIG_TEST_FEATURE_PARSING=y
+      - CONFIG_CTR_LTE_V2_SCAN=y
       - CONFIG_CTR_LTE_V2_CEREG_HISTORY=3
 
   subsys.ctr_lte_v2.parser_no_cause_str:
@@ -97,3 +98,18 @@ tests:
 
   subsys.ctr_lte_v2.txn_no_psm_cfun4:
     extra_args: CONFIG_TEST_FEATURE_TXN_NO_PSM_CFUN4=y
+
+  subsys.ctr_lte_v2.ncellmeas:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_NCELLMEAS=y
+
+  subsys.ctr_lte_v2.ncellmeas_fail:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_NCELLMEAS_FAIL=y
+
+  subsys.ctr_lte_v2.ncellmeas_no_psm:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_NCELLMEAS_NO_PSM=y
+
+  subsys.ctr_lte_v2.ncellmeas_from_sleep:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_NCELLMEAS_FROM_SLEEP=y
+
+  subsys.ctr_lte_v2.ncellmeas_cancel:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_NCELLMEAS_CANCEL=y

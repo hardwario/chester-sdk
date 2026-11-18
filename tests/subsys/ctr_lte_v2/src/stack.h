@@ -127,6 +127,32 @@
 	URC(ms, "+CSCON: 0"), \
 	URC(0, "%XMODEMSLEEP: 1,89999999"), \
 	{"AT#XSLEEP=2", "OK"}
+
+/* %NCELLMEAS=5,7 without PSM (U1): the RRC connection is released idle_ms after the previous
+ * item, the URC comes ms after the OK */
+#define ITEMS_NCELLMEAS(idle_ms, ms, urc) \
+	URC(idle_ms, "+CSCON: 0"), \
+	{"AT%NCELLMEAS=5,7", "OK"}, \
+	URC(ms, urc)
+
+/* %NCELLMEAS=5,7 in PSM as the board with PSM logged it (gate 3A, A1): "1,0" after the OK gives
+ * no event, the modem announces the sleep again right after the URC (one batch with it) */
+#define ITEMS_NCELLMEAS_PSM(ms, urc) \
+	{"AT%NCELLMEAS=5,7", "OK"}, \
+	URC(0, "%XMODEMSLEEP: 1,0"), \
+	URC(ms, urc), \
+	URC(0, "%XMODEMSLEEP: 1,86276669")
+
+/* %NCELLMEAS=5,7 in PSM from the ready state after a transfer, as the board with PSM logged it:
+ * the command meets the entry into PSM, so the modem announces that sleep and wakes up for the
+ * measurement; it announces the sleep again 77 ms after the URC */
+#define ITEMS_NCELLMEAS_PSM_READY(idle_ms, ms, urc) \
+	URC(idle_ms, "+CSCON: 0"), \
+	{"AT%NCELLMEAS=5,7", "OK"}, \
+	URC(0, "%XMODEMSLEEP: 1,86399601"), \
+	URC(0, "%XMODEMSLEEP: 1,0"), \
+	URC(ms, urc), \
+	URC(77, "%XMODEMSLEEP: 1,86280784")
 /* clang-format on */
 
 #define ASSERT_FSM_STATE(expected)                                                                 \
