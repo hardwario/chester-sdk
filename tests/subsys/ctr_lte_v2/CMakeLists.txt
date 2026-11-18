@@ -24,3 +24,8 @@ target_sources_ifdef(CONFIG_TEST_FEATURE_TXN app PRIVATE src/test_txn.c)
 if(CONFIG_TEST_FEATURE_STACK OR CONFIG_TEST_FEATURE_TXN)
   target_sources(app PRIVATE src/stack.c)
 endif()
+
+# The 'lte' shell commands, without CONFIG_CTR_SHELL (it selects the RTT backend)
+if(CONFIG_TEST_FEATURE_TXN)
+  target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../subsys/ctr_lte_v2/ctr_lte_v2_shell.c)
+endif()

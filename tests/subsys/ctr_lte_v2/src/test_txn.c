@@ -19,6 +19,8 @@
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_dummy.h>
 #include <zephyr/ztest.h>
 
 /* Standard includes */
@@ -83,6 +85,21 @@ static __maybe_unused void sleep_until(int64_t uptime)
 	if (uptime > now) {
 		k_sleep(K_MSEC(uptime - now));
 	}
+}
+
+/* The output of a shell command */
+static __maybe_unused const char *shell_cmd(const char *cmd)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	size_t size;
+
+	WAIT_FOR(shell_ready(sh), 20000, k_msleep(1));
+	shell_backend_dummy_clear_output(sh);
+	int ret = shell_execute_cmd(sh, cmd);
+	const char *out = shell_backend_dummy_get_output(sh, &size);
+	zassert_ok(ret, "%s failed: %d: %s", cmd, ret, out);
+
+	return out;
 }
 
 /* Give a transaction up while the FSM is in a state without IO: the call returns at the deadline,
@@ -1396,6 +1413,11 @@ ZTEST(txn, test_no_psm_cfun4)
 	stack_attach();
 	go_to_sleep();
 
+	/* The attach granted PSM */
+	const char *out = shell_cmd("lte state");
+	zassert_not_null(strstr(out, "psm: active-time 0s, periodic-tau 1d 00h 00m 00s"), "%s",
+			 out);
+
 	/* clang-format off */
 	static struct mock_link_item items[] = {
 		ITEMS_FLOW_CHECK,
@@ -1452,6 +1474,10 @@ ZTEST(txn, test_no_psm_cfun4)
 	zassert_str_equal(cereg.tac, "05F2");
 	zassert_equal(cereg.active_time, -1);
 
+	out = shell_cmd("lte state");
+	zassert_not_null(strstr(out, "cereg: registered-roaming"), "%s", out);
+	zassert_not_null(strstr(out, "psm: not granted"), "%s", out);
+
 	/* The history has it */
 	struct ctr_lte_v2_cereg_event event;
 	size_t count;
@@ -1476,6 +1502,11 @@ ZTEST(txn, test_no_psm_cfun4)
 
 	zassert_ok(ctr_lte_v2_get_cereg_param(&cereg));
 	zassert_equal(cereg.stat, CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING);
+
+	/* No PSM line without a registration */
+	out = shell_cmd("lte state");
+	zassert_not_null(strstr(out, "cereg: searching"), "%s", out);
+	zassert_is_null(strstr(out, "psm:"), "%s", out);
 }
 #endif
 
