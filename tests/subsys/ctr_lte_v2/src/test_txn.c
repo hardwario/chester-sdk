@@ -1337,4 +1337,55 @@ ZTEST(txn, test_reattach_in_send)
 }
 #endif
 
+#if defined(CONFIG_TEST_FEATURE_TXN_DEREGISTERED_IN_READY)
+/* The network is lost with no cell left ("+CEREG: 2" without a TAC) while the FSM is ready: it
+ * attaches again and opens the socket */
+ZTEST(txn, test_deregistered_in_ready)
+{
+	stack_attach();
+
+	/* clang-format off */
+	static struct mock_link_item items[] = {
+		URC(100, "+CEREG: 2"),
+		/* Attach: registered again, open the socket */
+		ITEMS_REGISTER,
+		ITEMS_SLEEP(500),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items, ARRAY_SIZE(items));
+
+	stack_wait_for_state("attach", K_SECONDS(2));
+	stack_wait_for_state("sleep", K_SECONDS(10));
+	/* Past the pause after AT#XSLEEP */
+	k_sleep(K_MSEC(500));
+	mock_ctr_lte_link_assert_done();
+
+	/* The loss is in the registration history, one more than the URCs to see that there are
+	 * no others */
+	struct ctr_lte_v2_cereg_event events[6];
+	size_t count;
+
+	BUILD_ASSERT(CONFIG_CTR_LTE_V2_CEREG_HISTORY >= 5);
+
+	zassert_ok(ctr_lte_v2_get_cereg_history(events, ARRAY_SIZE(events), &count));
+	zassert_equal(count, 5);
+
+	/* Newest first: registered again */
+	zassert_equal(events[0].stat, CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING);
+	zassert_equal(events[0].tac, 0xB4DC);
+
+	/* The loss, without a cell */
+	zassert_equal(events[1].stat, CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING);
+	zassert_equal(events[1].tac, 0);
+	zassert_equal(events[1].cid, 0);
+
+	/* The first attach: registered, searching, and "+CEREG: 0" after CFUN=1 */
+	zassert_equal(events[2].stat, CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING);
+	zassert_equal(events[3].stat, CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING);
+	zassert_equal(events[3].tac, 0xB4DC);
+	zassert_equal(events[4].stat, CTR_LTE_V2_CEREG_PARAM_STAT_NOT_REGISTERED);
+}
+#endif
+
 ZTEST_SUITE(txn, NULL, NULL, NULL, NULL, NULL);

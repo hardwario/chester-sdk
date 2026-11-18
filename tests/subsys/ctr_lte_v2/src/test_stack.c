@@ -313,25 +313,36 @@ static void test_send_recv_no_psm(void)
 /* The +CEREG URCs of the sequence went to the registration history */
 static void test_cereg_history(void)
 {
-	struct ctr_lte_v2_cereg_event events[2];
+	/* One more than the URCs, to see that there are no others */
+	struct ctr_lte_v2_cereg_event events[6];
 	size_t count;
 
-	zassert_ok(ctr_lte_v2_get_cereg_history(events, ARRAY_SIZE(events), &count));
-	zassert_equal(count, 2);
+	BUILD_ASSERT(CONFIG_CTR_LTE_V2_CEREG_HISTORY >= 5);
 
-	/* Newest first: the cell change during the receive */
-	zassert_equal(events[0].stat, CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING);
-	zassert_equal(events[0].tac, 0x05F2);
-	zassert_equal(events[0].cid, 0x074FEB01);
-	zassert_equal(events[0].act, CTR_LTE_V2_CEREG_PARAM_ACT_LTE);
-	zassert_equal(events[0].reject_cause, 0);
+	zassert_ok(ctr_lte_v2_get_cereg_history(events, ARRAY_SIZE(events), &count));
+	zassert_equal(count, 5);
+
+	/* Newest first: "+CEREG: 0" after CFUN=4 */
+	zassert_equal(events[0].stat, CTR_LTE_V2_CEREG_PARAM_STAT_NOT_REGISTERED);
+
+	/* The cell change during the receive */
+	zassert_equal(events[1].stat, CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING);
+	zassert_equal(events[1].tac, 0x05F2);
+	zassert_equal(events[1].cid, 0x074FEB01);
+	zassert_equal(events[1].act, CTR_LTE_V2_CEREG_PARAM_ACT_LTE);
+	zassert_equal(events[1].reject_cause, 0);
 
 	/* The attach, accepted with EMM cause 18 */
-	zassert_equal(events[1].stat, CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING);
-	zassert_equal(events[1].tac, 0xB4DC);
-	zassert_equal(events[1].cid, 0x000AE520);
-	zassert_equal(events[1].act, CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT);
-	zassert_equal(events[1].reject_cause, 18);
+	zassert_equal(events[2].stat, CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING);
+	zassert_equal(events[2].tac, 0xB4DC);
+	zassert_equal(events[2].cid, 0x000AE520);
+	zassert_equal(events[2].act, CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT);
+	zassert_equal(events[2].reject_cause, 18);
+
+	/* Searching, and "+CEREG: 0" after CFUN=1 */
+	zassert_equal(events[3].stat, CTR_LTE_V2_CEREG_PARAM_STAT_SEARCHING);
+	zassert_equal(events[3].tac, 0xB4DC);
+	zassert_equal(events[4].stat, CTR_LTE_V2_CEREG_PARAM_STAT_NOT_REGISTERED);
 
 	/* which is not a reject */
 	struct ctr_lte_v2_cereg_event reject;

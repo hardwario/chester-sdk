@@ -224,6 +224,15 @@ int parse_gprs_timer(const char *binary_string, int flag)
 	return timer_value * multiplier;
 }
 
+bool ctr_lte_v2_parse_cereg_is_urc(const char *s)
+{
+	while (isdigit((unsigned char)*s)) {
+		s++;
+	}
+
+	return *s == '\0' || (s[0] == ',' && s[1] == '"');
+}
+
 int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *param)
 { /*
 	 <stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>],[<reject_cause>][,[<Active-Time>],[<Periodic-TAU-ext>]]]]

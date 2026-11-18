@@ -128,6 +128,23 @@ ZTEST(parser, test_urc_cereg_4)
 	zassert_equal(param.act, 0, "param.act not equal");
 }
 
+/* What follows "+CEREG: " in a URC, and in the response to AT+CEREG? which comes the same way */
+ZTEST(parser, test_cereg_is_urc)
+{
+	zassert_true(ctr_lte_v2_parse_cereg_is_urc("0"));
+	zassert_true(ctr_lte_v2_parse_cereg_is_urc("2"));
+	zassert_true(ctr_lte_v2_parse_cereg_is_urc("90"));
+	zassert_true(ctr_lte_v2_parse_cereg_is_urc("2,\"B4DC\",\"000AE520\",9"));
+	zassert_true(ctr_lte_v2_parse_cereg_is_urc(
+		"5,\"B4DC\",\"000AE520\",9,0,18,\"00000000\",\"00111000\""));
+
+	/* <n>,<stat> first */
+	zassert_false(ctr_lte_v2_parse_cereg_is_urc(
+		"5,5,\"B4DC\",\"000AE520\",9,,,\"00000000\",\"00111000\""));
+	zassert_false(ctr_lte_v2_parse_cereg_is_urc("5,4"));
+	zassert_false(ctr_lte_v2_parse_cereg_is_urc("5,0"));
+}
+
 ZTEST(parser, test_urc_xmodemsleep_1_89999825)
 {
 	int p1, p2;

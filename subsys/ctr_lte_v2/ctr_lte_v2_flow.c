@@ -112,7 +112,7 @@ static void process_urc(const char *line)
 	} else if (!strncmp(line, "%XTIME:", 7)) {
 		m_event_delegate_cb(CTR_LTE_V2_EVENT_XTIME);
 
-	} else if (!strncmp(line, "+CEREG: ", 8) && line[10] == '"') { /* Ignore CEREG requests */
+	} else if (!strncmp(line, "+CEREG: ", 8) && ctr_lte_v2_parse_cereg_is_urc(&line[8])) {
 		int ret;
 		struct ctr_lte_v2_cereg_param cereg_param;
 

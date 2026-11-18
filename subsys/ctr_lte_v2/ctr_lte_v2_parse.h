@@ -11,6 +11,7 @@
 #include <chester/ctr_lte_v2.h>
 
 /* Standard includes */
+#include <stdbool.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -48,6 +49,9 @@ struct cgdcont_param {
 
 int ctr_lte_v2_parse_xsocket_set(const char *s, struct xsocket_set_param *param);
 int ctr_lte_v2_parse_xsocket_get(const char *s, struct xsocket_get_param *param);
+/* True for what follows "+CEREG: " in a URC (the status, then nothing or the quoted TAC), false
+ * for the response to AT+CEREG? (<n>,<stat>,...), which the URC handler gets as well */
+bool ctr_lte_v2_parse_cereg_is_urc(const char *s);
 int ctr_lte_v2_parse_urc_cereg(const char *s, struct ctr_lte_v2_cereg_param *param);
 int ctr_lte_v2_parse_urc_xmodemsleep(const char *s, int *p1, int *p2);
 int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param);
