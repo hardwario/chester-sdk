@@ -248,6 +248,7 @@ int ctr_lte_v2_get_curr_attach_info(int *attempt, int *attach_timeout_sec, int *
 struct ctr_lte_v2_cereg_event {
 	uint32_t uptime_s;    /**< Uptime of the change. */
 	uint32_t cid;         /**< Cell ID, 0 if not reported. */
+	uint32_t plmn;        /**< PLMN (MCCMNC) of the last %CONEVAL if on this cell, else 0. */
 	uint16_t tac;         /**< Tracking area code, 0 if not reported. */
 	uint8_t stat;         /**< @ref ctr_lte_v2_cereg_param_stat. */
 	uint8_t act;          /**< @ref ctr_lte_v2_cereg_param_act. */

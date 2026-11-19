@@ -90,8 +90,9 @@ config CTR_LTE_V2_CEREG_HISTORY
 	range 0 20
 	help
 		Registration status changes (CEREG) kept for 'lte history', e.g. to
-		see a device hopping between cells or getting rejected (16 B of
-		RAM each). 0 keeps only the last reject.
+		see a device hopping between cells or getting rejected (20 B of
+		RAM each, as much on the stack of 'lte history'). 0 keeps only the
+		last reject.
 
 config CTR_LTE_V2_SCAN
 	bool "CTR_LTE_V2_SCAN"

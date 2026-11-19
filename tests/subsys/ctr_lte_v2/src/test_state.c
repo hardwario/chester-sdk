@@ -196,6 +196,13 @@ ZTEST(state_cereg_history, test_history)
 
 	/* A manufacturer-specific cause is not an EMM cause */
 	add_cereg(3, "8DCC", 0xAE5CA, 1, 42);
+
+	/* From here on the last connection evaluation is on the cell 074FEB50: its PLMN for the
+	 * changes on that cell */
+	struct ctr_lte_v2_conn_param conn = {.valid = true, .plmn = 23002, .cid = 0x74FEB50};
+
+	ctr_lte_v2_state_set_conn_param(&conn);
+
 	/* An accepted registration keeps its cause, but is not a reject */
 	add_cereg(5, "05F2", 0x74FEB50, 0, 18);
 	add_cereg(1, "05F2", 0x74FEB50, 0, 0);
@@ -203,10 +210,13 @@ ZTEST(state_cereg_history, test_history)
 	zassert_ok(ctr_lte_v2_state_get_cereg_history(e, ARRAY_SIZE(e), &count));
 	zassert_equal(count, 3, "the ring keeps the newest 3");
 	zassert_equal(e[0].stat, 1);
+	zassert_equal(e[0].plmn, 23002);
 	zassert_equal(e[1].stat, 5);
 	zassert_equal(e[1].reject_cause, 18);
+	zassert_equal(e[1].plmn, 23002);
 	zassert_equal(e[2].stat, 3);
 	zassert_equal(e[2].reject_cause, 0);
+	zassert_equal(e[2].plmn, 0, "before the evaluation");
 
 	/* Fewer than kept */
 	zassert_ok(ctr_lte_v2_state_get_cereg_history(e, 1, &count));
@@ -218,6 +228,28 @@ ZTEST(state_cereg_history, test_history)
 	zassert_equal(e[0].reject_cause, 15);
 	zassert_equal(e[0].tac, 0x8DCC);
 	zassert_equal(e[0].stat, 3);
+	zassert_equal(e[0].plmn, 0);
+
+	/* A reject on another cell (e.g. by another network): not the PLMN of the evaluation */
+	add_cereg(2, "2D02", 0x74FEB56, 0, 11);
+	zassert_ok(ctr_lte_v2_state_get_cereg_history(e, 1, &count));
+	zassert_equal(e[0].reject_cause, 11);
+	zassert_equal(e[0].plmn, 0);
+	zassert_ok(ctr_lte_v2_state_get_last_reject(&e[0]));
+	zassert_equal(e[0].reject_cause, 11);
+	zassert_equal(e[0].plmn, 0);
+
+	/* Back on the cell of the evaluation */
+	add_cereg(1, "05F2", 0x74FEB50, 0, 0);
+	zassert_ok(ctr_lte_v2_state_get_cereg_history(e, 1, &count));
+	zassert_equal(e[0].plmn, 23002);
+
+	/* An evaluation that is not valid: unknown */
+	conn.valid = false;
+	ctr_lte_v2_state_set_conn_param(&conn);
+	add_cereg(2, "05F2", 0x74FEB50, 0, 0);
+	zassert_ok(ctr_lte_v2_state_get_cereg_history(e, 1, &count));
+	zassert_equal(e[0].plmn, 0);
 }
 
 #else

@@ -1911,8 +1911,8 @@ ZTEST(scan, test_scan_in_retry_delay)
 	const char *out = no_ages(shell_out("lte scan show"));
 	zassert_str_equal(
 		out,
-		"last-reject: * ago, searching, act: nb-iot, tac: 2D02, cell: 074FEB56, emm: 11 "
-		"(PLMN not allowed)\n"
+		"last-reject: * ago, searching, act: nb-iot, plmn: 0, tac: 2D02, cell: 074FEB56, "
+		"emm: 11 (PLMN not allowed)\n"
 		"last-reject-hint: network not allowed for this SIM, check roaming\n"
 		"last scan: * ago (request)\n"
 		"search: lte-m cells not run, nb-iot cells ok, networks ok\n"
@@ -2500,6 +2500,12 @@ ZTEST(scan, test_ncellmeas_shell)
 	k_sleep(K_SECONDS(2));
 	ASSERT_FSM_STATE("ready");
 	mock_ctr_lte_link_assert_done();
+
+	/* The search after the attach has the PLMN of its connection evaluation, as hio's */
+	out = shell_out("lte history");
+	zassert_not_null(strstr(out, " ago, searching, act: nb-iot, plmn: 23003, tac: B4DC, cell: "
+				     "000AE520\n"),
+			 "%s", out);
 
 	/* 4. The GNSS holds the request beyond the bound: it stays, measured after the GNSS */
 

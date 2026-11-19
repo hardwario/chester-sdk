@@ -137,14 +137,15 @@ static void print_cereg_event(const struct shell *shell, const char *label,
 	ctr_util_fmt_duration(k_uptime_seconds() - e->uptime_s, ago, sizeof(ago));
 
 	if (e->reject_cause) {
-		shell_print(shell, "%s%s ago, %s, act: %s, tac: %04X, cell: %08X, emm: %u (%s)",
+		shell_print(shell,
+			    "%s%s ago, %s, act: %s, plmn: %u, tac: %04X, cell: %08X, emm: %u (%s)",
 			    label, ago, ctr_lte_v2_str_cereg_stat(e->stat),
-			    ctr_lte_v2_str_act(e->act), e->tac, e->cid, e->reject_cause,
+			    ctr_lte_v2_str_act(e->act), e->plmn, e->tac, e->cid, e->reject_cause,
 			    ctr_lte_v2_str_emm_cause(e->reject_cause));
 	} else {
-		shell_print(shell, "%s%s ago, %s, act: %s, tac: %04X, cell: %08X", label, ago,
-			    ctr_lte_v2_str_cereg_stat(e->stat), ctr_lte_v2_str_act(e->act), e->tac,
-			    e->cid);
+		shell_print(shell, "%s%s ago, %s, act: %s, plmn: %u, tac: %04X, cell: %08X", label,
+			    ago, ctr_lte_v2_str_cereg_stat(e->stat), ctr_lte_v2_str_act(e->act),
+			    e->plmn, e->tac, e->cid);
 	}
 }
 

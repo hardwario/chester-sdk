@@ -288,6 +288,12 @@ void ctr_lte_v2_state_add_cereg_event(const struct ctr_lte_v2_cereg_param *param
 
 	k_mutex_lock(&m_lock, K_FOREVER);
 
+	/* As hio, which has it from %RAI (not reported here). Only on the cell of the evaluation: a
+	 * reject on another one may come from another network */
+	if (m_conn_param.valid && m_conn_param.cid == param->cid) {
+		event.plmn = m_conn_param.plmn;
+	}
+
 	if (ctr_lte_v2_state_cereg_is_reject(param)) {
 		m_last_reject = event;
 		m_last_reject_valid = true;
