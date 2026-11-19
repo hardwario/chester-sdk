@@ -574,53 +574,23 @@ static int cmd_reconnect(const struct shell *shell, size_t argc, char **argv)
 }
 
 #if defined(CONFIG_CTR_LTE_V2_SCAN)
-static int cmd_ncellmeas(const struct shell *shell, size_t argc, char **argv)
+/* The bound of 'lte ncellmeas now' */
+#define NCELLMEAS_NOW_BOUND_S (10 * 60)
+
+/* As hio: the status of the URC; an end without a readable one failed */
+static void ncellmeas_result_str(const struct ctr_lte_v2_ncellmeas_param *param, char *buf,
+				 size_t size)
 {
-	if (argc > 1) {
-		shell_error(shell, "command not found: %s", argv[1]);
-		shell_help(shell);
-		return -EINVAL;
-	}
-
-	if (g_ctr_lte_v2_config.test) {
-		shell_error(shell, "test mode is enabled");
-		return -ENOTSUP;
-	}
-
-	int ret = ctr_lte_v2_schedule_ncellmeas();
-	if (ret == -EALREADY) {
-		shell_print(shell, "measurement already requested");
-	} else if (ret == -EBUSY) {
-		shell_error(shell, "scan in progress");
-		return ret;
-	} else if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_schedule_ncellmeas` failed: %d", ret);
-		shell_error(shell, "command failed");
-		return ret;
+	if (param->result || param->status == 1) {
+		snprintf(buf, size, "failed");
+	} else if (param->status) {
+		snprintf(buf, size, "status %u", param->status);
 	} else {
-		shell_print(shell, "measurement requested, see 'lte ncellmeas show'");
-	}
-
-	shell_print(shell, "command succeeded");
-
-	return 0;
-}
-
-static const char *ncellmeas_result_str(const struct ctr_lte_v2_ncellmeas_param *param)
-{
-	switch (param->result) {
-	case 0:
-		return "ok";
-	case -ETIMEDOUT:
-		return param->num_cells ? "timeout, partial" : "timeout";
-	case -ECANCELED:
-		return "cancelled";
-	default:
-		return "error";
+		snprintf(buf, size, "ok");
 	}
 }
 
-static int cmd_ncellmeas_show(const struct shell *shell, size_t argc, char **argv)
+static int print_ncellmeas(const struct shell *shell)
 {
 	/* A copy (on the stack): printing under the lock of the state would hold up the URCs */
 	struct ctr_lte_v2_ncellmeas_param param;
@@ -646,8 +616,11 @@ static int cmd_ncellmeas_show(const struct shell *shell, size_t argc, char **arg
 	}
 
 	char ago[24];
+	char result[16];
+
 	ctr_util_fmt_duration(k_uptime_seconds() - param.uptime_s, ago, sizeof(ago));
-	shell_print(shell, "ncellmeas: %s ago, %s", ago, ncellmeas_result_str(&param));
+	ncellmeas_result_str(&param, result, sizeof(result));
+	shell_print(shell, "ncellmeas: %s ago, %s", ago, result);
 
 	for (int i = 0; i < param.num_cells; i++) {
 		const struct ctr_lte_v2_ncellmeas_cell *c = &param.cells[i];
@@ -670,6 +643,153 @@ static int cmd_ncellmeas_show(const struct shell *shell, size_t argc, char **arg
 	shell_print(shell, "command succeeded");
 
 	return 0;
+}
+
+/* A line each 30 s from the start until wait() gives 0; -ETIMEDOUT at the bound */
+static int ncellmeas_wait(const struct shell *shell, int (*wait)(k_timeout_t timeout))
+{
+	int64_t start = k_uptime_get();
+
+	shell_print(shell, "measuring, this takes minutes...");
+
+	while (wait(K_MSEC(30000 - (k_uptime_get() - start) % 30000))) {
+		int64_t elapsed = (k_uptime_get() - start) / MSEC_PER_SEC;
+
+		/* Beyond an attach from the radio off (5 min), the RRC idle (1 min) and the
+		 * measurement (3 min): it waits for something else */
+		if (elapsed >= NCELLMEAS_NOW_BOUND_S) {
+			shell_error(shell, "measurement did not finish");
+			return -ETIMEDOUT;
+		}
+
+		char took[24];
+
+		ctr_util_fmt_duration(elapsed, took, sizeof(took));
+		shell_print(shell, "still measuring (%s)", took);
+	}
+
+	return 0;
+}
+
+/* Test mode: no FSM, the command and its URC directly */
+static int ncellmeas_now_test(const struct shell *shell)
+{
+	char err[32] = "";
+
+	if (ctr_lte_v2_flow_test_link_up()) {
+		shell_error(shell, "measurement not possible: modem not ready");
+		return -EIO;
+	}
+
+	int ret = ctr_lte_v2_flow_test_ncellmeas_start(err, sizeof(err));
+	if (ret) {
+		if (err[0]) {
+			shell_error(shell, "measurement not possible: %s", err);
+			return -EIO;
+		}
+
+		shell_error(shell, "command failed: %d", ret);
+		return ret;
+	}
+
+	ret = ncellmeas_wait(shell, ctr_lte_v2_flow_test_ncellmeas_wait);
+	(void)ctr_lte_v2_flow_test_ncellmeas_end(!ret);
+	if (ret) {
+		return ret;
+	}
+
+	return print_ncellmeas(shell);
+}
+
+/* A state that does not take the request soon: the reason, or NULL. The request waits there (reset
+ * loop, error) or is dropped (disabled: not for a waiting request, its drop ends the wait) */
+static const char *scan_blocked(const char *state, bool waiting)
+{
+	if (!strcmp(state, "disabled")) {
+		return waiting ? NULL : "LTE is disabled";
+	} else if (!strcmp(state, "reset_loop")) {
+		return "modem reset loop, attach blocked";
+	} else if (!strcmp(state, "error")) {
+		return "LTE error, retrying";
+	}
+
+	return NULL;
+}
+
+static int cmd_ncellmeas_now(const struct shell *shell, size_t argc, char **argv)
+{
+	if (g_ctr_lte_v2_config.test) {
+		return ncellmeas_now_test(shell);
+	}
+
+	const char *state = ctr_lte_v2_get_state();
+	const char *reason = scan_blocked(state, false);
+
+	/* The retry delay takes the scan, a measurement waits for the next attach (up to hours) */
+	if (!reason && !strcmp(state, "retry_delay")) {
+		reason = "not registered, retrying attach";
+	}
+
+	if (reason) {
+		shell_error(shell, "measurement not possible: %s (fsm-state: %s)", reason, state);
+		return -EBUSY;
+	}
+
+	/* Unchanged by the end: the request was dropped */
+	uint32_t ends;
+
+	int ret = ctr_lte_v2_request_ncellmeas(&ends);
+	if (ret == -EALREADY) {
+		shell_print(shell, "measurement already in progress, waiting for it");
+	} else if (ret == -EBUSY) {
+		/* A scan requested or running: no request */
+		state = ctr_lte_v2_get_state();
+		shell_error(shell, "measurement not possible: scan in progress (fsm-state: %s)",
+			    state);
+		return ret;
+	} else if (ret) {
+		shell_error(shell, "command failed: %d", ret);
+		return ret;
+	}
+
+	ret = ncellmeas_wait(shell, ctr_lte_v2_wait_for_ncellmeas);
+	if (ret) {
+		return ret;
+	}
+
+	if (ctr_lte_v2_get_ncellmeas_ends() == ends) {
+		shell_error(shell, "measurement dropped");
+		return -ECANCELED;
+	}
+
+	return print_ncellmeas(shell);
+}
+
+static int cmd_ncellmeas_schedule(const struct shell *shell, size_t argc, char **argv)
+{
+	if (g_ctr_lte_v2_config.test) {
+		shell_error(shell, "not supported in test mode");
+		return -ENOEXEC;
+	}
+
+	int ret = ctr_lte_v2_schedule_ncellmeas();
+	if (ret == -EBUSY) {
+		shell_error(shell, "scan in progress");
+		return ret;
+	} else if (ret && ret != -EALREADY) {
+		LOG_ERR("Call `ctr_lte_v2_schedule_ncellmeas` failed: %d", ret);
+		shell_error(shell, "command failed");
+		return ret;
+	}
+
+	shell_info(shell, "command succeeded");
+
+	return 0;
+}
+
+static int cmd_ncellmeas_show(const struct shell *shell, size_t argc, char **argv)
+{
+	return print_ncellmeas(shell);
 }
 
 static const char *cops_stat_str(int stat)
@@ -897,6 +1017,7 @@ static int print_scan_result(const struct shell *shell)
 
 	if (!result.valid) {
 		shell_print(shell, "no scan yet");
+		shell_info(shell, "command succeeded");
 		return 0;
 	}
 
@@ -914,6 +1035,8 @@ static int print_scan_result(const struct shell *shell)
 		    scan_status_str(scan_networks_status(&result)));
 
 	print_scan_groups(shell, &result);
+
+	shell_info(shell, "command succeeded");
 
 	return 0;
 }
@@ -947,21 +1070,6 @@ static int scan_mode_parse(const struct shell *shell, size_t argc, char **argv,
 	return 0;
 }
 
-/* A state that does not take the scan soon: the reason, or NULL. The request waits there (reset
- * loop, error) or is dropped (disabled) */
-static const char *scan_blocked(const char *state)
-{
-	if (!strcmp(state, "disabled")) {
-		return "LTE is disabled";
-	} else if (!strcmp(state, "reset_loop")) {
-		return "modem reset loop, attach blocked";
-	} else if (!strcmp(state, "error")) {
-		return "LTE error, retrying";
-	}
-
-	return NULL;
-}
-
 static int cmd_scan_now(const struct shell *shell, size_t argc, char **argv)
 {
 	int ret;
@@ -972,27 +1080,25 @@ static int cmd_scan_now(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	if (g_ctr_lte_v2_config.test) {
-		shell_error(shell, "not supported in test mode");
-		return -ENOEXEC;
-	}
-
+	/* Test mode: no FSM, the steps run directly */
+	bool test = g_ctr_lte_v2_config.test;
 	const char *state = ctr_lte_v2_get_state();
-	const char *reason = scan_blocked(state);
+	const char *reason = test ? NULL : scan_blocked(state, false);
 
 	if (reason) {
 		shell_error(shell, "scan not possible: %s (fsm-state: %s)", reason, state);
 		return -EBUSY;
 	}
 
-	int64_t start;
-	int64_t last;
-	int64_t prev;
+	if (test && ctr_lte_v2_flow_test_link_up()) {
+		shell_error(shell, "scan not possible: modem not ready");
+		return -EIO;
+	}
 
-	/* The result of this request has another start */
-	ctr_lte_v2_state_get_scan_starts(&start, &prev);
+	/* Unchanged by the end: the request was dropped */
+	uint32_t ends;
 
-	ret = ctr_lte_v2_scan(mode);
+	ret = test ? ctr_lte_v2_test_scan(mode, &ends) : ctr_lte_v2_request_scan(mode, &ends);
 	if (ret == -EALREADY) {
 		shell_print(shell, "scan already in progress, waiting for it");
 	} else if (ret) {
@@ -1005,9 +1111,10 @@ static int cmd_scan_now(const struct shell *shell, size_t argc, char **argv)
 	shell_print(shell, "scanning, this takes minutes...");
 
 	int64_t command = k_uptime_get();
+	int64_t start = 0;
+	int64_t last;
 	k_timeout_t wait;
 
-	start = 0;
 	for (;;) {
 		if (!start) {
 			ctr_lte_v2_state_get_scan_starts(&start, &last);
@@ -1019,7 +1126,7 @@ static int cmd_scan_now(const struct shell *shell, size_t argc, char **argv)
 		} else {
 			/* Not started: a state that blocks it ends the wait, the request stays */
 			state = ctr_lte_v2_get_state();
-			reason = scan_blocked(state);
+			reason = test ? NULL : scan_blocked(state, true);
 			if (reason) {
 				shell_error(shell, "scan not possible: %s (fsm-state: %s)", reason,
 					    state);
@@ -1050,18 +1157,12 @@ static int cmd_scan_now(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	/* Dropped (a reconnect, LTE disabled): no new result */
-	ctr_lte_v2_state_get_scan_starts(&start, &last);
-	if (last == prev) {
+	if (ctr_lte_v2_get_scan_ends() == ends) {
 		shell_error(shell, "scan dropped");
 		return -ECANCELED;
 	}
 
-	ret = print_scan_result(shell);
-	if (!ret) {
-		shell_info(shell, "command succeeded");
-	}
-
-	return ret;
+	return print_scan_result(shell);
 }
 
 static int cmd_scan_schedule(const struct shell *shell, size_t argc, char **argv)
@@ -1150,8 +1251,16 @@ SHELL_DYNAMIC_CMD_CREATE(sub_lte_config, ctr_lte_v2_config_subcmd_get);
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lte_ncellmeas,
 
+	SHELL_CMD_ARG(now, NULL,
+	              "Measure and wait for the result.",
+	              cmd_ncellmeas_now, 1, 0),
+
+	SHELL_CMD_ARG(schedule, NULL,
+	              "Request a measurement, see 'show'.",
+	              cmd_ncellmeas_schedule, 1, 0),
+
 	SHELL_CMD_ARG(show, NULL,
-	              "Show the last neighbour cell measurement.",
+	              "Show the last measurement.",
 	              cmd_ncellmeas_show, 1, 0),
 
 	SHELL_SUBCMD_SET_END
@@ -1161,12 +1270,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lte_scan,
 
 	SHELL_CMD_ARG(now, NULL,
-	              "Scan and wait for the result (format: [all|plmn|cells]). Not while "
-	              "disabled, in a reset loop or an error (the request then stays).",
+	              "Scan and wait for the result (format: [all|plmn|cells]).",
 	              cmd_scan_now, 1, 1),
 
 	SHELL_CMD_ARG(schedule, NULL,
-	              "Schedule a scan and return at once (format: [all|plmn|cells]).",
+	              "Request a scan, see 'show' (format: [all|plmn|cells]).",
 	              cmd_scan_schedule, 1, 1),
 
 	SHELL_CMD_ARG(show, NULL,
@@ -1218,12 +1326,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	              cmd_history, 1, 0),
 
 #if defined(CONFIG_CTR_LTE_V2_SCAN)
-	SHELL_CMD_ARG(ncellmeas, &sub_lte_ncellmeas,
-	              "Measure the neighbour cells (returns at once, see 'show').",
-	              cmd_ncellmeas, 1, 0),
+	SHELL_CMD(ncellmeas, &sub_lte_ncellmeas,
+	          "Measure the neighbour cells.",
+	          print_help),
 
 	SHELL_CMD(scan, &sub_lte_scan,
-	          "Scan the cells and networks of the configured RATs; LTE is offline for minutes.",
+	          "Scan cells and networks of the configured RATs; interrupts "
+	          "attach and reconnects. Leaves the modem in CFUN=1 in test mode.",
 	          print_help),
 #endif
 

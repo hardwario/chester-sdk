@@ -130,6 +130,10 @@ enum ncellmeas_phase {
 static enum ncellmeas_phase m_ncellmeas_phase;
 static int m_ncellmeas_result;
 static bool m_ncellmeas_urc;
+/* The measurements on request and the scans that ended, counted with the post of their done bit
+ * under m_req_lock: a dropped request does not count */
+static atomic_t m_ncellmeas_ends;
+static atomic_t m_scan_ends;
 /* The requests against their drop in the disabled state */
 static K_MUTEX_DEFINE(m_req_lock);
 
@@ -884,9 +888,11 @@ static void scan_arm(k_timeout_t timeout)
 }
 
 /* The flag is the request, the bit is clear until it ends. The mode (if any) is set with the
- * request only: a running one keeps its own */
+ * request only: a running one keeps its own. The ends counted so far into ends_at (if any): a clear
+ * bit is an end not counted yet */
 static int request(int flag, uint32_t done_bit, enum ctr_lte_v2_event event,
-		   enum ctr_lte_v2_scan_mode *mode, enum ctr_lte_v2_scan_mode value)
+		   enum ctr_lte_v2_scan_mode *mode, enum ctr_lte_v2_scan_mode value,
+		   const atomic_t *ends, uint32_t *ends_at)
 {
 	int ret = 0;
 
@@ -896,6 +902,10 @@ static int request(int flag, uint32_t done_bit, enum ctr_lte_v2_event event,
 		k_mutex_unlock(&m_req_lock);
 		LOG_WRN("Cannot request, LTE is disabled");
 		return -ENODEV;
+	}
+
+	if (ends_at) {
+		*ends_at = atomic_get(ends);
 	}
 
 	if (k_event_test(&m_states_event, done_bit)) {
@@ -916,7 +926,7 @@ static int request(int flag, uint32_t done_bit, enum ctr_lte_v2_event event,
 	return ret;
 }
 
-int ctr_lte_v2_schedule_ncellmeas(void)
+int ctr_lte_v2_request_ncellmeas(uint32_t *ends)
 {
 	if (g_ctr_lte_v2_config.test) {
 		LOG_WRN("LTE Test mode enabled");
@@ -928,7 +938,13 @@ int ctr_lte_v2_schedule_ncellmeas(void)
 		return -EBUSY;
 	}
 
-	return request(FLAG_NCELLMEAS_REQ, NCELLMEAS_DONE_BIT, CTR_LTE_V2_EVENT_NCELLMEAS, NULL, 0);
+	return request(FLAG_NCELLMEAS_REQ, NCELLMEAS_DONE_BIT, CTR_LTE_V2_EVENT_NCELLMEAS, NULL, 0,
+		       &m_ncellmeas_ends, ends);
+}
+
+int ctr_lte_v2_schedule_ncellmeas(void)
+{
+	return ctr_lte_v2_request_ncellmeas(NULL);
 }
 
 static int wait_done(uint32_t done_bit, k_timeout_t timeout)
@@ -946,7 +962,17 @@ int ctr_lte_v2_get_ncellmeas_param(struct ctr_lte_v2_ncellmeas_param *param)
 	return ctr_lte_v2_state_get_ncellmeas_param(param);
 }
 
-int ctr_lte_v2_scan(enum ctr_lte_v2_scan_mode mode)
+uint32_t ctr_lte_v2_get_ncellmeas_ends(void)
+{
+	return atomic_get(&m_ncellmeas_ends);
+}
+
+uint32_t ctr_lte_v2_get_scan_ends(void)
+{
+	return atomic_get(&m_scan_ends);
+}
+
+int ctr_lte_v2_request_scan(enum ctr_lte_v2_scan_mode mode, uint32_t *ends)
 {
 	if (mode != CTR_LTE_V2_SCAN_ALL && mode != CTR_LTE_V2_SCAN_PLMN &&
 	    mode != CTR_LTE_V2_SCAN_CELLS) {
@@ -958,7 +984,13 @@ int ctr_lte_v2_scan(enum ctr_lte_v2_scan_mode mode)
 		return -ENOTSUP;
 	}
 
-	return request(FLAG_SCAN_REQ, SCAN_DONE_BIT, CTR_LTE_V2_EVENT_SCAN, &m_scan_req_mode, mode);
+	return request(FLAG_SCAN_REQ, SCAN_DONE_BIT, CTR_LTE_V2_EVENT_SCAN, &m_scan_req_mode, mode,
+		       &m_scan_ends, ends);
+}
+
+int ctr_lte_v2_scan(enum ctr_lte_v2_scan_mode mode)
+{
+	return ctr_lte_v2_request_scan(mode, NULL);
 }
 
 int ctr_lte_v2_wait_for_scan(k_timeout_t timeout)
@@ -969,6 +1001,18 @@ int ctr_lte_v2_wait_for_scan(k_timeout_t timeout)
 int ctr_lte_v2_get_scan_result(struct ctr_lte_v2_scan_result *result)
 {
 	return ctr_lte_v2_state_get_scan_result(result);
+}
+
+/* An end with its result: counted with the post, so that a request finds the bit clear only for an
+ * end not counted yet */
+static void request_end(uint32_t done_bit, atomic_t *ends)
+{
+	k_mutex_lock(&m_req_lock, K_FOREVER);
+
+	atomic_inc(ends);
+	k_event_post(&m_states_event, done_bit);
+
+	k_mutex_unlock(&m_req_lock);
 }
 
 /* Drop the requests: a waiting caller returns, there is no callback */
@@ -2034,7 +2078,7 @@ static void ncellmeas_measure(void)
 	/* Before the command: the URC may come right after its OK */
 	ctr_lte_v2_state_ncellmeas_arm(true);
 
-	int ret = ctr_lte_v2_flow_ncellmeas();
+	int ret = ctr_lte_v2_flow_ncellmeas(NULL, 0);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_flow_ncellmeas` failed: %d", ret);
 		ctr_lte_v2_state_ncellmeas_disarm();
@@ -2182,7 +2226,7 @@ static int on_leave_ncellmeas(void)
 
 	/* The callbacks first: a waiting caller returns once they ran */
 	notify(CTR_LTE_V2_CB_EVENT_NCELLMEAS_DONE);
-	k_event_post(&m_states_event, NCELLMEAS_DONE_BIT);
+	request_end(NCELLMEAS_DONE_BIT, &m_ncellmeas_ends);
 
 	return 0;
 }
@@ -2250,7 +2294,7 @@ static void scan_finish(void)
 	ctr_lte_v2_state_scan_end();
 
 	notify(CTR_LTE_V2_CB_EVENT_SCAN_DONE);
-	k_event_post(&m_states_event, SCAN_DONE_BIT);
+	request_end(SCAN_DONE_BIT, &m_scan_ends);
 }
 
 /* Before a reset. Graceful only where the modem has just answered (+COPS=?, %NCELLMEAS): CFUN=0
@@ -2397,6 +2441,140 @@ static void scan_networks(void)
 	}
 
 	scan_next_rat(true);
+}
+
+/* Test mode, without the FSM: the steps of each configured RAT run on the work queue, the shell
+ * waits for them as for the FSM. The waits stand on the URCs, as in the FSM: the window for the
+ * attach to open an RRC connection and the bound of its release (a connected modem finds only the
+ * serving cell), the bound of the registration (AT+COPS=? marks its network current). The modem
+ * ends in the configured RATs, in CFUN=1 */
+#define TEST_SCAN_CSCON_WINDOW     K_SECONDS(10)
+#define TEST_SCAN_RELEASE_TIMEOUT  K_SECONDS(60)
+#define TEST_SCAN_REGISTER_TIMEOUT K_SECONDS(60)
+
+static enum ctr_lte_v2_scan_mode m_test_scan_mode;
+
+/* CFUN=0 (the modem is idle in test mode, the graceful switch), the mode, the URCs, CFUN=1. The
+ * URCs after CFUN=0, as in the prepare: mfw 1.3.6 with SLM 2.5.2 drops their subscriptions there */
+static int test_scan_switch(const char *mode)
+{
+	LOG_INF("CFUN=0, in PSM it can take over a minute");
+
+	int ret = ctr_lte_v2_flow_cfun_timeout(0, SCAN_CFUN0_TIMEOUT);
+	if (!ret) {
+		ret = ctr_lte_v2_flow_system_mode(mode);
+	}
+	if (!ret) {
+		ret = ctr_lte_v2_flow_test_subscribe();
+	}
+	if (!ret) {
+		/* The URCs from here on are of the new attach */
+		ctr_lte_v2_flow_test_attach_begin();
+		ret = ctr_lte_v2_flow_cfun(1);
+	}
+
+	return ret;
+}
+
+/* An error of the start ends the scan (the modem may not answer) */
+static int test_scan_rat(int act)
+{
+	int ret = test_scan_switch(act == CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT ? "nb-iot" : "lte-m");
+	if (ret) {
+		ctr_lte_v2_state_scan_set_result(act, CTR_LTE_V2_SCAN_STEP_REGISTRATION, -EIO);
+		return ret;
+	}
+
+	if (m_test_scan_mode != CTR_LTE_V2_SCAN_PLMN) {
+		if (ctr_lte_v2_flow_test_wait_cscon(true, TEST_SCAN_CSCON_WINDOW) &&
+		    !ctr_lte_v2_flow_test_wait_cscon(false, TEST_SCAN_RELEASE_TIMEOUT)) {
+			LOG_WRN("RRC connection not released, measuring anyway");
+		}
+
+		int result = ctr_lte_v2_flow_test_ncellmeas_start(NULL, 0);
+		if (result) {
+			result = -EIO;
+		} else {
+			bool urc = !ctr_lte_v2_flow_test_ncellmeas_wait(NCELLMEAS_TIMEOUT);
+
+			result = ctr_lte_v2_flow_test_ncellmeas_end(urc);
+		}
+
+		ctr_lte_v2_state_scan_add_cells(act);
+		ctr_lte_v2_state_scan_set_result(act, CTR_LTE_V2_SCAN_STEP_CELLS, result);
+	}
+
+	if (m_test_scan_mode != CTR_LTE_V2_SCAN_CELLS) {
+		if (!ctr_lte_v2_flow_test_wait_registered(TEST_SCAN_REGISTER_TIMEOUT)) {
+			LOG_WRN("Not registered, searching networks anyway");
+		}
+
+		ctr_lte_v2_state_scan_set_result(act, CTR_LTE_V2_SCAN_STEP_NETWORKS,
+						 ctr_lte_v2_flow_scan_networks());
+	}
+
+	return 0;
+}
+
+static void test_scan_work_handler(struct k_work *work)
+{
+	ctr_lte_v2_state_scan_start(m_test_scan_mode);
+
+	int ret = 0;
+
+	if (scan_rat_configured(CTR_LTE_V2_CEREG_PARAM_ACT_LTE)) {
+		ret = test_scan_rat(CTR_LTE_V2_CEREG_PARAM_ACT_LTE);
+	}
+	if (!ret && scan_rat_configured(CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT)) {
+		(void)test_scan_rat(CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT);
+	}
+
+	ctr_lte_v2_state_scan_end();
+
+	/* Each step had one RAT */
+	if (scan_rat_configured(CTR_LTE_V2_CEREG_PARAM_ACT_LTE) &&
+	    scan_rat_configured(CTR_LTE_V2_CEREG_PARAM_ACT_NBIOT)) {
+		ret = test_scan_switch(g_ctr_lte_v2_config.mode);
+		if (ret) {
+			LOG_WRN("Call `test_scan_switch` failed: %d", ret);
+		}
+	}
+
+	request_end(SCAN_DONE_BIT, &m_scan_ends);
+}
+
+static K_WORK_DEFINE(m_test_scan_work, test_scan_work_handler);
+
+int ctr_lte_v2_test_scan(enum ctr_lte_v2_scan_mode mode, uint32_t *ends)
+{
+	if (mode != CTR_LTE_V2_SCAN_ALL && mode != CTR_LTE_V2_SCAN_PLMN &&
+	    mode != CTR_LTE_V2_SCAN_CELLS) {
+		return -EINVAL;
+	}
+
+	if (!g_ctr_lte_v2_config.test) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&m_req_lock, K_FOREVER);
+
+	if (ends) {
+		*ends = atomic_get(&m_scan_ends);
+	}
+
+	if (!k_event_test(&m_states_event, SCAN_DONE_BIT)) {
+		k_mutex_unlock(&m_req_lock);
+		return -EALREADY;
+	}
+
+	k_event_clear(&m_states_event, SCAN_DONE_BIT);
+	m_test_scan_mode = mode;
+
+	k_mutex_unlock(&m_req_lock);
+
+	k_work_submit_to_queue(&m_work_q, &m_test_scan_work);
+
+	return 0;
 }
 
 static int on_enter_scan(void)

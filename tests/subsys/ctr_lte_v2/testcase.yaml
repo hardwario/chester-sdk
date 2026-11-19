@@ -114,6 +114,12 @@ tests:
   subsys.ctr_lte_v2.ncellmeas_cancel:
     extra_args: CONFIG_TEST_FEATURE_SCAN_NCELLMEAS_CANCEL=y
 
+  subsys.ctr_lte_v2.ncellmeas_shell:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_NCELLMEAS_SHELL=y
+
+  subsys.ctr_lte_v2.scan_test_mode:
+    extra_args: CONFIG_TEST_FEATURE_SCAN_TEST_MODE=y
+
   subsys.ctr_lte_v2.scan_both:
     extra_args: CONFIG_TEST_FEATURE_SCAN_SCAN_BOTH=y
 

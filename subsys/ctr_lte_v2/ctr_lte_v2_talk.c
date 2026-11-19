@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -1238,13 +1239,17 @@ int ctr_lte_v2_talk_at_cmd(struct ctr_lte_v2_talk *talk, const char *s)
 
 #if defined(CONFIG_CTR_LTE_V2_SCAN)
 /* The dialogs of PR5 end on +CME ERROR as well, the others wait for their timeout */
-int ctr_lte_v2_talk_at_ncellmeas(struct ctr_lte_v2_talk *talk, int search_type, int max_cells)
+int ctr_lte_v2_talk_at_ncellmeas(struct ctr_lte_v2_talk *talk, int search_type, int max_cells,
+				 char *err, size_t err_size)
 {
 	DIALOG_PROLOG /* clang-format off */
 
 	DIALOG_ENTER();
 	DIALOG_SEND_LINE("AT%%NCELLMEAS=%d,%d", search_type, max_cells);
 	DIALOG_LOOP_RUN(RESPONSE_TIMEOUT_S, {
+		if (err_size && (!strncmp(line, "ERROR", 5) || !strncmp(line, "+CME ERROR", 10))) {
+			snprintf(err, err_size, "%s", line);
+		}
 		DIALOG_LOOP_ABORT_ON_PFX("ERROR");
 		DIALOG_LOOP_ABORT_ON_PFX("+CME ERROR");
 		DIALOG_LOOP_BREAK_ON_STR("OK");

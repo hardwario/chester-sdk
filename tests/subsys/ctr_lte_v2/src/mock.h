@@ -51,4 +51,10 @@ void mock_ctr_lte_link_drop_ready(int count);
  * on the wake-up after its reset) */
 int mock_ctr_lte_link_reset_item(int n);
 
+/* Model the subscriptions of +CEREG and +CSCON as mfw 1.3.6 with SLM 2.5.2 keeps them (off by
+ * default): AT+CEREG=5 and AT+CSCON=1 make them, AT+CFUN=0 and a reset drop them (a line answered
+ * other than OK changes nothing). A URC of the script without its subscription is not sent, the
+ * script goes on past it. Turned on, the modem has none */
+void mock_ctr_lte_link_model_subscriptions(bool on);
+
 #endif

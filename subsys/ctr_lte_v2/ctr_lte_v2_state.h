@@ -103,6 +103,19 @@ void ctr_lte_v2_state_get_scan_starts(int64_t *running, int64_t *last);
 
 const char *ctr_lte_v2_get_state(void);
 
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+/* As ctr_lte_v2_schedule_ncellmeas() and ctr_lte_v2_scan(), with the ends counted at the request
+ * into ends (also for -EALREADY): more ends once it is done, it has its result; as many, it was
+ * dropped */
+int ctr_lte_v2_request_ncellmeas(uint32_t *ends);
+int ctr_lte_v2_request_scan(enum ctr_lte_v2_scan_mode mode, uint32_t *ends);
+/* The measurements on request and the scans that ended so far */
+uint32_t ctr_lte_v2_get_ncellmeas_ends(void);
+uint32_t ctr_lte_v2_get_scan_ends(void);
+/* Test mode: the scan without the FSM, as ctr_lte_v2_request_scan() (-EALREADY: running) */
+int ctr_lte_v2_test_scan(enum ctr_lte_v2_scan_mode mode, uint32_t *ends);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -79,6 +79,10 @@ struct ctr_lte_link_data {
 	int wake_up_item[MOCK_LINK_MAX_RESETS];
 	int violations;
 	char violation[VIOLATION_BUF_SIZE];
+	/* mock_ctr_lte_link_model_subscriptions() */
+	bool model_subscriptions;
+	bool cereg_subscribed;
+	bool cscon_subscribed;
 
 	const char *pending_rx_data;
 	size_t pending_rx_data_len;
@@ -153,6 +157,8 @@ static int ctr_lte_link_reset_(const struct device *dev)
 		data->wake_up_item[data->resets] = -1;
 	}
 	data->resets++;
+	data->cereg_subscribed = false;
+	data->cscon_subscribed = false;
 
 	k_spin_unlock(&data->script_lock, key);
 
@@ -206,6 +212,37 @@ static void event_dispatch_work_handler(struct k_work *work)
 	}
 }
 
+/* The subscriptions after a line of the script; one refused changes nothing. The caller holds
+ * script_lock */
+static void update_subscriptions(struct ctr_lte_link_data *data, const struct mock_link_item *item)
+{
+	const char *line = item->tx;
+
+	if (!item->rx || strcmp(item->rx, "OK")) {
+		return;
+	}
+
+	if (!strcmp(line, "AT+CFUN=0")) {
+		data->cereg_subscribed = false;
+		data->cscon_subscribed = false;
+	} else if (!strcmp(line, "AT+CEREG=5")) {
+		data->cereg_subscribed = true;
+	} else if (!strcmp(line, "AT+CSCON=1")) {
+		data->cscon_subscribed = true;
+	}
+}
+
+/* A URC the modem does not send for want of its subscription; the caller holds script_lock */
+static bool urc_unsubscribed(struct ctr_lte_link_data *data, const char *line)
+{
+	if (!data->model_subscriptions || !line) {
+		return false;
+	}
+
+	return (!strncmp(line, "+CEREG: ", 8) && !data->cereg_subscribed) ||
+	       (!strncmp(line, "+CSCON: ", 8) && !data->cscon_subscribed);
+}
+
 /* Schedule the next item if it is a URC; the caller holds script_lock */
 static void schedule_next_urc(struct ctr_lte_link_data *data)
 {
@@ -223,12 +260,14 @@ static void urc_dispatch_work_handler(struct k_work *work)
 		(struct k_work_delayable *)work, struct ctr_lte_link_data, urc_dispatch_work);
 
 	const struct mock_link_item *item = NULL;
+	bool unsubscribed = false;
 
 	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
 
 	if (data->items_index < data->items_count && data->items[data->items_index].tx == NULL) {
 		data->item_time[data->items_index] = k_uptime_get();
 		item = &data->items[data->items_index++];
+		unsubscribed = urc_unsubscribed(data, item->rx);
 
 		/* If URC starts with #XRECV:, store rx2 as pending data */
 		if (item->rx && strncmp(item->rx, "#XRECV:", 7) == 0 && item->rx2) {
@@ -249,7 +288,9 @@ static void urc_dispatch_work_handler(struct k_work *work)
 
 	k_spin_unlock(&data->script_lock, key);
 
-	if (item && item->rx) {
+	if (unsubscribed) {
+		LOG_INF("Not subscribed, URC not sent: %s", item->rx);
+	} else if (item && item->rx) {
 		rx(data->dev, item->rx);
 	}
 }
@@ -458,6 +499,7 @@ static int ctr_lte_link_send_line_(const struct device *dev, k_timeout_t timeout
 	} else {
 		data->item_time[data->items_index] = k_uptime_get();
 		item = &data->items[data->items_index++];
+		update_subscriptions(data, item);
 	}
 
 	k_spin_unlock(&data->script_lock, key);
@@ -704,6 +746,19 @@ int mock_ctr_lte_link_reset_count(void)
 void mock_ctr_lte_link_drop_ready(int count)
 {
 	atomic_set(&m_ready_drop, count);
+}
+
+void mock_ctr_lte_link_model_subscriptions(bool on)
+{
+	struct ctr_lte_link_data *data = get_data(DEVICE_DT_INST_GET(0));
+
+	k_spinlock_key_t key = k_spin_lock(&data->script_lock);
+
+	data->model_subscriptions = on;
+	data->cereg_subscribed = false;
+	data->cscon_subscribed = false;
+
+	k_spin_unlock(&data->script_lock, key);
 }
 
 int mock_ctr_lte_link_reset_item(int n)

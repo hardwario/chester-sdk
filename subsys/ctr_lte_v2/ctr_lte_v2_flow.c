@@ -57,12 +57,18 @@ static const struct device *dev_lte_if = DEVICE_DT_GET(DT_CHOSEN(ctr_lte_link));
 static const struct device *dev_rfmux = DEVICE_DT_GET(DT_NODELABEL(ctr_rfmux));
 
 static K_SEM_DEFINE(m_ready_sem, 0, 1);
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+/* Test mode: the URC of the armed measurement came */
+static K_SEM_DEFINE(m_ncellmeas_sem, 0, 1);
+#endif
 
 #define EVENT_CSCON_0          BIT(0)
 #define EVENT_CSCON_1          BIT(1)
 #define EVENT_XMODEMSLEEP      BIT(2)
 #define EVENT_SIMDETECTED      BIT(3)
 #define EVENT_MDMEV_RESET_LOOP BIT(4)
+/* Test mode: CSCON_0 and CSCON_1 follow the RRC connection, REGISTERED the registration */
+#define EVENT_REGISTERED       BIT(5)
 
 static K_EVENT_DEFINE(m_flow_events);
 
@@ -87,6 +93,30 @@ static void log_esm_cause(int cause)
 		hint ? hint : "");
 }
 
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+/* Test mode: the RRC connection and the registration the scan waits for */
+static void process_urc_test_scan(const char *line)
+{
+	if (!strncmp(line, "+CSCON: 0", 9)) {
+		k_event_set_masked(&m_flow_events, EVENT_CSCON_0, EVENT_CSCON_0 | EVENT_CSCON_1);
+	} else if (!strncmp(line, "+CSCON: 1", 9)) {
+		k_event_set_masked(&m_flow_events, EVENT_CSCON_1, EVENT_CSCON_0 | EVENT_CSCON_1);
+	} else if (!strncmp(line, "+CEREG: ", 8) && ctr_lte_v2_parse_cereg_is_urc(&line[8])) {
+		struct ctr_lte_v2_cereg_param param;
+
+		if (ctr_lte_v2_parse_urc_cereg(&line[8], &param)) {
+			return;
+		}
+
+		bool registered = param.stat == CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_HOME ||
+				  param.stat == CTR_LTE_V2_CEREG_PARAM_STAT_REGISTERED_ROAMING;
+
+		k_event_set_masked(&m_flow_events, registered ? EVENT_REGISTERED : 0,
+				   EVENT_REGISTERED);
+	}
+}
+#endif
+
 static void process_urc(const char *line)
 {
 	LOG_INF("URC: %s", line);
@@ -95,6 +125,16 @@ static void process_urc(const char *line)
 		if (!strcmp(line, "Ready")) {
 			k_sem_give(&m_ready_sem);
 		}
+
+#if defined(CONFIG_CTR_LTE_V2_SCAN)
+		/* The measurement the shell armed */
+		if (!strncmp(line, "%NCELLMEAS: ", 12) &&
+		    ctr_lte_v2_state_ncellmeas_urc(&line[12])) {
+			k_sem_give(&m_ncellmeas_sem);
+		}
+
+		process_urc_test_scan(line);
+#endif
 
 		if (m_bypass_cb) {
 			m_bypass_cb(m_bypass_user_data, (const uint8_t *)line, strlen(line));
@@ -292,6 +332,33 @@ static int fill_bands(char *bands)
 	return 0;
 }
 
+int ctr_lte_v2_flow_system_mode(const char *mode)
+{
+	int gnss_mode = 0;
+#if defined(CONFIG_CTR_LTE_V2_GNSS)
+	gnss_mode = 1;
+#endif
+
+	char *pos_let_m = strstr(mode, "lte-m");
+	char *pos_nb_iot = strstr(mode, "nb-iot");
+
+	int lte_m_mode = pos_let_m ? 1 : 0;
+	int nb_iot_mode = pos_nb_iot ? 1 : 0;
+	int preference = 0;
+	if (pos_let_m && pos_nb_iot) {
+		preference = pos_let_m < pos_nb_iot ? 1 : 2;
+	}
+
+	int ret = ctr_lte_v2_talk_at_xsystemmode(&m_talk, lte_m_mode, nb_iot_mode, gnss_mode,
+						 preference);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_xsystemmode` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int ctr_lte_v2_flow_prepare(const char *mode)
 {
 	int ret;
@@ -387,25 +454,8 @@ int ctr_lte_v2_flow_prepare(const char *mode)
 		return ret;
 	}
 
-	int gnss_mode = 0;
-#if defined(CONFIG_CTR_LTE_V2_GNSS)
-	gnss_mode = 1;
-#endif
-
-	char *pos_let_m = strstr(mode, "lte-m");
-	char *pos_nb_iot = strstr(mode, "nb-iot");
-
-	int lte_m_mode = pos_let_m ? 1 : 0;
-	int nb_iot_mode = pos_nb_iot ? 1 : 0;
-	int preference = 0;
-	if (pos_let_m && pos_nb_iot) {
-		preference = pos_let_m < pos_nb_iot ? 1 : 2;
-	}
-
-	ret = ctr_lte_v2_talk_at_xsystemmode(&m_talk, lte_m_mode, nb_iot_mode, gnss_mode,
-					     preference);
+	ret = ctr_lte_v2_flow_system_mode(mode);
 	if (ret) {
-		LOG_ERR("Call `ctr_lte_v2_talk_at_xsystemmode` failed: %d", ret);
 		return ret;
 	}
 
@@ -502,7 +552,7 @@ int ctr_lte_v2_flow_prepare(const char *mode)
 		return ret;
 	}
 
-	if (gnss_mode) {
+	if (IS_ENABLED(CONFIG_CTR_LTE_V2_GNSS)) {
 		ctr_lte_v2_talk_at_cmd(&m_talk, "AT%XCOEX0=1,1,1565,1586");
 	}
 
@@ -1160,15 +1210,117 @@ int ctr_lte_v2_flow_coneval(void)
 }
 
 #if defined(CONFIG_CTR_LTE_V2_SCAN)
-int ctr_lte_v2_flow_ncellmeas(void)
+int ctr_lte_v2_flow_ncellmeas(char *err, size_t err_size)
 {
-	int ret = ctr_lte_v2_talk_at_ncellmeas(&m_talk, 5, CTR_LTE_V2_NCELLMEAS_CELL_MAX);
+	int ret = ctr_lte_v2_talk_at_ncellmeas(&m_talk, 5, CTR_LTE_V2_NCELLMEAS_CELL_MAX, err,
+					       err_size);
 	if (ret) {
 		LOG_ERR("Call `ctr_lte_v2_talk_at_ncellmeas` failed: %d", ret);
 		return ret;
 	}
 
 	return 0;
+}
+
+int ctr_lte_v2_flow_test_ncellmeas_start(char *err, size_t err_size)
+{
+	k_sem_reset(&m_ncellmeas_sem);
+
+	/* Before the command: the URC may come right after its OK */
+	ctr_lte_v2_state_ncellmeas_arm(true);
+
+	int ret = ctr_lte_v2_flow_ncellmeas(err, err_size);
+	if (ret) {
+		ctr_lte_v2_state_ncellmeas_disarm();
+		ctr_lte_v2_state_set_ncellmeas_result(-EIO);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_v2_flow_test_ncellmeas_wait(k_timeout_t timeout)
+{
+	return k_sem_take(&m_ncellmeas_sem, timeout) ? -EAGAIN : 0;
+}
+
+int ctr_lte_v2_flow_test_ncellmeas_end(bool urc)
+{
+	int result;
+
+	if (urc) {
+		result = ctr_lte_v2_state_ncellmeas_valid() ? 0 : -EBADMSG;
+	} else {
+		/* Still armed: the cells found so far come right after the OK */
+		int ret = ctr_lte_v2_flow_ncellmeas_stop();
+		if (ret) {
+			LOG_WRN("Call `ctr_lte_v2_flow_ncellmeas_stop` failed: %d", ret);
+		}
+
+		(void)k_sem_take(&m_ncellmeas_sem, K_SECONDS(2));
+		result = -ETIMEDOUT;
+	}
+
+	ctr_lte_v2_state_ncellmeas_disarm();
+	ctr_lte_v2_state_set_ncellmeas_result(result);
+
+	return result;
+}
+
+int ctr_lte_v2_flow_test_link_up(void)
+{
+	if (atomic_get(&m_started)) {
+		return 0;
+	}
+
+	int ret = ctr_lte_v2_flow_enable(false);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_flow_enable` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_v2_flow_wake_up_and_wait_on_ready();
+	if (ret) {
+		LOG_WRN("Call `ctr_lte_v2_flow_wake_up_and_wait_on_ready` failed: %d", ret);
+		/* Off again: the next attempt wakes the modem anew */
+		(void)ctr_lte_v2_flow_disable(false);
+		return ret;
+	}
+
+	return 0;
+}
+
+int ctr_lte_v2_flow_test_subscribe(void)
+{
+	int ret = ctr_lte_v2_talk_at_cereg(&m_talk, 5);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cereg` failed: %d", ret);
+		return ret;
+	}
+
+	ret = ctr_lte_v2_talk_at_cscon(&m_talk, 1);
+	if (ret) {
+		LOG_ERR("Call `ctr_lte_v2_talk_at_cscon` failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+void ctr_lte_v2_flow_test_attach_begin(void)
+{
+	k_event_clear(&m_flow_events, EVENT_CSCON_0 | EVENT_CSCON_1 | EVENT_REGISTERED);
+}
+
+bool ctr_lte_v2_flow_test_wait_cscon(bool connected, k_timeout_t timeout)
+{
+	return k_event_wait(&m_flow_events, connected ? EVENT_CSCON_1 : EVENT_CSCON_0, false,
+			    timeout) != 0;
+}
+
+bool ctr_lte_v2_flow_test_wait_registered(k_timeout_t timeout)
+{
+	return k_event_wait(&m_flow_events, EVENT_REGISTERED, false, timeout) != 0;
 }
 
 int ctr_lte_v2_flow_ncellmeas_stop(void)

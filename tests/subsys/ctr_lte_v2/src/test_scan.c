@@ -83,12 +83,23 @@
 static atomic_t m_cb_count;
 static atomic_t m_scan_cb_count;
 
+/* Set: the next callback of an end holds the FSM for 2 s, given once it starts */
+static atomic_t m_cb_slow;
+static K_SEM_DEFINE(m_cb_slow_sem, 0, 1);
+
 static void cb_handler(struct ctr_lte_v2_cb *cb, enum ctr_lte_v2_cb_event event)
 {
 	if (event == CTR_LTE_V2_CB_EVENT_NCELLMEAS_DONE) {
 		atomic_inc(&m_cb_count);
 	} else if (event == CTR_LTE_V2_CB_EVENT_SCAN_DONE) {
 		atomic_inc(&m_scan_cb_count);
+	} else {
+		return;
+	}
+
+	if (atomic_cas(&m_cb_slow, 1, 0)) {
+		k_sem_give(&m_cb_slow_sem);
+		k_sleep(K_SECONDS(2));
 	}
 }
 
@@ -228,6 +239,24 @@ static __maybe_unused const char *scan_now_text(const char *first, int n, const 
 	}
 
 	snprintf(buf + len, sizeof(buf) - len, "%scommand succeeded\n", result);
+
+	return buf;
+}
+
+/* The output of 'lte ncellmeas now': the first line, the progress every 30 s (n times), the end */
+static __maybe_unused const char *ncellmeas_now_text(const char *first, int n, const char *end)
+{
+	static char buf[2048];
+	size_t len = snprintf(buf, sizeof(buf), "%smeasuring, this takes minutes...\n", first);
+
+	for (int i = 1; i <= n; i++) {
+		char took[24];
+
+		ctr_util_fmt_duration(30 * i, took, sizeof(took));
+		len += snprintf(buf + len, sizeof(buf) - len, "still measuring (%s)\n", took);
+	}
+
+	snprintf(buf + len, sizeof(buf) - len, "%s", end);
 
 	return buf;
 }
@@ -566,6 +595,14 @@ ZTEST(scan, test_ncellmeas_fail)
 	assert_result(-ETIMEDOUT, 3, true);
 	zassert_equal(atomic_get(&m_cb_count), 2);
 	ASSERT_FSM_STATE("ready");
+	/* Stopped at its bound: failed, with the cells found so far */
+	assert_show(
+		"ago, failed\n",
+		"cell: 074FEB50, plmn: 23002, tac: 05F2, earfcn: 6300, pci: 488, rsrp: -74 dBm, "
+		"serving\n"
+		"cell: 074FEB51, plmn: 23002, tac: 05F2, earfcn: 6300, pci: 339, rsrp: -75 dBm\n"
+		"cell: 000AE5CA, plmn: 23003, tac: 8DCC, earfcn: 3544, pci: 135, rsrp: -66 dBm\n"
+		"command succeeded\n");
 
 	/* 4. The stop without a URC: the window after it ends empty */
 
@@ -584,6 +621,7 @@ ZTEST(scan, test_ncellmeas_fail)
 		     "ended %lld ms after the stop", k_uptime_get() - mock_ctr_lte_link_tx_time(1));
 	assert_result(-ETIMEDOUT, 0, false);
 	mock_ctr_lte_link_assert_done();
+	assert_show("ago, failed\n", "command succeeded\n");
 
 	/* 5. Rejected: ends at once, no stop */
 
@@ -601,6 +639,7 @@ ZTEST(scan, test_ncellmeas_fail)
 	k_sleep(K_MSEC(500));
 	mock_ctr_lte_link_assert_done();
 	ASSERT_FSM_STATE("ready");
+	assert_show("ago, failed\n", "command succeeded\n");
 
 	/* 6. A URC cut in the second cell: nothing of it is kept */
 
@@ -617,6 +656,7 @@ ZTEST(scan, test_ncellmeas_fail)
 	zassert_ok(ctr_lte_v2_wait_for_ncellmeas(K_SECONDS(5)));
 	assert_result(-EBADMSG, 0, false);
 	mock_ctr_lte_link_assert_done();
+	assert_show("ago, failed\n", "command succeeded\n");
 
 	/* 7. A request whose event the full ring dropped: the repeated request posts it again. The
 	 * cooperative test thread does not let the FSM thread run until it sleeps */
@@ -646,7 +686,31 @@ ZTEST(scan, test_ncellmeas_fail)
 	mock_ctr_lte_link_assert_done();
 	zassert_equal(atomic_get(&m_cb_count), 6);
 
-	/* 8. The modem enters PSM during a measurement that gets no URC: the ready state gets the
+	/* 8. The status of the URC as hio shows it: 1 failed (no cells), others by number */
+
+	/* clang-format off */
+	static struct mock_link_item items_status[] = {
+		{"AT%NCELLMEAS=5,7", "OK"},
+		URC(1000, "%NCELLMEAS: 1"),
+		{"AT%NCELLMEAS=5,7", "OK"},
+		URC(1000, "%NCELLMEAS: 3"),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_status, ARRAY_SIZE(items_status));
+
+	zassert_ok(ctr_lte_v2_schedule_ncellmeas());
+	zassert_ok(ctr_lte_v2_wait_for_ncellmeas(K_SECONDS(5)));
+	assert_result(0, 0, true);
+	assert_show("ago, failed\n", "command succeeded\n");
+
+	zassert_ok(ctr_lte_v2_schedule_ncellmeas());
+	zassert_ok(ctr_lte_v2_wait_for_ncellmeas(K_SECONDS(5)));
+	assert_result(0, 0, true);
+	assert_show("ago, status 3\n", "command succeeded\n");
+	mock_ctr_lte_link_assert_done();
+
+	/* 9. The modem enters PSM during a measurement that gets no URC: the ready state gets the
 	 * sleep announced in the measurement state */
 
 	/* clang-format off */
@@ -667,7 +731,7 @@ ZTEST(scan, test_ncellmeas_fail)
 	stack_wait_for_state("sleep", K_SECONDS(2));
 	k_sleep(K_MSEC(500));
 	mock_ctr_lte_link_assert_done();
-	zassert_equal(atomic_get(&m_cb_count), 7);
+	zassert_equal(atomic_get(&m_cb_count), 9);
 }
 #endif
 
@@ -976,13 +1040,16 @@ ZTEST(scan, test_scan_both)
 	ASSERT_FSM_STATE("scan");
 	zassert_equal(ctr_lte_v2_scan(CTR_LTE_V2_SCAN_ALL), -EALREADY);
 	zassert_equal(ctr_lte_v2_schedule_ncellmeas(), -EBUSY);
-	assert_shell_fails("lte ncellmeas", -EBUSY, "scan in progress");
+	assert_shell_fails("lte ncellmeas schedule", -EBUSY, "scan in progress");
+	assert_shell_fails("lte ncellmeas now", -EBUSY,
+			   "measurement not possible: scan in progress (fsm-state: scan)");
+	zassert_ok(ctr_lte_v2_wait_for_ncellmeas(K_NO_WAIT));
 	zassert_equal(ctr_lte_v2_wait_for_connected(K_NO_WAIT), -ETIMEDOUT);
 	zassert_equal(ctr_lte_v2_wait_for_scan(K_NO_WAIT), -ETIMEDOUT);
 
 	/* While it runs, the previous result: none yet */
 	const char *out = shell_out("lte scan show");
-	zassert_str_equal(out, "no scan yet\n", "%s", out);
+	zassert_str_equal(out, "no scan yet\ncommand succeeded\n", "%s", out);
 
 	zassert_ok(ctr_lte_v2_wait_for_scan(K_SECONDS(600)));
 	/* Published before the restore */
@@ -1024,7 +1091,8 @@ ZTEST(scan, test_scan_both)
 		"  cell: 074FEB51, act: lte-m, tac: 05F2, earfcn: 6300, pci: 339, rsrp: -76 dBm\n"
 		"plmn: 23003, act: lte-m,nb-iot, stat: available\n"
 		"  cell: 000AE5CA, act: lte-m, tac: 8DCC, earfcn: 3544, pci: 135, rsrp: -66 dBm\n"
-		"networks: 3 (6 with act), cells: 5\n",
+		"networks: 3 (6 with act), cells: 5\n"
+		"command succeeded\n",
 		"%s", out);
 	k_sleep(K_SECONDS(65));
 	out = shell_out("lte scan show");
@@ -1051,7 +1119,7 @@ ZTEST(scan, test_scan_one_rat)
 	stack_attach();
 
 	const char *out = shell_out("lte scan show");
-	zassert_str_equal(out, "no scan yet\n", "%s", out);
+	zassert_str_equal(out, "no scan yet\ncommand succeeded\n", "%s", out);
 
 	/* clang-format off */
 	static struct mock_link_item items[] = {
@@ -1194,7 +1262,8 @@ ZTEST(scan, test_scan_timeouts)
 		"plmn: 26208, act: lte-m, stat: available\n"
 		"plmn: 26209, act: lte-m, stat: available\n"
 		"plmn: 26210, act: lte-m, stat: available\n"
-		"networks: 10 (12 with act, 10 stored), cells: 3\n",
+		"networks: 10 (12 with act, 10 stored), cells: 3\n"
+		"command succeeded\n",
 		"%s", out);
 
 	/* The step also leaves its cells to 'lte ncellmeas show' */
@@ -1334,11 +1403,12 @@ ZTEST(scan, test_scan_step_fail)
 	assert_tx_time(TX_INDEX(items_boot, "AT", 1), start + 10000);
 
 	/* 3. 'lte scan now' while the restore waits for Ready: a reconnect drops the request, no
-	 * result of it */
+	 * result of it. The stop takes 3 s (no answer to AT#XSLEEP), the state reads disabled
+	 * meanwhile: still 'scan dropped' */
 
 	/* clang-format off */
 	static struct mock_link_item items_drop[] = {
-		{"AT#XSLEEP=2", "OK"},
+		{"AT#XSLEEP=2"},
 		ITEMS_SCAN_RESTORE_RESET,
 	};
 	/* clang-format on */
@@ -1381,6 +1451,9 @@ ZTEST(scan, test_scan_step_fail)
 	assert_shell_fails("lte scan now", -EBUSY,
 			   "scan not possible: LTE error, retrying (fsm-state: error)");
 	zassert_ok(ctr_lte_v2_wait_for_scan(K_NO_WAIT));
+	assert_shell_fails("lte ncellmeas now", -EBUSY,
+			   "measurement not possible: LTE error, retrying (fsm-state: error)");
+	zassert_ok(ctr_lte_v2_wait_for_ncellmeas(K_NO_WAIT));
 	assert_restored();
 	zassert_equal(atomic_get(&m_scan_cb_count), 4);
 }
@@ -1769,7 +1842,7 @@ ZTEST(scan, test_scan_in_attach)
 
 #if defined(CONFIG_TEST_FEATURE_SCAN_SCAN_IN_RETRY_DELAY)
 /* The device that does not attach (NB-IoT, rejected as on the board with PSM): the scan cuts the
- * retry delay short and runs after the attach starts */
+ * retry delay short and runs after the attach starts. 'lte ncellmeas now' is refused there */
 ZTEST(scan, test_scan_in_retry_delay)
 {
 	/* clang-format off */
@@ -1811,6 +1884,12 @@ ZTEST(scan, test_scan_in_retry_delay)
 	zassert_ok(ctr_lte_v2_get_curr_attach_info(&attempt, NULL, NULL, NULL));
 	zassert_equal(attempt, 3);
 
+	/* The measurement would wait for the next attach, an hour here: no request */
+	assert_shell_fails("lte ncellmeas now", -EBUSY,
+			   "measurement not possible: not registered, retrying attach "
+			   "(fsm-state: retry_delay)");
+	zassert_ok(ctr_lte_v2_wait_for_ncellmeas(K_NO_WAIT));
+
 	zassert_ok(ctr_lte_v2_scan(CTR_LTE_V2_SCAN_ALL));
 	stack_wait_for_state("scan", K_SECONDS(30));
 
@@ -1843,7 +1922,8 @@ ZTEST(scan, test_scan_in_retry_delay)
 		"  cell: 074FEB56, act: nb-iot, tac: 2D02, earfcn: 6348, pci: 339, rsrp: -70 dBm\n"
 		"plmn: 23003, act: nb-iot, stat: available\n"
 		"  cell: 000AE520, act: nb-iot, tac: B4DC, earfcn: 6447, pci: 135, rsrp: -56 dBm\n"
-		"networks: 3 (3 with act), cells: 3\n",
+		"networks: 3 (3 with act), cells: 3\n"
+		"command succeeded\n",
 		"%s", out);
 
 	assert_restored();
@@ -1974,6 +2054,10 @@ ZTEST(scan, test_scan_reset_loop)
 		"lte scan now", -EBUSY,
 		"scan not possible: modem reset loop, attach blocked (fsm-state: reset_loop)");
 	zassert_ok(ctr_lte_v2_wait_for_scan(K_NO_WAIT));
+	assert_shell_fails("lte ncellmeas now", -EBUSY,
+			   "measurement not possible: modem reset loop, attach blocked "
+			   "(fsm-state: reset_loop)");
+	zassert_ok(ctr_lte_v2_wait_for_ncellmeas(K_NO_WAIT));
 
 	/* 2. Deferred, then dropped: the waiting caller returns, no callback, no scan */
 
@@ -2002,7 +2086,8 @@ ZTEST(scan, test_scan_reset_loop)
 	zassert_str_equal(out,
 			  "last scan: * ago (request)\n"
 			  "search: lte-m cells not run, nb-iot cells not run, networks not run\n"
-			  "networks: 0 (0 with act), cells: 0\n",
+			  "networks: 0 (0 with act), cells: 0\n"
+			  "command succeeded\n",
 			  "%s", out);
 
 	stack_shell_cmd("lte reconnect");
@@ -2097,6 +2182,15 @@ ZTEST(scan, test_scan_reset_loop)
 	"  cell: 000AE5CA, act: lte-m, tac: 8DCC, earfcn: 3544, pci: 135, rsrp: -66 dBm\n"         \
 	"networks: 0 (0 with act), cells: 3\n"
 
+/* The result of the networks only below, in the order of MCC and MNC */
+#define SHOW_SCAN_BUSY                                                                             \
+	"last scan: * ago (request)\n"                                                             \
+	"search: lte-m cells not run, nb-iot cells not run, networks partial\n"                    \
+	"plmn: 23003, act: lte-m, stat: available\n"                                               \
+	"plmn: 310410, act: lte-m, stat: current\n"                                                \
+	"plmn: 311090, act: lte-m, stat: available\n"                                              \
+	"networks: 3 (3 with act), cells: 0\n"
+
 /* Both RATs: the shell without a mode, the bad words, test mode; the cells only ('lte scan now
  * cells', it waits), then the networks only ('lte scan schedule plmn', at once) joined by 'lte scan
  * now'. A mode skips its step in each RAT; CFUN=0 before a reset only after an answer */
@@ -2106,8 +2200,8 @@ ZTEST(scan, test_scan_modes)
 	assert_shell_fails("lte scan now", -EBUSY,
 			   "scan not possible: LTE is disabled (fsm-state: disabled)");
 	assert_shell_fails("lte scan schedule", -ENODEV, "command failed");
+	/* Test mode: 'now' runs the steps directly (test_test_mode) */
 	g_ctr_lte_v2_config.test = true;
-	assert_shell_fails("lte scan now", -ENOEXEC, "not supported in test mode");
 	assert_shell_fails("lte scan schedule cells", -ENOEXEC, "not supported in test mode");
 	g_ctr_lte_v2_config.test = false;
 	zassert_equal(ctr_lte_v2_scan(CTR_LTE_V2_SCAN_CELLS + 1), -EINVAL);
@@ -2126,7 +2220,7 @@ ZTEST(scan, test_scan_modes)
 	zassert_ok(ctr_lte_v2_wait_for_scan(K_NO_WAIT));
 	ASSERT_FSM_STATE("ready");
 	out = shell_out("lte scan show");
-	zassert_str_equal(out, "no scan yet\n", "%s", out);
+	zassert_str_equal(out, "no scan yet\ncommand succeeded\n", "%s", out);
 
 	/* 1. The cells only */
 
@@ -2202,7 +2296,7 @@ ZTEST(scan, test_scan_modes)
 
 	/* The previous result while it runs */
 	out = no_ages(shell_out("lte scan show"));
-	zassert_str_equal(out, SHOW_SCAN_CELLS, "%s", out);
+	zassert_str_equal(out, SHOW_SCAN_CELLS "command succeeded\n", "%s", out);
 
 	out = no_ages(shell_out("lte scan now"));
 	zassert_str_equal(out,
@@ -2251,17 +2345,538 @@ ZTEST(scan, test_scan_modes)
 		       URC_TIME(items_busy, CEREG_NO_PSM, 1) + T_IDLE_MS);
 	assert_scan(0, -ENODATA, 0, -ETIMEDOUT, -ENODATA, -EIO, 0, 3);
 
-	/* In the order of MCC and MNC */
 	out = no_ages(shell_out("lte scan show"));
-	zassert_str_equal(out,
-			  "last scan: * ago (request)\n"
-			  "search: lte-m cells not run, nb-iot cells not run, networks partial\n"
-			  "plmn: 23003, act: lte-m, stat: available\n"
-			  "plmn: 310410, act: lte-m, stat: current\n"
-			  "plmn: 311090, act: lte-m, stat: available\n"
-			  "networks: 3 (3 with act), cells: 0\n",
-			  "%s", out);
+	zassert_str_equal(out, SHOW_SCAN_BUSY "command succeeded\n", "%s", out);
 	assert_restored();
+
+	/* 4. 'lte scan now' while the callbacks of the end run: it joins the scan that has ended
+	 * and prints its result, not 'scan dropped' */
+	zassert_ok(ctr_lte_v2_add_callback(&m_cb));
+	mock_ctr_lte_link_start(items_busy, ARRAY_SIZE(items_busy));
+	atomic_set(&m_cb_slow, 1);
+	zassert_ok(ctr_lte_v2_scan(CTR_LTE_V2_SCAN_PLMN));
+	zassert_ok(k_sem_take(&m_cb_slow_sem, K_SECONDS(600)));
+
+	int ret;
+
+	shell_bg_start("lte scan now");
+	out = shell_bg_join(&ret, K_SECONDS(30));
+	zassert_ok(ret, "%s", out);
+	out = no_ages(out);
+	zassert_str_equal(
+		out, scan_now_text("scan already in progress, waiting for it\n", 0, SHOW_SCAN_BUSY),
+		"%s", out);
+	assert_restored();
+	zassert_ok(ctr_lte_v2_wait_for_scan(K_NO_WAIT));
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_SCAN_NCELLMEAS_SHELL)
+/* 'lte ncellmeas': the help alone, the refusals, 'now' with its progress, joining a request, a
+ * dropped request, and the bound while the GNSS holds the request */
+ZTEST(scan, test_ncellmeas_shell)
+{
+	int ret;
+
+	/* Disabled: no request */
+	assert_shell_fails("lte ncellmeas now", -EBUSY,
+			   "measurement not possible: LTE is disabled (fsm-state: disabled)");
+	assert_shell_fails("lte ncellmeas schedule", -ENODEV, "command failed");
+	g_ctr_lte_v2_config.test = true;
+	assert_shell_fails("lte ncellmeas schedule", -ENOEXEC, "not supported in test mode");
+	g_ctr_lte_v2_config.test = false;
+	const char *out = shell_out("lte ncellmeas show");
+	zassert_str_equal(out, "no measurement yet\ncommand succeeded\n", "%s", out);
+
+	stack_attach();
+
+	/* The help alone, no request */
+	out = shell_out("lte ncellmeas");
+	zassert_true(strstr(out, "Subcommands:") && strstr(out, "now") && strstr(out, "schedule") &&
+			     strstr(out, "show"),
+		     "%s", out);
+	assert_shell_fails("lte ncellmeas foo", -EINVAL, "command not found: foo");
+	assert_shell_fails("lte ncellmeas now foo", -EINVAL, "wrong parameter count");
+	zassert_ok(ctr_lte_v2_wait_for_ncellmeas(K_NO_WAIT));
+
+	/* 1. The RRC connection stays open: measured at the end of the idle bound, a line each
+	 * 30 s */
+
+	/* clang-format off */
+	static struct mock_link_item items_idle[] = {
+		{"AT%NCELLMEAS=5,7", "OK"},
+		URC(5000, "%NCELLMEAS: " HW_NCELLMEAS_REGISTERED),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_idle, ARRAY_SIZE(items_idle));
+	int64_t start = k_uptime_get();
+
+	shell_bg_start("lte ncellmeas now");
+	out = shell_bg_join(&ret, K_SECONDS(100));
+	zassert_ok(ret, "%s", out);
+	zassert_str_equal(out, ncellmeas_now_text("", 2, "ncellmeas: 0s ago, ok\n" SHOW_REGISTERED),
+			  "%s", out);
+	assert_tx_time(0, start + T_IDLE_MS);
+	mock_ctr_lte_link_assert_done();
+
+	/* 2. Requested already: 'now' waits for it */
+
+	/* clang-format off */
+	static struct mock_link_item items_join[] = {
+		URC(2000, "+CSCON: 0"),
+		{"AT%NCELLMEAS=5,7", "OK"},
+		URC(1000, "%NCELLMEAS: " HW_NCELLMEAS_REGISTERED),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_join, ARRAY_SIZE(items_join));
+
+	out = shell_out("lte ncellmeas schedule");
+	zassert_str_equal(out, "command succeeded\n", "%s", out);
+	out = shell_out("lte ncellmeas schedule");
+	zassert_str_equal(out, "command succeeded\n", "%s", out);
+
+	shell_bg_start("lte ncellmeas now");
+	out = shell_bg_join(&ret, K_SECONDS(30));
+	zassert_ok(ret, "%s", out);
+	zassert_str_equal(out,
+			  ncellmeas_now_text("measurement already in progress, waiting for it\n", 0,
+					     "ncellmeas: 0s ago, ok\n" SHOW_REGISTERED),
+			  "%s", out);
+	mock_ctr_lte_link_assert_done();
+
+	/* 2b. 'now' while the callbacks of the end run: it joins the measurement that has ended and
+	 * prints its result, not 'measurement dropped' */
+
+	/* clang-format off */
+	static struct mock_link_item items_ended[] = {
+		{"AT%NCELLMEAS=5,7", "OK"},
+		URC(1000, "%NCELLMEAS: " HW_NCELLMEAS_REGISTERED),
+	};
+	/* clang-format on */
+
+	zassert_ok(ctr_lte_v2_add_callback(&m_cb));
+	mock_ctr_lte_link_start(items_ended, ARRAY_SIZE(items_ended));
+	atomic_set(&m_cb_slow, 1);
+	zassert_ok(ctr_lte_v2_schedule_ncellmeas());
+	zassert_ok(k_sem_take(&m_cb_slow_sem, K_SECONDS(30)));
+
+	shell_bg_start("lte ncellmeas now");
+	out = no_ages(shell_bg_join(&ret, K_SECONDS(30)));
+	zassert_ok(ret, "%s", out);
+	zassert_str_equal(out,
+			  ncellmeas_now_text("measurement already in progress, waiting for it\n", 0,
+					     "ncellmeas: * ago, ok\n" SHOW_REGISTERED),
+			  "%s", out);
+	zassert_ok(ctr_lte_v2_wait_for_ncellmeas(K_NO_WAIT));
+	zassert_ok(ctr_lte_v2_remove_callback(&m_cb));
+	mock_ctr_lte_link_assert_done();
+
+	/* 3. Requested during the attach, LTE reconnects: dropped, no result of it */
+
+	/* clang-format off */
+	static struct mock_link_item items_drop[] = {
+		URC(100, "+CEREG: 2,\"B4DC\",\"000AE520\",9"),
+		{"AT#XSLEEP=2", "OK"},
+		ITEMS_PREPARE,
+		ITEMS_REGISTER,
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_drop, ARRAY_SIZE(items_drop));
+	stack_wait_for_state("attach", K_SECONDS(2));
+
+	shell_bg_start("lte ncellmeas now");
+	k_sleep(K_MSEC(100));
+	ASSERT_FSM_STATE("attach");
+	zassert_ok(ctr_lte_v2_reconnect());
+	out = shell_bg_join(&ret, K_SECONDS(30));
+	zassert_equal(ret, -ECANCELED, "%s", out);
+	zassert_str_equal(out, "measuring, this takes minutes...\nmeasurement dropped\n", "%s",
+			  out);
+
+	zassert_ok(ctr_lte_v2_wait_for_connected(K_SECONDS(30)));
+	k_sleep(K_SECONDS(2));
+	ASSERT_FSM_STATE("ready");
+	mock_ctr_lte_link_assert_done();
+
+	/* 4. The GNSS holds the request beyond the bound: it stays, measured after the GNSS */
+
+	/* clang-format off */
+	static struct mock_link_item items_gnss[] = {
+		{"AT#XGPS=1,0,1"},
+	};
+
+	static struct mock_link_item items_after[] = {
+		{"AT#XGPS=0"},
+		URC(1000, "+CSCON: 0"),
+		{"AT%NCELLMEAS=5,7", "OK"},
+		URC(1000, "%NCELLMEAS: " HW_NCELLMEAS_REGISTERED),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_gnss, ARRAY_SIZE(items_gnss));
+	zassert_ok(ctr_lte_v2_gnss_set_enable(true));
+	stack_wait_for_state("gnss", K_SECONDS(2));
+	k_sleep(K_MSEC(500));
+	mock_ctr_lte_link_assert_done();
+
+	shell_bg_start("lte ncellmeas now");
+	out = shell_bg_join(&ret, K_SECONDS(700));
+	zassert_equal(ret, -ETIMEDOUT, "%s", out);
+	zassert_str_equal(out, ncellmeas_now_text("", 19, "measurement did not finish\n"), "%s",
+			  out);
+	zassert_equal(ctr_lte_v2_wait_for_ncellmeas(K_NO_WAIT), -ETIMEDOUT);
+	ASSERT_FSM_STATE("gnss");
+
+	mock_ctr_lte_link_start(items_after, ARRAY_SIZE(items_after));
+	zassert_ok(ctr_lte_v2_gnss_set_enable(false));
+	zassert_ok(ctr_lte_v2_wait_for_ncellmeas(K_SECONDS(10)));
+	assert_result(0, 4, true);
+	mock_ctr_lte_link_assert_done();
+}
+#endif
+
+#if defined(CONFIG_TEST_FEATURE_SCAN_TEST_MODE)
+/* The result of 'lte scan now' below */
+#define SHOW_SCAN_TEST_MODE                                                                        \
+	"last scan: * ago (request)\n"                                                             \
+	"search: lte-m cells ok, nb-iot cells partial, networks partial\n"                         \
+	"plmn: 23001, act: lte-m,nb-iot, stat: available\n"                                        \
+	"  cell: 074FEB0C, act: lte-m, tac: 3866, earfcn: 6200, pci: 14, rsrp: -75 dBm\n"          \
+	"  cell: 074FEBAC, act: nb-iot, tac: 28B4, earfcn: 6247, pci: 14, rsrp: -68 dBm\n"         \
+	"plmn: 23002, act: lte-m, stat: current\n"                                                 \
+	"  cell: 074FEB50, act: lte-m, tac: 05F2, earfcn: 6300, pci: 488, rsrp: -74 dBm\n"         \
+	"  cell: 074FEB51, act: lte-m, tac: 05F2, earfcn: 6300, pci: 339, rsrp: -76 dBm\n"         \
+	"plmn: 23003, act: lte-m, stat: available\n"                                               \
+	"  cell: 000AE5CA, act: lte-m, tac: 8DCC, earfcn: 3544, pci: 135, rsrp: -66 dBm\n"         \
+	"networks: 3 (3 with act), cells: 5\n"
+
+/* clang-format off */
+/* The test mode scan: the switch to a RAT, and the end in the configured RATs. CFUN=0 drops the
+ * subscriptions of the URCs the scan waits for (the mock models it): they come after it */
+#define ITEMS_TEST_SCAN_RAT(sysmode) \
+	{"AT+CFUN=0", "OK"}, \
+	{"AT%XSYSTEMMODE=" sysmode, "OK"}, \
+	{"AT+CEREG=5", "OK"}, \
+	{"AT+CSCON=1", "OK"}, \
+	{"AT+CFUN=1", "OK"}
+
+#define ITEMS_TEST_SCAN_RESTORE ITEMS_TEST_SCAN_RAT(SYSMODE)
+/* clang-format on */
+
+/* Test mode, no FSM: 'now' runs the steps directly and brings the link up, 'schedule' refuses */
+ZTEST(scan, test_test_mode)
+{
+	int ret;
+
+	g_ctr_lte_v2_config.test = true;
+	/* As the hardware: the scan gets its URCs only if it subscribes after CFUN=0 */
+	mock_ctr_lte_link_model_subscriptions(true);
+
+	assert_shell_fails("lte scan schedule", -ENOEXEC, "not supported in test mode");
+	assert_shell_fails("lte ncellmeas schedule", -ENOEXEC, "not supported in test mode");
+
+	/* 0. The link is off and the modem does not send Ready: no AT command, the UART off again
+	 * (each command wakes the modem anew) */
+
+	mock_ctr_lte_link_start(NULL, 0);
+	mock_ctr_lte_link_drop_ready(1);
+	int64_t start = k_uptime_get();
+
+	shell_bg_start("lte ncellmeas now");
+	const char *out = shell_bg_join(&ret, K_SECONDS(30));
+	zassert_equal(ret, -EIO, "%s", out);
+	zassert_str_equal(out, "measurement not possible: modem not ready\n", "%s", out);
+	/* At the bound of the wait for Ready */
+	zassert_true(k_uptime_get() - start >= 10000);
+
+	mock_ctr_lte_link_drop_ready(1);
+	shell_bg_start("lte scan now");
+	out = shell_bg_join(&ret, K_SECONDS(30));
+	zassert_equal(ret, -EIO, "%s", out);
+	zassert_str_equal(out, "scan not possible: modem not ready\n", "%s", out);
+	mock_ctr_lte_link_assert_done();
+
+	/* 1. The link comes up (Ready), the modem refuses the measurement: its line */
+
+	/* clang-format off */
+	static struct mock_link_item items_cme[] = {
+		{"AT%NCELLMEAS=5,7", "+CME ERROR: 0"},
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_cme, ARRAY_SIZE(items_cme));
+
+	shell_bg_start("lte ncellmeas now");
+	out = shell_bg_join(&ret, K_SECONDS(30));
+	zassert_equal(ret, -EIO, "%s", out);
+	zassert_str_equal(out, "measurement not possible: +CME ERROR: 0\n", "%s", out);
+	mock_ctr_lte_link_assert_done();
+	out = shell_out("lte ncellmeas show");
+	zassert_str_equal(out, "ncellmeas: 0s ago, failed\ncommand succeeded\n", "%s", out);
+
+	/* 2. The URC after 40 s; the link stays on, no wake-up (it would get no Ready) */
+
+	/* clang-format off */
+	static struct mock_link_item items_meas[] = {
+		{"AT%NCELLMEAS=5,7", "OK"},
+		URC(40000, "%NCELLMEAS: " HW_NCELLMEAS_REGISTERED),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_meas, ARRAY_SIZE(items_meas));
+	mock_ctr_lte_link_drop_ready(1);
+
+	shell_bg_start("lte ncellmeas now");
+	out = shell_bg_join(&ret, K_SECONDS(60));
+	zassert_ok(ret, "%s", out);
+	zassert_str_equal(out, ncellmeas_now_text("", 1, "ncellmeas: 0s ago, ok\n" SHOW_REGISTERED),
+			  "%s", out);
+	assert_result(0, 4, true);
+	mock_ctr_lte_link_assert_done();
+	mock_ctr_lte_link_drop_ready(0);
+
+	/* 3. No URC within the bound: stopped, the cells found so far */
+
+	/* clang-format off */
+	static struct mock_link_item items_stop[] = {
+		{"AT%NCELLMEAS=5,7", "OK"},
+		{"AT%NCELLMEASSTOP", "OK"},
+		URC(10, "%NCELLMEAS: " HW_NCELLMEAS_STOPPED),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_stop, ARRAY_SIZE(items_stop));
+
+	shell_bg_start("lte ncellmeas now");
+	out = shell_bg_join(&ret, K_SECONDS(700));
+	zassert_equal(ret, -ETIMEDOUT, "%s", out);
+	zassert_str_equal(out, ncellmeas_now_text("", 19, "measurement did not finish\n"), "%s",
+			  out);
+	assert_tx_time(1, mock_ctr_lte_link_tx_time(0) + 600000);
+	assert_result(-ETIMEDOUT, 3, true);
+	assert_show("ago, failed\n", "cell: 074FEB50, plmn: 23002, tac: 05F2, earfcn: 6300, pci: "
+				     "488, rsrp: -74 dBm, serving\n"
+				     "cell: 074FEB51, plmn: 23002, tac: 05F2, earfcn: 6300, pci: "
+				     "339, rsrp: -75 dBm\n"
+				     "cell: 000AE5CA, plmn: 23003, tac: 8DCC, earfcn: 3544, pci: "
+				     "135, rsrp: -66 dBm\n"
+				     "command succeeded\n");
+	mock_ctr_lte_link_assert_done();
+
+	/* 4. The scan of both RATs from the link off. LTE-M: the attach opens an RRC connection,
+	 * the cells after its release, the networks at once (registered); a connection opens
+	 * during the search. NB-IoT: the connection and the registration of LTE-M do not count, no
+	 * connection within its window, the cells after it, no URC within their bound; no
+	 * registration, the networks at the end of its bound, rejected. The end in the configured
+	 * RATs, CFUN=1 */
+
+	/* clang-format off */
+	static struct mock_link_item items_scan[] = {
+		ITEMS_TEST_SCAN_RAT("1,0,1,0"),
+		URC(3000, "+CSCON: 1"),
+		URC(50, CEREG_NO_PSM),
+		URC(25000, "+CSCON: 0"),
+		{"AT%NCELLMEAS=5,7", "OK"},
+		URC(50000, "%NCELLMEAS: " HW_NCELLMEAS_REGISTERED),
+		{"AT+COPS=?"},
+		URC(30000, "+CSCON: 1"),
+		URC(44000, "+COPS: " HW_COPS_LIST),
+		URC(0, "OK"),
+		ITEMS_TEST_SCAN_RAT("0,1,1,0"),
+		URC(5000, HW_CEREG_NBIOT_CAMPED),
+		{"AT%NCELLMEAS=5,7", "OK"},
+		{"AT%NCELLMEASSTOP", "OK"},
+		URC(10, "%NCELLMEAS: " HW_NCELLMEAS_NBIOT_CAMPED),
+		{"AT+COPS=?", "ERROR"},
+		ITEMS_TEST_SCAN_RESTORE,
+	};
+	/* clang-format on */
+
+	stack_shell_cmd("lte test uart disable");
+	mock_ctr_lte_link_start(items_scan, ARRAY_SIZE(items_scan));
+
+	shell_bg_start("lte scan now");
+	out = shell_bg_join(&ret, K_SECONDS(600));
+	zassert_ok(ret, "%s", out);
+	out = no_ages(out);
+	zassert_str_equal(out, scan_now_text("", 13, SHOW_SCAN_TEST_MODE), "%s", out);
+
+	assert_tx_time(TX_INDEX(items_scan, "AT%NCELLMEAS=5,7", 1),
+		       URC_TIME(items_scan, "+CSCON: 0", 1));
+	assert_tx_time(TX_INDEX(items_scan, "AT+COPS=?", 1),
+		       URC_TIME(items_scan, "%NCELLMEAS: " HW_NCELLMEAS_REGISTERED, 1));
+	assert_tx_time(TX_INDEX(items_scan, "AT%NCELLMEAS=5,7", 2),
+		       TX_TIME(items_scan, "AT+CFUN=1", 2) + 10000);
+	assert_tx_time(TX_INDEX(items_scan, "AT%NCELLMEASSTOP", 1),
+		       TX_TIME(items_scan, "AT%NCELLMEAS=5,7", 2) + T_MEASURE_MS);
+	assert_tx_time(TX_INDEX(items_scan, "AT+COPS=?", 2),
+		       TX_TIME(items_scan, "AT%NCELLMEASSTOP", 1) + 60000);
+	assert_scan(-ENODATA, 0, 0, -ENODATA, -ETIMEDOUT, -EIO, 5, 3);
+	zassert_equal(m_scan.mode, CTR_LTE_V2_SCAN_ALL);
+
+	out = no_ages(shell_out("lte scan show"));
+	zassert_str_equal(out, SHOW_SCAN_TEST_MODE "command succeeded\n", "%s", out);
+	k_sleep(K_SECONDS(1));
+	mock_ctr_lte_link_assert_done();
+
+	/* 5. The networks only: after the registration; the start of NB-IoT fails, the scan ends in
+	 * the configured RATs */
+
+	/* clang-format off */
+	static struct mock_link_item items_plmn[] = {
+		ITEMS_TEST_SCAN_RAT("1,0,1,0"),
+		URC(15000, CEREG_NO_PSM),
+		ITEMS_SCAN_COPS(1000, HW_COPS_LIST),
+		{"AT+CFUN=0", "ERROR"},
+		ITEMS_TEST_SCAN_RESTORE,
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_plmn, ARRAY_SIZE(items_plmn));
+
+	shell_bg_start("lte scan now plmn");
+	out = shell_bg_join(&ret, K_SECONDS(60));
+	zassert_ok(ret, "%s", out);
+	out = no_ages(out);
+	zassert_str_equal(out,
+			  scan_now_text("", 0,
+					"last scan: * ago (request)\n"
+					"search: lte-m cells not run, nb-iot cells not run, "
+					"networks ok\n"
+					"plmn: 23001, act: lte-m, stat: available\n"
+					"plmn: 23002, act: lte-m, stat: current\n"
+					"plmn: 23003, act: lte-m, stat: available\n"
+					"networks: 3 (3 with act), cells: 0\n"),
+			  "%s", out);
+	assert_tx_time(TX_INDEX(items_plmn, "AT+COPS=?", 1), URC_TIME(items_plmn, CEREG_NO_PSM, 1));
+	assert_scan(-ENODATA, -ENODATA, 0, -EIO, -ENODATA, -ENODATA, 0, 3);
+	zassert_equal(m_scan.mode, CTR_LTE_V2_SCAN_PLMN);
+	k_sleep(K_SECONDS(1));
+	mock_ctr_lte_link_assert_done();
+
+	/* 6. The cells only: the RRC connection stays, the cells at the end of the bound of its
+	 * release; no list */
+
+	/* clang-format off */
+	static struct mock_link_item items_cells[] = {
+		ITEMS_TEST_SCAN_RAT("1,0,1,0"),
+		URC(2000, "+CSCON: 1"),
+		{"AT%NCELLMEAS=5,7", "OK"},
+		URC(1000, "%NCELLMEAS: " HW_NCELLMEAS_REGISTERED),
+		{"AT+CFUN=0", "ERROR"},
+		ITEMS_TEST_SCAN_RESTORE,
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_cells, ARRAY_SIZE(items_cells));
+
+	shell_bg_start("lte scan now cells");
+	out = shell_bg_join(&ret, K_SECONDS(120));
+	zassert_ok(ret, "%s", out);
+	out = no_ages(out);
+	zassert_str_equal(
+		out,
+		scan_now_text("", 2,
+			      "last scan: * ago (request)\n"
+			      "search: lte-m cells ok, nb-iot cells not run, networks not run\n"
+			      "plmn: 23001, act: lte-m, stat: not in network list\n"
+			      "  cell: 074FEB0C, act: lte-m, tac: 3866, earfcn: 6200, pci: 14, "
+			      "rsrp: -75 dBm\n"
+			      "plmn: 23002, act: lte-m, stat: not in network list\n"
+			      "  cell: 074FEB50, act: lte-m, tac: 05F2, earfcn: 6300, pci: 488, "
+			      "rsrp: -74 dBm\n"
+			      "  cell: 074FEB51, act: lte-m, tac: 05F2, earfcn: 6300, pci: 339, "
+			      "rsrp: -76 dBm\n"
+			      "plmn: 23003, act: lte-m, stat: not in network list\n"
+			      "  cell: 000AE5CA, act: lte-m, tac: 8DCC, earfcn: 3544, pci: 135, "
+			      "rsrp: -66 dBm\n"
+			      "networks: 0 (0 with act), cells: 4\n"),
+		"%s", out);
+	assert_tx_time(TX_INDEX(items_cells, "AT%NCELLMEAS=5,7", 1),
+		       URC_TIME(items_cells, "+CSCON: 1", 1) + 60000);
+	assert_scan(-ENODATA, 0, -ENODATA, -EIO, -ENODATA, -ENODATA, 4, 0);
+	zassert_equal(m_scan.mode, CTR_LTE_V2_SCAN_CELLS);
+	k_sleep(K_SECONDS(1));
+	mock_ctr_lte_link_assert_done();
+
+	/* 7. NB-IoT only, the modem in PSM (the board with PSM): it answers CFUN=0 after 85 s, as
+	 * mfw 1.3.6 with SLM 2.5.2 did, and the scan goes on. One RAT: no end in the configured
+	 * RATs */
+
+	char mode[sizeof(g_ctr_lte_v2_config.mode)];
+
+	strcpy(mode, g_ctr_lte_v2_config.mode);
+	strcpy(g_ctr_lte_v2_config.mode, "nb-iot");
+
+	/* clang-format off */
+	static struct mock_link_item items_psm[] = {
+		{"AT+CFUN=0"},
+		URC(85000, "OK"),
+		{"AT%XSYSTEMMODE=0,1,1,0", "OK"},
+		{"AT+CEREG=5", "OK"},
+		{"AT+CSCON=1", "OK"},
+		{"AT+CFUN=1", "OK"},
+		ITEMS_SCAN_REGISTER_PSM,
+		ITEMS_SCAN_COPS(1000, HW_COPS_PSM_NBIOT),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_psm, ARRAY_SIZE(items_psm));
+
+	shell_bg_start("lte scan now plmn");
+	out = shell_bg_join(&ret, K_SECONDS(300));
+	zassert_ok(ret, "%s", out);
+	out = no_ages(out);
+	zassert_str_equal(out,
+			  scan_now_text("", 2,
+					"last scan: * ago (request)\n"
+					"search: lte-m cells not run, nb-iot cells not run, "
+					"networks ok\n"
+					"plmn: 23001, act: nb-iot, stat: available\n"
+					"plmn: 23002, act: nb-iot, stat: available\n"
+					"plmn: 23003, act: nb-iot, stat: current\n"
+					"networks: 3 (3 with act), cells: 0\n"),
+			  "%s", out);
+	assert_tx_time(TX_INDEX(items_psm, "AT+CFUN=1", 1), mock_ctr_lte_link_tx_time(0) + 85000);
+	assert_scan(-ENODATA, -ENODATA, -ENODATA, -ENODATA, -ENODATA, 0, 0, 3);
+	k_sleep(K_SECONDS(1));
+	mock_ctr_lte_link_assert_done();
+
+	/* 8. CFUN=0 answered after 121 s: the scan ends at its bound of 120 s, no step run */
+
+	/* clang-format off */
+	static struct mock_link_item items_psm_late[] = {
+		{"AT+CFUN=0"},
+		URC(121000, "OK"),
+	};
+	/* clang-format on */
+
+	mock_ctr_lte_link_start(items_psm_late, ARRAY_SIZE(items_psm_late));
+
+	shell_bg_start("lte scan now plmn");
+	out = shell_bg_join(&ret, K_SECONDS(300));
+	int64_t took = k_uptime_get() - mock_ctr_lte_link_tx_time(0);
+
+	zassert_ok(ret, "%s", out);
+	out = no_ages(out);
+	/* The line of 2 min comes with the end */
+	zassert_str_equal(out,
+			  scan_now_text("", 4,
+					"last scan: * ago (request)\n"
+					"search: lte-m cells not run, nb-iot cells not run, "
+					"networks not run\n"
+					"networks: 0 (0 with act), cells: 0\n"),
+			  "%s", out);
+	zassert_true(took >= 120000 && took < 121000, "ended %lld ms after CFUN=0", took);
+	assert_scan(-ENODATA, -ENODATA, -ENODATA, -EIO, -ENODATA, -ENODATA, 0, 0);
+	/* The late OK, outside a dialog */
+	k_sleep(K_SECONDS(2));
+	mock_ctr_lte_link_assert_done();
+
+	strcpy(g_ctr_lte_v2_config.mode, mode);
 }
 #endif
 
