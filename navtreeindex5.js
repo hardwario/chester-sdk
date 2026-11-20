@@ -1,5 +1,7 @@
 var NAVTREEINDEX5 =
 {
+"structctr__led__cmd.html#a6c7a131bce7f602278afaeec0cdc0501":[1,14,0,1],
+"structctr__led__cmd.html#add24a126abd2930d34986a2269ecd331":[1,14,0,2],
 "structctr__led__cmd.html#ae7fd597649bae566834af5a4b7b6cada":[1,14,0,0],
 "structctr__led__seq.html":[1,14,1],
 "structctr__led__seq.html#a74b1b0e82711083f919b5ec1b930bbc9":[1,14,1,3],
@@ -118,12 +120,13 @@ var NAVTREEINDEX5 =
 "structctr__lte__v2__cb.html#a773b3063e8c7f35f4709ee82d10aa5d9":[1,17,5,1],
 "structctr__lte__v2__cb.html#aff739c95bb3b50901124ea507852c3f1":[1,17,5,0],
 "structctr__lte__v2__cereg__event.html":[1,17,4],
-"structctr__lte__v2__cereg__event.html#a38196a760b5303e9e871aec02862c918":[1,17,4,3],
+"structctr__lte__v2__cereg__event.html#a38196a760b5303e9e871aec02862c918":[1,17,4,4],
 "structctr__lte__v2__cereg__event.html#a498ad68f6ad531c198c4317491f8a082":[1,17,4,0],
-"structctr__lte__v2__cereg__event.html#a4eb039cbf2bfea0fee7c8c67b59eb6f5":[1,17,4,5],
+"structctr__lte__v2__cereg__event.html#a4eb039cbf2bfea0fee7c8c67b59eb6f5":[1,17,4,6],
 "structctr__lte__v2__cereg__event.html#a71b5d4380749bd0aaf64e951ecd4c552":[1,17,4,1],
-"structctr__lte__v2__cereg__event.html#ad1cc899be24d34062a9dd85f636622bf":[1,17,4,2],
-"structctr__lte__v2__cereg__event.html#af28ae38bc7fe2298e015320a84fe27fd":[1,17,4,4],
+"structctr__lte__v2__cereg__event.html#ad1cc899be24d34062a9dd85f636622bf":[1,17,4,3],
+"structctr__lte__v2__cereg__event.html#ae953030016aa72b44853409c7255b8b5":[1,17,4,2],
+"structctr__lte__v2__cereg__event.html#af28ae38bc7fe2298e015320a84fe27fd":[1,17,4,5],
 "structctr__lte__v2__cereg__param.html":[1,17,1],
 "structctr__lte__v2__cereg__param.html#a02a3dd0220cfaad4cae44207dc9a26ed":[1,17,1,1],
 "structctr__lte__v2__cereg__param.html#a09005bf883e96d5223cd3dc40e341ab3":[1,17,1,4],
@@ -246,8 +249,5 @@ var NAVTREEINDEX5 =
 "structctr__z__status.html#a8998e82eaf4cffb1d9f58759484a2e7b":[1,47,2,3],
 "structctr__z__status.html#a8a16bb1115e3636ea18d5015247935c1":[1,47,2,2],
 "structctr__z__status.html#ae901a03f751e5761cda602c14f9c846f":[1,47,2,5],
-"structpeople__counter__measurement.html":[1,50,0],
-"structpeople__counter__measurement.html#a00e83157fb1407b307f32ea26f2d500b":[1,50,0,3],
-"structpeople__counter__measurement.html#a0dde8a143310ed846e099ea143dedc12":[1,50,0,8],
-"structpeople__counter__measurement.html#a3cc2ad834c4bbd32aab3434d1d28a323":[1,50,0,5]
+"structpeople__counter__measurement.html":[1,50,0]
 };

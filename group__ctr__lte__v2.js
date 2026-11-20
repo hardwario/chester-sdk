@@ -55,6 +55,7 @@ var group__ctr__lte__v2 =
     [ "ctr_lte_v2_cereg_event", "structctr__lte__v2__cereg__event.html", [
       [ "act", "structctr__lte__v2__cereg__event.html#a498ad68f6ad531c198c4317491f8a082", null ],
       [ "cid", "structctr__lte__v2__cereg__event.html#a71b5d4380749bd0aaf64e951ecd4c552", null ],
+      [ "plmn", "structctr__lte__v2__cereg__event.html#ae953030016aa72b44853409c7255b8b5", null ],
       [ "reject_cause", "structctr__lte__v2__cereg__event.html#ad1cc899be24d34062a9dd85f636622bf", null ],
       [ "stat", "structctr__lte__v2__cereg__event.html#a38196a760b5303e9e871aec02862c918", null ],
       [ "tac", "structctr__lte__v2__cereg__event.html#af28ae38bc7fe2298e015320a84fe27fd", null ],
@@ -77,7 +78,9 @@ var group__ctr__lte__v2 =
     ] ],
     [ "ctr_lte_v2_cb_event", "group__ctr__lte__v2.html#ga91b07bcefc0667b9efac150c7b041033", [
       [ "CTR_LTE_V2_CB_EVENT_CSCON_0", "group__ctr__lte__v2.html#gga91b07bcefc0667b9efac150c7b041033a85e74878e0bf8b8fc23898785e75effa", null ],
-      [ "CTR_LTE_V2_CB_EVENT_CSCON_1", "group__ctr__lte__v2.html#gga91b07bcefc0667b9efac150c7b041033a32c0b8c1ad6405d7565d3dba6963abb2", null ]
+      [ "CTR_LTE_V2_CB_EVENT_CSCON_1", "group__ctr__lte__v2.html#gga91b07bcefc0667b9efac150c7b041033a32c0b8c1ad6405d7565d3dba6963abb2", null ],
+      [ "CTR_LTE_V2_CB_EVENT_NCELLMEAS_DONE", "group__ctr__lte__v2.html#gga91b07bcefc0667b9efac150c7b041033a3b1e4d337e4693f4d1a297a530ce9633", null ],
+      [ "CTR_LTE_V2_CB_EVENT_SCAN_DONE", "group__ctr__lte__v2.html#gga91b07bcefc0667b9efac150c7b041033aed73f3c20d29a859265db13ce4eb0e17", null ]
     ] ],
     [ "ctr_lte_v2_cereg_param_act", "group__ctr__lte__v2.html#ga36c152e447cf2947877e44eab9692de0", [
       [ "CTR_LTE_V2_CEREG_PARAM_ACT_UNKNOWN", "group__ctr__lte__v2.html#gga36c152e447cf2947877e44eab9692de0a1fbf4ba77d64e0d10047f1eecc51ed54", null ],
