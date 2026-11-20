@@ -385,6 +385,29 @@ ZTEST(parser, test_ncellmeas_invalid_fields)
 	expect_empty();
 }
 
+/* RSRQ index -30, the lowest of lte_lc.h, in the cell and in a neighbour; -31 is out of range */
+ZTEST(parser, test_ncellmeas_rsrq_extended_range)
+{
+	zassert_ok(ctr_lte_v2_parse_urc_ncellmeas(
+		"0,\"074FEB50\",\"23002\",\"05F2\",31,941054,6300,488,67,-30,1139290,1,1,6300,339,"
+		"64,-30,0",
+		&param));
+	zassert_true(param.valid, "valid");
+	zassert_equal(param.num_cells, 1, "num_cells");
+	zassert_equal(param.num_ncells, 1, "num_ncells");
+	expect_cell(0, 0x074FEB50, "23002", 0x05F2, 31, 6300, 488, 67, -30, true, 1);
+	expect_ncell(0, 6300, 339, 64, -30, 0);
+
+	zassert_equal(ctr_lte_v2_parse_urc_ncellmeas(
+			      "0,\"074FEB50\",\"23002\",\"05F2\",31,941054,6300,488,67,-31,1,1,0",
+			      &param),
+		      -ERANGE, "cell RSRQ -31");
+	expect_empty();
+	zassert_equal(ctr_lte_v2_parse_urc_ncellmeas(CELL0("1") ",6300,339,64,-31,0", &param),
+		      -ERANGE, "neighbour RSRQ -31");
+	expect_empty();
+}
+
 ZTEST(parser, test_ncellmeas_malformed)
 {
 	zassert_equal(ctr_lte_v2_parse_urc_ncellmeas(NULL, &param), -EINVAL, "NULL line");

@@ -840,7 +840,7 @@ static int parse_ncellmeas_ncell(const char **p, struct ctr_lte_v2_ncellmeas_nce
 	}
 	n->rsrp = num;
 
-	if ((ret = sep_ranged(p, -17, 255, &num))) {
+	if ((ret = sep_ranged(p, -30, 255, &num))) {
 		return ret;
 	}
 	n->rsrq = num;
@@ -928,7 +928,7 @@ static int parse_ncellmeas_cell(const char **p, struct ctr_lte_v2_ncellmeas_cell
 	}
 	c->rsrp = num;
 
-	if ((ret = sep_ranged(p, -17, 255, &num))) {
+	if ((ret = sep_ranged(p, -30, 255, &num))) {
 		return ret;
 	}
 	c->rsrq = num;
