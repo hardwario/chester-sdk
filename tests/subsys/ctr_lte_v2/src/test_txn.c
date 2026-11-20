@@ -1317,6 +1317,10 @@ ZTEST(txn, test_no_psm_cfun4)
 	const char *out = stack_shell_cmd("lte state");
 	zassert_not_null(strstr(out, "psm: active-time 0s, periodic-tau 1d 00h 00m 00s"), "%s",
 			 out);
+	/* %CONEVAL of ITEM_CONEVAL (RSRP 95, RSRQ 30, SNR 49) as modem_info.h of nrf converts it */
+	zassert_not_null(strstr(out, "rsrp: -46"), "%s", out);
+	zassert_not_null(strstr(out, "rsrq: -5"), "%s", out);
+	zassert_not_null(strstr(out, "snr: 25"), "%s", out);
 
 	/* clang-format off */
 	static struct mock_link_item items[] = {

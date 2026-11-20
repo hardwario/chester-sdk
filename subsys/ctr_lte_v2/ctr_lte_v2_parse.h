@@ -10,6 +10,9 @@
 /* CHESTER includes */
 #include <chester/ctr_lte_v2.h>
 
+/* NCS includes (the conversion macros only, the modem library is not used) */
+#include <modem/modem_info.h>
+
 /* Standard includes */
 #include <stdbool.h>
 #include <stddef.h>
@@ -58,16 +61,18 @@ int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param)
 int ctr_lte_v2_parse_urc_xgps(const char *s, struct ctr_lte_v2_gnss_update *update);
 int ctr_lte_v2_parse_cgcont(const char *s, struct cgdcont_param *param);
 
-/* The RSRP index of %NCELLMEAS in dBm, as RSRP_IDX_TO_DBM of nrf */
+/* The RSRP index the modem reports (%CONEVAL, %NCELLMEAS) in dBm: RSRP_IDX_TO_DBM of nrf, the
+ * lower bound of the 1 dB step (index - 141, a negative index - 140) */
 static inline int ctr_lte_v2_parse_rsrp_dbm(int rsrp)
 {
-	return rsrp - 141;
+	return RSRP_IDX_TO_DBM(rsrp);
 }
 
-/* The RSRQ the modem reports (%CONEVAL, %NCELLMEAS) in dB */
+/* The RSRQ index the modem reports (%CONEVAL, %NCELLMEAS) in dB: RSRQ_IDX_TO_DB of nrf, a float
+ * in half dB, truncated toward zero (as ecid_signal_meas_info.c of nrf stores it in an s32) */
 static inline int ctr_lte_v2_parse_rsrq_db(int rsrq)
 {
-	return (rsrq - 39) / 2;
+	return (int)RSRQ_IDX_TO_DB(rsrq);
 }
 
 #if defined(CONFIG_CTR_LTE_V2_SCAN)

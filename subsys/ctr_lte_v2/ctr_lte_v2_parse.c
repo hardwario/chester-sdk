@@ -582,9 +582,9 @@ int ctr_lte_v2_parse_coneval(const char *s, struct ctr_lte_v2_conn_param *param)
 	if (param->result == 0) {
 		param->eest = energy_estimate;
 		param->ecl = ce_level;
-		param->rsrp = rsrp - 140;
+		param->rsrp = ctr_lte_v2_parse_rsrp_dbm(rsrp);
 		param->rsrq = ctr_lte_v2_parse_rsrq_db(rsrq);
-		param->snr = snr - 24;
+		param->snr = SNR_IDX_TO_DB(snr);
 		param->plmn = strtol(plmn, NULL, 10);
 		param->cid = cid;
 		param->band = band;

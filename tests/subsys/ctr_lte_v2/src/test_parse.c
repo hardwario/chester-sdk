@@ -206,13 +206,55 @@ ZTEST(parser, test_coneval)
 	zassert_equal(param.result, 0, "param.result not equal"); // success
 	zassert_equal(param.eest, 7, "param.eest not equal");     // energy_estimate
 	zassert_equal(param.ecl, 0, "param.ecl not equal");
-	zassert_equal(param.rsrp, -72, "param.rsrp not equal");
+	zassert_equal(param.rsrp, -73, "param.rsrp not equal");
 	zassert_equal(param.rsrq, -5, "param.rsrq not equal");
 	zassert_equal(param.snr, 23, "param.snr not equal");
 	zassert_equal(param.plmn, 23003, "param.plmn not equal");
 	zassert_equal(param.cid, 0x000AE520, "param.cid not equal");
 	zassert_equal(param.band, 20, "param.band not equal");
 	zassert_equal(param.earfcn, 6447, "param.earfcn not equal");
+}
+
+/* The lowest RSRP index above 0 and the first RSRQ index of the upper step of RSRQ_IDX_TO_DB */
+ZTEST(parser, test_coneval_boundaries)
+{
+	struct ctr_lte_v2_conn_param param;
+
+	zassert_ok(ctr_lte_v2_parse_coneval(
+		"0,1,7,1,35,0,\"000AE520\",\"23003\",135,6447,20,0,0,14,2,1,99", &param));
+	zassert_true(param.valid);
+	zassert_equal(param.rsrp, -140);
+	zassert_equal(param.rsrq, -3);
+	zassert_equal(param.snr, -24);
+}
+
+/* RSRP_IDX_TO_DBM of nrf (modem_info.h): the lower bound of the 1 dB step */
+ZTEST(parser, test_rsrp_dbm)
+{
+	zassert_equal(ctr_lte_v2_parse_rsrp_dbm(-17), -157);
+	zassert_equal(ctr_lte_v2_parse_rsrp_dbm(-1), -141);
+	zassert_equal(ctr_lte_v2_parse_rsrp_dbm(0), -141);
+	zassert_equal(ctr_lte_v2_parse_rsrp_dbm(1), -140);
+	zassert_equal(ctr_lte_v2_parse_rsrp_dbm(34), -107);
+	zassert_equal(ctr_lte_v2_parse_rsrp_dbm(35), -106);
+	zassert_equal(ctr_lte_v2_parse_rsrp_dbm(97), -44);
+}
+
+/* RSRQ_IDX_TO_DB of nrf (modem_info.h), its half dB truncated toward zero */
+ZTEST(parser, test_rsrq_db)
+{
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(-30), -34); /* -34.5 */
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(-2), -20);  /* -20.5 */
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(-1), -20);
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(0), -20);
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(1), -19); /* -19.5 */
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(2), -19);
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(33), -3); /* -3.5 */
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(34), -3);
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(35), -3);
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(36), -2); /* -2.5 */
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(46), 2);  /* 2.5 */
+	zassert_equal(ctr_lte_v2_parse_rsrq_db(97), 28);
 }
 
 ZTEST(parser, test_urc_xgps)

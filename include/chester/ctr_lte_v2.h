@@ -38,9 +38,10 @@ struct ctr_lte_v2_conn_param {
 		       ctr_lte_v2_str_coneval_result). */
 	int eest;   /**< Energy estimate (vendor-specific). */
 	int ecl;    /**< Coverage enhancement level (e.g. 0..2 for NB-IoT). */
-	int rsrp;   /**< Reference Signal Received Power (dBm). */
-	int rsrq;   /**< Reference Signal Received Quality (dB). */
-	int snr;    /**< Signal-to-noise ratio. */
+	int rsrp;   /**< Reference Signal Received Power (dBm, RSRP_IDX_TO_DBM of nrf). */
+	int rsrq;   /**< Reference Signal Received Quality (dB, RSRQ_IDX_TO_DB of nrf truncated
+		       toward zero). */
+	int snr;    /**< Signal-to-noise ratio (dB, SNR_IDX_TO_DB of nrf). */
 	int plmn;   /**< PLMN code (MCCMNC) as integer. */
 	int cid;    /**< Cell ID. */
 	int band;   /**< LTE band number. */
@@ -348,9 +349,8 @@ int ctr_lte_v2_gnss_set_handler(ctr_lte_v2_gnss_cb callback, void *user_data);
 #if defined(CONFIG_CTR_LTE_V2_SCAN)
 
 /* %NCELLMEAS=5,7 (GCI search). rsrp and rsrq are the indexes the modem reports: RSRP in dBm is
- * rsrp - 141 (RSRP_IDX_TO_DBM of nrf for an index from 0, as the shell prints it; %CONEVAL in
- * ctr_lte_v2_conn_param takes - 140), RSRQ in dB is (rsrq - 39) / 2 with integer division (as
- * for %CONEVAL) */
+ * RSRP_IDX_TO_DBM of nrf (modem_info.h), RSRQ in dB is RSRQ_IDX_TO_DB of nrf, as the shell and
+ * ctr_lte_v2_conn_param (%CONEVAL) convert them */
 #define CTR_LTE_V2_NCELLMEAS_CELL_MAX  7
 #define CTR_LTE_V2_NCELLMEAS_NCELL_MAX 10
 
@@ -444,7 +444,7 @@ struct ctr_lte_v2_scan_cell {
 	char plmn[7];
 	uint16_t tac;
 	uint16_t pci;
-	int16_t rsrp; /* index as in ctr_lte_v2_ncellmeas_cell, in dBm rsrp - 141 */
+	int16_t rsrp; /* index as in ctr_lte_v2_ncellmeas_cell, in dBm RSRP_IDX_TO_DBM of nrf */
 	uint8_t act;  /* the RAT of the measurement: 7 LTE-M, 9 NB-IoT */
 	bool serving;
 };
